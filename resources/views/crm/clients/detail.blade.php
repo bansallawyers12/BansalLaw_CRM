@@ -209,27 +209,29 @@ use App\Http\Controllers\Controller;
                                 <span class="cdn-client-hero__meta-item">Stage: {{ $cdnWorkflowStageLabel }}</span>
                             @endif
                         </div>
+                        @php
+                            $cdnHeroShowMatterActions = empty($isClosedMatterView)
+                                && (
+                                    is_array($matterFormForLead ?? null)
+                                    || ($cdnHeroCanDiscontinue && $cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
+                                );
+                        @endphp
+                        @if($cdnHeroShowMatterActions)
                         <div class="cdn-client-hero__matter-row">
-                            @if($cdnMatterRefLabel)
-                                <span class="cdn-client-hero__matter-chip">
-                                    {{ $cdnMatterChipTitle }} ({{ $cdnMatterRefLabel }})
-                                    @if(!empty($isClosedMatterView))
-                                        <span class="badge bg-secondary ms-1">Closed</span>
-                                    @endif
-                                </span>
-                            @else
-                                <span class="cdn-client-hero__matter-chip">No active matter</span>
-                            @endif
-                            @if(empty($isClosedMatterView))
-                            <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-focus-matter-select" title="Change matter">Change Matter</button>
                             @if(is_array($matterFormForLead ?? null))
                                 <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-open-add-matter" title="Add a new matter for this client" onclick="openAddMatterModal()">Add Matter</button>
                             @endif
                             @if($cdnHeroCanDiscontinue && $cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
                                 <button type="button" class="btn cdn-client-hero__matter-btn text-danger" title="Close this matter" data-matter-id="{{ $cdnMatterRow->id }}" onclick="openCloseMatterModal(this)" style="background: rgba(211, 47, 47, 0.1); border-color: rgba(211, 47, 47, 0.2); font-weight: 600;">Close Matter</button>
                             @endif
-                            @endif
                         </div>
+                        @elseif(!empty($isClosedMatterView) && $cdnMatterRefLabel)
+                        <div class="cdn-client-hero__matter-row">
+                            <span class="cdn-client-hero__matter-chip">
+                                <span class="badge bg-secondary">Closed matter</span>
+                            </span>
+                        </div>
+                        @endif
                         <div class="cdn-client-hero__tags" aria-label="Tags">
                             @foreach($cdnHeroTagNames as $tname)
                                 <span class="cdn-client-hero__tag">{{ $tname }}</span>
@@ -2070,60 +2072,6 @@ $(function () {
 });
 </script>
 @endif
-
-<script>
-(function () {
-    document.addEventListener('DOMContentLoaded', function () {
-        var matterBtn = document.getElementById('cdn-focus-matter-select');
-        if (!matterBtn) {
-            return;
-        }
-
-        var sel = document.getElementById('sel_matter_id_client_detail');
-        var hasChoices = false;
-        if (sel) {
-            for (var i = 0; i < sel.options.length; i++) {
-                if (sel.options[i].value !== '') {
-                    hasChoices = true;
-                    break;
-                }
-            }
-        }
-
-        if (!hasChoices) {
-            matterBtn.classList.add('cdn-client-hero__matter-btn--no-switcher');
-            matterBtn.setAttribute('aria-disabled', 'true');
-            var noSwitcherMsg = 'No active matter to switch. Add a matter in Client Details Form (edit icon next to the client name), then return here.';
-            matterBtn.title = noSwitcherMsg;
-            matterBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                if (typeof iziToast !== 'undefined') {
-                    if (typeof iziToast.info === 'function') {
-                        iziToast.info({ message: noSwitcherMsg, position: 'topRight', timeout: 7000 });
-                    } else if (typeof iziToast.show === 'function') {
-                        iziToast.show({ message: noSwitcherMsg, position: 'topRight', timeout: 7000, backgroundColor: '#4a89dc' });
-                    }
-                }
-            });
-            return;
-        }
-
-        matterBtn.addEventListener('click', function () {
-            var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
-            if ($el && $el.length) {
-                var el0 = $el[0];
-                var ts = (typeof window.getTomSelectInstance === 'function') ? window.getTomSelectInstance(el0) : null;
-                if (ts && typeof window.openTS === 'function') {
-                    window.openTS(el0);
-                } else {
-                    $el.trigger('focus');
-                }
-            }
-        });
-        /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
-    });
-})();
-</script>
 
 <script>
 (function () {

@@ -1256,49 +1256,13 @@ $(document).ready(function() {
 
     jQuery(document).ready(function($){
 
-        /** Anchor Tom Select matter-switcher dropdown below the Change Matter hero button. */
-        function positionClientDetailMatterSwitchDropdown() {
-            var ts = (typeof getTomSelectInstance === 'function') ? getTomSelectInstance('#sel_matter_id_client_detail') : null;
-            if (!ts) return;
-            var btn = document.getElementById('cdn-focus-matter-select');
-            if (!btn) return;
-            var r = btn.getBoundingClientRect();
-            var minW = 280;
-            var w = Math.max(r.width, minW);
-            var maxLeft = window.innerWidth - w - 8;
-            var left = Math.min(Math.max(8, r.left), maxLeft);
-            var dd = ts.dropdown;
-            if (dd) {
-                dd.style.position = 'fixed';
-                dd.style.left = left + 'px';
-                dd.style.top = (r.bottom + 4) + 'px';
-                dd.style.width = w + 'px';
-                dd.style.zIndex = '10050';
-            }
-        }
-
-
-
-        // Initialize Tom Select for the matter dropdown (body parent + JS position for hero button; matter-dropdown-wrap for long-name wrapping)
+        // Hidden matter select: sync active matter for tabs/forms (switch via Client Matters tile on overview).
         var $matterClientDetail = $('#sel_matter_id_client_detail');
         if ($matterClientDetail.length) {
-            var _tsMatterDetail = initTS($matterClientDetail[0], {
+            initTS($matterClientDetail[0], {
                 dropdownParent: 'body',
-                create: false,
-                onDropdownOpen: function () {
-                    requestAnimationFrame(function () {
-                        positionClientDetailMatterSwitchDropdown();
-                        $(window).on('scroll.matterSwitchDd resize.matterSwitchDd', positionClientDetailMatterSwitchDropdown);
-                    });
-                },
-                onDropdownClose: function () {
-                    $(window).off('scroll.matterSwitchDd resize.matterSwitchDd');
-                }
+                create: false
             });
-            // Add class for long-name option wrapping on Tom Select dropdown
-            if (_tsMatterDetail && _tsMatterDetail.dropdown) {
-                _tsMatterDetail.dropdown.classList.add('matter-dropdown-wrap');
-            }
         }
 
 
