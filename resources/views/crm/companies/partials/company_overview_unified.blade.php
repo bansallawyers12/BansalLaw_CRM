@@ -5,12 +5,14 @@
         <h3><i class="fa-solid fa-building"></i> Company Information</h3>
         <div style="display:flex; align-items:center; gap:12px;">
             @if(!empty($cdnHeroLastUpdateOn))
-                <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
+                <span class="text-muted" style="font-size:12px; white-space:nowrap;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
             @endif
+            @if(empty($isClosedMatterView))
             <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
                class="btn btn-sm btn-primary">
                 <i class="fa-solid fa-pen-to-square"></i> Edit
             </a>
+            @endif
         </div>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">

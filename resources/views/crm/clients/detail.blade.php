@@ -146,27 +146,8 @@ use App\Http\Controllers\Controller;
             $__crmIsLeadType = ($__ftRaw === 1)
                 || in_array($__ftStr, ['lead', 'l', '1'], true);
 
-            // Mirror tab-strip "Last update on" visibility (hero renders before nav $matter_cnt).
-            $cdnHeroTabSlugList = [
-                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
-                'emails', 'client_portal', 'legalforms',
-                'formgenerations', 'formgenerationsl',
-                'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
-                'visadocuments',
-            ];
-            $cdnHeroIsMatterIdInUrl = isset($id1) && $id1 !== '' && ! in_array(strtolower((string) $id1), array_map('strtolower', $cdnHeroTabSlugList), true);
-            $cdnHeroMatterCntForLastUpdate = \App\Models\ClientMatter::query()
-                ->where('client_id', $fetchedData->id)
-                ->where(function ($q) {
-                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
-                })
-                ->count();
-            $cdnHeroShowMatterDocsForConvertedLead = ! $__crmIsLeadType
-                && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
-            $cdnHeroLastUpdateOn = null;
-            if (($cdnHeroIsMatterIdInUrl || $cdnHeroMatterCntForLastUpdate > 0 || $cdnHeroShowMatterDocsForConvertedLead) && $cdnLastUpdateAt) {
-                $cdnHeroLastUpdateOn = $cdnLastUpdateAt->format('d/m/Y');
-            }
+            // First-tile "Last update on" date (Overview company/personal card header).
+            $cdnHeroLastUpdateOn = $cdnLastUpdateAt ? $cdnLastUpdateAt->format('d/m/Y') : null;
         @endphp
 
         <section class="cdn-client-hero" aria-label="Client summary">
