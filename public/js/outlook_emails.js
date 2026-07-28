@@ -4523,10 +4523,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            const isAdmin = link.getAttribute('data-is-admin') === '1';
             const count = Math.max(0, Number(data.count) || 0);
             let badge = link.querySelector('.crm-nav-unassigned-badge');
 
             if (count > 0) {
+                link.style.setProperty('display', '', '');
                 if (!badge) {
                     badge = document.createElement('span');
                     badge.className = 'badge bg-danger crm-nav-unassigned-badge';
@@ -4539,8 +4541,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     link.appendChild(badge);
                 }
                 badge.textContent = String(count);
-            } else if (badge) {
-                badge.remove();
+            } else {
+                if (badge) {
+                    badge.remove();
+                }
+                if (!isAdmin) {
+                    link.style.setProperty('display', 'none', 'important');
+                }
             }
         } catch (error) {
             console.error('Failed to refresh unassigned mail count', error);
