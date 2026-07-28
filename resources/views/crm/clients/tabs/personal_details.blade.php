@@ -933,6 +933,12 @@
                                 </div>
                             @endif
                         </div>
+
+                        @include('crm.clients.partials.client-matters-list-card', [
+                            'fetchedData' => $fetchedData,
+                            'selectedClientMatter' => $selectedClientMatter ?? null,
+                            'activeTab' => $activeTab ?? 'personaldetails',
+                        ])
                     <?php
                     } ?>
 
