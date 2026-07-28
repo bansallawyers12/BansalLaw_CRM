@@ -110,6 +110,20 @@ class SyncedEmailController extends Controller
 
 
 
+        if (! $staff->canViewAllSyncedInboxMail()) {
+
+            $unassignedCount = IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff);
+
+            if ($unassignedCount === 0) {
+
+                return redirect()->route('dashboard')->with('error', 'You currently have no unassigned emails.');
+
+            }
+
+        }
+
+
+
         return view('crm.unassigned_emails.index');
 
     }
