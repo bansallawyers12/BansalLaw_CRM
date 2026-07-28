@@ -24,7 +24,25 @@ class SmsTemplateController extends Controller
      */
     public function index(Request $request)
     {
-        $templates = SmsTemplate::orderBy('title')->paginate(20);
+        $query = SmsTemplate::orderBy('title');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('message', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
+        $templates = $query->paginate(20);
+
+        if ($request->wantsJson() || $request->ajax() || $request->has('json')) {
+            return response()->json([
+                'success' => true,
+                'data' => $templates
+            ]);
+        }
         
         return view('AdminConsole.features.sms.templates.index', compact('templates'));
     }

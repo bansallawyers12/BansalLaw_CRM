@@ -48,8 +48,19 @@ class SmsController extends Controller
                            ->orderBy('created_at', 'desc')
                            ->limit(10)
                            ->get();
+
+        $activeTemplates = SmsTemplate::where('is_active', true)->orderBy('title')->get();
+
+        if ($request->wantsJson() || $request->ajax() || $request->has('json')) {
+            return response()->json([
+                'success' => true,
+                'stats' => $stats,
+                'recentSms' => $recentSms,
+                'templates' => $activeTemplates
+            ]);
+        }
         
-        return view('AdminConsole.features.sms.dashboard', compact('stats', 'recentSms'));
+        return view('AdminConsole.features.sms.dashboard', compact('stats', 'recentSms', 'activeTemplates'));
     }
 
     /**
@@ -60,11 +71,31 @@ class SmsController extends Controller
         $query = SmsLog::with(['client', 'contact', 'sender'])
             ->orderBy('created_at', 'desc');
 
-        // Add filters when implemented
-        // if ($request->filled('client_id')) { ... }
-        // if ($request->filled('date_from')) { ... }
+        if ($request->filled('provider')) {
+            $query->where('provider', $request->provider);
+        }
 
-        $smsLogs = $query->paginate(50);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('recipient_phone', 'like', "%{$search}%")
+                  ->orWhere('formatted_phone', 'like', "%{$search}%")
+                  ->orWhere('message_content', 'like', "%{$search}%");
+            });
+        }
+
+        $smsLogs = $query->paginate(20);
+
+        if ($request->wantsJson() || $request->ajax() || $request->has('json')) {
+            return response()->json([
+                'success' => true,
+                'data' => $smsLogs
+            ]);
+        }
 
         return view('AdminConsole.features.sms.history.index', compact('smsLogs'));
     }
@@ -75,6 +106,13 @@ class SmsController extends Controller
     public function show($id)
     {
         $smsLog = SmsLog::with(['client', 'contact', 'sender'])->findOrFail($id);
+
+        if (request()->wantsJson() || request()->ajax() || request()->has('json')) {
+            return response()->json([
+                'success' => true,
+                'data' => $smsLog
+            ]);
+        }
         
         return view('AdminConsole.features.sms.history.show', compact('smsLog'));
     }
