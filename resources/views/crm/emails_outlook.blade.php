@@ -152,40 +152,23 @@
             </div>
             @endif
             <div class="{{ $unassignedOnly ? 'list-toolbar__folder-row' : '' }}">
-                <div class="folder-tabs" role="tablist" aria-label="Mail folders">
-                    @if($unassignedOnly)
-                    <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                        <i class="fa-solid fa-inbox"></i> Inbox
-                    </button>
-                    <button type="button" class="folder-item" data-folder="unassigned" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-user-clock"></i> Unassigned
-                    </button>
-                    <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-user-check"></i> Assigned
-                    </button>
-                    {{-- Sent folder tab — enable when synced sent mail is ready.
-                    <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-paper-plane"></i> Sent
-                    </button>
-                    --}}
-                    @else
-                    <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                        <i class="fa-solid fa-inbox"></i> Inbox
-                    </button>
-                    <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-paper-plane"></i> Sent
-                    </button>
-                    {{-- Email Log tab hidden on client email view.
-                    <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Email Log
-                    </button>
-                    --}}
-                    @endif
-                </div>
                 @if($unassignedOnly)
+                <div class="folder-inbox-title">
+                    <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                    <span>Inbox</span>
+                </div>
                 <div class="search-box search-box--compact list-toolbar__search">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
+                </div>
+                @else
+                <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+                    <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
+                        <i class="fa-solid fa-inbox"></i> Inbox
+                    </button>
+                    <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
+                        <i class="fa-solid fa-paper-plane"></i> Sent
+                    </button>
                 </div>
                 @endif
             </div>
@@ -199,40 +182,33 @@
                     <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
                         <i class="fa-solid fa-cloud-arrow-down"></i>
                     </div>
-                    <div>
+                    <div class="sync-inbox-panel__intro-text">
                         <div class="sync-inbox-panel__title">Fetch from Zoho</div>
-                        <div class="sync-inbox-panel__hint">Missed mail is recovered automatically after sync.</div>
                     </div>
                 </div>
-                <div class="sync-inbox-panel__actions">
+                <div class="sync-inbox-panel__sync-row">
+                    @if($canSelectSyncMailbox)
+                    <div class="sync-inbox-panel__field">
+                        <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
+                            <option value="">Select</option>
+                            @foreach($syncMailboxOptions as $mailboxAddress)
+                                <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                    <div class="sync-inbox-panel__field">
+                        <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
+                            @foreach($unassignedSyncRangeOptions as $rangeValue => $rangeLabel)
+                                <option value="{{ $rangeValue }}" @selected($rangeValue === $defaultUnassignedSyncRange)>{{ $rangeLabel }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <button type="button" class="sync-inbox-panel__btn" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
                         <i class="fa-solid fa-rotate"></i>
                         <span>Sync now</span>
                     </button>
                 </div>
-            </div>
-            <div class="sync-inbox-panel__controls">
-                @if($canSelectSyncMailbox)
-                <div class="sync-inbox-panel__field">
-                    <label class="sync-inbox-panel__label" for="syncMailboxFilter">Mailbox</label>
-                    <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
-                        <option value="">Select mailbox</option>
-                        @foreach($syncMailboxOptions as $mailboxAddress)
-                            <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
-                @if($canSelectSyncMailbox)
-                <div class="sync-inbox-panel__field">
-                    <label class="sync-inbox-panel__label" for="syncRangeFilter">Sync range</label>
-                    <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
-                        @foreach($unassignedSyncRangeOptions as $rangeValue => $rangeLabel)
-                            <option value="{{ $rangeValue }}" @selected($rangeValue === $defaultUnassignedSyncRange)>{{ $rangeLabel }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
             </div>
             <div class="sync-inbox-panel__list-tools">
                 <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
@@ -240,7 +216,7 @@
                 </select>
                 @if(! empty($listMailboxFilterOptions))
                 <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
-                    <option value="">All mailboxes</option>
+                    <option value="">All</option>
                     @foreach($listMailboxFilterOptions as $mailboxAddress)
                         <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
                     @endforeach

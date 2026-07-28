@@ -818,7 +818,7 @@ class IncomingEmailSyncService
     }
 
     /**
-     * Short-interval sync ranges for Admin / Super Admin on the Unassigned mail tab.
+     * Sync ranges for Admin / Super Admin on the Unassigned mail tab.
      *
      * @return array<string, string>
      */
@@ -830,6 +830,13 @@ class IncomingEmailSyncService
             '1hour' => '1 hour',
             '2hours' => '2 hours',
             '5hours' => '5 hours',
+            'today' => 'Today',
+            '2days' => 'Last 2 days',
+            '5days' => 'Last 5 days',
+            '1week' => 'Last 1 week',
+            '2weeks' => 'Last 2 weeks',
+            '1month' => 'Last 1 month',
+            'full' => 'Full (reset & backfill)',
         ];
     }
 
@@ -1064,16 +1071,10 @@ class IncomingEmailSyncService
     }
 
     /**
-     * All Zoho-synced incoming inbox mail (assigned + unassigned).
+     * All Zoho-synced inbox mail (assigned + unassigned).
      */
     public static function applyAllSyncedInboxScope($query): void
     {
-        $query->where('mail_type', 1)
-            ->where(function ($inboxQuery) {
-                $inboxQuery->where('mail_body_type', 'inbox')
-                    ->orWhereNull('mail_body_type');
-            });
-
         if (Schema::hasColumn('email_logs', 'synced_email_id')) {
             $query->whereNotNull('synced_email_id');
         } else {

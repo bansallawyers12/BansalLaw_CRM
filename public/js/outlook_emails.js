@@ -441,28 +441,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSyncedClientBadge(email) {
-        if (currentFolder !== 'assigned'
-            && currentFolder !== 'inbox'
-            && email.sync_assignment_status !== 'auto_assigned'
-            && email.sync_assignment_status !== 'manual_assigned') {
+        if (!email) {
             return '';
         }
 
         const clientLabel = (email.client_name || '').trim()
             || (email.client_ref || '').trim()
             || (email.client_id ? ('Client #' + email.client_id) : '');
-        if (! clientLabel) {
-            return '';
+
+        if (clientLabel || email.sync_assignment_status === 'auto_assigned' || email.sync_assignment_status === 'manual_assigned') {
+            const labelStr = clientLabel || 'Assigned';
+            const iconClass = 'fa-user-check';
+            const badgeClass = unassignedOnly
+                ? 'email-client-badge email-client-badge--list'
+                : 'email-client-badge';
+            const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
+            return '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to client: ' + labelStr) + '">'
+                + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
+                + escapeHtml(labelStr)
+                + '</span>';
         }
 
-        const iconClass = unassignedOnly ? 'fa-user' : 'fa-user-check';
-        const badgeClass = unassignedOnly
-            ? 'email-client-badge email-client-badge--list'
-            : 'email-client-badge';
-        const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
-        return '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to client') + '">'
-            + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
-            + escapeHtml(clientLabel)
+        return '<span class="email-unassigned-badge" title="Unassigned mail">'
+            + '<i class="fa-solid fa-user-clock" aria-hidden="true"></i> Unassigned'
             + '</span>';
     }
 
@@ -810,8 +811,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        iframe.style.height = '100%';
-        iframe.style.minHeight = '100%';
+        try {
+            if (iframe.src && !iframe.src.startsWith('about:blank')) {
+                iframe.style.height = 'calc(100vh - 180px)';
+                iframe.style.minHeight = '650px';
+                return;
+            }
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (doc && doc.body) {
+                const scrollH = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 450);
+                iframe.style.height = (scrollH + 30) + 'px';
+                iframe.style.minHeight = '450px';
+            }
+        } catch(e) {
+            iframe.style.height = 'calc(100vh - 200px)';
+            iframe.style.minHeight = '500px';
+        }
     }
 
     function isSyncedInboxFolder(folder) {
@@ -973,6 +988,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    const folderSelect = document.getElementById('folderSelect');
+    if (folderSelect) {
+        folderSelect.addEventListener('change', (e) => {
+            const folder = e.target.value || 'inbox';
+            if ((folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
+                return;
+            }
+            switchToFolder(folder);
+            loadEmails();
+        });
+    }
+
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             currentPage = 1;
@@ -1128,6 +1155,10 @@ document.addEventListener('DOMContentLoaded', function() {
             f.classList.toggle('active', isActive);
             f.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
+        const fSelect = document.getElementById('folderSelect');
+        if (fSelect && fSelect.value !== folder) {
+            fSelect.value = folder;
+        }
         currentFolder = folder;
         currentPage = 1;
         resetReadingPane();
@@ -3578,14 +3609,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderHtmlIframe(iframe, html) {
         if (!iframe) return;
-        iframe.style.height = '100%';
-        iframe.style.minHeight = '100%';
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         const bodyHtml = html || '';
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-            'html,body{height:100%;margin:0;padding:0;box-sizing:border-box;}' +
-            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow-y:auto;}' +
+            'html,body{margin:0;padding:0;box-sizing:border-box;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow:visible;}' +
             'img{max-width:100%;height:auto;}' +
             'table{max-width:100%;}' +
             'a{color:#0078d4;}' +
@@ -3593,6 +3622,13 @@ document.addEventListener('DOMContentLoaded', function() {
             'p{margin:0 0 0.75em;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
+
+        setTimeout(function() {
+            resetReadBodyIframeSizing(iframe);
+        }, 50);
+        setTimeout(function() {
+            resetReadBodyIframeSizing(iframe);
+        }, 300);
     }
 
     function resetComposeEditor() {
