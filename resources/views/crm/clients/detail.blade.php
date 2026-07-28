@@ -239,12 +239,7 @@ use App\Http\Controllers\Controller;
                         <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Compose mail">Send Email</button>
                         <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Send SMS">Send SMS</button>
                     </div>
-                    @if($cdnHeroLastUpdateOn)
-                        <p class="cdn-client-hero__last-update">Last update on {{ $cdnHeroLastUpdateOn }}</p>
-                    @endif
                 </div>
-                @elseif($cdnHeroLastUpdateOn)
-                    <p class="cdn-client-hero__last-update">Last update on {{ $cdnHeroLastUpdateOn }}</p>
                 @endif
             </div>
         </section>

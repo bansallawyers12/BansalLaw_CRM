@@ -28,6 +28,9 @@
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fa-solid fa-user"></i> Personal Information</h3>
+                            @if(!empty($cdnHeroLastUpdateOn))
+                                <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
+                            @endif
                         </div>
                         <div class="field-group">
                             <span class="field-label">Age / Date of Birth</span>

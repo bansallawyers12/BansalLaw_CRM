@@ -3,10 +3,15 @@
 <div class="card" style="margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3><i class="fa-solid fa-building"></i> Company Information</h3>
-        <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
-           class="btn btn-sm btn-primary">
-            <i class="fa-solid fa-pen-to-square"></i> Edit
-        </a>
+        <div style="display:flex; align-items:center; gap:12px;">
+            @if(!empty($cdnHeroLastUpdateOn))
+                <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
+            @endif
+            <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
+               class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+            </a>
+        </div>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
         <div class="field-group">
