@@ -31,24 +31,35 @@
     $clientDetailEncodeId = $encodeId ?? base64_encode(convert_uuencode($fetchedData->id));
 
     $canAddClientMatter = is_array($matterFormForLead ?? null) && empty($isClosedMatterView);
+
+    $viewer = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+    $canCloseClientMatter = empty($isClosedMatterView)
+        && ($viewer instanceof \App\Models\Staff && $viewer->canCloseDiscontinueMatter());
+
     $matterCount = $clientMattersList->count();
-    $showClientMattersListCard = $matterCount > 1
-        || ($canAddClientMatter && $matterCount >= 1);
 @endphp
 
-@if($showClientMattersListCard)
 <div class="card" id="clientMattersListCard">
     <div class="client-matter-list-card-header">
         <h3><i class="fa-solid fa-folder-open"></i> Client Matters</h3>
         @if($canAddClientMatter)
             <button type="button"
                     class="client-matter-list-add-btn"
-                    title="Add a new matter for this client"
-                    aria-label="Add a new matter for this client"
-                    onclick="if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">+</button>
+                    title="Add a new matter"
+                    aria-label="Add a new matter"
+                    onclick="event.stopPropagation(); if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">+</button>
         @endif
     </div>
 
+    @if($matterCount === 0)
+    <p class="text-muted mb-0" style="font-size:13px;">
+        @if($canAddClientMatter)
+            No active matters yet. Use <strong>+</strong> to add one.
+        @else
+            No active matters yet.
+        @endif
+    </p>
+    @else
     @if($matterCount > 1)
     <p class="text-muted mb-2" style="font-size:13px;">
         Click a matter to switch the active matter for this client.
@@ -65,7 +76,7 @@
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
             $natureLabel = \App\Models\Matter::displayTitleFromJoinedRow($cmRow->matter?->title ?? null);
-            if ($natureLabel === '' || $natureLabel === '—') {
+            if ($natureLabel === '') {
                 $natureLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
             }
             $stream = (string) ($cmRow->matter?->stream ?? 'general');
@@ -114,6 +125,14 @@
                         {{ $natureLabel }}
                         @if($isCurrent)
                             <span class="badge badge-light ml-1" style="font-size:11px;font-weight:600;color:#1a73e8;">Current</span>
+                            @if($canCloseClientMatter)
+                                <button type="button"
+                                        class="client-matter-list-close-btn"
+                                        title="Close this matter"
+                                        aria-label="Close this matter"
+                                        data-matter-id="{{ $cmRow->id }}"
+                                        onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">Close</button>
+                            @endif
                         @endif
                     @endif
                 </span>
@@ -122,6 +141,7 @@
             </div>
         @endforeach
     @endforeach
+    @endif
 </div>
 
 <style>
@@ -161,6 +181,27 @@
     }
     #clientMattersListCard .client-matter-list-add-btn:focus-visible {
         outline: 2px solid #2563eb;
+        outline-offset: 2px;
+    }
+    #clientMattersListCard .client-matter-list-close-btn {
+        margin-left: 8px;
+        padding: 2px 8px;
+        border: 1px solid rgba(211, 47, 47, 0.25);
+        border-radius: 999px;
+        background: rgba(211, 47, 47, 0.08);
+        color: #b91c1c;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+    #clientMattersListCard .client-matter-list-close-btn:hover {
+        background: rgba(211, 47, 47, 0.14);
+        color: #991b1b;
+    }
+    #clientMattersListCard .client-matter-list-close-btn:focus-visible {
+        outline: 2px solid #dc2626;
         outline-offset: 2px;
     }
     #clientMattersListCard .client-matter-list-grid {
@@ -221,7 +262,7 @@
     }
 
     card.addEventListener('click', function (event) {
-        if (event.target.closest('.client-matter-list-add-btn')) {
+        if (event.target.closest('.client-matter-list-add-btn, .client-matter-list-close-btn')) {
             return;
         }
         var row = event.target.closest('.client-matter-list-row[data-matter-url]');
@@ -244,4 +285,3 @@
     });
 })();
 </script>
-@endif

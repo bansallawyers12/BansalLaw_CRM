@@ -933,18 +933,18 @@
                                 </div>
                             @endif
                         </div>
-
-                        @include('crm.clients.partials.client-matters-list-card', [
-                            'fetchedData' => $fetchedData,
-                            'encodeId' => $encodeId ?? null,
-                            'selectedClientMatter' => $selectedClientMatter ?? null,
-                            'matterRefInUrl' => $id1 ?? null,
-                            'activeTab' => $activeTab ?? 'personaldetails',
-                            'matterFormForLead' => $matterFormForLead ?? null,
-                            'isClosedMatterView' => $isClosedMatterView ?? false,
-                        ])
                     <?php
                     } ?>
+
+                    @include('crm.clients.partials.client-matters-list-card', [
+                        'fetchedData' => $fetchedData,
+                        'encodeId' => $encodeId ?? null,
+                        'selectedClientMatter' => $selectedClientMatter ?? null,
+                        'matterRefInUrl' => $id1 ?? null,
+                        'activeTab' => $activeTab ?? 'personaldetails',
+                        'matterFormForLead' => $matterFormForLead ?? null,
+                        'isClosedMatterView' => $isClosedMatterView ?? false,
+                    ])
 
                     <style>
                         .eoi-table{
