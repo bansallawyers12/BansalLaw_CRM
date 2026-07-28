@@ -938,6 +938,7 @@
                             'fetchedData' => $fetchedData,
                             'encodeId' => $encodeId ?? null,
                             'selectedClientMatter' => $selectedClientMatter ?? null,
+                            'matterRefInUrl' => $id1 ?? null,
                             'activeTab' => $activeTab ?? 'personaldetails',
                         ])
                     <?php
@@ -1075,11 +1076,6 @@
                         'latestConflictCheck'   => $latestConflictCheck ?? null,
                         'conflictCheckHistory'  => $conflictCheckHistory ?? collect(),
                         'activeClientMatterId'  => $activeClientMatterId ?? null,
-                    ])
-
-                    @include('crm.clients.partials.other-matter-parties-card', [
-                        'fetchedData'        => $fetchedData,
-                        'otherMatterParties' => $otherMatterParties ?? collect(),
                     ])
 
                     @unless($suppressPersonalDetailsTagCard ?? false)
