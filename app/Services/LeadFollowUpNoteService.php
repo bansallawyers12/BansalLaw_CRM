@@ -15,7 +15,18 @@ class LeadFollowUpNoteService
     /** @return list<string> */
     public static function pipelineStatuses(): array
     {
-        return ['new', 'follow_up', 'not_qualified', 'hostile'];
+        return [
+            'new',
+            'initial_consultation',
+            'conflict_check',
+            'engaged',
+            'retained',
+            'follow_up',
+            'not_proceeding',
+            'declined',
+            'not_qualified',
+            'hostile',
+        ];
     }
 
     /**

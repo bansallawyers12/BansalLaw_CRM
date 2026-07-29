@@ -169,7 +169,7 @@
                     </div>
                 @endif
                 
-                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" enctype="multipart/form-data">
+                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                     @csrf
 
 
@@ -421,7 +421,7 @@
                                         <div class="form-group full-width" id="contactPersonSearchWrap">
                                             <label for="contactPersonEmail">Search Contact Person <span class="text-danger contact-person-search-required">*</span></label>
                                             <select id="contactPersonEmail" name="contact_person_id" 
-                                                    class="form-control crm-ts-contact-person company-required" 
+                                                    class="form-control crm-ts-contact-person" 
                                                     data-placeholder="Type phone, email, name, or client ID to search..."
                                                     style="width: 100%;">
                                                 @if(old('contact_person_id'))
@@ -474,7 +474,7 @@
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonPhone">Phone <span class="text-danger contact-person-manual-contact-required" style="display:none;">*</span></label>
+                                            <label for="contactPersonPhone">Phone</label>
                                             <input type="text" id="contactPersonPhone" name="contact_person_phone" 
                                                    value="{{ old('contact_person_phone') }}" 
                                                    class="company-field contact-person-field">
@@ -485,7 +485,7 @@
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonEmailDisplay">Email <span class="text-danger contact-person-manual-contact-required" style="display:none;">*</span></label>
+                                            <label for="contactPersonEmailDisplay">Email </label>
                                             <input type="email" id="contactPersonEmailDisplay" name="contact_person_email"
                                                    value="{{ old('contact_person_email', old('contact_person_email_display')) }}" 
                                                    class="company-field contact-person-field">
@@ -1374,8 +1374,8 @@
                     searchSelect.tomselect.disable();
                 }
             } else {
-                searchSelect.setAttribute('required', 'required');
-                searchSelect.classList.add('company-required');
+                searchSelect.removeAttribute('required');
+                searchSelect.classList.remove('company-required');
                 if (searchSelect.tomselect) {
                     searchSelect.tomselect.enable();
                 }

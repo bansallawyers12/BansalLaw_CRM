@@ -1047,7 +1047,7 @@ class LeadController extends Controller
                         ],
                         'phone.0' => 'required|max:255',
                         'email.0' => 'required|email|max:255',
-                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'lead_status' => 'nullable|in:new,initial_consultation,conflict_check,engaged,retained,follow_up,not_proceeding,declined,not_qualified,hostile',
                         'followup_date' => 'nullable|date',
                         'assigned_staff_id' => 'nullable|exists:staff,id',
                     ];
@@ -1069,7 +1069,7 @@ class LeadController extends Controller
                         'dob' => 'nullable',
                         'phone.0' => 'required_without:email.0|nullable|max:255',
                         'email.0' => 'required_without:phone.0|nullable|email|max:255',
-                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'lead_status' => 'nullable|in:new,initial_consultation,conflict_check,engaged,retained,follow_up,not_proceeding,declined,not_qualified,hostile',
                         'followup_date' => 'nullable|date',
                         'assigned_staff_id' => 'nullable|exists:staff,id',
                     ];
@@ -1089,7 +1089,7 @@ class LeadController extends Controller
                         'dob' => 'required',
                         'phone.0' => 'required|max:255',
                         'email.0' => 'required|email|max:255',
-                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'lead_status' => 'nullable|in:new,initial_consultation,conflict_check,engaged,retained,follow_up,not_proceeding,declined,not_qualified,hostile',
                         'followup_date' => 'nullable|date',
                         'assigned_staff_id' => 'nullable|exists:staff,id',
                     ];
@@ -1195,10 +1195,8 @@ class LeadController extends Controller
             // Process dates with validation
             $dob = null;
             if (!empty($requestData['dob'])) {
-                $dobs = explode('/', $requestData['dob']);
-                if (count($dobs) === 3) {
-                    $dob = $dobs[2] . '-' . $dobs[1] . '-' . $dobs[0];
-                }
+                $parsedDob = $this->parseLeadDate($requestData['dob']);
+                $dob = $parsedDob ? $parsedDob->format('Y-m-d') : null;
             }
 
 
@@ -1416,7 +1414,7 @@ class LeadController extends Controller
                             : null,
                         'company_type' => $leadCompanyType,
                         'company_website' => !empty(trim($requestData['company_website'] ?? '')) ? $requestData['company_website'] : null,
-                        'contact_person_id' => $requestData['contact_person_id'] ?? null,
+                        'contact_person_id' => ! empty($requestData['contact_person_id']) ? (int) $requestData['contact_person_id'] : null,
                         'contact_person_position' => $requestData['contact_person_position'] ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -1615,7 +1613,7 @@ class LeadController extends Controller
             'last_name' => 'required|max:255',
             'gender' => 'required|max:255',
             'dob' => 'required',
-            'lead_status' => 'sometimes|in:new,follow_up,not_qualified,hostile',
+            'lead_status' => 'sometimes|in:new,initial_consultation,conflict_check,engaged,retained,follow_up,not_proceeding,declined,not_qualified,hostile',
             'followup_date' => 'nullable|date',
             'assigned_staff_id' => 'nullable|exists:staff,id',
         ]);
