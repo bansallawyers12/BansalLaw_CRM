@@ -16,8 +16,11 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+
 class SignatureDashboardController extends Controller
 {
+    use EnsuresCrmRecordAccess;
     protected $signatureService;
     protected $analyticsService;
 
@@ -929,11 +932,17 @@ class SignatureDashboardController extends Controller
         $request->validate(['ids' => 'required|array|min:1']);
         
         try {
-            $count = Document::whereIn('id', $ids)
-                ->notArchived()
-                ->update(['status' => 'archived']);
+            $documents = Document::whereIn('id', $ids)->notArchived()->get();
+            $archivedCount = 0;
+            foreach ($documents as $doc) {
+                if (!empty($doc->client_id)) {
+                    $this->ensureCrmRecordAccess((int) $doc->client_id);
+                }
+                $doc->update(['status' => 'archived']);
+                $archivedCount++;
+            }
             
-            return back()->with('success', "Successfully archived {$count} document(s)");
+            return back()->with('success', "Successfully archived {$archivedCount} document(s)");
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to archive documents: ' . $e->getMessage());
         }

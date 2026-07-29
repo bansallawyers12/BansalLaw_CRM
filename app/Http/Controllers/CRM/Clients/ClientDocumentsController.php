@@ -1709,10 +1709,12 @@ class ClientDocumentsController extends Controller
             $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
             $res = DB::table('documents')->where('id', @$note_id)->delete();
             //$this->s3Disk()->delete('documents/' . $data->myfile);
-            if($data->doc_type == 'migration') {
-                $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
-            } else {
-                $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+            if ($admin && !empty($admin->client_id)) {
+                if($data->doc_type == 'migration') {
+                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+                } else {
+                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+                }
             }
             if($res){
                 $documentName = $data->file_name ?? 'unknown';
@@ -2472,7 +2474,15 @@ class ClientDocumentsController extends Controller
             $parts = explode('--' . $boundary, $emlContent);
             foreach ($parts as $part) {
                 if (stripos($part, 'text/html') !== false) {
-                    return $this->decodeEmlPart($part);
+                    $rawHtml = $this->decodeEmlPart($part);
+                    // Sanitize raw HTML by removing script/iframe tags and inline event handlers
+                    $cleanHtml = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $rawHtml);
+                    $cleanHtml = preg_replace('/<iframe\b[^>]*>(.*?)<\/iframe>/is', '', $cleanHtml);
+                    $cleanHtml = preg_replace('/<object\b[^>]*>(.*?)<\/object>/is', '', $cleanHtml);
+                    $cleanHtml = preg_replace('/<embed\b[^>]*>(.*?)<\/embed>/is', '', $cleanHtml);
+                    $cleanHtml = preg_replace('/on[a-z]+\s*=\s*"[^"]*"/i', '', $cleanHtml);
+                    $cleanHtml = preg_replace('/on[a-z]+\s*=\s*\'[^\']*\'/i', '', $cleanHtml);
+                    return $cleanHtml;
                 }
             }
             foreach ($parts as $part) {

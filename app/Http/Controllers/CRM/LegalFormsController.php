@@ -17,10 +17,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 
 class LegalFormsController extends Controller
 {
+    use EnsuresCrmRecordAccess;
     private LegalFormDocxService $docxService;
 
     /** Document extensions allowed for legal form uploads (no images or executables). */
@@ -186,6 +187,7 @@ class LegalFormsController extends Controller
 
     public function show(ClientLegalForm $legalForm): JsonResponse
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         return response()->json([
             'success' => true,
             'form' => $legalForm->load(['client', 'matter', 'creator']),
@@ -194,6 +196,7 @@ class LegalFormsController extends Controller
 
     public function update(Request $request, ClientLegalForm $legalForm): JsonResponse
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         $request->validate([
             'scope_of_work' => 'nullable|string',
             'estimated_legal_fees' => 'nullable|numeric|min:0',
@@ -206,7 +209,7 @@ class LegalFormsController extends Controller
             'authority_scope' => 'nullable|string',
         ]);
 
-        $data = $request->all();
+        $data = $request->except(['client_id', 'client_matter_id', 'pdf_path', 'is_uploaded', 'form_type', 'created_by', 'trust_account_name', 'trust_bsb', 'trust_account_number']);
 
         $numericFields = [
             'estimated_legal_fees', 'estimated_disbursements', 'estimated_barrister_fees',

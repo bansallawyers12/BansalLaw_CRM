@@ -38,6 +38,8 @@ use App\Http\Controllers\CRM\DocToPdfController;
 
 // Admin routes will be moved after public routes to avoid conflicts
 
+Route::middleware('auth:admin')->group(function () {
+
 /*---------- Admin Utilities ----------*/
 Route::get('/test-signature', function () {
     return view('test-signature');
@@ -79,7 +81,7 @@ Route::prefix('signatures')->group(function () {
 /*---------- Client Matters API ----------*/
 Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getClientMatters'])->name('clients.matters');
 
-// }); // End of admin routes group
+}); // End of admin routes group
 
 // Debug route for testing PDF page generation (temporary - outside admin group)
 Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {

@@ -56,26 +56,7 @@ class PublicDocumentController extends Controller
 
         try {
             $document = Document::findOrFail($documentId);
-            
-            // Handle agreement type documents specially
-            if (isset($document->doc_type) && $document->doc_type == 'agreement') {
-                $signer = $document->signers()->where('document_id', $documentId)->first();
-                if ($signer) {
-                    // Only update token/status when still pending - never overwrite 'signed' or 'cancelled'
-                    if ($signer->status === 'pending') {
-                        $signer->update(['token' => $token, 'status' => 'pending']);
-                        $signer = $document->signers()->where('token', $token)->first();
-                    }
-                    // If signed or cancelled, $signer stays as-is; status check below will redirect
-                } else {
-                    $signer = $document->signers()->create([
-                        'token' => $token,
-                        'status' => 'pending'
-                    ]);
-                }
-            } else {
-                $signer = $document->signers()->where('token', $token)->first();
-            }
+            $signer = $document->signers()->where('token', $token)->first();
 
             if (!$signer || $signer->status === 'signed' || $signer->status === 'cancelled') {
                 Log::warning('Invalid signer, already signed, or cancelled', [
@@ -867,6 +848,12 @@ class PublicDocumentController extends Controller
         
         try {
             $document = Document::findOrFail($id);
+
+            $token = request('token');
+            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
+            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+                abort(403, 'Unauthorized access to document page.');
+            }
             
             // Check if cached image already exists
             $cachedImagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
@@ -1035,6 +1022,8 @@ class PublicDocumentController extends Controller
                 }
 
                 abort(503, 'PDF processing service unavailable. Please try again later.');
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+                throw $e;
             } catch (\Exception $e) {
                 // Only delete temp files, not local files
                 if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
@@ -1047,6 +1036,8 @@ class PublicDocumentController extends Controller
                 ]);
                 abort(500, 'Error generating page image');
             }
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             // Only delete temp files, not local files
             if (isset($isLocalFile) && !$isLocalFile && isset($tmpPdfPath) && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
@@ -1071,6 +1062,12 @@ class PublicDocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
+
+            $token = request('token');
+            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
+            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+                abort(403, 'Unauthorized download access.');
+            }
 
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
@@ -1272,6 +1269,13 @@ class PublicDocumentController extends Controller
         try {
             $document = Document::findOrFail($documentId);
             $signer = $document->signers()->findOrFail($signerId);
+
+            if (!\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+                $token = $request->input('token');
+                if (!$token || $signer->token !== $token) {
+                    return redirect()->back()->with('error', 'Unauthorized to send reminder.');
+                }
+            }
 
             if ($signer->status === 'signed') {
                 return redirect()->back()->with('error', 'Document is already signed.');
