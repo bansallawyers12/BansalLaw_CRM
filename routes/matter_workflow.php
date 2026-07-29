@@ -9,9 +9,9 @@ use App\Http\Controllers\CRM\ClientMatterWorkflowController;
 
 Route::get('/client-portal/detail', [ClientMatterWorkflowController::class, 'getClientPortalDetail']);
 Route::post('/client-portal/load-matter-upsert', [ClientMatterWorkflowController::class, 'loadMatterUpsert']);
-Route::get('/updatestage', [ClientMatterWorkflowController::class, 'updatestage']);
-Route::get('/completestage', [ClientMatterWorkflowController::class, 'completestage']);
-Route::get('/updatebackstage', [ClientMatterWorkflowController::class, 'updatebackstage']);
+Route::match(['get', 'post'], '/updatestage', [ClientMatterWorkflowController::class, 'updatestage']);
+Route::match(['get', 'post'], '/completestage', [ClientMatterWorkflowController::class, 'completestage']);
+Route::match(['get', 'post'], '/updatebackstage', [ClientMatterWorkflowController::class, 'updatebackstage']);
 Route::post('/clients/matter/update-next-stage', [ClientMatterWorkflowController::class, 'updateClientMatterNextStage'])->name('clients.matter.update-next-stage');
 Route::post('/clients/matter/update-previous-stage', [ClientMatterWorkflowController::class, 'updateClientMatterPreviousStage'])->name('clients.matter.update-previous-stage');
 Route::post('/clients/matter/discontinue', [ClientMatterWorkflowController::class, 'discontinueClientMatter'])->name('clients.matter.discontinue');

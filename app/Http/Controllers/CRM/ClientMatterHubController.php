@@ -22,13 +22,15 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use App\Services\FCMService;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+use App\Models\Staff;
 
 /**
  * Staff CRM controller for matters, workflow-adjacent utilities, documents, and checklists.
  */
 class ClientMatterHubController extends Controller
 {
+    use EnsuresCrmRecordAccess;
     /**
      * Create a new controller instance.
      *
@@ -92,20 +94,20 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
 			return;
 		}
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 		$stageName = $clientMatter->workflowStage?->name ?? '';
 		$clientMatter->matter_status = 0; // Discontinued/completed
 		$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
 		$clientMatter->discontinue_reason = 'Completed';
 		$saved = $clientMatter->save();
 		if ($saved) {
-			// Delete email conversations from database (keep S3 attachments)
-			$this->deleteEmailConversationsForMatter($clientMatter->client_id, $clientMatter->id);
 			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Matter has been successfully completed.'];
 		} else {
 			$response = ['status' => false, 'message' => 'Please try again'];
 		}
 		echo json_encode($response);
 	}
+
 	public function updatestage(Request $request){
 		$matterId = $request->id ?? $request->client_matter_id;
 		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
@@ -113,22 +115,23 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
 			return;
 		}
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 		$currentStage = $clientMatter->workflowStage;
-		$workflowId = $currentStage->w_id ?? $clientMatter->workflow_id;
+		$workflowId = $currentStage->workflow_id ?? $clientMatter->workflow_id;
 		$nextStage = WorkflowStage::where('id', '>', $currentStage->id)
-			->when($workflowId, fn($q) => $q->where('w_id', $workflowId))
-			->orderBy('id','asc')->first();
+			->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))
+			->orderByRaw('COALESCE(sort_order, id) ASC')->first();
 		if (!$nextStage) {
 			echo json_encode(['status' => false, 'message' => 'No next stage']);
 			return;
 		}
-		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 		$nextIndex = $stages->search(fn($s) => $s->id == $nextStage->id) + 1;
 		$width = $stages->count() > 0 ? round(($nextIndex / $stages->count()) * 100) : 0;
 		$clientMatter->workflow_stage_id = $nextStage->id;
 		$saved = $clientMatter->save();
 		if ($saved) {
-			$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
+			$comments = 'moved the stage from <b>' . e($currentStage->name) . '</b> to <b>' . e($nextStage->name) . '</b>';
 			$obj = new ActivitiesLog;
 			$obj->client_id = $clientMatter->client_id;
 			$obj->created_by = Auth::user()->id;
@@ -153,16 +156,17 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
 			return;
 		}
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 		$currentStage = $clientMatter->workflowStage;
-		$workflowId = $currentStage->w_id ?? $clientMatter->workflow_id;
+		$workflowId = $currentStage->workflow_id ?? $clientMatter->workflow_id;
 		$prevStage = WorkflowStage::where('id', '<', $currentStage->id)
-			->when($workflowId, fn($q) => $q->where('w_id', $workflowId))
-			->orderBy('id','Desc')->first();
+			->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))
+			->orderByRaw('COALESCE(sort_order, id) DESC')->first();
 		if (!$prevStage) {
 			echo json_encode(['status' => false, 'message' => '']);
 			return;
 		}
-		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 		$prevIndex = $stages->search(fn($s) => $s->id == $prevStage->id) + 1;
 		$width = $stages->count() > 0 ? round(($prevIndex / $stages->count()) * 100) : 0;
 		$clientMatter->workflow_stage_id = $prevStage->id;
@@ -1082,6 +1086,17 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
+			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
+			$actor = Auth::user();
+			if (! ($actor instanceof Staff && ($actor->hasEffectiveSuperAdminPrivileges() || $actor->canCloseDiscontinueMatter()))) {
+				return response()->json(['status' => false, 'message' => 'Unauthorized to delete matter.'], 403);
+			}
+
+			if ((int) $clientMatter->matter_status !== 0) {
+				return response()->json(['status' => false, 'message' => 'Only discontinued or closed matters can be permanently deleted.'], 422);
+			}
+
 			$oneYearAgo = now()->subYear();
 			$createdAt = $clientMatter->created_at ? \Carbon\Carbon::parse($clientMatter->created_at) : null;
 
@@ -1193,15 +1208,17 @@ class ClientMatterHubController extends Controller
 			return response()->json(['error' => 'Matter not found'], 404);
 		}
 
-		$workflowId = $clientMatter->workflowStage->w_id ?? $clientMatter->workflow_id;
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
+		$workflowId = $clientMatter->workflowStage->workflow_id ?? $clientMatter->workflow_id;
 		$currentStage = $clientMatter->workflowStage;
-		$stagesquery = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$stagesquery = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 		foreach($stagesquery as $stages){
 			$stage1 = '';
 
-			$workflowstagess = \App\Models\WorkflowStage::where('name', $currentStage->name)->when($workflowId, fn($q) => $q->where('w_id', $workflowId))->first();
+			$workflowstagess = \App\Models\WorkflowStage::where('name', $currentStage->name)->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->first();
 
-			$prevdata = $workflowstagess ? \App\Models\WorkflowStage::where('id', '<', $workflowstagess->id)->when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id','Desc')->get() : collect();
+			$prevdata = $workflowstagess ? \App\Models\WorkflowStage::where('id', '<', $workflowstagess->id)->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) DESC')->get() : collect();
 			$stagearray = array();
 			foreach($prevdata as $pre){
 				$stagearray[] = $pre->id;
@@ -1266,12 +1283,17 @@ class ClientMatterHubController extends Controller
 		$noteid = $request->noteid;
 		$type = $request->type;
 		$clientMatter = ClientMatter::find($noteid);
+		if (!$clientMatter) {
+			echo json_encode(['status' => false, 'message' => 'Matter not found']);
+			return;
+		}
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 
 		$obj = new ActivitiesLog;
-		$obj->client_id = $clientMatter ? $clientMatter->client_id : null;
+		$obj->client_id = $clientMatter->client_id;
 		$obj->created_by = Auth::user()->id;
-		$obj->subject = $request->title;
-		$obj->description = $request->description;
+		$obj->subject = e($request->title ?? '');
+		$obj->description = e($request->description ?? '');
 		$obj->activity_type = 'note';
 		$obj->use_for = 'matter';
 		$saved = $obj->save();
@@ -1288,10 +1310,15 @@ class ClientMatterHubController extends Controller
 	public function getMatterNotes(Request $request){
 		$noteid = $request->id;
 		$clientMatter = ClientMatter::find($noteid);
+		if (!$clientMatter) {
+			echo '';
+			return;
+		}
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 
 		$lists = ActivitiesLog::where('activity_type','note')
 			->where('use_for','matter')
-			->where('client_id', $clientMatter ? $clientMatter->client_id : null)
+			->where('client_id', $clientMatter->client_id)
 			->orderby('created_at', 'DESC')->get();
 
 		ob_start();
@@ -1413,15 +1440,17 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
 			return;
 		}
+		$this->ensureCrmRecordAccess((int) $obj->client_id);
+		$user = Auth::user();
+		if (! ($user instanceof Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->canCloseDiscontinueMatter()))) {
+			echo json_encode(['status' => false, 'message' => 'Unauthorized']);
+			return;
+		}
 		$obj->matter_status = 0;
 		$obj->closed_by = Auth::guard('admin')->id() ?? Auth::id();
 		$obj->discontinue_reason = $request->workflow ?? 'Discontinued';
 		$obj->discontinue_notes = $request->note ?? '';
 		$saved = $obj->save();
-		if ($saved) {
-			// Delete email conversations from database (keep S3 attachments)
-			$this->deleteEmailConversationsForMatter($obj->client_id, $obj->id);
-		}
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
@@ -1431,6 +1460,12 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
 			return;
 		}
+		$this->ensureCrmRecordAccess((int) $obj->client_id);
+		$user = Auth::user();
+		if (! ($user instanceof Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->canCloseDiscontinueMatter()))) {
+			echo json_encode(['status' => false, 'message' => 'Unauthorized']);
+			return;
+		}
 		$obj->matter_status = 1;
 		$obj->closed_by = null;
 		$obj->discontinue_reason = null;
@@ -1438,8 +1473,8 @@ class ClientMatterHubController extends Controller
 		$obj->reopen_requested_by = null;
 		$saved = $obj->save();
 		$stage = $obj->workflowStage;
-		$workflowId = $stage->w_id ?? $obj->workflow_id;
-		$stages = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$workflowId = $stage->workflow_id ?? $obj->workflow_id;
+		$stages = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 		$idx = $stages->search(fn($s) => $s->id == ($stage->id ?? 0)) + 1;
 		$width = $stages->count() > 0 ? round(($idx / $stages->count()) * 100) : 0;
 		$lastStage = $stages->last();
@@ -2294,6 +2329,14 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
 		}
 
+		if (!empty($document->client_id)) {
+			$this->ensureCrmRecordAccess((int) $document->client_id);
+		}
+
+		if (empty($document->cp_list_id) && ($document->type ?? '') !== 'workflow_checklist') {
+			return response()->json(['success' => false, 'message' => 'Not a checklist document.'], 422);
+		}
+
 		$clientMatterId = $document->client_matter_id ?? null;
 		$cpListId = $document->cp_list_id ?? null;
 		$checklistName = 'checklist';
@@ -2333,6 +2376,14 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			return response()->json(['success' => false, 'message' => 'document_id and valid status (1 or 2) are required.'], 422);
 		}
 
+		$doc = DB::table('documents')->where('id', $documentId)->first();
+		if (!$doc) {
+			return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+		}
+		if (!empty($doc->client_id)) {
+			$this->ensureCrmRecordAccess((int) $doc->client_id);
+		}
+
 		$data = ['cp_doc_status' => $status];
 		if ($status === 2) {
 			$data['cp_rejection_reason'] = $rejectionReason;
@@ -2340,14 +2391,14 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			$data['cp_rejection_reason'] = null;
 		}
 
-		$updated = DB::table('documents')->where('id', $documentId)->update($data);
+		$affectedRows = DB::table('documents')->where('id', $documentId)->update($data);
 
-		if ($updated !== false) {
+		if ($affectedRows > 0) {
 			$this->notifyClientAndCreateActionForDocumentStatusChange($documentId, $status === 1 ? 'approved' : 'rejected');
 			return response()->json(['success' => true]);
 		}
 
-		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+		return response()->json(['success' => false, 'message' => 'Document not found or status unchanged.'], 400);
 	}
 
 	/**
