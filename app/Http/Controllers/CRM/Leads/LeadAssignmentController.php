@@ -41,9 +41,14 @@ class LeadAssignmentController extends Controller
         if ($leadId) {
             $lead = Lead::find($leadId);
             if (! $lead) {
-                return response()->json(['error' => 'Unauthorized'], 403);
+                return response()->json(['error' => 'Lead not found'], 404);
             }
             if (! StaffClientVisibility::canAccessClientOrLead((int) $lead->id, Auth::user())) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        } else {
+            $user = Auth::user();
+            if (! ($user instanceof Staff) || (int) $user->status !== 1) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
         }

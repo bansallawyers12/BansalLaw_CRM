@@ -630,7 +630,7 @@
                     </svg>
                 </div>
                 <h3>Assigned</h3>
-                <div class="value">{{ number_format($leadStats['assigned']) }}</div>
+                <div class="value">{{ number_format($leadStats['assigned'] ?? 0) }}</div>
                 <div class="subtext">Actively owned by a team member</div>
             </div>
         </div>

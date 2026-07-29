@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Admin;
 use App\Models\Staff;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class LeadAnalyticsService
@@ -48,9 +49,14 @@ class LeadAnalyticsService
      */
     public function getSourcePerformance($startDate = null, $endDate = null)
     {
+        $sourceCol = Schema::hasColumn('admins', 'source') ? 'source' : (Schema::hasColumn('admins', 'lead_source') ? 'lead_source' : null);
+        if (!$sourceCol) {
+            return [];
+        }
+
         $query = Admin::where('type', 'lead')
-            ->select('source', DB::raw('COUNT(*) as total'))
-            ->groupBy('source');
+            ->select($sourceCol . ' as source_name', DB::raw('COUNT(*) as total'))
+            ->groupBy($sourceCol);
         
         if ($startDate) {
             $query->where('created_at', '>=', $startDate);
@@ -63,15 +69,16 @@ class LeadAnalyticsService
         
         $performance = [];
         foreach ($sources as $source) {
+            $sourceName = $source->source_name;
             $converted = Admin::where('type', 'client')
-                ->where('source', $source->source)
+                ->where($sourceCol, $sourceName)
                 ->where('lead_status', 'converted')
                 ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
                 ->count();
             
             $performance[] = [
-                'source' => $source->source ?: 'Unknown',
+                'source' => $sourceName ?: 'Unknown',
                 'total_leads' => $source->total,
                 'converted' => $converted,
                 'conversion_rate' => $source->total > 0 ? round(($converted / $source->total) * 100, 2) : 0,

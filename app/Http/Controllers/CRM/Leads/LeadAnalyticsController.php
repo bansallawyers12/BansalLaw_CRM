@@ -26,6 +26,19 @@ class LeadAnalyticsController extends Controller
             || in_array((int) ($u->role ?? 0), [12], true);
     }
     
+    private function parseDateSafely(?string $dateInput, bool $isEnd = false): Carbon
+    {
+        if (empty($dateInput)) {
+            return $isEnd ? now()->endOfDay() : now()->subDays(30)->startOfDay();
+        }
+        try {
+            $parsed = Carbon::parse($dateInput);
+            return $isEnd ? $parsed->endOfDay() : $parsed->startOfDay();
+        } catch (\Throwable $e) {
+            return $isEnd ? now()->endOfDay() : now()->subDays(30)->startOfDay();
+        }
+    }
+    
     /**
      * Display analytics dashboard
      * Only admin and super admin can access (roles 1, 12)
@@ -37,9 +50,9 @@ class LeadAnalyticsController extends Controller
         }
         $user = Auth::user();
         
-        // Get date range from request or default to last 30 days
-        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
-        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
+        // Get date range from request or default to last 30 days safely
+        $startDate = $this->parseDateSafely($request->get('start_date'), false);
+        $endDate   = $this->parseDateSafely($request->get('end_date'), true);
         
         // Get comprehensive statistics
         $dashboardStats = $this->analyticsService->getDashboardStats($startDate, $endDate);
@@ -87,8 +100,8 @@ class LeadAnalyticsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
-        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
-        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
+        $startDate = $this->parseDateSafely($request->get('start_date'), false);
+        $endDate   = $this->parseDateSafely($request->get('end_date'), true);
 
         $data = [
             'dashboard_stats' => $this->analyticsService->getDashboardStats($startDate, $endDate),
@@ -113,8 +126,8 @@ class LeadAnalyticsController extends Controller
         }
         
         $agentIds = $request->get('agent_ids', []);
-        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
-        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
+        $startDate = $this->parseDateSafely($request->get('start_date'), false);
+        $endDate   = $this->parseDateSafely($request->get('end_date'), true);
 
         $comparison = [];
         

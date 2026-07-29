@@ -258,7 +258,9 @@
             <div class="chart-header">
                 <h3 class="chart-title">Conversion Funnel</h3>
             </div>
-            <canvas id="funnelChart" height="300"></canvas>
+            <div style="position: relative; height: 300px;">
+                <canvas id="funnelChart"></canvas>
+            </div>
         </div>
         
         <!-- Lead Stage Distribution -->
@@ -266,7 +268,9 @@
             <div class="chart-header">
                 <h3 class="chart-title">Lead Stage Distribution</h3>
             </div>
-            <canvas id="qualityChart" height="300"></canvas>
+            <div style="position: relative; height: 300px;">
+                <canvas id="qualityChart"></canvas>
+            </div>
         </div>
     </div>
     
@@ -476,7 +480,7 @@ const qualityChart = new Chart(qualityCtx, {
 function applyDateFilter() {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
-    window.location.href = `{{ route('leads.analytics') }}?start_date=${startDate}&end_date=${endDate}`;
+    window.location.href = `{{ route('leads.analytics.index') }}?start_date=${startDate}&end_date=${endDate}`;
 }
 
 // Export function
@@ -488,9 +492,12 @@ function exportReport() {
 
 // Filter agents
 function filterAgents(filter) {
-    // Implement client-side filtering or reload with filter param
-    // TODO: Add filter implementation
-    window.location.href = '{{ route("leads.analytics.index") }}?filter=' + filter;
+    const startDate = document.getElementById('start_date') ? document.getElementById('start_date').value : '';
+    const endDate = document.getElementById('end_date') ? document.getElementById('end_date').value : '';
+    let url = '{{ route("leads.analytics.index") }}?filter=' + encodeURIComponent(filter);
+    if (startDate) url += '&start_date=' + encodeURIComponent(startDate);
+    if (endDate) url += '&end_date=' + encodeURIComponent(endDate);
+    window.location.href = url;
 }
 </script>
 @endsection

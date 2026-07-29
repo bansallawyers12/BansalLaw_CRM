@@ -214,7 +214,7 @@ Route::middleware(['auth:admin'])->group(function () {
         Route::get('/assignable-staff', [LeadAssignmentController::class, 'getAssignableStaff'])->name('assignable_staff');
 
         // Conversion operations
-        Route::get('/convert', [LeadConversionController::class, 'convertToClient'])->name('convert');
+        Route::post('/convert', [LeadConversionController::class, 'convertToClient'])->name('convert');
         Route::post('/convert-single', [LeadConversionController::class, 'convertSingleLead'])->name('convert_single');
         Route::post('/bulk-convert', [LeadConversionController::class, 'bulkConvertToClient'])->name('bulk_convert');
         Route::get('/conversion-stats', [LeadConversionController::class, 'getConversionStats'])->name('conversion_stats');

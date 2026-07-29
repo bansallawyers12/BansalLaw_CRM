@@ -547,6 +547,7 @@ class ClientsController extends Controller
         $leadStats = [
             'total' => (clone $leadBase)->count(),
             'new30' => (clone $leadBase)->where('created_at', '>=', $now->copy()->subDays(30))->count(),
+            'assigned' => (clone $leadBase)->whereNotNull('user_id')->count(),
         ];
 
         $leadsByStatus = (clone $leadBase)

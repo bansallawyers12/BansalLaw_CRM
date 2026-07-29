@@ -27,32 +27,11 @@ class LeadConversionController extends Controller
     }
 
     /**
-     * Convert lead to client
-     * Only super admin can perform bulk conversions
+     * Convert lead to client (deprecated unselected bulk operation)
      */
     public function convertToClient(Request $request)
     {
-        $actor = Auth::user();
-        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
-            return redirect()->back()->with('error', 'Only super admin can perform bulk conversions');
-        }
-        
-        $requestData = $request->all();
-        
-        // Get all leads (including archived) for conversion
-        $enqdatas = Lead::withArchived()->paginate(500);
-        
-        $convertedCount = 0;
-        foreach($enqdatas as $lead){
-            try {
-                $lead->convertToClient();
-                $convertedCount++;
-            } catch (\Exception $e) {
-                // Skip failed conversions
-            }
-        }
-        
-        return redirect()->back()->with('success', "Converted {$convertedCount} leads successfully");
+        return redirect()->back()->with('error', 'Unselected bulk conversion is disabled for safety. Please select specific leads to convert.');
     }
 
     /**
@@ -63,7 +42,7 @@ class LeadConversionController extends Controller
     {
         $requestData = $request->all();
         
-        $leadId = $this->decodeString($requestData['lead_id']);
+        $leadId = $this->decodeString($requestData['lead_id'] ?? '');
         $lead = Lead::withArchived()->find($leadId);
         
         if(!$lead) {
@@ -87,6 +66,14 @@ class LeadConversionController extends Controller
                 ->with('error', 'Assign a matter type before converting this lead to a client. Use the edit page to add an active matter, then try again.');
         }
 
+        // Validate user_id if provided
+        if (isset($requestData['user_id']) && $requestData['user_id'] !== '') {
+            $validStaff = Staff::where('id', $requestData['user_id'])->where('status', 1)->exists();
+            if (!$validStaff) {
+                return redirect()->back()->with('error', 'Selected staff member is invalid or inactive.');
+            }
+        }
+
         // Start transaction
         DB::beginTransaction();
         
@@ -95,7 +82,7 @@ class LeadConversionController extends Controller
             $client = $lead->convertToClient();
             
             // Update user_id if provided
-            if(isset($requestData['user_id'])) {
+            if(isset($requestData['user_id']) && $requestData['user_id'] !== '') {
                 $client->user_id = $requestData['user_id'];
                 $client->save();
             }
@@ -115,11 +102,11 @@ class LeadConversionController extends Controller
                 $matter->sel_person_assisting = $requestData['person_assisting'] ?? null;
                 $matter->sel_matter_id = $requestData['matter_id'];
 
-                // Generate unique matter number
+                // Generate unique matter number with lock to prevent race conditions
                 $client_matters_cnt_per_client = DB::table('client_matters')
-                    ->select('id')
                     ->where('sel_matter_id', $requestData['matter_id'])
                     ->where('client_id', $client->id)
+                    ->lockForUpdate()
                     ->count();
                     
                 $client_matters_current_no = $client_matters_cnt_per_client + 1;
@@ -160,7 +147,7 @@ class LeadConversionController extends Controller
         
         $requestData = $request->all();
         
-        if(!isset($requestData['lead_ids'])) {
+        if(!isset($requestData['lead_ids']) || !is_array($requestData['lead_ids'])) {
             return redirect()->back()->with('error', 'No leads selected');
         }
 
@@ -171,10 +158,18 @@ class LeadConversionController extends Controller
         foreach($leadIds as $leadId) {
             try {
                 $lead = Lead::withArchived()->find($leadId);
-                if($lead) {
-                    $lead->convertToClient();
-                    $convertedCount++;
+                if(!$lead) {
+                    $errors[] = "Lead ID {$leadId}: Lead not found.";
+                    continue;
                 }
+
+                if (! ClientMatter::clientHasActiveAssignedMatter((int) $lead->id)) {
+                    $errors[] = "Lead ID {$leadId}: Active assigned matter is required before conversion.";
+                    continue;
+                }
+
+                $lead->convertToClient();
+                $convertedCount++;
             } catch (\Exception $e) {
                 $errors[] = "Lead ID {$leadId}: " . $e->getMessage();
             }
@@ -202,7 +197,7 @@ class LeadConversionController extends Controller
         $totalLeads = Lead::count();
         $totalClients = Admin::where('type', 'client')->count();
         $convertedThisMonth = Admin::where('type', 'client')
-            ->where('type', 'client')
+            ->where('lead_status', 'converted')
             ->whereMonth('updated_at', now()->month)
             ->whereYear('updated_at', now()->year)
             ->count();
