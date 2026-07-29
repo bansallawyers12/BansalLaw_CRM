@@ -28,8 +28,18 @@ class UnassignedEmailAssignmentService
             return ['success' => false, 'message' => 'Email not found.'];
         }
 
-        if ($emailLog->client_id && (int) $emailLog->client_id === $clientId && (int) $emailLog->client_matter_id === $clientMatterId) {
-            return ['success' => true, 'message' => 'Email is already assigned to this client matter.', 'email_log_id' => $emailLogId];
+        if ($emailLog->client_id) {
+            if ((int) $emailLog->client_id === $clientId && (int) $emailLog->client_matter_id === $clientMatterId) {
+                return ['success' => true, 'message' => 'Email is already assigned to this client matter.', 'email_log_id' => $emailLogId];
+            }
+            if ((int) $emailLog->client_id !== $clientId) {
+                return ['success' => false, 'message' => 'Email is already assigned to another client.'];
+            }
+        }
+
+        $user = Auth::guard('admin')->user();
+        if ($user && ! \App\Services\StaffClientVisibility::canAccessClientOrLead($user, $clientId)) {
+            return ['success' => false, 'message' => 'Unauthorized access to client.'];
         }
 
         $client = Admin::query()->where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();

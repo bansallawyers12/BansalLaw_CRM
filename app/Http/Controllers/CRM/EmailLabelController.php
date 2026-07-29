@@ -137,6 +137,9 @@ class EmailLabelController extends Controller
             }
 
             $emailLog = EmailLog::findOrFail($request->mail_report_id);
+            $this->ensureCrmRecordAccessForOptionalClientId(
+                $emailLog->client_id ? (int) $emailLog->client_id : null
+            );
             
             // Check if already attached
             if (!$emailLog->labels()->where('email_label_id', $request->label_id)->exists()) {

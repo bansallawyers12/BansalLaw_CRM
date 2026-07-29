@@ -53,11 +53,8 @@ class EmailLogAttachmentController extends Controller
             $attachment = EmailLogAttachment::findOrFail($id);
 
             $emailLog = $attachment->emailLog;
-            if ($emailLog) {
-                $this->ensureCrmRecordAccessForOptionalClientId(
-                    $emailLog->client_id ? (int) $emailLog->client_id : null
-                );
-            }
+            $clientId = $emailLog?->client_id ? (int) $emailLog->client_id : ($attachment->client_id ? (int) $attachment->client_id : null);
+            $this->ensureCrmRecordAccessForOptionalClientId($clientId);
 
             // Check if s3_key exists
             if (!$attachment->s3_key) {
@@ -176,11 +173,8 @@ class EmailLogAttachmentController extends Controller
             $attachment = EmailLogAttachment::findOrFail($id);
 
             $emailLog = $attachment->emailLog;
-            if ($emailLog) {
-                $this->ensureCrmRecordAccessForOptionalClientId(
-                    $emailLog->client_id ? (int) $emailLog->client_id : null
-                );
-            }
+            $clientId = $emailLog?->client_id ? (int) $emailLog->client_id : ($attachment->client_id ? (int) $attachment->client_id : null);
+            $this->ensureCrmRecordAccessForOptionalClientId($clientId);
 
             if (!$attachment->canPreview()) {
                 abort(400, 'This file type cannot be previewed');

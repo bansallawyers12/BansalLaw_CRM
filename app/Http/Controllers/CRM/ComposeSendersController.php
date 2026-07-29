@@ -72,26 +72,7 @@ class ComposeSendersController extends Controller
             ->value('email_signature');
 
         $signature = trim((string) ($signature ?? ''));
-        if ($signature !== '') {
-            return response()->json(['signature' => $signature]);
-        }
-
-        // Fallback: optional from_email when the logged-in user has no signature saved.
-        $fromEmail = strtolower(trim((string) $request->query('from_email', '')));
-        if ($fromEmail !== '') {
-            $fromSignature = Staff::query()
-                ->where('status', 1)
-                ->whereRaw('LOWER(TRIM(email)) = ?', [$fromEmail])
-                ->whereNotNull('email_signature')
-                ->where('email_signature', '!=', '')
-                ->value('email_signature');
-
-            if ($fromSignature !== null && trim((string) $fromSignature) !== '') {
-                return response()->json(['signature' => (string) $fromSignature]);
-            }
-        }
-
-        return response()->json(['signature' => '']);
+        return response()->json(['signature' => $signature]);
     }
 
     private function getZohoComposeSenders(): array
