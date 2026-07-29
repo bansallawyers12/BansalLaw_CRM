@@ -78,7 +78,7 @@ class AdminLoginController extends Controller
             'password' => 'required|string',
         ];
 
-        if (config('services.recaptcha.key') && config('services.recaptcha.secret')) {
+        if (!app()->environment('local') && config('services.recaptcha.key') && config('services.recaptcha.secret')) {
             $rules['g-recaptcha-response'] = 'required';
         }
 
@@ -87,7 +87,7 @@ class AdminLoginController extends Controller
 
     public function authenticated(Request $request, $user): mixed
     {
-        if (config('services.recaptcha.key') && config('services.recaptcha.secret')) {
+        if (!app()->environment('local') && config('services.recaptcha.key') && config('services.recaptcha.secret')) {
             $recaptcha_response = $request->input('g-recaptcha-response');
             if (is_null($recaptcha_response)) {
                 return redirect()->back()

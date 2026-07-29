@@ -645,18 +645,24 @@ class ClientPersonalDetailsController extends Controller
 
     public function saveRelationship(Request $request)
     {
-        $clientId = Auth::id(); // Assuming the logged-in user is the client
+        $clientId = (int) ($request->input('client_id') ?? 0);
+        if ($clientId < 1) {
+            return response()->json(['error' => 'Client ID is required.'], 422);
+        }
+        $this->ensureCrmRecordAccess($clientId);
 
         // Loop through the relationship data to insert each relationship
-        foreach ($request->relationship_type as $index => $relationshipType) {
-            ClientRelationship::create([
-                'client_id' => $clientId,
-                'relationship_type' => $relationshipType,
-                'name' => $request->name[$index],
-                'phone_number' => $request->phone_number[$index],
-                'email_address' => $request->email_address[$index],
-                'crm_reference' => $request->crm_reference[$index] ?? null,
-            ]);
+        if (is_array($request->relationship_type)) {
+            foreach ($request->relationship_type as $index => $relationshipType) {
+                ClientRelationship::create([
+                    'client_id' => $clientId,
+                    'relationship_type' => $relationshipType,
+                    'name' => $request->name[$index] ?? '',
+                    'phone_number' => $request->phone_number[$index] ?? '',
+                    'email_address' => $request->email_address[$index] ?? '',
+                    'crm_reference' => $request->crm_reference[$index] ?? null,
+                ]);
+            }
         }
 
         return response()->json(['success' => 'Relationship data saved successfully!']);
@@ -717,6 +723,9 @@ class ClientPersonalDetailsController extends Controller
     // Test method to debug search functionality
     public function searchPartnerTest(Request $request)
     {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
         $query = $request->input('query', 'vip');
         
         // Get total clients count
@@ -6008,6 +6017,9 @@ class ClientPersonalDetailsController extends Controller
     // Test method to debug specific scenario
     public function testBidirectionalRemoval(Request $request)
     {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
         try {
             $clientAId = $request->input('client_a_id', '36464');
             $clientBId = $request->input('client_b_id', '36465');

@@ -9,8 +9,12 @@ use App\Services\ClientMatterTaskSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+
 class ClientMatterTaskController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     public function __construct()
     {
         $this->middleware('auth:admin');
@@ -50,6 +54,8 @@ class ClientMatterTaskController extends Controller
             return response()->json(['status' => false, 'message' => 'Invalid client'], 422);
         }
 
+        $this->ensureCrmRecordAccess($clientId);
+
         $tasks = ClientMatterTask::query()
             ->where('client_id', $clientId)
             ->with(['creator:id,first_name,last_name'])
@@ -69,6 +75,7 @@ class ClientMatterTaskController extends Controller
         ]);
 
         $clientId = (int) $validated['client_id'];
+        $this->ensureCrmRecordAccess($clientId);
         $matter = null;
         if (! empty($validated['matter_id'])) {
             $matter = $this->resolveMatter($clientId, (int) $validated['matter_id']);
@@ -108,6 +115,8 @@ class ClientMatterTaskController extends Controller
         if ($clientId < 1 || (int) $task->client_id !== $clientId) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
+
+        $this->ensureCrmRecordAccess((int) $task->client_id);
 
         $changed = false;
 
@@ -150,6 +159,8 @@ class ClientMatterTaskController extends Controller
         if ($clientId < 1 || (int) $task->client_id !== $clientId) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
+
+        $this->ensureCrmRecordAccess((int) $task->client_id);
 
         app(ClientMatterTaskSyncService::class)->onClientTaskDeleted($task);
         $task->delete();

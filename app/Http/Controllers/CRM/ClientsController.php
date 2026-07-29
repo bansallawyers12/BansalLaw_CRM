@@ -3533,206 +3533,231 @@ class ClientsController extends Controller
 
     public function merge_records(Request $request){
         $response = array();
-        if(
-            ( isset($request->merge_from) && $request->merge_from != "" )
-            && ( isset($request->merge_into) && $request->merge_into != "" )
-        ){
-            //Update merge_into to be deleted
-            // Must be a timestamp (same as Lead::softDelete); integer breaks PostgreSQL and datetime cast.
-            DB::table('admins')->where('id', $request->merge_into)->update(['is_deleted' => now()]);
+        $fromId = (int) ($request->merge_from ?? 0);
+        $toId = (int) ($request->merge_into ?? 0);
 
-            //activities_logs
-            $activitiesLogs = DB::table('activities_logs')->where('client_id', $request->merge_from)->get(); //dd($activitiesLogs);
-            if(!empty($activitiesLogs)){
-                foreach($activitiesLogs as $actkey=>$actval){
-                    DB::table('activities_logs')->insert(
-                        [
-                            'client_id' => $request->merge_into,
-                            'created_by' => $actval->created_by,
-                            'description' => $actval->description,
-                            'created_at' => $actval->created_at,
-                            'updated_at' => $actval->updated_at,
-                            'subject' => $actval->subject,
-                            'use_for' => $actval->use_for,
-                            'followup_date' => $actval->followup_date,
-                            'task_group' => $actval->task_group,
-                            'task_status' => $actval->task_status,
-                            'source' => $actval->source ?? null
-                        ]
-                    );
+        if ($fromId > 0 && $toId > 0) {
+            $this->ensureCrmRecordAccess($fromId);
+            $this->ensureCrmRecordAccess($toId);
+
+            DB::beginTransaction();
+            try {
+                // Soft-delete the SOURCE record (merge_from), NOT the survivor (merge_into)
+                DB::table('admins')->where('id', $fromId)->update(['is_deleted' => now()]);
+
+                // Migrate client_matters
+                DB::table('client_matters')->where('client_id', $fromId)->update(['client_id' => $toId]);
+
+                // Migrate receipts
+                DB::table('account_client_receipts')->where('client_id', $fromId)->update(['client_id' => $toId]);
+
+                // Migrate relationships
+                DB::table('client_relationships')->where('client_id', $fromId)->update(['client_id' => $toId]);
+
+                // Migrate qualifications
+                DB::table('client_qualifications')->where('client_id', $fromId)->update(['client_id' => $toId]);
+
+                // Migrate emails & contacts & addresses
+                DB::table('client_emails')->where('client_id', $fromId)->update(['client_id' => $toId]);
+                DB::table('client_contacts')->where('client_id', $fromId)->update(['client_id' => $toId]);
+                DB::table('client_addresses')->where('client_id', $fromId)->update(['client_id' => $toId]);
+
+                // activities_logs
+                $activitiesLogs = DB::table('activities_logs')->where('client_id', $fromId)->get();
+                if(!empty($activitiesLogs)){
+                    foreach($activitiesLogs as $actkey=>$actval){
+                        DB::table('activities_logs')->insert(
+                            [
+                                'client_id' => $toId,
+                                'created_by' => $actval->created_by,
+                                'description' => $actval->description,
+                                'created_at' => $actval->created_at,
+                                'updated_at' => $actval->updated_at,
+                                'subject' => $actval->subject,
+                                'use_for' => $actval->use_for,
+                                'followup_date' => $actval->followup_date,
+                                'task_group' => $actval->task_group,
+                                'task_status' => $actval->task_status,
+                                'source' => $actval->source ?? null
+                            ]
+                        );
+                    }
                 }
-            }
 
-            //notes
-            $notes = DB::table('notes')->where('client_id', $request->merge_from)->get(); //dd($notes);
-            if(!empty($notes)){
-                foreach($notes as $notekey=>$noteval){
-                    DB::table('notes')->insert(
-                        [
-                            'user_id'=> $noteval->user_id,
-                            'client_id' => $request->merge_into,
-                            'lead_id' => $noteval->lead_id,
-                            'title' => $noteval->title,
-                            'description' => $noteval->description,
-                            'created_at' => $noteval->created_at,
-                            'updated_at' => $noteval->updated_at,
-                            'mail_id' => $noteval->mail_id,
-                            'type' => $noteval->type,
-                            'pin' => $noteval->pin,
-                            'action_date' => $noteval->action_date,
-                            'is_action' => $noteval->is_action,
-                            'assigned_to' => $noteval->assigned_to,
-                            'status' => $noteval->status,
-                            'task_group' => $noteval->task_group,
-                        ]
-                    );
+                // notes
+                $notes = DB::table('notes')->where('client_id', $fromId)->get();
+                if(!empty($notes)){
+                    foreach($notes as $notekey=>$noteval){
+                        DB::table('notes')->insert(
+                            [
+                                'user_id'=> $noteval->user_id,
+                                'client_id' => $toId,
+                                'lead_id' => $noteval->lead_id,
+                                'title' => $noteval->title,
+                                'description' => $noteval->description,
+                                'created_at' => $noteval->created_at,
+                                'updated_at' => $noteval->updated_at,
+                                'mail_id' => $noteval->mail_id,
+                                'type' => $noteval->type,
+                                'pin' => $noteval->pin,
+                                'action_date' => $noteval->action_date,
+                                'is_action' => $noteval->is_action,
+                                'assigned_to' => $noteval->assigned_to,
+                                'status' => $noteval->status,
+                                'task_group' => $noteval->task_group,
+                            ]
+                        );
+                    }
                 }
-            }
 
-            // applications table has been removed - workflow is tracked via client_matters
-
-            //education documents and migration documents
-            $documents = DB::table('documents')->where('client_id', $request->merge_from)->get(); //dd($documents);
-            if(!empty($documents)){
-                foreach($documents as $dockey=>$docval){
-                    DB::table('documents')->insert(
-                        [
-                            'document'=> $docval->document,
-                            'filetype' => $docval->filetype,
-                            'myfile' => $docval->myfile,
-                            'user_id' => $docval->user_id,
-                            'client_id' => $request->merge_into,
-                            'file_size' => $docval->file_size,
-                            'type' => $docval->type,
-                            'doc_type' => $docval->doc_type,
-                            'created_at' => $docval->created_at,
-                            'updated_at' => $docval->updated_at
-                        ]
-                    );
+                // documents
+                $documents = DB::table('documents')->where('client_id', $fromId)->get();
+                if(!empty($documents)){
+                    foreach($documents as $dockey=>$docval){
+                        DB::table('documents')->insert(
+                            [
+                                'document'=> $docval->document,
+                                'filetype' => $docval->filetype,
+                                'myfile' => $docval->myfile,
+                                'user_id' => $docval->user_id,
+                                'client_id' => $toId,
+                                'file_size' => $docval->file_size,
+                                'type' => $docval->type,
+                                'doc_type' => $docval->doc_type,
+                                'created_at' => $docval->created_at,
+                                'updated_at' => $docval->updated_at
+                            ]
+                        );
+                    }
                 }
-            }
 
-            //appointments
-            $appointments = DB::table('appointments')->where('client_id', $request->merge_from)->get(); //dd($appointments);
-            if(!empty($appointments)){
-                foreach($appointments as $appkey=>$appval){
-                    DB::table('appointments')->insert(
-                        [
-                            'user_id'=> $appval->user_id,
-                            'client_id' => $request->merge_into,
-                            'service_id' => $appval->service_id,
-                            'noe_id' => $appval->noe_id,
-                            'full_name' => $appval->full_name,
-                            'email' => $appval->email,
-                            'phone' => $appval->phone,
-                            'timezone' => $appval->timezone,
-                            'date' => $appval->date,
-                            'time' => $appval->time,
-                            'timeslot_full' => $appval->timeslot_full,
-                            'title' => $appval->title,
-                            'description' => $appval->description,
-                            'invites' => $appval->invites,
-                            'appointment_details' => $appval->appointment_details,
-                            'status' => $appval->status,
-                            'assignee' => $appval->assignee,
-                            'priority' => $appval->priority,
-                            'priority_no' => $appval->priority_no,
-                            'created_at' => $appval->created_at,
-                            'updated_at' => $appval->updated_at,
-                            'related_to' => $appval->related_to,
-                            'order_hash' => $appval->order_hash
-                        ]
-                    );
+                // appointments
+                $appointments = DB::table('appointments')->where('client_id', $fromId)->get();
+                if(!empty($appointments)){
+                    foreach($appointments as $appkey=>$appval){
+                        DB::table('appointments')->insert(
+                            [
+                                'user_id'=> $appval->user_id,
+                                'client_id' => $toId,
+                                'service_id' => $appval->service_id,
+                                'noe_id' => $appval->noe_id,
+                                'full_name' => $appval->full_name,
+                                'email' => $appval->email,
+                                'phone' => $appval->phone,
+                                'timezone' => $appval->timezone,
+                                'date' => $appval->date,
+                                'time' => $appval->time,
+                                'timeslot_full' => $appval->timeslot_full,
+                                'title' => $appval->title,
+                                'description' => $appval->description,
+                                'invites' => $appval->invites,
+                                'appointment_details' => $appval->appointment_details,
+                                'status' => $appval->status,
+                                'assignee' => $appval->assignee,
+                                'priority' => $appval->priority,
+                                'priority_no' => $appval->priority_no,
+                                'created_at' => $appval->created_at,
+                                'updated_at' => $appval->updated_at,
+                                'related_to' => $appval->related_to,
+                                'order_hash' => $appval->order_hash
+                            ]
+                        );
+                    }
                 }
-            }
 
-            //quotations
-            $quotations = DB::table('quotations')->where('client_id', $request->merge_from)->get(); //dd($quotations);
-            if(!empty($quotations)){
-                foreach($quotations as $quotekey=>$quoteval){
-                    DB::table('quotations')->insert(
-                        [
-                            'client_id' => $request->merge_into,
-                            'user_id'=> $quoteval->user_id,
-                            'total_fee' => $quoteval->total_fee,
-                            'status' => $quoteval->status,
-                            'due_date' => $quoteval->due_date,
-                            'created_by' => $quoteval->created_by,
-                            'created_at' => $quoteval->created_at,
-                            'updated_at' => $quoteval->updated_at,
-                            'currency' => $quoteval->currency,
-                            'is_archive' => $quoteval->is_archive
-                        ]
-                    );
+                // quotations
+                $quotations = DB::table('quotations')->where('client_id', $fromId)->get();
+                if(!empty($quotations)){
+                    foreach($quotations as $quotekey=>$quoteval){
+                        DB::table('quotations')->insert(
+                            [
+                                'client_id' => $toId,
+                                'user_id'=> $quoteval->user_id,
+                                'total_fee' => $quoteval->total_fee,
+                                'status' => $quoteval->status,
+                                'due_date' => $quoteval->due_date,
+                                'created_by' => $quoteval->created_by,
+                                'created_at' => $quoteval->created_at,
+                                'updated_at' => $quoteval->updated_at,
+                                'currency' => $quoteval->currency,
+                                'is_archive' => $quoteval->is_archive
+                            ]
+                        );
+                    }
                 }
-            }
 
-            // Email history (email_logs)
-            $conversations = DB::table('email_logs')->where('client_id', $request->merge_from)->get(); //dd($conversations);
-            if(!empty($conversations)){
-                foreach($conversations as $mailkey=>$mailval){
-                    DB::table('email_logs')->insert(
-                        [
-                            'user_id' => $mailval->user_id,
-                            'from_mail' => $mailval->from_mail,
-                            'to_mail' => $mailval->to_mail,
-                            'cc' => $mailval->cc,
-                            'template_id' => $mailval->template_id,
-                            'subject' => $mailval->subject,
-                            'message' => $mailval->message,
-                            'created_at' => $mailval->created_at,
-                            'updated_at' => $mailval->updated_at,
-                            'type' => $mailval->type,
-                            'reciept_id' => $mailval->reciept_id,
-                            'attachments' => $mailval->attachments,
-                            'mail_type' => $mailval->mail_type,
-                            'client_id' => $request->merge_into
-                        ]
-                    );
+                // email_logs
+                $conversations = DB::table('email_logs')->where('client_id', $fromId)->get();
+                if(!empty($conversations)){
+                    foreach($conversations as $mailkey=>$mailval){
+                        DB::table('email_logs')->insert(
+                            [
+                                'user_id' => $mailval->user_id,
+                                'from_mail' => $mailval->from_mail,
+                                'to_mail' => $mailval->to_mail,
+                                'cc' => $mailval->cc,
+                                'template_id' => $mailval->template_id,
+                                'subject' => $mailval->subject,
+                                'message' => $mailval->message,
+                                'created_at' => $mailval->created_at,
+                                'updated_at' => $mailval->updated_at,
+                                'type' => $mailval->type,
+                                'reciept_id' => $mailval->reciept_id,
+                                'attachments' => $mailval->attachments,
+                                'mail_type' => $mailval->mail_type,
+                                'client_id' => $toId
+                            ]
+                        );
+                    }
                 }
-            }
 
-            // Education table removed - system deprecated (replaced by ClientQualification)
-            // Table 'education' no longer exists in database - verified 2026-01-27
-            // Current qualification system uses 'client_qualifications' table with ClientQualification model
-
-            //CheckinLogs
-            $checkinLogs = DB::table('checkin_logs')->where('client_id', $request->merge_from)->get(); //dd($checkinLogs);
-            if(!empty($checkinLogs)){
-                foreach($checkinLogs as $checkkey=>$checkval){
-                    DB::table('checkin_logs')->insert(
-                        [
-                             'client_id' => $request->merge_into,
-                             'contact_type' => $checkval->contact_type,
-                             'user_id' => $checkval->user_id,
-                             'visit_purpose' => $checkval->visit_purpose,
-                             'status' => $checkval->status,
-                             'date' => $checkval->date,
-                             'sesion_start' => $checkval->sesion_start,
-                             'sesion_end' => $checkval->sesion_end,
-                             'created_at' => $checkval->created_at,
-                             'updated_at' => $checkval->updated_at,
-                             'wait_time' => $checkval->wait_time,
-                             'attend_time' => $checkval->attend_time,
-                             'office' => $checkval->office,
-                             'wait_type' => $checkval->wait_type
-                        ]
-                    );
+                // checkin_logs
+                $checkinLogs = DB::table('checkin_logs')->where('client_id', $fromId)->get();
+                if(!empty($checkinLogs)){
+                    foreach($checkinLogs as $checkkey=>$checkval){
+                        DB::table('checkin_logs')->insert(
+                            [
+                                 'client_id' => $toId,
+                                 'contact_type' => $checkval->contact_type,
+                                 'user_id' => $checkval->user_id,
+                                 'visit_purpose' => $checkval->visit_purpose,
+                                 'status' => $checkval->status,
+                                 'date' => $checkval->date,
+                                 'sesion_start' => $checkval->sesion_start,
+                                 'sesion_end' => $checkval->sesion_end,
+                                 'created_at' => $checkval->created_at,
+                                 'updated_at' => $checkval->updated_at,
+                                 'wait_time' => $checkval->wait_time,
+                                 'attend_time' => $checkval->attend_time,
+                                 'office' => $checkval->office,
+                                 'wait_type' => $checkval->wait_type
+                            ]
+                        );
+                    }
                 }
-            }
 
-            // prev_visa column dropped Phase 4 - no longer copied during merge
+                DB::commit();
+                $response['status'] = true;
+                $response['message'] = 'You have successfully merged records.';
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $response['status'] = false;
+                $response['message'] = 'Failed to merge records: ' . $e->getMessage();
+            }
+        } else {
+            $response['status'] = false;
+            $response['message'] = 'Invalid parameters for merge.';
         }
-        $response['status'] 	= 	true;
-        $response['message']	=	'You have successfully merged records.';
-        echo json_encode($response);
+
+        return response()->json($response);
     }
 
     //not picked call button click
     public function notpickedcall(Request $request){
-        $data = $request->all(); //dd($data);
+        $data = $request->all();
+        $this->ensureCrmRecordAccess((int) ($data['id'] ?? 0));
         //Get client phone and send message via UnifiedSmsManager
-        $clientInfo = Admin::select('id','country_code','phone')->where('id', $data['id'])->first();//dd($clientInfo);
+        $clientInfo = Admin::select('id','country_code','phone')->where('id', $data['id'])->first();
         
         $smsResult = null;
         if ($clientInfo) {
@@ -3748,9 +3773,6 @@ class ClientsController extends Controller
         $recExist = Admin::where('id', $data['id'])->update(['not_picked_call' => $data['not_picked_call']]);
         if($recExist){
             if($data['not_picked_call'] == 1){ //if checked true
-                // Activity log is now automatically created by UnifiedSmsManager
-                // No need to manually create it here
-                
                 $response['status'] 	= 	true;
                 $response['message']	=	$smsResult && $smsResult['success'] 
                     ? 'Call not picked. SMS sent successfully!' 
@@ -3771,8 +3793,10 @@ class ClientsController extends Controller
     }
 
     public function deleteactivitylog(Request $request){
-		$activitylogid = $request->activitylogid; //dd($activitylogid);
-		if(\App\Models\ActivitiesLog::where('id',$activitylogid)->exists()){
+		$activitylogid = $request->activitylogid;
+		$activity = \App\Models\ActivitiesLog::find($activitylogid);
+		if($activity){
+			$this->ensureCrmRecordAccess((int) $activity->client_id);
 			$data = \App\Models\ActivitiesLog::select('client_id','subject','description')->where('id',$activitylogid)->first();
 			$res = DB::table('activities_logs')->where('id', @$activitylogid)->delete();
 			if($res){
@@ -3791,8 +3815,9 @@ class ClientsController extends Controller
 
     public function pinactivitylog(Request $request){
 		$requestData = $request->all();
-        if(\App\Models\ActivitiesLog::where('id',$requestData['activity_id'])->exists()){
-			$activity = \App\Models\ActivitiesLog::where('id',$requestData['activity_id'])->first();
+		$activity = \App\Models\ActivitiesLog::find($requestData['activity_id'] ?? 0);
+        if($activity){
+			$this->ensureCrmRecordAccess((int) $activity->client_id);
 			if($activity->pin == 0){
 				$obj = \App\Models\ActivitiesLog::find($activity->id);
 				$obj->pin = 1;
@@ -3817,73 +3842,72 @@ class ClientsController extends Controller
 
     //Re-assign inbox email
     public function reassiginboxemail(Request $request) {
-		$requestData = $request->all(); //dd($requestData);
-		$uploaded_doc_id = $requestData['uploaded_doc_id'];
-        if( \App\Models\Document::where('id', '=', $uploaded_doc_id)->exists() )
-		{
-            //Get existing document info
-            $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
-            $source_doc_client_id = $document_info['client_id'];
+		$requestData = $request->all();
+		$uploaded_doc_id = $requestData['uploaded_doc_id'] ?? 0;
+        $dest_assign_client_id = (int) ($requestData['reassign_client_id'] ?? 0);
+        $saved_mail_report_info = false;
+
+        $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
+        if ($document_info && $dest_assign_client_id > 0) {
+            $source_doc_client_id = (int) $document_info['client_id'];
+            $this->ensureCrmRecordAccess($source_doc_client_id);
+            $this->ensureCrmRecordAccess($dest_assign_client_id);
+
             $source_doc_myfile = $document_info['myfile'];
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
-            $source_doc_client_unique_id = $source_doc_admin_info['client_id'];
+            $source_doc_client_unique_id = $source_doc_admin_info['client_id'] ?? '';
 
-            $dest_assign_client_id = $requestData['reassign_client_id'];
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
-            $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'];
+            $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'] ?? '';
 
-            // Define the source and destination paths
-            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$source_doc_myfile; // Replace with your source file path
-            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$source_doc_myfile; // Replace with your destination file path
+            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
 
             try {
-                // Check if the file exists before copying
                 if (Storage::disk('s3')->exists($sourcePath)) {
-                    // Use the copy method to copy the file within S3
                     Storage::disk('s3')->copy($sourcePath, $destinationPath);
                     Storage::disk('s3')->delete($sourcePath);
-                    //echo "File copied successfully.";
-                } else {
-                    //echo "Source file does not exist.";
                 }
             } catch (\Exception $e) {
-                // Handle errors here
-                echo "Error: " . $e->getMessage();
+                Log::error('Error copying S3 object: ' . $e->getMessage());
             }
 
-            //Update document with client id and matter id
             $upd_doc_info = \App\Models\Document::find($uploaded_doc_id);
-            $upd_doc_info->client_id = $requestData['reassign_client_id'];
-            $upd_doc_info->user_id = Auth::user()->id;
-            $upd_doc_info->client_matter_id = $requestData['reassign_client_matter_id'];
-            $saved_doc_info = $upd_doc_info->save();
-            if($saved_doc_info){
-                //Update email_logs table with client id and matter id
-                $id = $requestData['memail_id'];
-                $email_log_info = \App\Models\EmailLog::find($id);
-                $email_log_info->client_id = $requestData['reassign_client_id'];
-                $email_log_info->user_id = Auth::user()->id;
-                $email_log_info->client_matter_id = $requestData['reassign_client_matter_id'];
-                $saved_mail_report_info = $email_log_info->save();
-                if($saved_mail_report_info){
-                    $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_client_matter_id'])->first();
-                    $subject = 'Inbox Email Re-assign';
-                    $objs = new \App\Models\ActivitiesLog;
-                    $objs->client_id = $requestData['reassign_client_id'];
-                    $objs->created_by = Auth::user()->id;
-                    $objs->description = $dest_doc_client_unique_id.'-'.$client_matter_info['client_unique_matter_no'];
-                    $objs->subject = $subject;
-                    $objs->task_status = 0;
-                    $objs->pin = 0;
-                    $objs->save();
-                }
+            if ($upd_doc_info) {
+                $upd_doc_info->client_id = $dest_assign_client_id;
+                $upd_doc_info->user_id = Auth::user()->id;
+                $upd_doc_info->client_matter_id = $requestData['reassign_client_matter_id'] ?? null;
+                $saved_doc_info = $upd_doc_info->save();
+                if($saved_doc_info){
+                    $id = $requestData['memail_id'] ?? 0;
+                    $email_log_info = \App\Models\EmailLog::find($id);
+                    if ($email_log_info) {
+                        $email_log_info->client_id = $dest_assign_client_id;
+                        $email_log_info->user_id = Auth::user()->id;
+                        $email_log_info->client_matter_id = $requestData['reassign_client_matter_id'] ?? null;
+                        $saved_mail_report_info = $email_log_info->save();
+                        if($saved_mail_report_info){
+                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_client_matter_id'] ?? 0)->first();
+                            $subject = 'Inbox Email Re-assign';
+                            $objs = new \App\Models\ActivitiesLog;
+                            $objs->client_id = $dest_assign_client_id;
+                            $objs->created_by = Auth::user()->id;
+                            $objs->description = $dest_doc_client_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
+                            $objs->subject = $subject;
+                            $objs->task_status = 0;
+                            $objs->pin = 0;
+                            $objs->save();
+                        }
+                    }
 
-                //Update date in client matter table
-                if( isset( $requestData['reassign_client_matter_id'] ) && $requestData['reassign_client_matter_id'] != ""){
-                    $obj1 = \App\Models\ClientMatter::find($requestData['reassign_client_matter_id']);
-                    $obj1->updated_at = date('Y-m-d H:i:s');
-                    $obj1->save();
+                    if( isset( $requestData['reassign_client_matter_id'] ) && $requestData['reassign_client_matter_id'] != ""){
+                        $obj1 = \App\Models\ClientMatter::find($requestData['reassign_client_matter_id']);
+                        if ($obj1) {
+                            $obj1->updated_at = date('Y-m-d H:i:s');
+                            $obj1->save();
+                        }
+                    }
                 }
             }
             if(!$saved_mail_report_info) {
@@ -3898,73 +3922,72 @@ class ClientsController extends Controller
 
     //Re-assign sent email
     public function reassigsentemail(Request $request) {
-		$requestData = $request->all(); //dd($requestData);
-		$uploaded_doc_id = $requestData['uploaded_doc_id'];
-        if( \App\Models\Document::where('id', '=', $uploaded_doc_id)->exists() )
-		{
-            //Get existing document info
-            $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
-            $source_doc_client_id = $document_info['client_id'];
+		$requestData = $request->all();
+		$uploaded_doc_id = $requestData['uploaded_doc_id'] ?? 0;
+        $dest_assign_client_id = (int) ($requestData['reassign_sent_client_id'] ?? 0);
+        $saved_mail_report_info = false;
+
+        $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
+        if ($document_info && $dest_assign_client_id > 0) {
+            $source_doc_client_id = (int) $document_info['client_id'];
+            $this->ensureCrmRecordAccess($source_doc_client_id);
+            $this->ensureCrmRecordAccess($dest_assign_client_id);
+
             $source_doc_myfile = $document_info['myfile'];
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
-            $source_doc_client_unique_id = $source_doc_admin_info['client_id'];
+            $source_doc_client_unique_id = $source_doc_admin_info['client_id'] ?? '';
 
-            $dest_assign_client_id = $requestData['reassign_sent_client_id'];
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
-            $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'];
+            $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'] ?? '';
 
-            // Define the source and destination paths
-            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$source_doc_myfile; // Replace with your source file path
-            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$source_doc_myfile; // Replace with your destination file path
+            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
 
             try {
-                // Check if the file exists before copying
                 if (Storage::disk('s3')->exists($sourcePath)) {
-                    // Use the copy method to copy the file within S3
                     Storage::disk('s3')->copy($sourcePath, $destinationPath);
                     Storage::disk('s3')->delete($sourcePath);
-                    //echo "File copied successfully.";
-                } else {
-                    //echo "Source file does not exist.";
                 }
             } catch (\Exception $e) {
-                // Handle errors here
-                echo "Error: " . $e->getMessage();
+                Log::error('Error copying S3 object: ' . $e->getMessage());
             }
 
-            //Update document with client id and matter id
             $upd_doc_info = \App\Models\Document::find($uploaded_doc_id);
-            $upd_doc_info->client_id = $requestData['reassign_sent_client_id'];
-            $upd_doc_info->user_id = Auth::user()->id;
-            $upd_doc_info->client_matter_id = $requestData['reassign_sent_client_matter_id'];
-            $saved_doc_info = $upd_doc_info->save();
-            if($saved_doc_info){
-                //Update email_logs table with client id and matter id
-                $id = $requestData['memail_id'];
-                $email_log_info = \App\Models\EmailLog::find($id);
-                $email_log_info->client_id = $requestData['reassign_sent_client_id'];
-                $email_log_info->user_id = Auth::user()->id;
-                $email_log_info->client_matter_id = $requestData['reassign_sent_client_matter_id'];
-                $saved_mail_report_info = $email_log_info->save();
-                if($saved_mail_report_info){
-                    $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_sent_client_matter_id'])->first();
-                    $subject = 'Sent Email Re-assign';
-                    $objs = new \App\Models\ActivitiesLog;
-                    $objs->client_id = $requestData['reassign_sent_client_id'];
-                    $objs->created_by = Auth::user()->id;
-                    $objs->description = $dest_doc_client_unique_id.'-'.$client_matter_info['client_unique_matter_no'];
-                    $objs->subject = $subject;
-                    $objs->task_status = 0;
-                    $objs->pin = 0;
-                    $objs->save();
-                }
+            if ($upd_doc_info) {
+                $upd_doc_info->client_id = $dest_assign_client_id;
+                $upd_doc_info->user_id = Auth::user()->id;
+                $upd_doc_info->client_matter_id = $requestData['reassign_sent_client_matter_id'] ?? null;
+                $saved_doc_info = $upd_doc_info->save();
+                if($saved_doc_info){
+                    $id = $requestData['memail_id'] ?? 0;
+                    $email_log_info = \App\Models\EmailLog::find($id);
+                    if ($email_log_info) {
+                        $email_log_info->client_id = $dest_assign_client_id;
+                        $email_log_info->user_id = Auth::user()->id;
+                        $email_log_info->client_matter_id = $requestData['reassign_sent_client_matter_id'] ?? null;
+                        $saved_mail_report_info = $email_log_info->save();
+                        if($saved_mail_report_info){
+                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_sent_client_matter_id'] ?? 0)->first();
+                            $subject = 'Sent Email Re-assign';
+                            $objs = new \App\Models\ActivitiesLog;
+                            $objs->client_id = $dest_assign_client_id;
+                            $objs->created_by = Auth::user()->id;
+                            $objs->description = $dest_doc_client_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
+                            $objs->subject = $subject;
+                            $objs->task_status = 0;
+                            $objs->pin = 0;
+                            $objs->save();
+                        }
+                    }
 
-                //Update date in client matter table
-                if( isset($requestData['reassign_sent_client_matter_id']) && $requestData['reassign_sent_client_matter_id'] != ""){
-                    $obj1 = \App\Models\ClientMatter::find($requestData['reassign_sent_client_matter_id']);
-                    $obj1->updated_at = date('Y-m-d H:i:s');
-                    $obj1->save();
+                    if( isset($requestData['reassign_sent_client_matter_id']) && $requestData['reassign_sent_client_matter_id'] != ""){
+                        $obj1 = \App\Models\ClientMatter::find($requestData['reassign_sent_client_matter_id']);
+                        if ($obj1) {
+                            $obj1->updated_at = date('Y-m-d H:i:s');
+                            $obj1->save();
+                        }
+                    }
                 }
             }
             if(!$saved_mail_report_info) {
@@ -4325,6 +4348,10 @@ class ClientsController extends Controller
                     'success' => false,
                     'message' => 'Email not found.',
                 ], 404);
+            }
+
+            if ($emailLog->client_id) {
+                $this->ensureCrmRecordAccess((int) $emailLog->client_id);
             }
 
             $matterId = $request->input('client_matter_id');
@@ -5520,6 +5547,8 @@ class ClientsController extends Controller
             ]);
         }
 
+        $this->ensureCrmRecordAccess((int) $costAssignment->client_id);
+
         $client_id = $costAssignment->client_id;
         $matter = \App\Models\ClientMatter::find($costAssignment->client_matter_id);
         $matterName = $matter ? $matter->title : 'N/A';
@@ -6282,6 +6311,7 @@ class ClientsController extends Controller
                     }
 
                     $obj->type = $slug;
+                    $obj->lead_status = 'converted';
                     $obj->user_id = $request['user_id'];
                     $saved = $obj->save();
                     Log::info('ConvertLeadToClient: admin type updated to client', ['saved' => $saved]);
@@ -6373,6 +6403,7 @@ class ClientsController extends Controller
         if (empty($clientId)) {
             return redirect()->back()->with('error', 'Client ID is required.');
         }
+        $this->ensureCrmRecordAccess((int) $clientId);
         $obj = Admin::where('id', $clientId)->first();
         if (!$obj) {
             return redirect()->back()->with('error', 'Record not found.');
@@ -6393,6 +6424,7 @@ class ClientsController extends Controller
         }
 
         $obj->type = 'client';
+        $obj->lead_status = 'converted';
         $obj->user_id = $request->input('user_id', Auth::user()->id);
         $obj->save();
 
@@ -8378,6 +8410,9 @@ class ClientsController extends Controller
     {
         try {
             $emailLog = \App\Models\EmailLog::findOrFail($id);
+            if ($emailLog->client_id) {
+                $this->ensureCrmRecordAccess((int) $emailLog->client_id);
+            }
             if (!$emailLog->s3_path) {
                 return response()->json(['error' => 'No S3 path found for this email'], 404);
             }

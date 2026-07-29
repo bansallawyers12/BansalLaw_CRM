@@ -1183,6 +1183,13 @@ class LeadController extends Controller
             // If there are any custom errors, return them
             if (!empty($errors)) {
                 Log::warning('Custom validation errors: ' . json_encode($errors));
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $errors
+                    ], 422);
+                }
                 return redirect()->back()
                     ->withInput()
                     ->withErrors($errors);
@@ -1454,6 +1461,15 @@ class LeadController extends Controller
                 $encodedId = base64_encode(convert_uuencode($admin->id));
                 Log::info('Redirecting to edit page with encoded ID: ' . $encodedId);
                 
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Lead added successfully',
+                        'id' => $admin->id,
+                        'redirect_url' => route('clients.edit', ['id' => $encodedId])
+                    ]);
+                }
+
                 return redirect()->route('clients.edit', ['id' => $encodedId])
                     ->with('success', 'Lead added successfully');
             } catch (\Exception $e) {
@@ -1462,9 +1478,14 @@ class LeadController extends Controller
                 Log::error('Lead creation failed: ' . $e->getMessage());
                 Log::error('Stack trace: ' . $e->getTraceAsString());
                 
-                // Clean up uploaded file if exists
-                // No profile image to clean up
-                
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to create lead: ' . $e->getMessage(),
+                        'errors' => ['error' => ['Failed to create lead: ' . $e->getMessage()]]
+                    ], 500);
+                }
+
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['error' => 'Failed to create lead: ' . $e->getMessage()]);

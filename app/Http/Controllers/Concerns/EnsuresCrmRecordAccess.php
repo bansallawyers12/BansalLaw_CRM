@@ -23,14 +23,18 @@ trait EnsuresCrmRecordAccess
             return;
         }
 
-        $row = Admin::query()
-            ->where('id', $adminId)
-            ->whereIn('type', ['client', 'lead'])
-            ->first(['id', 'type']);
-
-        // ID does not correspond to a client/lead — skip gate (not our concern)
-        if (! $row) {
+        $adminRow = Admin::query()->where('id', $adminId)->first(['id', 'type']);
+        if (!$adminRow) {
             return;
+        }
+
+        if (!in_array($adminRow->type, ['client', 'lead'], true)) {
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(
+                    response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
+            abort(403, 'Unauthorized access to non-client record');
         }
 
         $user = Auth::guard('admin')->user();

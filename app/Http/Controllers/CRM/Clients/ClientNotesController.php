@@ -26,9 +26,11 @@ use Carbon\Carbon;
 | * 
 | * Maps to: resources/views/Admin/clients/tabs/notes.blade.php
 | */
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+
 class ClientNotesController extends Controller
 {
-    use LogsClientActivity;
+    use LogsClientActivity, EnsuresCrmRecordAccess;
 
     /**
      * Create a new controller instance.
@@ -48,7 +50,6 @@ class ClientNotesController extends Controller
      */
     public function createnote(Request $request)
     { 
-        //dd($request->all());
         $response = []; // Initialize response array
         $isUpdate = isset($request->noteid) && $request->noteid != '';
         $changedFields = [];
@@ -56,8 +57,13 @@ class ClientNotesController extends Controller
         
         if($isUpdate){
             $obj = Note::find($request->noteid);
+            if (!$obj) {
+                return response()->json(['status' => false, 'message' => 'Note not found'], 404);
+            }
+            $this->ensureCrmRecordAccess((int) $obj->client_id);
             $oldNote = $obj->replicate(); // Keep a copy of old values for tracking changes
         }else{
+            $this->ensureCrmRecordAccess((int) $request->client_id);
             $obj = new Note;
             // Title field may not exist in simple form, use default if not provided
             $obj->title = $request->title ?? '';
@@ -259,6 +265,7 @@ class ClientNotesController extends Controller
             ->first();
         
         if($note){
+            $this->ensureCrmRecordAccess((int) $note->client_id);
             $note->updated_at = $carbonDateTime; // Carbon instance
             $saved = $note->save();
             
@@ -285,8 +292,10 @@ class ClientNotesController extends Controller
      */
     public function getnotedetail(Request $request)
     {
-		$note_id = $request->note_id; //dd($note_id);
-		if(Note::where('id',$note_id)->exists()){
+		$note_id = $request->note_id;
+		$note = Note::find($note_id);
+		if($note){
+			$this->ensureCrmRecordAccess((int) $note->client_id);
 			$data = Note::select('title','description','task_group','mobile_number')->where('id',$note_id)->first();
 			$response['status'] 	= 	true;
 			$response['data']	=	$data;
@@ -306,7 +315,9 @@ class ClientNotesController extends Controller
     public function viewnotedetail(Request $request)
     {
 		$note_id = $request->note_id;
-		if(Note::where('id',$note_id)->exists()){
+		$note = Note::find($note_id);
+		if($note){
+			$this->ensureCrmRecordAccess((int) $note->client_id);
 			$data = Note::select('title','description','user_id','updated_at')->where('id',$note_id)->first();
 			$admin = Admin::where('id', $data->user_id)->first();
 			$s = substr(@$admin->first_name, 0, 1);
@@ -329,7 +340,9 @@ class ClientNotesController extends Controller
     public function viewapplicationnote(Request $request)
     {
 		$note_id = $request->note_id;
-		if(\App\Models\ActivitiesLog::where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->exists()){
+		$act = \App\Models\ActivitiesLog::where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->first();
+		if($act){
+			$this->ensureCrmRecordAccess((int) $act->client_id);
 			$data = \App\Models\ActivitiesLog::select('subject as title','description','created_by as user_id','updated_at')->where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->first();
 			$admin = Admin::where('id', $data->user_id)->first();
 			$s = substr(@$admin->first_name, 0, 1);
@@ -352,6 +365,7 @@ class ClientNotesController extends Controller
     public function getnotes(Request $request)
     {   
         $client_id = $request->clientid;
+        $this->ensureCrmRecordAccess((int) $client_id);
         $type = $request->type; 
         $task_group = $request->task_group;
         //if($task_group == ''){
@@ -447,7 +461,9 @@ class ClientNotesController extends Controller
     public function deletenote(Request $request)
     {
 		$note_id = $request->note_id;
-		if(Note::where('id',$note_id)->exists()){
+		$note = Note::find($note_id);
+		if($note){
+			$this->ensureCrmRecordAccess((int) $note->client_id);
 			$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
 			$res = DB::table('notes')->where('id', @$note_id)->delete();
 			if($res){
@@ -493,11 +509,12 @@ class ClientNotesController extends Controller
     {
 		$noteId = $request->input('note_id');
 
-		if (!$noteId || !Note::where('id', $noteId)->exists()) {
+		$note = Note::find($noteId);
+		if (!$note) {
 			return response()->json(['status' => false, 'message' => 'Record not found']);
 		}
+		$this->ensureCrmRecordAccess((int) $note->client_id);
 
-		$note = Note::find($noteId);
 		$currentPin = (int) $note->pin;
 		$newPin = $currentPin ? 0 : 1;
 

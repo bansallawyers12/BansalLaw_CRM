@@ -83,10 +83,6 @@ class ClientDocumentsController extends Controller
 
     private function denyJsonUnlessStaffClientAccess(int $clientId): ?JsonResponse
     {
-        if (! StaffClientVisibility::isRestrictedPersonAssisting(Auth::user())) {
-            return null;
-        }
-
         if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
             return response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
         }
@@ -99,10 +95,6 @@ class ClientDocumentsController extends Controller
      */
     private function blockEchoUnlessStaffClientAccess(int $clientId): bool
     {
-        if (! StaffClientVisibility::isRestrictedPersonAssisting(Auth::user())) {
-            return false;
-        }
-
         if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
             header('Content-Type: application/json');
             echo json_encode(StaffClientVisibility::unauthorizedPayload());
@@ -2979,6 +2971,16 @@ class ClientDocumentsController extends Controller
                 }
                 if (! $this->s3ObjectExistsLenient($s3Key)) {
                     return abort(404, 'File not found in S3');
+                }
+
+                $matchingDoc = Document::where('document', $s3Key)
+                    ->orWhere('myfile', basename($s3Key))
+                    ->orWhere('myfile_key', $s3Key)
+                    ->first();
+                if ($matchingDoc) {
+                    if (! StaffClientVisibility::canAccessClientOrLead((int) $matchingDoc->client_id)) {
+                        return abort(403, 'Unauthorized');
+                    }
                 }
             }
 

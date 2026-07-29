@@ -62,7 +62,7 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
 /*---------- Client Actions & Activities ----------*/
 Route::post('/clients/action/store', [ClientsController::class, 'actionStore']);
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
-Route::get('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
+Route::match(['get', 'post'], '/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLeadOnly'])->name('clients.convertLeadOnly');
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
 Route::get('/clients/removetag', [ClientsController::class, 'removetag']);
@@ -154,7 +154,7 @@ Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clien
 Route::post('/unarchive/{id}', [ClientsController::class, 'unarchive'])->name('clients.unarchive');
 Route::get('/change-client-status', [ClientsController::class, 'updateclientstatus'])->name('clients.updateclientstatus');
 Route::get('/get-activities', [ClientsController::class, 'activities'])->name('clients.activities');
-Route::get('/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');
+Route::match(['get', 'post'], '/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');
 Route::get('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
 Route::get('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
@@ -253,8 +253,8 @@ Route::post('/delete_receipt', [ClientAccountsController::class, 'delete_receipt
 Route::get('/clients/genClientFundReceipt/{id}', [ClientAccountsController::class, 'genClientFundReceipt']);
 Route::get('/clients/genTrustStatement', [ClientAccountsController::class, 'genTrustStatement']);
 /** Fix CFL receipt matter + regenerate PDF (auth:admin). Matter: matter=PSA_1 or client_matter_id (id or short code). */
-Route::get('/clients/fix-client-fund-receipt-matter/{id}', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate'])->whereNumber('id');
-Route::get('/clients/fix-client-fund-receipt-matter', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate']);
+Route::match(['get', 'post'], '/clients/fix-client-fund-receipt-matter/{id}', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate'])->whereNumber('id');
+Route::match(['get', 'post'], '/clients/fix-client-fund-receipt-matter', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate']);
 Route::get('/clients/genOfficeReceipt/{id}', [ClientAccountsController::class, 'genofficereceiptInvoice']);
 
 // Send to client routes

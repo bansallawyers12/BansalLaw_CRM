@@ -138,6 +138,7 @@
 
             <!-- Main Content Area -->
             <div class="main-content-area">
+                <div id="spaAlertContainer"></div>
                 
                 {{-- Error Display Section --}}
                 @if($errors->any())
@@ -2085,6 +2086,145 @@
                 }
             });
         })();
+    </script>
+
+    <!-- SPA Form Submit Handler -->
+    <script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('createLeadForm');
+            if (!form) return;
+
+            const saveBtn = document.querySelector('.save-btn');
+            const alertContainer = document.getElementById('spaAlertContainer');
+
+            function clearSpaErrors() {
+                if (alertContainer) alertContainer.innerHTML = '';
+                document.querySelectorAll('.spa-field-error').forEach(el => el.remove());
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            }
+
+            function renderSpaErrorSummary(messages) {
+                if (!alertContainer) return;
+                let listHtml = messages.map(msg => `<li style="color: #721c24; margin-bottom: 5px;">${msg}</li>`).join('');
+                alertContainer.innerHTML = `
+                    <div class="alert alert-danger" style="margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; color: #721c24; font-size: 16px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Please fix the following errors:
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            ${listHtml}
+                        </ul>
+                    </div>
+                `;
+                alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function renderSpaSuccessMessage(msg) {
+                if (!alertContainer) return;
+                alertContainer.innerHTML = `
+                    <div class="alert alert-success" style="margin: 20px 0; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;">
+                        <h4 style="margin: 0; color: #155724; font-size: 16px;">
+                            <i class="fa-solid fa-circle-check"></i> ${msg}
+                        </h4>
+                    </div>
+                `;
+                alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function renderInlineFieldError(fieldName, msg) {
+                let inputElement = null;
+                if (fieldName.includes('.')) {
+                    const parts = fieldName.split('.');
+                    inputElement = form.querySelector(`[name="${parts[0]}[${parts[1]}]"]`);
+                }
+                if (!inputElement) {
+                    inputElement = form.querySelector(`[name="${fieldName}"]`) || document.getElementById(fieldName);
+                }
+                if (inputElement) {
+                    inputElement.classList.add('is-invalid');
+                    const formGroup = inputElement.closest('.form-group') || inputElement.parentElement;
+                    if (formGroup && !formGroup.querySelector('.spa-field-error')) {
+                        const errSpan = document.createElement('span');
+                        errSpan.className = 'text-danger spa-field-error';
+                        errSpan.style.display = 'block';
+                        errSpan.style.marginTop = '4px';
+                        errSpan.style.fontSize = '12px';
+                        errSpan.textContent = msg;
+                        formGroup.appendChild(errSpan);
+                    }
+                }
+            }
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                clearSpaErrors();
+
+                const originalBtnHtml = saveBtn ? saveBtn.innerHTML : '';
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving Lead...</span>';
+                }
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token') || ''
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        renderSpaSuccessMessage(data.message || 'Lead added successfully! Redirecting...');
+                        if (saveBtn) {
+                            saveBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Saved!</span>';
+                        }
+                        setTimeout(() => {
+                            if (data.redirect_url) {
+                                window.location.href = data.redirect_url;
+                            }
+                        }, 500);
+                    } else {
+                        if (saveBtn) {
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = originalBtnHtml;
+                        }
+
+                        const allMessages = [];
+                        if (data.errors) {
+                            Object.keys(data.errors).forEach(key => {
+                                const errMsgs = data.errors[key];
+                                errMsgs.forEach(m => {
+                                    allMessages.push(m);
+                                    renderInlineFieldError(key, m);
+                                });
+                            });
+                        } else if (data.message) {
+                            allMessages.push(data.message);
+                        }
+
+                        if (allMessages.length > 0) {
+                            renderSpaErrorSummary(allMessages);
+                        } else {
+                            renderSpaErrorSummary(['An unexpected error occurred while saving.']);
+                        }
+                    }
+                } catch (err) {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnHtml;
+                    }
+                    renderSpaErrorSummary(['Network error or server unavailable. Please try again.']);
+                }
+            });
+        });
+    })();
     </script>
 @endpush
 
