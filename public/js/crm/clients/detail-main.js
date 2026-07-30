@@ -2516,25 +2516,35 @@ success: function(response) {
 
 
 
-        function prepareInvoiceEditModal() {
+        function prepareInvoiceEditModal(saveType) {
             var $modal = $('#createreceiptmodal');
             if (!$modal.length) {
                 return;
             }
 
+            var isFinal = saveType === 'final';
+            var title = isFinal ? 'Edit Invoice' : 'Edit Draft Invoice';
+
             $modal.find('.receipt-type-selector').hide();
-            $modal.find('.modal-title').html('<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Edit Draft Invoice');
+            $modal.find('.modal-title').html('<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> ' + title);
+            // A finalised invoice must stay finalised, so only offer the update action.
+            $('#invoice_receipt_form .invoice-draft-btn').toggle(!isFinal);
+            $('#invoice_receipt_form .invoice-final-btn').text(isFinal ? 'Update Invoice' : 'Create Invoice');
             $('#client_receipt_form, #office_receipt_form').hide();
             $('#invoice_receipt_form').show();
         }
 
-        function getInfoByReceiptId(receiptid) {
+        function getInfoByReceiptId(receiptid, saveType) {
 
             if (!receiptid) {
                 return;
             }
 
-            prepareInvoiceEditModal();
+            if (typeof window.captureInvoiceLineRowTemplate === 'function') {
+                window.captureInvoiceLineRowTemplate();
+            }
+
+            prepareInvoiceEditModal(saveType);
             $('#invoice_receipt_form input[name="function_type"]').val('edit');
 
             $.ajax({
@@ -2733,7 +2743,7 @@ success: function(response) {
             e.stopPropagation();
 
             var receiptid = $(this).data('receiptid');
-            getInfoByReceiptId(receiptid);
+            getInfoByReceiptId(receiptid, $(this).data('save-type'));
         });
 
         window.getInfoByReceiptId = getInfoByReceiptId;

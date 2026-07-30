@@ -161,6 +161,7 @@
             can_delete_email_with_attachments: '_access',
             can_sync_inbox_emails: '_access',
             can_close_discontinue_matter: '_access',
+            can_edit_final_invoice: '_access',
             grant_super_admin_access: '_access',
             trust_rule42_supervisor: '_access',
             is_solicitor: '_solicitor',

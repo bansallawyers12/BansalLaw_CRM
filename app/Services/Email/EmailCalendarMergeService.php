@@ -190,10 +190,10 @@ class EmailCalendarMergeService
      */
     public function loadIcsAttachmentsFromEmail(EmailLog $emailLog): array
     {
-        $emailLog->loadMissing('attachments');
+        // `email_logs` has an `attachments` column that shadows the relation accessor.
         $icsAttachments = [];
 
-        foreach ($emailLog->attachments as $attachment) {
+        foreach ($emailLog->attachments()->get() as $attachment) {
             if (! $this->isCalendarAttachment($attachment->filename ?? '', $attachment->content_type ?? '', $attachment->extension ?? '')) {
                 continue;
             }

@@ -131,6 +131,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant close/discontinue matter permission.', 422);
             }
 
+            $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantFinalInvoiceEdit && $request->has('can_edit_final_invoice')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant final invoice edit permission.', 422);
+            }
+
             $obj = new Staff();
             $this->fillStaffFromRequest($obj, $requestData, $request, isCreate: true);
             $saved = $obj->save();
@@ -223,6 +230,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant close/discontinue matter permission.', 422);
+            }
+
+            if (! Staff::canGrantFinalInvoiceEditPermission($actor instanceof Staff ? $actor : null) && $request->has('can_edit_final_invoice')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant final invoice edit permission.', 422);
             }
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
@@ -469,6 +480,13 @@ class StaffController extends Controller
         );
         if ($canGrantCloseDiscontinue && Schema::hasColumn('staff', 'can_close_discontinue_matter')) {
             $obj->can_close_discontinue_matter = $request->boolean('can_close_discontinue_matter');
+        }
+
+        $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantFinalInvoiceEdit && Schema::hasColumn('staff', 'can_edit_final_invoice')) {
+            $obj->can_edit_final_invoice = $request->boolean('can_edit_final_invoice');
         }
     }
 

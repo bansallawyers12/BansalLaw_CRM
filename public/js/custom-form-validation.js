@@ -1085,7 +1085,11 @@ function customValidate(formName, savetype = '')
 									$('.custom-error-msg').html('<span class="alert alert-danger">' + failMsg + '</span>');
 									return;
 								}
-								crmToast('Invoice No - ' + obj.invoice_no + ' is generated', 'success');
+								if (obj.function_type == 'edit') {
+									crmToast('Invoice No - ' + obj.invoice_no + ' is updated', 'success');
+								} else {
+									crmToast('Invoice No - ' + obj.invoice_no + ' is generated', 'success');
+								}
 								$('#createreceiptmodal').modal('hide');
                                 localStorage.setItem('activeTab', 'account');
                                 

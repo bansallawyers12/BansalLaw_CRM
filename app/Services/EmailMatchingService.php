@@ -25,7 +25,9 @@ class EmailMatchingService
      *     confidence: int,
      *     is_high_confidence: bool,
      *     mail_type: string,
-     *     matched_by: list<string>
+     *     matched_by: list<string>,
+     *     is_ambiguous: bool,
+     *     confidence_gap: int|null
      * }
      */
     public function suggestMatches(array $parsedData): array
@@ -34,7 +36,16 @@ class EmailMatchingService
         $textPreview = (string) ($parsedData['text_preview'] ?? $parsedData['text_content'] ?? '');
         $searchText = $subject . "\n" . mb_substr(strip_tags((string) ($parsedData['html_content'] ?? '')), 0, 2000) . "\n" . $textPreview;
 
-        $addresses = $this->extractEmailAddresses($parsedData);
+        $senderAddresses = $this->extractEmailAddresses([
+            'sender_email' => $parsedData['sender_email'] ?? null,
+            'from_mail' => $parsedData['from_mail'] ?? null,
+        ]);
+        $recipientAddresses = $this->extractEmailAddresses([
+            'to_recipients' => $parsedData['to_recipients'] ?? [],
+            'cc_recipients' => $parsedData['cc_recipients'] ?? [],
+            'recipients' => $parsedData['recipients'] ?? [],
+            'bcc_recipients' => $parsedData['bcc_recipients'] ?? [],
+        ]);
         $mailType = $this->detectMailType($parsedData);
 
         $candidates = [];
@@ -47,7 +58,13 @@ class EmailMatchingService
             $this->addCandidate($candidates, $match);
         }
 
-        foreach ($this->matchByEmailAddresses($addresses) as $match) {
+        // For incoming mail, the sender is stronger evidence than To/Cc/Bcc.
+        // Treating every participant equally caused unrelated copied recipients to win ties.
+        foreach ($this->matchByEmailAddresses($senderAddresses, 85, 'sender_email') as $match) {
+            $this->addCandidate($candidates, $match);
+        }
+
+        foreach ($this->matchByEmailAddresses($recipientAddresses, 70, 'recipient_email') as $match) {
             $this->addCandidate($candidates, $match);
         }
 
@@ -57,14 +74,27 @@ class EmailMatchingService
         $best = $suggestions[0] ?? null;
         $confidence = (int) ($best['confidence'] ?? 0);
         $matchedBy = $best ? array_values(array_unique($best['matched_by'] ?? [])) : [];
+        $runnerUp = null;
+        foreach (array_slice($suggestions, 1) as $suggestion) {
+            if ((int) ($suggestion['client_id'] ?? 0) !== (int) ($best['client_id'] ?? 0)) {
+                $runnerUp = $suggestion;
+                break;
+            }
+        }
+        $confidenceGap = $runnerUp
+            ? $confidence - (int) ($runnerUp['confidence'] ?? 0)
+            : null;
+        $isAmbiguous = $runnerUp !== null && $confidenceGap < 10;
 
         return [
             'suggestions' => array_slice($suggestions, 0, 5),
             'best' => $best,
             'confidence' => $confidence,
-            'is_high_confidence' => $confidence >= self::HIGH_CONFIDENCE,
+            'is_high_confidence' => $confidence >= self::HIGH_CONFIDENCE && ! $isAmbiguous,
             'mail_type' => $mailType,
             'matched_by' => $matchedBy,
+            'is_ambiguous' => $isAmbiguous,
+            'confidence_gap' => $confidenceGap,
         ];
     }
 
@@ -236,7 +266,11 @@ class EmailMatchingService
      * @param list<string> $addresses
      * @return list<array<string, mixed>>
      */
-    private function matchByEmailAddresses(array $addresses): array
+    private function matchByEmailAddresses(
+        array $addresses,
+        int $confidence,
+        string $matchedBy
+    ): array
     {
         if ($addresses === []) {
             return [];
@@ -277,8 +311,8 @@ class EmailMatchingService
                 $matter ? (string) $matter->client_unique_matter_no : '',
                 $matter ? (string) ($matter->matter_title ?? '') : '',
                 (string) $client->type,
-                85,
-                'email_address',
+                $confidence,
+                $matchedBy,
                 $matter ? (int) $matter->matter_status === 1 : false
             );
         }
@@ -319,8 +353,8 @@ class EmailMatchingService
                 $matter ? (string) $matter->client_unique_matter_no : '',
                 $matter ? (string) ($matter->matter_title ?? '') : '',
                 (string) $row->record_type,
-                85,
-                'email_address',
+                $confidence,
+                $matchedBy,
                 $matter ? (int) $matter->matter_status === 1 : false
             );
         }

@@ -1454,6 +1454,60 @@ class ClientAccountsController extends Controller
             }
         }
         else if ($functionType == 'edit') {
+            // Editing rewrites the line items and recalculates the invoice total, so it is
+            // only safe while nothing has been allocated against the invoice.
+            $receiptToEdit = DB::table('account_client_receipts')
+                ->where('receipt_type', 3)
+                ->where('receipt_id', $requestData['receipt_id'])
+                ->first();
+
+            if (! $receiptToEdit || (int) $receiptToEdit->client_id !== (int) $requestData['client_id']) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice not found for this client.',
+                    'requestData' => [],
+                    'function_type' => $functionType,
+                    'invoice_no' => '',
+                ], 404);
+            }
+
+            $invoiceEditActor = Auth::guard('admin')->user();
+
+            if ($receiptToEdit->void_invoice == 1) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This invoice has been voided and can no longer be edited.',
+                    'requestData' => [],
+                    'function_type' => $functionType,
+                    'invoice_no' => $receiptToEdit->invoice_no,
+                ], 422);
+            }
+
+            if ($receiptToEdit->save_type == 'final') {
+                if (! $invoiceEditActor instanceof Staff || ! $invoiceEditActor->canEditFinalInvoice()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'You do not have permission to edit final invoices.',
+                        'requestData' => [],
+                        'function_type' => $functionType,
+                        'invoice_no' => $receiptToEdit->invoice_no,
+                    ], 403);
+                }
+
+                if (in_array((int) $receiptToEdit->invoice_status, [1, 2], true)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'This invoice already has payments applied to it and can no longer be edited.',
+                        'requestData' => [],
+                        'function_type' => $functionType,
+                        'invoice_no' => $receiptToEdit->invoice_no,
+                    ], 422);
+                }
+
+                // An issued invoice cannot be changed back to a draft by altering the request.
+                $requestData['save_type'] = 'final';
+            }
+
             DB::beginTransaction();
             try {
                 // Step 1: Check for deleted entries and remove them
@@ -1464,6 +1518,10 @@ class ClientAccountsController extends Controller
                     ->toArray();
    
                 $requestIds = array_filter($requestData['id'], fn($id) => !empty($id));
+                $invalidRequestIds = array_diff($requestIds, $existingRecords);
+                if (! empty($invalidRequestIds)) {
+                    throw new \RuntimeException('One or more invoice lines do not belong to this invoice.');
+                }
                 $deletedIds = array_diff($existingRecords, $requestIds);
    
                 if (!empty($deletedIds)) {
@@ -1502,7 +1560,7 @@ class ClientAccountsController extends Controller
                     $withdrawAmount = floatval($requestData['withdraw_amount'][$index]);
    
                     $entryData = [
-                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                        'user_id' => $invoiceEditActor instanceof Staff ? $invoiceEditActor->id : null,
                         'client_id' => $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                         'receipt_type' => $requestData['receipt_type'],
@@ -1534,6 +1592,8 @@ class ClientAccountsController extends Controller
                         // Update existing entry
                         $entryData['id'] = $requestData['id'][$index];
                         AccountAllInvoiceReceipt::where('id', $requestData['id'][$index])
+                            ->where('receipt_type', 3)
+                            ->where('receipt_id', $requestData['receipt_id'])
                             ->update($entryData);
                     } else {
                         // Add new entry with created_at and updated_at
@@ -1580,6 +1640,13 @@ class ClientAccountsController extends Controller
                     }
    
                     if ($existingClientReceipt) {
+                        // Keep payment / void state intact while rewriting line totals.
+                        $lastEntryData['invoice_status'] = $existingClientReceipt->invoice_status;
+                        $lastEntryData['void_invoice'] = $existingClientReceipt->void_invoice;
+                        $lastEntryData['validate_receipt'] = $existingClientReceipt->validate_receipt;
+                        $lastEntryData['hubdoc_sent'] = $existingClientReceipt->hubdoc_sent;
+                        $lastEntryData['hubdoc_sent_at'] = $existingClientReceipt->hubdoc_sent_at ?? null;
+
                         // Update existing record
                         DB::table('account_client_receipts')
                             ->where('receipt_id', $requestData['receipt_id'])
@@ -1596,6 +1663,21 @@ class ClientAccountsController extends Controller
                         DB::table('account_client_receipts')->insert($lastEntryData);
                     }
                 }
+
+                ActivitiesLog::create([
+                    'client_id' => $receiptToEdit->client_id,
+                    'created_by' => $invoiceEditActor instanceof Staff ? $invoiceEditActor->id : null,
+                    'subject' => 'edited invoice. Reference no- '.$invoice_no,
+                    'description' => '<p>Invoice '.$invoice_no.' was edited on '
+                        .now()->format('d/m/Y \a\t h:i A')
+                        .'. Amount changed from $'.number_format((float) $receiptToEdit->withdraw_amount, 2)
+                        .' to $'.number_format((float) $totalWithdrawAmount, 2).'.</p>',
+                    'activity_type' => 'financial',
+                    'source' => 'crm',
+                    'use_for' => 'matter',
+                    'task_status' => 0,
+                    'pin' => 0,
+                ]);
    
                 DB::commit();
    
@@ -1748,6 +1830,20 @@ class ClientAccountsController extends Controller
             ->where('receipt_type', 3)
             ->where('receipt_id', $receiptid)
             ->get();
+
+        $parentInvoice = $record_get_parent->first();
+        if ($parentInvoice && $parentInvoice->save_type === 'final') {
+            $invoiceEditActor = Auth::guard('admin')->user();
+            if (! $invoiceEditActor instanceof Staff || ! $invoiceEditActor->canEditFinalInvoice()) {
+                return response()->json([
+                    'record_get' => [],
+                    'record_get_parent' => [],
+                    'status' => false,
+                    'message' => 'You do not have permission to edit final invoices.',
+                    'last_record_id' => 0,
+                ], 403);
+            }
+        }
    
         $record_get  = AccountAllInvoiceReceipt::where('receipt_type', 3)
             ->where('receipt_id', $receiptid)

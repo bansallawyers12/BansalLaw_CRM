@@ -4,12 +4,12 @@
     $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
     $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
     $_canViewSyncedInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
-    $_isSuperOrAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewAllSyncedInboxMail();
+    $_canViewAllSyncedInbox = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewAllSyncedInboxMail();
     $_unassignedMailCount = 0;
     if ($_canViewSyncedInboxNav && $_staffTop instanceof \App\Models\Staff) {
         $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
     }
-    $_showUnassignedNavOption = $_canViewSyncedInboxNav && ($_isSuperOrAdmin || $_unassignedMailCount > 0);
+    $_showUnassignedNavOption = $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -68,7 +68,7 @@
                 </div>
             </div>
             @if($_canViewSyncedInboxNav)
-            <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_isSuperOrAdmin ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}">
+            <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_canViewAllSyncedInbox ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}">
                 <i class="fa-solid fa-user-clock"></i>
                 @if($_unassignedMailCount > 0)
                     <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>

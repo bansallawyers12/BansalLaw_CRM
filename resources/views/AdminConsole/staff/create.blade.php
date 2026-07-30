@@ -201,6 +201,23 @@
                                 </div>
                                 @endif
 
+                                @php
+                                    $_canGrantFinalInvoiceEdit = \App\Models\Staff::canGrantFinalInvoiceEditPermission(
+                                        $_emailDeleteGrantActor instanceof \App\Models\Staff ? $_emailDeleteGrantActor : null
+                                    );
+                                @endphp
+                                @if($_canGrantFinalInvoiceEdit && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_edit_final_invoice'))
+                                <div class="form-group">
+                                    <input type="hidden" name="can_edit_final_invoice" value="0">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="checkbox" name="can_edit_final_invoice" value="1" class="me-2"
+                                            @if(old('can_edit_final_invoice')) checked @endif>
+                                        <span>Can edit unpaid final invoices</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">Allows this staff member to amend a saved invoice before any payment is applied. All edits are recorded in the client timeline.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<br><b>Notes</b>  &nbsp;&nbsp;&nbsp;&nbsp;

@@ -45,6 +45,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Staff roles that may edit/grant final invoice editing
+    |--------------------------------------------------------------------------
+    |
+    | Super Admin (1) and Admin (17) may edit unpaid final invoices and grant
+    | the same capability to individual staff members.
+    |
+    */
+    'invoice_edit_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_INVOICE_EDIT_GRANT_ROLE_IDS', '1,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Roles allowed to delete CRM email logs (legacy — superseded by staff flag)
     |--------------------------------------------------------------------------
     |

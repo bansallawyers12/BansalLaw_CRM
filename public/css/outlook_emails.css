@@ -1648,6 +1648,14 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     line-height: 1.3;
 }
 
+/* crm-theme.css sets `body.sidebar-mini h1..h6 { color: var(--navy) !important }`, which
+   outranks the rule above and paints these titles navy on the dark modal headers. */
+body.sidebar-mini .outlook-ui-modal__title,
+body.sidebar-mini .outlook-ui-modal__title.modal-title {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
 .outlook-ui-modal__subtitle {
     margin: 0;
     font-size: 13px;
@@ -2692,6 +2700,19 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 }
 
 /* Assign email modal */
+#assignSyncedEmailModal {
+    z-index: 1056 !important;
+}
+
+#assignSyncedEmailModal .modal-dialog {
+    z-index: 1057 !important;
+    pointer-events: auto !important;
+}
+
+#assignSyncedEmailModal .modal-content {
+    pointer-events: auto !important;
+}
+
 body.assign-email-modal-open .ts-dropdown {
     z-index: 1060 !important;
     width: auto !important;
@@ -2721,16 +2742,21 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
     overflow: hidden;
+    max-height: calc(100vh - 3rem);
 }
 
 .assign-email-modal__header.outlook-ui-modal__header {
     border-bottom: none;
     padding-bottom: 18px;
+    flex-shrink: 0;
 }
 
 .assign-email-modal__body.outlook-ui-modal__body {
     padding-top: 0;
     padding-bottom: 12px;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1 1 auto;
 }
 
 .assign-email-preview {
@@ -3140,6 +3166,7 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 
 .assign-email-modal__footer.outlook-ui-modal__footer {
     padding-top: 8px;
+    flex-shrink: 0;
 }
 
 /* ========== Unassigned mail page ========== */
@@ -4143,6 +4170,54 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     text-decoration: none !important;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(20, 83, 45, 0.1);
+}
+
+.email-client-badge--auto {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+}
+
+.email-client-badge--auto i {
+    color: #059669;
+}
+
+.email-client-badge--manual-assigned {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+}
+
+.email-client-badge--manual-assigned i {
+    color: #4f46e5;
+}
+
+.email-client-badge--manual-upload {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+}
+
+.email-client-badge--manual-upload i {
+    color: #ea580c;
+}
+
+.email-client-badge--clickable.email-client-badge--auto:hover {
+    background: #d1fae5 !important;
+    border-color: #6ee7b7 !important;
+    color: #065f46 !important;
+}
+
+.email-client-badge--clickable.email-client-badge--manual-assigned:hover {
+    background: #e0e7ff !important;
+    border-color: #a5b4fc !important;
+    color: #312e81 !important;
+}
+
+.email-client-badge--clickable.email-client-badge--manual-upload:hover {
+    background: #ffedd5 !important;
+    border-color: #fdba74 !important;
+    color: #7c2d12 !important;
 }
 
 .email-list-calendar--event i {
@@ -5363,5 +5438,118 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 
     .email-ui-mode-btn {
         padding: 8px 10px;
+    }
+}
+
+.email-assignment-review-badge {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #efb957;
+    border-radius: 50%;
+    background: #fff4d8;
+    color: #b76e00;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.email-assignment-review-banner {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 16px 12px;
+    padding: 10px 12px;
+    border: 1px solid #efb957;
+    border-radius: 8px;
+    background: #fff7e2;
+    color: #704300;
+}
+
+.email-assignment-review-banner[hidden] {
+    display: none;
+}
+
+.email-assignment-review-banner > i {
+    margin-top: 2px;
+}
+
+.email-assignment-review-banner strong,
+.email-assignment-review-banner span {
+    display: block;
+}
+
+.email-assignment-review-banner span {
+    margin-top: 2px;
+    font-size: 13px;
+}
+
+.unlink-email-destination {
+    margin: 18px 0;
+}
+
+.unlink-email-destination[hidden] {
+    display: none;
+}
+
+.unlink-email-destination__label {
+    margin-bottom: 8px;
+    color: #24364b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.unlink-email-destination__options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.unlink-email-destination__option {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 13px;
+    border: 1px solid #d8e0ea;
+    border-radius: 9px;
+    background: #fff;
+    color: #2d4057;
+    text-align: left;
+    cursor: pointer;
+}
+
+.unlink-email-destination__option:hover {
+    border-color: #7e9bc0;
+    background: #f7faff;
+}
+
+.unlink-email-destination__option.active {
+    border-color: #2563a9;
+    box-shadow: 0 0 0 2px rgba(37, 99, 169, 0.12);
+    background: #eef6ff;
+}
+
+.unlink-email-destination__option > i {
+    margin-top: 3px;
+    color: #2563a9;
+    font-size: 18px;
+}
+
+.unlink-email-destination__option span,
+.unlink-email-destination__option strong,
+.unlink-email-destination__option small {
+    display: block;
+}
+
+.unlink-email-destination__option small {
+    margin-top: 3px;
+    color: #66768a;
+    line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+    .unlink-email-destination__options {
+        grid-template-columns: 1fr;
     }
 }

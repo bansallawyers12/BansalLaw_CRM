@@ -8,7 +8,9 @@ use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
 use App\Services\Email\EmailCalendarMergeService;
+use App\Support\StaffClientVisibility;
 use App\Traits\LogsClientActivity;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -21,24 +23,33 @@ class UnassignedEmailAssignmentService
     /**
      * @return array{success: bool, message?: string, email_log_id?: int}
      */
-    public function assignToClient(int $emailLogId, int $clientId, int $clientMatterId, ?int $staffUserId = null): array
+    public function assignToClient(
+        int $emailLogId,
+        int $clientId,
+        int $clientMatterId,
+        ?int $staffUserId = null,
+        bool $allowReassign = false
+    ): array
     {
-        $emailLog = EmailLog::with('attachments')->find($emailLogId);
+        $emailLog = EmailLog::find($emailLogId);
         if (! $emailLog) {
             return ['success' => false, 'message' => 'Email not found.'];
         }
+
+        $previousClientId = (int) ($emailLog->client_id ?? 0);
+        $isReassigning = $previousClientId > 0 && $previousClientId !== $clientId;
 
         if ($emailLog->client_id) {
             if ((int) $emailLog->client_id === $clientId && (int) $emailLog->client_matter_id === $clientMatterId) {
                 return ['success' => true, 'message' => 'Email is already assigned to this client matter.', 'email_log_id' => $emailLogId];
             }
-            if ((int) $emailLog->client_id !== $clientId) {
+            if ($isReassigning && ! $allowReassign) {
                 return ['success' => false, 'message' => 'Email is already assigned to another client.'];
             }
         }
 
         $user = Auth::guard('admin')->user();
-        if ($user && ! \App\Services\StaffClientVisibility::canAccessClientOrLead($user, $clientId)) {
+        if ($user && ! StaffClientVisibility::canAccessClientOrLead($clientId, $user)) {
             return ['success' => false, 'message' => 'Unauthorized access to client.'];
         }
 
@@ -71,7 +82,7 @@ class UnassignedEmailAssignmentService
                 $this->relocateDocument((int) $emailLog->pdf_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
             }
 
-            foreach ($emailLog->attachments as $attachment) {
+            foreach ($this->attachmentsFor($emailLog) as $attachment) {
                 $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
             }
 
@@ -113,7 +124,9 @@ class UnassignedEmailAssignmentService
 
             return [
                 'success' => true,
-                'message' => 'Email assigned to client successfully.',
+                'message' => $isReassigning
+                    ? 'Email moved to the selected client successfully.'
+                    : 'Email assigned to client successfully.',
                 'email_log_id' => $emailLog->id,
             ];
         } catch (Throwable $e) {
@@ -125,6 +138,119 @@ class UnassignedEmailAssignmentService
 
             return ['success' => false, 'message' => 'Could not assign email: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Return a wrongly assigned synced email to the unassigned inbox.
+     *
+     * @return array{success: bool, message?: string, email_log_id?: int}
+     */
+    public function unlinkFromClient(int $emailLogId, ?int $staffUserId = null): array
+    {
+        $emailLog = EmailLog::find($emailLogId);
+        if (! $emailLog) {
+            return ['success' => false, 'message' => 'Email not found.'];
+        }
+
+        if (! $emailLog->synced_email_id) {
+            return ['success' => false, 'message' => 'Only synced inbox emails can be unlinked.'];
+        }
+
+        if (! $emailLog->client_id) {
+            return [
+                'success' => true,
+                'message' => 'Email is already unassigned.',
+                'email_log_id' => $emailLogId,
+            ];
+        }
+
+        $oldClientId = (int) $emailLog->client_id;
+        $oldClient = Admin::query()->find($oldClientId);
+        $sourcePrefix = $oldClient
+            ? $this->clientStoragePrefix($oldClient)
+            : $this->resolveSourcePrefix($emailLog);
+        $destPrefix = $this->unassignedStoragePrefix($emailLog);
+        $mailType = (string) ($emailLog->mail_body_type ?: 'inbox');
+        $docType = (string) ($emailLog->conversion_type ?: 'conversion_email_fetch');
+
+        try {
+            if ($emailLog->uploaded_doc_id) {
+                $this->unlinkDocument(
+                    (int) $emailLog->uploaded_doc_id,
+                    $sourcePrefix,
+                    $destPrefix,
+                    $docType,
+                    $mailType
+                );
+            }
+
+            if ($emailLog->pdf_doc_id) {
+                $this->unlinkDocument(
+                    (int) $emailLog->pdf_doc_id,
+                    $sourcePrefix,
+                    $destPrefix,
+                    $docType,
+                    $mailType
+                );
+            }
+
+            foreach ($this->attachmentsFor($emailLog) as $attachment) {
+                $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
+            }
+
+            $emailLog->client_id = null;
+            $emailLog->client_matter_id = null;
+            $emailLog->user_id = $staffUserId ?: (int) Auth::id();
+            $emailLog->sync_assignment_status = 'unassigned';
+            $emailLog->save();
+
+            if ($oldClient && $oldClient->type === 'client') {
+                try {
+                    $subjectLine = $emailLog->subject ?: 'Email';
+                    $activitySubject = "unlinked Email: {$subjectLine}";
+                    if (strlen($activitySubject) > 100) {
+                        $activitySubject = substr($activitySubject, 0, 97) . '...';
+                    }
+                    $this->logClientActivity(
+                        $oldClientId,
+                        $activitySubject,
+                        '<p>Email returned to the unassigned inbox.</p>',
+                        'email'
+                    );
+                } catch (Throwable $activityException) {
+                    Log::warning('Email was unlinked but client activity logging failed', [
+                        'email_log_id' => $emailLogId,
+                        'client_id' => $oldClientId,
+                        'error' => $activityException->getMessage(),
+                    ]);
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Email unlinked and returned to the unassigned inbox.',
+                'email_log_id' => $emailLog->id,
+            ];
+        } catch (Throwable $e) {
+            Log::error('Failed to unlink synced email from client', [
+                'email_log_id' => $emailLogId,
+                'client_id' => $oldClientId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['success' => false, 'message' => 'Could not unlink email: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * `email_logs` has an `attachments` column, so `$emailLog->attachments` returns that
+     * column (null) instead of the relation. Always read attachments via the relation query.
+     *
+     * @return Collection<int, EmailLogAttachment>
+     */
+    protected function attachmentsFor(EmailLog $emailLog): Collection
+    {
+        return $emailLog->attachments()->get();
     }
 
     protected function clientStoragePrefix(Admin $client): string
@@ -159,6 +285,17 @@ class UnassignedEmailAssignmentService
                     return $parsed;
                 }
             }
+        }
+
+        return config('imap_sync.unassigned_storage_prefix', 'sync-inbox');
+    }
+
+    protected function unassignedStoragePrefix(EmailLog $emailLog): string
+    {
+        if ($emailLog->mailbox_email) {
+            $safeMailbox = preg_replace('/[^a-zA-Z0-9\-_.@]/', '_', strtolower($emailLog->mailbox_email));
+
+            return config('imap_sync.unassigned_storage_prefix', 'sync-inbox') . '/' . $safeMailbox;
         }
 
         return config('imap_sync.unassigned_storage_prefix', 'sync-inbox');
@@ -205,6 +342,33 @@ class UnassignedEmailAssignmentService
         $document->client_id = $clientId;
         $document->client_matter_id = $clientMatterId;
         $document->user_id = $staffUserId;
+        if ($disk->exists($destPath)) {
+            $document->myfile = $disk->url($destPath);
+        }
+        $document->save();
+    }
+
+    protected function unlinkDocument(
+        int $documentId,
+        string $sourcePrefix,
+        string $destPrefix,
+        string $docType,
+        string $mailType
+    ): void {
+        $document = Document::find($documentId);
+        if (! $document || empty($document->myfile_key)) {
+            return;
+        }
+
+        $filename = (string) $document->myfile_key;
+        $sourcePath = "{$sourcePrefix}/{$docType}/{$mailType}/{$filename}";
+        $destPath = "{$destPrefix}/{$docType}/{$mailType}/{$filename}";
+
+        $this->moveS3Object($sourcePath, $destPath);
+
+        $disk = Storage::disk('s3');
+        $document->client_id = null;
+        $document->client_matter_id = null;
         if ($disk->exists($destPath)) {
             $document->myfile = $disk->url($destPath);
         }

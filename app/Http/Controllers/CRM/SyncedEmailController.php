@@ -20,6 +20,8 @@ use App\Services\EmailSync\ManualInboxSyncRunner;
 
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
 
+use App\Support\StaffClientVisibility;
+
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +72,13 @@ class SyncedEmailController extends Controller
 
         ]);
 
+        if (! $this->canAccessSyncedEmail((int) $validated['email_log_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email not found or you do not have permission to update it.',
+            ], 404);
+        }
+
 
 
         $result = $assignmentService->assignToClient(
@@ -91,6 +100,79 @@ class SyncedEmailController extends Controller
 
 
         return response()->json($result, $status);
+
+    }
+
+
+
+    public function unlinkFromClient(Request $request, UnassignedEmailAssignmentService $assignmentService)
+
+    {
+        $request->merge([
+
+            'action' => $request->input('action', 'unassigned'),
+
+        ]);
+
+        $validated = $request->validate([
+
+            'email_log_id' => 'required|integer|min:1',
+
+            'action' => 'required|in:unassigned,client',
+
+            'client_id' => 'required_if:action,client|nullable|integer|min:1',
+
+            'client_matter_id' => 'required_if:action,client|nullable|integer|min:1',
+
+        ]);
+
+
+
+        if (! $this->canUnlinkSyncedEmail((int) $validated['email_log_id'])) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Email not found or you do not have permission to unlink it.',
+
+            ], 403);
+
+        }
+
+
+
+        if ($validated['action'] === 'client') {
+
+            $result = $assignmentService->assignToClient(
+
+                (int) $validated['email_log_id'],
+
+                (int) $validated['client_id'],
+
+                (int) $validated['client_matter_id'],
+
+                Auth::id(),
+
+                true
+
+            );
+
+        } else {
+
+            $result = $assignmentService->unlinkFromClient(
+
+                (int) $validated['email_log_id'],
+
+                Auth::id()
+
+            );
+
+        }
+
+
+
+        return response()->json($result, $result['success'] ? 200 : 422);
 
     }
 
@@ -125,6 +207,26 @@ class SyncedEmailController extends Controller
 
 
         return view('crm.unassigned_emails.index');
+
+    }
+
+
+
+    public function autoAssignmentReviewIndex()
+
+    {
+
+        $staff = Auth::guard('admin')->user();
+
+        if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
+
+            abort(403, 'You do not have permission to review auto-assigned emails.');
+
+        }
+
+
+
+        return view('crm.auto_assignment_review.index');
 
     }
 
@@ -527,6 +629,80 @@ class SyncedEmailController extends Controller
 
 
         return $staff instanceof Staff && $staff->canSyncInboxEmails();
+
+    }
+
+
+
+    protected function canAccessSyncedEmail(int $emailLogId): bool
+
+    {
+
+        $staff = Auth::guard('admin')->user();
+
+        if (! $staff instanceof Staff) {
+
+            return false;
+
+        }
+
+
+
+        $query = EmailLog::query()
+
+            ->whereKey($emailLogId)
+
+            ->whereNotNull('synced_email_id');
+
+        IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+
+
+
+        return $query->exists();
+
+    }
+
+
+
+    protected function canUnlinkSyncedEmail(int $emailLogId): bool
+
+    {
+
+        $staff = Auth::guard('admin')->user();
+
+        if (! $staff instanceof Staff) {
+
+            return false;
+
+        }
+
+
+
+        $emailLog = EmailLog::query()
+
+            ->whereKey($emailLogId)
+
+            ->whereNotNull('client_id')
+
+            ->first(['id', 'client_id']);
+
+        if (! $emailLog) {
+
+            return false;
+
+        }
+
+
+
+        if (StaffClientVisibility::canAccessClientOrLead((int) $emailLog->client_id, $staff)) {
+
+            return true;
+
+        }
+
+
+
+        return $staff->canSyncInboxEmails() && $this->canAccessSyncedEmail($emailLogId);
 
     }
 

@@ -48,7 +48,7 @@ function crmOutlookEmailUpload403Message(responseText, status) {
 
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
-    let currentFolder = 'inbox'; // inbox, sent, outbox, unassigned
+    let currentFolder = 'inbox'; // inbox, sent, outbox, unassigned, assigned, review
     let emails = [];
     let selectedEmailId = null;
 
@@ -93,11 +93,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSendEl = document.getElementById('btnSend');
     const btnResend = document.getElementById('btnResend');
     const btnAssignToClient = document.getElementById('btnAssignToClient');
+    const btnUnlinkFromClient = document.getElementById('btnUnlinkFromClient');
+    const assignmentReviewBanner = document.getElementById('assignmentReviewBanner');
     const btnSyncInbox = document.getElementById('btnSyncInbox');
     const syncRangeFilter = document.getElementById('syncRangeFilter');
     const syncMailboxFilter = document.getElementById('syncMailboxFilter');
     const listMailboxFilter = document.getElementById('listMailboxFilter');
     const assignEmailModal = document.getElementById('assignSyncedEmailModal');
+    const assignEmailModalTitle = document.getElementById('assignSyncedEmailModalLabel');
+    const assignEmailModalSubtitle = document.getElementById('assignSyncedEmailModalSubtitle');
+    const assignEmailModalIcon = document.getElementById('assignSyncedEmailModalIcon');
+    const unlinkEmailDestination = document.getElementById('unlinkEmailDestination');
+    const unlinkDestinationButtons = document.querySelectorAll('[data-unlink-destination]');
+    const assignEmailSteps = document.getElementById('assignEmailSteps');
+    const assignEmailFields = document.getElementById('assignEmailFields');
     const assignClientSelect = document.getElementById('assignClientId');
     const assignMatterHiddenInput = document.getElementById('assignClientMatterId');
     const assignMatterList = document.getElementById('assignMatterList');
@@ -116,10 +125,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignStepMatter = document.getElementById('assignStepMatter');
     const assignStepConnector = document.getElementById('assignStepConnector');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
+    const unlinkEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-unlink-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
     const unassignedCountUrl = outlookContainer ? (outlookContainer.getAttribute('data-unassigned-count-url') || '') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
+    const canUnlinkSyncedEmail = !!(outlookContainer
+        && outlookContainer.getAttribute('data-can-unlink-synced-email') === '1');
     const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
     const canDeleteEmail = !!(outlookContainer && outlookContainer.dataset.canDeleteEmail === '1');
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
@@ -141,7 +153,8 @@ document.addEventListener('DOMContentLoaded', function() {
         sent: 'Sent',
         outbox: 'Outbox',
         unassigned: 'Unassigned',
-        assigned: 'Assigned'
+        assigned: 'Assigned',
+        review: 'Needs Review'
     };
     let listTotal = 0;
     let listFrom = 0;
@@ -153,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     let syncedDateSummary = null;
     let selectedEmail = null;
+    let assignmentModalMode = 'assign';
+    let unlinkDestinationMode = 'unassigned';
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -188,6 +203,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currentFolder = defaultFolder;
+    if (unassignedOnly && sortOrder && defaultFolder === 'review') {
+        sortOrder.value = 'review';
+    }
+    updateUnassignedFolderChrome();
     setEmailUiMode('outlook', false);
     loadEmails();
     updateOutboxFiltersVisibility();
@@ -427,6 +446,28 @@ document.addEventListener('DOMContentLoaded', function() {
         */
     }
 
+    function resolveEmailOrigin(email) {
+        if (!email) {
+            return null;
+        }
+
+        const status = String(email.sync_assignment_status || '').trim();
+        if (status === 'auto_assigned') {
+            return 'auto_assigned';
+        }
+        if (status === 'manual_assigned') {
+            return 'manual_assigned';
+        }
+
+        // Uploaded .msg/.eml filed onto a client (not Zoho-synced).
+        const mailType = parseInt(email.mail_type, 10);
+        if (email.client_id && !email.synced_email_id && mailType === 1) {
+            return 'manual_upload';
+        }
+
+        return null;
+    }
+
     function renderSyncedClientBadge(email) {
         if (!email) {
             return '';
@@ -434,32 +475,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const clientLabel = (email.client_name || '').trim()
             || (email.client_ref || '').trim()
-            || (email.client_id ? ('Client #' + email.client_id) : '');
+            || '';
+        const origin = resolveEmailOrigin(email);
+        const clientUrl = email.client_url || '';
 
-        if (clientLabel || email.sync_assignment_status === 'auto_assigned' || email.sync_assignment_status === 'manual_assigned') {
-            const labelStr = clientLabel || 'Assigned';
-            const iconClass = 'fa-user-check';
-            const badgeClass = unassignedOnly
-                ? 'email-client-badge email-client-badge--list email-client-badge--clickable'
-                : 'email-client-badge email-client-badge--clickable';
-            const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
-            const clientUrl = email.client_url || (email.client_id ? (`${baseUrl}/clients/detail/${encodeURIComponent(email.client_id)}`) : '');
-
-            if (clientUrl) {
-                return '<a href="' + escapeHtml(clientUrl) + '" class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned: click to view detail') + '" onclick="event.stopPropagation();" target="_blank">'
-                    + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
-                    + escapeHtml(labelStr)
-                    + '</a>';
+        if (!origin && !clientLabel && !email.client_id) {
+            if (unassignedOnly) {
+                return '<span class="email-unassigned-badge" title="Unassigned mail">'
+                    + '<i class="fa-solid fa-user-clock" aria-hidden="true"></i> Unassigned'
+                    + '</span>';
             }
-
-            return '<span class="email-client-badge email-client-badge--list" title="' + escapeHtml(assignLabel + ' assigned') + '">'
-                + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
-                + escapeHtml(labelStr)
-                + '</span>';
+            return '';
         }
 
-        return '<span class="email-unassigned-badge" title="Unassigned mail">'
-            + '<i class="fa-solid fa-user-clock" aria-hidden="true"></i> Unassigned'
+        let labelStr = clientLabel;
+        let iconClass = 'fa-user-check';
+        let title = clientLabel ? ('Open client: ' + clientLabel) : 'Open client detail';
+        let modifier = '';
+
+        if (origin === 'auto_assigned') {
+            iconClass = 'fa-wand-magic-sparkles';
+            modifier = ' email-client-badge--auto';
+            title = 'Auto assigned from synced inbox'
+                + (clientLabel ? (' · ' + clientLabel) : '')
+                + (clientUrl ? ' — click to open client detail' : '');
+            labelStr = unassignedOnly && clientLabel ? clientLabel : 'Auto assigned';
+        } else if (origin === 'manual_assigned') {
+            iconClass = 'fa-user-check';
+            modifier = ' email-client-badge--manual-assigned';
+            title = 'Manually assigned to client'
+                + (clientLabel ? (' · ' + clientLabel) : '')
+                + (clientUrl ? ' — click to open client detail' : '');
+            labelStr = unassignedOnly && clientLabel ? clientLabel : 'Manually assigned';
+        } else if (origin === 'manual_upload') {
+            iconClass = 'fa-cloud-arrow-up';
+            modifier = ' email-client-badge--manual-upload';
+            title = 'Uploaded manually (.msg / .eml)'
+                + (clientLabel ? (' · ' + clientLabel) : '')
+                + (clientUrl ? ' — click to open client detail' : '');
+            labelStr = unassignedOnly && clientLabel ? clientLabel : 'Manual upload';
+        } else if (!labelStr && email.client_id) {
+            labelStr = 'Client #' + email.client_id;
+        }
+
+        const badgeClass = (unassignedOnly
+            ? 'email-client-badge email-client-badge--list email-client-badge--clickable'
+            : 'email-client-badge email-client-badge--clickable')
+            + modifier;
+
+        if (clientUrl) {
+            return '<a href="' + escapeHtml(clientUrl) + '" class="' + badgeClass + '" title="'
+                + escapeHtml(title) + '" onclick="event.stopPropagation();">'
+                + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
+                + escapeHtml(labelStr)
+                + '</a>';
+        }
+
+        return '<span class="' + badgeClass.replace(' email-client-badge--clickable', '') + '" title="'
+            + escapeHtml(title) + '">'
+            + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
+            + escapeHtml(labelStr)
+            + '</span>';
+    }
+
+    function renderAssignmentReviewBadge(email) {
+        const review = email && email.assignment_review;
+        if (!review || !review.reason) {
+            return '';
+        }
+
+        return '<span class="email-assignment-review-badge" title="' + escapeHtml(review.reason) + '"'
+            + ' role="img" aria-label="Needs review: ' + escapeHtml(review.reason) + '">'
+            + '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
             + '</span>';
     }
 
@@ -827,10 +914,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function isSyncedInboxFolder(folder) {
         if (unassignedOnly) {
-            return folder === 'inbox' || folder === 'unassigned' || folder === 'assigned';
+            return folder === 'inbox' || folder === 'unassigned' || folder === 'assigned' || folder === 'review';
         }
 
-        return folder === 'unassigned' || folder === 'assigned';
+        return folder === 'unassigned' || folder === 'assigned' || folder === 'review';
     }
 
     function renderSyncedDateSummaryBar(summary) {
@@ -1024,9 +1111,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function updateUnassignedFolderChrome() {
+        if (!unassignedOnly) {
+            return;
+        }
+
+        const isReview = currentFolder === 'review';
+        const titleEl = document.getElementById('unassignedFolderTitle');
+        if (titleEl) {
+            const icon = titleEl.querySelector('i');
+            const label = titleEl.querySelector('span');
+            if (icon) {
+                icon.className = 'fa-solid ' + (isReview ? 'fa-triangle-exclamation' : 'fa-inbox');
+            }
+            if (label) {
+                label.textContent = isReview ? 'Needs Review' : 'Inbox';
+            }
+        }
+
+        const panelTitle = document.getElementById('unassignedPanelTitle');
+        if (panelTitle) {
+            panelTitle.textContent = isReview ? 'Auto-assignment review' : 'Synced inbox';
+        }
+
+        const panelIcon = document.querySelector('.sync-inbox-panel--tools-only .sync-inbox-panel__intro-icon i');
+        if (panelIcon) {
+            panelIcon.className = 'fa-solid ' + (isReview ? 'fa-triangle-exclamation' : 'fa-inbox');
+        }
+    }
+
+    function applyUnassignedListModeFromSort() {
+        if (!unassignedOnly || !sortOrder) {
+            return;
+        }
+
+        const value = sortOrder.value;
+        if (value === 'review') {
+            currentFolder = 'review';
+        } else if (defaultFolder === 'review') {
+            // Dedicated review page: Newest/Oldest only change sort direction.
+            currentFolder = 'review';
+        } else if (currentFolder === 'review') {
+            currentFolder = 'inbox';
+        }
+
+        updateUnassignedFolderChrome();
+    }
+
     if (sortOrder) {
         sortOrder.addEventListener('change', () => {
+            applyUnassignedListModeFromSort();
             currentPage = 1;
+            resetReadingPane();
             loadEmails();
         });
     }
@@ -2835,7 +2971,10 @@ document.addEventListener('DOMContentLoaded', function() {
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
-            url.searchParams.append('sort_order', sortOrder ? sortOrder.value : 'desc');
+            const sortValue = sortOrder && sortOrder.value === 'review'
+                ? 'desc'
+                : (sortOrder ? sortOrder.value : 'desc');
+            url.searchParams.append('sort_order', sortValue);
             if (isSyncedInboxFolder(folderToFetch) && listMailboxFilter && listMailboxFilter.value) {
                 url.searchParams.append('mailbox_filter', listMailboxFilter.value);
             }
@@ -2886,7 +3025,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const lastPage = data.last_page || 1;
             const from = data.from || 0;
             const to = data.to || 0;
-            
             if (total > 0) {
                 updatePaginationDisplay(total, lastPage, from, to);
             } else {
@@ -2904,6 +3042,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             renderEmailList();
+            refreshSelectedEmailAfterReload();
         } catch (error) {
             console.error('Failed to fetch emails', error);
             emails = [];
@@ -2913,6 +3052,33 @@ document.addEventListener('DOMContentLoaded', function() {
             pageInfo.textContent = 'No emails found';
             updatePaginationDisplay(0, 1, 0, 0);
         }
+    }
+
+    function refreshSelectedEmailAfterReload() {
+        if (!selectedEmailId) {
+            return;
+        }
+
+        const refreshed = emails.find(function (email) {
+            return email.id === selectedEmailId;
+        });
+
+        if (!refreshed) {
+            selectedEmailId = null;
+            selectedEmail = null;
+            if (readingPane) {
+                readingPane.hidden = true;
+            }
+            if (emptyState) {
+                emptyState.hidden = false;
+            }
+            return;
+        }
+
+        const activeItem = emailListContainer
+            ? emailListContainer.querySelector('.email-item.active')
+            : null;
+        showEmail(refreshed, activeItem);
     }
 
     function resolveAttachmentDisplayName(att) {
@@ -3305,6 +3471,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 emptyMsg = 'No assigned emails yet';
                 emptyHint = 'Emails you assign from the Unassigned tab will appear here.';
                 emptyIcon = 'fa-user-check';
+            } else if (currentFolder === 'review') {
+                emptyMsg = 'No auto-assigned emails need review';
+                emptyHint = 'The current auto-assignments have a unique supporting client email or reference.';
+                emptyIcon = 'fa-circle-check';
             }
 
             emailListContainer.innerHTML = renderListEmptyState(emptyMsg, emptyHint, emptyIcon);
@@ -3365,13 +3535,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const clientBadge = renderSyncedClientBadge(email);
             const syncSourceBadge = renderSyncSourceBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
-            const autoAssignedBadge = email.sync_assignment_status === 'auto_assigned'
-                ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
-                : '';
 
             if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
                 const senderEmail = escapeHtml(sender);
-                const tagHtml = [clientBadge, attachmentIcon, calendarIndicator].filter(Boolean).join('');
+                const reviewBadge = renderAssignmentReviewBadge(email);
+                const tagHtml = [reviewBadge, clientBadge, attachmentIcon, calendarIndicator].filter(Boolean).join('');
                 const tagsBlock = tagHtml
                     ? '<div class="email-item-synced-list__tags">' + tagHtml + '</div>'
                     : '';
@@ -3395,7 +3563,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const badgeRow = attachmentIcon + calendarIndicator + autoAssignedBadge + statusBadge + syncSourceBadge + clientBadge;
+                const badgeRow = attachmentIcon + calendarIndicator + statusBadge + syncSourceBadge + clientBadge;
                 const previewHtml = preview
                     ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
                     : '';
@@ -3421,7 +3589,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${autoAssignedBadge}${statusBadge}${syncSourceBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -3522,9 +3690,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (btnAssignToClient) {
-            const needsAssign = currentFolder === 'unassigned'
-                && (email.sync_assignment_status === 'unassigned' || (!email.client_id && email.mailbox_email));
+            // Unassigned Mail page uses folder=inbox; show Assign by email state, not folder name.
+            const needsAssign = !email.client_id
+                && (
+                    email.sync_assignment_status === 'unassigned'
+                    || !!email.synced_email_id
+                    || !!email.mailbox_email
+                );
             btnAssignToClient.hidden = !canSyncInbox || !needsAssign;
+        }
+
+        if (btnUnlinkFromClient) {
+            const canUnlink = !!email.client_id
+                && email.can_unlink_synced_email !== false
+                && (
+                    email.sync_assignment_status === 'auto_assigned'
+                    || email.sync_assignment_status === 'manual_assigned'
+                    || !email.sync_assignment_status
+                );
+            btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canUnlink;
+        }
+
+        if (assignmentReviewBanner) {
+            const review = email.assignment_review;
+            if (review && review.reason) {
+                assignmentReviewBanner.hidden = false;
+                assignmentReviewBanner.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
+                    + '<div><strong>Why this email needs review</strong><span>'
+                    + escapeHtml(review.reason)
+                    + '</span></div>';
+            } else {
+                assignmentReviewBanner.hidden = true;
+                assignmentReviewBanner.innerHTML = '';
+            }
         }
 
         const readDateEl = document.getElementById('readDate');
@@ -3986,6 +4184,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!assignEmailConfirmBtn) {
             return;
         }
+        if (assignmentModalMode === 'unlink' && unlinkDestinationMode === 'unassigned') {
+            assignEmailConfirmBtn.disabled = !selectedEmailId;
+            return;
+        }
         const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
         const clientId = assignClientSelect
             ? extractClientIdFromTomSelectValue(assignClientSelect.value, clientTs)
@@ -4048,6 +4250,102 @@ document.addEventListener('DOMContentLoaded', function() {
             metaParts.push(dateStr);
         }
         assignEmailPreviewMeta.textContent = metaParts.join(' · ');
+    }
+
+    // Only synced mail has an Unassigned Mail queue to fall back to; uploaded mail
+    // would disappear from every list if it were left without a client.
+    function selectedEmailCanReturnToUnassigned() {
+        return !!(selectedEmail && selectedEmail.synced_email_id);
+    }
+
+    function configureAssignmentModal(mode, destination) {
+        assignmentModalMode = mode === 'unlink' ? 'unlink' : 'assign';
+        const canReturnToUnassigned = selectedEmailCanReturnToUnassigned();
+        unlinkDestinationMode = (destination === 'client' || !canReturnToUnassigned) ? 'client' : 'unassigned';
+        const isUnlink = assignmentModalMode === 'unlink';
+        const selectingClient = !isUnlink || unlinkDestinationMode === 'client';
+
+        if (assignEmailModalTitle) {
+            assignEmailModalTitle.textContent = isUnlink ? 'Reassign Email' : 'Assign Email to Client';
+        }
+        if (assignEmailModalSubtitle) {
+            if (!isUnlink) {
+                assignEmailModalSubtitle.textContent = 'Link this synced email to a client and matter.';
+            } else if (canReturnToUnassigned) {
+                assignEmailModalSubtitle.textContent = 'Move this email to Unassigned Mail or reassign it to the correct client.';
+            } else {
+                assignEmailModalSubtitle.textContent = 'This email was uploaded rather than synced, so it can only be reassigned to another client.';
+            }
+        }
+        if (assignEmailModalIcon) {
+            assignEmailModalIcon.innerHTML = '<i class="fa-solid '
+                + (isUnlink ? 'fa-arrow-right-arrow-left' : 'fa-user-plus')
+                + '"></i>';
+        }
+        if (unlinkEmailDestination) {
+            unlinkEmailDestination.hidden = !isUnlink;
+        }
+        if (assignEmailSteps) {
+            assignEmailSteps.hidden = !selectingClient;
+        }
+        if (assignEmailFields) {
+            assignEmailFields.hidden = !selectingClient;
+        }
+
+        unlinkDestinationButtons.forEach(function (button) {
+            const isUnassignedOption = button.dataset.unlinkDestination !== 'client';
+            const unavailable = isUnassignedOption && !canReturnToUnassigned;
+            button.classList.toggle('active', button.dataset.unlinkDestination === unlinkDestinationMode);
+            button.classList.toggle('disabled', unavailable);
+            button.disabled = unavailable;
+            button.title = unavailable ? 'Uploaded emails cannot be moved to Unassigned Mail.' : '';
+        });
+
+        if (assignEmailConfirmBtn) {
+            if (isUnlink && unlinkDestinationMode === 'unassigned') {
+                assignEmailConfirmBtn.innerHTML = '<i class="fa-solid fa-link-slash" aria-hidden="true"></i> Move to Unassigned';
+            } else if (isUnlink) {
+                assignEmailConfirmBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Reassign Email';
+            } else {
+                assignEmailConfirmBtn.innerHTML = '<i class="fa-solid fa-link" aria-hidden="true"></i> Assign Email';
+            }
+        }
+
+        updateAssignConfirmButton();
+        updateAssignStepProgress();
+    }
+
+    function openAssignmentModal(mode) {
+        if (!selectedEmailId || !assignEmailModal) {
+            crmToast('Select an email first.', 'warning');
+            return;
+        }
+
+        // Move modal to body root to avoid parent container CSS stacking context trapping
+        // (which causes .modal-backdrop z-index 1050 to sit above the modal).
+        if (assignEmailModal.parentNode && assignEmailModal.parentNode !== document.body) {
+            document.body.appendChild(assignEmailModal);
+        }
+
+        if (assignEmailLogIdInput) {
+            assignEmailLogIdInput.value = selectedEmailId;
+        }
+        if (assignEmailStatus) {
+            assignEmailStatus.hidden = true;
+            assignEmailStatus.textContent = '';
+        }
+
+        configureAssignmentModal(mode, 'unassigned');
+        populateAssignEmailPreview();
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
+        } else {
+            document.body.classList.add('assign-email-modal-open');
+            assignEmailModal.classList.add('show');
+            assignEmailModal.style.display = 'block';
+            initAssignEmailModalSelects();
+        }
     }
 
     function setAssignMatterHint(message, state) {
@@ -4265,6 +4563,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     dropdownParent: dropdownParent
                 });
             }
+
+            // Auto-load matters if a client is preselected in the dropdown or page context
+            const initVal = assignClientSelect ? assignClientSelect.value : '';
+            const initClientId = extractClientIdFromTomSelectValue(initVal, clientTs) || (clientId ? parseInt(clientId, 10) : null);
+            const isUnlinkMode = assignmentModalMode === 'unlink';
+            const isSelectingClientMode = !isUnlinkMode || unlinkDestinationMode === 'client';
+            if (initClientId && isSelectingClientMode) {
+                loadAssignMattersForClient(initClientId, extractMatterRefFromTomSelectValue(initVal));
+            }
         }
 
         updateAssignConfirmButton();
@@ -4357,50 +4664,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (btnAssignToClient && assignEmailModal) {
-        btnAssignToClient.addEventListener('click', function () {
-            if (!selectedEmailId) {
-                crmToast('Select an email to assign.', 'warning');
-                return;
-            }
-            if (assignEmailLogIdInput) {
-                assignEmailLogIdInput.value = selectedEmailId;
-            }
-            if (assignEmailStatus) {
-                assignEmailStatus.hidden = true;
-                assignEmailStatus.textContent = '';
-            }
-            populateAssignEmailPreview();
-            updateAssignConfirmButton();
-            updateAssignStepProgress();
-            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
-            } else {
-                document.body.classList.add('assign-email-modal-open');
-                assignEmailModal.classList.add('show');
-                assignEmailModal.style.display = 'block';
-                initAssignEmailModalSelects();
-                if (clientId && assignClientSelect) {
-                    assignClientSelect.value = clientId;
-                    loadAssignMattersForClient(clientId);
-                }
-            }
-        });
+    if (assignEmailModal) {
+        if (btnAssignToClient) {
+            btnAssignToClient.addEventListener('click', function () {
+                openAssignmentModal('assign');
+            });
+        }
 
         assignEmailModal.addEventListener('shown.bs.modal', function () {
             document.body.classList.add('assign-email-modal-open');
             initAssignEmailModalSelects();
-            if (clientId && assignClientSelect) {
-                const ts = assignClientSelect.tomselect;
-                if (ts) {
-                    ts.setValue(clientId, true);
-                } else {
-                    assignClientSelect.value = clientId;
+
+            const isUnlink = assignmentModalMode === 'unlink';
+            const isSelectingClient = !isUnlink || unlinkDestinationMode === 'client';
+
+            if (isSelectingClient && assignClientSelect) {
+                const clientTs = assignClientSelect.tomselect;
+                let activeVal = assignClientSelect ? assignClientSelect.value : '';
+
+                if (!activeVal && clientId) {
+                    activeVal = String(clientId);
+                    if (clientTs) {
+                        clientTs.setValue(activeVal, true);
+                    } else {
+                        assignClientSelect.value = activeVal;
+                    }
                 }
-                loadAssignMattersForClient(clientId);
-            } else if (assignClientSelect && assignClientSelect.tomselect) {
-                assignClientSelect.tomselect.focus();
+
+                const activeClientId = extractClientIdFromTomSelectValue(activeVal, clientTs);
+                if (activeClientId) {
+                    const activeMatterRef = extractMatterRefFromTomSelectValue(activeVal);
+                    loadAssignMattersForClient(activeClientId, activeMatterRef);
+                } else if (clientTs) {
+                    clientTs.focus();
+                }
             }
+
+            configureAssignmentModal(assignmentModalMode, unlinkDestinationMode);
             updateAssignStepProgress();
         });
 
@@ -4414,8 +4714,43 @@ document.addEventListener('DOMContentLoaded', function() {
             if (assignEmailConfirmBtn) {
                 assignEmailConfirmBtn.disabled = true;
             }
+            configureAssignmentModal('assign', 'unassigned');
         });
     }
+
+    unlinkDestinationButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            const destination = button.dataset.unlinkDestination === 'client' ? 'client' : 'unassigned';
+            configureAssignmentModal('unlink', destination);
+
+            if (destination === 'client' && assignClientSelect) {
+                const clientTs = assignClientSelect.tomselect;
+                let activeVal = assignClientSelect ? assignClientSelect.value : '';
+                if (!activeVal && clientId) {
+                    activeVal = String(clientId);
+                    if (clientTs) {
+                        clientTs.setValue(activeVal, true);
+                    } else {
+                        assignClientSelect.value = activeVal;
+                    }
+                }
+                const activeClientId = extractClientIdFromTomSelectValue(activeVal, clientTs);
+                if (activeClientId) {
+                    const activeMatterRef = extractMatterRefFromTomSelectValue(activeVal);
+                    loadAssignMattersForClient(activeClientId, activeMatterRef);
+                } else {
+                    clearAssignMatterSelection();
+                    if (clientTs) {
+                        clientTs.clear(true);
+                        clientTs.focus();
+                    } else {
+                        assignClientSelect.value = '';
+                        assignClientSelect.focus();
+                    }
+                }
+            }
+        });
+    });
 
     if (assignEmailConfirmBtn) {
         assignEmailConfirmBtn.addEventListener('click', async function () {
@@ -4424,15 +4759,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedClientRaw = assignClientSelect ? assignClientSelect.value : '';
             const selectedClientId = extractClientIdFromTomSelectValue(selectedClientRaw, clientTs);
             const selectedMatter = assignMatterHiddenInput ? assignMatterHiddenInput.value : '';
+            const isUnlinkFlow = assignmentModalMode === 'unlink';
+            const moveToClient = isUnlinkFlow && unlinkDestinationMode === 'client';
+            const needsClientSelection = !isUnlinkFlow || moveToClient;
 
-            if (!emailLogId || !selectedClientId || !selectedMatter) {
+            if (!emailLogId) {
+                crmToast('Select an email first.', 'warning');
+                return;
+            }
+            if (needsClientSelection && (!selectedClientId || !selectedMatter)) {
                 crmToast('Please select both client and matter.', 'warning');
                 return;
             }
 
             assignEmailConfirmBtn.disabled = true;
             try {
-                const response = await fetch(assignEmailUrl, {
+                const endpoint = isUnlinkFlow ? unlinkEmailUrl : assignEmailUrl;
+                const payload = {
+                    email_log_id: parseInt(emailLogId, 10)
+                };
+                if (isUnlinkFlow) {
+                    payload.action = moveToClient ? 'client' : 'unassigned';
+                }
+                if (needsClientSelection) {
+                    payload.client_id = selectedClientId;
+                    payload.client_matter_id = parseInt(selectedMatter, 10);
+                }
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -4440,13 +4794,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-CSRF-TOKEN': getCsrfToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({
-                        email_log_id: parseInt(emailLogId, 10),
-                        client_id: selectedClientId,
-                        client_matter_id: parseInt(selectedMatter, 10)
-                    })
+                    body: JSON.stringify(payload)
                 });
-                const data = await response.json();
+                const data = await response.json().catch(function () {
+                    return {};
+                });
                 if (response.ok && data.success) {
                     if (typeof bootstrap !== 'undefined' && bootstrap.Modal && assignEmailModal) {
                         bootstrap.Modal.getOrCreateInstance(assignEmailModal).hide();
@@ -4454,20 +4806,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (btnAssignToClient) {
                         btnAssignToClient.hidden = true;
                     }
-                    crmToast(data.message || 'Email assigned to client successfully.', 'success', 'Assigned');
-                    if (! unassignedOnly) {
+                    if (btnUnlinkFromClient) {
+                        btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail;
+                    }
+                    const successTitle = isUnlinkFlow
+                        ? (moveToClient ? 'Reassigned' : 'Moved to Unassigned')
+                        : 'Assigned';
+                    crmToast(data.message || 'Email updated successfully.', 'success', successTitle);
+                    if (!isUnlinkFlow && !unassignedOnly) {
                         switchToFolder('inbox');
                     }
                     loadEmails();
                     refreshUnassignedNavCount();
                     return;
                 }
-                crmToast(data.message || 'Could not assign email.', 'error');
+                crmToast(data.message || 'Could not update email.', 'error');
             } catch (error) {
-                crmToast('Could not assign email: ' + (error.message || 'Unknown error'), 'error');
+                crmToast('Could not update email: ' + (error.message || 'Unknown error'), 'error');
             } finally {
-                assignEmailConfirmBtn.disabled = false;
+                updateAssignConfirmButton();
             }
+        });
+    }
+
+    if (btnUnlinkFromClient) {
+        btnUnlinkFromClient.addEventListener('click', function () {
+            if (!selectedEmailId || !selectedEmail) {
+                crmToast('Select an assigned email to reassign.', 'warning');
+                return;
+            }
+            openAssignmentModal('unlink');
         });
     }
 

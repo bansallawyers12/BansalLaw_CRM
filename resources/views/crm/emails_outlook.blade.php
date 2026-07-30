@@ -62,12 +62,24 @@
         && $authStaff->canDeleteEmailWithAttachments();
     $canSyncInbox = $authStaff instanceof \App\Models\Staff
         && $authStaff->canSyncInboxEmails();
-    $canViewSyncedInbox = $authStaff instanceof \App\Models\Staff
-        && $authStaff->canViewSyncedInboxMail();
-    $canSelectSyncMailbox = $canSyncInbox
+    $canShowInboxSync = $canSyncInbox
         && $authStaff instanceof \App\Models\Staff
         && $authStaff->canViewAllSyncedInboxMail();
+    $canViewSyncedInbox = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canViewSyncedInboxMail();
     $unassignedOnly = ! empty($unassignedOnly);
+    $assignmentReviewOnly = ! empty($assignmentReviewOnly);
+    $canUnlinkSyncedEmail = $authStaff instanceof \App\Models\Staff
+        && (
+            $canSyncInbox
+            || $assignmentReviewOnly
+            || $unassignedOnly
+            || (
+                $clientData
+                && \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientData->id, $authStaff)
+            )
+        );
+    $canSelectSyncMailbox = $canShowInboxSync;
     $syncMailboxOptions = $canSelectSyncMailbox
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
         : [];
@@ -101,17 +113,23 @@
     data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'
     @if($canSyncInbox)
     data-assign-email-url="{{ url('/clients/synced-emails/assign') }}"
+    @endif
+    @if($canShowInboxSync)
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
     data-sync-status-url="{{ url('/clients/synced-emails/sync-status') }}"
+    @endif
+    @if($canUnlinkSyncedEmail)
+    data-unlink-email-url="{{ route('clients.synced-emails.unlink') }}"
     @endif
     @if($canViewSyncedInbox)
     data-unassigned-count-url="{{ route('clients.synced-emails.unassigned-count') }}"
     @endif
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
+    data-can-unlink-synced-email="{{ $canUnlinkSyncedEmail ? '1' : '0' }}"
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
-    data-default-folder="inbox"
+    data-default-folder="{{ $assignmentReviewOnly ? 'review' : 'inbox' }}"
     data-matters-url="{{ route('clients.listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
@@ -153,9 +171,9 @@
             @endif
             <div class="{{ $unassignedOnly ? 'list-toolbar__folder-row' : '' }}">
                 @if($unassignedOnly)
-                <div class="folder-inbox-title">
-                    <i class="fa-solid fa-inbox" aria-hidden="true"></i>
-                    <span>Inbox</span>
+                <div class="folder-inbox-title" id="unassignedFolderTitle">
+                    <i class="fa-solid {{ $assignmentReviewOnly ? 'fa-triangle-exclamation' : 'fa-inbox' }}" aria-hidden="true"></i>
+                    <span>{{ $assignmentReviewOnly ? 'Needs Review' : 'Inbox' }}</span>
                 </div>
                 <div class="search-box search-box--compact list-toolbar__search">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
@@ -175,7 +193,7 @@
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
 
-        @if($canSyncInbox && $unassignedOnly)
+        @if($canShowInboxSync && $unassignedOnly && ! $assignmentReviewOnly)
         <div class="sync-inbox-panel{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
             <div class="sync-inbox-panel__top">
                 <div class="sync-inbox-panel__intro">
@@ -222,9 +240,10 @@
                     @endforeach
                 </select>
                 @endif
-                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
-                    <option value="desc" selected>Newest</option>
+                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
+                    <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
                     <option value="asc">Oldest</option>
+                    <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
                 </select>
             </div>
         </div>
@@ -233,10 +252,10 @@
             <div class="sync-inbox-panel__top">
                 <div class="sync-inbox-panel__intro">
                     <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
-                        <i class="fa-solid fa-inbox"></i>
+                        <i class="fa-solid {{ $assignmentReviewOnly ? 'fa-triangle-exclamation' : 'fa-inbox' }}"></i>
                     </div>
                     <div>
-                        <div class="sync-inbox-panel__title">Synced inbox</div>
+                        <div class="sync-inbox-panel__title" id="unassignedPanelTitle">{{ $assignmentReviewOnly ? 'Auto-assignment review' : 'Synced inbox' }}</div>
                     </div>
                 </div>
             </div>
@@ -252,9 +271,10 @@
                     @endforeach
                 </select>
                 @endif
-                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
-                    <option value="desc" selected>Newest</option>
+                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
+                    <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
                     <option value="asc">Oldest</option>
+                    <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
                 </select>
             </div>
         </div>
@@ -437,12 +457,18 @@
                         <i class="fa-solid fa-user-plus"></i> Assign to Client
                     </button>
                     @endif
+                    @if($canUnlinkSyncedEmail)
+                    <button type="button" class="action-btn action-btn--warning" id="btnUnlinkFromClient" hidden title="Reassign this email to another client or move it to Unassigned Mail">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Reassign Client
+                    </button>
+                    @endif
                     @if($canDeleteEmail)
                     <button type="button" class="action-btn action-btn--danger" id="btnDeleteEmail" title="Delete email and attachments">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>
                     @endif
                 </div>
+                <div class="email-assignment-review-banner" id="assignmentReviewBanner" hidden></div>
 
                 <div class="gmail-read-subject-row">
                     <h2 class="email-full-subject" id="readSubject">Loading...</h2>
@@ -693,7 +719,7 @@
     </div>
 </div>
 
-@if($canSyncInbox && $unassignedOnly)
+@if($canShowInboxSync && $unassignedOnly)
 <div class="full-sync-confirm-overlay outlook-modal-overlay" id="fullSyncConfirmModal" aria-hidden="true">
     <div class="full-sync-confirm-modal outlook-ui-modal outlook-ui-modal--sm" role="dialog" aria-labelledby="fullSyncConfirmTitle" aria-modal="true">
         <div class="outlook-ui-modal__header outlook-ui-modal__header--warn">
@@ -723,18 +749,18 @@
 </div>
 @endif
 
-@if($canSyncInbox)
+@if($canSyncInbox || $canUnlinkSyncedEmail)
 <div class="modal fade assign-email-modal outlook-ui-modal-wrapper" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered assign-email-modal__dialog" role="document">
         <div class="modal-content assign-email-modal__content outlook-ui-modal">
             <div class="modal-header assign-email-modal__header outlook-ui-modal__header">
                 <div class="assign-email-modal__header-main outlook-ui-modal__header-main">
-                    <div class="assign-email-modal__icon outlook-ui-modal__header-icon" aria-hidden="true">
+                    <div class="assign-email-modal__icon outlook-ui-modal__header-icon" id="assignSyncedEmailModalIcon" aria-hidden="true">
                         <i class="fa-solid fa-user-plus"></i>
                     </div>
                     <div class="assign-email-modal__titles outlook-ui-modal__header-text">
                         <h5 class="modal-title outlook-ui-modal__title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
-                        <p class="assign-email-modal__subtitle outlook-ui-modal__subtitle">Link this synced email to a client and matter.</p>
+                        <p class="assign-email-modal__subtitle outlook-ui-modal__subtitle" id="assignSyncedEmailModalSubtitle">Link this synced email to a client and matter.</p>
                     </div>
                 </div>
                 <button type="button" class="assign-email-modal__close outlook-ui-modal__close" data-bs-dismiss="modal" aria-label="Close">
@@ -756,7 +782,27 @@
                     </div>
                 </div>
 
-                <div class="assign-email-steps" aria-hidden="true">
+                <div class="unlink-email-destination" id="unlinkEmailDestination" hidden>
+                    <div class="unlink-email-destination__label">Where should this email go?</div>
+                    <div class="unlink-email-destination__options" role="group" aria-label="Choose email destination">
+                        <button type="button" class="unlink-email-destination__option active" data-unlink-destination="unassigned">
+                            <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
+                            <span>
+                                <strong>Unassigned Mail</strong>
+                                <small>Remove the current client link for later review.</small>
+                            </span>
+                        </button>
+                        <button type="button" class="unlink-email-destination__option" data-unlink-destination="client">
+                            <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                            <span>
+                                <strong>Another Client</strong>
+                                <small>Reassign to the correct client and matter now.</small>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="assign-email-steps" id="assignEmailSteps" aria-hidden="true">
                     <div class="assign-email-step assign-email-step--active" id="assignStepClient">
                         <span class="assign-email-step__dot">1</span>
                         <span class="assign-email-step__label">Client</span>
@@ -768,7 +814,7 @@
                     </div>
                 </div>
 
-                <div class="assign-email-fields">
+                <div class="assign-email-fields" id="assignEmailFields">
                     <div class="assign-email-field assign-email-field--client" id="assignClientField">
                         <label class="assign-email-field__label" for="assignClientId">
                             <span class="assign-email-field__label-text">

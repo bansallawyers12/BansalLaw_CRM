@@ -19,6 +19,9 @@
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantFinalInvoiceEdit = \App\Models\Staff::canGrantFinalInvoiceEditPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $permissionArr = [];
     if ($isEdit && $fetchedData && !empty($fetchedData->permission)) {
         $permissionArr = strpos($fetchedData->permission, ',') !== false
@@ -229,6 +232,18 @@
                             @checked(old('can_close_discontinue_matter', $isEdit ? ($fetchedData->can_close_discontinue_matter ?? false) : false))>
                         <span>Can close/discontinue matters</span>
                     </label>
+                </div>
+                @endif
+
+                @if($canGrantFinalInvoiceEdit && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_edit_final_invoice'))
+                <div class="form-group">
+                    <input type="hidden" name="can_edit_final_invoice" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_edit_final_invoice" value="1"
+                            @checked(old('can_edit_final_invoice', $isEdit ? ($fetchedData->can_edit_final_invoice ?? false) : false))>
+                        <span>Can edit unpaid final invoices</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Allows this staff member to amend a saved invoice before any payment is applied. All edits are recorded in the client timeline.</small>
                 </div>
                 @endif
 

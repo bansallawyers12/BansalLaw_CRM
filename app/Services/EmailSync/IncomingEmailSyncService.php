@@ -607,13 +607,11 @@ class IncomingEmailSyncService
             }
 
             $bestMatch = $match['best'] ?? null;
-            $matchedBy = array_values(array_unique(array_merge(
-                $match['matched_by'] ?? [],
-                is_array($bestMatch) ? ($bestMatch['matched_by'] ?? []) : []
-            )));
-            $hasEmailMatch = in_array('email_address', $matchedBy, true);
+            // Auto-assign only on clear high-confidence matches. Ambiguous / sub-80
+            // email hits stay unassigned for manual review instead of guessing.
             $isAutoAssigned = ! empty($bestMatch['client_id'])
-                && (! empty($match['is_high_confidence']) || $hasEmailMatch);
+                && ! empty($match['is_high_confidence'])
+                && empty($match['is_ambiguous']);
 
             $clientId = $isAutoAssigned ? (int) $bestMatch['client_id'] : null;
             $clientMatterId = $isAutoAssigned ? (int) ($bestMatch['client_matter_id'] ?? 0) : null;
@@ -1111,9 +1109,9 @@ class IncomingEmailSyncService
     }
 
     /**
-     * Limit synced inbox lists to mail relevant to the staff member.
-     * Staff see mail when their login email appears in To/Cc, their mailbox was synced, or they sent it.
-     * Admin and Super Admin see all synced mail.
+     * Limit synced inbox lists to mail addressed to the staff member.
+     * Only Super Admin sees all synced mail; every other role, including
+     * Admin, must appear in To, Cc, or Bcc.
      */
     public static function applySyncedInboxVisibilityFilter($query, Staff $staff): void
     {
@@ -1122,30 +1120,19 @@ class IncomingEmailSyncService
         }
 
         $loginEmails = self::staffLoginEmailsForSyncFilter($staff);
-        $mailboxEmails = array_values(array_diff(
-            self::staffRecipientEmailsForSyncFilter($staff),
-            $loginEmails
-        ));
 
-        if ($loginEmails === [] && $mailboxEmails === []) {
+        if ($loginEmails === []) {
             $query->whereRaw('1 = 0');
 
             return;
         }
 
-        $query->where(function ($outer) use ($loginEmails, $mailboxEmails) {
+        $query->where(function ($outer) use ($loginEmails) {
             foreach ($loginEmails as $email) {
                 $outer->orWhere(function ($match) use ($email) {
                     self::applyRecipientEmailMatch($match, 'to_mail', $email);
                     self::applyRecipientEmailMatch($match, 'cc', $email);
-                    self::applyStaffEmailFieldMatch($match, 'from_mail', $email);
-                });
-            }
-
-            foreach ($mailboxEmails as $email) {
-                $outer->orWhere(function ($match) use ($email) {
-                    $match->whereRaw('LOWER(COALESCE(mailbox_email, \'\')) = ?', [$email]);
-                    self::applyStaffEmailFieldMatch($match, 'from_mail', $email);
+                    self::applyRecipientEmailMatch($match, 'bcc', $email);
                 });
             }
         });

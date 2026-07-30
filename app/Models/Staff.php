@@ -61,6 +61,7 @@ class Staff extends Authenticatable
         'can_delete_email_with_attachments',
         'can_sync_inbox_emails',
         'can_close_discontinue_matter',
+        'can_edit_final_invoice',
         'trust_rule42_supervisor',
     ];
 
@@ -84,6 +85,7 @@ class Staff extends Authenticatable
         'can_delete_email_with_attachments' => 'boolean',
         'can_sync_inbox_emails' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
+        'can_edit_final_invoice' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -409,20 +411,17 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Admin / Super Admin may sync and view all synced inbox mail across mailboxes.
-     * Regular staff (e.g. Solicitors like Michael, Assistants, Accountants) are strictly restricted
-     * to mail addressed To/Cc/From them or assigned mailboxes.
+     * Only Super Admin may view all synced inbox mail across mailboxes.
+     * Every other role, including Admin, is restricted to mail addressed to them.
      */
     public function canViewAllSyncedInboxMail(): bool
     {
-        $roleId = (int) ($this->role ?? 0);
-
-        // Only true Super Admin (role 1) and Admin (role 17) may view all synced inbox mail across all mailboxes.
-        return in_array($roleId, [1, 17], true);
+        return (int) ($this->role ?? 0) === 1;
     }
 
     /**
-     * Any staff with an email may open synced inbox views; lists are filtered to their To/Cc/mailbox.
+     * Any staff with an email may open synced inbox views; non-Super Admin
+     * lists are filtered to their To/Cc/Bcc recipients.
      */
     public function canViewSyncedInboxMail(): bool
     {
@@ -466,6 +465,45 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_close_discontinue_matter ?? false);
+    }
+
+    /**
+     * Role IDs that may edit final invoices and grant that capability to staff.
+     * Default: Super Admin (1) and Admin (17).
+     */
+    public static function finalInvoiceEditGrantRoleIds(): array
+    {
+        $ids = config('crm.invoice_edit_grant_role_ids', [1, 17]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 17];
+    }
+
+    /**
+     * Whether the actor may grant final-invoice editing to another staff member.
+     */
+    public static function canGrantFinalInvoiceEditPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::finalInvoiceEditGrantRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may amend an unpaid final invoice.
+     */
+    public function canEditFinalInvoice(): bool
+    {
+        if (in_array((int) ($this->role ?? 0), self::finalInvoiceEditGrantRoleIds(), true)) {
+            return true;
+        }
+
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return (bool) ($this->can_edit_final_invoice ?? false);
     }
 
 }

@@ -93,6 +93,8 @@
             matter_reference: 'Matter ref',
             client_reference: 'Client ref',
             email_address: 'Email',
+            sender_email: 'Sender email',
+            recipient_email: 'Recipient email',
         };
         return keys.map(function (key) {
             return labels[key] || key;

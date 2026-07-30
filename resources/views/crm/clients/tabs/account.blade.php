@@ -445,6 +445,10 @@
                     </thead>
                     <tbody class="productitemList_invoice">
                         <?php
+                        $invoiceEditActor = auth()->guard('admin')->user();
+                        $canEditFinalInvoices = $invoiceEditActor instanceof \App\Models\Staff
+                            && $invoiceEditActor->canEditFinalInvoice();
+
                         // Use DISTINCT ON for PostgreSQL to get latest record per receipt_id
                         if ($client_selected_matter_id !== null) {
                             $receipts_lists_invoice = DB::select("
@@ -505,8 +509,22 @@
                                                 </a>
                                                 <?php } ?>
                                                 <?php if($inc_val->save_type == 'draft'){ ?>
-                                                <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>">
+                                                <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="draft">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit Draft Invoice
+                                                </a>
+                                                <?php } ?>
+                                                <?php
+                                                // A finalised invoice can only be amended while nothing has been
+                                                // allocated against it, otherwise the recalculated balance would
+                                                // no longer match the receipts already applied.
+                                                $isEditableFinal = $inc_val->save_type == 'final'
+                                                    && $canEditFinalInvoices
+                                                    && $inc_val->void_invoice != 1
+                                                    && $inc_val->invoice_status == 0;
+                                                if($isEditableFinal) { ?>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="final">
+                                                    <i class="fa-solid fa-pen-to-square"></i> Edit Invoice
                                                 </a>
                                                 <?php } ?>
                                                 <div class="dropdown-divider"></div>
@@ -827,9 +845,32 @@ window.TRUST_WITHDRAWAL_AUTHORITY_TYPES = @json($__acctTabTrustAuthTypes);
         return dd + '/' + mm + '/' + yyyy;
     }
 
+    var invoiceLineRowTemplate = null;
+
+    function captureInvoiceLineRowTemplate() {
+        if (invoiceLineRowTemplate === null) {
+            var $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
+            if ($row.length) {
+                invoiceLineRowTemplate = $row.prop('outerHTML');
+            }
+        }
+        return invoiceLineRowTemplate;
+    }
+
     function prepareInvoiceFormForCreate(selectedMatter) {
         $('#invoice_receipt_form input[name="function_type"]').val('add');
+        $('#invoice_receipt_id').val('');
         $('#client_matter_id_invoice').val(selectedMatter);
+
+        // Editing an invoice replaces the blank line rows with the saved ones,
+        // so rebuild a single empty row before creating a new invoice.
+        var rowTemplate = captureInvoiceLineRowTemplate();
+        if (rowTemplate) {
+            $('#invoice_receipt_form .productitem_invoice').html(rowTemplate);
+        }
+        $('.total_withdraw_amount_all_rows_invoice').text('');
+        $('#invoice_receipt_form .invoice-draft-btn').show();
+        $('#invoice_receipt_form .invoice-final-btn').text('Create Invoice');
 
         var today = formatInvoiceDateToday();
         var $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
@@ -856,7 +897,12 @@ window.TRUST_WITHDRAWAL_AUTHORITY_TYPES = @json($__acctTabTrustAuthTypes);
         }
     }
 
+window.captureInvoiceLineRowTemplate = captureInvoiceLineRowTemplate;
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Snapshot the pristine invoice line row before any edit flow replaces it.
+    captureInvoiceLineRowTemplate();
+
     // Improved Create Receipt Button Click Handler
     // Automatically selects the correct form based on which button was clicked
     // SOLUTION 4: Use namespaced event with higher priority to prevent conflicts

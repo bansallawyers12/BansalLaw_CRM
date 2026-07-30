@@ -8468,11 +8468,13 @@ class ClientsController extends Controller
     public function fetchAllOutlookEmails(Request $request)
     {
         $folder = $request->input('folder', 'inbox'); // inbox, sent, outbox, deleted
+        $clientId = $request->input('client_id');
+        $clientMatterId = $request->input('client_matter_id');
         $staff = auth('admin')->user();
         $canSyncInbox = $staff instanceof \App\Models\Staff && $staff->canSyncInboxEmails();
         $canViewSyncedInbox = $staff instanceof \App\Models\Staff && $staff->canViewSyncedInboxMail();
 
-        if (empty($clientId) && empty($clientMatterId) && in_array($folder, ['inbox', 'unassigned', 'assigned'], true) && ! $canViewSyncedInbox) {
+        if (empty($clientId) && empty($clientMatterId) && in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true) && ! $canViewSyncedInbox) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -8488,8 +8490,6 @@ class ClientsController extends Controller
         }
 
         $search = $request->input('search');
-        $clientId = $request->input('client_id');
-        $clientMatterId = $request->input('client_matter_id');
         $labelId = $request->input('label_id');
         $senderFilter = $request->input('sender_filter');
         $sendStatusFilter = $request->input('send_status', '');
@@ -8498,11 +8498,16 @@ class ClientsController extends Controller
         $perPage = 15;
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
         $isGlobalSyncedMailView = empty($clientId) && empty($clientMatterId);
-        $isSyncedInboxFolder = $isGlobalSyncedMailView && in_array($folder, ['inbox', 'unassigned', 'assigned'], true);
+        $isSyncedInboxFolder = $isGlobalSyncedMailView && in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true);
         $hasCalendarLinksTable = \Illuminate\Support\Facades\Schema::hasTable('email_calendar_links');
+        $autoAssignmentReviewItems = [];
+        if ($folder === 'review' && $staff instanceof \App\Models\Staff) {
+            $autoAssignmentReviewItems = app(\App\Services\EmailSync\AutoAssignmentReviewService::class)
+                ->reviewItemsForStaff($staff);
+        }
 
-        // Base query with attachments (+ client, matter for assigned synced mail)
-        $withRelations = $isSyncedInboxFolder ? ['attachments', 'client', 'matter'] : ['attachments'];
+        // Base query with attachments (+ client/matter for assignment badges and client links)
+        $withRelations = ['attachments', 'client', 'matter'];
         if ($hasCalendarLinksTable) {
             $withRelations[] = 'calendarLinks';
         }
@@ -8542,7 +8547,8 @@ class ClientsController extends Controller
             }
         }
 
-        // Synced inbox queues: admin/super admin see all mail; staff see their mailbox / To/Cc/Bcc matches.
+        // Synced inbox queues: only Super Admin sees all mail.
+        // Every other role, including Admin, must be present in To/Cc/Bcc.
         if (empty($clientId) && $isSyncedInboxFolder) {
             $staff = auth('admin')->user();
             if ($staff instanceof \App\Models\Staff) {
@@ -8625,6 +8631,13 @@ class ClientsController extends Controller
             } else {
                 $query->where('id', '<', 0);
             }
+        } elseif ($folder === 'review') {
+            $reviewEmailIds = array_keys($autoAssignmentReviewItems);
+            if ($reviewEmailIds === []) {
+                $query->where('id', '<', 0);
+            } else {
+                $query->whereIn('id', $reviewEmailIds);
+            }
         }
 
         // Apply search filter if present
@@ -8639,7 +8652,7 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
-        if (in_array($folder, ['inbox', 'unassigned', 'assigned'], true)) {
+        if (in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true)) {
             $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
         }
         if ($folder === 'outbox' && $hasSendStatus) {
@@ -8653,7 +8666,13 @@ class ClientsController extends Controller
         $calendarMergeService = app(\App\Services\Email\EmailCalendarMergeService::class);
 
         // Prepare preview text and map authenticated document/attachment URLs
-        $emails->getCollection()->transform(function ($email) use ($calendarMergeService, $hasCalendarLinksTable) {
+        $emails->getCollection()->transform(function ($email) use (
+            $calendarMergeService,
+            $hasCalendarLinksTable,
+            $autoAssignmentReviewItems,
+            $staff,
+            $canSyncInbox
+        ) {
             $preview = strip_tags($email->message);
             $email->text_preview = mb_substr($preview, 0, 100);
 
@@ -8670,11 +8689,20 @@ class ClientsController extends Controller
             $email->client_name = '';
             $email->client_ref = '';
             $email->client_url = '';
+            $email->assignment_review = $autoAssignmentReviewItems[(int) $email->id] ?? null;
+            $email->can_unlink_synced_email = $email->client_id
+                && $staff instanceof \App\Models\Staff
+                && (
+                    $canSyncInbox
+                    || \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $email->client_id, $staff)
+                );
 
             if ($email->relationLoaded('client') && $email->client) {
                 $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
                 $email->client_ref = (string) ($email->client->client_id ?? '');
                 $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client->id)));
+            } elseif (! empty($email->client_id)) {
+                $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client_id)));
             }
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
@@ -8735,6 +8763,9 @@ class ClientsController extends Controller
         if (!empty($clientMatterId)) {
             $sendersQuery->where('client_matter_id', $clientMatterId);
         }
+        if ($folder === 'review') {
+            $sendersQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
+        }
         
         $senders = $sendersQuery->distinct()->pluck('from_mail');
 
@@ -8758,6 +8789,8 @@ class ClientsController extends Controller
                 \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($unreadCountQuery);
             } elseif ($folder === 'inbox') {
                 \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($unreadCountQuery);
+            } elseif ($folder === 'review') {
+                $unreadCountQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
             } else {
                 if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
                     $unreadCountQuery->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
@@ -8779,7 +8812,12 @@ class ClientsController extends Controller
 
         $dateSummary = null;
         if ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
-            $dateSummary = $this->syncedInboxDateSummary($folder, $staff, ! empty($mailboxFilter) ? (string) $mailboxFilter : null);
+            $dateSummary = $this->syncedInboxDateSummary(
+                $folder,
+                $staff,
+                ! empty($mailboxFilter) ? (string) $mailboxFilter : null,
+                array_keys($autoAssignmentReviewItems)
+            );
         }
 
         return response()->json([
@@ -8800,7 +8838,12 @@ class ClientsController extends Controller
     /**
      * Count synced inbox emails by date bucket (today, yesterday, this week, earlier).
      */
-    protected function syncedInboxDateSummary(string $folder, \App\Models\Staff $staff, ?string $mailboxFilter = null): array
+    protected function syncedInboxDateSummary(
+        string $folder,
+        \App\Models\Staff $staff,
+        ?string $mailboxFilter = null,
+        array $reviewEmailIds = []
+    ): array
     {
         $query = \App\Models\EmailLog::query();
         \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
@@ -8813,6 +8856,12 @@ class ClientsController extends Controller
             \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
         } elseif ($folder === 'inbox') {
             \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
+        } elseif ($folder === 'review') {
+            if ($reviewEmailIds === []) {
+                $query->where('id', '<', 0);
+            } else {
+                $query->whereIn('id', $reviewEmailIds);
+            }
         } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
                 ->whereNotNull('client_id');

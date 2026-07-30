@@ -519,8 +519,8 @@
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
                             <input type="hidden" name="save_type" class="save_type" value="">
-                            <button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-primary" style="margin:0px !important;">Draft Invoice</button>
-							<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-primary" style="margin:0px !important;">Create Invoice</button>
+                            <button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-primary invoice-draft-btn" style="margin:0px !important;">Draft Invoice</button>
+							<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-primary invoice-final-btn" style="margin:0px !important;">Create Invoice</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>
