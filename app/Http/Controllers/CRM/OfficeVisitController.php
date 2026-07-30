@@ -456,7 +456,11 @@ class OfficeVisitController extends Controller
 	}
 	public function update_visit_purpose(Request $request){
 		$obj = CheckinLog::find($request->id);
-		if ($obj && $obj->client_id) {
+		if (!$obj) {
+			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
+			return;
+		}
+		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
 		}
 		$obj->visit_purpose = $request->visit_purpose;
@@ -472,8 +476,12 @@ class OfficeVisitController extends Controller
 	}
 
 	public function update_visit_comment(Request $request){
-		$checkinForAuth = CheckinLog::select('client_id')->where('id', $request->id)->first();
-		if ($checkinForAuth && $checkinForAuth->client_id) {
+		$checkinForAuth = CheckinLog::where('id', $request->id)->first();
+		if (!$checkinForAuth) {
+			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
+			return;
+		}
+		if ($checkinForAuth->client_id) {
 			$this->ensureCrmRecordAccess((int) $checkinForAuth->client_id);
 		}
 		$objs = new CheckinHistory;
@@ -494,7 +502,11 @@ class OfficeVisitController extends Controller
 
 	public function change_assignee(Request $request){
 		$objs = CheckinLog::find($request->id);
-		if ($objs && $objs->client_id) {
+		if (!$objs) {
+			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
+			return;
+		}
+		if ($objs->client_id) {
 			$this->ensureCrmRecordAccess((int) $objs->client_id);
 		}
 		$objs->user_id = $request->assinee;
@@ -532,7 +544,11 @@ class OfficeVisitController extends Controller
 
     public function attend_session(Request $request){ 
 		$obj = CheckinLog::find($request->id);
-		if ($obj && $obj->client_id) {
+		if (!$obj) {
+			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
+			return;
+		}
+		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
 		}
 		$obj->sesion_start = date('Y-m-d H:i');
@@ -596,7 +612,11 @@ class OfficeVisitController extends Controller
 
 	public function complete_session(Request $request){
 		$obj = CheckinLog::find($request->id);
-		if ($obj && $obj->client_id) {
+		if (!$obj) {
+			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
+			return;
+		}
+		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
 		}
 		$obj->sesion_end = date('Y-m-d H:i');

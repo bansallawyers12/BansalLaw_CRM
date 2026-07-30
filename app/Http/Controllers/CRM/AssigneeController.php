@@ -457,15 +457,16 @@ class AssigneeController extends Controller
                             if (isset($data->description) && $data->description != "") {
                                 // Use Utf8Helper for consistent UTF-8 handling
                                 $sanitized_description = Utf8Helper::safeSanitize($data->description);
+                                $safe_display_text = htmlspecialchars($sanitized_description, ENT_QUOTES, 'UTF-8');
                                 
                                 if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
                                     // For data attribute: use HTML encoding to prevent XSS
-                                    $encoded_for_attr = htmlspecialchars($sanitized_description, ENT_QUOTES, 'UTF-8');
-                                    // For display: use safe truncation without encoding (DataTables rawColumns handles this)
-                                    $truncated_desc = Utf8Helper::safeTruncate($sanitized_description, 190, '');
+                                    $encoded_for_attr = $safe_display_text;
+                                    // For display: use safe truncation with HTML encoding
+                                    $truncated_desc = htmlspecialchars(Utf8Helper::safeTruncate($sanitized_description, 190, ''), ENT_QUOTES, 'UTF-8');
                                     $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button>';
                                 } else {
-                                    $final_desc = $sanitized_description;
+                                    $final_desc = $safe_display_text;
                                 }
                             } else {
                                 $final_desc = "N/P";
@@ -503,80 +504,59 @@ class AssigneeController extends Controller
                         $keywordLower = strtolower($keyword);
                         $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
                         $query->whereHas('noteStaff', function($q) use ($keywordLower, $nameConcat) {
-                            $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw("LOWER({$nameConcat}) LIKE ?", ['%' . $keywordLower . '%']);
+                            $q->where(function($subQ) use ($keywordLower, $nameConcat) {
+                                $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
+                                     ->orWhereRaw("LOWER(first_name) LIKE ?", ["%{$keywordLower}%"])
+                                     ->orWhereRaw("LOWER(last_name) LIKE ?", ["%{$keywordLower}%"]);
+                            });
+                        });
+                    })
+                    ->filterColumn('assignee_name', function($query, $keyword) {
+                        $keywordLower = strtolower($keyword);
+                        $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
+                        $query->whereHas('assignedStaff', function($q) use ($keywordLower, $nameConcat) {
+                            $q->where(function($subQ) use ($keywordLower, $nameConcat) {
+                                $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
+                                     ->orWhereRaw("LOWER(first_name) LIKE ?", ["%{$keywordLower}%"])
+                                     ->orWhereRaw("LOWER(last_name) LIKE ?", ["%{$keywordLower}%"]);
+                            });
                         });
                     })
                     ->filterColumn('client_reference', function($query, $keyword) {
                         $keywordLower = strtolower($keyword);
                         $query->whereHas('noteClient', function($q) use ($keywordLower) {
-                            $q->whereRaw('LOWER(client_id) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereHas('company', function ($cq) use ($keywordLower) {
-                                  $cq->whereRaw('LOWER(company_name) LIKE ?', ['%' . $keywordLower . '%']);
-                              });
+                            $q->whereRaw("LOWER(client_id) LIKE ?", ["%{$keywordLower}%"]);
                         });
-                    });
-
-                // Get the response and ensure UTF-8 encoding
-                $response = $dataTable->make(true);
-                
-                // Set proper UTF-8 headers
-                if ($response instanceof \Illuminate\Http\JsonResponse) {
-                    $response->header('Content-Type', 'application/json; charset=utf-8');
-                }
-                
-                return $response;
-        } catch (\Exception $e) {
-            Log::error('Error in getAction: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'draw' => intval($request->get('draw')),
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0,
-                'data' => [],
-                'error' => 'An error occurred while processing the request'
-            ], 500);
-        }
+                    })
+                    ->make(true);
+            } catch (\Exception $e) {
+                \Log::error('Error in assignee list AJAX: ' . $e->getMessage());
+                return response()->json(['error' => 'An error occurred while fetching data.'], 500);
+            }
     }
 
-    public function getActionCounts(Request $request)
+    /**
+     * Helper to verify staff authorization to delete or manage a task note.
+     */
+    protected function authorizeNoteManagement(Note $appointment): void
     {
-        $counts = [
-            'all' => 0,
-            'call' => 0,
-            'checklist' => 0,
-            'review' => 0,
-            'query' => 0,
-            'urgent' => 0,
-            'personal_action' => 0,
-            'follow_up' => 0,
-        ];
-
-        $query = Note::where('status', '<>', '1')
-            ->where('type', 'client')
-            ->where('is_action', 1);
-
-        if (! $this->viewerSeesAllActions()) {
-            $query->where('assigned_to', Auth::user()->id);
+        $actor = Auth::guard('admin')->user();
+        if (!$actor) {
+            abort(401, 'Unauthenticated');
         }
 
-        $counts['all'] = (clone $query)->count();
-        $counts['call'] = (clone $query)->where('task_group', 'Call')->count();
-        $counts['checklist'] = (clone $query)->where('task_group', 'Checklist')->count();
-        $counts['review'] = (clone $query)->where('task_group', 'Review')->count();
-        $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
-        $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
-        $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
-        $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
+        $userId = (int) $actor->id;
+        $isCreator = ((int) ($appointment->user_id ?? 0)) === $userId;
+        $isAssignee = ((int) ($appointment->assigned_to ?? 0)) === $userId;
+        $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
 
-        return response()->json($counts);
+        if (!$isCreator && !$isAssignee && !$isSuperAdmin) {
+            abort(403, 'Unauthorized access to action task.');
+        }
+
+        if ($appointment->client_id) {
+            $this->ensureCrmRecordAccess((int) $appointment->client_id);
+        }
     }
 
 
@@ -589,7 +569,9 @@ class AssigneeController extends Controller
      */
     public function destroy( $id,Note $Note)
     {   // dd($id);
-        $appointment =Note::find($id);
+        $appointment = Note::findOrFail($id);
+        $this->authorizeNoteManagement($appointment);
+
         $appointment->is_action = 0;
         $appointment->save();
 
@@ -599,7 +581,9 @@ class AssigneeController extends Controller
 
     public function destroy_by_me( $id,Note $Note)
     {
-        $appointment =Note::find($id);
+        $appointment = Note::findOrFail($id);
+        $this->authorizeNoteManagement($appointment);
+
         $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;
@@ -632,7 +616,9 @@ class AssigneeController extends Controller
 
     public function destroy_to_me( $id,Note $Note)
     {
-        $appointment =Note::find($id);
+        $appointment = Note::findOrFail($id);
+        $this->authorizeNoteManagement($appointment);
+
         $appointment->is_action = 0;
         $appointment->save();
         return redirect()->route('assignee.assigned_to_me')->with('success','Assingee deleted successfully');
@@ -641,7 +627,9 @@ class AssigneeController extends Controller
     //incomplete activity remove
     public function destroy_activity($id,Note $Note)
     {
-        $appointment = Note::find($id);//dd($appointment);
+        $appointment = Note::findOrFail($id);
+        $this->authorizeNoteManagement($appointment);
+
         $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;
@@ -676,7 +664,9 @@ class AssigneeController extends Controller
     //complete activity remove
     public function destroy_complete_activity( $id,Note $Note)
     {
-        $appointment = Note::find($id);
+        $appointment = Note::findOrFail($id);
+        $this->authorizeNoteManagement($appointment);
+
         $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;

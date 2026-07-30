@@ -250,28 +250,54 @@ class DashboardController extends Controller
     public function updateCheckinStatus(Request $request)
     { 
         try {
-            $checkinLog = \App\Models\CheckinLog::where('id', $request->checkin_id)->first();
-            
-            if ($checkinLog) {
-                $checkinLog->status = $request->status;
-                
-                if ($request->has('wait_type')) {
-                    $checkinLog->wait_type = $request->wait_type;
-                }
-                
-                $saved = $checkinLog->save();
-                
-                if ($saved) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Status updated successfully to ' . $request->status
-                    ]);
-                } else {
-                    return response()->json(['success' => false, 'message' => 'Failed to save status update']);
-                }
+            if (!$request->has('checkin_id') || !is_numeric($request->checkin_id)) {
+                return response()->json(['success' => false, 'message' => 'Valid checkin ID is required'], 422);
             }
 
-            return response()->json(['success' => false, 'message' => 'Checkin not found']);
+            $checkinLog = \App\Models\CheckinLog::where('id', (int) $request->checkin_id)->first();
+            
+            if (!$checkinLog) {
+                return response()->json(['success' => false, 'message' => 'Checkin not found'], 404);
+            }
+
+            $actor = Auth::guard('admin')->user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $isAssignee = ((int) ($checkinLog->user_id ?? 0)) === (int) $actor->id;
+            $hasFrontDeskAccess = method_exists($actor, 'canAccessFrontDeskCheckIn') && $actor->canAccessFrontDeskCheckIn();
+            $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
+
+            if (!$isAssignee && !$hasFrontDeskAccess && !$isSuperAdmin) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized access to check-in record'], 403);
+            }
+
+            if ($checkinLog->client_id) {
+                $this->ensureCrmRecordAccess((int) $checkinLog->client_id);
+            }
+
+            $allowedStatuses = [0, 1, 2, '0', '1', '2'];
+            if (!$request->has('status') || !in_array($request->status, $allowedStatuses, false)) {
+                return response()->json(['success' => false, 'message' => 'Invalid status value'], 422);
+            }
+
+            $checkinLog->status = (int) $request->status;
+            
+            if ($request->has('wait_type')) {
+                $checkinLog->wait_type = (int) $request->wait_type;
+            }
+            
+            $saved = $checkinLog->save();
+            
+            if ($saved) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status updated successfully to ' . $checkinLog->status
+                ]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Failed to save status update']);
+            }
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating checkin status: ' . $e->getMessage()]);
         }

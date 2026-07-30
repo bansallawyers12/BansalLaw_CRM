@@ -2550,45 +2550,22 @@ class PublicBookingController extends BaseController
             }
 
             $paymentType = strtolower((string) $request->payment_type);
-            $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
 
-            DB::beginTransaction();
-            try {
-                $payment = AppointmentPayment::updateOrCreate(
-                    ['appointment_id' => $appointment->id],
-                    [
-                        'payment_gateway' => 'stripe',
-                        'transaction_id' => $request->payment_intent_id,
-                        'charge_id' => null,
-                        'customer_id' => null,
-                        'payment_method_id' => null,
-                        'amount' => $appointmentAmount,
-                        'currency' => 'AUD',
-                        'status' => 'succeeded',
-                        'error_message' => null,
-                        'transaction_data' => [
-                            'payment_type' => $paymentType,
-                            'payment_intent_id' => $request->payment_intent_id,
-                        ],
-                        'receipt_url' => null,
-                        'client_ip' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                        'processed_at' => now(),
-                    ]
-                );
+            $stripeService = app(StripePaymentService::class);
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'payment_type' => $paymentType,
+            ];
 
-                $appointment->update([
-                    'status' => 'paid',
-                    'is_paid' => true,
-                    'payment_status' => 'completed',
-                    'payment_method' => 'stripe',
-                    'paid_at' => now(),
-                ]);
+            $result = $stripeService->recordPaymentByIntent(
+                $appointment,
+                $request->payment_intent_id,
+                $metadata
+            );
 
-                DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'] ?? [], 422);
             }
 
             $syncError = null;
@@ -2803,45 +2780,22 @@ class PublicBookingController extends BaseController
             }
 
             $paymentType = strtolower((string) $request->payment_type);
-            $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
 
-            DB::beginTransaction();
-            try {
-                $payment = AppointmentPayment::updateOrCreate(
-                    ['appointment_id' => $appointment->id],
-                    [
-                        'payment_gateway' => 'stripe',
-                        'transaction_id' => $request->payment_intent_id,
-                        'charge_id' => null,
-                        'customer_id' => null,
-                        'payment_method_id' => null,
-                        'amount' => $appointmentAmount,
-                        'currency' => 'AUD',
-                        'status' => 'succeeded',
-                        'error_message' => null,
-                        'transaction_data' => [
-                            'payment_type' => $paymentType,
-                            'payment_intent_id' => $request->payment_intent_id,
-                        ],
-                        'receipt_url' => null,
-                        'client_ip' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                        'processed_at' => now(),
-                    ]
-                );
+            $stripeService = app(StripePaymentService::class);
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'payment_type' => $paymentType,
+            ];
 
-                $appointment->update([
-                    'status' => 'paid',
-                    'is_paid' => true,
-                    'payment_status' => 'completed',
-                    'payment_method' => 'stripe',
-                    'paid_at' => now(),
-                ]);
+            $result = $stripeService->recordPaymentByIntent(
+                $appointment,
+                $request->payment_intent_id,
+                $metadata
+            );
 
-                DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'] ?? [], 422);
             }
 
             $syncError = null;

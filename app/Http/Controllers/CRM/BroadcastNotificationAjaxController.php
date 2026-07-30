@@ -38,6 +38,18 @@ class BroadcastNotificationAjaxController extends Controller
             'recipient_ids.*' => ['integer'],
         ]);
 
+        $sender = $this->sender($request);
+        if ($validated['scope'] === 'all') {
+            $isSuperAdmin = method_exists($sender, 'hasEffectiveSuperAdminPrivileges') && $sender->hasEffectiveSuperAdminPrivileges();
+            $isAdminRole = in_array((int) ($sender->role ?? 0), [1, 12, 17], true);
+            
+            if (!$isSuperAdmin && !$isAdminRole) {
+                return response()->json([
+                    'message' => 'Unauthorized access to broadcast notifications to all staff.'
+                ], 403);
+            }
+        }
+
         \Log::info('✅ Broadcast validation passed', ['validated' => $validated]);
 
         try {

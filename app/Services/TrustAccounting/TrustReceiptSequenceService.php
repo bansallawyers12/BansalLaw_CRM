@@ -45,7 +45,7 @@ class TrustReceiptSequenceService
                 ->first();
 
             if (! $row) {
-                DB::table('trust_practice_sequences')->insert([
+                DB::table('trust_practice_sequences')->insertOrIgnore([
                     'sequence_type'        => $prefix,
                     'trust_year_start_year' => $trustYearStart,
                     'last_sequence'        => 1,
@@ -53,7 +53,21 @@ class TrustReceiptSequenceService
                     'updated_at'           => now(),
                 ]);
 
-                $seq = 1;
+                $row = DB::table('trust_practice_sequences')
+                    ->where('trust_year_start_year', $trustYearStart)
+                    ->where('sequence_type', $prefix)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($row && (int) $row->last_sequence > 1) {
+                    $seq = (int) $row->last_sequence + 1;
+                    DB::table('trust_practice_sequences')
+                        ->where('trust_year_start_year', $trustYearStart)
+                        ->where('sequence_type', $prefix)
+                        ->update(['last_sequence' => $seq, 'updated_at' => now()]);
+                } else {
+                    $seq = 1;
+                }
             } else {
                 $seq = (int) $row->last_sequence + 1;
                 DB::table('trust_practice_sequences')
