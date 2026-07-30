@@ -1110,8 +1110,8 @@ class IncomingEmailSyncService
 
     /**
      * Limit synced inbox lists to mail addressed to the staff member.
-     * Only Super Admin sees all synced mail; every other role, including
-     * Admin, must appear in To, Cc, or Bcc.
+     * Native Super Admin and staff with can_view_all_synced_inbox_mail see all
+     * synced mail; every other role must appear in To, Cc, or Bcc.
      */
     public static function applySyncedInboxVisibilityFilter($query, Staff $staff): void
     {

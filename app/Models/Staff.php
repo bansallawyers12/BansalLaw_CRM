@@ -60,6 +60,7 @@ class Staff extends Authenticatable
         'grant_super_admin_access',
         'can_delete_email_with_attachments',
         'can_sync_inbox_emails',
+        'can_view_all_synced_inbox_mail',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
         'trust_rule42_supervisor',
@@ -84,6 +85,7 @@ class Staff extends Authenticatable
         'grant_super_admin_access' => 'boolean',
         'can_delete_email_with_attachments' => 'boolean',
         'can_sync_inbox_emails' => 'boolean',
+        'can_view_all_synced_inbox_mail' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
@@ -407,16 +409,49 @@ class Staff extends Authenticatable
             return true;
         }
 
+        // Full-mailbox grant includes sync so one Super Admin option unlocks both list and Sync.
+        if ($this->canViewAllSyncedInboxMail()) {
+            return true;
+        }
+
         return (bool) ($this->can_sync_inbox_emails ?? false);
     }
 
     /**
-     * Only Super Admin may view all synced inbox mail across mailboxes.
-     * Every other role, including Admin, is restricted to mail addressed to them.
+     * Role IDs that may grant {@see canViewAllSyncedInboxMail()} to others.
+     * Default: native Super Admin (1) only.
+     */
+    public static function viewAllSyncedInboxGrantRoleIds(): array
+    {
+        $ids = config('crm.view_all_synced_inbox_grant_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may toggle full synced-mailbox visibility on staff records.
+     * Only native Super Admin (role 1) may grant this — not elevated Admin sessions.
+     */
+    public static function canGrantViewAllSyncedInboxMailPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::viewAllSyncedInboxGrantRoleIds(), true);
+    }
+
+    /**
+     * Native Super Admin, or staff with the per-user grant, may view all synced
+     * inbox mail across mailboxes. Everyone else is restricted to mail addressed to them.
      */
     public function canViewAllSyncedInboxMail(): bool
     {
-        return (int) ($this->role ?? 0) === 1;
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
+        return (bool) ($this->can_view_all_synced_inbox_mail ?? false);
     }
 
     /**

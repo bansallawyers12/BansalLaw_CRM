@@ -160,6 +160,7 @@
             quick_access_enabled: '_access',
             can_delete_email_with_attachments: '_access',
             can_sync_inbox_emails: '_access',
+            can_view_all_synced_inbox_mail: '_access',
             can_close_discontinue_matter: '_access',
             can_edit_final_invoice: '_access',
             grant_super_admin_access: '_access',

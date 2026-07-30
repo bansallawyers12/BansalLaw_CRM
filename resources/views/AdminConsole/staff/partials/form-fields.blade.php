@@ -16,6 +16,9 @@
     $canGrantInboxSync = \App\Models\Staff::canGrantInboxSyncPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantViewAllSyncedInbox = \App\Models\Staff::canGrantViewAllSyncedInboxMailPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -221,6 +224,18 @@
                             @checked(old('can_sync_inbox_emails', $isEdit ? ($fetchedData->can_sync_inbox_emails ?? false) : false))>
                         <span>Can sync inbox from Zoho (Sync button &amp; Unassigned folder)</span>
                     </label>
+                </div>
+                @endif
+
+                @if($canGrantViewAllSyncedInbox && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_view_all_synced_inbox_mail'))
+                <div class="form-group">
+                    <input type="hidden" name="can_view_all_synced_inbox_mail" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_view_all_synced_inbox_mail" value="1"
+                            @checked(old('can_view_all_synced_inbox_mail', $isEdit ? ($fetchedData->can_view_all_synced_inbox_mail ?? false) : false))>
+                        <span>Can view and sync all mailboxes</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Gives this staff member the same Unassigned Mail access as Super Admin: all assigned and unassigned mail, mailbox and sender filters, mailbox/range selection, and the Sync now button.</small>
                 </div>
                 @endif
 

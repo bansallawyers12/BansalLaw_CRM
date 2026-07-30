@@ -124,6 +124,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant inbox sync permission.', 422);
             }
 
+            $canGrantViewAllSyncedInbox = Staff::canGrantViewAllSyncedInboxMailPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantViewAllSyncedInbox && $request->has('can_view_all_synced_inbox_mail')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant full mailbox list permission.', 422);
+            }
+
             $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -226,6 +233,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantInboxSyncPermission($actor instanceof Staff ? $actor : null) && $request->has('can_sync_inbox_emails')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant inbox sync permission.', 422);
+            }
+
+            if (! Staff::canGrantViewAllSyncedInboxMailPermission($actor instanceof Staff ? $actor : null) && $request->has('can_view_all_synced_inbox_mail')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant full mailbox list permission.', 422);
             }
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
@@ -473,6 +484,13 @@ class StaffController extends Controller
         );
         if ($canGrantInboxSync && Schema::hasColumn('staff', 'can_sync_inbox_emails')) {
             $obj->can_sync_inbox_emails = $request->boolean('can_sync_inbox_emails');
+        }
+
+        $canGrantViewAllSyncedInbox = Staff::canGrantViewAllSyncedInboxMailPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantViewAllSyncedInbox && Schema::hasColumn('staff', 'can_view_all_synced_inbox_mail')) {
+            $obj->can_view_all_synced_inbox_mail = $request->boolean('can_view_all_synced_inbox_mail');
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(

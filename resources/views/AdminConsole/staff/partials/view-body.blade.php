@@ -47,6 +47,14 @@
                         <span class="badge bg-secondary">No inbox sync access</span>
                     @endif
                 </dd>
+                <dt>Full mailbox access</dt>
+                <dd>
+                    @if($fetchedData->canViewAllSyncedInboxMail())
+                        <span class="badge bg-success">Can view and sync all mailboxes</span>
+                    @else
+                        <span class="badge bg-secondary">Recipient-only mailbox view</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>

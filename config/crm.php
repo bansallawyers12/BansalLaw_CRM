@@ -31,6 +31,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Full synced-mailbox view/sync grant (native Super Admin only)
+    |--------------------------------------------------------------------------
+    |
+    | Only role 1 may toggle {@see Staff::can_view_all_synced_inbox_mail}. That
+    | flag unlocks the same unassigned inbox list, filters, and Sync controls
+    | as a native Super Admin.
+    |
+    */
+    'view_all_synced_inbox_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_VIEW_ALL_SYNCED_INBOX_GRANT_ROLE_IDS', '1'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff roles that may close/discontinue matters and grant per-user flag
     |--------------------------------------------------------------------------
     |
