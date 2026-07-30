@@ -1796,6 +1796,27 @@ body.sidebar-mini .outlook-ui-modal__title.modal-title {
     cursor: not-allowed;
 }
 
+/* The button stays disabled while the request is in flight, but Bootstrap's
+   `.btn:disabled` outranks the variant classes above and would strip its colour,
+   and `body.sidebar-mini .btn:disabled` in crm-theme.css would fade the spinner. */
+.outlook-ui-modal__btn.is-loading:disabled,
+body.sidebar-mini .outlook-ui-modal__btn.is-loading:disabled {
+    opacity: 1;
+    cursor: progress;
+}
+
+.outlook-ui-modal__btn--confirm.is-loading:disabled {
+    background-color: var(--outlook-blue);
+    border-color: var(--outlook-blue);
+    color: #fff;
+}
+
+.outlook-ui-modal__btn--danger.is-loading:disabled {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+
 /* Duplicate email confirmation modal */
 .duplicate-email-modal-overlay {
     display: none;
@@ -2757,6 +2778,11 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     overflow-y: auto;
     min-height: 0;
     flex: 1 1 auto;
+}
+
+.assign-email-modal--busy .assign-email-modal__body {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .assign-email-preview {

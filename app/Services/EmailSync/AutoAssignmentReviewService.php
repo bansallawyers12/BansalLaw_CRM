@@ -89,6 +89,12 @@ class AutoAssignmentReviewService
         $isSynced = ! empty($emailLog->synced_email_id);
         $isAutoAssigned = $isSynced && $emailLog->sync_assignment_status === 'auto_assigned';
 
+        // A human already picked this client from the reassign modal, so the
+        // heuristics below must not pull the message straight back into review.
+        if ($emailLog->sync_assignment_status === 'manual_assigned') {
+            return null;
+        }
+
         $matchedClientIds = [];
         foreach ($this->externalParticipantEmails($emailLog) as $address) {
             foreach ($emailClientMap[$address] ?? [] as $clientId) {

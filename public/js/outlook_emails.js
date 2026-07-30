@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedEmail = null;
     let assignmentModalMode = 'assign';
     let unlinkDestinationMode = 'unassigned';
+    let isAssignSubmitting = false;
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -573,8 +574,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function resetReadingPane() {
         selectedEmailId = null;
-        readingPane.classList.remove('is-visible');
-        emptyState.style.display = 'flex';
+        selectedEmail = null;
+        if (readingPane) {
+            readingPane.classList.remove('is-visible');
+            readingPane.hidden = false;
+        }
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+            emptyState.hidden = false;
+        }
         closeGmailReadingView();
         const calendarBanner = document.getElementById('readCalendarBanner');
         if (calendarBanner) {
@@ -3064,14 +3072,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (!refreshed) {
-            selectedEmailId = null;
-            selectedEmail = null;
-            if (readingPane) {
-                readingPane.hidden = true;
-            }
-            if (emptyState) {
-                emptyState.hidden = false;
-            }
+            resetReadingPane();
             return;
         }
 
@@ -3612,8 +3613,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showEmail(email, listElement) {
-        emptyState.style.display = 'none';
-        readingPane.classList.add('is-visible');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+            emptyState.hidden = true;
+        }
+        if (readingPane) {
+            readingPane.hidden = false;
+            readingPane.classList.add('is-visible');
+        }
         openGmailReadingView();
 
         selectedEmailId = email.id;
@@ -4197,6 +4204,40 @@ document.addEventListener('DOMContentLoaded', function() {
         assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
     }
 
+    function setAssignModalBusy(isBusy, busyLabel) {
+        if (!assignEmailConfirmBtn) {
+            return;
+        }
+
+        if (isBusy) {
+            if (typeof assignEmailConfirmBtn.dataset.idleHtml !== 'string') {
+                assignEmailConfirmBtn.dataset.idleHtml = assignEmailConfirmBtn.innerHTML;
+            }
+            assignEmailConfirmBtn.disabled = true;
+            assignEmailConfirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> '
+                + (busyLabel || 'Working...');
+        } else {
+            if (typeof assignEmailConfirmBtn.dataset.idleHtml === 'string') {
+                assignEmailConfirmBtn.innerHTML = assignEmailConfirmBtn.dataset.idleHtml;
+                delete assignEmailConfirmBtn.dataset.idleHtml;
+            }
+        }
+
+        assignEmailConfirmBtn.classList.toggle('is-loading', isBusy);
+
+        if (assignEmailModal) {
+            assignEmailModal.classList.toggle('assign-email-modal--busy', isBusy);
+            assignEmailModal.querySelectorAll('.assign-email-modal__close, .assign-email-modal__btn--cancel')
+                .forEach(function (button) {
+                    button.disabled = isBusy;
+                });
+        }
+
+        unlinkDestinationButtons.forEach(function (button) {
+            button.disabled = isBusy;
+        });
+    }
+
     function updateAssignStepProgress() {
         const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
         const hasClient = !!extractClientIdFromTomSelectValue(
@@ -4302,6 +4343,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (assignEmailConfirmBtn) {
+            delete assignEmailConfirmBtn.dataset.idleHtml;
             if (isUnlink && unlinkDestinationMode === 'unassigned') {
                 assignEmailConfirmBtn.innerHTML = '<i class="fa-solid fa-link-slash" aria-hidden="true"></i> Move to Unassigned';
             } else if (isUnlink) {
@@ -4754,6 +4796,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (assignEmailConfirmBtn) {
         assignEmailConfirmBtn.addEventListener('click', async function () {
+            if (isAssignSubmitting) {
+                return;
+            }
             const emailLogId = assignEmailLogIdInput ? assignEmailLogIdInput.value : '';
             const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
             const selectedClientRaw = assignClientSelect ? assignClientSelect.value : '';
@@ -4772,7 +4817,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            assignEmailConfirmBtn.disabled = true;
+            isAssignSubmitting = true;
+            setAssignModalBusy(true, isUnlinkFlow
+                ? (moveToClient ? 'Reassigning...' : 'Moving...')
+                : 'Assigning...');
             try {
                 const endpoint = isUnlinkFlow ? unlinkEmailUrl : assignEmailUrl;
                 const payload = {
@@ -4803,19 +4851,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (typeof bootstrap !== 'undefined' && bootstrap.Modal && assignEmailModal) {
                         bootstrap.Modal.getOrCreateInstance(assignEmailModal).hide();
                     }
-                    if (btnAssignToClient) {
-                        btnAssignToClient.hidden = true;
-                    }
-                    if (btnUnlinkFromClient) {
-                        btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail;
-                    }
                     const successTitle = isUnlinkFlow
                         ? (moveToClient ? 'Reassigned' : 'Moved to Unassigned')
                         : 'Assigned';
                     crmToast(data.message || 'Email updated successfully.', 'success', successTitle);
+
                     if (!isUnlinkFlow && !unassignedOnly) {
                         switchToFolder('inbox');
+                    } else {
+                        // The message leaves the list it was opened from, so the
+                        // reading pane would otherwise keep showing stale details.
+                        resetReadingPane();
+                        if (currentPage > 1 && emails.length <= 1) {
+                            currentPage -= 1;
+                        }
                     }
+
                     loadEmails();
                     refreshUnassignedNavCount();
                     return;
@@ -4824,6 +4875,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 crmToast('Could not update email: ' + (error.message || 'Unknown error'), 'error');
             } finally {
+                isAssignSubmitting = false;
+                setAssignModalBusy(false);
                 updateAssignConfirmButton();
             }
         });
