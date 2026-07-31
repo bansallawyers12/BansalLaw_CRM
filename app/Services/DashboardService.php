@@ -21,7 +21,7 @@ class DashboardService
     /**
      * Native Super Admin (role 1) or session-elevated grant — same matter/action visibility as role 1.
      */
-    private function viewerSeesAllMattersAndActions($user): bool
+    public function viewerSeesAllMattersAndActions($user): bool
     {
         return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
     }
@@ -37,8 +37,8 @@ class DashboardService
             'data' => $this->getClientMatters($request, $user),
             'notesData' => $this->getNotesData($user),
             'cases_requiring_attention_data' => $this->getCasesRequiringAttention($user),
-            'count_active_matter' => $this->getActiveMatterCount(),
-            'count_closed_matter' => $this->getClosedMatterCount(),
+            'count_active_matter' => $this->getActiveMatterCount($user),
+            'count_closed_matter' => $this->getClosedMatterCount($user),
             'count_note_deadline' => $this->getNoteDeadlineCount($user),
             'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
             'filters' => [
@@ -239,50 +239,83 @@ class DashboardService
             return;
         }
 
-        $role = (int) $user->role;
-        // LP / PR / PA roles: any matter where they are assigned in any of the three roles
-        if (in_array($role, [12, 13, 16], true)) {
-            $uid = (int) $user->id;
-            $query->where(function ($q) use ($uid) {
-                $q->where('client_matters.sel_legal_practitioner', $uid)
-                    ->orWhere('client_matters.sel_person_responsible', $uid)
-                    ->orWhere('client_matters.sel_person_assisting', $uid);
-            });
-        }
+        $uid = (int) $user->id;
+        $query->where(function ($q) use ($uid) {
+            $q->where('client_matters.sel_legal_practitioner', $uid)
+                ->orWhere('client_matters.sel_person_responsible', $uid)
+                ->orWhere('client_matters.sel_person_assisting', $uid);
+        });
     }
 
     /**
      * Get active matter count with caching
      */
-    private function getActiveMatterCount(): int
+    private function getActiveMatterCount($user = null): int
     {
-        return Cache::remember('active_matter_count', 300, function () {
-            return ClientMatter::where('matter_status', 1)->count();
+        $user = $user ?? Auth::user();
+        if ($this->viewerSeesAllMattersAndActions($user)) {
+            return Cache::remember('active_matter_count_all', 300, function () {
+                return ClientMatter::where('matter_status', 1)->count();
+            });
+        }
+
+        $userId = $user ? $user->id : 0;
+        return Cache::remember('active_matter_count_staff_' . $userId, 300, function () use ($user) {
+            $query = ClientMatter::where('matter_status', 1);
+            $this->applyRoleBasedFiltering($query, $user);
+
+            return $query->count();
         });
     }
 
     /**
      * Get closed matter count (mirrors closedmatterslist filters).
      */
-    private function getClosedMatterCount(): int
+    private function getClosedMatterCount($user = null): int
     {
-        return Cache::remember('closed_matter_count', 300, function () {
+        $user = $user ?? Auth::user();
+        if ($this->viewerSeesAllMattersAndActions($user)) {
+            return Cache::remember('closed_matter_count_all', 300, function () {
+                $closedStages = ClientMatter::closedWorkflowStageNames();
+
+                return (int) DB::table('client_matters as cm')
+                    ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+                    ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+                    ->where('ad.is_archived', '=', '0')
+                    ->whereIn('ad.type', ['client', 'lead'])
+                    ->whereNull('ad.is_deleted')
+                    ->where(function ($q) use ($closedStages) {
+                        $q->where('cm.matter_status', '=', '0')
+                            ->orWhereRaw(
+                                'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                                $closedStages
+                            );
+                    })
+                    ->count();
+            });
+        }
+
+        $userId = $user ? $user->id : 0;
+        return Cache::remember('closed_matter_count_staff_' . $userId, 300, function () use ($user) {
             $closedStages = ClientMatter::closedWorkflowStageNames();
 
-            return (int) DB::table('client_matters as cm')
-                ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-                ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+            $query = ClientMatter::from('client_matters as client_matters')
+                ->join('admins as ad', 'client_matters.client_id', '=', 'ad.id')
+                ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
                 ->where('ad.is_archived', '=', '0')
                 ->whereIn('ad.type', ['client', 'lead'])
                 ->whereNull('ad.is_deleted')
                 ->where(function ($q) use ($closedStages) {
-                    $q->where('cm.matter_status', '=', '0')
+                    $q->where('client_matters.matter_status', '=', '0')
                         ->orWhereRaw(
                             'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
                             $closedStages
                         );
-                })
-                ->count();
+                });
+
+            $this->applyRoleBasedFiltering($query, $user);
+
+            return (int) $query->count();
         });
     }
 
@@ -434,12 +467,24 @@ class DashboardService
     /**
      * Update client matter stage
      */
-    public function updateClientMatterStage($itemId, $stageId): array
+    public function updateClientMatterStage($itemId, $stageId, $user = null): array
     {
         $item = ClientMatter::find($itemId);
         
         if (!$item) {
             return ['success' => false, 'message' => 'Matter not found!'];
+        }
+
+        $user = $user ?? Auth::user();
+        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+            $uid = (int) $user->id;
+            $isAssigned = ((int)$item->sel_legal_practitioner === $uid
+                || (int)$item->sel_person_responsible === $uid
+                || (int)$item->sel_person_assisting === $uid);
+
+            if (!$isAssigned && !StaffClientVisibility::canAccessClientOrLead($item->client_id, $user)) {
+                return ['success' => false, 'message' => 'Unauthorized matter stage update.'];
+            }
         }
 
         $item->workflow_stage_id = $stageId;
@@ -517,9 +562,10 @@ class DashboardService
     /**
      * Extend note deadline
      */
-    public function extendNoteDeadline($data): array
+    public function extendNoteDeadline($data, $user = null): array
     {
         try {
+            $user = $user ?? Auth::user();
             $notes = Note::where('unique_group_id', $data['unique_group_id'])
                 ->whereNotNull('unique_group_id')
                 ->get();
@@ -528,12 +574,23 @@ class DashboardService
                 return ['success' => false, 'message' => 'No notes found with the provided unique group ID'];
             }
 
+            if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+                $uid = (int) $user->id;
+                foreach ($notes as $note) {
+                    $isOwnerOrAssignee = ((int)$note->assigned_to === $uid || (int)$note->user_id === $uid);
+                    $hasClientAccess = $note->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $note->client_id, $user) : false;
+                    if (!$isOwnerOrAssignee && !$hasClientAccess) {
+                        return ['success' => false, 'message' => 'Unauthorized deadline extension.'];
+                    }
+                }
+            }
+
             $updated = Note::where('unique_group_id', $data['unique_group_id'])
                 ->whereNotNull('unique_group_id')
                 ->update([
                     'description' => $data['description'],
                     'note_deadline' => $data['note_deadline'],
-                    'user_id' => Auth::id()
+                    'user_id' => $user ? $user->id : Auth::id()
                 ]);
 
             if ($updated > 0) {
@@ -559,14 +616,22 @@ class DashboardService
      * Update action completion status and create completed action activity
      * Matches Action tab behavior: updates note(s), creates ActivitiesLog with optional completion notes
      */
-    public function updateActionCompleted($noteId, $uniqueGroupId, ?string $completionNotes = null): array
+    public function updateActionCompleted($noteId, $uniqueGroupId, ?string $completionNotes = null, $user = null): array
     {
-        $noteData = Note::where('id', $noteId)
-            ->where('unique_group_id', $uniqueGroupId)
-            ->first();
+        $user = $user ?? Auth::user();
+        $noteData = Note::where('id', $noteId)->first();
 
         if (!$noteData) {
             return ['success' => false, 'message' => 'Action not found'];
+        }
+
+        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+            $uid = (int) $user->id;
+            $isOwnerOrAssignee = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
+            $hasClientAccess = $noteData->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $noteData->client_id, $user) : false;
+            if (!$isOwnerOrAssignee && !$hasClientAccess) {
+                return ['success' => false, 'message' => 'Unauthorized action completion.'];
+            }
         }
 
         // Update all notes in the group (matches Action tab behavior), or single note if no group
@@ -629,8 +694,15 @@ class DashboardService
     /**
      * Get visa expiry message
      */
-    public function getVisaExpiryMessage($clientId): string
+    public function getVisaExpiryMessage($clientId, $user = null): string
     {
+        $user = $user ?? Auth::user();
+        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+            if (!StaffClientVisibility::canAccessClientOrLead((int) $clientId, $user)) {
+                return '';
+            }
+        }
+
         $visaInfo = ClientVisaCountry::where('client_id', $clientId)
             ->latest('id')
             ->first();

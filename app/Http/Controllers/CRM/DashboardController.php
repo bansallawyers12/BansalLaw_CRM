@@ -89,10 +89,16 @@ class DashboardController extends Controller
             'stage_id' => 'required|integer',
         ]);
 
+        $user = Auth::guard('admin')->user() ?: Auth::user();
         $result = $this->dashboardService->updateClientMatterStage(
             $request->item_id, 
-            $request->stage_id
+            $request->stage_id,
+            $user
         );
+
+        if (isset($result['success']) && $result['success'] === false && str_contains(strtolower($result['message'] ?? ''), 'unauthorized')) {
+            return response()->json($result, 403);
+        }
 
         return response()->json($result);
     }
@@ -147,10 +153,15 @@ class DashboardController extends Controller
 
             Log::info('Extend deadline request data:', $request->all());
 
-            $result = $this->dashboardService->extendNoteDeadline($request->all());
+            $user = Auth::guard('admin')->user() ?: Auth::user();
+            $result = $this->dashboardService->extendNoteDeadline($request->all(), $user);
             
             Log::info('Extend deadline result:', $result);
-            
+
+            if (isset($result['success']) && $result['success'] === false && str_contains(strtolower($result['message'] ?? ''), 'unauthorized')) {
+                return response()->json($result, 403);
+            }
+
             return response()->json($result);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error in extendDeadlineDate:', $e->errors());
@@ -183,14 +194,20 @@ class DashboardController extends Controller
                 'completion_notes' => 'nullable|string|max:5000'
             ]);
 
+            $user = Auth::guard('admin')->user() ?: Auth::user();
             $result = $this->dashboardService->updateActionCompleted(
                 $request->id,
                 $request->unique_group_id ?? '',
-                $request->completion_notes
+                $request->completion_notes,
+                $user
             );
             
             Log::info('Update action completed result:', $result);
-            
+
+            if (isset($result['success']) && $result['success'] === false && str_contains(strtolower($result['message'] ?? ''), 'unauthorized')) {
+                return response()->json($result, 403);
+            }
+
             return response()->json($result);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error in updateActionCompleted:', $e->errors());
@@ -218,7 +235,14 @@ class DashboardController extends Controller
             'client_id' => 'required|integer'
         ]);
 
-        $message = $this->dashboardService->getVisaExpiryMessage($request->client_id);
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
+            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $request->client_id, $user)) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
+        $message = $this->dashboardService->getVisaExpiryMessage($request->client_id, $user);
         
         return $message;
     }
