@@ -5938,7 +5938,7 @@ success: function(response) {
 
                 url: deleteUrl,
 
-                type:'GET',
+                type:'POST',
 
                 dataType:'json',
 
@@ -6111,7 +6111,7 @@ success: function(response) {
 
                 url: window.ClientDetailConfig.urls.pinNote,
 
-                type:'GET',
+                type:'POST',
 
                 dataType:'json',
 

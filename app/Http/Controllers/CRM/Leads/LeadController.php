@@ -2073,7 +2073,7 @@ class LeadController extends Controller
         $excludeId = $request->input('id'); // Optional - for edit operations
         
         // Check in leads (admins table where type='lead')
-        $leadQuery = Lead::where('phone', 'LIKE', '%' . $contact . '%');
+        $leadQuery = Lead::where('phone', $contact);
         if ($excludeId) {
             $leadQuery->where('id', '!=', $excludeId);
         }
@@ -2082,7 +2082,7 @@ class LeadController extends Controller
         // Check in clients (admins table where type='client')
         $client_count = Admin::whereIn('type', ['client', 'lead'])
             ->where('type', 'client')
-            ->where('phone', 'LIKE', '%' . $contact . '%')
+            ->where('phone', $contact)
             ->when($excludeId, function($q) use ($excludeId) {
                 return $q->where('id', '!=', $excludeId);
             })
@@ -2148,7 +2148,7 @@ class LeadController extends Controller
             }
         }
 
-        if (!$matchedPerson) {
+        if (!$matchedPerson || !StaffClientVisibility::canAccessClientOrLead((int) $matchedPerson->id, Auth::user())) {
             return response()->json(['found' => false, 'person' => null]);
         }
 

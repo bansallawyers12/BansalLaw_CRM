@@ -194,6 +194,28 @@ final class StaffClientVisibility
             ? ['show_quick' => false, 'show_supervisor' => false]
             : self::crossAccessUiFlags($user);
 
+        if (! $can) {
+            $item['name'] = 'Restricted Record';
+            if (isset($item['first_name'])) {
+                $item['first_name'] = 'Restricted';
+            }
+            if (isset($item['last_name'])) {
+                $item['last_name'] = 'Record';
+            }
+            if (isset($item['email']) && $item['email'] !== '') {
+                $item['email'] = '***@***';
+            }
+            if (isset($item['phone']) && $item['phone'] !== '') {
+                $item['phone'] = '***';
+            }
+            if (isset($item['mobile']) && $item['mobile'] !== '') {
+                $item['mobile'] = '***';
+            }
+            if (isset($item['telephone']) && $item['telephone'] !== '') {
+                $item['telephone'] = '***';
+            }
+        }
+
         return $item;
     }
 

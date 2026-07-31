@@ -1927,9 +1927,9 @@ class ClientsController extends Controller
         return $pdf->stream('codeplaners.pdf');
     }
 
-    public function edit($id)
+    public function edit($id = null)
     {
-        // Check authorization (assumed to be handled elsewhere)
+        $id = $id ?? request()->input('id') ?? request()->input('user_id') ?? request()->input('client_id');
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
             if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
@@ -1976,9 +1976,13 @@ class ClientsController extends Controller
 
             // Verify client exists
             $client = Admin::find($clientId);
-            $isClient = in_array($client->type ?? '', ['client', 'lead']);
-            if (!$client || !$isClient) {
+            if (!$client || !in_array($client->type ?? '', ['client', 'lead'])) {
                 return redirect()->back()->withErrors(['error' => 'Client not found'])->withInput();
+            }
+
+            $actor = Auth::guard('admin')->user() ?: Auth::user();
+            if ($actor && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
+                return redirect()->back()->withErrors(['error' => config('constants.unauthorized')])->withInput();
             }
 
             // Delete existing TOEFL, IELTS, and PTE test scores for this client (only the ones handled by this legacy form)

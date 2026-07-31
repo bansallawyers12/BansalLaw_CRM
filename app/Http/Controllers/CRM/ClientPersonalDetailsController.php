@@ -124,7 +124,7 @@ class ClientPersonalDetailsController extends Controller
         $postcode = $request->input('postcode');
         // Fetch data based on the postcode
         // Replace this with your actual API call to get address details
-        $apiKey = 'acb06506-edb3-4965-856e-db81ade1b45b';
+        $apiKey = config('services.auspost.auth_key') ?? env('AUSPOST_AUTH_KEY', '');
         $urlPrefix = 'digitalapi.auspost.com.au';
         $url = 'https://' . $urlPrefix . '/postcode/search.json?q=' . $postcode;
 
@@ -6051,7 +6051,7 @@ class ClientPersonalDetailsController extends Controller
     /**
      * Save Parents Information Section
      */
-    public function saveParentsInfoSection(Request $request)
+    public function saveParentsInfoSection(Request $request, $client = null)
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
@@ -6196,7 +6196,7 @@ class ClientPersonalDetailsController extends Controller
     /**
      * Save Siblings Information Section
      */
-    public function saveSiblingsInfoSection(Request $request)
+    public function saveSiblingsInfoSection(Request $request, $client = null)
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
@@ -6331,7 +6331,7 @@ class ClientPersonalDetailsController extends Controller
     /**
      * Save Others Information Section
      */
-    public function saveOthersInfoSection(Request $request)
+    public function saveOthersInfoSection(Request $request, $client = null)
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID

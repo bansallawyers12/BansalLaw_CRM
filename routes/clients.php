@@ -39,7 +39,7 @@ Route::get('/clientsclosedmatterslist', [ClientsController::class, 'closedmatter
 Route::get('/clientsemaillist', [ClientsController::class, 'clientsemaillist'])->name('clients.clientsemaillist');
 Route::post('/clients/store', [ClientsController::class, 'store'])->name('clients.store');
 Route::get('/clients/edit/{id}', [ClientsController::class, 'edit'])->name('clients.edit');
-Route::post('/clients/edit', [ClientsController::class, 'edit'])->name('clients.update');
+Route::match(['get', 'post'], '/clients/edit/{id?}', [ClientsController::class, 'edit'])->name('clients.update');
 Route::get('/clients/export/{id}', [ClientsController::class, 'export'])->name('clients.export');
 Route::post('/clients/import', [ClientsController::class, 'import'])->name('clients.import');
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
@@ -132,14 +132,14 @@ Route::prefix('mail-attachments')->name('mail-attachments.')->group(function () 
 Route::post('/create-note', [ClientNotesController::class, 'createnote'])->name('clients.createnote');
 Route::post('/update-note-datetime', [ClientNotesController::class, 'updateNoteDatetime'])->name('clients.updateNoteDatetime');
 Route::get('/getnotedetail', [ClientNotesController::class, 'getnotedetail'])->name('clients.getnotedetail');
-Route::get('/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
+Route::match(['get', 'post'], '/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
 Route::get('/viewmatternote', [ClientNotesController::class, 'viewapplicationnote'])->name('clients.viewmatternote');
 Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']); // backward compat
 // REMOVED Phase 4: prev_visa column dropped - Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
-Route::get('/pinnote', [ClientNotesController::class, 'pinnote']);
+Route::match(['get', 'post'], '/pinnote', [ClientNotesController::class, 'pinnote']);
 
 Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index'])->name('clients.matterTask.index');
 Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');
