@@ -188,7 +188,8 @@ class FrontDeskCheckInController extends Controller
         $appointmentId = null;
         if (!empty($validated['appointment_id'])) {
             $appt = BookingAppointment::find((int) $validated['appointment_id']);
-            if ($appt && $adminId && (int) $appt->client_id === $adminId) {
+            $isToday = $appt && $appt->appointment_datetime && \Carbon\Carbon::parse($appt->appointment_datetime)->isToday();
+            if ($appt && $adminId && (int) $appt->client_id === $adminId && $isToday) {
                 $appointmentId = $appt->id;
             }
         }

@@ -30,7 +30,19 @@ class TrustPeriodService
             return;
         }
 
-        $d = Carbon::createFromFormat('d/m/Y', $ddMmYyyy)->toDateString();
+        try {
+            if (str_contains($ddMmYyyy, '-')) {
+                $d = Carbon::parse($ddMmYyyy)->toDateString();
+            } else {
+                $d = Carbon::createFromFormat('d/m/Y', $ddMmYyyy)->toDateString();
+            }
+        } catch (\Throwable $e) {
+            try {
+                $d = Carbon::parse($ddMmYyyy)->toDateString();
+            } catch (\Throwable $e2) {
+                throw new \RuntimeException('Invalid transaction date format: ' . $ddMmYyyy);
+            }
+        }
 
         $locked = DB::table('trust_accounting_periods')
             ->where('status', 'locked')
@@ -39,7 +51,7 @@ class TrustPeriodService
             ->exists();
 
         if ($locked) {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'This transaction date falls in a locked trust accounting period. Trust entries cannot be added or voided.'
             );
         }

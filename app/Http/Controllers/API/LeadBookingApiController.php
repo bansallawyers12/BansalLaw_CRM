@@ -306,6 +306,15 @@ class LeadBookingApiController extends BaseController
             $this->applyWebsiteStatusLifecycleTimestamps($websiteStatusCode, $payload);
         }
 
+        if (!\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+            $payload['is_paid'] = false;
+            $payload['payment_status'] = 'pending';
+            $payload['paid_at'] = null;
+            if (($payload['status'] ?? '') === 'paid') {
+                $payload['status'] = 'pending';
+            }
+        }
+
         if (isset($payload['noe_id']) && $payload['noe_id'] !== null) {
             $noeId = (int) $payload['noe_id'];
             if (empty($payload['service_type'])) {

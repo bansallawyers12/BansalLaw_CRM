@@ -74,6 +74,9 @@ class ClientAccountsController extends Controller
         if ($hasTrustVoidedAt && isset($row->trust_voided_at) && $row->trust_voided_at !== null) {
             return true;
         }
+        if (isset($row->trust_reversal_of_entry_id) && $row->trust_reversal_of_entry_id !== null) {
+            return true;
+        }
         if (isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1) {
             return true;
         }
@@ -738,7 +741,7 @@ class ClientAccountsController extends Controller
                     $trans_no = TrustReceiptSequenceService::nextTransNo($requestData['trans_date'][$i]);
                     $principal = floatval($requestData['deposit_amount'][$i] ?? 0);
                     $eftposSurcharge = $ledgerSurchargeAt($i);
-                    $deposit = ($clientFundLedgerType === 'Deposit') ? round($principal + $eftposSurcharge, 2) : $principal;
+                    $deposit = $principal;
                     $withdraw = floatval($requestData['withdraw_amount'][$i] ?? 0);
 
                     // Validate Fee Transfer amount against Current Funds Held (for Fee Transfer without invoice)
@@ -2747,6 +2750,15 @@ class ClientAccountsController extends Controller
               $new_balance = $running_balance - $depositAmount;
 
               // Insert Fee Transfer entry
+              $existingInv = DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('invoice_no', $invoiceNo)
+                  ->where('client_id', $clientId)
+                  ->first();
+
+              $invCap = $existingInv ? floatval($existingInv->balance_amount ?? $existingInv->withdraw_amount) : floatval($depositAmount);
+              $transferAmount = round(min(floatval($depositAmount), max(0, $invCap)), 2);
+
               $feeTransferRowId = DB::table('account_client_receipts')->insertGetId([
                   'user_id' => Auth::user()->id,
                   'client_id' => $clientId,
@@ -2760,7 +2772,7 @@ class ClientAccountsController extends Controller
                   'client_fund_ledger_type' => 'Fee Transfer',
                   'description' => 'Fee transfer to invoice ' . $invoiceNo,
                   'deposit_amount' => 0,
-                  'withdraw_amount' => $depositAmount,
+                  'withdraw_amount' => $transferAmount,
                   'balance_amount' => $new_balance,
                   'validate_receipt' => 0,
                   'void_invoice' => 0,
@@ -4369,9 +4381,21 @@ class ClientAccountsController extends Controller
                        
                        DB::table('account_client_receipts')
                        ->where('id',$infoVal->id)
-                       ->update(['withdraw_amount_before_void' => $infoVal->balance_amount,'withdraw_amount'=>'0.00','balance_amount'=>'0.00','partial_paid_amount'=>'0.00']);
+                       ->update(['withdraw_amount_before_void' => $infoVal->withdraw_amount,'withdraw_amount'=>'0.00','balance_amount'=>'0.00','partial_paid_amount'=>'0.00']);
                    }
                }
+
+                // Unallocate office receipts linked to this voided invoice (14.6)
+                if (!empty($invoice_info->invoice_no)) {
+                    DB::table('account_client_receipts')
+                        ->where('client_id', $invoice_info->client_id)
+                        ->where('receipt_type', 2)
+                        ->where('invoice_no', $invoice_info->invoice_no)
+                        ->update([
+                            'invoice_no' => null,
+                            'updated_at' => now(),
+                        ]);
+                }
 
                //update account_all_invoice_receipts entries also
                $record_info1 = AccountAllInvoiceReceipt::select('id','withdraw_amount','receipt_id')
@@ -5119,6 +5143,9 @@ class ClientAccountsController extends Controller
           ->delete();
 
       if ($affectedRows > 0) {
+          if (!empty($receipt->invoice_no)) {
+              $this->recalculateInvoiceStatusAndBalance((int) $client_id, (string) $receipt->invoice_no);
+          }
           $client_info = \App\Models\Admin::select('client_id')->where('id', $client_id)->first();
           $subject = 'Deleted client receipt no -' . $receipt_id . ' of client-' . ($client_info->client_id ?? 'N/A');
           $objs = new ActivitiesLog;

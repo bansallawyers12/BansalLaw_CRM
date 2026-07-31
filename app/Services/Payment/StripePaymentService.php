@@ -434,12 +434,20 @@ class StripePaymentService
                 ];
             }
 
-            // Optional: verify metadata appointment_id if frontend set it
-            if (!empty($paymentIntent->metadata->appointment_id) && (string) $paymentIntent->metadata->appointment_id !== (string) $appointment->id) {
+            if (strtolower($paymentIntent->currency ?? 'aud') !== 'aud') {
                 return [
                     'success' => false,
                     'data' => [],
-                    'message' => 'PaymentIntent does not belong to this appointment.',
+                    'message' => 'Currency mismatch. Expected AUD.',
+                ];
+            }
+
+            $metaAppId = $paymentIntent->metadata->appointment_id ?? $paymentIntent->metadata->bansal_appointment_id ?? null;
+            if (!empty($metaAppId) && (string) $metaAppId !== (string) $appointment->id && (string) $metaAppId !== (string) $appointment->bansal_appointment_id) {
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'PaymentIntent metadata does not match this appointment.',
                 ];
             }
 

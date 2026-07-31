@@ -138,8 +138,28 @@ class AppointmentSyncService
         $existingAppointment = BookingAppointment::where('bansal_appointment_id', $bansalId)->first();
 
         if ($existingAppointment) {
-            // Update if needed (optional - you might want to skip updates)
-            Log::info('Appointment already exists, skipping', ['bansal_id' => $bansalId]);
+            $updated = false;
+            $newPaymentStatus = $appointmentData['payment_status'] ?? $appointmentData['payment']['status'] ?? null;
+            $newIsPaid = $appointmentData['is_paid'] ?? null;
+            $newStatus = $appointmentData['status'] ?? null;
+
+            if ($newPaymentStatus && $existingAppointment->payment_status !== $newPaymentStatus) {
+                $existingAppointment->payment_status = $newPaymentStatus;
+                $updated = true;
+            }
+            if ($newIsPaid !== null && (bool)$existingAppointment->is_paid !== (bool)$newIsPaid) {
+                $existingAppointment->is_paid = (bool)$newIsPaid;
+                $updated = true;
+            }
+            if ($newStatus && $existingAppointment->status !== $newStatus) {
+                $existingAppointment->status = $newStatus;
+                $updated = true;
+            }
+            if ($updated) {
+                $existingAppointment->save();
+                Log::info('Updated existing appointment from website sync', ['bansal_id' => $bansalId]);
+                return 'updated';
+            }
             return 'skipped';
         }
 

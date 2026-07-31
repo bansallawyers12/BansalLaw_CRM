@@ -281,7 +281,7 @@ class OfficeVisitController extends Controller
 					<div class="col-md-12">
 						<div class="form-group">
 							<label>Visit Purpose</label>
-								<textarea class="form-control visitpurpose" data-id="<?php echo $CheckinLog->id; ?>" ><?php echo $CheckinLog->visit_purpose; ?></textarea>
+								<textarea class="form-control visitpurpose" data-id="<?php echo $CheckinLog->id; ?>" ><?php echo htmlspecialchars($CheckinLog->visit_purpose ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
 						</div>
 					</div>
 
@@ -387,7 +387,7 @@ class OfficeVisitController extends Controller
 									</div>
 									<?php if($llist->description != ''){ ?>
 									<div class="col-md-12 logs_comment">
-										<p><?php echo $llist->description; ?></p>
+										<p><?php echo htmlspecialchars($llist->description, ENT_QUOTES, 'UTF-8'); ?></p>
 									</div>
 									<?php } ?>
 								</div>

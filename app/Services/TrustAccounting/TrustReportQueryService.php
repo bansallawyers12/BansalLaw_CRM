@@ -28,6 +28,10 @@ class TrustReportQueryService
             $q->whereNull('trust_voided_at');
         }
 
+        if (Schema::hasColumn('account_client_receipts', 'trust_reversal_of_entry_id')) {
+            $q->whereNull('trust_reversal_of_entry_id');
+        }
+
         return $q;
     }
 

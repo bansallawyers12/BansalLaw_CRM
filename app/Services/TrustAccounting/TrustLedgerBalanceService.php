@@ -21,6 +21,10 @@ class TrustLedgerBalanceService
             return true;
         }
 
+        if (isset($row->trust_reversal_of_entry_id) && $row->trust_reversal_of_entry_id !== null) {
+            return true;
+        }
+
         return isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1;
     }
 

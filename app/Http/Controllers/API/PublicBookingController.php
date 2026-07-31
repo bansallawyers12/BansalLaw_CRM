@@ -584,8 +584,7 @@ class PublicBookingController extends BaseController
             // 1. It's for the same client
             // 2. It's on the same date and time
             // 3. It's not cancelled or rescheduled
-            $existingAppointment = BookingAppointment::where('client_id', $client->id)
-                ->where('appointment_datetime', $appointmentDateTime)
+            $existingAppointment = BookingAppointment::where('appointment_datetime', $appointmentDateTime)
                 ->whereNotIn('status', ['cancelled', 'rescheduled'])
                 ->first();
 
@@ -649,7 +648,7 @@ class PublicBookingController extends BaseController
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
-                'is_paid' => ($serviceId == 2) ? false : true,
+                'is_paid' => false,
                 'amount' => ($serviceId == 2) ? 0 : 150,
                 'final_amount' => ($serviceId == 2) ? 0 : 150,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
@@ -686,32 +685,9 @@ class PublicBookingController extends BaseController
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,
                     'payload' => $bansalApiPayload,
-                    'trace' => $apiException->getTraceAsString()
                 ]);
                 
-                // If API call fails, we'll still create the appointment locally
-                // but with a temporary ID that indicates it needs to be synced
-                // This ensures existing functionality doesn't break
-                $bansalAppointmentId = null; // Will be set to a placeholder if API fails
-            }
-
-            // If API call failed, use a placeholder ID that indicates manual creation
-            // This allows the appointment to exist in CRM while we can retry API sync later
-            if ($bansalAppointmentId === null) {
-                // Generate temporary ID starting from 2000000 to distinguish from old system
-                // This will be replaced when API sync succeeds
-                $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
-                
-                // Ensure uniqueness
-                while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
-                    $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
-                }
-                
-                Log::warning('Using temporary bansal_appointment_id due to API failure', [
-                    'temporary_id' => $bansalAppointmentId,
-                    'api_error' => $bansalApiError,
-                    'client_id' => $client->id
-                ]);
+                return $this->sendError('Selected time slot is unavailable on the booking calendar: ' . $bansalApiError, [], 422);
             }
 
             // Create booking appointment
@@ -1703,6 +1679,10 @@ class PublicBookingController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            if ($request->type === 'complete' && !\Auth::guard('admin')->check()) {
+                return $this->sendError('Clients can only cancel appointments. Appointment completion must be confirmed by staff.', [], 403);
             }
 
             // Map 'cancel' to 'cancelled' and 'complete' to 'completed'
