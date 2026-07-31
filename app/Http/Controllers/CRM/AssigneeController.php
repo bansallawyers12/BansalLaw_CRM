@@ -525,14 +525,72 @@ class AssigneeController extends Controller
                     ->filterColumn('client_reference', function($query, $keyword) {
                         $keywordLower = strtolower($keyword);
                         $query->whereHas('noteClient', function($q) use ($keywordLower) {
-                            $q->whereRaw("LOWER(client_id) LIKE ?", ["%{$keywordLower}%"]);
+                            $q->whereRaw('LOWER(client_id) LIKE ?', ['%' . $keywordLower . '%'])
+                              ->orWhereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
+                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
+                              ->orWhereHas('company', function ($cq) use ($keywordLower) {
+                                  $cq->whereRaw('LOWER(company_name) LIKE ?', ['%' . $keywordLower . '%']);
+                              });
                         });
-                    })
-                    ->make(true);
-            } catch (\Exception $e) {
-                \Log::error('Error in assignee list AJAX: ' . $e->getMessage());
-                return response()->json(['error' => 'An error occurred while fetching data.'], 500);
-            }
+                    });
+
+                // Get the response and ensure UTF-8 encoding
+                $response = $dataTable->make(true);
+
+                // Set proper UTF-8 headers
+                if ($response instanceof \Illuminate\Http\JsonResponse) {
+                    $response->header('Content-Type', 'application/json; charset=utf-8');
+                }
+
+                return $response;
+        } catch (\Exception $e) {
+            Log::error('Error in getAction: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'draw' => intval($request->get('draw')),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'An error occurred while processing the request'
+            ], 500);
+        }
+    }
+
+    public function getActionCounts(Request $request)
+    {
+        $counts = [
+            'all' => 0,
+            'call' => 0,
+            'checklist' => 0,
+            'review' => 0,
+            'query' => 0,
+            'urgent' => 0,
+            'personal_action' => 0,
+            'follow_up' => 0,
+        ];
+
+        $query = Note::where('status', '<>', '1')
+            ->where('type', 'client')
+            ->where('is_action', 1);
+
+        if (! $this->viewerSeesAllActions()) {
+            $query->where('assigned_to', Auth::user()->id);
+        }
+
+        $counts['all'] = (clone $query)->count();
+        $counts['call'] = (clone $query)->where('task_group', 'Call')->count();
+        $counts['checklist'] = (clone $query)->where('task_group', 'Checklist')->count();
+        $counts['review'] = (clone $query)->where('task_group', 'Review')->count();
+        $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
+        $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
+        $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
+        $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
+
+        return response()->json($counts);
     }
 
     /**
