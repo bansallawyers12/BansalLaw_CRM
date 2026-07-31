@@ -92,21 +92,39 @@ class AssigneeController extends Controller
     //Update action to be complete
     public function updateActionCompleted(Request $request)
     {
-        $data = $request->all(); //dd($data);
-        $uniqueGroupId = $data['unique_group_id'] ?? '';
-        // Try group update first (notes with same unique_group_id)
-        $updated = Note::where('unique_group_id', $uniqueGroupId)
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $data = $request->all();
+        $noteId = $data['id'] ?? 0;
+        $noteData = Note::find($noteId);
+        if (!$noteData) {
+            return response()->json(['status' => false, 'message' => 'Action not found']);
+        }
+
+        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
+            $uid = (int) $user->id;
+            $isAssigneeOrOwner = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
+            $hasClientAccess = $noteData->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$noteData->client_id, $user) : false;
+            if (!$isAssigneeOrOwner && !$hasClientAccess) {
+                return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+            }
+        }
+
+        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
+        $updated = 0;
+        if ($uniqueGroupId !== '') {
+            $updated = Note::where('unique_group_id', $uniqueGroupId)
+                ->where('unique_group_id', '!=', '')
                 ->whereNotNull('assigned_to')
                 ->whereNotNull('unique_group_id')
                 ->update(['status' => '1']);
-        // Fallback: when unique_group_id is null/empty, update single note by id so completion still works
+        }
         if ($updated === 0) {
-            $updated = Note::where('id', $data['id'])->update(['status' => '1']);
+            $updated = Note::where('id', $noteId)->update(['status' => '1']);
         }
         if ($updated) {
-            $note_data = Note::where('id', $data['id'])->first(); //dd($note_data);
+            $note_data = Note::where('id', $data['id'])->first();
             if($note_data){
-                $admin_data = Staff::where('id',$note_data['assigned_to'])->first(); //dd($admin_data);
+                $admin_data = Staff::where('id',$note_data['assigned_to'])->first();
                 if($admin_data){
                     $assignee_name = $admin_data['first_name']." ".$admin_data['last_name'];
                 } else {
@@ -142,9 +160,9 @@ class AssigneeController extends Controller
                 } else {
                     $objs->use_for = null;
                 }
-                $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
+                $objs->followup_date = @$note_data['updated_at'];
                 $objs->task_group = $taskGroup;
-                $objs->task_status = 1; //marked completed
+                $objs->task_status = 1;
                 $objs->pin = 0;
                 $objs->activity_type = 'activity';
                 $objs->save();
@@ -163,12 +181,37 @@ class AssigneeController extends Controller
     //Update action to be not complete
     public function updateActionNotCompleted(Request $request)
     {
-        $data = $request->all(); //dd($data['id']);
-        $note = Note::where('unique_group_id',$data['unique_group_id'])
-                    ->whereNotNull('assigned_to')
-                    ->whereNotNull('unique_group_id')
-                    ->update(['status'=>'0']);
-        if($note){
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $data = $request->all();
+        $noteId = $data['id'] ?? 0;
+        $noteData = Note::find($noteId);
+        if (!$noteData) {
+            return response()->json(['status' => false, 'message' => 'Action not found']);
+        }
+
+        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
+            $uid = (int) $user->id;
+            $isAssigneeOrOwner = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
+            $hasClientAccess = $noteData->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$noteData->client_id, $user) : false;
+            if (!$isAssigneeOrOwner && !$hasClientAccess) {
+                return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+            }
+        }
+
+        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
+        $updated = 0;
+        if ($uniqueGroupId !== '') {
+            $updated = Note::where('unique_group_id', $uniqueGroupId)
+                ->where('unique_group_id', '!=', '')
+                ->whereNotNull('assigned_to')
+                ->whereNotNull('unique_group_id')
+                ->update(['status' => '0']);
+        }
+        if ($updated === 0) {
+            $updated = Note::where('id', $noteId)->update(['status' => '0']);
+        }
+
+        if($updated){
             $noteRow = Note::where('id', $data['id'] ?? 0)->first();
             if ($noteRow) {
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteRow, false);

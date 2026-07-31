@@ -274,8 +274,11 @@ class WorkflowController extends Controller
 
         $workflowId = $request->workflow_id;
         if (!$workflowId) {
-            $general = Workflow::where('name', 'General')->first();
-            $workflowId = $general ? $general->id : null;
+            $general = Workflow::firstOrCreate(
+                ['name' => 'General'],
+                ['description' => 'Default General Workflow', 'status' => 1]
+            );
+            $workflowId = $general->id;
         }
 
         $stages = array_values(array_filter($request->stage_name, function ($name) {

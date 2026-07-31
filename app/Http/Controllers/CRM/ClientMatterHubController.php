@@ -886,7 +886,8 @@ class ClientMatterHubController extends Controller
 				// Send notification to admins
 				$admins = \App\Models\Admin::where('role', 1)->where('is_deleted', null)->get();
 				$requesterName = Auth::user() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'A team member';
-				$matterTitle = \App\Models\Matter::find($clientMatter->sel_matter_id)->title ?? 'Matter';
+				$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;
+				$matterTitle = $matterObj ? $matterObj->title : 'Matter';
 				$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
 
 				foreach ($admins as $admin) {
@@ -965,7 +966,8 @@ class ClientMatterHubController extends Controller
 			if ($saved) {
 				// Send notification back to requester if applicable
 				if ($requesterId && $requesterId != (Auth::guard('admin')->id() ?? Auth::id())) {
-					$matterTitle = \App\Models\Matter::find($clientMatter->sel_matter_id)->title ?? 'Matter';
+					$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;
+					$matterTitle = $matterObj ? $matterObj->title : 'Matter';
 					$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
 					\App\Models\Notification::create([
 						'sender_id' => Auth::guard('admin')->id() ?? Auth::id(),
@@ -1571,7 +1573,16 @@ class ClientMatterHubController extends Controller
 			return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
 		}
 
-		$stage     = DB::table('workflow_stages')->where('name', $wfStage)->first();
+		$stageQuery = DB::table('workflow_stages')->where('name', $wfStage);
+		if (!empty($matter->workflow_id)) {
+			$stageQuery->where('workflow_id', $matter->workflow_id);
+		} elseif (!empty($matter->sel_matter_id)) {
+			$wf = DB::table('workflows')->where('matter_id', $matter->sel_matter_id)->first();
+			if ($wf) {
+				$stageQuery->where('workflow_id', $wf->id);
+			}
+		}
+		$stage     = $stageQuery->first() ?? DB::table('workflow_stages')->where('name', $wfStage)->first();
 		$wfStageId = $stage ? $stage->id : null;
 
 		$inserted  = [];

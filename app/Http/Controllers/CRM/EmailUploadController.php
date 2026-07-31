@@ -609,6 +609,13 @@ class EmailUploadController extends Controller
                 : $request->upload_inbox_mail_client_matter_id;
             $matterId = empty($matterId) ? null : (int) $matterId;
 
+            if ($matterId && !empty($clientId)) {
+                $belongs = \App\Models\ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
+                if (!$belongs) {
+                    $matterId = null;
+                }
+            }
+
             if (!$request->boolean('force_upload') && empty($syncMeta)) {
                 $existing = $this->findExistingEmailLog(
                     (int) ($clientId ?? 0),

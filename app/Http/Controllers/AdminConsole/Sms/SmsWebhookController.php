@@ -33,10 +33,11 @@ class SmsWebhookController extends Controller
         $smsLog = SmsLog::where('provider_message_id', $messageSid)->first();
 
         if ($smsLog) {
-            $smsLog->update([
-                'status' => $status,
-                'delivered_at' => in_array($status, ['delivered']) ? now() : null,
-            ]);
+            $updateData = ['status' => $status];
+            if ($status === 'delivered') {
+                $updateData['delivered_at'] = $smsLog->delivered_at ?? now();
+            }
+            $smsLog->update($updateData);
 
             Log::info('SMS status updated', [
                 'sms_log_id' => $smsLog->id,
@@ -107,10 +108,11 @@ class SmsWebhookController extends Controller
             // Map Cellcast status to internal status
             $internalStatus = $this->mapCellcastStatus($status);
             
-            $smsLog->update([
-                'status' => $internalStatus,
-                'delivered_at' => in_array($internalStatus, ['delivered']) ? now() : null,
-            ]);
+            $updateData = ['status' => $internalStatus];
+            if ($internalStatus === 'delivered') {
+                $updateData['delivered_at'] = $smsLog->delivered_at ?? now();
+            }
+            $smsLog->update($updateData);
 
             Log::info('SMS status updated', [
                 'sms_log_id' => $smsLog->id,

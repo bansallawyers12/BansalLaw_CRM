@@ -2040,7 +2040,11 @@ class DocumentController extends Controller
             ]);
 
             if ($signer->token !== null && $signer->status === 'pending') {
-                // S3 path setup
+                // S3 path & fallbacks setup
+                $url = $document->myfile;
+                $tmpPdfPath = null;
+                $s3Key = null;
+
                 $clientId = null;
                 if ($document->client_id) {
                     $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
@@ -2050,11 +2054,48 @@ class DocumentController extends Controller
                 }
                 $docType = $document->doc_type ?? '';
                 $myfileKey = $document->myfile_key ?? '';
-                $s3Key = $clientId && $docType && $myfileKey ? ($clientId . '/' . $docType . '/' . $myfileKey) : null;
+                if ($clientId && $docType && $myfileKey) {
+                    $s3Key = $clientId . '/' . $docType . '/' . $myfileKey;
+                }
 
-                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                $pdfStream = Storage::disk('s3')->get($s3Key);
-                file_put_contents($tmpPdfPath, $pdfStream);
+                if ($s3Key && Storage::disk('s3')->exists($s3Key)) {
+                    try {
+                        $pdfStream = Storage::disk('s3')->get($s3Key);
+                        if ($pdfStream && strlen($pdfStream) > 0) {
+                            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                            file_put_contents($tmpPdfPath, $pdfStream);
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Constructed S3 key failed: ' . $e->getMessage());
+                    }
+                }
+
+                if (!$tmpPdfPath && $url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
+                    $parsed = parse_url($url);
+                    if (isset($parsed['path'])) {
+                        $pdfPath = ltrim(urldecode($parsed['path']), '/');
+                        if ($pdfPath && Storage::disk('s3')->exists($pdfPath)) {
+                            try {
+                                $pdfStream = Storage::disk('s3')->get($pdfPath);
+                                if ($pdfStream && strlen($pdfStream) > 0) {
+                                    $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                                    file_put_contents($tmpPdfPath, $pdfStream);
+                                }
+                            } catch (\Exception $e) {
+                                Log::warning('Parsed S3 URL failed: ' . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+
+                if (!$tmpPdfPath && $url && file_exists(storage_path('app/public/' . $url))) {
+                    $tmpPdfPath = storage_path('app/public/' . $url);
+                }
+
+                if (!$tmpPdfPath || !file_exists($tmpPdfPath)) {
+                    return back()->with('error', 'Unable to retrieve PDF document for signing.');
+                }
+
                 $outputTmpPath = storage_path('app/tmp_' . uniqid() . '_signed.pdf');
 
                 Log::info("PDF paths", [

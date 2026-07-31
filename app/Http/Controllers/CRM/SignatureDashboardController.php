@@ -767,6 +767,9 @@ class SignatureDashboardController extends Controller
             ->get();
             
         foreach ($entities as $entity) {
+            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $entity->id, Auth::user())) {
+                continue;
+            }
             // Determine if it's a client or lead based on type field
             $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
             
@@ -816,6 +819,10 @@ class SignatureDashboardController extends Controller
     public function getClientMatters($id)
     {
         try {
+            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
             $matters = \DB::table('client_matters')
                 ->where('client_id', $id)
                 ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
@@ -865,6 +872,15 @@ class SignatureDashboardController extends Controller
             'doc_category' => 'required|string|in:visa,personal',
             'note' => 'nullable|string|max:500'
         ]);
+
+        if ($request->matter_id) {
+            $belongs = \App\Models\ClientMatter::where('id', $request->matter_id)
+                ->where('client_id', $request->entity_id)
+                ->exists();
+            if (!$belongs) {
+                return back()->with('error', 'Selected matter does not belong to this client.');
+            }
+        }
 
         $success = $this->signatureService->associateWithCategory(
             $document,

@@ -60,6 +60,13 @@ class MatterEmailTemplateController extends Controller
 		//check authorization end
 		if ($request->isMethod('post')) 
 		{
+			$this->validate($request, [
+				'matter_id' => 'required|integer|exists:matters,id',
+				'name' => 'required|string|max:255',
+				'subject' => 'required|string|max:255',
+				'description' => 'required|string',
+			]);
+
 			$requestData 		= 	$request->all();
 			$obj				= 	new EmailTemplate; 
 			$obj->type			=	EmailTemplate::TYPE_MATTER_FIRST;
@@ -109,6 +116,13 @@ class MatterEmailTemplateController extends Controller
 	 */
 	public function update(Request $request, $templateId)
 	{
+		$this->validate($request, [
+			'matter_id' => 'required|integer|exists:matters,id',
+			'name' => 'required|string|max:255',
+			'subject' => 'required|string|max:255',
+			'description' => 'required|string',
+		]);
+
 		$requestData = $request->all();
 		
 		$obj = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_FIRST)->find($templateId);

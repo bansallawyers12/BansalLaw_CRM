@@ -246,10 +246,14 @@ class UnifiedSmsManager
     {
         $message = $this->replaceTemplateVariables($template->message, $variables);
         $context['template_id'] = $template->id;
-        $template->increment('usage_count');
         $type = $this->resolveMessageTypeFromCategory($template->category);
 
-        return $this->sendSms($to, $message, $type, $context);
+        $result = $this->sendSms($to, $message, $type, $context);
+        if (!empty($result['success'])) {
+            $template->increment('usage_count');
+        }
+
+        return $result;
     }
 
     protected function resolveMessageTypeFromCategory(?string $category): string
