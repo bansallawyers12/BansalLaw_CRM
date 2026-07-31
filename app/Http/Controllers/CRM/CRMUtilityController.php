@@ -301,7 +301,11 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 			$requestData['col'] = trim($requestData['colname']);
 
-			if($this->viewerCanMutateAnyRecord())
+			$allowedCols = ['status', 'is_active', 'is_archive', 'is_trash'];
+			$userRole = (int) (Auth::user()?->role ?? 0);
+			$isAuthorized = $this->viewerCanMutateAnyRecord() || in_array($userRole, [1, 12, 17], true);
+
+			if ($isAuthorized && in_array($requestData['col'], $allowedCols, true))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['current_status']) && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -345,18 +349,19 @@ class CRMUtilityController extends Controller
 				}
 				else
 				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
+					$message = config('constants.server_error');
 				}
 			}
 			else
 			{
-				$message = 'You are not authorized person to perform this action.';
+				$message = 'You are not authorized to perform this operation or target column is invalid.';
 			}
 		}
 		else
 		{
-			$message = config('constants.post_method');
+			$message = config('constants.server_error');
 		}
+
 		echo json_encode(array('status'=>$status, 'message'=>$message));
 		 die;
 
@@ -375,6 +380,12 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 			$requestData['col'] = trim($requestData['col']);
 
+			$allowedCols = ['status', 'is_active', 'is_archive', 'is_trash'];
+			$userRole = (int) (Auth::user()?->role ?? 0);
+			$isAuthorized = $this->viewerCanMutateAnyRecord() || in_array($userRole, [1, 12, 17], true);
+
+			if ($isAuthorized && in_array($requestData['col'], $allowedCols, true))
+			{
 				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['table']) && !empty($requestData['table']))
 				{
 					$tableExist = Schema::hasTable(trim($requestData['table']));
@@ -409,14 +420,19 @@ class CRMUtilityController extends Controller
 				}
 				else
 				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
+					$message = config('constants.server_error');
 				}
-
+			}
+			else
+			{
+				$message = 'You are not authorized to perform this operation or target column is invalid.';
+			}
 		}
 		else
 		{
 			$message = config('constants.post_method');
 		}
+
 		echo json_encode(array('status'=>$status, 'message'=>$message));
 		die;
 	}
@@ -832,13 +848,23 @@ class CRMUtilityController extends Controller
                                 }
                             }
                         }
-                        else{
-                            $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                            if($response) {
-                                $status = 1;
-                                $message = 'Record has been deleted successfully.';
+                        else {
+                            $allowedDeleteTables = [
+                                'matters', 'workflows', 'workflow_stages', 'branches',
+                                'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+                                'email_labels', 'document_checklists', 'personal_document_types',
+                                'matter_document_types', 'teams', 'client_matter_tasks'
+                            ];
+                            if (in_array($requestData['table'], $allowedDeleteTables, true)) {
+                                $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
+                                if ($response) {
+                                    $status = 1;
+                                    $message = 'Record has been deleted successfully.';
+                                } else {
+                                    $message = config('constants.server_error');
+                                }
                             } else {
-                                $message = config('constants.server_error');
+                                $message = 'Deletion is not authorized for this table.';
                             }
                         }
 					}
@@ -1560,12 +1586,21 @@ public function getChapters(Request $request)
                             else if( $filechecklist_doc->doc_type == "documents") {
                                 $fileUrl = $filechecklist_doc->myfile; // AWS S3 link
 
-                                // Check if it's a URL
-                                if(filter_var($fileUrl, FILTER_VALIDATE_URL)){
-                                    // Download and save to a temporary location
-                                    $tempPath = sys_get_temp_dir() . '/' . basename($fileUrl);
-                                    file_put_contents($tempPath, file_get_contents($fileUrl));
-                                    $array['files'][] = $tempPath; // Attach the temp file
+                                // Check if it's a URL and validate domain
+                                if (filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+                                    $parsedHost = parse_url($fileUrl, PHP_URL_HOST);
+                                    $isAllowedDomain = $parsedHost && (
+                                        str_ends_with($parsedHost, 'amazonaws.com') ||
+                                        str_ends_with($parsedHost, 'bansallawyers.com.au')
+                                    );
+                                    if ($isAllowedDomain) {
+                                        $tempPath = sys_get_temp_dir() . '/' . basename($fileUrl);
+                                        $fileContent = @file_get_contents($fileUrl);
+                                        if ($fileContent !== false) {
+                                            file_put_contents($tempPath, $fileContent);
+                                            $array['files'][] = $tempPath; // Attach the temp file
+                                        }
+                                    }
                                 } else {
                                     $array['files'][] = $fileUrl; // Local file
                                 }

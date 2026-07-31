@@ -26,8 +26,22 @@ class ServiceAccountController extends Controller
                 'admin_password' => 'required|string',
             ]);
 
-            // For local development, we'll generate a mock token
-            // In production, this would call the actual external API
+            // Validate admin credentials
+            $user = \App\Models\Staff::where('email', $request->admin_email)->first();
+            if (!$user || !\Illuminate\Support\Facades\Hash::check($request->admin_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid admin credentials',
+                ], 401);
+            }
+
+            if (!app()->environment('local', 'testing')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service account token generation is disabled in production',
+                ], 403);
+            }
+
             $mockToken = 'local_token_' . Str::random(32) . '_' . time();
             
             $response = [
@@ -39,11 +53,9 @@ class ServiceAccountController extends Controller
                 'generated_at' => now()->toISOString()
             ];
 
-            // Log the token generation
             Log::info('Local service account token generated', [
                 'service_name' => $request->service_name,
                 'admin_email' => $request->admin_email,
-                'token' => $mockToken
             ]);
 
             return response()->json($response, 200);

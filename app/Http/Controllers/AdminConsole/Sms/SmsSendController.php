@@ -12,8 +12,12 @@ use Illuminate\Support\Facades\Validator;
  * 
  * Handles manual SMS sending and bulk operations for AdminConsole
  */
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+
 class SmsSendController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     protected $smsManager;
 
     public function __construct(UnifiedSmsManager $smsManager)
@@ -48,6 +52,10 @@ class SmsSendController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        if ($request->filled('client_id')) {
+            $this->ensureCrmRecordAccess((int) $request->client_id);
         }
 
         $result = $this->smsManager->sendSms(

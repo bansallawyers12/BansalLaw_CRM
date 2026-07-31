@@ -53,11 +53,6 @@ class StaffApiAuthController extends Controller
         }
 
         $deviceName = $request->device_name ?? 'admin-portal-app';
-        $token = $staff->createToken($deviceName)->plainTextToken;
-
-        if ($request->device_token) {
-            $this->handleDeviceToken($staff->id, $request->device_token, $deviceName);
-        }
 
         try {
             $refreshTokenValue = Str::random(64);
@@ -73,7 +68,31 @@ class StaffApiAuthController extends Controller
                 'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
             ];
 
-            DB::table('refresh_tokens')->insertGetId($insertData);
+            return DB::transaction(function () use ($staff, $deviceName, $request, $refreshTokenValue, $insertData) {
+                $tokenObj = $staff->createToken($deviceName);
+                $token = $tokenObj->plainTextToken;
+
+                if ($request->device_token) {
+                    $this->handleDeviceToken($staff->id, $request->device_token, $deviceName);
+                }
+
+                DB::table('refresh_tokens')->insertGetId($insertData);
+
+                $staff->touch();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'token' => $token,
+                    'refresh_token' => $refreshTokenValue,
+                    'user' => [
+                        'id' => $staff->id,
+                        'name' => $staff->first_name.' '.$staff->last_name,
+                        'email' => $staff->email,
+                        'role' => $staff->role,
+                    ],
+                ]);
+            });
         } catch (\Illuminate\Database\QueryException $e) {
             $errorDetails = $this->handleRefreshTokenError($e, $staff->id, $insertData ?? [], $refreshTokenValue ?? '');
 
@@ -98,22 +117,6 @@ class StaffApiAuthController extends Controller
                 'error_details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
-
-        $staff->touch();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'token' => $token,
-                'refresh_token' => $refreshTokenValue,
-                'user' => [
-                    'id' => $staff->id,
-                    'name' => $staff->first_name.' '.$staff->last_name,
-                    'email' => $staff->email,
-                    'role' => $staff->role,
-                ],
-            ],
-        ], 200);
     }
 
     /**
@@ -215,11 +218,16 @@ class StaffApiAuthController extends Controller
     private function handleDeviceToken($userId, $deviceToken, $deviceName = null)
     {
         try {
-            $existingToken = DeviceToken::where('device_token', $deviceToken)->first();
+            DeviceToken::where('device_token', $deviceToken)
+                ->where('user_id', '!=', $userId)
+                ->update(['is_active' => false]);
+
+            $existingToken = DeviceToken::where('device_token', $deviceToken)
+                ->where('user_id', $userId)
+                ->first();
 
             if ($existingToken) {
                 $existingToken->update([
-                    'user_id' => $userId,
                     'device_name' => $deviceName,
                     'is_active' => true,
                     'last_used_at' => now(),

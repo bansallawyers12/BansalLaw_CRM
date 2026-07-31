@@ -48,7 +48,14 @@ class LeadBookingApiController extends BaseController
             ->first();
 
         if ($existing) {
-            return $this->leadStoreJsonResponse($existing, true);
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for reaching out. Your request has been received.',
+                'data' => [
+                    'lead_id' => $existing->id,
+                    'is_existing' => true,
+                ],
+            ], 200);
         }
 
         if ($hasFullName) {

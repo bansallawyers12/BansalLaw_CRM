@@ -100,18 +100,12 @@ class PythonService
     public function mergePdfs(array $files): array
     {
         try {
-            $multipart = [];
-            foreach ($files as $index => $file) {
-                $multipart[] = [
-                    'name' => 'files',
-                    'contents' => file_get_contents($file->getPathname()),
-                    'filename' => $file->getClientOriginalName()
-                ];
+            $httpRequest = Http::timeout($this->timeout);
+            foreach ($files as $file) {
+                $httpRequest->attach('files', file_get_contents($file->getPathname()), $file->getClientOriginalName());
             }
 
-            $response = Http::timeout($this->timeout)
-                ->attach($multipart)
-                ->post($this->getUrlWithTimezone('/pdf/merge'));
+            $response = $httpRequest->post($this->getUrlWithTimezone('/pdf/merge'));
 
             if (!$response->successful()) {
                 throw new Exception('PDF merge failed: ' . $response->body());
