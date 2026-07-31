@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -17,6 +19,14 @@ class BranchesController extends Controller
 
     public function index(Request $request)
     {
+        $check = $this->checkAuthorizationAction('branch_management', $request->route()->getActionMethod(), Auth::user()?->role);
+        if ($check) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+            }
+            return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
+        }
+
         $query = Branch::query();
         $totalData = $query->count();
         $lists = $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));

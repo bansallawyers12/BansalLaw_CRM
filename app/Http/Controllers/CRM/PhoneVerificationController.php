@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
+use App\Models\ClientContact;
 use App\Services\Sms\PhoneVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class PhoneVerificationController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     protected $verificationService;
 
     public function __construct(PhoneVerificationService $verificationService)
@@ -34,10 +38,16 @@ class PhoneVerificationController extends Controller
                 ], 422);
             }
 
+            $contact = ClientContact::findOrFail($request->contact_id);
+            $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
+
             $result = $this->verificationService->sendOTP($request->contact_id);
 
             return response()->json($result, $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+                throw $e;
+            }
             \Log::error('OTP Send Error', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -71,6 +81,9 @@ class PhoneVerificationController extends Controller
                 ], 422);
             }
 
+            $contact = ClientContact::findOrFail($request->contact_id);
+            $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
+
             $result = $this->verificationService->verifyOTP(
                 $request->contact_id,
                 $request->otp_code
@@ -78,6 +91,9 @@ class PhoneVerificationController extends Controller
 
             return response()->json($result, $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+                throw $e;
+            }
             \Log::error('OTP Verification Error', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -109,6 +125,9 @@ class PhoneVerificationController extends Controller
             ], 422);
         }
 
+        $contact = ClientContact::findOrFail($request->contact_id);
+        $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
+
         if (!$this->verificationService->canResendOTP($request->contact_id)) {
             return response()->json([
                 'success' => false,
@@ -126,7 +145,7 @@ class PhoneVerificationController extends Controller
      */
     public function getStatus(Request $request, $contactId)
     {
-        $contact = \App\Models\ClientContact::find($contactId);
+        $contact = ClientContact::find($contactId);
 
         if (!$contact) {
             return response()->json([
@@ -134,6 +153,8 @@ class PhoneVerificationController extends Controller
                 'message' => 'Contact not found'
             ], 404);
         }
+
+        $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
 
         return response()->json([
             'success' => true,

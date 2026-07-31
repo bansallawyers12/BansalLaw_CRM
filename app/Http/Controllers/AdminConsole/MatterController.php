@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
+use Illuminate\Support\Facades\Auth;
+
 class MatterController extends Controller
 {
     public function __construct()
@@ -21,6 +23,14 @@ class MatterController extends Controller
 
     public function index(Request $request)
     {
+        $check = $this->checkAuthorizationAction('matter_management', $request->route()->getActionMethod(), Auth::user()?->role);
+        if ($check) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+            }
+            return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
+        }
+
         $data = $this->buildListPayload($request);
 
         if ($request->ajax() || $request->expectsJson()) {

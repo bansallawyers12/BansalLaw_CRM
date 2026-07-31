@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
+use App\Models\ClientEmail;
 use App\Services\EmailVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class EmailVerificationController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     protected $verificationService;
 
     public function __construct(EmailVerificationService $verificationService)
@@ -33,6 +37,9 @@ class EmailVerificationController extends Controller
                 'message' => $validator->errors()->first()
             ], 422);
         }
+
+        $clientEmail = ClientEmail::findOrFail($request->email_id);
+        $this->ensureCrmRecordAccess((int) ($clientEmail->client_id ?? $clientEmail->admin_id));
 
         $result = $this->verificationService->sendVerificationEmail($request->email_id);
 
@@ -77,6 +84,9 @@ class EmailVerificationController extends Controller
             ], 422);
         }
 
+        $clientEmail = ClientEmail::findOrFail($request->email_id);
+        $this->ensureCrmRecordAccess((int) ($clientEmail->client_id ?? $clientEmail->admin_id));
+
         if (!$this->verificationService->canResendVerification($request->email_id)) {
             return response()->json([
                 'success' => false,
@@ -94,7 +104,7 @@ class EmailVerificationController extends Controller
      */
     public function getStatus($emailId)
     {
-        $clientEmail = \App\Models\ClientEmail::find($emailId);
+        $clientEmail = ClientEmail::find($emailId);
 
         if (!$clientEmail) {
             return response()->json([
@@ -102,6 +112,8 @@ class EmailVerificationController extends Controller
                 'message' => 'Email not found'
             ], 404);
         }
+
+        $this->ensureCrmRecordAccess((int) ($clientEmail->client_id ?? $clientEmail->admin_id));
 
         return response()->json([
             'success' => true,

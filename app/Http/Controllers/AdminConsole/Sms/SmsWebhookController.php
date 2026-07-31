@@ -54,11 +54,34 @@ class SmsWebhookController extends Controller
     {
         Log::info('Twilio Incoming Message', $request->all());
 
-        // TODO: Implement incoming message handling in future sprints
-        // Could be used for:
-        // - Client responses
-        // - Auto-reply system
-        // - Keyword-based actions
+        $from = $request->input('From');
+        $body = $request->input('Body');
+        $messageSid = $request->input('MessageSid');
+
+        if ($from && $body) {
+            $contact = null;
+            $cleanPhone = preg_replace('/[^\d]/', '', $from);
+            $lastDigits = strlen($cleanPhone) >= 10 ? substr($cleanPhone, -10) : $cleanPhone;
+            if ($lastDigits !== '') {
+                $contact = \App\Models\ClientContact::where('phone', 'LIKE', '%' . $lastDigits)->first();
+            }
+
+            SmsLog::create([
+                'client_id' => $contact?->client_id ?? $contact?->admin_id,
+                'client_contact_id' => $contact?->id,
+                'sender_id' => null,
+                'recipient_phone' => $from,
+                'formatted_phone' => $from,
+                'message_content' => $body,
+                'message_type' => 'incoming',
+                'provider' => 'twilio',
+                'provider_message_id' => $messageSid,
+                'status' => 'received',
+                'sent_at' => now(),
+            ]);
+
+            Log::info('Incoming Twilio SMS saved', ['from' => $from, 'sid' => $messageSid]);
+        }
 
         return response('OK', 200);
     }
@@ -105,7 +128,34 @@ class SmsWebhookController extends Controller
     {
         Log::info('Cellcast Incoming Message', $request->all());
 
-        // TODO: Implement incoming message handling in future sprints
+        $from = $request->input('from') ?? $request->input('sender');
+        $body = $request->input('message') ?? $request->input('text') ?? $request->input('content');
+        $messageId = $request->input('message_id') ?? $request->input('id');
+
+        if ($from && $body) {
+            $contact = null;
+            $cleanPhone = preg_replace('/[^\d]/', '', (string)$from);
+            $lastDigits = strlen($cleanPhone) >= 10 ? substr($cleanPhone, -10) : $cleanPhone;
+            if ($lastDigits !== '') {
+                $contact = \App\Models\ClientContact::where('phone', 'LIKE', '%' . $lastDigits)->first();
+            }
+
+            SmsLog::create([
+                'client_id' => $contact?->client_id ?? $contact?->admin_id,
+                'client_contact_id' => $contact?->id,
+                'sender_id' => null,
+                'recipient_phone' => (string)$from,
+                'formatted_phone' => (string)$from,
+                'message_content' => (string)$body,
+                'message_type' => 'incoming',
+                'provider' => 'cellcast',
+                'provider_message_id' => $messageId,
+                'status' => 'received',
+                'sent_at' => now(),
+            ]);
+
+            Log::info('Incoming Cellcast SMS saved', ['from' => $from, 'id' => $messageId]);
+        }
 
         return response('OK', 200);
     }

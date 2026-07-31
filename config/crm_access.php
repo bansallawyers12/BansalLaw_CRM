@@ -15,8 +15,8 @@ $intList = static function (string $envKey, string $envDefault, array $hardDefau
 };
 
 // Canonical default exempt staff ids (used when env is missing or invalid).
-$defaultPrivilegedStaffIdsCsv = '36834,36524,36692,36483,36484,36718,36523,36836,36830';
-$defaultPrivilegedStaffIdsArr = [36834, 36524, 36692, 36483, 36484, 36718, 36523, 36836, 36830];
+$defaultPrivilegedStaffIdsCsv = '';
+$defaultPrivilegedStaffIdsArr = [];
 $exemptEnvRaw = env('CRM_ACCESS_EXEMPT_STAFF_IDS');
 $exemptEnvTrimmed = is_string($exemptEnvRaw) ? trim($exemptEnvRaw) : '';
 if ($exemptEnvRaw === null || $exemptEnvRaw === false || $exemptEnvTrimmed === '') {
