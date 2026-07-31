@@ -62,7 +62,6 @@
 
                                     <form id="app-logout-form" action="{{ route('crm.logout') }}" method="POST" style="display: none;">
                                         @csrf
-                                        <input type="hidden" name="id" value="{{ Auth::user() ? Auth::user()->id : '' }}">
                                     </form>
                                 </div>
                             </li>

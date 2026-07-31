@@ -69,6 +69,10 @@ class StaffController extends Controller
         }
 
         $usertype = UserRole::orderedForSelect();
+        $actor = Auth::user();
+        if (!($actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor))) {
+            $usertype = $usertype->reject(fn ($r) => (int) $r->id === 1);
+        }
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
@@ -183,6 +187,10 @@ class StaffController extends Controller
 
         $currentRoleId = isset($staff->role) ? (int) $staff->role : 0;
         $usertype = UserRole::orderedForSelect($currentRoleId > 0 ? $currentRoleId : null);
+        $actor = Auth::user();
+        if (!($actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor))) {
+            $usertype = $usertype->reject(fn ($r) => (int) $r->id === 1);
+        }
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
@@ -315,9 +323,22 @@ class StaffController extends Controller
 
     public function savezone(Request $request)
     {
+        $check = $this->checkAuthorizationAction('user_management', 'savezone', Auth::user()?->role);
+        if ($check) {
+            return $this->respondUnauthorized($request);
+        }
+
         if ($request->isMethod('post')) {
             $requestData = $request->all();
-            $obj = Staff::find(@$requestData['user_id']);
+            $targetUserId = (int) (@$requestData['user_id'] ?? 0);
+
+            $actor = Auth::user();
+            $isSuperAdmin = $actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
+            if (!$isSuperAdmin && $targetUserId !== (int) ($actor?->id ?? 0)) {
+                return $this->respondUnauthorized($request);
+            }
+
+            $obj = Staff::find($targetUserId);
 
             if (!$obj) {
                 return redirect()->back()->with('error', 'Staff not found.');
@@ -330,7 +351,7 @@ class StaffController extends Controller
                 return redirect()->back()->with('error', config('constants.server_error'));
             }
 
-            return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $requestData['user_id']])->with('success', 'Staff edited successfully.');
+            return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $targetUserId])->with('success', 'Staff edited successfully.');
         }
     }
 
@@ -356,7 +377,7 @@ class StaffController extends Controller
 
         $query = match ($tab) {
             'inactive' => Staff::where('status', 0),
-            'invited' => Staff::query(),
+            'invited' => Staff::where('status', 2),
             default => Staff::active(),
         };
 
@@ -417,7 +438,27 @@ class StaffController extends Controller
         $obj->country_code = @$requestData['country_code'];
         $obj->position = @$requestData['position'];
         $obj->phone = @$requestData['phone'];
-        $obj->role = @$requestData['role'];
+
+        $actor = Auth::user();
+        $actorCanAssignSuperAdmin = $actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
+        $requestedRole = (int) (@$requestData['role'] ?? 0);
+
+        if ($requestedRole === 1 && !$actorCanAssignSuperAdmin) {
+            throw ValidationException::withMessages([
+                'role' => ['You are not authorized to assign the Super Admin role.'],
+            ]);
+        }
+
+        if ($obj->exists && (int) $obj->role === 1 && !$actorCanAssignSuperAdmin) {
+            if ($requestedRole !== 1 && $requestedRole !== 0) {
+                throw ValidationException::withMessages([
+                    'role' => ['You are not authorized to change the role of a Super Admin.'],
+                ]);
+            }
+            $obj->role = 1;
+        } else {
+            $obj->role = @$requestData['role'];
+        }
         $obj->office_id = @$requestData['office'];
         $obj->team = @$requestData['team'];
         $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;

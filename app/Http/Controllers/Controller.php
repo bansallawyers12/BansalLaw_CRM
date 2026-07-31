@@ -254,25 +254,60 @@ class Controller extends BaseController
 	{
 		// Super Admin (role 1) — unrestricted
 		if ($role == 1) {
-			return;
+			return null;
 		}
 
 		// CRM access approvers get the same unrestricted admin console access as Super Admin
 		$actor = Auth::user();
 		if ($actor instanceof \App\Models\Staff && app(\App\Services\CrmAccess\CrmAccessService::class)->hasAdminConsoleLikeSuperAdminAccess($actor)) {
-			return;
+			return null;
 		}
 
-		$userrole = UserRole::where('usertype', $role)->first();
-		if ($userrole) {
-			$module_access = $userrole->module_access;
+		if (!$role) {
+			return true;
+		}
 
-			$noAccessController = json_decode($module_access);
+		$userrole = UserRole::find($role);
+		if (!$userrole) {
+			return true;
+		}
 
-			if (!in_array($controller, $noAccessController)) {
-				return true;
+		$module_access = $userrole->module_access;
+		if (empty($module_access)) {
+			return true;
+		}
+
+		$decoded = json_decode(trim((string) $module_access), true);
+		if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+			return true;
+		}
+
+		$moduleKeysToCheck = match ($controller) {
+			'user_management' => [3, 4, '3', '4', 'user_management'],
+			'user_role' => [6, '6', 'user_role'],
+			'branch_management' => [1, 2, '1', '2', 'branch_management'],
+			'matter_management' => [34, 40, 41, '34', '40', '41', 'matter_management'],
+			default => [$controller],
+		};
+
+		$hasAccess = false;
+		if (array_is_list($decoded)) {
+			foreach ($moduleKeysToCheck as $key) {
+				if (in_array($key, $decoded, false) || in_array((string)$key, $decoded, true)) {
+					$hasAccess = true;
+					break;
+				}
+			}
+		} else {
+			foreach ($moduleKeysToCheck as $key) {
+				if (array_key_exists($key, $decoded) || array_key_exists((string)$key, $decoded)) {
+					$hasAccess = true;
+					break;
+				}
 			}
 		}
+
+		return $hasAccess ? null : true;
 	}
 
 	public function curlRequest($url, $type = "PUT", $data = null){

@@ -88,7 +88,7 @@
 						       name="password" 
 						       placeholder="••••••••" 
 						       tabindex="2" 
-						       value="{{ (Cookie::get('password') != '' && !old('password')) ? Cookie::get('password') : old('password') }}" 
+						       value="{{ old('password') }}" 
 						       required>
 						<button type="button" class="btn-toggle-password" id="togglePasswordBtn" title="Show/Hide Password" aria-label="Toggle password visibility">
 							<i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
@@ -121,7 +121,7 @@
 						       class="remember-check-input" 
 						       tabindex="3" 
 						       id="remember-me" 
-						       @if(Cookie::get('email') != '' && Cookie::get('password') != '') checked @endif>
+						       @if(Cookie::get('email') != '' || old('remember')) checked @endif>
 						<span>Remember Me</span>
 					</label>
 				</div>

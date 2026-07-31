@@ -165,41 +165,44 @@ class CrmAccessService
         if (! array_key_exists($reasonCode, $reasons)) {
             throw new CrmAccessDeniedException('Invalid reason.');
         }
-        if ($this->hasDuplicateActiveQuickGrant($user, $adminId)) {
-            throw new CrmAccessDeniedException('An active quick access grant already exists for this record.');
-        }
 
-        $minutes = max(1, (int) config('crm_access.quick_grant_minutes', 15));
-        $starts = Carbon::now('UTC');
-        $ends = $starts->copy()->addMinutes($minutes);
+        return DB::transaction(function () use ($user, $adminId, $recordType, $officeId, $teamId, $reasonCode) {
+            if ($this->hasDuplicateActiveQuickGrant($user, $adminId, lock: true)) {
+                throw new CrmAccessDeniedException('An active quick access grant already exists for this record.');
+            }
 
-        $office = Branch::query()->find($officeId);
-        if (! $office) {
-            throw new CrmAccessDeniedException('Invalid office.');
-        }
+            $minutes = max(1, (int) config('crm_access.quick_grant_minutes', 15));
+            $starts = Carbon::now('UTC');
+            $ends = $starts->copy()->addMinutes($minutes);
 
-        $teamLabel = null;
-        if ($teamId !== null) {
-            $team = Team::query()->find($teamId);
-            $teamLabel = $team ? (string) $team->name : 'Team ' . $teamId;
-        }
+            $office = Branch::query()->find($officeId);
+            if (! $office) {
+                throw new CrmAccessDeniedException('Invalid office.');
+            }
 
-        return ClientAccessGrant::query()->create([
-            'staff_id' => (int) $user->id,
-            'admin_id' => $adminId,
-            'record_type' => $recordType,
-            'grant_type' => 'quick',
-            'access_type' => 'quick',
-            'status' => 'active',
-            'quick_reason_code' => $reasonCode,
-            'office_id' => $officeId,
-            'office_label_snapshot' => (string) $office->office_name,
-            'team_id' => $teamId,
-            'team_label_snapshot' => $teamLabel,
-            'requested_at' => $starts,
-            'starts_at' => $starts,
-            'ends_at' => $ends,
-        ]);
+            $teamLabel = null;
+            if ($teamId !== null) {
+                $team = Team::query()->find($teamId);
+                $teamLabel = $team ? (string) $team->name : 'Team ' . $teamId;
+            }
+
+            return ClientAccessGrant::query()->create([
+                'staff_id' => (int) $user->id,
+                'admin_id' => $adminId,
+                'record_type' => $recordType,
+                'grant_type' => 'quick',
+                'access_type' => 'quick',
+                'status' => 'active',
+                'quick_reason_code' => $reasonCode,
+                'office_id' => $officeId,
+                'office_label_snapshot' => (string) $office->office_name,
+                'team_id' => $teamId,
+                'team_label_snapshot' => $teamLabel,
+                'requested_at' => $starts,
+                'starts_at' => $starts,
+                'ends_at' => $ends,
+            ]);
+        });
     }
 
     public function requestSupervisorGrant(Staff $user, int $adminId, string $recordType, int $officeId, string $reasonCode, string $note = ''): ClientAccessGrant
@@ -341,18 +344,23 @@ class CrmAccessService
         return $expired + $pendingExpired;
     }
 
-    protected function hasDuplicateActiveQuickGrant(Staff $user, int $adminId): bool
+    protected function hasDuplicateActiveQuickGrant(Staff $user, int $adminId, bool $lock = false): bool
     {
         $now = Carbon::now('UTC');
 
-        return ClientAccessGrant::query()
+        $query = ClientAccessGrant::query()
             ->where('staff_id', (int) $user->id)
             ->where('admin_id', $adminId)
             ->where('grant_type', 'quick')
             ->where('status', 'active')
             ->whereNotNull('ends_at')
-            ->where('ends_at', '>', $now)
-            ->exists();
+            ->where('ends_at', '>', $now);
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->exists();
     }
 
     protected function notifyApproversOfPendingGrant(ClientAccessGrant $grant, Staff $requester, int $adminId): void
