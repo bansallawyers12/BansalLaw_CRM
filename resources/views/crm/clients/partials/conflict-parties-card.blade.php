@@ -50,6 +50,10 @@
         ? $latestConflictCheck->checked_at->format('d M Y H:i')
         : null;
     $conflictCheckHistory = $conflictCheckHistory ?? collect();
+    $conflictCheckStaleness = $conflictCheckStaleness ?? ['is_stale' => false, 'reason' => null];
+    $partiesUpdatedAtIso = isset($partiesUpdatedAt) && $partiesUpdatedAt
+        ? $partiesUpdatedAt->toIso8601String()
+        : '';
 @endphp
 
 <style>
@@ -125,7 +129,6 @@
     #conflictPartiesCard .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
     #conflictPartiesCard .cp-history-item { padding: 3px 0; }
     #conflictPartiesCard .cp-stale-hint {
-        display: none;
         font-size: 12px;
         color: #856404;
         background: #fff3cd;
@@ -211,7 +214,8 @@
 
 <div class="card" id="conflictPartiesCard"
      data-client-id="{{ $fetchedData->id }}"
-     data-client-matter-id="{{ $activeClientMatterId ?? '' }}">
+     data-client-matter-id="{{ $activeClientMatterId ?? '' }}"
+     data-parties-updated-at="{{ $partiesUpdatedAtIso }}">
     <div id="conflictPartiesView" class="cp-view" role="region" aria-label="Other parties summary">
         <div class="cp-card-header">
             <h3><i class="fa-solid fa-user-shield"></i> Other Parties &amp; Conflict Check</h3>
@@ -328,8 +332,8 @@
                 @endif
             </p>
 
-            <div class="cp-stale-hint" id="cpStaleHint">
-                Parties were updated after the last Clear/Waived check. Re-run the conflict search before saving a new outcome.
+            <div class="cp-stale-hint" id="cpStaleHint" @if(empty($conflictCheckStaleness['is_stale'])) style="display:none;" @endif>
+                {{ $conflictCheckStaleness['reason'] ?? 'Parties were updated after the last Clear/Waived check. Re-run the conflict search before saving a new outcome.' }}
             </div>
 
             <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
@@ -435,9 +439,39 @@
     var clientMatterId = card.getAttribute('data-client-matter-id') || '';
     var latestOutcome = @json($latestOutcome);
     var lastSearchTerms = null;
+    var lastSearchHash = null;
     var lastMatches = null;
     var lastInformationalMatches = null;
     var searchWasRun = false;
+    var conflictCheckIsStale = @json(! empty($conflictCheckStaleness['is_stale']));
+
+    function showStaleHint(message) {
+        var stale = document.getElementById('cpStaleHint');
+        if (!stale) return;
+        if (message) stale.textContent = message;
+        stale.style.display = 'block';
+        conflictCheckIsStale = true;
+        updateOutcomeSaveState();
+    }
+
+    function hideStaleHint() {
+        var stale = document.getElementById('cpStaleHint');
+        if (stale) stale.style.display = 'none';
+        conflictCheckIsStale = false;
+        updateOutcomeSaveState();
+    }
+
+    function updateOutcomeSaveState() {
+        if (!saveOutcomeBtn) return;
+        var outcome = (document.getElementById('cpOutcomeSelect') || {}).value || 'pending';
+        var blockClearWaived = conflictCheckIsStale
+            && !searchWasRun
+            && (outcome === 'clear' || outcome === 'waived');
+        saveOutcomeBtn.disabled = blockClearWaived;
+        saveOutcomeBtn.title = blockClearWaived
+            ? 'Run conflict search again after party or client detail changes before saving Clear or Waived.'
+            : '';
+    }
 
     function toast(msg, ok) {
         if (typeof iziToast !== 'undefined' && iziToast.show) {
@@ -661,8 +695,10 @@
         }
         if (hint) hint.textContent = 'Last check: ' + checkedAt + ' — ' + label;
         latestOutcome = outcome;
-        var stale = document.getElementById('cpStaleHint');
-        if (stale) stale.style.display = 'none';
+        hideStaleHint();
+        searchWasRun = false;
+        lastSearchHash = null;
+        updateOutcomeSaveState();
     }
 
     function prependHistory(outcome, checkedAt, matchCount, informationalCount, matterLabel) {
@@ -892,8 +928,11 @@
                     if (res.ok && res.data.success) {
                         searchWasRun = true;
                         lastSearchTerms = res.data.search_terms || null;
+                        lastSearchHash = res.data.search_hash || null;
                         lastMatches = res.data.matches || [];
                         lastInformationalMatches = res.data.informational_matches || [];
+                        hideStaleHint();
+                        updateOutcomeSaveState();
                         renderMatches(lastMatches, lastInformationalMatches);
                         renderWarnings(res.data.warnings || []);
                         var hardCount = res.data.match_count || 0;
@@ -944,6 +983,12 @@
     }
 
     if (saveOutcomeBtn) {
+        var outcomeSelect = document.getElementById('cpOutcomeSelect');
+        if (outcomeSelect) {
+            outcomeSelect.addEventListener('change', updateOutcomeSaveState);
+        }
+        updateOutcomeSaveState();
+
         saveOutcomeBtn.addEventListener('click', function () {
             var outcome = (document.getElementById('cpOutcomeSelect') || {}).value || 'pending';
             var notes = ((document.getElementById('cpOutcomeNotes') || {}).value || '').trim();
@@ -977,6 +1022,9 @@
             if (clientMatterId) {
                 fd.append('client_matter_id', clientMatterId);
             }
+            if (searchWasRun && lastSearchHash) {
+                fd.append('acknowledged_search_hash', lastSearchHash);
+            }
             saveOutcomeBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
                 method: 'POST',
@@ -991,6 +1039,7 @@
                 })
                 .then(function (res) {
                     saveOutcomeBtn.disabled = false;
+                    updateOutcomeSaveState();
                     if (res.ok && res.data.success) {
                         toast(res.data.message || 'Outcome saved', true);
                         if (res.data.outcome && res.data.checked_at) {
@@ -1004,11 +1053,19 @@
                             );
                         }
                     } else {
+                        if (res.data && res.data.error_type === 'stale') {
+                            showStaleHint(
+                                (res.data.staleness && res.data.staleness.reason)
+                                    || res.data.message
+                                    || 'Parties or client details changed. Re-run the conflict search.'
+                            );
+                        }
                         toast((res.data && res.data.message) || 'Save failed', false);
                     }
                 })
                 .catch(function () {
                     saveOutcomeBtn.disabled = false;
+                    updateOutcomeSaveState();
                     toast('Network error', false);
                 });
         });

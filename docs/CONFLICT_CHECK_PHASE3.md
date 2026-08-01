@@ -77,20 +77,9 @@ Fixtures: `tests/Support/ConflictCheckPhase3Fixtures.php` (extends Phase 0 base)
 
 ---
 
-## Optional next: Phase 4B — Staleness enforcement
-
-Phase 2 already stores `parties_snapshot_at` and `search_hash`. A follow-up can:
-
-1. On outcome save / pipeline gate, compare current party snapshot + hash to saved row.
-2. Block Clear / engaged without re-run when parties changed since last check.
-3. UI banner: “Parties changed since last check — re-run search.”
-
-Estimated effort: 1–2 days; can run in parallel with Phase 3 (now complete).
-
----
-
 ## See also
 
 - [Phase 0 baseline](./CONFLICT_CHECK_PHASE0.md)
 - [Phase 1 false-positive fixes](./CONFLICT_CHECK_PHASE1.md)
 - [Phase 2 audit integrity](./CONFLICT_CHECK_PHASE2.md)
+- [Phase 4B staleness enforcement](./CONFLICT_CHECK_PHASE4B.md)

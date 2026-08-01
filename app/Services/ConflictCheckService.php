@@ -70,6 +70,30 @@ class ConflictCheckService
     }
 
     /**
+     * Build search terms and hash for the current client/matter state (no search execution).
+     *
+     * @return array{search_terms: array, search_hash: string, party_count: int}
+     */
+    public function buildSearchContext(Admin $client, ?int $clientMatterId = null): array
+    {
+        $client->loadMissing('company');
+        $parties = \App\Support\MatterOtherPartiesHelper::loadForConflictSearch((int) $client->id, $clientMatterId);
+        $searchTerms = $this->buildSearchTerms($client, $parties);
+
+        if (! $this->hasSearchableTerms($searchTerms)) {
+            throw new \InvalidArgumentException(
+                'Not enough information to run a conflict search. Ensure the client has a name, email, phone, or company details, or save at least one other party first.'
+            );
+        }
+
+        return [
+            'search_terms' => $searchTerms,
+            'search_hash' => $this->buildSearchHash($searchTerms),
+            'party_count' => $parties->count(),
+        ];
+    }
+
+    /**
      * @param  \Illuminate\Support\Collection<int, ClientConflictParty>  $parties
      * @return list<string>
      */

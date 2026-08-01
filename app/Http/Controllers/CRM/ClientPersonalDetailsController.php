@@ -41,6 +41,7 @@ use App\Models\Matter;
 use App\Support\MatterStreamHelper;
 use App\Models\Company;
 use App\Services\ConflictCheckService;
+use App\Services\ConflictCheckStalenessService;
 use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
@@ -2575,13 +2576,30 @@ class ClientPersonalDetailsController extends Controller
             if (! $hasCheck) {
                 $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this matter. Complete the conflict check on Personal Details before engaging/retaining.';
             } else {
-                $latest = (clone $matterCheckQuery)
+                $latestClear = (clone $matterCheckQuery)
+                    ->whereIn('outcome', ['clear', 'waived'])
                     ->orderByDesc('checked_at')
+                    ->orderByDesc('id')
                     ->first();
-                if ($latest && in_array($latest->outcome, ['pending', 'conflict_found'], true)) {
-                    $conflictWarning = 'Warning: The latest conflict check outcome is "'
-                        . str_replace('_', ' ', $latest->outcome)
-                        . '". Confirm Clear or Waived with consent before engaging/retaining.';
+
+                if ($latestClear) {
+                    $staleness = app(ConflictCheckStalenessService::class)
+                        ->evaluateStaleness($client, $pipelineMatterId, $latestClear);
+                    if ($staleness['is_stale']) {
+                        $conflictWarning = 'Warning: Other parties or client details changed since the last conflict check. Re-run the conflict search and save a new outcome before engaging/retaining.';
+                    }
+                }
+
+                if ($conflictWarning === null) {
+                    $latest = (clone $matterCheckQuery)
+                        ->orderByDesc('checked_at')
+                        ->orderByDesc('id')
+                        ->first();
+                    if ($latest && in_array($latest->outcome, ['pending', 'conflict_found'], true)) {
+                        $conflictWarning = 'Warning: The latest conflict check outcome is "'
+                            . str_replace('_', ' ', $latest->outcome)
+                            . '". Confirm Clear or Waived with consent before engaging/retaining.';
+                    }
                 }
             }
         }
@@ -2751,15 +2769,17 @@ class ClientPersonalDetailsController extends Controller
 
     private function partiesSnapshotAtForMatter(?int $clientMatterId): ?Carbon
     {
-        if (! $clientMatterId || ! Schema::hasTable('client_matter_opposing_parties')) {
+        if (! $clientMatterId) {
             return null;
         }
 
-        $ts = ClientMatterOpposingParty::query()
-            ->where('client_matter_id', $clientMatterId)
-            ->max('updated_at');
+        $clientId = (int) (ClientMatter::query()->where('id', $clientMatterId)->value('client_id') ?? 0);
+        if ($clientId <= 0) {
+            return null;
+        }
 
-        return $ts ? Carbon::parse($ts) : null;
+        return app(ConflictCheckStalenessService::class)
+            ->partiesUpdatedAtForMatter($clientId, $clientMatterId);
     }
 
     /**
@@ -2816,6 +2836,27 @@ class ClientPersonalDetailsController extends Controller
                 'client_count' => is_array($clientMatches) ? count($clientMatches) : 0,
                 'server_count' => (int) ($result['match_count'] ?? 0),
             ]);
+        }
+
+        if (in_array($outcome, ['clear', 'waived'], true)) {
+            /** @var ConflictCheckStalenessService $stalenessService */
+            $stalenessService = app(ConflictCheckStalenessService::class);
+            $ackHash = trim((string) ($request->input('acknowledged_search_hash', '')));
+            $staleness = $stalenessService->evaluateAgainstPreviousCheck(
+                $client,
+                $clientMatterId,
+                $result,
+                $ackHash !== '' ? $ackHash : null
+            );
+
+            if ($staleness['is_stale']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parties or client details changed since the last saved check. Run conflict search again before saving Clear or Waived.',
+                    'error_type' => 'stale',
+                    'staleness' => $staleness,
+                ], 422);
+            }
         }
 
         $validationError = $service->validateOutcomeAgainstResults($outcome, $result, [
@@ -2971,10 +3012,17 @@ class ClientPersonalDetailsController extends Controller
                 $message = $hardCount . ' potential conflict(s) found. Review carefully before saving an outcome.';
             }
 
+            $currentSearchHash = $service->buildSearchHash($result['search_terms']);
+            $referenceClear = app(ConflictCheckStalenessService::class)
+                ->findLatestClearOrWaived((int) $client->id, $clientMatterId);
+            $staleness = app(ConflictCheckStalenessService::class)
+                ->evaluateStaleness($client, $clientMatterId, $referenceClear);
+
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'search_terms' => $result['search_terms'],
+                'search_hash' => $currentSearchHash,
                 'matches' => $result['matches'],
                 'informational_matches' => $result['informational_matches'] ?? [],
                 'suggested_outcome' => $result['suggested_outcome'],
@@ -2983,6 +3031,11 @@ class ClientPersonalDetailsController extends Controller
                 'warnings' => $result['warnings'] ?? [],
                 'party_count' => $result['party_count'] ?? 0,
                 'client_matter_id' => $clientMatterId,
+                'staleness' => [
+                    'is_stale' => $staleness['is_stale'],
+                    'reason' => $staleness['reason'],
+                ],
+                'latest_check_id' => $referenceClear?->id,
             ]);
         } catch (\InvalidArgumentException $e) {
             return response()->json([

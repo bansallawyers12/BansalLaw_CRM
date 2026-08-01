@@ -1178,8 +1178,8 @@
                                             <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
-                                    <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date">
-                                        Trans. Date
+                                    <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date" title="Date shown on the tax invoice">
+                                        Invoice Date
                                         <span class="sort-icon">
                                             <i class="fa-solid fa-caret-up"></i>
                                             <i class="fa-solid fa-caret-down"></i>

@@ -2323,14 +2323,35 @@ class ClientsController extends Controller
                     ->forActiveMatter($activeClientMatterId)
                     ->with('clientMatter')
                     ->orderByDesc('checked_at')
+                    ->orderByDesc('id')
                     ->first();
 
                 $conflictCheckHistory = \App\Models\ClientConflictCheck::where('client_id', $id)
                     ->forActiveMatter($activeClientMatterId)
                     ->with('clientMatter')
                     ->orderByDesc('checked_at')
+                    ->orderByDesc('id')
                     ->limit(5)
                     ->get();
+
+                $referenceClear = $latestConflictCheck
+                    && in_array($latestConflictCheck->outcome, ['clear', 'waived'], true)
+                    ? $latestConflictCheck
+                    : \App\Models\ClientConflictCheck::where('client_id', $id)
+                        ->forActiveMatter($activeClientMatterId)
+                        ->whereIn('outcome', ['clear', 'waived'])
+                        ->orderByDesc('checked_at')
+                        ->orderByDesc('id')
+                        ->first();
+
+                $conflictCheckStaleness = ['is_stale' => false, 'reason' => null];
+                if ($referenceClear) {
+                    $conflictCheckStaleness = app(\App\Services\ConflictCheckStalenessService::class)
+                        ->evaluateStaleness($fetchedData, $activeClientMatterId, $referenceClear);
+                }
+
+                $partiesUpdatedAt = app(\App\Services\ConflictCheckStalenessService::class)
+                    ->partiesUpdatedAtForMatter((int) $id, $activeClientMatterId);
 
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
@@ -2343,7 +2364,7 @@ class ClientsController extends Controller
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
                     'conflictParties', 'latestConflictCheck', 'conflictCheckHistory',
-                    'activeClientMatterId'
+                    'activeClientMatterId', 'conflictCheckStaleness', 'partiesUpdatedAt'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');

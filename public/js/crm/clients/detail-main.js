@@ -2398,13 +2398,13 @@ success: function(response) {
 
                                         <input name="id[]" type="hidden" value="${subArray.id}" />
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" />
+                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" title="Date shown on the tax invoice" />
 
                                     </td>
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
+                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" title="Date this entry was posted in the system" />
 
                                     </td>
 
@@ -2485,10 +2485,8 @@ success: function(response) {
 
 
                                 // Initialize Flatpickr for invoice date fields
-                                initFlatpickrForClass('.report_date_fields_invoice');
-                                initFlatpickrForClass('.report_entry_date_fields_invoice:last', {
-                                    defaultDate: new Date()
-                                });
+                                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
+                                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
 
                                 if(index <1 ){
 
@@ -2622,13 +2620,13 @@ success: function(response) {
 
                                         <input name="id[]" type="hidden" value="${subArray.id}" />
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" />
+                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" title="Date shown on the tax invoice" />
 
                                     </td>
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
+                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" title="Date this entry was posted in the system" />
 
                                     </td>
 
@@ -2699,10 +2697,8 @@ success: function(response) {
 
 
                                 // Initialize Flatpickr for invoice date fields
-                                initFlatpickrForClass('.report_date_fields_invoice');
-                                initFlatpickrForClass('.report_entry_date_fields_invoice:last', {
-                                    defaultDate: new Date()
-                                });
+                                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
+                                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
 
 
 
@@ -3016,6 +3012,18 @@ success: function(response) {
 
 
         //create invoice receipt start - Initialize Flatpickr
+        function invoiceDateTodayStr() {
+            var today = new Date();
+            return ('0' + today.getDate()).slice(-2) + '/' +
+                   ('0' + (today.getMonth() + 1)).slice(-2) + '/' +
+                   today.getFullYear();
+        }
+
+        function invoiceRowDateFromFirst($tbody, fieldName) {
+            var val = $.trim($tbody.find('tr').first().find('input[name="' + fieldName + '"]').val());
+            return val || invoiceDateTodayStr();
+        }
+
         initFlatpickrForClass('.report_date_fields_invoice');
         initFlatpickrForClass('.report_entry_date_fields_invoice', {
             defaultDate: new Date()
@@ -3027,17 +3035,21 @@ success: function(response) {
 
         $(document).delegate('.openproductrinfo_invoice', 'click', function(){
 
+            var $tbody = $(this).closest('form').find('.productitem_invoice');
+            var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
+            var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
+
             var clonedval_invoice = `<td>
 
                             <input name="id[]" type="hidden" value="" />
 
-                            <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" />
+                            <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${invoiceDate}" title="Date shown on the tax invoice" />
 
                         </td>
 
                         <td>
 
-                            <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" />
+                            <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${recordedDate}" title="Date this entry was posted in the system" />
 
                         </td>
 
@@ -3114,10 +3126,9 @@ success: function(response) {
                 $('.productitem_invoice').append('<tr class="product_field_clone_invoice">'+clonedval_invoice+'</tr>');
 
                 // Initialize Flatpickr for invoice date fields
-                initFlatpickrForClass('.report_date_fields_invoice,.report_entry_date_fields_invoice');
-                initFlatpickrForClass('.report_entry_date_fields_invoice:last', {
-                    defaultDate: new Date()
-                });
+                var $newRow = $tbody.find('tr.product_field_clone_invoice').last();
+                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
+                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
 
         });
 

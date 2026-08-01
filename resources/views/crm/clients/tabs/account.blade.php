@@ -437,7 +437,7 @@
                     <thead>
                         <tr>
                             <th style="text-align: center;" title="Tax invoice number">Invoice No.</th>
-                            <th style="text-align: left;" title="Date invoice was issued">Date</th>
+                            <th style="text-align: left;" title="Date shown on the tax invoice">Invoice Date</th>
                             <th style="text-align: left;" title="Description of services rendered">Services / Description</th>
                             <th style="text-align: right;" title="Invoice amount (inc. GST where applicable)">Amount (incl. GST)</th>
                             <th style="text-align: left;" title="Payment status">Status</th>

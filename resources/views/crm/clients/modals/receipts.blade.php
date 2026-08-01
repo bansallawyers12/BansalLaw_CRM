@@ -447,8 +447,8 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:15%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:15%;color: #34395e;">Entry Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
                                             <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
                                             <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
@@ -460,10 +460,10 @@
                                         <tr class="clonedrow_invoice">
                                             <td>
                                                 <input name="id[]" type="hidden" value="" />
-                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" title="Date shown on the tax invoice" />
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
                                             </td>
                                             <td>
                                                 <select class="form-control" name="gst_included[]" data-valid="required">
@@ -724,8 +724,8 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:15%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:15%;color: #34395e;">Entry Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
                                             <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
                                             <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
@@ -737,10 +737,10 @@
                                         <tr class="clonedrow_invoice">
                                             <td>
                                                 <input name="id[]" type="hidden" value="" />
-                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" title="Date shown on the tax invoice" />
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
                                             </td>
                                             <td>
                                                 <select class="form-control" name="gst_included[]">
@@ -980,8 +980,8 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:15%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:15%;color: #34395e;">Entry Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
+                                            <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
                                             <th style="width:15%;color: #34395e;">Trans. No</th>
                                             <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
                                             <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
@@ -994,10 +994,10 @@
                                         <tr class="clonedrow_invoice">
                                             <td>
                                                 <input name="id[]" type="hidden" value="" />
-                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" title="Date shown on the tax invoice" />
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" />
+                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
                                             </td>
                                             <td>
                                                 <input class="form-control unique_trans_no_invoice" type="text" value="" readonly/>
