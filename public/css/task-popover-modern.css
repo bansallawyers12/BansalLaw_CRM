@@ -86,6 +86,24 @@
     box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
 }
 
+/* Keep selected Tom Select values inside the control (Update Task) */
+.popover.update-task-popover .ts-wrapper.single .ts-control .item,
+.popover-body .update-task-layout .ts-wrapper.single .ts-control .item {
+    position: static !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #1a2c40 !important;
+    box-shadow: none !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Buttons */
 .popover-body .btn {
     border-radius: 8px;

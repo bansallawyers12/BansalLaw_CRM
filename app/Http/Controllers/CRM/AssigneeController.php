@@ -539,11 +539,21 @@ class AssigneeController extends Controller
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             $detailUrl = $list->clientDetailUrl();
+                            $matterRef = htmlspecialchars($list->matterReference() ?? '', ENT_QUOTES, 'UTF-8');
+                            $matterUrl = htmlspecialchars($detailUrl ?? '', ENT_QUOTES, 'UTF-8');
+                            $clientLabelRaw = '';
+                            if ($list->noteClient) {
+                                $clientLabelRaw = trim($list->noteClient->company_name_or_personal_name ?? '');
+                                if ($clientLabelRaw === '') {
+                                    $clientLabelRaw = trim(($list->noteClient->first_name ?? '') . ' ' . ($list->noteClient->last_name ?? ''));
+                                }
+                            }
+                            $clientLabel = htmlspecialchars(Utf8Helper::safeSanitize($clientLabelRaw), ENT_QUOTES, 'UTF-8');
                             if ($detailUrl) {
                                 $actionBtn .= '<a href="'.e($detailUrl).'" target="_blank" class="btn btn-info" title="Open matter"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></a> ';
                             }
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" data-matterref="'.$matterRef.'" data-matterurl="'.$matterUrl.'" data-clientlabel="'.$clientLabel.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 

@@ -913,6 +913,162 @@
     padding: 5px !important;
 }
 
+/* Update Task: simple single-column modal form */
+.popover .modern-popover-content.update-task-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    grid-template-columns: none !important;
+    max-width: 100%;
+    padding: 0 !important;
+}
+
+.popover .modern-popover-content.update-task-layout > .form-group,
+.popover .modern-popover-content.update-task-layout > .form-group-full-width,
+.popover .modern-popover-content.update-task-layout > .text-center,
+.popover .modern-popover-content.update-task-layout > .update-task-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-column: auto !important;
+    margin-bottom: 0 !important;
+}
+
+.popover.update-task-popover {
+    max-width: 440px !important;
+    width: min(440px, 94vw) !important;
+    overflow: visible !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    box-shadow: 0 16px 40px rgba(30, 61, 96, 0.16) !important;
+}
+
+.popover.update-task-popover .popover-header {
+    background: #fff !important;
+    color: var(--navy, #1e3d60) !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    padding: 14px 18px !important;
+}
+
+.popover.update-task-popover .popover-body {
+    background: #fff !important;
+    padding: 16px 18px 18px !important;
+}
+
+.popover.update-task-popover .popover-arrow {
+    display: none !important;
+}
+
+.popover.update-task-popover .control-label {
+    margin-bottom: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text-muted, #5e7a90) !important;
+}
+
+.popover.update-task-popover .control-label i {
+    margin-right: 4px;
+    color: var(--navy, #1e3d60);
+}
+
+.popover.update-task-popover .form-control,
+.popover.update-task-popover select.form-control,
+.popover.update-task-popover textarea.form-control {
+    border: 1px solid var(--border, #c8dcef) !important;
+    border-radius: 8px !important;
+    padding: 9px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: var(--text-dark, #1a2c40) !important;
+    background: #fff !important;
+    min-height: 40px !important;
+    box-shadow: none !important;
+}
+
+.popover.update-task-popover select.form-control {
+    appearance: auto !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+    cursor: pointer;
+}
+
+.popover.update-task-popover textarea.form-control {
+    min-height: 96px !important;
+    resize: vertical !important;
+}
+
+.popover.update-task-popover .update-task-matter-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: nowrap;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #c8dcef);
+    border-radius: 8px;
+    background: var(--page-bg, #f0f6ff);
+}
+
+.popover.update-task-popover .update-task-matter-box .matter-meta {
+    min-width: 0;
+    flex: 1 1 auto;
+    color: var(--navy, #1e3d60);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.popover.update-task-popover .update-task-matter-box .matter-meta small {
+    display: block;
+    margin-top: 2px;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--text-muted, #5e7a90);
+}
+
+.popover.update-task-popover .update-task-matter-box .btn-open-matter {
+    flex: 0 0 auto;
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    border-radius: 7px !important;
+    white-space: nowrap;
+    text-transform: none !important;
+}
+
+.popover.update-task-popover .update-task-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px !important;
+    padding-top: 12px;
+    border-top: 1px solid var(--border, #c8dcef);
+}
+
+.popover.update-task-popover .update-task-actions .btn {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    min-width: auto !important;
+}
+
+.popover.update-task-popover .update-task-actions .btn-secondary {
+    background: #fff !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--text-dark, #1a2c40) !important;
+}
+
+.popover.update-task-popover .error-message:empty {
+    display: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+}
+
 .popover .modern-popover-content > .form-group {
     width: 100% !important;
     min-width: 0 !important;
@@ -1377,20 +1533,40 @@ $(function () {
     }
 
     // Function to generate Update Task popover content
-    function getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId) {
+    function getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel) {
         // Sanitize all inputs to prevent XSS
         assignedTo = String(assignedTo || '');
         noteId = escapeHtml(noteId || '');
         taskId = escapeHtml(taskId || '');
         taskGroup = String(taskGroup || '');
         clientId = escapeHtml(clientId || '');
-        
+        matterRef = escapeHtml(matterRef || '');
+        matterUrl = escapeHtml(matterUrl || '');
+        clientLabel = escapeHtml(clientLabel || '');
+
+        var matterBlock = '';
+        if (matterUrl) {
+            var matterTitle = matterRef || clientLabel || 'Open client';
+            var matterSub = (matterRef && clientLabel) ? '<small>' + clientLabel + '</small>' : '';
+            matterBlock = `
+                <div class="form-group form-group-full-width">
+                    <label class="control-label">Matter</label>
+                    <div class="update-task-matter-box">
+                        <div class="matter-meta">
+                            ${matterTitle}
+                            ${matterSub}
+                        </div>
+                        <a href="${matterUrl}" target="_blank" class="btn btn-primary btn-open-matter">Open</a>
+                    </div>
+                </div>`;
+        }
+
         return `
             <div id="popover-content" class="modern-popover-content update-task-layout">
+                ${matterBlock}
                 <div class="form-group">
-                    <label class="control-label"><i class="fa-solid fa-user"></i> Select Assignee</label>
-                    <select class="crm-ts-assignee form-control" id="update_task_rem_cat" name="rem_cat">
-                        <option value="">Select Assignee...</option>
+                    <label class="control-label" for="update_task_rem_cat">Assignee</label>
+                    <select class="form-control update-task-native-select" id="update_task_rem_cat" name="rem_cat">
                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                             <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
@@ -1400,35 +1576,33 @@ $(function () {
                     </select>
                     <div id="assignee-error" class="error-message"></div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label class="control-label"><i class="fa-solid fa-tag"></i> Task Group</label>
-                    <select class="crm-ts-assignee form-control" id="update_task_task_group" name="task_group">
-                        <option value="">Select Group...</option>
-                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
-                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
-                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>📋 Review</option>
-                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
-                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
-                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
-                        <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>📅 Follow up</option>
+                    <label class="control-label" for="update_task_task_group">Group</label>
+                    <select class="form-control update-task-native-select" id="update_task_task_group" name="task_group">
+                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>Call</option>
+                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>Checklist</option>
+                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
+                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
+                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
+                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Action</option>
+                        <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
-                
+
                 <div class="form-group form-group-full-width">
-                    <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                    <textarea id="update_task_assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId}</textarea>
+                    <label class="control-label" for="update_task_assignnote">Description</label>
+                    <textarea id="update_task_assignnote" class="form-control" rows="4">${noteId}</textarea>
                     <div id="note-error" class="error-message"></div>
                 </div>
-                
+
                 <input id="assign_note_id" type="hidden" value="${taskId}">
                 <input id="update_task_client_id" type="hidden" value="${clientId}">
-                
-                <div class="text-center">
-                    <button class="btn btn-primary" id="updateTask">
-                        <i class="fa-solid fa-floppy-disk"></i> Update Task
-                    </button>
+
+                <div class="update-task-actions">
+                    <button type="button" class="btn btn-secondary" id="updateTaskCancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateTask">Save</button>
                 </div>
             </div>`;
     }
@@ -1547,31 +1721,44 @@ $(function () {
         tryInitialize();
     }
 
-    // Initialize Update Task popover — Tom Select for assignee fields inside popover shell
+    // Initialize Update Task popover (native selects — no Tom Select placeholders)
     $(document).on('shown.bs.popover', '.update_task', function() {
-        var $shell = $('.popover.show').last();
-        var $popover = $shell.find('.popover-body');
-        if (!$popover.length) {
-            $popover = $shell;
+        var $shell = $('.popover.show').filter(function() {
+            return $(this).find('.update-task-layout').length > 0;
+        }).last();
+        if (!$shell.length) {
+            $shell = $('.popover.show').last();
         }
-        var ddParent = $shell.length ? $shell[0] : document.body;
-        $popover.find('.crm-ts-assignee').each(function() {
-            if (typeof destroyTS === 'function') destroyTS(this);
-            if (typeof initTS === 'function') {
-                initTS(this, { create: false, allowEmptyOption: true, dropdownParent: ddParent });
-            }
-            var ts = this.tomselect;
-            if (ts && ts.wrapper) {
-                ts.wrapper.style.width = '100%';
-                ts.wrapper.style.maxWidth = '100%';
-            }
+        $shell.addClass('update-task-popover');
+        $shell.css({
+            'position': 'fixed',
+            'left': '50%',
+            'top': '50%',
+            'transform': 'translate(-50%, -50%)',
+            'margin': '0',
+            'z-index': '1060'
+        });
+
+        if (!$('.popover-backdrop').length) {
+            $('body').append('<div class="popover-backdrop"></div>');
+        }
+        $('.popover-backdrop').addClass('show').off('click.updateTask').on('click.updateTask', function() {
+            $('.update_task').popover('hide');
         });
     });
 
+    $(document).on('click', '#updateTaskCancel', function() {
+        $('.update_task').popover('hide');
+    });
+
     $(document).on('hide.bs.popover', '.update_task', function() {
-        $('.popover .crm-ts-assignee').each(function() {
-            if (typeof destroyTS === 'function') destroyTS(this);
-        });
+        $('.popover-backdrop').removeClass('show').off('click.updateTask');
+    });
+
+    $(document).on('hidden.bs.popover', '.update_task', function() {
+        if (!$('.popover.add-my-task-popover.show').length) {
+            $('.popover-backdrop').removeClass('show');
+        }
     });
 
     // Update badge counts
@@ -1623,6 +1810,9 @@ $(function () {
         var taskGroup = $button.data('taskgroupid') || '';
         var followupDate = $button.data('actiondate') || '';
         var clientId = $button.data('clientid') || '';
+        var matterRef = $button.attr('data-matterref') || '';
+        var matterUrl = $button.attr('data-matterurl') || '';
+        var clientLabel = $button.attr('data-clientlabel') || '';
 
         // Set popover content
         $button.popover('dispose'); // Dispose of any existing popover
@@ -1630,10 +1820,11 @@ $(function () {
             html: true,
             sanitize: false,
             title: 'Update Task',
-            content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId),
+            content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel),
             trigger: 'manual',
             placement: 'auto',
             boundary: 'viewport',
+            customClass: 'update-task-popover',
             template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>',
             container: 'body'
         }).popover('show');
