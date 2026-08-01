@@ -269,66 +269,38 @@
                                                         @if ($list->noteClient)
                                                             @php
                                                                 $openMatterUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
+                                                                $matterRef = $list->matterReference() ?: '';
+                                                                $clientLabel = $client_name !== 'N/P' ? $client_name : '';
                                                             @endphp
                                                             <a href="{{ $openMatterUrl }}" target="_blank" class="btn btn-info btn-sm" data-bs-toggle="tooltip" title="Open matter">
                                                                 <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                                                             </a>
+                                                        @else
+                                                            @php
+                                                                $openMatterUrl = '';
+                                                                $matterRef = '';
+                                                                $clientLabel = '';
+                                                            @endphp
                                                         @endif
-                                                        @if ($list->task_group != 'Personal Action')
-                                                            <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" class="btn btn-primary btn-sm update_task" data-bs-toggle="tooltip" title="Update Task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content='
-                                                                <div id="popover-content">
-                                                                    <h4 class="text-center">Update Task</h4>
-                                                                    <div class="form-group row" style="margin-bottom:12px">
-                                                                        <label for="rem_cat" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Select Assignee</label>
-                                                                        <div class="col-sm-9">
-                                                                            <select class="crm-ts-assignee form-control selec_reg" id="rem_cat" name="rem_cat">
-                                                                                <option value="">Select</option>
-                                                                                @foreach (\App\Models\Staff::where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
-                                                                                    @php
-                                                                                        $branchname = \App\Models\Branch::where('id', $admin->office_id)->first();
-                                                                                    @endphp
-                                                                                    <option value="{{ $admin->id }}" {{ $admin->id == $list->assigned_to ? 'selected' : '' }}>{{ $admin->first_name . ' ' . $admin->last_name . ' (' . ($branchname->office_name ?? 'N/A') . ')' }}</option>
-                                                                                @endforeach
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="form-group row" style="margin-bottom:12px">
-                                                                        <label for="assignnote" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Note</label>
-                                                                        <div class="col-sm-9">
-                                                                            <textarea id="assignnote" class="form-control tinymce-editor f13" placeholder="Enter a note..."></textarea>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="form-group row" style="margin-bottom:12px">
-                                                                        <label for="popoverdatetime" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Date</label>
-                                                                        <div class="col-sm-9">
-                                                                            <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}" name="popoverdate">
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="form-group row" style="margin-bottom:12px">
-                                                                        <label for="task_group" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Group</label>
-                                                                        <div class="col-sm-9">
-                                                                            <select class="crm-ts-assignee form-control selec_reg" id="task_group" name="task_group">
-                                                                                <option value="">Select</option>
-                                                                                <option value="Call">Call</option>
-                                                                                <option value="Checklist">Checklist</option>
-                                                                                <option value="Review">Review</option>
-                                                                                <option value="Query">Query</option>
-                                                                                <option value="Urgent">Urgent</option>
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-                                                                    <input id="assign_note_id" type="hidden" value="">
-                                                                    <input id="assign_client_id" type="hidden" value="{{ base64_encode(convert_uuencode($list->client_id)) }}">
-                                                                    <div class="text-center">
-                                                                        <button class="btn btn-info" id="updateTask">Update Task</button>
-                                                                    </div>
-                                                                </div>'>
-                                                                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                                                            </button>
-                                                            <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
-                                                                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                                                            </button>
-                                                        @endif
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-primary btn-sm update_task"
+                                                            title="Update Task"
+                                                            data-assignedto="{{ $list->assigned_to }}"
+                                                            data-noteid="{{ e($list->description ?? '') }}"
+                                                            data-taskid="{{ $list->id }}"
+                                                            data-taskgroupid="{{ e($list->task_group ?? '') }}"
+                                                            data-actiondate="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}"
+                                                            data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"
+                                                            data-matterref="{{ e($matterRef) }}"
+                                                            data-matterurl="{{ e($openMatterUrl) }}"
+                                                            data-clientlabel="{{ e($clientLabel) }}"
+                                                        >
+                                                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                                                        </button>
+                                                        <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
+                                                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -408,63 +380,275 @@
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
 {{-- $.fn.popover: public/js/bootstrap5-jquery-compat.js (layout) --}}
+<style>
+    /* Reuse Action page Update Task styles on Assigned by Me */
+    .popover.update-task-popover {
+        max-width: 440px !important;
+        width: min(440px, 94vw) !important;
+        overflow: visible !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        box-shadow: 0 16px 40px rgba(30, 61, 96, 0.16) !important;
+    }
+    .popover.update-task-popover .popover-header {
+        background: #fff !important;
+        color: var(--navy, #1e3d60) !important;
+        border-bottom: 1px solid var(--border, #c8dcef) !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        padding: 14px 18px !important;
+    }
+    .popover.update-task-popover .popover-body {
+        background: #fff !important;
+        padding: 16px 18px 18px !important;
+    }
+    .popover.update-task-popover .popover-arrow { display: none !important; }
+    .popover .modern-popover-content.update-task-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        padding: 0 !important;
+    }
+    .popover.update-task-popover .control-label {
+        margin-bottom: 6px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--text-muted, #5e7a90) !important;
+    }
+    .popover.update-task-popover .form-control,
+    .popover.update-task-popover select.form-control,
+    .popover.update-task-popover textarea.form-control {
+        border: 1px solid var(--border, #c8dcef) !important;
+        border-radius: 8px !important;
+        padding: 9px 12px !important;
+        font-size: 14px !important;
+        min-height: 40px !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    .popover.update-task-popover select.form-control {
+        appearance: auto !important;
+        -webkit-appearance: menulist !important;
+        cursor: pointer;
+    }
+    .popover.update-task-popover textarea.form-control {
+        min-height: 96px !important;
+        resize: vertical !important;
+    }
+    .popover.update-task-popover .update-task-matter-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 8px;
+        background: var(--page-bg, #f0f6ff);
+    }
+    .popover.update-task-popover .update-task-matter-box .matter-meta {
+        min-width: 0;
+        flex: 1 1 auto;
+        color: var(--navy, #1e3d60);
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+    .popover.update-task-popover .update-task-matter-box .matter-meta small {
+        display: block;
+        margin-top: 2px;
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--text-muted, #5e7a90);
+    }
+    .popover.update-task-popover .update-task-matter-box .btn-open-matter {
+        flex: 0 0 auto;
+        padding: 7px 12px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+    }
+    .popover.update-task-popover .update-task-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border, #c8dcef);
+    }
+    .popover.update-task-popover .update-task-actions .btn {
+        padding: 9px 16px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+    }
+    .popover.update-task-popover .update-task-actions .btn-secondary {
+        background: #fff !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        color: var(--text-dark, #1a2c40) !important;
+    }
+    .popover.update-task-popover .error-message:empty {
+        display: none !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+    }
+    .popover-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 44, 64, 0.35);
+        z-index: 1055;
+        display: none;
+    }
+    .popover-backdrop.show { display: block; }
+</style>
 <script>
     jQuery(document).ready(function($) {
-        // Open assignee modal
-        $(document).on('click', '.listing-container .openassignee', function() {
-            $('.assignee').show();
-        });
-
-        $(document).on('click', '.listing-container .closeassignee', function() {
-            $('.assignee').hide();
-        });
-
-        // Reassign task
-        $(document).on('click', '.listing-container .reassign_task', function() {
-            var note_id = $(this).attr('data-noteid');
-            $('#assignnote').val(note_id);
-            var task_id = $(this).attr('data-taskid');
-            $('#assign_note_id').val(task_id);
-        });
-
-        // Update task — populate fields + Tom Select (content in DOM; dropdown parent must be popover, not hidden modal)
-        $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
-            var $trigger = $(this);
-            var $shell = $('.popover.show').last();
-            var $popover = $shell.find('.popover-body');
-            if (!$popover.length) {
-                $popover = $shell;
-            }
-
-            $popover.find('#assignnote').val($trigger.attr('data-noteid') || '');
-            $popover.find('#assign_note_id').val($trigger.attr('data-taskid') || '');
-            var taskgroup_id = $trigger.attr('data-taskgroupid');
-            $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
-            var followupdate_id = $trigger.attr('data-actiondate');
-            if (followupdate_id) {
-                $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
-            }
-
-            $popover.find('.crm-ts-assignee').each(function() {
-                if (typeof destroyTS === 'function') destroyTS(this);
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"']/g, function(m) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m];
             });
-            var ddParent = $shell.length ? $shell[0] : document.body;
-            if (typeof initTS === 'function') {
-                $popover.find('.crm-ts-assignee').each(function() {
-                    initTS(this, { create: false, allowEmptyOption: true, dropdownParent: ddParent });
-                    var ts = this.tomselect;
-                    if (ts && ts.wrapper) {
-                        ts.wrapper.style.width = '100%';
-                        ts.wrapper.style.maxWidth = '100%';
-                    }
-                });
+        }
+
+        function getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel) {
+            assignedTo = String(assignedTo || '');
+            noteId = escapeHtml(noteId || '');
+            taskId = escapeHtml(taskId || '');
+            taskGroup = String(taskGroup || '');
+            clientId = escapeHtml(clientId || '');
+            matterRef = escapeHtml(matterRef || '');
+            matterUrl = escapeHtml(matterUrl || '');
+            clientLabel = escapeHtml(clientLabel || '');
+            followupDate = escapeHtml(followupDate || '');
+
+            var matterBlock = '';
+            if (matterUrl) {
+                var matterTitle = matterRef || clientLabel || 'Open client';
+                var matterSub = (matterRef && clientLabel) ? '<small>' + clientLabel + '</small>' : '';
+                matterBlock = `
+                    <div class="form-group form-group-full-width">
+                        <label class="control-label">Matter</label>
+                        <div class="update-task-matter-box">
+                            <div class="matter-meta">${matterTitle}${matterSub}</div>
+                            <a href="${matterUrl}" target="_blank" class="btn btn-primary btn-open-matter">Open</a>
+                        </div>
+                    </div>`;
             }
+
+            var staffOptions = `
+                @foreach (\App\Models\Staff::where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
+                    @php $branchname = \App\Models\Branch::where('id', $admin->office_id)->first(); @endphp
+                    <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
+                        {{ $admin->first_name }} {{ $admin->last_name }} ({{ $branchname->office_name ?? 'N/A' }})
+                    </option>
+                @endforeach
+            `;
+
+            return `
+                <div id="popover-content" class="modern-popover-content update-task-layout">
+                    ${matterBlock}
+                    <div class="form-group">
+                        <label class="control-label" for="update_task_rem_cat">Assignee</label>
+                        <select class="form-control" id="update_task_rem_cat" name="rem_cat">${staffOptions}</select>
+                        <div id="assignee-error" class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="update_task_task_group">Group</label>
+                        <select class="form-control" id="update_task_task_group" name="task_group">
+                            <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>Call</option>
+                            <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>Checklist</option>
+                            <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
+                            <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
+                            <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
+                            <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Action</option>
+                            <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
+                        </select>
+                        <div id="task-group-error" class="error-message"></div>
+                    </div>
+                    <div class="form-group form-group-full-width">
+                        <label class="control-label" for="update_task_assignnote">Description</label>
+                        <textarea id="update_task_assignnote" class="form-control" rows="4">${noteId}</textarea>
+                        <div id="note-error" class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="update_task_date">Date</label>
+                        <input type="date" class="form-control" id="update_task_date" value="${followupDate}">
+                    </div>
+                    <input id="assign_note_id" type="hidden" value="${taskId}">
+                    <input id="update_task_client_id" type="hidden" value="${clientId}">
+                    <div class="update-task-actions">
+                        <button type="button" class="btn btn-secondary" id="updateTaskCancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="updateTask">Save</button>
+                    </div>
+                </div>`;
+        }
+
+        $(document).on('click', '.listing-container .update_task', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $button = $(this);
+            var assignedTo = $button.attr('data-assignedto') || '';
+            var noteId = $button.attr('data-noteid') || '';
+            var taskId = $button.attr('data-taskid') || '';
+            var taskGroup = $button.attr('data-taskgroupid') || '';
+            var followupDate = $button.attr('data-actiondate') || '';
+            var clientId = $button.attr('data-clientid') || '';
+            var matterRef = $button.attr('data-matterref') || '';
+            var matterUrl = $button.attr('data-matterurl') || '';
+            var clientLabel = $button.attr('data-clientlabel') || '';
+
+            $('.update_task').popover('hide');
+            $button.popover('dispose');
+            $button.popover({
+                html: true,
+                sanitize: false,
+                title: 'Update Task',
+                content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel),
+                trigger: 'manual',
+                placement: 'auto',
+                boundary: 'viewport',
+                customClass: 'update-task-popover',
+                template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>',
+                container: 'body'
+            }).popover('show');
+        });
+
+        $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
+            var $shell = $('.popover.show').filter(function() {
+                return $(this).find('.update-task-layout').length > 0;
+            }).last();
+            if (!$shell.length) {
+                $shell = $('.popover.show').last();
+            }
+            $shell.addClass('update-task-popover');
+            $shell.css({
+                position: 'fixed',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                margin: '0',
+                zIndex: '1060'
+            });
+            if (!$('.popover-backdrop').length) {
+                $('body').append('<div class="popover-backdrop"></div>');
+            }
+            $('.popover-backdrop').addClass('show').off('click.updateTask').on('click.updateTask', function() {
+                $('.update_task').popover('hide');
+            });
+        });
+
+        $(document).on('click', '#updateTaskCancel', function() {
+            $('.update_task').popover('hide');
         });
 
         $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
-            $('.popover .crm-ts-assignee').each(function() {
-                if (typeof destroyTS === 'function') destroyTS(this);
-            });
+            $('.popover-backdrop').removeClass('show').off('click.updateTask');
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.popover').length && !$(e.target).closest('.update_task').length) {
+                $('.update_task').popover('hide');
+            }
         });
 
         // Mark task as not complete
@@ -477,81 +661,58 @@
                     url: "{{ URL::to('/') }}/update-action-not-completed",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
-                    success: function(response) {
+                    success: function() {
                         location.reload();
                     }
                 });
             }
         });
 
-        // Mark task as complete - open modal
         var currentTaskId = null;
         var currentTaskGroupId = null;
-        
+
         $(document).on('click', '.listing-container .complete_task', function() {
             var row_id = $(this).attr('data-id');
             var row_unique_group_id = $(this).attr('data-unique_group_id');
-            
             if (row_id != "") {
-                // Store task IDs for later use
                 currentTaskId = row_id;
                 currentTaskGroupId = row_unique_group_id;
-                
-                // Clear previous notes
                 $('#completionNotes').val('');
-                
-                // Show the completion notes modal
                 $('#completionNotesModal').modal('show');
             }
         });
-        
-        // Handle task completion with notes
+
         $(document).on('click', '#confirmTaskCompletion', function() {
             var completionNotes = $('#completionNotes').val().trim();
-            
             if (!currentTaskId) {
-                console.error('No task ID found');
                 return;
             }
-            
-            // Disable button to prevent double submission
             var $button = $(this);
             $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Completing...');
-            
             $.ajax({
                 type: 'post',
                 url: "{{ URL::to('/') }}/update-action-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
-                    id: currentTaskId, 
+                    id: currentTaskId,
                     unique_group_id: currentTaskGroupId,
                     completion_notes: completionNotes
                 },
-                success: function(response) {
-                    // Close modal
+                success: function() {
                     $('#completionNotesModal').modal('hide');
-                    
-                    // Reset button
                     $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
-                    
-                    // Clear stored IDs
                     currentTaskId = null;
                     currentTaskGroupId = null;
-                    
-                    // Reload page
                     location.reload();
                 },
                 error: function(xhr) {
                     console.error('Error completing task:', xhr.responseText);
                     alert('An error occurred while completing the task.');
-                    
-                    // Reset button
                     $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                 }
             });
         });
 
-        // Update task (scope to visible popover â€” IDs repeat per row in markup)
         $(document).on('click', '#updateTask', function() {
             var $root = $(this).closest('.popover-body');
             if (!$root.length) {
@@ -560,86 +721,68 @@
 
             $(".popuploader").show();
             var flag = true;
-            var error = "";
-            $root.find(".custom-error").remove();
+            $root.find(".custom-error, .error-message").text('');
 
-            if ($root.find('#rem_cat').val() == '') {
+            if (!$root.find('#update_task_rem_cat').val()) {
                 $('.popuploader').hide();
-                error = "Assignee field is required.";
-                $root.find('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#assignee-error').text('Please select an assignee.');
                 flag = false;
             }
-            if ($root.find('#assignnote').val() == '') {
+            if (!$root.find('#update_task_assignnote').val()) {
                 $('.popuploader').hide();
-                error = "Note field is required.";
-                $root.find('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#note-error').text('Please enter a description.');
                 flag = false;
             }
-            if ($root.find('#task_group').val() == '') {
+            if (!$root.find('#update_task_task_group').val()) {
                 $('.popuploader').hide();
-                error = "Group field is required.";
-                $root.find('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#task-group-error').text('Please select a group.');
                 flag = false;
             }
-            if (flag) {
-                $.ajax({
-                    type: 'post',
-                    url: "{{ URL::to('/') }}/clients/action/update",
-                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    data: {
-                        note_id: $root.find('#assign_note_id').val(),
-                        note_type: 'follow_up',
-                        description: $root.find('#assignnote').val(),
-                        client_id: $root.find('#assign_client_id').val(),
-                        followup_datetime: $root.find('#popoverdatetime').val(),
-                        assignee_name: $root.find('#rem_cat :selected').text(),
-                        rem_cat: $root.find('#rem_cat option:selected').val(),
-                        task_group: $root.find('#task_group option:selected').val()
-                    },
-                    success: function(response) {
-                        $('.popuploader').hide();
-                        // Parse response if it's a string (fallback for older jQuery versions)
-                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                        if (obj.success) {
-                            $("[data-role=popover]").each(function() {
-                                (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false;
-                            });
-                            location.reload();
-                        } else {
-                            alert(obj.message);
-                            location.reload();
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        $('.popuploader').hide();
-                        console.error('Error updating task:', xhr.responseText);
-                        alert('An error occurred while updating the task. Please try again.');
+
+            if (!flag) {
+                return;
+            }
+
+            $.ajax({
+                type: 'post',
+                url: "{{ URL::to('/') }}/clients/action/update",
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: {
+                    note_id: $root.find('#assign_note_id').val(),
+                    note_type: 'follow_up',
+                    description: $root.find('#update_task_assignnote').val(),
+                    client_id: $root.find('#update_task_client_id').val(),
+                    followup_datetime: $root.find('#update_task_date').val(),
+                    assignee_name: $root.find('#update_task_rem_cat :selected').text(),
+                    rem_cat: $root.find('#update_task_rem_cat').val(),
+                    task_group: $root.find('#update_task_task_group').val()
+                },
+                success: function(response) {
+                    $('.popuploader').hide();
+                    var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                    if (obj && obj.success) {
+                        $('.update_task').popover('hide');
+                        location.reload();
+                    } else {
+                        alert((obj && obj.message) ? obj.message : 'Could not update task.');
                     }
-                });
-            } else {
-                $("#loader").hide();
-            }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    console.error('Error updating task:', xhr.responseText);
+                    alert('An error occurred while updating the task. Please try again.');
+                }
+            });
         });
 
-        // REMOVED: Deprecated appointment system functionality
-        // Open assignee view modal - endpoint /get-assigne-detail was removed
-        // $(document).on('click', '.listing-container .openassigneview', function() { ... });
-
-        // Delete task record
         $(document).on('click', '.listing-container .deleteNote', function(e) {
             e.preventDefault();
             var url = $(this).data('remote');
-            
             if (confirm('Are you sure you want to delete this task?')) {
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-
                 $.ajax({
                     type: 'DELETE',
                     url: url,
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
