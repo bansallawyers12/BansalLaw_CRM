@@ -2820,16 +2820,32 @@ class ClientPersonalDetailsController extends Controller
                 ? (int) $request->input('client_matter_id')
                 : null;
             $matterRef = trim((string) ($request->input('client_unique_matter_no', '')));
+            $explicitMatterRequested = ($requestedMatterId !== null && $requestedMatterId > 0) || $matterRef !== '';
             $clientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
                 (int) $client->id,
                 $requestedMatterId,
                 $matterRef !== '' ? $matterRef : null
             );
+
+            if ($explicitMatterRequested && ! $clientMatterId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or missing matter. Refresh the page and try again.',
+                    'error_type' => 'validation',
+                ], 422);
+            }
+
             $result = $service->run($client, $clientMatterId);
 
-            $activityDetail = $result['match_count'] === 0
-                ? 'Automated search completed — no matches'
-                : 'Automated search completed — ' . $result['match_count'] . ' match(es)';
+            $hardCount = (int) ($result['match_count'] ?? 0);
+            $infoCount = (int) ($result['informational_count'] ?? 0);
+
+            $activityDetail = $hardCount === 0
+                ? 'Automated search completed — no conflicts'
+                : 'Automated search completed — ' . $hardCount . ' conflict(s)';
+            if ($infoCount > 0) {
+                $activityDetail .= ' · ' . $infoCount . ' informational note(s)';
+            }
             if (! empty($result['warnings'])) {
                 $activityDetail .= ' · ' . count($result['warnings']) . ' note(s)';
             }
@@ -2841,19 +2857,26 @@ class ClientPersonalDetailsController extends Controller
                 'activity'
             );
 
-            $message = $result['match_count'] === 0
-                ? 'No potential conflicts found. Review and save outcome as Clear if appropriate.'
-                : $result['match_count'] . ' potential match(es) found. Review carefully before saving an outcome.';
+            if ($hardCount === 0 && $infoCount === 0) {
+                $message = 'No potential conflicts found. Review and save outcome as Clear if appropriate.';
+            } elseif ($hardCount === 0) {
+                $message = 'No potential conflicts found. ' . $infoCount . ' informational note(s) listed for awareness.';
+            } else {
+                $message = $hardCount . ' potential conflict(s) found. Review carefully before saving an outcome.';
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'search_terms' => $result['search_terms'],
                 'matches' => $result['matches'],
+                'informational_matches' => $result['informational_matches'] ?? [],
                 'suggested_outcome' => $result['suggested_outcome'],
-                'match_count' => $result['match_count'],
+                'match_count' => $hardCount,
+                'informational_count' => $infoCount,
                 'warnings' => $result['warnings'] ?? [],
                 'party_count' => $result['party_count'] ?? 0,
+                'client_matter_id' => $clientMatterId,
             ]);
         } catch (\InvalidArgumentException $e) {
             return response()->json([

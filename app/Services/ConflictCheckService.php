@@ -21,8 +21,10 @@ class ConflictCheckService
      * @return array{
      *     search_terms: array,
      *     matches: list<array>,
+     *     informational_matches: list<array>,
      *     suggested_outcome: string,
      *     match_count: int,
+     *     informational_count: int,
      *     warnings: list<string>,
      *     party_count: int
      * }
@@ -42,21 +44,23 @@ class ConflictCheckService
         }
 
         $warnings = $this->buildWarnings($parties, $searchTerms);
+        $known = $this->buildKnownPartyContext($searchTerms, (int) $client->id);
         $matches = [];
 
-        $this->searchAdmins($client, $searchTerms, $matches);
-        $this->searchConflictPartiesOnOtherClients($client, $searchTerms, $matches);
-        $this->searchMatterOpposingParties($client, $searchTerms, $matches);
-        $this->searchCompanies($client, $searchTerms, $matches);
+        $this->searchAdmins($client, $searchTerms, $known, $matches);
+        $this->searchConflictPartiesOnOtherClients($client, $searchTerms, $known, $matches);
+        $this->searchMatterOpposingParties($client, $searchTerms, $known, $matches);
+        $this->searchCompanies($client, $searchTerms, $known, $matches);
 
-        $matches = $this->dedupeAndRank($matches);
-        $matchCount = count($matches);
+        [$hardMatches, $infoMatches] = $this->splitAndFinalizeMatches($matches, $known, (int) $client->id);
 
         return [
             'search_terms' => $searchTerms,
-            'matches' => $matches,
-            'suggested_outcome' => $matchCount === 0 ? 'clear' : 'pending',
-            'match_count' => $matchCount,
+            'matches' => $hardMatches,
+            'informational_matches' => $infoMatches,
+            'suggested_outcome' => count($hardMatches) === 0 ? 'clear' : 'pending',
+            'match_count' => count($hardMatches),
+            'informational_count' => count($infoMatches),
             'warnings' => $warnings,
             'party_count' => $parties->count(),
         ];
@@ -249,23 +253,241 @@ class ConflictCheckService
 
     /**
      * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
-     * @param  list<array>  $matches
+     * @return array{
+     *   admin_ids: list<int>,
+     *   identity: list<array{name: string, emails: list<string>, phones: list<string>, abns: list<string>, acns: list<string>}>
+     * }
      */
-    private function searchAdmins(Admin $subject, array $searchTerms, array &$matches): void
+    private function buildKnownPartyContext(array $searchTerms, int $subjectId): array
     {
-        $like = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
-        $excludeIds = [(int) $subject->id];
+        $adminIds = [$subjectId];
+        $identity = [];
 
-        // Do not flag other-party records already linked on this client's conflict list.
-        foreach ($searchTerms['parties'] ?? [] as $pt) {
-            $leadId = (int) ($pt['opposing_lead_id'] ?? 0);
+        foreach ($searchTerms['parties'] ?? [] as $party) {
+            $leadId = (int) ($party['opposing_lead_id'] ?? 0);
             if ($leadId > 0) {
-                $excludeIds[] = $leadId;
+                $adminIds[] = $leadId;
+
+                continue;
+            }
+
+            $abns = [];
+            $acns = [];
+            if (! empty($party['abn'])) {
+                $abns[] = $party['abn'];
+            }
+            if (! empty($party['acn'])) {
+                $acns[] = $party['acn'];
+            }
+
+            $identity[] = [
+                'name' => strtolower(trim((string) ($party['name'] ?? ''))),
+                'emails' => array_values(array_unique($party['emails'] ?? [])),
+                'phones' => array_values(array_unique($party['phones'] ?? [])),
+                'abns' => $abns,
+                'acns' => $acns,
+            ];
+        }
+
+        return [
+            'admin_ids' => array_values(array_unique($adminIds)),
+            'identity' => $identity,
+        ];
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     */
+    private function isExcludedAdminId(int $adminId, array $known): bool
+    {
+        return in_array($adminId, $known['admin_ids'], true);
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     */
+    private function isKnownPartyIdentityMatch(array $match, array $known): bool
+    {
+        foreach ($known['identity'] as $identity) {
+            $name = trim((string) ($identity['name'] ?? ''));
+            $matchName = strtolower(trim((string) ($match['name'] ?? '')));
+            if ($name !== '' && $matchName !== '' && $this->namesLooselyMatch($matchName, $name)) {
+                return true;
+            }
+
+            $matchedOn = strtolower((string) ($match['matched_on'] ?? ''));
+            foreach ($identity['emails'] as $email) {
+                if ($email !== '' && str_contains($matchedOn, 'email:' . strtolower($email))) {
+                    return true;
+                }
+            }
+            foreach ($identity['phones'] as $phone) {
+                if ($phone !== '' && str_contains($matchedOn, 'phone:' . $phone)) {
+                    return true;
+                }
             }
         }
-        $excludeIds = array_values(array_unique($excludeIds));
 
-        // Linked other-party leads are expected; still flag if they are also a real client elsewhere.
+        return false;
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     */
+    private function isKnownPartyIdentityMatchForAdmin(Admin $admin, array $known): bool
+    {
+        if (empty($admin->is_other_party)) {
+            return false;
+        }
+
+        $candidate = [
+            'name' => $this->displayName($admin),
+            'matched_on' => '',
+        ];
+
+        if ($this->isKnownPartyIdentityMatch($candidate, $known)) {
+            return true;
+        }
+
+        $adminEmails = $this->collectEmailsForAdmin($admin);
+        $adminPhones = $this->collectPhonesForAdmin($admin);
+
+        foreach ($known['identity'] as $identity) {
+            foreach ($identity['emails'] as $email) {
+                if ($email !== '' && in_array($email, $adminEmails, true)) {
+                    return true;
+                }
+            }
+            foreach ($identity['phones'] as $phone) {
+                if ($phone !== '' && in_array($phone, $adminPhones, true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     */
+    private function isSharedOtherPartyOnOtherClient(array $match, array $known): bool
+    {
+        $source = (string) ($match['source'] ?? '');
+        if (! in_array($source, ['matter_opposing_party', 'conflict_party'], true)) {
+            return false;
+        }
+
+        $oppLeadId = (int) ($match['opposing_lead_id'] ?? 0);
+
+        return $oppLeadId > 0 && in_array($oppLeadId, $known['admin_ids'], true);
+    }
+
+    /**
+     * @param  list<array>  $matches
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @return array{0: list<array>, 1: list<array>}
+     */
+    private function splitAndFinalizeMatches(array $matches, array $known, int $subjectId): array
+    {
+        $matches = $this->dedupeCrossClientPartyDuplicates($matches);
+
+        $hard = [];
+        $informational = [];
+
+        foreach ($matches as $match) {
+            $classified = $this->classifyMatch($match, $known, $subjectId);
+            if ($classified === null) {
+                continue;
+            }
+
+            if (($classified['severity'] ?? '') === 'informational') {
+                $informational[] = $classified;
+            } else {
+                $hard[] = $classified;
+            }
+        }
+
+        return [
+            $this->dedupeAndRank($hard),
+            $this->dedupeAndRank($informational),
+        ];
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @return array|null
+     */
+    private function classifyMatch(array $match, array $known, int $subjectId): ?array
+    {
+        $clientId = (int) ($match['client_id'] ?? 0);
+        if ($clientId > 0 && $this->isExcludedAdminId($clientId, $known)) {
+            return null;
+        }
+
+        $match['is_cross_client'] = $clientId > 0 && $clientId !== $subjectId;
+
+        if ($this->isSharedOtherPartyOnOtherClient($match, $known)) {
+            $match['severity'] = 'informational';
+            $match['is_known_party'] = true;
+            $match['informational_reason'] = 'Same other-party record on another client\'s matter';
+
+            return $match;
+        }
+
+        $match['severity'] = 'hard';
+        $match['is_known_party'] = false;
+        $match['informational_reason'] = null;
+
+        return $match;
+    }
+
+    /**
+     * @param  list<array>  $matches
+     * @return list<array>
+     */
+    private function dedupeCrossClientPartyDuplicates(array $matches): array
+    {
+        $standalone = [];
+        $groups = [];
+
+        foreach ($matches as $match) {
+            $source = (string) ($match['source'] ?? '');
+            if (! in_array($source, ['conflict_party', 'matter_opposing_party'], true)) {
+                $standalone[] = $match;
+
+                continue;
+            }
+
+            $ownerId = (int) ($match['client_id'] ?? 0);
+            $oppLeadId = (int) ($match['opposing_lead_id'] ?? 0);
+            $key = $oppLeadId > 0
+                ? ($ownerId . ':lead:' . $oppLeadId)
+                : ($ownerId . ':name:' . strtolower(trim((string) ($match['name'] ?? ''))));
+
+            if (! isset($groups[$key])) {
+                $groups[$key] = $match;
+
+                continue;
+            }
+
+            if (($groups[$key]['source'] ?? '') === 'conflict_party' && $source === 'matter_opposing_party') {
+                $groups[$key] = $match;
+            }
+        }
+
+        return array_merge($standalone, array_values($groups));
+    }
+
+    /**
+     * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @param  list<array>  $matches
+     */
+    private function searchAdmins(Admin $subject, array $searchTerms, array $known, array &$matches): void
+    {
+        $like = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+        $excludeIds = $known['admin_ids'];
         $names = $this->collectNameCandidates($searchTerms);
         $emails = $this->collectEmailCandidates($searchTerms);
         $phones = $this->collectPhoneCandidates($searchTerms);
@@ -315,8 +537,16 @@ class ConflictCheckService
             ->limit(40);
 
         foreach ($query->get() as $admin) {
+            if ($this->isExcludedAdminId((int) $admin->id, $known)) {
+                continue;
+            }
+
             $matchedOn = $this->describeAdminMatch($admin, $searchTerms);
             if ($matchedOn === null) {
+                continue;
+            }
+
+            if (! empty($admin->is_other_party) && $this->isKnownPartyIdentityMatchForAdmin($admin, $known)) {
                 continue;
             }
 
@@ -353,7 +583,10 @@ class ConflictCheckService
 
             foreach ($emailRows as $row) {
                 $admin = Admin::find($row->client_id);
-                if (! $admin || $admin->is_deleted) {
+                if (! $admin || $admin->is_deleted || $this->isExcludedAdminId((int) $admin->id, $known)) {
+                    continue;
+                }
+                if (! empty($admin->is_other_party) && $this->isKnownPartyIdentityMatchForAdmin($admin, $known)) {
                     continue;
                 }
                 $this->addMatch($matches, [
@@ -373,9 +606,10 @@ class ConflictCheckService
 
     /**
      * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
      * @param  list<array>  $matches
      */
-    private function searchConflictPartiesOnOtherClients(Admin $subject, array $searchTerms, array &$matches): void
+    private function searchConflictPartiesOnOtherClients(Admin $subject, array $searchTerms, array $known, array &$matches): void
     {
         $like = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
         $names = $this->collectNameCandidates($searchTerms);
@@ -452,15 +686,17 @@ class ConflictCheckService
                 'score' => $this->scoreForMatchType($matchedOn),
                 'client_id' => $owner->id,
                 'client_ref' => $owner->client_id,
+                'opposing_lead_id' => $party->opposing_lead_id ? (int) $party->opposing_lead_id : null,
             ]);
         }
     }
 
     /**
      * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
      * @param  list<array>  $matches
      */
-    private function searchMatterOpposingParties(Admin $subject, array $searchTerms, array &$matches): void
+    private function searchMatterOpposingParties(Admin $subject, array $searchTerms, array $known, array &$matches): void
     {
         $like = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
         $names = $this->collectNameCandidates($searchTerms);
@@ -513,15 +749,17 @@ class ConflictCheckService
                 'client_id' => $ownerId,
                 'client_ref' => $owner?->client_id,
                 'matter_id' => $opp->client_matter_id,
+                'opposing_lead_id' => $opp->opposing_lead_id ? (int) $opp->opposing_lead_id : null,
             ]);
         }
     }
 
     /**
      * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
      * @param  list<array>  $matches
      */
-    private function searchCompanies(Admin $subject, array $searchTerms, array &$matches): void
+    private function searchCompanies(Admin $subject, array $searchTerms, array $known, array &$matches): void
     {
         if (! Schema::hasTable('companies')) {
             return;
@@ -536,8 +774,10 @@ class ConflictCheckService
             return;
         }
 
+        $excludeAdminIds = $known['admin_ids'];
+
         $query = Company::query()
-            ->where('admin_id', '!=', $subject->id)
+            ->whereNotIn('admin_id', $excludeAdminIds)
             ->where(function ($q) use ($companyNames, $abns, $acns, $like) {
                 $abnCol = $this->sqlColumn('ABN_number');
                 $acnCol = $this->sqlColumn('ACN');
@@ -562,7 +802,12 @@ class ConflictCheckService
             ->limit(30);
 
         foreach ($query->get() as $company) {
-            $admin = Admin::find($company->admin_id);
+            $adminId = (int) ($company->admin_id ?? 0);
+            if ($adminId <= 0 || $this->isExcludedAdminId($adminId, $known)) {
+                continue;
+            }
+
+            $admin = Admin::find($adminId);
             if (! $admin || $admin->is_deleted) {
                 continue;
             }

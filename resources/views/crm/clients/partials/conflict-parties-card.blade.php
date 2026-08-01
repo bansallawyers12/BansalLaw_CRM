@@ -90,6 +90,38 @@
     #conflictPartiesCard .cp-match-item:last-child { border-bottom: 0; }
     #conflictPartiesCard .cp-match-name { font-weight: 600; color: #212529; }
     #conflictPartiesCard .cp-match-meta { color: #666; }
+    #conflictPartiesCard .cp-match-item.cp-match-informational {
+        background: #f4f6f8;
+        border-radius: 4px;
+        padding: 6px 8px;
+        margin-bottom: 4px;
+        border-bottom: 0;
+    }
+    #conflictPartiesCard .cp-match-item.cp-match-informational .cp-match-name { color: #5f6368; font-weight: 500; }
+    #conflictPartiesCard .cp-match-item.cp-match-informational .cp-match-meta { color: #80868b; }
+    #conflictPartiesCard .cp-info-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #5f6368;
+        background: #e8eaed;
+        border-radius: 3px;
+        padding: 1px 6px;
+        margin-left: 6px;
+    }
+    #conflictPartiesCard .cp-info-panel {
+        margin-bottom: 10px;
+        padding: 8px;
+        border: 1px dashed #dadce0;
+        border-radius: 4px;
+        background: #fafafa;
+    }
+    #conflictPartiesCard .cp-info-panel-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #5f6368;
+        margin-bottom: 6px;
+    }
     #conflictPartiesCard .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
     #conflictPartiesCard .cp-history-item { padding: 3px 0; }
     #conflictPartiesCard .cp-stale-hint {
@@ -314,6 +346,10 @@
             <div id="cpMatchesPanel" style="display:none;">
                 <div class="small fw-semibold mb-1" id="cpMatchesHeading">Matches</div>
                 <div class="cp-match-list" id="cpMatchesList"></div>
+                <div id="cpInformationalPanel" class="cp-info-panel" style="display:none;">
+                    <div class="cp-info-panel-title"><i class="fa-solid fa-circle-info"></i> Same other-party elsewhere</div>
+                    <div class="cp-match-list" id="cpInformationalList"></div>
+                </div>
             </div>
 
             <div class="form-group mb-2">
@@ -393,6 +429,7 @@
     var latestOutcome = @json($latestOutcome);
     var lastSearchTerms = null;
     var lastMatches = null;
+    var lastInformationalMatches = null;
     var searchWasRun = false;
 
     function toast(msg, ok) {
@@ -646,39 +683,79 @@
         }
     }
 
-    function renderMatches(matches) {
-        var panel = document.getElementById('cpMatchesPanel');
-        var list = document.getElementById('cpMatchesList');
-        var heading = document.getElementById('cpMatchesHeading');
-        if (!panel || !list) return;
-
-        list.innerHTML = '';
-        if (!matches || !matches.length) {
-            panel.style.display = '';
-            if (heading) heading.textContent = 'No matches found';
-            list.innerHTML = '<div class="text-muted">Automated search found no potential conflicts in the CRM.</div>';
-            return;
-        }
-
-        panel.style.display = '';
-        if (heading) heading.textContent = matches.length + ' potential match' + (matches.length === 1 ? '' : 'es');
-        matches.forEach(function (m) {
-            var div = document.createElement('div');
-            div.className = 'cp-match-item';
-            var link = '';
+    function renderMatchRow(m, opts) {
+        opts = opts || {};
+        var informational = opts.informational || m.severity === 'informational' || m.is_known_party;
+        var div = document.createElement('div');
+        div.className = 'cp-match-item' + (informational ? ' cp-match-informational' : '');
+        var link = '';
+        if (!informational) {
             if (m.detail_url) {
                 link = ' <a href="' + esc(m.detail_url) + '" target="_blank" rel="noopener">Open</a>';
             } else if (m.client_id) {
                 link = ' <a href="/clients/detail/' + encodeURIComponent(m.client_id) + '" target="_blank" rel="noopener">Open</a>';
             }
-            div.innerHTML =
-                '<div class="cp-match-name">' + esc(m.name || 'Unknown') + link + '</div>' +
-                '<div class="cp-match-meta">' + esc(m.context || '') +
-                (m.matched_on ? ' · Matched on ' + esc(m.matched_on) : '') +
-                (m.party_role ? ' · ' + esc(m.party_role) : '') +
-                '</div>';
-            list.appendChild(div);
+        }
+        var reason = m.informational_reason
+            ? '<div class="cp-match-meta"><i class="fa-solid fa-circle-info"></i> ' + esc(m.informational_reason) + '</div>'
+            : '';
+        var badge = informational ? '<span class="cp-info-badge">Informational</span>' : '';
+        div.innerHTML =
+            '<div class="cp-match-name">' + esc(m.name || 'Unknown') + badge + link + '</div>' +
+            '<div class="cp-match-meta">' + esc(m.context || '') +
+            (m.matched_on ? ' · Matched on ' + esc(m.matched_on) : '') +
+            (m.party_role ? ' · ' + esc(m.party_role) : '') +
+            '</div>' +
+            reason;
+        return div;
+    }
+
+    function renderMatches(matches, informationalMatches) {
+        var panel = document.getElementById('cpMatchesPanel');
+        var list = document.getElementById('cpMatchesList');
+        var heading = document.getElementById('cpMatchesHeading');
+        var infoPanel = document.getElementById('cpInformationalPanel');
+        var infoList = document.getElementById('cpInformationalList');
+        if (!panel || !list) return;
+
+        matches = matches || [];
+        informationalMatches = informationalMatches || [];
+
+        list.innerHTML = '';
+        if (infoList) infoList.innerHTML = '';
+
+        panel.style.display = '';
+
+        if (!matches.length && !informationalMatches.length) {
+            if (heading) heading.textContent = 'No conflicts found';
+            list.innerHTML = '<div class="text-muted">Automated search found no potential conflicts in the CRM.</div>';
+            if (infoPanel) infoPanel.style.display = 'none';
+            return;
+        }
+
+        if (heading) {
+            if (matches.length) {
+                heading.textContent = matches.length + ' potential conflict' + (matches.length === 1 ? '' : 's');
+            } else {
+                heading.textContent = 'No potential conflicts';
+                list.innerHTML = '<div class="text-muted">No hard conflicts found.</div>';
+            }
+        }
+
+        matches.forEach(function (m) {
+            list.appendChild(renderMatchRow(m, { informational: false }));
         });
+
+        if (infoPanel && infoList) {
+            if (informationalMatches.length) {
+                infoPanel.style.display = '';
+                informationalMatches.forEach(function (m) {
+                    infoList.appendChild(renderMatchRow(m, { informational: true }));
+                });
+            } else {
+                infoPanel.style.display = 'none';
+            }
+        }
     }
 
     if (savePartiesBtn) {
@@ -802,25 +879,40 @@
                         searchWasRun = true;
                         lastSearchTerms = res.data.search_terms || null;
                         lastMatches = res.data.matches || [];
-                        renderMatches(lastMatches);
+                        lastInformationalMatches = res.data.informational_matches || [];
+                        renderMatches(lastMatches, lastInformationalMatches);
                         renderWarnings(res.data.warnings || []);
+                        var hardCount = res.data.match_count || 0;
+                        var infoCount = res.data.informational_count || 0;
                         if (statusEl) {
-                            var statusText = (res.data.match_count || 0) + ' match(es)';
+                            var statusText = hardCount + ' conflict' + (hardCount === 1 ? '' : 's');
+                            if (infoCount > 0) {
+                                statusText += ' · ' + infoCount + ' informational note' + (infoCount === 1 ? '' : 's');
+                            }
                             if ((res.data.party_count || 0) === 0) {
                                 statusText += ' · subject only';
                             }
                             statusEl.textContent = statusText;
                         }
                         var select = document.getElementById('cpOutcomeSelect');
-                        if (select && res.data.suggested_outcome && (!select.value || select.value === 'pending')) {
-                            select.value = res.data.suggested_outcome;
+                        if (select && res.data.suggested_outcome) {
+                            if (hardCount > 0) {
+                                if (!select.value || select.value === 'pending') {
+                                    select.value = res.data.suggested_outcome;
+                                }
+                            } else if (res.data.suggested_outcome === 'clear' && (!select.value || select.value === 'pending')) {
+                                select.value = 'clear';
+                            }
                         }
                         var notes = document.getElementById('cpOutcomeNotes');
                         if (notes && !(notes.value || '').trim()) {
-                            var count = res.data.match_count || 0;
-                            notes.value = count === 0
-                                ? 'Automated CRM search completed — no matches found.'
-                                : 'Automated CRM search found ' + count + ' potential match(es). Review listed matches before deciding.';
+                            if (hardCount === 0 && infoCount === 0) {
+                                notes.value = 'Automated CRM search completed — no matches found.';
+                            } else if (hardCount === 0) {
+                                notes.value = 'Automated CRM search completed — no conflicts; ' + infoCount + ' informational note(s) for awareness.';
+                            } else {
+                                notes.value = 'Automated CRM search found ' + hardCount + ' potential conflict(s). Review listed matches before deciding.';
+                            }
                         }
                         toast(res.data.message || 'Search complete', true);
                     } else {
@@ -859,7 +951,7 @@
                 return;
             }
             if (outcome === 'clear' && lastMatches && lastMatches.length > 0) {
-                if (!window.confirm('Automated search found ' + lastMatches.length + ' potential match(es). Save outcome as Clear anyway?')) {
+                if (!window.confirm('Automated search found ' + lastMatches.length + ' potential conflict(s). Save outcome as Clear anyway?')) {
                     return;
                 }
             }

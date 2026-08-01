@@ -165,6 +165,18 @@
             font-weight: 700;
             font-size: 13px;
         }
+        .costs-rights-notice {
+            padding: 10px 12px;
+            background: #f9f9f9;
+            border-left: 4px solid #666;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #444;
+            line-height: 1.6;
+        }
+        .costs-rights-notice p {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -526,6 +538,10 @@
                 <strong>BSB:</strong> 083419<br/>
                 <strong>Account Number:</strong> 787266100
             </div>
+        </div>
+
+        <div class="costs-rights-notice">
+            <p><strong>Costs rights notice:</strong> You may dispute this bill with the Victorian Legal Services Board and Commissioner and may apply for a costs assessment. Time limits apply. Further information is available from the Victorian Legal Services Board + Commissioner.</p>
         </div>
     </div>
 </body>
