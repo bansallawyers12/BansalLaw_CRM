@@ -591,7 +591,7 @@ use App\Http\Controllers\Controller;
 
 {{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
 <div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable cdn-update-stage-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
@@ -599,8 +599,8 @@ use App\Http\Controllers\Controller;
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body cdn-update-stage-modal-body p-2">
-                @include('crm.clients.tabs.workflow')
+            <div class="modal-body cdn-update-stage-modal-body">
+                @include('crm.clients.tabs.workflow', ['workflowInModal' => true])
             </div>
         </div>
     </div>

@@ -1,5 +1,8 @@
 {{-- Workflow tab: matter stages, deadlines, discontinue/reopen (server-rendered + JS) --}}
-<div class="tab-pane" id="workflow-tab">
+@php
+    $workflowInModal = $workflowInModal ?? false;
+@endphp
+<div class="tab-pane {{ $workflowInModal ? 'workflow-in-modal' : '' }}" id="workflow-tab">
     <div class="card full-width workflow-tab-container">
         <?php
         // Selected matter from URL matter ref or latest active matter for this client
@@ -50,48 +53,142 @@
         ?>
 
         @if($workflowSelectedMatter)
+            @php
+                $workflowTotalStages = $workflowAllStages->count();
+                $workflowCurrentStageRow = $workflowCurrentStageId ? $workflowAllStages->firstWhere('id', $workflowCurrentStageId) : null;
+                $workflowCurrentSortVal = $workflowCurrentStageRow ? ($workflowCurrentStageRow->sort_order ?? $workflowCurrentStageRow->id) : null;
+                $workflowCompletedStages = ($workflowCurrentSortVal !== null && $workflowTotalStages > 0)
+                    ? $workflowAllStages->where(fn($s) => ($s->sort_order ?? $s->id) < $workflowCurrentSortVal)->count()
+                    : 0;
+                $workflowStagePosition = ($workflowCurrentSortVal !== null && $workflowTotalStages > 0)
+                    ? $workflowAllStages->where(fn($s) => ($s->sort_order ?? $s->id) <= $workflowCurrentSortVal)->count()
+                    : 0;
+                if ($workflowTotalStages <= 1) {
+                    $workflowProgressPercentage = 0;
+                } elseif ($workflowCurrentSortVal === null) {
+                    $workflowProgressPercentage = 0;
+                } else {
+                    $workflowProgressPercentage = (int) round(($workflowCompletedStages / max($workflowTotalStages - 1, 1)) * 100);
+                }
+
+                $workflowViewer = Auth::guard('admin')->user();
+                $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
+                $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
+                $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && $workflowViewer->canCloseDiscontinueMatter());
+                $workflowIsReadOnly = !empty($isClosedMatterView);
+
+                $workflowIsFirstStage = false;
+                $workflowNextStageName = null;
+                $workflowNextStage = null;
+                if ($workflowCurrentStageId && $workflowAllStages->count() > 0) {
+                    $workflowFirstStage = $workflowAllStages->first();
+                    $workflowIsFirstStage = ($workflowCurrentStageId == $workflowFirstStage->id);
+                    $workflowCurrentOrder = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
+                    $workflowCurrentSort = $workflowCurrentOrder ? ($workflowCurrentOrder->sort_order ?? $workflowCurrentOrder->id) : null;
+                    $workflowNextStage = $workflowCurrentSort !== null ? $workflowAllStages->first(fn($s) => ($s->sort_order ?? $s->id) > $workflowCurrentSort) : $workflowAllStages->where('id', '>', $workflowCurrentStageId)->first();
+                    $workflowNextStageName = $workflowNextStage ? $workflowNextStage->name : null;
+                }
+                $workflowIsLastStage = $workflowNextStage === null;
+                $workflowNextBtnDisabled = $workflowIsLastStage;
+                $workflowNextBtnTitle = 'Proceed to Next Stage';
+                if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
+                    $workflowNextBtnDisabled = true;
+                    $workflowNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
+                }
+                $workflowNextBtnLabel = $workflowNextStageName ? ('Proceed to ' . $workflowNextStageName) : 'Proceed to Next Stage';
+                $workflowStatusLabel = (!empty($isClosedMatterView) || (isset($workflowSelectedMatter->matter_status) && $workflowSelectedMatter->matter_status != 1))
+                    ? 'Closed'
+                    : ($workflowIsDiscontinued ? 'Discontinued' : 'Active');
+            @endphp
+
+            @if($workflowInModal)
+                <div class="cdn-workflow-modal">
+                    <div class="cdn-workflow-modal__context">
+                        <div class="cdn-workflow-modal__matter">
+                            <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                            <span>{{ $workflowMatterName }} ({{ $workflowMatterNumber }})</span>
+                        </div>
+                        <span class="badge cdn-workflow-modal__status {{ $workflowStatusLabel === 'Active' ? 'bg-success' : 'bg-secondary' }}">{{ $workflowStatusLabel }}</span>
+                    </div>
+
+                    @include('crm.clients.tabs.partials.workflow-stages-list', [
+                        'containerClass' => 'cdn-workflow-modal__stepper mt-3',
+                        'listClass' => 'workflow-stages-list--horizontal',
+                    ])
+
+                    <div class="cdn-workflow-modal__progress mt-3">
+                        <div class="progress cdn-workflow-modal__progress-bar" role="progressbar" aria-valuenow="{{ $workflowProgressPercentage }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-primary" style="width: {{ $workflowProgressPercentage }}%;"></div>
+                        </div>
+                        <p class="cdn-workflow-modal__progress-label mb-0">
+                            @if($workflowTotalStages <= 1)
+                                Stage 1 of 1
+                            @else
+                                {{ $workflowProgressPercentage }}% complete · Stage {{ $workflowStagePosition }} of {{ $workflowTotalStages }}
+                            @endif
+                        </p>
+                    </div>
+
+                    <div class="cdn-workflow-modal__current mt-3">
+                        <span class="text-muted">Current stage</span>
+                        <strong>{{ $workflowCurrentStageName ?? 'N/A' }}</strong>
+                    </div>
+
+                    <div class="deadline-section cdn-workflow-modal__deadline mt-3">
+                        <div class="form-group mb-0">
+                            @if(empty($isClosedMatterView))
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                    {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
+                                <label class="form-check-label" for="workflow-set-deadline">Set deadline</label>
+                            </div>
+                            <div class="workflow-deadline-date-wrapper mt-2" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
+                                <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
+                                <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
+                                    value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
+                                    data-matter-id="{{ $workflowSelectedMatter->id }}">
+                                <small class="form-text text-muted">Select the matter deadline date.</small>
+                            </div>
+                            @endif
+                            @if($workflowSelectedMatter->deadline)
+                                <div class="mt-2">
+                                    <span class="badge bg-info text-dark"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    @include('crm.clients.tabs.partials.workflow-navigation', [
+                        'navigationClass' => 'cdn-workflow-modal__actions mt-4',
+                    ])
+                </div>
+            @else
             <div class="row mt-3">
                 <div class="col-md-12">
                     <div class="info-card in-progress-section">
                         <div class="in-progress-single-line">
-                            <h5 class="in-progress-title">
-                                @if(!empty($isClosedMatterView) || (isset($workflowSelectedMatter->matter_status) && $workflowSelectedMatter->matter_status != 1))
-                                    Closed
-                                @else
-                                    Active
-                                @endif
-                            </h5>
+                            <h5 class="in-progress-title">{{ $workflowStatusLabel }}</h5>
                             <div class="current-stage-info">
                                 <label class="stage-label">Current Stage:</label>
                                 <div class="stage-value-container">
-                                    <span class="stage-value">
-                                        @if($workflowCurrentStageId)
-                                            @php
-                                                $workflowCurrentStage = $workflowAllStages->where('id', $workflowCurrentStageId)->first();
-                                            @endphp
-                                            {{ $workflowCurrentStage ? $workflowCurrentStage->name : 'N/A' }}
-                                        @else
-                                            N/A
-                                        @endif
-                                    </span>
+                                    <span class="stage-value">{{ $workflowCurrentStageName ?? 'N/A' }}</span>
                                 </div>
                             </div>
                             <div class="overall-progress-container">
                                 <label class="progress-label">Overall Progress:</label>
                                 <div class="progress-circle-wrapper">
-                                    @php
-                                        $workflowTotalStages = $workflowAllStages->count();
-                                        $workflowCurrentStageRow = $workflowCurrentStageId ? $workflowAllStages->firstWhere('id', $workflowCurrentStageId) : null;
-                                        $workflowCurrentSortVal = $workflowCurrentStageRow ? ($workflowCurrentStageRow->sort_order ?? $workflowCurrentStageRow->id) : null;
-                                        $workflowCurrentStageIndex = $workflowCurrentSortVal !== null ? $workflowAllStages->where(fn($s) => ($s->sort_order ?? $s->id) <= $workflowCurrentSortVal)->count() : 0;
-                                        $workflowProgressPercentage = $workflowTotalStages > 0 ? round(($workflowCurrentStageIndex / $workflowTotalStages) * 100) : 0;
-                                    @endphp
                                     <div class="progress-circle" data-progress="{{ $workflowProgressPercentage }}">
                                         <svg class="progress-ring" width="80" height="80">
                                             <circle class="progress-ring-circle-bg" cx="40" cy="40" r="36" fill="transparent" stroke="#e9ecef" stroke-width="6"/>
                                             <circle class="progress-ring-circle" cx="40" cy="40" r="36" fill="transparent" stroke="#007bff" stroke-width="6" stroke-dasharray="{{ 2 * M_PI * 36 }}" stroke-dashoffset="{{ 2 * M_PI * 36 * (1 - $workflowProgressPercentage / 100) }}"/>
                                         </svg>
-                                        <div class="progress-text">{{ $workflowProgressPercentage }}%</div>
+                                        <div class="progress-text">
+                                            @if($workflowTotalStages <= 1)
+                                                —
+                                            @else
+                                                {{ $workflowProgressPercentage }}%
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -119,77 +216,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="stage-navigation-buttons">
-                                @php
-                                    $workflowViewer = Auth::guard('admin')->user();
-                                    $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
-                                    $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
-                                    $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && $workflowViewer->canCloseDiscontinueMatter());
-                                    $workflowIsReadOnly = !empty($isClosedMatterView);
-                                @endphp
-                                @if($workflowIsReadOnly)
-                                    <span class="text-muted small"><i class="fa-solid fa-lock"></i> View only — this matter is closed.</span>
-                                @elseif($workflowIsDiscontinued)
-                                    {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
-                                    @if($workflowCanReopen)
-                                    <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
-                                        <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
-                                    </button>
-                                    @else
-                                        @if($workflowSelectedMatter->reopen_requested_by ?? null)
-                                            <button class="btn btn-secondary btn-sm" disabled title="Reopen Requested">
-                                                <i class="fa-solid fa-clock"></i> Reopen Requested
-                                            </button>
-                                        @else
-                                            <button class="btn btn-warning btn-sm matter-detail-request-reopen-btn" id="workflow-tab-request-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Request Admin to Reopen Matter">
-                                                <i class="fa-solid fa-hand-paper"></i> Request Reopen
-                                            </button>
-                                        @endif
-                                    @endif
-                                    <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fa-solid fa-right-left"></i> Change Workflow
-                                    </button>
-                                @else
-                                    {{-- Active matter: show normal workflow buttons --}}
-                                    @php
-                                        $workflowIsFirstStage = false;
-                                        $workflowNextStageName = null;
-                                        $workflowNextStage = null;
-                                        if ($workflowCurrentStageId && $workflowAllStages->count() > 0) {
-                                            $workflowFirstStage = $workflowAllStages->first();
-                                            $workflowIsFirstStage = ($workflowCurrentStageId == $workflowFirstStage->id);
-                                            $workflowCurrentOrder = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
-                                            $workflowCurrentSort = $workflowCurrentOrder ? ($workflowCurrentOrder->sort_order ?? $workflowCurrentOrder->id) : null;
-                                            $workflowNextStage = $workflowCurrentSort !== null ? $workflowAllStages->first(fn($s) => ($s->sort_order ?? $s->id) > $workflowCurrentSort) : $workflowAllStages->where('id', '>', $workflowCurrentStageId)->first();
-                                            $workflowNextStageName = $workflowNextStage ? $workflowNextStage->name : null;
-                                        }
-                                        $workflowLastStage = $workflowAllStages->last();
-                                        $workflowIsLastStage = $workflowNextStage === null;
-                                    @endphp
-                                    <button class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
-                                        <i class="fa-solid fa-angle-left"></i> Back to Previous Stage
-                                    </button>
-                                    @php
-                                        $workflowNextBtnDisabled = $workflowIsLastStage;
-                                        $workflowNextBtnTitle = 'Proceed to Next Stage';
-                                        if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
-                                            $workflowNextBtnDisabled = true;
-                                            $workflowNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
-                                        }
-                                    @endphp
-                                    <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
-                                        Proceed to Next Stage <i class="fa-solid fa-angle-right"></i>
-                                    </button>
-                                    @if($workflowCanDiscontinue)
-                                    <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
-                                        <i class="fa-solid fa-ban"></i> Discontinue
-                                    </button>
-                                    @endif
-                                    <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fa-solid fa-right-left"></i> Change Workflow
-                                    </button>
-                                @endif
-                            </div>
+                            @include('crm.clients.tabs.partials.workflow-navigation')
                         </div>
                     </div>
                 </div>
@@ -202,30 +229,13 @@
                             <i class="fa-solid fa-folder-open"></i> {{ $workflowMatterName }} ({{ $workflowMatterNumber }})
                         </h5>
 
-                        @if($workflowAllStages->count() > 0)
-                            <div class="workflow-stages-container mt-3">
-                                <div class="workflow-stages-list">
-                                    @foreach($workflowAllStages as $stage)
-                                        @php
-                                            $wfIsActive = ($workflowCurrentStageId && $workflowCurrentStageId == $stage->id);
-                                            $stageSort = $stage->sort_order ?? $stage->id;
-                                            $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
-                                            $currentStageSort = $currentStageRow ? ($currentStageRow->sort_order ?? $currentStageRow->id) : null;
-                                            $wfIsCompleted = ($workflowCurrentStageId && $currentStageSort !== null && $stageSort < $currentStageSort);
-                                            $wfStageClass = $wfIsActive ? 'workflow-stage-active' : ($wfIsCompleted ? 'workflow-stage-completed' : 'workflow-stage-pending');
-                                        @endphp
-                                        <div class="workflow-stage-item {{ $wfStageClass }}">
-                                            <span class="stage-name">{{ $stage->name }}</span>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @else
-                            <p class="text-muted">No workflow stages defined. Add stages from Admin Console → Workflows.</p>
-                        @endif
+                        <div class="mt-3">
+                            @include('crm.clients.tabs.partials.workflow-stages-list')
+                        </div>
                     </div>
                 </div>
             </div>
+            @endif
         @else
             <div class="row mt-3">
                 <div class="col-md-12">

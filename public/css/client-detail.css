@@ -4355,6 +4355,10 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* Update Stage modal lives outside (Bootstrap portal-friendly). */
+#cdn-update-stage-modal .cdn-update-stage-modal-dialog {
+  max-width: 640px;
+}
+
 #cdn-update-stage-modal #workflow-tab.tab-pane {
   display: block !important;
 }
@@ -4367,7 +4371,133 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 #cdn-update-stage-modal .cdn-update-stage-modal-body {
   max-height: min(78vh, 900px);
   overflow-y: auto;
+  padding: 1.25rem 1.5rem;
 }
+
+#cdn-update-stage-modal .cdn-workflow-modal__context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__matter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1e3a8a;
+  min-width: 0;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__matter span {
+  min-width: 0;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+#cdn-update-stage-modal .workflow-stages-list--horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#cdn-update-stage-modal .workflow-stage-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+#cdn-update-stage-modal .workflow-stage-item.workflow-stage-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+#cdn-update-stage-modal .workflow-stage-item.workflow-stage-completed {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+#cdn-update-stage-modal .workflow-stage-item.workflow-stage-pending {
+  color: #6b7280;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__progress-label {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__current {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__current strong {
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__deadline .form-check-label {
+  font-size: 0.875rem;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__deadline #workflow-deadline-date {
+  max-width: 200px;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid #e5e7eb;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__actions .workflow-nav-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-proceed-to-next-stage {
+  flex: 1 1 220px;
+}
+
+#cdn-update-stage-modal .cdn-workflow-modal__actions .workflow-nav-more {
+  flex-shrink: 0;
+}
+
+.stage-navigation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 
 /* —— Hero card (client identity + actions) —— */
 .cdn-client-hero {
