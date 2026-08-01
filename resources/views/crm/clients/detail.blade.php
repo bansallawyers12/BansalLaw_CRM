@@ -128,8 +128,10 @@ use App\Http\Controllers\Controller;
                 $cdnWorkflowStageLabel = $cdnWs->name ?? null;
             }
 
-            [$cdnHeroNormal, $cdnHeroRedIgnored] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+            [$cdnHeroNormal, $cdnHeroRed] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
             $cdnHeroTagNames = collect($cdnHeroNormal)->values();
+            $cdnHeroRedTagNames = collect($cdnHeroRed)->values();
+            $cdnHeroRedTagCount = $cdnHeroRedTagNames->count();
             $cdnHeroTagMore = 0;
             if ($cdnHeroTagNames->count() > 4) {
                 $cdnHeroTagMore = $cdnHeroTagNames->count() - 4;
@@ -199,6 +201,25 @@ use App\Http\Controllers\Controller;
                             @endforeach
                             @if($cdnHeroTagMore > 0)
                                 <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
+                            @endif
+                            @if($cdnHeroRedTagCount > 0)
+                                <span id="cdn-hero-red-tags" class="cdn-client-hero__red-tags" style="display: none;" aria-label="Red tags">
+                                    @foreach($cdnHeroRedTagNames as $tname)
+                                        <span class="cdn-client-hero__tag cdn-client-hero__tag--red">{{ $tname }}</span>
+                                    @endforeach
+                                </span>
+                                <button type="button"
+                                        id="cdnToggleHeroRedTags"
+                                        class="cdn-client-hero__tag-toggle-red"
+                                        data-client-id="{{ $fetchedData->id }}"
+                                        data-red-count="{{ $cdnHeroRedTagCount }}"
+                                        title="Show {{ $cdnHeroRedTagCount }} red tag{{ $cdnHeroRedTagCount === 1 ? '' : 's' }}"
+                                        aria-label="Show red tags"
+                                        aria-expanded="false"
+                                        aria-controls="cdn-hero-red-tags">
+                                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                                    <span class="cdn-client-hero__tag-toggle-red-count">{{ $cdnHeroRedTagCount }}</span>
+                                </button>
                             @endif
                             @if(empty($isClosedMatterView))
                             <span class="cdn-client-hero__tag-actions">

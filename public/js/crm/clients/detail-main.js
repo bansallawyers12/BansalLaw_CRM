@@ -549,6 +549,74 @@ $(document).ready(function() {
 
     });
 
+
+
+    // Hero: toggle visibility of red tags (hidden by default)
+
+    (function initHeroRedTagsToggle() {
+
+        var toggleBtn = document.getElementById('cdnToggleHeroRedTags');
+
+        var redTagsSection = document.getElementById('cdn-hero-red-tags');
+
+        if (!toggleBtn || !redTagsSection) {
+
+            return;
+
+        }
+
+        var clientId = toggleBtn.getAttribute('data-client-id') || '';
+
+        var storageKey = 'redTagsVisible_' + clientId;
+
+        var redCount = toggleBtn.getAttribute('data-red-count') || '0';
+
+
+
+        function setVisible(visible) {
+
+            redTagsSection.style.display = visible ? 'inline-flex' : 'none';
+
+            toggleBtn.classList.toggle('is-visible', visible);
+
+            toggleBtn.setAttribute('aria-expanded', visible ? 'true' : 'false');
+
+            toggleBtn.title = visible
+
+                ? 'Hide ' + redCount + ' red tag' + (redCount === '1' ? '' : 's')
+
+                : 'Show ' + redCount + ' red tag' + (redCount === '1' ? '' : 's');
+
+            toggleBtn.setAttribute('aria-label', visible ? 'Hide red tags' : 'Show red tags');
+
+            var icon = toggleBtn.querySelector('i');
+
+            if (icon) {
+
+                icon.className = visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+
+            }
+
+            sessionStorage.setItem(storageKey, visible ? 'true' : 'false');
+
+        }
+
+
+
+        setVisible(sessionStorage.getItem(storageKey) === 'true');
+
+
+
+        toggleBtn.addEventListener('click', function() {
+
+            setVisible(redTagsSection.style.display === 'none');
+
+        });
+
+    })();
+
+
+
     // Matter assignee / edit matter details modal: public/js/crm/clients/matter-assignee-modal.js (loaded before this file)
 
     // Convert Lead to Client modal: re-init Tom Select with dropdownParent so dropdowns render inside modal

@@ -6824,25 +6824,39 @@ class ClientsController extends Controller
         ));
        
         try {
-            $client = Admin::where('id', $clientId)
-                ->whereIn('type', ['client', 'lead'])
-                ->first();
+            $client = Admin::find($clientId);
 
-            if (! $client) {
+            if (! $client || ! $client->isCrmClientOrLeadSubject()) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+                }
+
                 return redirect()->back()->with('error', 'Client not found');
             }
 
             if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+                }
+
                 return redirect()->back()->with('error', config('constants.unauthorized'));
             }
 
             $client->tagname = ClientTagStorage::encode($normal, $red);
             $client->save();
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Tags saved successfully']);
+            }
+
             return redirect()->back()->with('success', 'Tags saved successfully');
 
         } catch (\Throwable $e) {
             Log::error('Error saving tags: ' . $e->getMessage(), ['exception' => $e]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred while saving tags'], 500);
+            }
 
             return redirect()->back()->with('error', 'An error occurred while saving tags');
         }
