@@ -11,6 +11,8 @@ use App\Models\ClientMatterOpposingParty;
 use App\Models\Company;
 use App\Models\ConflictPartyContact;
 use App\Models\ConflictPartyEmail;
+use App\Support\StaffClientVisibility;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -916,11 +918,53 @@ class ConflictCheckService
             return;
         }
 
-        if (! empty($match['client_id']) && empty($match['detail_url'])) {
-            $match['detail_url'] = url('/clients/detail/' . base64_encode(convert_uuencode((string) $match['client_id'])));
-        }
+        $this->applyMatchAccessGating($match);
 
         $matches[] = $match;
+    }
+
+    /**
+     * Re-apply detail URL access rules to stored match rows (e.g. history detail view).
+     *
+     * @param  list<array<string, mixed>>  $matches
+     * @return list<array<string, mixed>>
+     */
+    public function sanitizeStoredMatchesForViewer(array $matches): array
+    {
+        return array_map(function ($match) {
+            if (! is_array($match)) {
+                return $match;
+            }
+
+            $this->applyMatchAccessGating($match);
+
+            return $match;
+        }, $matches);
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     */
+    private function applyMatchAccessGating(array &$match): void
+    {
+        if (empty($match['client_id'])) {
+            return;
+        }
+
+        $user = Auth::guard('admin')->user() ?? Auth::user();
+
+        if ($user && ! StaffClientVisibility::canAccessClientOrLead((int) $match['client_id'], $user)) {
+            $match['detail_url'] = null;
+            $match['access_locked'] = true;
+
+            return;
+        }
+
+        unset($match['access_locked']);
+
+        if (empty($match['detail_url'])) {
+            $match['detail_url'] = url('/clients/detail/' . base64_encode(convert_uuencode((string) $match['client_id'])));
+        }
     }
 
     private function displayName(Admin $admin): string

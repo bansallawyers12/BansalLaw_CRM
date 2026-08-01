@@ -114,4 +114,4 @@ vendor/bin/phpunit tests/Feature/ConflictCheckPhase0Test.php tests/Feature/Confl
 
 - [Phase 4B staleness](./CONFLICT_CHECK_PHASE4B.md)
 
-**Next:** Phase 5 UX polish (`force_clear` UI, access-gated match links, performance indexes, history UX).
+**Next:** [Phase 5](./CONFLICT_CHECK_PHASE5.md) UX polish (`force_clear` UI, access-gated links, history detail).

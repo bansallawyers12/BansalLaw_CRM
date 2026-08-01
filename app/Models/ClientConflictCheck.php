@@ -54,6 +54,18 @@ class ClientConflictCheck extends Model
         });
     }
 
+    /**
+     * Strict matter scope for pipeline gate — legacy null-matter checks do not satisfy engaged/retained.
+     */
+    public function scopeForPipelineMatter(Builder $query, ?int $clientMatterId): Builder
+    {
+        if (! $clientMatterId) {
+            return $query->whereNull('client_matter_id');
+        }
+
+        return $query->where('client_matter_id', $clientMatterId);
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'client_id');

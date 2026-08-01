@@ -128,6 +128,32 @@
     }
     #conflictPartiesCard .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
     #conflictPartiesCard .cp-history-item { padding: 3px 0; }
+    #conflictPartiesCard .cp-history-row {
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 4px 6px;
+        margin: 0 -6px;
+    }
+    #conflictPartiesCard .cp-history-row:hover { background: #f1f3f4; }
+    #conflictPartiesCard .cp-force-clear-panel {
+        border: 1px solid #f5c6cb;
+        background: #fff5f5;
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin-bottom: 10px;
+        font-size: 12px;
+    }
+    #conflictPartiesCard .cp-force-clear-panel summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: #c5221f;
+    }
+    #conflictPartiesCard .cp-access-locked {
+        color: #856404;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+    #conflictPartiesCard .cp-history-modal .modal-body { font-size: 13px; }
     #conflictPartiesCard .cp-stale-hint {
         font-size: 12px;
         color: #856404;
@@ -356,6 +382,17 @@
                 </div>
             </div>
 
+            <details class="cp-force-clear-panel" id="cpForceClearPanel" style="display:none;">
+                <summary>Override — clear despite matches</summary>
+                <div class="mt-2">
+                    <label class="d-flex align-items-start gap-2 mb-1">
+                        <input type="checkbox" id="cpForceClear" value="1">
+                        <span>I have reviewed the listed matches and document why Clear is appropriate despite potential conflicts.</span>
+                    </label>
+                    <p class="text-muted small mb-0">Requires detailed notes (at least 20 characters) in the Notes field.</p>
+                </div>
+            </details>
+
             <div class="form-group mb-2">
                 <label for="cpOutcomeSelect">Outcome</label>
                 <select id="cpOutcomeSelect" class="form-control form-control-sm">
@@ -392,7 +429,7 @@
                             $hInfo = (int) ($hist->informational_count ?? 0);
                             $hMatter = $hist->clientMatter?->client_unique_matter_no;
                         @endphp
-                        <div class="cp-history-item">
+                        <div class="cp-history-item cp-history-row" role="button" tabindex="0" data-check-id="{{ $hist->id }}">
                             {{ $hAt }} —
                             <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$hist->outcome] ?? '#555' }};">{{ $hLabel }}</span>
                             @if($hMatter)
@@ -412,6 +449,8 @@
         </div>
     </div>
 </div>
+
+@include('crm.clients.partials.conflict-check-history-detail')
 
 @push('scripts')
 <script>
@@ -435,6 +474,7 @@
     var searchUrl = window.OTHER_PARTY_SEARCH_URL || @json(route('api.search.other.party'));
     var solicitorSearchUrl = window.CONTACT_PERSON_SEARCH_URL || @json(route('api.search.contact.person'));
     var runCheckUrl = @json(route('clients.conflictCheck.run'));
+    var conflictCheckDetailUrl = @json(route('clients.conflictCheck.detail', ['checkId' => '__ID__']));
     var clientId = card.getAttribute('data-client-id');
     var clientMatterId = card.getAttribute('data-client-matter-id') || '';
     var latestOutcome = @json($latestOutcome);
@@ -442,6 +482,7 @@
     var lastSearchHash = null;
     var lastMatches = null;
     var lastInformationalMatches = null;
+    var lastHardMatchCount = 0;
     var searchWasRun = false;
     var conflictCheckIsStale = @json(! empty($conflictCheckStaleness['is_stale']));
 
@@ -701,14 +742,32 @@
         updateOutcomeSaveState();
     }
 
-    function prependHistory(outcome, checkedAt, matchCount, informationalCount, matterLabel) {
+    function updateForceClearPanel(hardCount) {
+        lastHardMatchCount = hardCount || 0;
+        var panel = document.getElementById('cpForceClearPanel');
+        var checkbox = document.getElementById('cpForceClear');
+        if (!panel) return;
+        if (lastHardMatchCount > 0) {
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+            if (checkbox) checkbox.checked = false;
+        }
+    }
+
+    function prependHistory(outcome, checkedAt, matchCount, informationalCount, matterLabel, checkId) {
         var list = document.getElementById('cpHistoryList');
         if (!list) return;
         list.style.display = '';
         var label = outcomeLabels[outcome] || outcome;
         var color = outcomeBadgeColors[outcome] || '#555';
         var item = document.createElement('div');
-        item.className = 'cp-history-item';
+        item.className = 'cp-history-item cp-history-row';
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        if (checkId) {
+            item.setAttribute('data-check-id', String(checkId));
+        }
         var matterPart = matterLabel ? ' <span class="text-muted">· ' + esc(matterLabel) + '</span>' : '';
         var countPart = '';
         if ((matchCount || 0) > 0) {
@@ -731,6 +790,7 @@
         } else {
             list.appendChild(item);
         }
+        bindHistoryRow(item);
     }
 
     function renderMatchRow(m, opts) {
@@ -742,8 +802,9 @@
         if (!informational) {
             if (m.detail_url) {
                 link = ' <a href="' + esc(m.detail_url) + '" target="_blank" rel="noopener">Open</a>';
-            } else if (m.client_id) {
-                link = ' <a href="/clients/detail/' + encodeURIComponent(m.client_id) + '" target="_blank" rel="noopener">Open</a>';
+            } else if (m.access_locked) {
+                link = ' <span class="cp-access-locked" title="You do not have access to this record">'
+                    + '<i class="fa-solid fa-lock"></i> No access to this record</span>';
             }
         }
         var reason = m.informational_reason
@@ -807,6 +868,102 @@
             }
         }
     }
+
+    function renderHistoryDetailMatches(matches, informationalMatches) {
+        var wrap = document.createElement('div');
+        var hardList = document.createElement('div');
+        hardList.className = 'cp-match-list';
+        (matches || []).forEach(function (m) {
+            hardList.appendChild(renderMatchRow(m, { informational: false }));
+        });
+        if (!matches || !matches.length) {
+            hardList.innerHTML = '<div class="text-muted">No hard conflicts stored.</div>';
+        }
+        wrap.appendChild(hardList);
+
+        if (informationalMatches && informationalMatches.length) {
+            var infoTitle = document.createElement('div');
+            infoTitle.className = 'cp-info-panel-title mt-2';
+            infoTitle.innerHTML = '<i class="fa-solid fa-circle-info"></i> Informational notes';
+            wrap.appendChild(infoTitle);
+            var infoList = document.createElement('div');
+            infoList.className = 'cp-match-list';
+            informationalMatches.forEach(function (m) {
+                infoList.appendChild(renderMatchRow(m, { informational: true }));
+            });
+            wrap.appendChild(infoList);
+        }
+
+        return wrap;
+    }
+
+    function openHistoryDetail(checkId) {
+        if (!checkId) return;
+        var modalEl = document.getElementById('cpHistoryDetailModal');
+        var bodyEl = document.getElementById('cpHistoryDetailBody');
+        if (!modalEl || !bodyEl) return;
+
+        bodyEl.innerHTML = '<div class="text-muted">Loading…</div>';
+        var url = conflictCheckDetailUrl.replace('__ID__', encodeURIComponent(checkId))
+            + '?client_id=' + encodeURIComponent(clientId);
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.style.display = 'block';
+        }
+
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+            .then(function (r) {
+                return r.json().then(function (data) {
+                    return { ok: r.ok, status: r.status, data: data };
+                });
+            })
+            .then(function (res) {
+                if (!res.ok || !res.data.success || !res.data.check) {
+                    bodyEl.innerHTML = '<div class="text-danger">' + esc((res.data && res.data.message) || 'Could not load check detail.') + '</div>';
+                    return;
+                }
+                var c = res.data.check;
+                var meta = document.createElement('div');
+                meta.className = 'mb-2 text-muted small';
+                meta.innerHTML = esc(c.checked_at || '')
+                    + (c.checked_by ? ' · ' + esc(c.checked_by) : '')
+                    + (c.matter_label ? ' · Matter ' + esc(c.matter_label) : '')
+                    + (c.search_hash ? ' · Hash ' + esc(c.search_hash) : '');
+                bodyEl.innerHTML = '';
+                bodyEl.appendChild(meta);
+                if (c.outcome_notes) {
+                    var notes = document.createElement('div');
+                    notes.className = 'small mb-2';
+                    notes.innerHTML = '<strong>Notes:</strong> ' + esc(c.outcome_notes);
+                    bodyEl.appendChild(notes);
+                }
+                bodyEl.appendChild(renderHistoryDetailMatches(c.matches, c.informational_matches));
+            })
+            .catch(function () {
+                bodyEl.innerHTML = '<div class="text-danger">Network error loading check detail.</div>';
+            });
+    }
+
+    function bindHistoryRow(el) {
+        if (!el || el.getAttribute('data-bound') === '1') return;
+        el.setAttribute('data-bound', '1');
+        var checkId = el.getAttribute('data-check-id');
+        if (!checkId) return;
+        el.addEventListener('click', function () { openHistoryDetail(checkId); });
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openHistoryDetail(checkId);
+            }
+        });
+    }
+
+    document.querySelectorAll('#cpHistoryList .cp-history-row').forEach(bindHistoryRow);
 
     if (savePartiesBtn) {
         savePartiesBtn.addEventListener('click', function () {
@@ -936,6 +1093,7 @@
                         renderMatches(lastMatches, lastInformationalMatches);
                         renderWarnings(res.data.warnings || []);
                         var hardCount = res.data.match_count || 0;
+                        updateForceClearPanel(hardCount);
                         var infoCount = res.data.informational_count || 0;
                         if (statusEl) {
                             var statusText = hardCount + ' conflict' + (hardCount === 1 ? '' : 's');
@@ -1009,6 +1167,16 @@
                 toast('Notes are required when recording Conflict found.', false);
                 return;
             }
+            var forceClearEl = document.getElementById('cpForceClear');
+            var forceClear = !!(forceClearEl && forceClearEl.checked);
+            if (outcome === 'clear' && lastHardMatchCount > 0 && !forceClear) {
+                toast('Potential conflicts exist. Record Conflict found, or use the override with detailed notes (20+ characters).', false);
+                return;
+            }
+            if (outcome === 'clear' && forceClear && notes.length < 20) {
+                toast('Override requires detailed notes of at least 20 characters.', false);
+                return;
+            }
 
             var token = document.querySelector('meta[name="csrf-token"]');
             var fd = new FormData();
@@ -1024,6 +1192,9 @@
             }
             if (searchWasRun && lastSearchHash) {
                 fd.append('acknowledged_search_hash', lastSearchHash);
+            }
+            if (forceClear) {
+                fd.append('force_clear', '1');
             }
             saveOutcomeBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
@@ -1049,8 +1220,12 @@
                                 res.data.checked_at,
                                 res.data.match_count || 0,
                                 res.data.informational_count || 0,
-                                res.data.matter_label || ''
+                                res.data.matter_label || '',
+                                res.data.check_id || null
                             );
+                        }
+                        if (forceClearEl) {
+                            forceClearEl.checked = false;
                         }
                     } else {
                         if (res.data && res.data.error_type === 'stale') {
@@ -1060,7 +1235,12 @@
                                     || 'Parties or client details changed. Re-run the conflict search.'
                             );
                         }
-                        toast((res.data && res.data.message) || 'Save failed', false);
+                        var errMsg = (res.data && res.data.message) || 'Save failed';
+                        if (res.data && res.data.error_type === 'validation' && res.data.match_count > 0) {
+                            errMsg += ' (' + res.data.match_count + ' potential conflict'
+                                + (res.data.match_count === 1 ? '' : 's') + ')';
+                        }
+                        toast(errMsg, false);
                     }
                 })
                 .catch(function () {

@@ -2567,7 +2567,7 @@ class ClientPersonalDetailsController extends Controller
 
             $matterCheckQuery = ClientConflictCheck::query()
                 ->where('client_id', $client->id)
-                ->forActiveMatter($pipelineMatterId);
+                ->forPipelineMatter($pipelineMatterId);
 
             $hasCheck = (clone $matterCheckQuery)
                 ->whereIn('outcome', ['clear', 'waived'])
@@ -2924,7 +2924,9 @@ class ClientPersonalDetailsController extends Controller
 
             return response()->json([
                 'success'             => true,
-                'message'             => 'Conflict check outcome saved.',
+                'message'             => ($outcome === 'clear' && $forceClear && $hardCount > 0)
+                    ? 'Conflict check outcome saved with documented override (Clear despite matches).'
+                    : 'Conflict check outcome saved.',
                 'check_id'            => $check->id,
                 'outcome'             => $outcome,
                 'checked_at'          => $check->checked_at->format('d M Y H:i'),
@@ -2935,6 +2937,7 @@ class ClientPersonalDetailsController extends Controller
                 'informational_count' => $infoCount,
                 'client_matter_id'    => $clientMatterId,
                 'matter_label'        => $matterLabel,
+                'force_clear_applied' => $outcome === 'clear' && $forceClear && $hardCount > 0,
             ]);
         } catch (\Exception $e) {
             Log::error('Conflict check outcome save failed', [
@@ -3067,6 +3070,57 @@ class ClientPersonalDetailsController extends Controller
                 'error_type' => 'general',
             ], 500);
         }
+    }
+
+    /**
+     * Return stored conflict-check snapshot for history detail (matches + metadata).
+     */
+    public function getConflictCheckDetail(Request $request, ConflictCheckService $service, int $checkId)
+    {
+        $clientId = (int) $request->input('client_id', $request->input('id', 0));
+        $check = ClientConflictCheck::query()
+            ->with(['checkedBy', 'clientMatter'])
+            ->find($checkId);
+
+        if (! $check) {
+            return response()->json(['success' => false, 'message' => 'Conflict check not found.'], 404);
+        }
+
+        if ($clientId > 0 && (int) $check->client_id !== $clientId) {
+            return response()->json(['success' => false, 'message' => 'Conflict check not found.'], 404);
+        }
+
+        $viewer = Auth::guard('admin')->user() ?? Auth::user();
+        if (! \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $check->client_id, $viewer)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $matches = $service->sanitizeStoredMatchesForViewer(is_array($check->matches) ? $check->matches : []);
+        $informational = $service->sanitizeStoredMatchesForViewer(
+            is_array($check->informational_matches) ? $check->informational_matches : []
+        );
+
+        $checkedBy = $check->checkedBy;
+        $checkedByName = $checkedBy
+            ? trim(($checkedBy->first_name ?? '') . ' ' . ($checkedBy->last_name ?? ''))
+            : null;
+
+        return response()->json([
+            'success' => true,
+            'check' => [
+                'id' => $check->id,
+                'outcome' => $check->outcome,
+                'checked_at' => $check->checked_at?->format('d M Y H:i'),
+                'checked_by' => $checkedByName ?: null,
+                'match_count' => (int) ($check->match_count ?? count($matches)),
+                'informational_count' => (int) ($check->informational_count ?? count($informational)),
+                'search_hash' => $check->search_hash ? substr((string) $check->search_hash, 0, 12) . '…' : null,
+                'matter_label' => $check->clientMatter?->client_unique_matter_no,
+                'outcome_notes' => $check->outcome_notes,
+                'matches' => $matches,
+                'informational_matches' => $informational,
+            ],
+        ]);
     }
 
     /**
