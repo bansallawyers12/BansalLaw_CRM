@@ -15,6 +15,25 @@ use Illuminate\Support\Facades\Hash;
 class SecurityBugFixes10Test extends TestCase
 {
     /** @test */
+    public function test_10_2_authenticated_does_not_reverify_recaptcha()
+    {
+        $controller = new AdminLoginController();
+        $reflector = new \ReflectionClass($controller);
+        $method = $reflector->getMethod('authenticated');
+        $method->setAccessible(true);
+
+        $source = file_get_contents((new \ReflectionClass(AdminLoginController::class))->getFileName());
+        $authenticatedPos = strpos($source, 'public function authenticated');
+        $authenticatedBlock = substr($source, $authenticatedPos, 800);
+
+        $this->assertStringNotContainsString(
+            'verifyRecaptcha($request)',
+            $authenticatedBlock,
+            'authenticated() must not re-verify reCAPTCHA; Google tokens are single-use'
+        );
+    }
+
+    /** @test */
     public function test_10_3_web_login_requires_status_1()
     {
         $controller = new AdminLoginController();

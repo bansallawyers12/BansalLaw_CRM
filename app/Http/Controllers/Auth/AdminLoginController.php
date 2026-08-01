@@ -98,22 +98,20 @@ class AdminLoginController extends Controller
     {
         if (!app()->environment('local') && config('services.recaptcha.key') && config('services.recaptcha.secret')) {
             $recaptcha_response = $request->input('g-recaptcha-response');
-            if (is_null($recaptcha_response)) {
+            if ($recaptcha_response === null || trim((string) $recaptcha_response) === '') {
                 return redirect()->back()
                     ->withInput($request->only($this->username(), 'remember'))
                     ->withErrors(['g-recaptcha-response' => 'Please Complete the Recaptcha to proceed']);
             }
 
-            $body = [
+            $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
                 'secret'   => config('services.recaptcha.secret'),
                 'response' => $recaptcha_response,
                 'remoteip' => IpUtils::anonymize($request->ip()),
-            ];
+            ]);
+            $result = $response->json();
 
-            $response = Http::get('https://www.google.com/recaptcha/api/siteverify', $body);
-            $result   = json_decode($response);
-
-            if (!$response->successful() || empty($result->success)) {
+            if (!$response->successful() || empty($result['success'])) {
                 return redirect()->back()
                     ->withInput($request->only($this->username(), 'remember'))
                     ->withErrors(['g-recaptcha-response' => 'Please Complete the Recaptcha Again to proceed']);
@@ -125,12 +123,9 @@ class AdminLoginController extends Controller
 
     public function authenticated(Request $request, $user): mixed
     {
-        if ($recaptchaError = $this->verifyRecaptcha($request)) {
-            $this->guard()->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return $recaptchaError;
-        }
+        // reCAPTCHA is already verified in login() before attemptLogin().
+        // Do not verify again: Google tokens are single-use and a second
+        // siteverify call fails with timeout-or-duplicate, logging the user out.
 
         if (!empty($request->remember)) {
             \Cookie::queue(\Cookie::make('email', $request->email, 3600));
