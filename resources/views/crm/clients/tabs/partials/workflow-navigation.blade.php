@@ -32,7 +32,7 @@
 
         @if(!empty($workflowInModal))
             <div class="dropdown workflow-nav-more">
-                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">
                     More
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">

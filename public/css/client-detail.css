@@ -4371,6 +4371,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 #cdn-update-stage-modal .cdn-update-stage-modal-body {
   max-height: min(78vh, 900px);
   overflow-y: auto;
+  overflow-x: visible;
   padding: 1.25rem 1.5rem;
 }
 

@@ -72,7 +72,7 @@
                 }
 
                 $workflowViewer = Auth::guard('admin')->user();
-                $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
+                $workflowIsDiscontinued = (int) ($workflowSelectedMatter->matter_status ?? 1) === 0;
                 $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
                 $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && $workflowViewer->canCloseDiscontinueMatter());
                 $workflowIsReadOnly = !empty($isClosedMatterView);
@@ -96,9 +96,17 @@
                     $workflowNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
                 }
                 $workflowNextBtnLabel = $workflowNextStageName ? ('Proceed to ' . $workflowNextStageName) : 'Proceed to Next Stage';
-                $workflowStatusLabel = (!empty($isClosedMatterView) || (isset($workflowSelectedMatter->matter_status) && $workflowSelectedMatter->matter_status != 1))
-                    ? 'Closed'
-                    : ($workflowIsDiscontinued ? 'Discontinued' : 'Active');
+
+                if (!empty($isClosedMatterView)) {
+                    $workflowStatusLabel = 'Closed';
+                    $workflowStatusBadgeClass = 'bg-secondary';
+                } elseif ($workflowIsDiscontinued) {
+                    $workflowStatusLabel = 'Discontinued';
+                    $workflowStatusBadgeClass = 'bg-warning text-dark';
+                } else {
+                    $workflowStatusLabel = 'Active';
+                    $workflowStatusBadgeClass = 'bg-success';
+                }
             @endphp
 
             @if($workflowInModal)
@@ -108,7 +116,7 @@
                             <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                             <span>{{ $workflowMatterName }} ({{ $workflowMatterNumber }})</span>
                         </div>
-                        <span class="badge cdn-workflow-modal__status {{ $workflowStatusLabel === 'Active' ? 'bg-success' : 'bg-secondary' }}">{{ $workflowStatusLabel }}</span>
+                        <span class="badge cdn-workflow-modal__status {{ $workflowStatusBadgeClass }}">{{ $workflowStatusLabel }}</span>
                     </div>
 
                     @include('crm.clients.tabs.partials.workflow-stages-list', [
@@ -160,6 +168,7 @@
 
                     @include('crm.clients.tabs.partials.workflow-navigation', [
                         'navigationClass' => 'cdn-workflow-modal__actions mt-4',
+                        'workflowInModal' => true,
                     ])
                 </div>
             @else
@@ -216,7 +225,7 @@
                                     @endif
                                 </div>
                             </div>
-                            @include('crm.clients.tabs.partials.workflow-navigation')
+                            @include('crm.clients.tabs.partials.workflow-navigation', ['workflowInModal' => false])
                         </div>
                     </div>
                 </div>
