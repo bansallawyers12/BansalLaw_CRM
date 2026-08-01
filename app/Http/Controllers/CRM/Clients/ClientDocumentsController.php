@@ -663,7 +663,7 @@ class ClientDocumentsController extends Controller
         try {
             $clientid = $request->clientid;
             if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
-                return;
+                exit;
             }
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
             if(!empty($admin_info1)){
@@ -715,8 +715,10 @@ class ClientDocumentsController extends Controller
                     //Update date in client matter table
                     if( isset($request->client_matter_id) && $request->client_matter_id != ""){
                         $obj1 = ClientMatter::find($request->client_matter_id);
-                        $obj1->updated_at = date('Y-m-d H:i:s');
-                        $obj1->save();
+                        if ($obj1) {
+                            $obj1->updated_at = date('Y-m-d H:i:s');
+                            $obj1->save();
+                        }
                     }
                     $response['status'] 	= 	true;
                     $response['message']	=	'You have added your matter document checklist';

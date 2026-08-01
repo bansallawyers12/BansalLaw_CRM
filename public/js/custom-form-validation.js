@@ -134,6 +134,31 @@ function crmShowEmailUploadHttpError(xhr) {
     $('.custom-error-msg .alert').text(message);
 }
 
+/**
+ * Commit any typed-but-not-yet-selected Tom Select "create" text into real items.
+ * Users often type a name and click Create without pressing Enter first.
+ */
+function flushTomSelectPendingCreates($form) {
+	if (!$form || !$form.length) {
+		return;
+	}
+	$form.find('select').each(function () {
+		var ts = this.tomselect;
+		if (!ts || !ts.settings || !ts.settings.create || typeof ts.createItem !== 'function') {
+			return;
+		}
+		var pending = '';
+		if (typeof ts.inputValue === 'function') {
+			pending = String(ts.inputValue() || '').trim();
+		} else if (ts.control_input) {
+			pending = String(ts.control_input.value || '').trim();
+		}
+		if (pending) {
+			ts.createItem(pending);
+		}
+	});
+}
+
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
@@ -152,13 +177,18 @@ function customValidate(formName, savetype = '')
 		$(".custom-error").remove(); //remove all errors when submit the button
 
 		var $inputsToValidate;
+		var $formForValidate;
 		if (formName === 'convert_lead_to_client') {
-			$inputsToValidate = $("#convertLeadToClientModal form[name='convert_lead_to_client'] :input[data-valid]");
+			$formForValidate = $("#convertLeadToClientModal form[name='convert_lead_to_client']");
+			$inputsToValidate = $formForValidate.find(':input[data-valid]');
 		} else if (formName === 'change_matter_assignee') {
-			$inputsToValidate = $("#changeMatterAssigneeModal form[name='change_matter_assignee'] :input[data-valid]");
+			$formForValidate = $("#changeMatterAssigneeModal form[name='change_matter_assignee']");
+			$inputsToValidate = $formForValidate.find(':input[data-valid]');
 		} else {
-			$inputsToValidate = $("form[name="+formName+"] :input[data-valid]");
+			$formForValidate = $("form[name="+formName+"]");
+			$inputsToValidate = $formForValidate.find(':input[data-valid]');
 		}
+		flushTomSelectPendingCreates($formForValidate);
 		if (formName === 'change_matter_assignee') {
 		}
 		$inputsToValidate.each(function(){
@@ -193,7 +223,8 @@ function customValidate(formName, savetype = '')
 								{
 									i++;
 									j++;
-									$(this).after(errorDisplay(requiredError));
+									var $tsWrap = $element.next('.ts-wrapper');
+									($tsWrap.length ? $tsWrap : $element).after(errorDisplay(requiredError));
 								}
 						}
 					else
@@ -545,7 +576,7 @@ function customValidate(formName, savetype = '')
 							//datatype:'json',
 							success: function(response){
 								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
+								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
 								$('#openmigrationdocsmodal').modal('hide');
 								if(obj.status){ //alert('folder_name=='+folder_name);
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
@@ -580,7 +611,7 @@ function customValidate(formName, savetype = '')
 							data: fd,
 							success: function(response){
 								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
+								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
 								$('#opennominationdocsmodal').modal('hide');
 								if(obj.status){
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');

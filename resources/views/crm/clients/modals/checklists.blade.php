@@ -30,8 +30,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control crm-ts-plain" name="checklist[]" id="checklist" multiple>
-									<option value="">Select</option>
+								<select data-valid="required" class="form-control crm-ts-plain" name="checklist[]" id="checklist" multiple placeholder="Type or select checklist name...">
 									<?php
 									$eduChkList = $__portalChecklistsOk
                                         ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 1)->get()
@@ -43,6 +42,7 @@
 									}
 									?>
 								</select>
+								<small class="text-muted d-block mt-1">Type a checklist name, then click Create (or press Enter to add multiple names).</small>
 								<span class="custom-error checklist_name_error" role="alert">
 									<strong></strong>
 								</span>
@@ -87,8 +87,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="visa_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control crm-ts-plain" name="visa_checklist[]" id="visa_checklist" multiple>
-									<option value="">Select</option>
+								<select data-valid="required" class="form-control crm-ts-plain" name="visa_checklist[]" id="visa_checklist" multiple placeholder="Type or select checklist name...">
 									<?php
 									$visaChkList = $__portalChecklistsOk
                                         ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 2)->get()
@@ -100,6 +99,7 @@
 									}
 									?>
 								</select>
+								<small class="text-muted d-block mt-1">Type a checklist name, then click Create (or press Enter to add multiple names).</small>
 								<span class="custom-error visa_checklist_error" role="alert">
 									<strong></strong>
 								</span>
@@ -145,8 +145,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="nomination_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control crm-ts-plain" name="nomination_checklist[]" id="nomination_checklist" multiple>
-									<option value="">Select</option>
+								<select data-valid="required" class="form-control crm-ts-plain" name="nomination_checklist[]" id="nomination_checklist" multiple placeholder="Type or select checklist name...">
 									<?php
 									$nomChkList = $__portalChecklistsOk
                                         ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 3)->get()
@@ -158,6 +157,7 @@
 									}
 									?>
 								</select>
+								<small class="text-muted d-block mt-1">Type a checklist name, then click Create (or press Enter to add multiple names).</small>
 								<span class="custom-error nomination_checklist_error" role="alert">
 									<strong></strong>
 								</span>

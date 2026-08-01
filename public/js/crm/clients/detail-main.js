@@ -7959,10 +7959,14 @@ success: function(response) {
             $modal.one('shown.bs.modal', function () {
                 initTS('#checklist', {
                     plugins: ['remove_button'],
-                    allowEmptyOption: true,
+                    allowEmptyOption: false,
                     closeAfterSelect: false,
                     dropdownParent: this,
-                    create: false
+                    create: true,
+                    createOnBlur: true,
+                    addPrecedence: true,
+                    persist: true,
+                    placeholder: 'Type or select checklist name...'
                 });
             });
             $modal.modal('show');
@@ -8047,10 +8051,14 @@ success: function(response) {
             $modal.one('shown.bs.modal', function () {
                 initTS('#visa_checklist', {
                     plugins: ['remove_button'],
-                    allowEmptyOption: true,
+                    allowEmptyOption: false,
                     closeAfterSelect: false,
                     dropdownParent: this,
-                    create: false
+                    create: true,
+                    createOnBlur: true,
+                    addPrecedence: true,
+                    persist: true,
+                    placeholder: 'Type or select checklist name...'
                 });
             });
             $modal.modal('show');
@@ -8071,10 +8079,14 @@ success: function(response) {
             $modal.one('shown.bs.modal', function () {
                 initTS('#nomination_checklist', {
                     plugins: ['remove_button'],
-                    allowEmptyOption: true,
+                    allowEmptyOption: false,
                     closeAfterSelect: false,
                     dropdownParent: this,
-                    create: false
+                    create: true,
+                    createOnBlur: true,
+                    addPrecedence: true,
+                    persist: true,
+                    placeholder: 'Type or select checklist name...'
                 });
             });
             $modal.modal('show');
