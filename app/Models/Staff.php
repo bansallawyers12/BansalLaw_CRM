@@ -464,7 +464,18 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Role IDs that may close/discontinue matters and grant {@see canCloseDiscontinueMatter()} to others.
+     * Role IDs that may close/discontinue client matters.
+     * Default: Super Admin (1), Solicitor (16), and Admin (17).
+     */
+    public static function closeDiscontinueRoleIds(): array
+    {
+        $ids = config('crm.close_discontinue_role_ids', [1, 16, 17]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 16, 17];
+    }
+
+    /**
+     * Role IDs that may grant {@see canCloseDiscontinueMatter()} to others on staff profiles.
      * Default: Super Admin (1) and Admin (17).
      */
     public static function closeDiscontinueGrantRoleIds(): array
@@ -491,7 +502,7 @@ class Staff extends Authenticatable
      */
     public function canCloseDiscontinueMatter(): bool
     {
-        if (in_array((int) ($this->role ?? 0), self::closeDiscontinueGrantRoleIds(), true)) {
+        if (in_array((int) ($this->role ?? 0), self::closeDiscontinueRoleIds(), true)) {
             return true;
         }
 

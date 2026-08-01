@@ -46,11 +46,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Staff roles that may close/discontinue matters and grant per-user flag
+    | Staff roles that may close/discontinue client matters
+    |--------------------------------------------------------------------------
+    |
+    | Canonical ids: 1 = Super Admin, 16 = Solicitor, 17 = Admin (config/crm_roles.php).
+    | Other staff need {@see Staff::can_close_discontinue_matter} on their profile.
+    | Override via CRM_CLOSE_DISCONTINUE_ROLE_IDS e.g. "1,16,17".
+    |
+    */
+    'close_discontinue_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_CLOSE_DISCONTINUE_ROLE_IDS', '1,16,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Staff roles that may grant close/discontinue permission on staff profiles
     |--------------------------------------------------------------------------
     |
     | Canonical ids: 1 = Super Admin, 17 = Admin (see config/crm_roles.php).
-    | Other staff need {@see Staff::can_close_discontinue_matter} on their profile.
     |
     */
     'close_discontinue_grant_role_ids' => array_values(array_filter(array_map(

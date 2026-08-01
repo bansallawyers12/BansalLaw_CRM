@@ -85,7 +85,7 @@
 
 .modal .modal-header .close:not(.crm-modal-close)::before,
 .modal .modal-header .close-btn:not(.crm-modal-close):not(.add-matter-modal__close)::before {
-    font-family: "Font Awesome 6 Free";
+    font-family: var(--fa-style-family, "Font Awesome 7 Free");
     font-weight: 900;
     content: "\f00d";
     font-size: 1.15rem;
