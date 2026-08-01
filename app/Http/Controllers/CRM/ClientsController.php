@@ -6506,6 +6506,7 @@ class ClientsController extends Controller
             
             // Get the next unique ID for this action
             $actionUniqueId = 'group_' . uniqid('', true);
+            $matterId = $this->resolveActionMatterId($requestData, (int) $clientId);
 
             // Loop through each assignee and create an action
             $mirroredToClientTask = false;
@@ -6515,6 +6516,7 @@ class ClientsController extends Controller
                 $action = new \App\Models\Note;
                 $action->client_id = $clientId;
                 $action->user_id = Auth::user()->id;
+                $action->matter_id = $matterId;
                 $action->description = $requestData['description'] ?? '';
                 $action->unique_group_id = $actionUniqueId;
 
@@ -6565,7 +6567,7 @@ class ClientsController extends Controller
                     $o->sender_id = Auth::user()->id;
                     $o->receiver_id = $assigneeId;
                     $o->module_id = $clientId;
-                    $o->url = URL::to('/clients/detail/' . $requestData['client_id']);
+                    $o->url = $this->actionClientDetailUrl((int) $clientId, $matterId, $requestData['client_id'] ?? null);
                     $o->notification_type = 'client';
                     $o->receiver_status = 0; // Unread
                     $o->seen = 0; // Not seen
@@ -6650,6 +6652,123 @@ class ClientsController extends Controller
     }
 
     /**
+     * Parse action client picker values:
+     * - "ENCODED"
+     * - "ENCODED/Matter/CLIENT_UNIQUE_MATTER_NO"
+     * - "ENCODED/Client"
+     *
+     * @return array{encoded: ?string, client_id: ?int, matter_ref: ?string, matter_id: ?int}
+     */
+    protected function parseActionClientMatterPath(?string $clientPath): array
+    {
+        $result = [
+            'encoded' => null,
+            'client_id' => null,
+            'matter_ref' => null,
+            'matter_id' => null,
+        ];
+
+        $clientPath = trim((string) $clientPath);
+        if ($clientPath === '') {
+            return $result;
+        }
+
+        $parts = explode('/', $clientPath);
+        $encoded = $parts[0] ?? '';
+        $result['encoded'] = $encoded !== '' ? $encoded : null;
+
+        if ($encoded !== '') {
+            $decoded = $this->decodeString($encoded);
+            if ($decoded !== false && $decoded !== '' && $decoded !== null) {
+                $result['client_id'] = (int) $decoded;
+            }
+        }
+
+        if (isset($parts[1]) && strcasecmp((string) $parts[1], 'Matter') === 0 && ! empty($parts[2])) {
+            $result['matter_ref'] = (string) $parts[2];
+        }
+
+        if ($result['client_id'] && $result['matter_ref']) {
+            $matterId = ClientMatter::where('client_id', $result['client_id'])
+                ->where('client_unique_matter_no', $result['matter_ref'])
+                ->value('id');
+            if ($matterId) {
+                $result['matter_id'] = (int) $matterId;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Resolve matter_id for an action from explicit request field and/or client picker path.
+     */
+    protected function resolveActionMatterId(array $requestData, ?int $clientId): ?int
+    {
+        if (! empty($requestData['matter_id']) && is_numeric($requestData['matter_id'])) {
+            $matterId = (int) $requestData['matter_id'];
+            if ($matterId > 0 && $clientId) {
+                $owns = ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
+                if ($owns) {
+                    return $matterId;
+                }
+            } elseif ($matterId > 0 && ! $clientId) {
+                return $matterId;
+            }
+        }
+
+        if (! empty($requestData['client_matter_id']) && is_numeric($requestData['client_matter_id'])) {
+            $matterId = (int) $requestData['client_matter_id'];
+            if ($matterId > 0 && $clientId) {
+                $owns = ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
+                if ($owns) {
+                    return $matterId;
+                }
+            }
+        }
+
+        if (! empty($requestData['client_id'])) {
+            $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+            if (! empty($parsed['matter_id'])) {
+                return (int) $parsed['matter_id'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Build client detail URL for action notifications (includes matter when available).
+     */
+    protected function actionClientDetailUrl(?int $clientId, ?int $matterId = null, ?string $encodedOrPath = null): string
+    {
+        $encoded = null;
+        if ($encodedOrPath) {
+            $parsed = $this->parseActionClientMatterPath($encodedOrPath);
+            if (! empty($parsed['encoded']) && ! empty($parsed['matter_ref'])) {
+                return URL::to('/clients/detail/' . $parsed['encoded'] . '/' . $parsed['matter_ref']);
+            }
+            if (! empty($parsed['encoded'])) {
+                $encoded = $parsed['encoded'];
+            }
+        }
+
+        if ($clientId) {
+            $encoded = $encoded ?? base64_encode(convert_uuencode($clientId));
+            if ($matterId) {
+                $matterRef = ClientMatter::where('id', $matterId)->value('client_unique_matter_no');
+                if ($matterRef) {
+                    return URL::to('/clients/detail/' . $encoded . '/' . $matterRef);
+                }
+            }
+
+            return URL::to('/clients/detail/' . $encoded);
+        }
+
+        return URL::to('/action');
+    }
+
+    /**
      * Save tags for a client
      * Handles the tag assignment functionality from the client detail modal
      *
@@ -6713,16 +6832,16 @@ class ClientsController extends Controller
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             $encodedClientId = null;
+            $matterId = null;
             
             if (!empty($requestData['client_id'])) {
-                // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
-                $clientIdParts = explode('/', $requestData['client_id']);
-                $encodedClientId = $clientIdParts[0];
-                $decodedClient = $this->decodeString($encodedClientId);
-                if ($decodedClient === false || $decodedClient === '') {
+                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                $encodedClientId = $parsed['encoded'];
+                if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
-                $clientId = (int) $decodedClient;
+                $clientId = (int) $parsed['client_id'];
+                $matterId = $this->resolveActionMatterId($requestData, $clientId);
             }
 
             // Generate unique action ID
@@ -6752,6 +6871,7 @@ class ClientsController extends Controller
                 $action = new \App\Models\Note;
                 $action->client_id = $clientId;
                 $action->user_id = Auth::user()->id;
+                $action->matter_id = $matterId;
                 $action->description = @$requestData['description'];
                 $action->unique_group_id = $actionUniqueId;
                 $action->is_action = 1;
@@ -6780,13 +6900,7 @@ class ClientsController extends Controller
                     $notification->sender_id = Auth::user()->id;
                     $notification->receiver_id = $assigneeId;
                     $notification->module_id = $clientId;
-                    
-                    // Set URL based on whether client exists
-                    if (!empty($requestData['client_id'])) {
-                        $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
-                    } else {
-                        $notification->url = URL::to('/action');
-                    }
+                    $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? $encodedClientId);
                     
                     $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                     $notification->seen = 0;
@@ -6819,15 +6933,13 @@ class ClientsController extends Controller
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             $clientLabel = '';
+            $matterId = null;
             if (!empty($requestData['client_id'])) {
-                // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
-                $clientIdParts = explode('/', $requestData['client_id']);
-                $encodedClientId = $clientIdParts[0];
-                $decodedId = $this->decodeString($encodedClientId);
-                if ($decodedId === false || $decodedId === '') {
+                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
-                $clientId = (int) $decodedId;
+                $clientId = (int) $parsed['client_id'];
                 $targetForAction = $this->findClientOrLeadForAction($clientId);
                 if (! $targetForAction) {
                     return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
@@ -6836,11 +6948,17 @@ class ClientsController extends Controller
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
                 $clientLabel = $this->actionClientDisplayName($targetForAction);
+                $matterId = $this->resolveActionMatterId($requestData, $clientId);
             }
             
             // Update action fields
             $action->description = @$requestData['description'];
             $action->client_id = $clientId;
+            if ($matterId) {
+                $action->matter_id = $matterId;
+            } elseif ($clientId === null) {
+                $action->matter_id = null;
+            }
             $action->task_group = @$requestData['task_group'];
             $action->assigned_to = @$requestData['rem_cat'];
             
@@ -6856,13 +6974,7 @@ class ClientsController extends Controller
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
-                
-                // Set URL based on whether client exists
-                if (!empty($requestData['client_id'])) {
-                    $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
-                } else {
-                    $notification->url = URL::to('/action');
-                }
+                $notification->url = $this->actionClientDetailUrl($clientId, $action->matter_id ? (int) $action->matter_id : $matterId, $requestData['client_id'] ?? null);
                 
                 $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
                 $notification->seen = 0;
@@ -6908,15 +7020,13 @@ class ClientsController extends Controller
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             $clientLabel = '';
+            $matterId = null;
             if (!empty($requestData['client_id'])) {
-                // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
-                $clientIdParts = explode('/', $requestData['client_id']);
-                $encodedClientId = $clientIdParts[0];
-                $decodedId = $this->decodeString($encodedClientId);
-                if ($decodedId === false || $decodedId === '') {
+                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
-                $clientId = (int) $decodedId;
+                $clientId = (int) $parsed['client_id'];
                 $targetForAction = $this->findClientOrLeadForAction($clientId);
                 if (! $targetForAction) {
                     return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
@@ -6925,6 +7035,7 @@ class ClientsController extends Controller
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
                 $clientLabel = $this->actionClientDisplayName($targetForAction);
+                $matterId = $this->resolveActionMatterId($requestData, $clientId);
             }
 
             // Generate unique action ID
@@ -6934,6 +7045,7 @@ class ClientsController extends Controller
             $action = new \App\Models\Note;
             $action->client_id = $clientId;
             $action->user_id = Auth::user()->id;
+            $action->matter_id = $matterId;
             $action->description = @$requestData['description'];
             $action->unique_group_id = $actionUniqueId;
             $action->is_action = 1;
@@ -6961,13 +7073,7 @@ class ClientsController extends Controller
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
-                
-                // Set URL based on whether client exists
-                if (!empty($requestData['client_id'])) {
-                    $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
-                } else {
-                    $notification->url = URL::to('/action');
-                }
+                $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? null);
                 
                 $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                 $notification->seen = 0;

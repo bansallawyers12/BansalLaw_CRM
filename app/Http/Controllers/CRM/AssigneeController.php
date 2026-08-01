@@ -229,9 +229,9 @@ class AssigneeController extends Controller
      public function assigned_by_me(Request $request)
      {
         if ($this->viewerSeesAllActions()) {
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
          #dd($assignees_notCompleted);
          return view('crm.assignee.assign_by_me',compact('assignees_notCompleted'))
@@ -242,13 +242,13 @@ class AssigneeController extends Controller
     public function assigned_to_me(Request $request)
     {
         if ($this->viewerSeesAllActions()) {
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
+            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
 
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
 
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
         return view('crm.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -267,7 +267,8 @@ class AssigneeController extends Controller
         $assignees_completed = \App\Models\Note::with([
                 'noteStaff',
                 'noteClient.company',
-                'assigned_staff'
+                'assigned_staff',
+                'clientMatter'
             ])
             ->where('status', 1)
             ->where('type', 'client')
@@ -351,6 +352,7 @@ class AssigneeController extends Controller
                         'notes.id',
                         'notes.user_id', // Changed from 'created_by' to 'user_id'
                         'notes.client_id',
+                        'notes.matter_id',
                         'notes.assigned_to',
                         'notes.status',
                         'notes.type',
@@ -361,7 +363,7 @@ class AssigneeController extends Controller
                         'notes.unique_group_id',
                         'notes.created_at'
                     ])
-                    ->with(['noteStaff', 'noteClient.company', 'assigned_staff'])
+                    ->with(['noteStaff', 'noteClient.company', 'assigned_staff', 'clientMatter'])
                     ->where('notes.status', '<>', '1')
                     ->where('notes.type', 'client')
                     ->where('notes.is_action', 1);
@@ -468,10 +470,15 @@ class AssigneeController extends Controller
                                 if ($label === '') {
                                     $label = trim(Utf8Helper::safeSanitize($data->noteClient->first_name ?? '') . ' ' . Utf8Helper::safeSanitize($data->noteClient->last_name ?? ''));
                                 }
+                                $matterRef = Utf8Helper::safeSanitize($data->matterReference() ?? '');
+                                $detailUrl = $data->clientDetailUrl() ?: url('/clients/detail/' . base64_encode(convert_uuencode($data->client_id)));
+                                $linkLabel = $matterRef !== '' ? $matterRef : $clientId;
                                 $client_name = $label;
                                 $client_name .= "<br>";
-                                $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
-                                $client_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
+                                $client_name .= '<a href="'.e($detailUrl).'" target="_blank">'.e($linkLabel).'</a>';
+                                if ($matterRef !== '' && $clientId !== '') {
+                                    $client_name .= '<br><small class="text-muted">'.e($clientId).'</small>';
+                                }
                             } else {
                                 // Personal Action - no client assigned (theme: theme.md navy / page-bg tint)
                                 $client_name = '<span class="action-badge-personal">Personal Action</span>';
@@ -531,6 +538,10 @@ class AssigneeController extends Controller
                             
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
+                            $detailUrl = $list->clientDetailUrl();
+                            if ($detailUrl) {
+                                $actionBtn .= '<a href="'.e($detailUrl).'" target="_blank" class="btn btn-info" title="Open matter"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></a> ';
+                            }
                             
                             $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
 
@@ -896,6 +907,7 @@ class AssigneeController extends Controller
             $newAction = new Note;
             $newAction->user_id = Auth::user()->id;
             $newAction->client_id = $clientId;
+            $newAction->matter_id = $currentAction->matter_id;
             $newAction->assigned_to = $validated['assigned_to'];
             $newAction->description = $validated['description'];
             $newAction->action_date = $followupDate;

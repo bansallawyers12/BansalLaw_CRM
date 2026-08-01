@@ -212,7 +212,7 @@
                                             <th width="5%" style="text-align: center;">Sno</th>
                                             <th width="5%" style="text-align: center;">Done</th>
                                             <th width="15%">Assignee Name</th>
-                                            <th width="15%">Client Reference</th>
+                                            <th width="15%">Client / Matter</th>
                                             <th width="15%" class="sort_col">@sortablelink('action_date', 'Assign Date')</th>
                                             <th width="10%" class="sort_col">@sortablelink('task_group', 'Type')</th>
                                             <th>Note</th>
@@ -240,7 +240,15 @@
                                                         {{ $client_name }}
                                                         <br>
                                                         @if ($list->noteClient)
-                                                            <a href="{{ URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id))) }}" target="_blank">{{ $list->noteClient->client_id }}</a>
+                                                            @php
+                                                                $matterRef = $list->matterReference();
+                                                                $detailUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
+                                                                $linkLabel = $matterRef ?: ($list->noteClient->client_id ?? 'Open');
+                                                            @endphp
+                                                            <a href="{{ $detailUrl }}" target="_blank">{{ $linkLabel }}</a>
+                                                            @if ($matterRef && !empty($list->noteClient->client_id))
+                                                                <br><small class="text-muted">{{ $list->noteClient->client_id }}</small>
+                                                            @endif
                                                         @endif
                                                     </td>
                                                     <td>{{ $list->action_date ? date('d/m/Y', strtotime($list->action_date)) : 'N/P' }}</td>
@@ -258,6 +266,14 @@
                                                         @endif
                                                     </td>
                                                     <td>
+                                                        @if ($list->noteClient)
+                                                            @php
+                                                                $openMatterUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
+                                                            @endphp
+                                                            <a href="{{ $openMatterUrl }}" target="_blank" class="btn btn-info btn-sm" data-bs-toggle="tooltip" title="Open matter">
+                                                                <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                                                            </a>
+                                                        @endif
                                                         @if ($list->task_group != 'Personal Action')
                                                             <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" class="btn btn-primary btn-sm update_task" data-bs-toggle="tooltip" title="Update Task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content='
                                                                 <div id="popover-content">

@@ -112,6 +112,66 @@ class Note extends Model
     }
 
     /**
+     * Matter this action/note belongs to (client_matters.id).
+     */
+    public function clientMatter()
+    {
+        return $this->belongsTo(ClientMatter::class, 'matter_id');
+    }
+
+    /**
+     * Prefer notes.matter_id; fall back to linked checklist task matter for legacy rows.
+     */
+    public function resolvedClientMatter(): ?ClientMatter
+    {
+        if ($this->relationLoaded('clientMatter') && $this->clientMatter) {
+            return $this->clientMatter;
+        }
+
+        if (! empty($this->matter_id)) {
+            $matter = $this->clientMatter;
+            if ($matter instanceof ClientMatter) {
+                return $matter;
+            }
+        }
+
+        $taskMatterId = ClientMatterTask::where('note_id', $this->id)->value('client_matter_id');
+        if ($taskMatterId) {
+            return ClientMatter::find($taskMatterId);
+        }
+
+        return null;
+    }
+
+    /**
+     * Matter reference for display (e.g. CRM_1), when linked.
+     */
+    public function matterReference(): ?string
+    {
+        $ref = $this->resolvedClientMatter()->client_unique_matter_no ?? null;
+
+        return $ref !== null && $ref !== '' ? (string) $ref : null;
+    }
+
+    /**
+     * Deep-link to client detail, preferring the linked matter when present.
+     */
+    public function clientDetailUrl(): ?string
+    {
+        if (! $this->client_id) {
+            return null;
+        }
+
+        $encoded = base64_encode(convert_uuencode($this->client_id));
+        $matterRef = $this->matterReference();
+        if ($matterRef) {
+            return url('/clients/detail/' . $encoded . '/' . $matterRef);
+        }
+
+        return url('/clients/detail/' . $encoded);
+    }
+
+    /**
      * Legacy relationship - Appointment model has been removed
      * This relationship is kept for backward compatibility but will return null
      * 

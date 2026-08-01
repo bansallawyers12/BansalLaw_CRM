@@ -118,7 +118,15 @@
                                             <td>
                                                 @if($list->noteClient)
                                                     {{ trim($list->noteClient->company_name_or_personal_name) }}<br>
-                                                    <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank">{{ $list->noteClient->client_id ?? 'N/P' }}</a>
+                                                    @php
+                                                        $matterRef = $list->matterReference();
+                                                        $detailUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)));
+                                                        $linkLabel = $matterRef ?: ($list->noteClient->client_id ?? 'N/P');
+                                                    @endphp
+                                                    <a href="{{ $detailUrl }}" target="_blank">{{ $linkLabel }}</a>
+                                                    @if ($matterRef && !empty($list->noteClient->client_id))
+                                                        <br><small class="text-muted">{{ $list->noteClient->client_id }}</small>
+                                                    @endif
                                                 @else
                                                     N/P
                                                 @endif
@@ -150,7 +158,13 @@
 
 											<td>
 												@if($list->noteClient)
-												<form action="{{ route('assignee.destroy_to_me',$list->id) }}" method="POST">
+                                                @php
+                                                    $openMatterUrlToMe = $list->clientDetailUrl() ?: URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)));
+                                                @endphp
+                                                <a href="{{ $openMatterUrlToMe }}" target="_blank" class="btn btn-info btn-sm" title="Open matter">
+                                                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                                                </a>
+												<form action="{{ route('assignee.destroy_to_me',$list->id) }}" method="POST" style="display:inline;">
 
 													{{-- <a class="btn btn-info" href="{{ route('assignees.show',$list->id) }}">Show</a> --}}
 
@@ -294,7 +308,15 @@
                                             <td>
                                                 @if($listC->noteClient)
                                                     {{ trim($listC->noteClient->company_name_or_personal_name) }}<br>
-                                                    <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank">{{ $listC->noteClient->client_id ?? 'N/P' }}</a>
+                                                    @php
+                                                        $matterRefC = $listC->matterReference();
+                                                        $detailUrlC = $listC->clientDetailUrl() ?: URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)));
+                                                        $linkLabelC = $matterRefC ?: ($listC->noteClient->client_id ?? 'N/P');
+                                                    @endphp
+                                                    <a href="{{ $detailUrlC }}" target="_blank">{{ $linkLabelC }}</a>
+                                                    @if ($matterRefC && !empty($listC->noteClient->client_id))
+                                                        <br><small class="text-muted">{{ $listC->noteClient->client_id }}</small>
+                                                    @endif
                                                 @else
                                                     N/P
                                                 @endif

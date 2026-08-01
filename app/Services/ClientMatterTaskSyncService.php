@@ -76,9 +76,23 @@ class ClientMatterTaskSyncService
             return $existing;
         }
 
-        $matter = $this->resolveDefaultMatterForClient((int) $note->client_id);
+        $matter = null;
+        if (! empty($note->matter_id)) {
+            $matter = ClientMatter::where('id', (int) $note->matter_id)
+                ->where('client_id', (int) $note->client_id)
+                ->first();
+        }
+        if (! $matter) {
+            $matter = $this->resolveDefaultMatterForClient((int) $note->client_id);
+        }
         if (! $matter) {
             return null;
+        }
+
+        // Keep Action ↔ matter in sync when the note had no matter yet.
+        if (empty($note->matter_id)) {
+            $note->matter_id = $matter->id;
+            $note->saveQuietly();
         }
 
         $title = $this->titleFromNote($note);

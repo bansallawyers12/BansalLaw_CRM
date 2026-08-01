@@ -5052,6 +5052,8 @@ success: function(response) {
 
                         client_id: $('#assign_client_id').val(),
 
+                        matter_id: $('#sel_matter_id_client_detail').val() || '',
+
                         followup_datetime: $('#popoverdatetime').val(),
 
                         rem_cat: selectedValues,
