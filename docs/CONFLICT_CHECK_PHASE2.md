@@ -105,3 +105,4 @@ vendor/bin/phpunit tests/Feature/ConflictCheckPhase2Test.php
 
 - [Phase 0 baseline](./CONFLICT_CHECK_PHASE0.md)
 - [Phase 1 false-positive fixes](./CONFLICT_CHECK_PHASE1.md)
+- [Phase 3 search coverage](./CONFLICT_CHECK_PHASE3.md)

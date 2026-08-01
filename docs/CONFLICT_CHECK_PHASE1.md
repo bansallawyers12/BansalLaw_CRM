@@ -94,10 +94,11 @@ Only **`match_count` (hard)** drives `suggested_outcome`.
 
 ## Out of scope (later phases)
 
-- Phone normalization (Phase 3)
-- Further staleness UX using `parties_snapshot_at` / `search_hash` (optional follow-up)
+- ~~Phone normalization~~ → **Done in [Phase 3](./CONFLICT_CHECK_PHASE3.md)**
+- Further staleness UX using `parties_snapshot_at` / `search_hash` (optional [Phase 4B](./CONFLICT_CHECK_PHASE3.md#optional-next-phase-4b--staleness-enforcement))
 
-**Phase 2** (audit record + matter scope): [CONFLICT_CHECK_PHASE2.md](./CONFLICT_CHECK_PHASE2.md)
+**Phase 2** (audit record + matter scope): [CONFLICT_CHECK_PHASE2.md](./CONFLICT_CHECK_PHASE2.md)  
+**Phase 3** (search coverage): [CONFLICT_CHECK_PHASE3.md](./CONFLICT_CHECK_PHASE3.md)
 
 ---
 

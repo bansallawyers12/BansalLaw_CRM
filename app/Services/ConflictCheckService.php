@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\ClientConflictParty;
+use App\Models\ClientContact;
 use App\Models\ClientEmail;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterOpposingParty;
 use App\Models\Company;
+use App\Models\ConflictPartyContact;
+use App\Models\ConflictPartyEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -102,7 +105,8 @@ class ConflictCheckService
             || ! empty($subject['phones'])
             || $this->isMeaningfulName($subject['company_name'] ?? null)
             || ! empty($subject['abn'])
-            || ! empty($subject['acn'])) {
+            || ! empty($subject['acn'])
+            || ! empty($subject['dob'])) {
             return true;
         }
 
@@ -113,7 +117,8 @@ class ConflictCheckService
                 || $this->isMeaningfulName($party['company_name'] ?? null)
                 || $this->isMeaningfulName($party['trading_name'] ?? null)
                 || ! empty($party['abn'])
-                || ! empty($party['acn'])) {
+                || ! empty($party['acn'])
+                || ! empty($party['dob'])) {
                 return true;
             }
         }
@@ -340,13 +345,21 @@ class ConflictCheckService
             return false;
         }
 
-        $candidate = [
-            'name' => $this->displayName($admin),
-            'matched_on' => '',
-        ];
+        $candidateNames = array_values(array_unique(array_filter([
+            trim($this->adminPersonName($admin)),
+            trim($this->displayName($admin)),
+        ])));
 
-        if ($this->isKnownPartyIdentityMatch($candidate, $known)) {
-            return true;
+        foreach ($known['identity'] as $identity) {
+            $name = trim((string) ($identity['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            foreach ($candidateNames as $candidateName) {
+                if ($candidateName !== '' && $this->namesLooselyMatch($candidateName, $name)) {
+                    return true;
+                }
+            }
         }
 
         $adminEmails = $this->collectEmailsForAdmin($admin);
@@ -492,8 +505,9 @@ class ConflictCheckService
         $emails = $this->collectEmailCandidates($searchTerms);
         $phones = $this->collectPhoneCandidates($searchTerms);
         $companyNames = $this->collectCompanyNameCandidates($searchTerms);
+        $dobs = $this->collectDobCandidates($searchTerms);
 
-        if ($names === [] && $emails === [] && $phones === [] && $companyNames === []) {
+        if ($names === [] && $emails === [] && $phones === [] && $companyNames === [] && $dobs === []) {
             return;
         }
 
@@ -501,22 +515,19 @@ class ConflictCheckService
             ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
             ->whereNotIn('id', $excludeIds)
-            ->where(function ($q) use ($names, $emails, $phones, $companyNames, $like) {
+            ->where(function ($q) use ($names, $emails, $phones, $companyNames, $dobs, $like) {
                 foreach ($names as $name) {
                     $parts = preg_split('/\s+/', $name) ?: [];
                     if (count($parts) >= 2) {
-                        $first = $parts[0];
-                        $last = $parts[count($parts) - 1];
-                        $q->orWhere(function ($inner) use ($first, $last, $like) {
-                            $inner->where('first_name', $like, $first)
-                                ->where('last_name', $like, $last);
-                        });
+                        $this->applyExactFirstLastMatch($q, $parts[0], $parts[count($parts) - 1]);
                     }
+                    $escaped = $this->escapeLike($name);
                     $q->orWhereRaw(
-                        DB::getDriverName() === 'pgsql'
+                        (DB::getDriverName() === 'pgsql'
                             ? "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) ILIKE ?"
-                            : "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) LIKE ?",
-                        ['%' . $name . '%']
+                            : "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) LIKE ?")
+                        . $this->likeEscapeClause(),
+                        ['%' . $escaped . '%']
                     );
                 }
 
@@ -525,13 +536,17 @@ class ConflictCheckService
                 }
 
                 foreach ($phones as $phone) {
-                    $q->orWhere('phone', 'LIKE', '%' . $phone . '%');
+                    $this->applyNormalizedPhoneColumnMatch($q, 'phone', $phone);
                 }
 
                 if (Schema::hasColumn('admins', 'company_name')) {
                     foreach ($companyNames as $cn) {
-                        $q->orWhere('company_name', $like, '%' . $cn . '%');
+                        $this->applyLikeContains($q, 'company_name', $cn);
                     }
+                }
+
+                foreach ($dobs as $dob) {
+                    $q->orWhereDate('dob', $dob);
                 }
             })
             ->limit(40);
@@ -602,6 +617,8 @@ class ConflictCheckService
                 ]);
             }
         }
+
+        $this->searchClientContactPhones($subject, $searchTerms, $known, $matches);
     }
 
     /**
@@ -616,35 +633,37 @@ class ConflictCheckService
         $companyNames = $this->collectCompanyNameCandidates($searchTerms);
         $abns = $this->collectAbnCandidates($searchTerms);
         $acns = $this->collectAcnCandidates($searchTerms);
+        $emails = $this->collectEmailCandidates($searchTerms);
+        $phones = $this->collectPhoneCandidates($searchTerms);
+        $dobs = $this->collectDobCandidates($searchTerms);
 
-        if ($names === [] && $companyNames === [] && $abns === [] && $acns === []) {
+        if ($names === [] && $companyNames === [] && $abns === [] && $acns === [] && $emails === [] && $phones === [] && $dobs === []) {
             return;
         }
 
         $query = ClientConflictParty::query()
             ->where('client_id', '!=', $subject->id)
             ->with('client')
-            ->where(function ($q) use ($names, $companyNames, $abns, $acns, $like) {
+            ->where(function ($q) use ($names, $companyNames, $abns, $acns, $emails, $phones, $dobs, $like) {
                 foreach ($names as $name) {
                     $parts = preg_split('/\s+/', $name) ?: [];
                     if (count($parts) >= 2) {
-                        $first = $parts[0];
-                        $last = $parts[count($parts) - 1];
-                        $q->orWhere(function ($inner) use ($first, $last, $like) {
-                            $inner->where('first_name', $like, $first)
-                                ->where('last_name', $like, $last);
-                        });
+                        $this->applyExactFirstLastMatch($q, $parts[0], $parts[count($parts) - 1]);
                     }
+                    $escaped = $this->escapeLike($name);
                     $q->orWhereRaw(
-                        DB::getDriverName() === 'pgsql'
+                        (DB::getDriverName() === 'pgsql'
                             ? "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) ILIKE ?"
-                            : "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) LIKE ?",
-                        ['%' . $name . '%']
+                            : "CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')) LIKE ?")
+                        . $this->likeEscapeClause(),
+                        ['%' . $escaped . '%']
                     );
                 }
                 foreach ($companyNames as $cn) {
-                    $q->orWhere('company_name', $like, '%' . $cn . '%')
-                        ->orWhere('trading_name', $like, '%' . $cn . '%');
+                    $q->orWhere(function ($inner) use ($cn) {
+                        $this->applyLikeContains($inner, 'company_name', $cn, false);
+                        $this->applyLikeContains($inner, 'trading_name', $cn);
+                    });
                 }
                 foreach ($abns as $abn) {
                     $q->orWhereRaw("REPLACE(REPLACE(COALESCE(abn,''), ' ', ''), '-', '') = ?", [$abn]);
@@ -652,43 +671,38 @@ class ConflictCheckService
                 foreach ($acns as $acn) {
                     $q->orWhereRaw("REPLACE(REPLACE(COALESCE(acn,''), ' ', ''), '-', '') = ?", [$acn]);
                 }
+                foreach ($emails as $email) {
+                    $q->orWhereRaw('LOWER(COALESCE(rep_email, \'\')) = ?', [strtolower($email)]);
+                }
+                foreach ($phones as $phone) {
+                    $this->applyNormalizedPhoneColumnMatch($q, 'rep_phone', $phone);
+                }
+                foreach ($dobs as $dob) {
+                    $q->orWhereDate('dob', $dob);
+                }
             })
             ->limit(40);
 
         foreach ($query->get() as $party) {
+            if ($this->shouldExcludeConflictParty($party, $known)) {
+                continue;
+            }
+
             $owner = $party->client;
             if (! $owner) {
                 continue;
             }
-            $matchedOn = 'name/company on conflict party';
-            $display = $this->partyDisplayName($party);
-            foreach ($names as $name) {
-                if ($this->namesLooselyMatch($display, $name)) {
-                    $matchedOn = 'name:' . $name;
-                    break;
-                }
-            }
-            foreach ($abns as $abn) {
-                if ($this->digitsOnly($party->abn) === $abn) {
-                    $matchedOn = 'abn:' . $abn;
-                    break;
-                }
+
+            $matchedOn = $this->describeConflictPartyMatch($party, $searchTerms);
+            if ($matchedOn === null) {
+                continue;
             }
 
-            $this->addMatch($matches, [
-                'source' => 'conflict_party',
-                'source_id' => $party->id,
-                'name' => $display,
-                'matched_on' => $matchedOn,
-                'context' => 'Conflict party on ' . $this->displayName($owner)
-                    . ($owner->client_id ? ' (' . $owner->client_id . ')' : ''),
-                'party_role' => $party->party_role,
-                'score' => $this->scoreForMatchType($matchedOn),
-                'client_id' => $owner->id,
-                'client_ref' => $owner->client_id,
-                'opposing_lead_id' => $party->opposing_lead_id ? (int) $party->opposing_lead_id : null,
-            ]);
+            $this->addConflictPartyMatch($party, $owner, $matchedOn, $matches);
         }
+
+        $this->searchConflictPartyEmailsOnOtherClients($subject, $searchTerms, $known, $matches);
+        $this->searchConflictPartyPhonesOnOtherClients($subject, $searchTerms, $known, $matches);
     }
 
     /**
@@ -711,7 +725,7 @@ class ConflictCheckService
             ->when($ownMatterIds->isNotEmpty(), fn ($q) => $q->whereNotIn('client_matter_id', $ownMatterIds))
             ->where(function ($q) use ($names, $like) {
                 foreach ($names as $name) {
-                    $q->orWhere('name', $like, '%' . $name . '%');
+                    $this->applyLikeContains($q, 'name', $name);
                 }
             })
             ->limit(40);
@@ -783,8 +797,10 @@ class ConflictCheckService
                 $acnCol = $this->sqlColumn('ACN');
 
                 foreach ($companyNames as $cn) {
-                    $q->orWhere('company_name', $like, '%' . $cn . '%')
-                        ->orWhere('trading_name', $like, '%' . $cn . '%');
+                    $q->orWhere(function ($inner) use ($cn) {
+                        $this->applyLikeContains($inner, 'company_name', $cn, false);
+                        $this->applyLikeContains($inner, 'trading_name', $cn);
+                    });
                 }
                 foreach ($abns as $abn) {
                     $q->orWhereRaw(
@@ -996,16 +1012,431 @@ class ConflictCheckService
 
     private function normalizePhone(?string $phone): ?string
     {
-        $digits = $this->digitsOnly($phone);
+        $digits = $this->normalizePhoneDigits($phone);
         if ($digits === null) {
             return null;
         }
-        // Keep last 9 digits for AU mobile/landline comparison
+
         if (strlen($digits) > 9) {
-            $digits = substr($digits, -9);
+            return substr($digits, -9);
         }
 
-        return strlen($digits) >= 8 ? $digits : null;
+        return $digits;
+    }
+
+    /**
+     * Full normalized digit string for phone comparison (AU-aware).
+     */
+    public function normalizePhoneDigits(?string $phone): ?string
+    {
+        $digits = $this->digitsOnly($phone);
+        if ($digits === null || strlen($digits) < 8) {
+            return null;
+        }
+
+        if (strlen($digits) === 10 && $digits[0] === '0') {
+            return '61' . substr($digits, 1);
+        }
+
+        if (strlen($digits) === 9 && $digits[0] === '4') {
+            return '61' . $digits;
+        }
+
+        return $digits;
+    }
+
+    private function phonesMatch(?string $a, ?string $b): bool
+    {
+        $da = $this->normalizePhoneDigits($a);
+        $db = $this->normalizePhoneDigits($b);
+        if ($da === null || $db === null) {
+            return false;
+        }
+
+        if ($da === $db) {
+            return true;
+        }
+
+        if (strlen($da) >= 9 && strlen($db) >= 9) {
+            return substr($da, -9) === substr($db, -9);
+        }
+
+        return false;
+    }
+
+    private function phoneLikeSuffix(string $phone): ?string
+    {
+        $digits = $this->normalizePhoneDigits($phone);
+        if ($digits === null) {
+            return null;
+        }
+
+        return strlen($digits) >= 9 ? substr($digits, -9) : $digits;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    private function applyNormalizedPhoneColumnMatch($query, string $column, string $phone): void
+    {
+        $suffix = $this->phoneLikeSuffix($phone);
+        if ($suffix === null) {
+            return;
+        }
+
+        $suffixLen = strlen($suffix);
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            $query->orWhereRaw(
+                "RIGHT(REGEXP_REPLACE(COALESCE({$column}, ''), '[^0-9]', '', 'g'), ?) = ?",
+                [$suffixLen, $suffix]
+            );
+
+            return;
+        }
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $query->orWhereRaw(
+                "RIGHT(REGEXP_REPLACE(COALESCE({$column}, ''), '[^0-9]', ''), ?) = ?",
+                [$suffixLen, $suffix]
+            );
+
+            return;
+        }
+
+        $this->applyPhoneSuffixLike($query, $column, $suffix);
+    }
+
+    private function likeOperator(): string
+    {
+        return DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+    }
+
+    private function applyLikeContains($query, string $column, string $value, bool $or = true): void
+    {
+        $like = $this->likeOperator();
+        $pattern = '%' . $this->escapeLike($value) . '%';
+        if ($or) {
+            $query->orWhereRaw("{$column} {$like} ?" . $this->likeEscapeClause(), [$pattern]);
+        } else {
+            $query->whereRaw("{$column} {$like} ?" . $this->likeEscapeClause(), [$pattern]);
+        }
+    }
+
+    /**
+     * Exact first + last token match without LIKE wildcards in token values.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    private function applyExactFirstLastMatch($query, string $first, string $last): void
+    {
+        $query->orWhere(function ($inner) use ($first, $last) {
+            $inner->whereRaw('LOWER(COALESCE(first_name, \'\')) = ?', [strtolower($first)])
+                ->whereRaw('LOWER(COALESCE(last_name, \'\')) = ?', [strtolower($last)]);
+        });
+    }
+
+    private const LIKE_ESCAPE_CHAR = '!';
+
+    private function escapeLike(string $value): string
+    {
+        $char = self::LIKE_ESCAPE_CHAR;
+
+        return str_replace([$char, '%', '_'], [$char . $char, $char . '%', $char . '_'], $value);
+    }
+
+    private function likeEscapeClause(): string
+    {
+        return " ESCAPE '" . self::LIKE_ESCAPE_CHAR . "'";
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    private function applyPhoneSuffixLike($query, string $column, string $suffix): void
+    {
+        $pattern = '%' . $this->escapeLike($suffix) . '%';
+        if (DB::getDriverName() === 'pgsql') {
+            $query->orWhereRaw("{$column} ILIKE ?" . $this->likeEscapeClause(), [$pattern]);
+        } else {
+            $query->orWhereRaw("{$column} LIKE ?" . $this->likeEscapeClause(), [$pattern]);
+        }
+    }
+
+    private function adminPersonName(Admin $admin): string
+    {
+        return trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? ''));
+    }
+
+    /** @return list<string> */
+    private function collectDobCandidates(array $searchTerms): array
+    {
+        $out = [];
+        if (! empty($searchTerms['subject']['dob'])) {
+            $out[] = $searchTerms['subject']['dob'];
+        }
+        foreach ($searchTerms['parties'] ?? [] as $party) {
+            if (! empty($party['dob'])) {
+                $out[] = $party['dob'];
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     */
+    private function shouldExcludeConflictParty(ClientConflictParty $party, array $known): bool
+    {
+        $leadId = (int) ($party->opposing_lead_id ?? 0);
+
+        return $leadId > 0 && $this->isExcludedAdminId($leadId, $known);
+    }
+
+    /**
+     * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     */
+    private function describeConflictPartyMatch(ClientConflictParty $party, array $searchTerms): ?string
+    {
+        $emails = $this->collectEmailCandidates($searchTerms);
+        $partyEmails = $party->relationLoaded('emails')
+            ? $party->emails->pluck('email')->map(fn ($e) => strtolower(trim((string) $e)))->all()
+            : [];
+        $repEmail = strtolower(trim((string) ($party->rep_email ?? '')));
+        if ($repEmail !== '' && ! str_ends_with($repEmail, '@lead.internal')) {
+            $partyEmails[] = $repEmail;
+        }
+        foreach ($emails as $email) {
+            if (in_array($email, $partyEmails, true)) {
+                return 'email:' . $email;
+            }
+        }
+
+        $phones = $this->collectPhoneCandidates($searchTerms);
+        $partyPhones = [];
+        if ($party->relationLoaded('phones')) {
+            foreach ($party->phones as $contact) {
+                $partyPhones[] = (string) $contact->phone;
+            }
+        }
+        if (! empty($party->rep_phone)) {
+            $partyPhones[] = (string) $party->rep_phone;
+        }
+        foreach ($phones as $phone) {
+            foreach ($partyPhones as $partyPhone) {
+                if ($this->phonesMatch($phone, $partyPhone)) {
+                    return 'phone:' . $this->normalizePhone($phone);
+                }
+            }
+        }
+
+        $dobs = $this->collectDobCandidates($searchTerms);
+        if ($party->dob && in_array($party->dob->format('Y-m-d'), $dobs, true)) {
+            return 'dob:' . $party->dob->format('Y-m-d');
+        }
+
+        $display = $this->partyDisplayName($party);
+        foreach ($this->collectNameCandidates($searchTerms) as $name) {
+            if ($this->namesLooselyMatch($display, $name)) {
+                return 'name:' . $name;
+            }
+        }
+
+        foreach ($this->collectAbnCandidates($searchTerms) as $abn) {
+            if ($this->digitsOnly($party->abn) === $abn) {
+                return 'abn:' . $abn;
+            }
+        }
+
+        foreach ($this->collectAcnCandidates($searchTerms) as $acn) {
+            if ($this->digitsOnly($party->acn) === $acn) {
+                return 'acn:' . $acn;
+            }
+        }
+
+        foreach ($this->collectCompanyNameCandidates($searchTerms) as $cn) {
+            $company = strtolower((string) ($party->company_name ?? ''));
+            $trading = strtolower((string) ($party->trading_name ?? ''));
+            if (($company !== '' && (str_contains($company, $cn) || str_contains($cn, $company)))
+                || ($trading !== '' && (str_contains($trading, $cn) || str_contains($cn, $trading)))) {
+                return 'company_name:' . $cn;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  list<array>  $matches
+     */
+    private function addConflictPartyMatch(
+        ClientConflictParty $party,
+        Admin $owner,
+        string $matchedOn,
+        array &$matches
+    ): void {
+        $this->addMatch($matches, [
+            'source' => 'conflict_party',
+            'source_id' => $party->id,
+            'name' => $this->partyDisplayName($party),
+            'matched_on' => $matchedOn,
+            'context' => 'Conflict party on ' . $this->displayName($owner)
+                . ($owner->client_id ? ' (' . $owner->client_id . ')' : ''),
+            'party_role' => $party->party_role,
+            'score' => $this->scoreForMatchType($matchedOn),
+            'client_id' => $owner->id,
+            'client_ref' => $owner->client_id,
+            'opposing_lead_id' => $party->opposing_lead_id ? (int) $party->opposing_lead_id : null,
+        ]);
+    }
+
+    /**
+     * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @param  list<array>  $matches
+     */
+    private function searchClientContactPhones(Admin $subject, array $searchTerms, array $known, array &$matches): void
+    {
+        $phones = $this->collectPhoneCandidates($searchTerms);
+        if ($phones === [] || ! Schema::hasTable('client_contacts')) {
+            return;
+        }
+
+        $excludeIds = $known['admin_ids'];
+
+        $rows = ClientContact::query()
+            ->whereNotIn('client_id', $excludeIds)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->where(function ($q) use ($phones) {
+                foreach ($phones as $phone) {
+                    $this->applyNormalizedPhoneColumnMatch($q, 'phone', $phone);
+                }
+            })
+            ->limit(40)
+            ->get();
+
+        foreach ($rows as $row) {
+            $matchedPhone = null;
+            foreach ($phones as $candidate) {
+                if ($this->phonesMatch($candidate, (string) $row->phone)) {
+                    $matchedPhone = $this->normalizePhone($candidate);
+                    break;
+                }
+            }
+            if ($matchedPhone === null) {
+                continue;
+            }
+
+            $admin = Admin::find($row->client_id);
+            if (! $admin || $admin->is_deleted || $this->isExcludedAdminId((int) $admin->id, $known)) {
+                continue;
+            }
+            if (! empty($admin->is_other_party) && $this->isKnownPartyIdentityMatchForAdmin($admin, $known)) {
+                continue;
+            }
+
+            $this->addMatch($matches, [
+                'source' => 'client_contact_phone',
+                'source_id' => $row->id,
+                'name' => $this->displayName($admin),
+                'matched_on' => 'phone:' . $matchedPhone,
+                'context' => 'Phone on ' . ucfirst((string) $admin->type) . ' contact record',
+                'party_role' => $admin->type,
+                'score' => 85,
+                'client_id' => $admin->id,
+                'client_ref' => $admin->client_id,
+            ]);
+        }
+    }
+
+    /**
+     * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @param  list<array>  $matches
+     */
+    private function searchConflictPartyEmailsOnOtherClients(Admin $subject, array $searchTerms, array $known, array &$matches): void
+    {
+        $emails = $this->collectEmailCandidates($searchTerms);
+        if ($emails === [] || ! Schema::hasTable('conflict_party_emails')) {
+            return;
+        }
+
+        $rows = ConflictPartyEmail::query()
+            ->whereHas('party', fn ($q) => $q->where('client_id', '!=', $subject->id))
+            ->where(function ($q) use ($emails) {
+                foreach ($emails as $email) {
+                    $q->orWhereRaw('LOWER(email) = ?', [strtolower($email)]);
+                }
+            })
+            ->with(['party.client'])
+            ->limit(30)
+            ->get();
+
+        foreach ($rows as $row) {
+            $party = $row->party;
+            if (! $party || $this->shouldExcludeConflictParty($party, $known)) {
+                continue;
+            }
+            $owner = $party->client;
+            if (! $owner) {
+                continue;
+            }
+
+            $email = strtolower(trim((string) $row->email));
+            $this->addConflictPartyMatch($party, $owner, 'email:' . $email, $matches);
+        }
+    }
+
+    /**
+     * @param  array{subject: array, parties: list<array>, terms: list<string>}  $searchTerms
+     * @param  array{admin_ids: list<int>, identity: list<array>}  $known
+     * @param  list<array>  $matches
+     */
+    private function searchConflictPartyPhonesOnOtherClients(Admin $subject, array $searchTerms, array $known, array &$matches): void
+    {
+        $phones = $this->collectPhoneCandidates($searchTerms);
+        if ($phones === [] || ! Schema::hasTable('conflict_party_contacts')) {
+            return;
+        }
+
+        $rows = ConflictPartyContact::query()
+            ->whereHas('party', fn ($q) => $q->where('client_id', '!=', $subject->id))
+            ->where(function ($q) use ($phones) {
+                foreach ($phones as $phone) {
+                    $this->applyNormalizedPhoneColumnMatch($q, 'phone', $phone);
+                }
+            })
+            ->with(['party.client'])
+            ->limit(40)
+            ->get();
+
+        foreach ($rows as $row) {
+            $party = $row->party;
+            if (! $party || $this->shouldExcludeConflictParty($party, $known)) {
+                continue;
+            }
+
+            $matchedPhone = null;
+            foreach ($phones as $candidate) {
+                if ($this->phonesMatch($candidate, (string) $row->phone)) {
+                    $matchedPhone = $this->normalizePhone($candidate);
+                    break;
+                }
+            }
+            if ($matchedPhone === null) {
+                continue;
+            }
+
+            $owner = $party->client;
+            if (! $owner) {
+                continue;
+            }
+
+            $this->addConflictPartyMatch($party, $owner, 'phone:' . $matchedPhone, $matches);
+        }
     }
 
     private function namesLooselyMatch(string $a, string $b): bool
@@ -1118,14 +1549,40 @@ class ConflictCheckService
         $phones = $this->collectPhoneCandidates($searchTerms);
         $adminPhones = $this->collectPhonesForAdmin($admin);
         foreach ($phones as $p) {
-            if (in_array($p, $adminPhones, true)) {
-                return 'phone:' . $p;
+            foreach ($adminPhones as $adminPhone) {
+                if ($this->phonesMatch($p, $adminPhone)) {
+                    return 'phone:' . $this->normalizePhone($p);
+                }
+            }
+        }
+
+        $dobs = $this->collectDobCandidates($searchTerms);
+        if ($admin->dob) {
+            $adminDob = $admin->dob->format('Y-m-d');
+            if (in_array($adminDob, $dobs, true)) {
+                return 'dob:' . $adminDob;
             }
         }
 
         $names = $this->collectNameCandidates($searchTerms);
-        $display = strtolower($this->displayName($admin));
         foreach ($names as $name) {
+            $parts = preg_split('/\s+/', $name) ?: [];
+            if (count($parts) >= 2) {
+                $first = trim((string) $admin->first_name);
+                $last = trim((string) $admin->last_name);
+                if ($first !== '' && $last !== ''
+                    && strcasecmp($first, $parts[0]) === 0
+                    && strcasecmp($last, $parts[count($parts) - 1]) === 0) {
+                    return 'name:' . $name;
+                }
+            }
+
+            $personName = strtolower($this->adminPersonName($admin));
+            if ($personName !== '' && $this->namesLooselyMatch($personName, $name)) {
+                return 'name:' . $name;
+            }
+
+            $display = strtolower($this->displayName($admin));
             if ($this->namesLooselyMatch($display, $name)) {
                 return 'name:' . $name;
             }
@@ -1151,6 +1608,9 @@ class ConflictCheckService
             return 98;
         }
         if (str_starts_with($matchedOn, 'phone:')) {
+            return 85;
+        }
+        if (str_starts_with($matchedOn, 'dob:')) {
             return 85;
         }
         if (str_starts_with($matchedOn, 'name:')) {

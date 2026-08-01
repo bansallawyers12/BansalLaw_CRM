@@ -298,6 +298,19 @@ class MatterOtherPartiesHelper
             $data['last_name'] = $parts[1] ?? null;
         }
 
+        if ($lead && $lead->company) {
+            if (! empty($lead->company->ABN_number)) {
+                $data['abn'] = $lead->company->ABN_number;
+            }
+            if (! empty($lead->company->ACN)) {
+                $data['acn'] = $lead->company->ACN;
+            }
+        }
+
+        if ($lead && $lead->dob) {
+            $data['dob'] = $lead->dob;
+        }
+
         $row = ClientConflictParty::create($data);
 
         if ($lead && $lead->phone && Schema::hasTable('conflict_party_contacts')) {
@@ -388,6 +401,18 @@ class MatterOtherPartiesHelper
             'notes'            => $display->notes,
             'sort_order'       => $party->sort_order,
         ]);
+        if ($party->opposingLead && $party->opposingLead->company) {
+            $company = $party->opposingLead->company;
+            if (! empty($company->ABN_number)) {
+                $model->abn = $company->ABN_number;
+            }
+            if (! empty($company->ACN)) {
+                $model->acn = $company->ACN;
+            }
+        }
+        if ($party->opposingLead?->dob) {
+            $model->dob = $party->opposingLead->dob;
+        }
         $model->setRelation('phones', collect());
         $model->setRelation('emails', collect());
         if ($party->relationLoaded('opposingLead')) {
