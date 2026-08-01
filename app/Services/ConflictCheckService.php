@@ -1162,4 +1162,62 @@ class ConflictCheckService
 
         return 50;
     }
+
+    /**
+     * Validate solicitor-selected outcome against server search results.
+     *
+     * @param  array{
+     *     match_count?: int,
+     *     informational_count?: int
+     * }  $result
+     * @param  array{
+     *     outcome_notes?: string,
+     *     consent_obtained?: bool,
+     *     consent_notes?: string,
+     *     force_clear?: bool
+     * }  $options
+     */
+    public function validateOutcomeAgainstResults(string $outcome, array $result, array $options = []): ?string
+    {
+        $matchCount = (int) ($result['match_count'] ?? 0);
+        $outcomeNotes = trim((string) ($options['outcome_notes'] ?? ''));
+        $consentObtained = (bool) ($options['consent_obtained'] ?? false);
+        $consentNotes = trim((string) ($options['consent_notes'] ?? ''));
+        $forceClear = (bool) ($options['force_clear'] ?? false);
+
+        if ($outcome === 'clear') {
+            if ($matchCount > 0 && ! $forceClear) {
+                return 'Cannot save Clear while potential conflicts exist. Record Conflict found, or document an override with force clear and detailed notes.';
+            }
+            if ($matchCount > 0 && $forceClear && strlen($outcomeNotes) < 20) {
+                return 'A detailed note (at least 20 characters) is required when clearing despite potential conflicts.';
+            }
+        }
+
+        if ($outcome === 'waived') {
+            if (! $consentObtained) {
+                return 'Consent obtained must be checked when outcome is Waived with consent.';
+            }
+            if ($consentNotes === '') {
+                return 'Consent notes are required when outcome is Waived with consent (who consented, form used, etc.).';
+            }
+            if ($matchCount > 0 && strlen($outcomeNotes) < 10) {
+                return 'Outcome notes explaining the waiver are required when potential conflicts exist.';
+            }
+        }
+
+        if ($outcome === 'conflict_found' && $outcomeNotes === '') {
+            return 'Notes are required when recording a conflict found outcome.';
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array{subject?: array, parties?: list<array>, terms?: list<string>}  $searchTerms
+     */
+    public function buildSearchHash(array $searchTerms): string
+    {
+        return hash('sha256', json_encode($searchTerms, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
 }

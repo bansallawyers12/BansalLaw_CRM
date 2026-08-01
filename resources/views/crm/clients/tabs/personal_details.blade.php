@@ -1080,6 +1080,7 @@
                             'fetchedData' => $fetchedData,
                             'assignableStaff' => $assignableStaff ?? collect(),
                             'leadStageLabels' => $leadStageLabels ?? [],
+                            'activeClientMatterId' => $activeClientMatterId ?? null,
                         ])
                     @endif
 

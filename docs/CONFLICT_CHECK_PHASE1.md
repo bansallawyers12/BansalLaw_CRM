@@ -94,9 +94,10 @@ Only **`match_count` (hard)** drives `suggested_outcome`.
 
 ## Out of scope (later phases)
 
-- Server-side outcome re-run (Phase 2)
 - Phone normalization (Phase 3)
-- `client_matter_id` column on saved checks (Phase 2)
+- Further staleness UX using `parties_snapshot_at` / `search_hash` (optional follow-up)
+
+**Phase 2** (audit record + matter scope): [CONFLICT_CHECK_PHASE2.md](./CONFLICT_CHECK_PHASE2.md)
 
 ---
 

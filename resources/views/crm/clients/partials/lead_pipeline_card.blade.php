@@ -56,6 +56,7 @@
 
 <div class="card" id="leadPipelineCard"
      data-client-id="{{ $fetchedData->id }}"
+     data-client-matter-id="{{ $activeClientMatterId ?? '' }}"
      data-initial-stage="{{ $stageKey }}"
      data-initial-followup="{{ $followupYmd }}"
      data-initial-assign="{{ $fetchedData->user_id ?? '' }}">
@@ -340,6 +341,10 @@
             fd.append('lead_status', stageSel ? stageSel.value : 'new');
             fd.append('followup_date', (stageSel && stageSel.value === 'follow_up' && followInput) ? (followInput.value || '') : '');
             fd.append('assigned_staff_id', assignSel ? (assignSel.value || '') : '');
+            var pipelineMatterId = card.getAttribute('data-client-matter-id');
+            if (pipelineMatterId) {
+                fd.append('client_matter_id', pipelineMatterId);
+            }
 
             saveBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {

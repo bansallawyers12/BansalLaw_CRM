@@ -2553,13 +2553,29 @@ class ClientPersonalDetailsController extends Controller
 
         $conflictWarning = null;
         if (in_array($validated['lead_status'], ['engaged', 'retained'], true)) {
-            $hasCheck = ClientConflictCheck::where('client_id', $client->id)
+            $pipelineMatterId = $request->filled('client_matter_id')
+                ? (int) $request->input('client_matter_id')
+                : null;
+            if (! $pipelineMatterId) {
+                $pipelineMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
+                    (int) $client->id,
+                    null,
+                    null
+                );
+            }
+
+            $matterCheckQuery = ClientConflictCheck::query()
+                ->where('client_id', $client->id)
+                ->forActiveMatter($pipelineMatterId);
+
+            $hasCheck = (clone $matterCheckQuery)
                 ->whereIn('outcome', ['clear', 'waived'])
                 ->exists();
+
             if (! $hasCheck) {
-                $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this client. Complete the conflict check on Personal Details before engaging/retaining.';
+                $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this matter. Complete the conflict check on Personal Details before engaging/retaining.';
             } else {
-                $latest = ClientConflictCheck::where('client_id', $client->id)
+                $latest = (clone $matterCheckQuery)
                     ->orderByDesc('checked_at')
                     ->first();
                 if ($latest && in_array($latest->outcome, ['pending', 'conflict_found'], true)) {
@@ -2699,7 +2715,55 @@ class ClientPersonalDetailsController extends Controller
     }
 
     /**
-     * Save conflict check outcome (result of running the search).
+     * Resolve matter id for conflict check run/save (strict when explicitly requested).
+     *
+     * @return array{client_matter_id: ?int, explicit_requested: bool}
+     */
+    private function resolveConflictCheckMatterFromRequest(Request $request, Admin $client): array
+    {
+        $requestedMatterId = $request->filled('client_matter_id')
+            ? (int) $request->input('client_matter_id')
+            : null;
+        $matterRef = trim((string) ($request->input('client_unique_matter_no', '')));
+        $explicitMatterRequested = ($requestedMatterId !== null && $requestedMatterId > 0) || $matterRef !== '';
+        $clientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
+            (int) $client->id,
+            $requestedMatterId,
+            $matterRef !== '' ? $matterRef : null
+        );
+
+        return [
+            'client_matter_id' => $clientMatterId,
+            'explicit_requested' => $explicitMatterRequested,
+        ];
+    }
+
+    private function conflictCheckMatterLabel(?int $clientMatterId): ?string
+    {
+        if (! $clientMatterId) {
+            return null;
+        }
+
+        return ClientMatter::query()
+            ->where('id', $clientMatterId)
+            ->value('client_unique_matter_no');
+    }
+
+    private function partiesSnapshotAtForMatter(?int $clientMatterId): ?Carbon
+    {
+        if (! $clientMatterId || ! Schema::hasTable('client_matter_opposing_parties')) {
+            return null;
+        }
+
+        $ts = ClientMatterOpposingParty::query()
+            ->where('client_matter_id', $clientMatterId)
+            ->max('updated_at');
+
+        return $ts ? Carbon::parse($ts) : null;
+    }
+
+    /**
+     * Save conflict check outcome — server re-runs search; client matches are not trusted.
      */
     private function saveConflictCheckOutcomeSection(Request $request, Admin $client)
     {
@@ -2715,43 +2779,83 @@ class ClientPersonalDetailsController extends Controller
             || $request->input('consent_obtained') === '1'
             || $request->input('consent_obtained') === 1;
         $consentNotes = trim((string) ($request->input('consent_notes', '')));
+        $forceClear = filter_var($request->input('force_clear', false), FILTER_VALIDATE_BOOLEAN)
+            || $request->input('force_clear') === '1'
+            || $request->input('force_clear') === 1;
 
-        if ($outcome === 'waived') {
-            if (! $consentObtained) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Consent obtained must be checked when outcome is Waived with consent.',
-                ], 422);
-            }
-            if ($consentNotes === '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Consent notes are required when outcome is Waived with consent (who consented, form used, etc.).',
-                ], 422);
-            }
-        }
+        $matterContext = $this->resolveConflictCheckMatterFromRequest($request, $client);
+        $clientMatterId = $matterContext['client_matter_id'];
 
-        if ($outcome === 'conflict_found' && $outcomeNotes === '') {
+        if ($matterContext['explicit_requested'] && ! $clientMatterId) {
             return response()->json([
                 'success' => false,
-                'message' => 'Notes are required when recording a conflict found outcome.',
+                'message' => 'Invalid or missing matter. Refresh the page and try again.',
+                'error_type' => 'validation',
             ], 422);
         }
 
-        $searchTerms = $this->decodeJsonField($request->input('search_terms'));
-        $matches = $this->decodeJsonField($request->input('matches'));
+        /** @var ConflictCheckService $service */
+        $service = app(ConflictCheckService::class);
+
+        try {
+            $client->loadMissing('company');
+            $result = $service->run($client, $clientMatterId);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error_type' => 'validation',
+            ], 422);
+        }
+
+        $clientMatches = $this->decodeJsonField($request->input('matches'));
+        if ($clientMatches !== null && $clientMatches !== ($result['matches'] ?? [])) {
+            Log::warning('Conflict check outcome save: client matches differ from server re-run', [
+                'client_id' => $client->id,
+                'client_matter_id' => $clientMatterId,
+                'client_count' => is_array($clientMatches) ? count($clientMatches) : 0,
+                'server_count' => (int) ($result['match_count'] ?? 0),
+            ]);
+        }
+
+        $validationError = $service->validateOutcomeAgainstResults($outcome, $result, [
+            'outcome_notes' => $outcomeNotes,
+            'consent_obtained' => $consentObtained,
+            'consent_notes' => $consentNotes,
+            'force_clear' => $forceClear,
+        ]);
+
+        if ($validationError !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => $validationError,
+                'error_type' => 'validation',
+                'match_count' => (int) ($result['match_count'] ?? 0),
+                'informational_count' => (int) ($result['informational_count'] ?? 0),
+            ], 422);
+        }
+
+        $hardCount = (int) ($result['match_count'] ?? 0);
+        $infoCount = (int) ($result['informational_count'] ?? 0);
+        $matterLabel = $this->conflictCheckMatterLabel($clientMatterId);
 
         try {
             $check = ClientConflictCheck::create([
-                'client_id'        => $client->id,
-                'checked_by'       => Auth::id(),
-                'checked_at'       => now(),
-                'search_terms'     => $searchTerms,
-                'matches'          => $matches,
-                'outcome'          => $outcome,
-                'outcome_notes'    => $outcomeNotes !== '' ? $outcomeNotes : null,
-                'consent_obtained' => $consentObtained,
-                'consent_notes'    => $consentNotes !== '' ? $consentNotes : null,
+                'client_id'             => $client->id,
+                'client_matter_id'      => $clientMatterId,
+                'checked_by'            => Auth::id(),
+                'checked_at'            => now(),
+                'search_terms'          => $result['search_terms'],
+                'matches'               => $result['matches'],
+                'informational_matches' => $result['informational_matches'] ?? [],
+                'match_count'           => $hardCount,
+                'informational_count'   => $infoCount,
+                'parties_snapshot_at'   => $this->partiesSnapshotAtForMatter($clientMatterId),
+                'search_hash'           => $service->buildSearchHash($result['search_terms']),
+                'outcome'               => $outcome,
+                'outcome_notes'         => $outcomeNotes !== '' ? $outcomeNotes : null,
+                'consent_obtained'      => $consentObtained,
+                'consent_notes'         => $consentNotes !== '' ? $consentNotes : null,
             ]);
 
             $outcomeLabels = [
@@ -2761,10 +2865,13 @@ class ClientPersonalDetailsController extends Controller
                 'pending'        => 'Pending',
             ];
 
-            $matchCount = is_array($matches) ? count($matches) : 0;
             $detail = 'Outcome: ' . ($outcomeLabels[$outcome] ?? $outcome);
-            if ($matchCount > 0) {
-                $detail .= ' · ' . $matchCount . ' match' . ($matchCount === 1 ? '' : 'es') . ' recorded';
+            if ($matterLabel) {
+                $detail .= ' · Matter ' . $matterLabel;
+            }
+            $detail .= ' · ' . $hardCount . ' conflict' . ($hardCount === 1 ? '' : 's');
+            if ($infoCount > 0) {
+                $detail .= ' · ' . $infoCount . ' informational';
             }
 
             $this->logClientActivity(
@@ -2775,15 +2882,18 @@ class ClientPersonalDetailsController extends Controller
             );
 
             return response()->json([
-                'success'          => true,
-                'message'          => 'Conflict check outcome saved.',
-                'check_id'         => $check->id,
-                'outcome'          => $outcome,
-                'checked_at'       => $check->checked_at->format('d M Y H:i'),
-                'outcome_notes'    => $check->outcome_notes,
-                'consent_obtained' => (bool) $check->consent_obtained,
-                'consent_notes'    => $check->consent_notes,
-                'match_count'      => $matchCount,
+                'success'             => true,
+                'message'             => 'Conflict check outcome saved.',
+                'check_id'            => $check->id,
+                'outcome'             => $outcome,
+                'checked_at'          => $check->checked_at->format('d M Y H:i'),
+                'outcome_notes'       => $check->outcome_notes,
+                'consent_obtained'    => (bool) $check->consent_obtained,
+                'consent_notes'       => $check->consent_notes,
+                'match_count'         => $hardCount,
+                'informational_count' => $infoCount,
+                'client_matter_id'    => $clientMatterId,
+                'matter_label'        => $matterLabel,
             ]);
         } catch (\Exception $e) {
             Log::error('Conflict check outcome save failed', [
@@ -2816,18 +2926,10 @@ class ClientPersonalDetailsController extends Controller
 
         try {
             $client->loadMissing('company');
-            $requestedMatterId = $request->filled('client_matter_id')
-                ? (int) $request->input('client_matter_id')
-                : null;
-            $matterRef = trim((string) ($request->input('client_unique_matter_no', '')));
-            $explicitMatterRequested = ($requestedMatterId !== null && $requestedMatterId > 0) || $matterRef !== '';
-            $clientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
-                (int) $client->id,
-                $requestedMatterId,
-                $matterRef !== '' ? $matterRef : null
-            );
+            $matterContext = $this->resolveConflictCheckMatterFromRequest($request, $client);
+            $clientMatterId = $matterContext['client_matter_id'];
 
-            if ($explicitMatterRequested && ! $clientMatterId) {
+            if ($matterContext['explicit_requested'] && ! $clientMatterId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid or missing matter. Refresh the page and try again.',
@@ -2839,10 +2941,14 @@ class ClientPersonalDetailsController extends Controller
 
             $hardCount = (int) ($result['match_count'] ?? 0);
             $infoCount = (int) ($result['informational_count'] ?? 0);
+            $matterLabel = $this->conflictCheckMatterLabel($clientMatterId);
 
             $activityDetail = $hardCount === 0
                 ? 'Automated search completed — no conflicts'
                 : 'Automated search completed — ' . $hardCount . ' conflict(s)';
+            if ($matterLabel) {
+                $activityDetail = 'Matter ' . $matterLabel . ' — ' . $activityDetail;
+            }
             if ($infoCount > 0) {
                 $activityDetail .= ' · ' . $infoCount . ' informational note(s)';
             }

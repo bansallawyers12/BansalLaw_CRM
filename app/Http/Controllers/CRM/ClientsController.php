@@ -2320,10 +2320,14 @@ class ClientsController extends Controller
                 $conflictParties = \App\Support\MatterOtherPartiesHelper::loadDisplayParties((int) $id, $activeClientMatterId);
 
                 $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
+                    ->forActiveMatter($activeClientMatterId)
+                    ->with('clientMatter')
                     ->orderByDesc('checked_at')
                     ->first();
 
                 $conflictCheckHistory = \App\Models\ClientConflictCheck::where('client_id', $id)
+                    ->forActiveMatter($activeClientMatterId)
+                    ->with('clientMatter')
                     ->orderByDesc('checked_at')
                     ->limit(5)
                     ->get();
@@ -5923,24 +5927,27 @@ class ClientsController extends Controller
                 'id' => $row->id,
                 'client_unique_matter_no' => $row->client_unique_matter_no,
             ],
-            'conflict_warning' => $this->conflictCheckWarningForClient((int) $admin->id),
+            'conflict_warning' => $this->conflictCheckWarningForClient((int) $admin->id, (int) $row->id),
         ]);
     }
 
     /**
      * Soft warning when client has no Clear/Waived conflict check (or latest is pending/conflict).
      */
-    private function conflictCheckWarningForClient(int $clientId): ?string
+    private function conflictCheckWarningForClient(int $clientId, ?int $clientMatterId = null): ?string
     {
-        $hasClearOrWaived = \App\Models\ClientConflictCheck::where('client_id', $clientId)
+        $checkQuery = \App\Models\ClientConflictCheck::where('client_id', $clientId)
+            ->forActiveMatter($clientMatterId);
+
+        $hasClearOrWaived = (clone $checkQuery)
             ->whereIn('outcome', ['clear', 'waived'])
             ->exists();
 
         if (! $hasClearOrWaived) {
-            return 'Remember: no conflict check has been recorded as Clear or Waived. Complete it on Personal Details.';
+            return 'Remember: no conflict check has been recorded as Clear or Waived for this matter. Complete it on Personal Details.';
         }
 
-        $latest = \App\Models\ClientConflictCheck::where('client_id', $clientId)
+        $latest = (clone $checkQuery)
             ->orderByDesc('checked_at')
             ->first();
 

@@ -384,13 +384,20 @@
                         @php
                             $hLabel = $outcomeLabels[$hist->outcome] ?? $hist->outcome;
                             $hAt = $hist->checked_at ? $hist->checked_at->format('d M Y H:i') : '—';
-                            $hMatches = is_array($hist->matches) ? count($hist->matches) : 0;
+                            $hMatches = (int) ($hist->match_count ?? (is_array($hist->matches) ? count($hist->matches) : 0));
+                            $hInfo = (int) ($hist->informational_count ?? 0);
+                            $hMatter = $hist->clientMatter?->client_unique_matter_no;
                         @endphp
                         <div class="cp-history-item">
                             {{ $hAt }} —
                             <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$hist->outcome] ?? '#555' }};">{{ $hLabel }}</span>
+                            @if($hMatter)
+                                <span class="text-muted">· {{ $hMatter }}</span>
+                            @endif
                             @if($hMatches > 0)
-                                <span class="text-muted">({{ $hMatches }} match{{ $hMatches === 1 ? '' : 'es' }})</span>
+                                <span class="text-muted">({{ $hMatches }} conflict{{ $hMatches === 1 ? '' : 's' }})</span>
+                            @elseif($hInfo > 0)
+                                <span class="text-muted">(0 conflicts · {{ $hInfo }} informational)</span>
                             @endif
                         </div>
                     @endforeach
@@ -658,7 +665,7 @@
         if (stale) stale.style.display = 'none';
     }
 
-    function prependHistory(outcome, checkedAt, matchCount) {
+    function prependHistory(outcome, checkedAt, matchCount, informationalCount, matterLabel) {
         var list = document.getElementById('cpHistoryList');
         if (!list) return;
         list.style.display = '';
@@ -666,8 +673,15 @@
         var color = outcomeBadgeColors[outcome] || '#555';
         var item = document.createElement('div');
         item.className = 'cp-history-item';
-        item.innerHTML = esc(checkedAt) + ' — <span class="cp-outcome-badge" style="background:' + color + ';">' + esc(label) + '</span>' +
-            (matchCount > 0 ? ' <span class="text-muted">(' + matchCount + ' match' + (matchCount === 1 ? '' : 'es') + ')</span>' : '');
+        var matterPart = matterLabel ? ' <span class="text-muted">· ' + esc(matterLabel) + '</span>' : '';
+        var countPart = '';
+        if ((matchCount || 0) > 0) {
+            countPart = ' <span class="text-muted">(' + matchCount + ' conflict' + (matchCount === 1 ? '' : 's') + ')</span>';
+        } else if ((informationalCount || 0) > 0) {
+            countPart = ' <span class="text-muted">(0 conflicts · ' + informationalCount + ' informational)</span>';
+        }
+        item.innerHTML = esc(checkedAt) + ' — <span class="cp-outcome-badge" style="background:' + color + ';">' + esc(label) + '</span>'
+            + matterPart + countPart;
         var title = list.querySelector('.fw-semibold');
         if (!title) {
             title = document.createElement('div');
@@ -950,11 +964,6 @@
                 toast('Notes are required when recording Conflict found.', false);
                 return;
             }
-            if (outcome === 'clear' && lastMatches && lastMatches.length > 0) {
-                if (!window.confirm('Automated search found ' + lastMatches.length + ' potential conflict(s). Save outcome as Clear anyway?')) {
-                    return;
-                }
-            }
 
             var token = document.querySelector('meta[name="csrf-token"]');
             var fd = new FormData();
@@ -965,9 +974,8 @@
             fd.append('outcome_notes', notes);
             fd.append('consent_obtained', consent ? '1' : '0');
             fd.append('consent_notes', consentNotes);
-            if (searchWasRun) {
-                fd.append('search_terms', JSON.stringify(lastSearchTerms || {}));
-                fd.append('matches', JSON.stringify(lastMatches || []));
+            if (clientMatterId) {
+                fd.append('client_matter_id', clientMatterId);
             }
             saveOutcomeBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
@@ -987,7 +995,13 @@
                         toast(res.data.message || 'Outcome saved', true);
                         if (res.data.outcome && res.data.checked_at) {
                             updateOutcomeDisplay(res.data.outcome, res.data.checked_at);
-                            prependHistory(res.data.outcome, res.data.checked_at, res.data.match_count || 0);
+                            prependHistory(
+                                res.data.outcome,
+                                res.data.checked_at,
+                                res.data.match_count || 0,
+                                res.data.informational_count || 0,
+                                res.data.matter_label || ''
+                            );
                         }
                     } else {
                         toast((res.data && res.data.message) || 'Save failed', false);

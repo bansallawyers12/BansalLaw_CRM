@@ -1585,12 +1585,16 @@ class LeadController extends Controller
             'declined' => 'Declined',
         ];
 
+        $activeClientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null);
+
         $conflictParties = \App\Support\MatterOtherPartiesHelper::loadDisplayParties(
             (int) $id,
-            \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null)
+            $activeClientMatterId
         );
 
         $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
+            ->forActiveMatter($activeClientMatterId)
+            ->with('clientMatter')
             ->orderByDesc('checked_at')
             ->first();
 
