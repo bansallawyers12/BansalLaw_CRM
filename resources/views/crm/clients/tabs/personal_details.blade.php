@@ -186,7 +186,13 @@
                         <?php
                         $address_Info = null;
                         if ($detailHasClientAddressCols) {
-                            $address_Info = App\Models\ClientAddress::select('address', 'suburb', 'country', 'zip', 'regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
+                            $addressSelectCols = ['address', 'suburb', 'country', 'zip', 'regional_code'];
+                            foreach (['address_line_1', 'address_line_2', 'state'] as $addressCol) {
+                                if ($__sch::hasColumn('client_addresses', $addressCol)) {
+                                    $addressSelectCols[] = $addressCol;
+                                }
+                            }
+                            $address_Info = App\Models\ClientAddress::select($addressSelectCols)->where('client_id', $fetchedData->id)->latest('id')->first();
                         }
                         ?>
 
@@ -195,18 +201,18 @@
                             <span class="field-value">
                                 <?php
                                 if($address_Info) {
-                                    // Check if we have new structured address fields
                                     $addressParts = array_filter([
+                                        $address_Info->address_line_1 ?? '',
+                                        $address_Info->address_line_2 ?? '',
                                         $address_Info->suburb ?? '',
-                                        $address_Info->country ?? '',
-                                        $address_Info->zip ?? ''
+                                        $address_Info->state ?? '',
+                                        $address_Info->zip ?? '',
+                                        (!empty($address_Info->country) && $address_Info->country !== 'Australia') ? $address_Info->country : '',
                                     ]);
-                                    
+
                                     if (!empty($addressParts)) {
-                                        // Use new structured format: "Sydney, Australia, 2000"
                                         echo implode(', ', $addressParts);
                                     } elseif (!empty($address_Info->address)) {
-                                        // Fallback to old address field format
                                         echo $address_Info->address;
                                     } else {
                                         echo 'N/A';
