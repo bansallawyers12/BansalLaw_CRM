@@ -37,13 +37,16 @@
                 return;
             }
 
-            if (!$this.val() && config.defaultDate === undefined) {
-                config.defaultDate = null;
-            } else if ($this.val() && config.defaultDate === undefined) {
-                config.defaultDate = $this.val();
+            // Per-element copy so defaultDate mutations do not leak across fields
+            var elementConfig = $.extend({}, config);
+
+            if (!$this.val() && elementConfig.defaultDate === undefined) {
+                elementConfig.defaultDate = null;
+            } else if ($this.val() && elementConfig.defaultDate === undefined) {
+                elementConfig.defaultDate = $this.val();
             }
 
-            var fp = flatpickr(element, config);
+            var fp = flatpickr(element, elementConfig);
             $this.data('flatpickr', fp);
         });
     }

@@ -2370,9 +2370,8 @@ success: function(response) {
 
                             var sum = 0;
 
-                            $('.productitem_invoice tr.clonedrow_invoice').remove();
-
-                            $('.productitem_invoice tr.product_field_clone_invoice').remove();
+                            var $invoiceLines = $('#invoice_receipt_form .productitem_invoice');
+                            $invoiceLines.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
 
                             $.each(record_get, function(index, subArray) {
 
@@ -2472,7 +2471,7 @@ success: function(response) {
 
                                 let $newRow = $(trRows_office);
 
-                                $('.productitem_invoice').append($newRow);
+                                $invoiceLines.append($newRow);
 
 
 
@@ -2490,9 +2489,9 @@ success: function(response) {
 
                                 if(index <1 ){
 
-                                    $('.invoice_no').val(subArray.invoice_no);
+                                    $('#invoice_receipt_form .invoice_no').val(subArray.invoice_no);
 
-                                    $('.unique_invoice_no').text(subArray.invoice_no);
+                                    $('#invoice_receipt_form .unique_invoice_no').text(subArray.invoice_no);
 
                                     $('#invoice_receipt_id').val(subArray.receipt_id);
 
@@ -2500,7 +2499,7 @@ success: function(response) {
 
                             });
 
-                            $('.total_withdraw_amount_all_rows_invoice').text("$"+sum.toFixed(2));
+                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$"+sum.toFixed(2));
 
                         }
 
@@ -2592,9 +2591,8 @@ success: function(response) {
 
                             var sum = 0;
 
-                            $('.productitem_invoice tr.clonedrow_invoice').remove();
-
-                            $('.productitem_invoice tr.product_field_clone_invoice').remove();
+                            var $invoiceLines = $('#invoice_receipt_form .productitem_invoice');
+                            $invoiceLines.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
 
 
 
@@ -2692,7 +2690,7 @@ success: function(response) {
 
                                 let $newRow = $(trRows_office);
 
-                                $('.productitem_invoice').append($newRow);
+                                $invoiceLines.append($newRow);
 
 
 
@@ -2704,9 +2702,9 @@ success: function(response) {
 
                                 if (index < 1) {
 
-                                    $('.invoice_no').val(subArray.invoice_no);
+                                    $('#invoice_receipt_form .invoice_no').val(subArray.invoice_no);
 
-                                    $('.unique_invoice_no').text(subArray.invoice_no);
+                                    $('#invoice_receipt_form .unique_invoice_no').text(subArray.invoice_no);
 
                                     $('#invoice_receipt_id').val(subArray.receipt_id);
 
@@ -2716,7 +2714,7 @@ success: function(response) {
 
 
 
-                            $('.total_withdraw_amount_all_rows_invoice').text("$" + sum.toFixed(2));
+                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$" + sum.toFixed(2));
 
                         }
 
@@ -3036,97 +3034,61 @@ success: function(response) {
         $(document).delegate('.openproductrinfo_invoice', 'click', function(){
 
             var $tbody = $(this).closest('form').find('.productitem_invoice');
+            if (!$tbody.length) {
+                return;
+            }
+
             var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
             var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
+            var includeTransNo = $tbody.find('.unique_trans_no_invoice').length > 0;
+            var transNoCell = includeTransNo
+                ? `<td>
+                            <input class="form-control unique_trans_no_invoice" type="text" value="" readonly/>
+                            <input class="unique_trans_no_hidden_invoice" name="trans_no[]" type="hidden" value="" />
+                        </td>`
+                : '';
 
             var clonedval_invoice = `<td>
-
                             <input name="id[]" type="hidden" value="" />
-
                             <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${invoiceDate}" title="Date shown on the tax invoice" />
-
                         </td>
-
                         <td>
-
                             <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${recordedDate}" title="Date this entry was posted in the system" />
-
                         </td>
-
-
-
+                        ${transNoCell}
                         <td>
-
                             <select class="form-control" name="gst_included[]">
-
                                 <option value="">Select</option>
-
                                 <option value="Yes">Yes</option>
-
                                 <option value="No">No</option>
-
                             </select>
-
                         </td>
-
-
-
                         <td>
-
                             <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
-
                                 <option value="">Select</option>
-
                                 <option value="Professional Fee">Professional Fee</option>
-
                                 <option value="Department Charges">Department Charges</option>
-
                                 <option value="Surcharge">Surcharge</option>
-
                                 <option value="Disbursements">Disbursements</option>
-
                                 <option value="Other Cost">Other Cost</option>
-
                                 <option value="Discount">Discount</option>
-
-
-
                             </select>
-
                         </td>
-
                         <td>
-
                             <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
-
                         </td>
-
-
-
                         <td>
-
                             <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-
                             <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="" />
-
                         </td>
-
-
-
                         <td>
-
                             <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
+                        </td>`;
 
-                        </td>>`;
+                var $newRow = $('<tr class="product_field_clone_invoice">' + clonedval_invoice + '</tr>');
+                $tbody.append($newRow);
 
-
-
-                //var clonedval_invoice = $('.clonedrow_invoice').html();
-
-                $('.productitem_invoice').append('<tr class="product_field_clone_invoice">'+clonedval_invoice+'</tr>');
-
-                // Initialize Flatpickr for invoice date fields
-                var $newRow = $tbody.find('tr.product_field_clone_invoice').last();
+                // Initialize Flatpickr for invoice date fields on the new row only
                 initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
                 initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
 

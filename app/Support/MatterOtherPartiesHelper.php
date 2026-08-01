@@ -164,7 +164,9 @@ class MatterOtherPartiesHelper
             return count($parties);
         }
 
-        self::syncConflictPartiesClientLevel($clientId, $parties);
+        DB::transaction(function () use ($clientId, $parties) {
+            self::syncConflictPartiesClientLevel($clientId, $parties);
+        });
 
         return count($parties);
     }
@@ -180,7 +182,9 @@ class MatterOtherPartiesHelper
             return;
         }
 
-        self::syncConflictPartiesForMatter($clientId, $clientMatterId, $parties);
+        DB::transaction(function () use ($clientId, $clientMatterId, $parties) {
+            self::syncConflictPartiesForMatter($clientId, $clientMatterId, $parties);
+        });
     }
 
     /**
@@ -188,20 +192,7 @@ class MatterOtherPartiesHelper
      */
     private static function syncConflictPartiesForMatter(int $clientId, int $clientMatterId, array $parties): void
     {
-        if (! Schema::hasTable('client_conflict_parties')) {
-            return;
-        }
-
-        $existingIds = ClientConflictParty::query()
-            ->where('client_id', $clientId)
-            ->where('client_matter_id', $clientMatterId)
-            ->pluck('id');
-
-        self::deleteConflictPartyRows($existingIds);
-
-        foreach ($parties as $i => $party) {
-            self::createConflictPartyRow($clientId, $clientMatterId, $party, $i);
-        }
+        self::syncConflictPartiesForScope($clientId, $clientMatterId, $parties);
     }
 
     /**
@@ -209,20 +200,120 @@ class MatterOtherPartiesHelper
      */
     private static function syncConflictPartiesClientLevel(int $clientId, array $parties): void
     {
+        self::syncConflictPartiesForScope($clientId, null, $parties);
+    }
+
+    /**
+     * Upsert conflict-party rows for a matter or client-level scope (preserves rich fields on re-save).
+     *
+     * @param  list<array{opposing_lead_id: int|null, name: string, party_role: string, rep_firm: string, rep_name: string, rep_email: string, rep_phone: string, rep_notes: string}>  $parties
+     */
+    private static function syncConflictPartiesForScope(int $clientId, ?int $clientMatterId, array $parties): void
+    {
         if (! Schema::hasTable('client_conflict_parties')) {
             return;
         }
 
-        $existingIds = ClientConflictParty::query()
+        $query = ClientConflictParty::query()
             ->where('client_id', $clientId)
-            ->whereNull('client_matter_id')
-            ->pluck('id');
+            ->with(['phones', 'emails', 'opposingLead.company']);
 
-        self::deleteConflictPartyRows($existingIds);
+        if ($clientMatterId) {
+            $query->where('client_matter_id', $clientMatterId);
+        } else {
+            $query->whereNull('client_matter_id');
+        }
+
+        $existingRows = $query->get();
+        $matchedIds = [];
+        $usedExistingIds = [];
 
         foreach ($parties as $i => $party) {
-            self::createConflictPartyRow($clientId, null, $party, $i);
+            $existing = self::findExistingConflictPartyRow($existingRows, $party, $usedExistingIds);
+
+            if ($existing) {
+                $usedExistingIds[] = (int) $existing->id;
+                $matchedIds[] = (int) $existing->id;
+                self::updateConflictPartyRow($existing, $party, $i);
+            } else {
+                $row = self::createConflictPartyRow($clientId, $clientMatterId, $party, $i);
+                $matchedIds[] = (int) $row->id;
+            }
         }
+
+        $toDelete = $existingRows->pluck('id')->diff($matchedIds);
+        self::deleteConflictPartyRows($toDelete);
+    }
+
+    /**
+     * @param  Collection<int, ClientConflictParty>  $existingRows
+     * @param  array{opposing_lead_id: int|null, name: string, party_role: string, rep_firm: string, rep_name: string, rep_email: string, rep_phone: string, rep_notes: string}  $party
+     */
+    private static function findExistingConflictPartyRow(
+        Collection $existingRows,
+        array $party,
+        array $usedExistingIds
+    ): ?ClientConflictParty {
+        $leadId = isset($party['opposing_lead_id']) ? (int) $party['opposing_lead_id'] : 0;
+
+        if ($leadId > 0) {
+            $byLead = $existingRows->first(
+                fn (ClientConflictParty $row) => ! in_array((int) $row->id, $usedExistingIds, true)
+                    && (int) ($row->opposing_lead_id ?? 0) === $leadId
+            );
+
+            if ($byLead) {
+                return $byLead;
+            }
+        }
+
+        $nameKey = self::normalizePartyMatchName($party);
+        $roleKey = self::normalizePartyRole($party);
+
+        if ($nameKey === '') {
+            return null;
+        }
+
+        return $existingRows->first(function (ClientConflictParty $row) use ($usedExistingIds, $nameKey, $roleKey, $leadId) {
+            if (in_array((int) $row->id, $usedExistingIds, true)) {
+                return false;
+            }
+
+            if ($leadId === 0 && (int) ($row->opposing_lead_id ?? 0) > 0) {
+                return false;
+            }
+
+            if ($leadId > 0 && (int) ($row->opposing_lead_id ?? 0) > 0) {
+                return false;
+            }
+
+            return self::existingRowMatchName($row) === $nameKey
+                && self::existingRowMatchRole($row) === $roleKey;
+        });
+    }
+
+    /**
+     * @param  array{opposing_lead_id: int|null, name: string, party_role: string, rep_firm: string, rep_name: string, rep_email: string, rep_phone: string, rep_notes: string}  $party
+     */
+    private static function updateConflictPartyRow(ClientConflictParty $existing, array $party, int $sortOrder): ClientConflictParty
+    {
+        $data = self::buildConflictPartyAttributes(
+            (int) $existing->client_id,
+            $existing->client_matter_id,
+            $party,
+            $sortOrder,
+            $existing
+        );
+
+        $existing->fill($data);
+
+        if ($existing->isDirty()) {
+            $existing->save();
+        }
+
+        self::syncConflictPartyChildRecords($existing, $party, false);
+
+        return $existing->fresh(['phones', 'emails', 'opposingLead.company']) ?? $existing;
     }
 
     /**
@@ -248,6 +339,26 @@ class MatterOtherPartiesHelper
      */
     private static function createConflictPartyRow(int $clientId, ?int $clientMatterId, array $party, int $sortOrder): ClientConflictParty
     {
+        $data = self::buildConflictPartyAttributes($clientId, $clientMatterId, $party, $sortOrder, null);
+        $data['created_by'] = Auth::id();
+
+        $row = ClientConflictParty::create($data);
+        self::syncConflictPartyChildRecords($row, $party, true);
+
+        return $row;
+    }
+
+    /**
+     * @param  array{opposing_lead_id: int|null, name: string, party_role: string, rep_firm: string, rep_name: string, rep_email: string, rep_phone: string, rep_notes: string}  $party
+     * @return array<string, mixed>
+     */
+    private static function buildConflictPartyAttributes(
+        int $clientId,
+        ?int $clientMatterId,
+        array $party,
+        int $sortOrder,
+        ?ClientConflictParty $existing
+    ): array {
         $leadId = isset($party['opposing_lead_id']) ? (int) $party['opposing_lead_id'] : 0;
         $lead = ($leadId > 0) ? Admin::query()->with('company')->find($leadId) : null;
         $payloadName = trim((string) ($party['name'] ?? ''));
@@ -256,13 +367,12 @@ class MatterOtherPartiesHelper
             'client_id'     => $clientId,
             'party_role'    => $party['party_role'],
             'sort_order'    => $sortOrder,
-            'created_by'    => Auth::id(),
             'rep_firm_name' => ($party['rep_firm'] ?? '') !== '' ? $party['rep_firm'] : null,
             'rep_name'      => ($party['rep_name'] ?? '') !== '' ? $party['rep_name'] : null,
             'rep_email'     => ($party['rep_email'] ?? '') !== '' ? $party['rep_email'] : null,
             'rep_phone'     => ($party['rep_phone'] ?? '') !== '' ? $party['rep_phone'] : null,
             'notes'         => ($party['rep_notes'] ?? '') !== '' ? $party['rep_notes'] : null,
-            'country'       => 'Australia',
+            'country'       => $existing?->country ?? 'Australia',
         ];
 
         if (Schema::hasColumn('client_conflict_parties', 'client_matter_id')) {
@@ -298,20 +408,109 @@ class MatterOtherPartiesHelper
             $data['last_name'] = $parts[1] ?? null;
         }
 
-        if ($lead && $lead->company) {
-            if (! empty($lead->company->ABN_number)) {
-                $data['abn'] = $lead->company->ABN_number;
-            }
-            if (! empty($lead->company->ACN)) {
-                $data['acn'] = $lead->company->ACN;
+        $data['abn'] = self::resolveConflictPartyAbn($party, $existing, $lead);
+        $data['acn'] = self::resolveConflictPartyAcn($party, $existing, $lead);
+
+        foreach (['aliases', 'dob', 'trading_name', 'address', 'suburb', 'state', 'postcode'] as $field) {
+            if (array_key_exists($field, $party) && $party[$field] !== '' && $party[$field] !== null) {
+                $data[$field] = $party[$field];
+            } elseif ($existing) {
+                $data[$field] = $existing->{$field};
+            } elseif ($field === 'dob' && $lead && $lead->dob) {
+                $data[$field] = $lead->dob;
             }
         }
 
-        if ($lead && $lead->dob) {
-            $data['dob'] = $lead->dob;
+        return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $party
+     */
+    private static function resolveConflictPartyAbn(array $party, ?ClientConflictParty $existing, ?Admin $lead): ?string
+    {
+        if (array_key_exists('abn', $party) && (string) ($party['abn'] ?? '') !== '') {
+            return (string) $party['abn'];
         }
 
-        $row = ClientConflictParty::create($data);
+        if ($existing && (string) ($existing->abn ?? '') !== '') {
+            return $existing->abn;
+        }
+
+        if ($lead && $lead->company && ! empty($lead->company->ABN_number)) {
+            return $lead->company->ABN_number;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $party
+     */
+    private static function resolveConflictPartyAcn(array $party, ?ClientConflictParty $existing, ?Admin $lead): ?string
+    {
+        if (array_key_exists('acn', $party) && (string) ($party['acn'] ?? '') !== '') {
+            return (string) $party['acn'];
+        }
+
+        if ($existing && (string) ($existing->acn ?? '') !== '') {
+            return $existing->acn;
+        }
+
+        if ($lead && $lead->company && ! empty($lead->company->ACN)) {
+            return $lead->company->ACN;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $party
+     */
+    private static function syncConflictPartyChildRecords(
+        ClientConflictParty $row,
+        array $party,
+        bool $isCreate
+    ): void {
+        if (array_key_exists('emails', $party) && Schema::hasTable('conflict_party_emails')) {
+            ConflictPartyEmail::query()->where('conflict_party_id', $row->id)->delete();
+            foreach ((array) $party['emails'] as $emailRow) {
+                if (! is_array($emailRow) || empty($emailRow['email'])) {
+                    continue;
+                }
+                ConflictPartyEmail::create([
+                    'conflict_party_id' => $row->id,
+                    'email_type'        => $emailRow['email_type'] ?? 'Personal',
+                    'email'             => $emailRow['email'],
+                ]);
+            }
+
+            return;
+        }
+
+        if (array_key_exists('phones', $party) && Schema::hasTable('conflict_party_contacts')) {
+            ConflictPartyContact::query()->where('conflict_party_id', $row->id)->delete();
+            foreach ((array) $party['phones'] as $phoneRow) {
+                if (! is_array($phoneRow) || empty($phoneRow['phone'])) {
+                    continue;
+                }
+                ConflictPartyContact::create([
+                    'conflict_party_id' => $row->id,
+                    'contact_type'      => $phoneRow['contact_type'] ?? 'Mobile',
+                    'country_code'      => $phoneRow['country_code'] ?? '+61',
+                    'phone'             => $phoneRow['phone'],
+                ]);
+            }
+
+            return;
+        }
+
+        if (! $isCreate) {
+            return;
+        }
+
+        $leadId = isset($party['opposing_lead_id']) ? (int) $party['opposing_lead_id'] : 0;
+        $lead = ($leadId > 0) ? Admin::query()->find($leadId) : null;
 
         if ($lead && $lead->phone && Schema::hasTable('conflict_party_contacts')) {
             ConflictPartyContact::create([
@@ -329,8 +528,56 @@ class MatterOtherPartiesHelper
                 'email'             => $lead->email,
             ]);
         }
+    }
 
-        return $row;
+    /**
+     * @param  array{opposing_lead_id: int|null, name: string, party_role: string, rep_firm: string, rep_name: string, rep_email: string, rep_phone: string, rep_notes: string}  $party
+     */
+    private static function normalizePartyMatchName(array $party, ?Admin $lead = null): string
+    {
+        $name = trim((string) ($party['name'] ?? ''));
+
+        if ($name === '' && $lead) {
+            if ((bool) ($lead->is_company ?? false)) {
+                $name = trim((string) ($lead->company_name ?? '')) ?: trim($lead->first_name . ' ' . $lead->last_name);
+            } else {
+                $name = trim($lead->first_name . ' ' . $lead->last_name);
+            }
+        }
+
+        return self::normalizeMatchString($name);
+    }
+
+    private static function normalizePartyRole(array $party): string
+    {
+        return self::normalizeMatchString((string) ($party['party_role'] ?? ''));
+    }
+
+    private static function existingRowMatchName(ClientConflictParty $row): string
+    {
+        if ($row->party_type === 'company') {
+            $name = trim((string) ($row->company_name ?? ''));
+        } else {
+            $name = trim(trim((string) ($row->first_name ?? '')) . ' ' . trim((string) ($row->last_name ?? '')));
+        }
+
+        return self::normalizeMatchString($name);
+    }
+
+    private static function existingRowMatchRole(ClientConflictParty $row): string
+    {
+        return self::normalizeMatchString((string) ($row->party_role ?? ''));
+    }
+
+    private static function normalizeMatchString(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        return mb_strtolower(preg_replace('/\s+/', ' ', $value) ?? $value);
     }
 
     private static function opposingPartyToDisplay(ClientMatterOpposingParty $party): object

@@ -86,7 +86,7 @@ vendor/bin/phpunit tests/Feature/ConflictCheckPhase4bTest.php
 Full regression:
 
 ```bash
-vendor/bin/phpunit tests/Feature/ConflictCheckPhase0Test.php tests/Feature/ConflictCheckPhase1Test.php tests/Feature/ConflictCheckPhase2Test.php tests/Feature/ConflictCheckPhase3Test.php tests/Feature/ConflictCheckPhase4bTest.php
+vendor/bin/phpunit tests/Feature/ConflictCheckPhase0Test.php tests/Feature/ConflictCheckPhase1Test.php tests/Feature/ConflictCheckPhase2Test.php tests/Feature/ConflictCheckPhase3Test.php tests/Feature/ConflictCheckPhase4aTest.php tests/Feature/ConflictCheckPhase4bTest.php
 ```
 
 ---
@@ -107,4 +107,4 @@ vendor/bin/phpunit tests/Feature/ConflictCheckPhase0Test.php tests/Feature/Confl
 - [Phase 2 audit integrity](./CONFLICT_CHECK_PHASE2.md) — `parties_snapshot_at`, `search_hash` columns
 - [Phase 3 search coverage](./CONFLICT_CHECK_PHASE3.md)
 
-**Next:** [Phase 4A](./CONFLICT_CHECK_PHASE0.md) party upsert (preserve aliases, DOB, extra contacts on re-save).
+**Next:** [Phase 4A](./CONFLICT_CHECK_PHASE4A.md) party upsert (preserve aliases, DOB, extra contacts on re-save).
