@@ -496,19 +496,22 @@
                                                 <?php echo $inc_val->trans_no;?> <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
-                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <?php if($inc_val->save_type == 'final' || $inc_val->save_type == 'draft') { ?>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
-                                                    <i class="fa-solid fa-eye"></i> View Invoice
+                                                    <i class="fa-solid fa-eye"></i> {{ $inc_val->save_type == 'draft' ? 'View Draft PDF' : 'View Invoice' }}
                                                 </a>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}?download=1">
-                                                    <i class="fa-solid fa-download"></i> Download PDF
+                                                    <i class="fa-solid fa-download"></i> {{ $inc_val->save_type == 'draft' ? 'Download Draft PDF' : 'Download PDF' }}
                                                 </a>
+                                                <?php if($inc_val->save_type == 'final') { ?>
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item send-invoice-to-client" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
                                                     <i class="fa-solid fa-envelope"></i> Send to Client
                                                 </a>
                                                 <?php } ?>
+                                                <?php } ?>
                                                 <?php if($inc_val->save_type == 'draft'){ ?>
+                                                <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="draft">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit Draft Invoice
                                                 </a>
@@ -580,13 +583,15 @@
                                         ];
 
                                         $status = $inc_val->invoice_status;
-                                        $statusClass = $statusClassMap[$status];
-                                        if( isset($inc_val->payment_type) && $inc_val->payment_type == 'Discount'){
-                                            $status = 4; //Discount
+                                        $statusClass = $statusClassMap[$status] ?? 'status-unpaid';
+                                        if (isset($inc_val->save_type) && $inc_val->save_type == 'draft') {
+                                            $statusDes = 'Draft';
+                                            $statusClass = 'status-draft';
+                                        } elseif (isset($inc_val->payment_type) && $inc_val->payment_type == 'Discount') {
+                                            $statusDes = $statusVal[4];
                                         } else {
-                                            $status = $status;
+                                            $statusDes = $statusVal[$status] ?? 'Unpaid';
                                         }
-                                        $statusDes = $statusVal[$status];
                                         ?>
 
                                     <td style="text-align: left; vertical-align: middle;">

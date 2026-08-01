@@ -14,6 +14,8 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 8px;
+            position: relative;
+            z-index: 1;
         }
         .header-section {
             border-bottom: 3px solid #1b3a6b;
@@ -38,6 +40,32 @@
             color: #1b3a6b;
             margin: 0 0 10px 0;
             letter-spacing: -0.5px;
+        }
+        .draft-banner {
+            display: inline-block;
+            margin: 0 0 8px 0;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #7c2d12;
+            background: #ffedd5;
+            border: 1px solid #f97316;
+            border-radius: 3px;
+        }
+        .draft-watermark {
+            position: fixed;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-28deg);
+            font-size: 72px;
+            font-weight: 700;
+            color: rgba(249, 115, 22, 0.12);
+            letter-spacing: 0.12em;
+            z-index: 0;
+            pointer-events: none;
+            white-space: nowrap;
         }
         .document-info {
             font-size: 13px;
@@ -190,6 +218,9 @@
     @endphp
     
     <div class="invoice_table">
+        @if(!empty($is_draft_invoice))
+            <div class="draft-watermark">DRAFT</div>
+        @endif
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr class="header-section">
                 <td style="text-align: left; width: 50%; vertical-align: top;">
@@ -204,7 +235,10 @@
                     </div>
                 </td>
                 <td style="text-align: right; width: 50%; vertical-align: top;">
-                    <h1 class="document-title">Tax Invoice</h1>
+                    @if(!empty($is_draft_invoice))
+                        <div class="draft-banner">Draft — Not Final</div>
+                    @endif
+                    <h1 class="document-title">{{ !empty($is_draft_invoice) ? 'Draft Tax Invoice' : 'Tax Invoice' }}</h1>
                     <div class="document-info">
                         <b>ABN</b> 66 677 069 439<br/>
                         <b>Invoice Date:</b> 
@@ -331,155 +365,30 @@
             <strong>Matter:</strong> {{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}
         </div>
 
-        @if($record_get_Professional_Fee_cnt > 0)
-            <h4 class="section-title">Professional Fee</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Professional_Fee))
-                            @foreach($record_get_Professional_Fee as $fee)
+        @foreach(($invoice_charge_groups ?? []) as $chargeGroup)
+            @if(($chargeGroup['count'] ?? 0) > 0)
+                <h4 class="section-title">{{ $chargeGroup['title'] }}</h4>
+                <div class="ledger-table-wrapper">
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($chargeGroup['lines'] as $line)
                                 <tr>
-                                                                        <td>{{@$fee->description}}</td>
-                                    <td>{{@$fee->trans_date}}</td>
-                                    <td>{{ isset($fee->gst_included) && $fee->gst_included !== '' ? $fee->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($fee->withdraw_amount ?? 0), 2) }}</td>
+                                    <td>{!! nl2br(e($line->description ?? '')) !!}</td>
+                                    <td>{{@$line->trans_date}}</td>
+                                    <td>{{ isset($line->gst_included) && $line->gst_included !== '' ? $line->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($line->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-        @if($record_get_Department_Charges_cnt > 0)
-            <h4 class="section-title">Department Charges</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Department_Charges))
-                            @foreach($record_get_Department_Charges as $charge)
-                                <tr>
-                                                                        <td>{{@$charge->description}}</td>
-                                    <td>{{@$charge->trans_date}}</td>
-                                    <td>{{ isset($charge->gst_included) && $charge->gst_included !== '' ? $charge->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($charge->withdraw_amount ?? 0), 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-        @if($record_get_Surcharge_cnt > 0)
-            <h4 class="section-title">Surcharge</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Surcharge))
-                            @foreach($record_get_Surcharge as $surcharge)
-                                <tr>
-                                                                        <td>{{@$surcharge->description}}</td>
-                                    <td>{{@$surcharge->trans_date}}</td>
-                                    <td>{{ isset($surcharge->gst_included) && $surcharge->gst_included !== '' ? $surcharge->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($surcharge->withdraw_amount ?? 0), 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-        @if($record_get_Disbursements_cnt > 0)
-            <h4 class="section-title">Disbursements</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Disbursements))
-                            @foreach($record_get_Disbursements as $disbursement)
-                                <tr>
-                                                                        <td>{{@$disbursement->description}}</td>
-                                    <td>{{@$disbursement->trans_date}}</td>
-                                    <td>{{ isset($disbursement->gst_included) && $disbursement->gst_included !== '' ? $disbursement->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($disbursement->withdraw_amount ?? 0), 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-        @if($record_get_Other_Cost_cnt > 0)
-            <h4 class="section-title">Other Cost</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Other_Cost))
-                            @foreach($record_get_Other_Cost as $cost)
-                                <tr>
-                                                                        <td>{{@$cost->description}}</td>
-                                    <td>{{@$cost->trans_date}}</td>
-                                    <td>{{ isset($cost->gst_included) && $cost->gst_included !== '' ? $cost->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($cost->withdraw_amount ?? 0), 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-        @if($record_get_Discount_cnt > 0)
-            <h4 class="section-title">Discount</h4>
-            <div class="ledger-table-wrapper">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($record_get_Discount))
-                            @foreach($record_get_Discount as $discount)
-                                <tr>
-                                                                        <td>{{@$discount->description}}</td>
-                                    <td>{{@$discount->trans_date}}</td>
-                                    <td>{{ isset($discount->gst_included) && $discount->gst_included !== '' ? $discount->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($discount->withdraw_amount ?? 0), 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        @endif
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        @endforeach
 
         <div class="totals-section">
             @php

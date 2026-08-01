@@ -18,6 +18,7 @@ use App\Models\Staff;
 use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
+use App\Support\InvoiceChargeTypes;
 use App\Services\FinancialStatsService;
 use App\Services\FCMService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
@@ -3184,9 +3185,12 @@ class ClientAccountsController extends Controller
           ->first();
 
       // ============= START CACHING LOGIC =============
+
+      $is_draft_invoice = (($receipt_entry->save_type ?? null) === 'draft')
+          || (($record_get[0]->save_type ?? null) === 'draft');
       
-      // Check if PDF already exists in AWS
-      if ($receipt_entry && !empty($receipt_entry->pdf_document_id)) {
+      // Check if PDF already exists in AWS (skip cache for drafts so edits always show)
+      if (!$is_draft_invoice && $receipt_entry && !empty($receipt_entry->pdf_document_id)) {
           $existingPdf = DB::table('documents')
            ->where('id', $receipt_entry->pdf_document_id)
            ->first();
@@ -3206,18 +3210,7 @@ class ClientAccountsController extends Controller
       
       // ============= PDF DATA PREPARATION =============
 
-      $record_get_Professional_Fee_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
-      $record_get_Department_Charges_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
-      $record_get_Surcharge_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
-      $record_get_Disbursements_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
-      $record_get_Other_Cost_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
-      $record_get_Discount_cnt = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
-      $record_get_Professional_Fee = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
-      $record_get_Department_Charges = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
-      $record_get_Surcharge = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
-      $record_get_Disbursements = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
-      $record_get_Other_Cost = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
-      $record_get_Discount = AccountAllInvoiceReceipt::where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
+      $invoice_charge_groups = InvoiceChargeTypes::loadGroupedLines((int) $id, (int) $queryClientId);
       //Calculate Gross Amount
       $total_Gross_Amount = AccountAllInvoiceReceipt::where('client_id', $queryClientId)
           ->where('receipt_type', 3)
@@ -3373,19 +3366,8 @@ class ClientAccountsController extends Controller
            'tempDir' => storage_path('logs/')
           ])->loadView('emails.geninvoice',compact(
            ['record_get',
-           'record_get_Professional_Fee_cnt',
-           'record_get_Department_Charges_cnt',
-           'record_get_Surcharge_cnt',
-           'record_get_Disbursements_cnt',
-           'record_get_Other_Cost_cnt',
-           'record_get_Discount_cnt',
-
-           'record_get_Professional_Fee',
-           'record_get_Department_Charges',
-           'record_get_Surcharge',
-           'record_get_Disbursements',
-           'record_get_Other_Cost',
-           'record_get_Discount',
+           'invoice_charge_groups',
+           'is_draft_invoice',
 
            'total_Gross_Amount',
            'total_Invoice_Amount',
@@ -3398,9 +3380,15 @@ class ClientAccountsController extends Controller
            'client_matter_display'
           ]));
           
-          // Save PDF to AWS S3
           $pdfContent = $pdf->output();
-          $fileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+          $fileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+
+          // Draft PDFs are generated on demand — do not cache to S3 so edits always show.
+          if ($is_draft_invoice) {
+              return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
+          }
+
+          // Save final invoice PDF to AWS S3
           $client_unique_id = $clientname->client_id ?? 'unknown';
           $docType = 'invoices'; // Category for S3 storage
           $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
@@ -3449,19 +3437,8 @@ class ClientAccountsController extends Controller
            'tempDir' => storage_path('logs/')
           ])->loadView('emails.geninvoice',compact(
            ['record_get',
-           'record_get_Professional_Fee_cnt',
-           'record_get_Department_Charges_cnt',
-           'record_get_Surcharge_cnt',
-           'record_get_Disbursements_cnt',
-           'record_get_Other_Cost_cnt',
-           'record_get_Discount_cnt',
-
-           'record_get_Professional_Fee',
-           'record_get_Department_Charges',
-           'record_get_Surcharge',
-           'record_get_Disbursements',
-           'record_get_Other_Cost',
-           'record_get_Discount',
+           'invoice_charge_groups',
+           'is_draft_invoice',
 
            'total_Gross_Amount',
            'total_Invoice_Amount',
@@ -3474,29 +3451,31 @@ class ClientAccountsController extends Controller
            'client_matter_display'
           ]));
 
-          try {
-              $pdfBinary = $pdf->output();
-              $fileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
-              $this->persistReceiptPdfLocalAndLink(
-                  $pdfBinary,
-                  $fileName,
-                  'invoice',
-                  'invoices',
-                  (int) $record_get[0]->client_id,
-                  function (int $documentId) use ($id, $queryClientId) {
-                      DB::table('account_client_receipts')
-                          ->where('receipt_id', $id)
-                          ->where('receipt_type', 3)
-                          ->where('client_id', $queryClientId)
-                          ->update(['pdf_document_id' => $documentId]);
-                  }
-              );
-          } catch (\Throwable $e2) {
-              Log::error('Invoice local PDF persist failed: ' . $e2->getMessage());
+          $pdfFileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+
+          if (!$is_draft_invoice) {
+              try {
+                  $pdfBinary = $pdf->output();
+                  $this->persistReceiptPdfLocalAndLink(
+                      $pdfBinary,
+                      $pdfFileName,
+                      'invoice',
+                      'invoices',
+                      (int) $record_get[0]->client_id,
+                      function (int $documentId) use ($id, $queryClientId) {
+                          DB::table('account_client_receipts')
+                              ->where('receipt_id', $id)
+                              ->where('receipt_type', 3)
+                              ->where('client_id', $queryClientId)
+                              ->update(['pdf_document_id' => $documentId]);
+                      }
+                  );
+              } catch (\Throwable $e2) {
+                  Log::error('Invoice local PDF persist failed: ' . $e2->getMessage());
+              }
           }
 
           // Return appropriate response based on download parameter
-          $pdfFileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
           if ($request->has('download')) {
               return $pdf->download($pdfFileName);
           } else {
@@ -6111,19 +6090,8 @@ public function getInvoiceAmount(Request $request)
              END"));
 
          // Get all required data for PDF generation
-         $record_get_Professional_Fee_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
-         $record_get_Department_Charges_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
-         $record_get_Surcharge_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
-         $record_get_Disbursements_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
-         $record_get_Other_Cost_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
-         $record_get_Discount_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
-
-         $record_get_Professional_Fee = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
-         $record_get_Department_Charges = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
-         $record_get_Surcharge = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
-         $record_get_Disbursements = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
-         $record_get_Other_Cost = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
-         $record_get_Discount = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
+         $invoice_charge_groups = InvoiceChargeTypes::loadGroupedLines((int) $id);
+         $is_draft_invoice = false;
 
          $total_Gross_Amount = AccountAllInvoiceReceipt::where('receipt_type', 3)
              ->where('receipt_id', $id)
@@ -6222,19 +6190,8 @@ public function getInvoiceAmount(Request $request)
              'default_font' => 'Arial'
          ])->loadView('emails.geninvoice',compact(
              ['record_get',
-             'record_get_Professional_Fee_cnt',
-             'record_get_Department_Charges_cnt',
-             'record_get_Surcharge_cnt',
-             'record_get_Disbursements_cnt',
-             'record_get_Other_Cost_cnt',
-             'record_get_Discount_cnt',
-
-             'record_get_Professional_Fee',
-             'record_get_Department_Charges',
-             'record_get_Surcharge',
-             'record_get_Disbursements',
-             'record_get_Other_Cost',
-             'record_get_Discount',
+             'invoice_charge_groups',
+             'is_draft_invoice',
 
              'total_Gross_Amount',
              'total_Invoice_Amount',

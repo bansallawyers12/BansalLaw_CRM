@@ -14,6 +14,42 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    function getInvoiceChargeTypeOptions() {
+        var types = (window.ClientDetailConfig && window.ClientDetailConfig.invoiceChargeTypes) || [
+            'Professional Fees',
+            'Barrister Fees',
+            'Court Fees',
+            'VOI Charges',
+            'Disbursements',
+            'Government Fees',
+            'Surcharge',
+            'Other Costs',
+            'Discount'
+        ];
+        return types;
+    }
+
+    function normalizeInvoicePaymentType(paymentType) {
+        var map = {
+            'Professional Fee': 'Professional Fees',
+            'Department Charges': 'Government Fees',
+            'Other Cost': 'Other Costs',
+            'Disbursement': 'Disbursements'
+        };
+        var value = (paymentType || '').trim();
+        return map[value] || value;
+    }
+
+    function buildInvoicePaymentTypeOptionsHtml(selectedValue) {
+        var selected = normalizeInvoicePaymentType(selectedValue);
+        var html = '<option value="">Select</option>';
+        getInvoiceChargeTypeOptions().forEach(function(type) {
+            var isSelected = selected && selected === type ? ' selected' : '';
+            html += '<option value="' + type + '"' + isSelected + '>' + type + '</option>';
+        });
+        return html;
+    }
+
     function formatClientDocDateTime(iso) {
         if (typeof window.formatDisplayDateTime === 'function') {
             return window.formatDisplayDateTime(iso) || '';
@@ -2378,9 +2414,11 @@ success: function(response) {
                                 var value_sum = parseFloat(subArray.withdraw_amount);
 
                                 if (!isNaN(value_sum)) {
-
-                                    sum += value_sum;
-
+                                    if (subArray.payment_type === 'Discount') {
+                                        sum -= value_sum;
+                                    } else {
+                                        sum += value_sum;
+                                    }
                                 }
 
 
@@ -2411,7 +2449,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control gst_included_cls" name="gst_included[]">
+                                        <select class="form-control gst_included_cls" name="gst_included[]" data-valid="required">
 
                                             <option value="">Select</option>
 
@@ -2425,21 +2463,9 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control payment_type_cls" name="payment_type[]">
+                                        <select class="form-control payment_type_cls payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
 
-                                            <option value="">Select</option>
-
-                                            <option value="Professional Fee">Professional Fee</option>
-
-                                            <option value="Department Charges">Department Charges</option>
-
-                                            <option value="Surcharge">Surcharge</option>
-
-                                            <option value="Disbursements">Disbursements</option>
-
-                                            <option value="Other Cost">Other Cost</option>
-
-                                            <option value="Discount">Discount</option>
+                                            ${buildInvoicePaymentTypeOptionsHtml(subArray.payment_type)}
 
                                         </select>
 
@@ -2447,7 +2473,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control" name="description[]" type="text" value="${subArray.description}" />
+                                        <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
 
                                     </td>
 
@@ -2479,7 +2505,9 @@ success: function(response) {
 
                                 $newRow.find('.gst_included_cls').val(subArray.gst_included);
 
-                                $newRow.find('.payment_type_cls').val(subArray.payment_type);
+                                $newRow.find('.payment_type_cls').val(normalizeInvoicePaymentType(subArray.payment_type));
+
+                                $newRow.find('[name="description[]"]').val(subArray.description || '');
 
 
 
@@ -2601,9 +2629,11 @@ success: function(response) {
                                 var value_sum = parseFloat(subArray.withdraw_amount);
 
                                 if (!isNaN(value_sum)) {
-
-                                    sum += value_sum;
-
+                                    if (subArray.payment_type === 'Discount') {
+                                        sum -= value_sum;
+                                    } else {
+                                        sum += value_sum;
+                                    }
                                 }
 
 
@@ -2630,7 +2660,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control gst_included_cls" name="gst_included[]">
+                                        <select class="form-control gst_included_cls" name="gst_included[]" data-valid="required">
 
                                             <option value="">Select</option>
 
@@ -2644,21 +2674,9 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control payment_type_cls" name="payment_type[]">
+                                        <select class="form-control payment_type_cls payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
 
-                                            <option value="">Select</option>
-
-                                            <option value="Professional Fee" ${subArray.payment_type === 'Professional Fee' ? 'selected' : ''}>Professional Fee</option>
-
-                                            <option value="Department Charges" ${subArray.payment_type === 'Department Charges' ? 'selected' : ''}>Department Charges</option>
-
-                                            <option value="Surcharge" ${subArray.payment_type === 'Surcharge' ? 'selected' : ''}>Surcharge</option>
-
-                                            <option value="Disbursements" ${subArray.payment_type === 'Disbursements' ? 'selected' : ''}>Disbursements</option>
-
-                                            <option value="Other Cost" ${subArray.payment_type === 'Other Cost' ? 'selected' : ''}>Other Cost</option>
-
-                                            <option value="Discount" ${subArray.payment_type === 'Discount' ? 'selected' : ''}>Discount</option>
+                                            ${buildInvoicePaymentTypeOptionsHtml(subArray.payment_type)}
 
                                         </select>
 
@@ -2666,7 +2684,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control" name="description[]" type="text" value="${subArray.description}" />
+                                        <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
 
                                     </td>
 
@@ -2691,6 +2709,9 @@ success: function(response) {
                                 let $newRow = $(trRows_office);
 
                                 $invoiceLines.append($newRow);
+
+                                $newRow.find('[name="description[]"]').val(subArray.description || '');
+                                $newRow.find('.payment_type_cls').val(normalizeInvoicePaymentType(subArray.payment_type));
 
 
 
@@ -3057,29 +3078,23 @@ success: function(response) {
                         </td>
                         ${transNoCell}
                         <td>
-                            <select class="form-control" name="gst_included[]">
+                            <select class="form-control" name="gst_included[]" data-valid="required">
                                 <option value="">Select</option>
                                 <option value="Yes">Yes</option>
                                 <option value="No">No</option>
                             </select>
                         </td>
                         <td>
-                            <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
-                                <option value="">Select</option>
-                                <option value="Professional Fee">Professional Fee</option>
-                                <option value="Department Charges">Department Charges</option>
-                                <option value="Surcharge">Surcharge</option>
-                                <option value="Disbursements">Disbursements</option>
-                                <option value="Other Cost">Other Cost</option>
-                                <option value="Discount">Discount</option>
+                            <select class="form-control payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
+                                ${buildInvoicePaymentTypeOptionsHtml('')}
                             </select>
                         </td>
                         <td>
-                            <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
+                            <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
                         </td>
                         <td>
                             <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                            <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="" />
+                            <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*)\\./g, '$1').replace(/(\\.\\d{2}).*/g, '$1')" value="" />
                         </td>
                         <td>
                             <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
@@ -3106,7 +3121,7 @@ success: function(response) {
             if ($.trim($row.find('input[name="entry_date[]"]').val())) {
                 return true;
             }
-            if ($.trim($row.find('input[name="description[]"]').val())) {
+            if ($.trim($row.find('[name="description[]"]').val())) {
                 return true;
             }
             if ($.trim($row.find('input[name="withdraw_amount[]"]').val())) {
@@ -3130,6 +3145,7 @@ success: function(response) {
             if ($dataRows.length <= 1) {
                 $row.find('input[name="id[]"]').val('');
                 $row.find('input[type="text"]').not('[type="hidden"]').val('');
+                $row.find('textarea[name="description[]"]').val('');
                 $row.find('select').prop('selectedIndex', 0);
             } else {
                 $row.remove();

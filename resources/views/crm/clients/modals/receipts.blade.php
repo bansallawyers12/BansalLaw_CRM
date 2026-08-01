@@ -153,6 +153,15 @@
     padding: 5px 10px;
     font-size: 12px;
 }
+
+/* Tax invoice line description — taller than a single-line input */
+#invoice_receipt_form textarea.invoice-line-description,
+#create_invoice_receipt textarea.invoice-line-description,
+#adjust_invoice_receipt_form textarea.invoice-line-description {
+    min-height: 4.5rem;
+    resize: vertical;
+    line-height: 1.35;
+}
 </style>
 
 {{-- 1. Create Receipt Modal (Multi-Type: Client Funds Ledger, Invoice, Office Receipt) --}}
@@ -450,7 +459,7 @@
                                             <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
                                             <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
                                             <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
-                                            <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
+                                            <th style="width:14%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
                                             <th style="width:14%;color: #34395e;">Amount</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -476,16 +485,13 @@
                                             <td>
                                                 <select class="form-control payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
                                                     <option value="">Select</option>
-                                                    <option value="Professional Fee">Professional Fee</option>
-                                                    <option value="Department Charges">Department Charges</option>
-                                                    <option value="Surcharge">Surcharge</option>
-                                                    <option value="Disbursements">Disbursements</option>
-                                                    <option value="Other Cost">Other Cost</option>
-                                                    <option value="Discount">Discount</option>
+                                                    @foreach(\App\Support\InvoiceChargeTypes::options() as $chargeType)
+                                                        <option value="{{ $chargeType }}">{{ $chargeType }}</option>
+                                                    @endforeach
                                                 </select>
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
+                                                <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
                                             </td>
 
                                             <td>
@@ -757,7 +763,7 @@
                                                 </select>
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
+                                                <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
                                             </td>
 
                                             <td>
@@ -984,7 +990,7 @@
                                             <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
                                             <th style="width:15%;color: #34395e;">Trans. No</th>
                                             <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
-                                            <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
+                                            <th style="width:14%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
                                             <th style="width:14%;color: #34395e;">Amount</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -1012,18 +1018,15 @@
                                             </td>
 
                                             <td>
-                                                <select class="form-control" name="payment_type[]">
+                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
                                                     <option value="">Select</option>
-                                                    <option value="Professional Fee">Professional Fee</option>
-                                                    <option value="Department Charges">Department Charges</option>
-                                                    <option value="Surcharge">Surcharge</option>
-                                                    <option value="Disbursements">Disbursements</option>
-                                                    <option value="Other Cost">Other Cost</option>
-                                                    <option value="Discount">Discount</option>
+                                                    @foreach(\App\Support\InvoiceChargeTypes::options() as $chargeType)
+                                                        <option value="{{ $chargeType }}">{{ $chargeType }}</option>
+                                                    @endforeach
                                                 </select>
                                             </td>
                                             <td>
-                                                <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
+                                                <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
                                             </td>
 
                                             <td>

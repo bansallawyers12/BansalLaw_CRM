@@ -1228,9 +1228,11 @@ function customValidate(formName, savetype = '')
                                             // Generate action link
                                             var actionLink = '';
                                             if (subArray.save_type === 'draft') {
-                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
+                                                var draftPdfUrl = "/clients/genInvoice/" + subArray.receipt_id + "/" + client_id;
+                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'" data-save-type="draft" title="Edit draft"><i class="fa-solid fa-pen"></i></a> '
+                                                    + '<a target="_blank" class="link-primary" href="'+draftPdfUrl+'" title="View draft PDF"><i class="fa-solid fa-file-pdf"></i></a>';
                                             } else if (subArray.save_type === 'final') {
-                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
+                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id + "/" + client_id;
                                                 actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
                                             }
 
@@ -1242,6 +1244,9 @@ function customValidate(formName, savetype = '')
                                                 '3': {class: 'status-void', text: 'Void'}
                                             };
                                             var statusInfo = statusMap[subArray.invoice_status] || {class: '', text: ''};
+                                            if (subArray.save_type === 'draft') {
+                                                statusInfo = {class: 'status-draft', text: 'Draft'};
+                                            }
 
                                             var trRow = "<tr class='invoiceTrRow "+trcls+"' id='"+unique_invoice_id+"'>" +
                                                 "<td>"+subArray.trans_no+" "+actionLink+"</td>" +

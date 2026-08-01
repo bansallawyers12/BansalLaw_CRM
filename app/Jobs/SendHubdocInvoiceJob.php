@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\AccountAllInvoiceReceipt;
+use App\Support\InvoiceChargeTypes;
 use PDF;
 
 class SendHubdocInvoiceJob implements ShouldQueue
@@ -61,19 +62,8 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 END"));
 
             // Get all required data for PDF generation
-            $record_get_Professional_Fee_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->count();
-            $record_get_Department_Charges_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->count();
-            $record_get_Surcharge_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->count();
-            $record_get_Disbursements_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->count();
-            $record_get_Other_Cost_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->count();
-            $record_get_Discount_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->count();
-
-            $record_get_Professional_Fee = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->get();
-            $record_get_Department_Charges = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->get();
-            $record_get_Surcharge = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->get();
-            $record_get_Disbursements = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->get();
-            $record_get_Other_Cost = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->get();
-            $record_get_Discount = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->get();
+            $invoice_charge_groups = InvoiceChargeTypes::loadGroupedLines((int) $this->invoiceId);
+            $is_draft_invoice = false;
 
             $total_Gross_Amount = AccountAllInvoiceReceipt::where('receipt_type', 3)
                 ->where('receipt_id', $this->invoiceId)
@@ -143,19 +133,8 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 'default_font' => 'Arial'
             ])->loadView('emails.geninvoice',compact(
                 ['record_get',
-                'record_get_Professional_Fee_cnt',
-                'record_get_Department_Charges_cnt',
-                'record_get_Surcharge_cnt',
-                'record_get_Disbursements_cnt',
-                'record_get_Other_Cost_cnt',
-                'record_get_Discount_cnt',
-
-                'record_get_Professional_Fee',
-                'record_get_Department_Charges',
-                'record_get_Surcharge',
-                'record_get_Disbursements',
-                'record_get_Other_Cost',
-                'record_get_Discount',
+                'invoice_charge_groups',
+                'is_draft_invoice',
 
                 'total_Gross_Amount',
                 'total_Invoice_Amount',

@@ -1454,6 +1454,7 @@ $(document).ready(function() {
         csrfToken: @json(csrf_token()),
         currentDate: @json(date('Y-m-d')),
         appId: @json(($_GET['appid'] ?? '')),
+        invoiceChargeTypes: @json(\App\Support\InvoiceChargeTypes::options()),
         // AWS Configuration for document URLs
         aws: {
             bucket: @json(env('AWS_BUCKET', '')),
