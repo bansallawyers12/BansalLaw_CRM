@@ -495,22 +495,27 @@
                                             <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                                 <?php echo $inc_val->trans_no;?> <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
+                                                <?php
+                                                $invoiceSaveType = $inc_val->save_type ?? '';
+                                                $canViewInvoicePdf = in_array($invoiceSaveType, ['final', 'draft'], true)
+                                                    || $invoiceSaveType === ''; // legacy rows without save_type
+                                                ?>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
-                                                <?php if($inc_val->save_type == 'final' || $inc_val->save_type == 'draft') { ?>
+                                                <?php if($canViewInvoicePdf) { ?>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
-                                                    <i class="fa-solid fa-eye"></i> {{ $inc_val->save_type == 'draft' ? 'View Draft PDF' : 'View Invoice' }}
+                                                    <i class="fa-solid fa-eye"></i> {{ $invoiceSaveType == 'draft' ? 'View Draft PDF' : 'View Invoice' }}
                                                 </a>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}?download=1">
-                                                    <i class="fa-solid fa-download"></i> {{ $inc_val->save_type == 'draft' ? 'Download Draft PDF' : 'Download PDF' }}
+                                                    <i class="fa-solid fa-download"></i> {{ $invoiceSaveType == 'draft' ? 'Download Draft PDF' : 'Download PDF' }}
                                                 </a>
-                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <?php if($invoiceSaveType == 'final' || $invoiceSaveType === '') { ?>
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item send-invoice-to-client" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
                                                     <i class="fa-solid fa-envelope"></i> Send to Client
                                                 </a>
                                                 <?php } ?>
                                                 <?php } ?>
-                                                <?php if($inc_val->save_type == 'draft'){ ?>
+                                                <?php if($invoiceSaveType == 'draft'){ ?>
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="draft">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit Draft Invoice
@@ -520,7 +525,7 @@
                                                 // A finalised invoice can only be amended while nothing has been
                                                 // allocated against it, otherwise the recalculated balance would
                                                 // no longer match the receipts already applied.
-                                                $isEditableFinal = $inc_val->save_type == 'final'
+                                                $isEditableFinal = ($invoiceSaveType == 'final' || $invoiceSaveType === '')
                                                     && $canEditFinalInvoices
                                                     && $inc_val->void_invoice != 1
                                                     && $inc_val->invoice_status == 0;
@@ -535,7 +540,7 @@
                                                     <i class="fa-solid fa-copy"></i> Copy Invoice #
                                                 </a>
                                                 
-                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <?php if($invoiceSaveType == 'final' || $invoiceSaveType === '') { ?>
                                                 <div class="dropdown-divider"></div>
                                                 <?php
                                                 $hubdoc_sent    = $inc_val->hubdoc_sent ?? false;

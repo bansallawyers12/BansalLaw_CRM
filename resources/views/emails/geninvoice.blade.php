@@ -236,7 +236,7 @@
                 </td>
                 <td style="text-align: right; width: 50%; vertical-align: top;">
                     @if(!empty($is_draft_invoice))
-                        <div class="draft-banner">Draft — Not Final</div>
+                        <div class="draft-banner">Draft - Not Final</div>
                     @endif
                     <h1 class="document-title">{{ !empty($is_draft_invoice) ? 'Draft Tax Invoice' : 'Tax Invoice' }}</h1>
                     <div class="document-info">

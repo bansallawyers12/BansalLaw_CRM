@@ -3186,7 +3186,7 @@ class ClientAccountsController extends Controller
 
       // ============= START CACHING LOGIC =============
 
-      $is_draft_invoice = (($receipt_entry->save_type ?? null) === 'draft')
+      $is_draft_invoice = (($receipt_entry?->save_type ?? null) === 'draft')
           || (($record_get[0]->save_type ?? null) === 'draft');
       
       // Check if PDF already exists in AWS (skip cache for drafts so edits always show)
@@ -3381,7 +3381,8 @@ class ClientAccountsController extends Controller
           ]));
           
           $pdfContent = $pdf->output();
-          $fileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+          $invoiceRef = $record_get[0]->invoice_no ?? $record_get[0]->trans_no ?? $id;
+          $fileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . $invoiceRef . '.pdf';
 
           // Draft PDFs are generated on demand — do not cache to S3 so edits always show.
           if ($is_draft_invoice) {
@@ -3451,7 +3452,7 @@ class ClientAccountsController extends Controller
            'client_matter_display'
           ]));
 
-          $pdfFileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+          $pdfFileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $record_get[0]->trans_no ?? $id) . '.pdf';
 
           if (!$is_draft_invoice) {
               try {
