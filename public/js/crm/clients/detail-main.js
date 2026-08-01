@@ -571,45 +571,63 @@ $(document).ready(function() {
 
         var redCount = toggleBtn.getAttribute('data-red-count') || '0';
 
+        var isVisible = false;
+
 
 
         function setVisible(visible) {
 
-            redTagsSection.style.display = visible ? 'inline-flex' : 'none';
+            isVisible = !!visible;
 
-            toggleBtn.classList.toggle('is-visible', visible);
+            redTagsSection.classList.toggle('is-visible', isVisible);
 
-            toggleBtn.setAttribute('aria-expanded', visible ? 'true' : 'false');
+            redTagsSection.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
 
-            toggleBtn.title = visible
+            toggleBtn.classList.toggle('is-visible', isVisible);
+
+            toggleBtn.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+
+            toggleBtn.title = isVisible
 
                 ? 'Hide ' + redCount + ' red tag' + (redCount === '1' ? '' : 's')
 
                 : 'Show ' + redCount + ' red tag' + (redCount === '1' ? '' : 's');
 
-            toggleBtn.setAttribute('aria-label', visible ? 'Hide red tags' : 'Show red tags');
+            toggleBtn.setAttribute('aria-label', isVisible ? 'Hide red tags' : 'Show red tags');
 
             var icon = toggleBtn.querySelector('i');
 
             if (icon) {
 
-                icon.className = visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+                icon.className = isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
 
             }
 
-            sessionStorage.setItem(storageKey, visible ? 'true' : 'false');
+            try {
+
+                sessionStorage.setItem(storageKey, isVisible ? 'true' : 'false');
+
+            } catch (e) { /* private mode / quota */ }
 
         }
 
 
 
-        setVisible(sessionStorage.getItem(storageKey) === 'true');
+        var storedVisible = false;
+
+        try {
+
+            storedVisible = sessionStorage.getItem(storageKey) === 'true';
+
+        } catch (e) { /* private mode */ }
+
+        setVisible(storedVisible);
 
 
 
         toggleBtn.addEventListener('click', function() {
 
-            setVisible(redTagsSection.style.display === 'none');
+            setVisible(!isVisible);
 
         });
 

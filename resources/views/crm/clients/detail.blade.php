@@ -203,7 +203,7 @@ use App\Http\Controllers\Controller;
                                 <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
                             @endif
                             @if($cdnHeroRedTagCount > 0)
-                                <span id="cdn-hero-red-tags" class="cdn-client-hero__red-tags" style="display: none;" aria-label="Red tags">
+                                <span id="cdn-hero-red-tags" class="cdn-client-hero__red-tags" aria-label="Red tags" aria-hidden="true">
                                     @foreach($cdnHeroRedTagNames as $tname)
                                         <span class="cdn-client-hero__tag cdn-client-hero__tag--red">{{ $tname }}</span>
                                     @endforeach

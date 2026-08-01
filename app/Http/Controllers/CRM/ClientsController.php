@@ -6801,10 +6801,12 @@ class ClientsController extends Controller
      * Handles the tag assignment functionality from the client detail modal
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function save_tag(Request $request)
     {
+        $wantsJson = $request->ajax() || $request->wantsJson();
+
         $request->validate([
             'client_id' => 'required|integer',
             'tag_normal' => 'nullable|array',
@@ -6822,12 +6824,12 @@ class ClientsController extends Controller
             (array) $request->input('tag_red', []),
             static fn ($v) => $v !== null && $v !== ''
         ));
-       
+
         try {
             $client = Admin::find($clientId);
 
             if (! $client || ! $client->isCrmClientOrLeadSubject()) {
-                if ($request->ajax() || $request->wantsJson()) {
+                if ($wantsJson) {
                     return response()->json(['success' => false, 'message' => 'Client not found'], 404);
                 }
 
@@ -6835,7 +6837,7 @@ class ClientsController extends Controller
             }
 
             if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
-                if ($request->ajax() || $request->wantsJson()) {
+                if ($wantsJson) {
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
 
@@ -6845,7 +6847,7 @@ class ClientsController extends Controller
             $client->tagname = ClientTagStorage::encode($normal, $red);
             $client->save();
 
-            if ($request->ajax() || $request->wantsJson()) {
+            if ($wantsJson) {
                 return response()->json(['success' => true, 'message' => 'Tags saved successfully']);
             }
 
@@ -6854,7 +6856,7 @@ class ClientsController extends Controller
         } catch (\Throwable $e) {
             Log::error('Error saving tags: ' . $e->getMessage(), ['exception' => $e]);
 
-            if ($request->ajax() || $request->wantsJson()) {
+            if ($wantsJson) {
                 return response()->json(['success' => false, 'message' => 'An error occurred while saving tags'], 500);
             }
 

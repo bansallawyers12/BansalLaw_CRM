@@ -4550,10 +4550,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .cdn-client-hero__red-tags {
-  display: inline-flex;
+  display: none;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.cdn-client-hero__red-tags.is-visible {
+  display: inline-flex;
 }
 
 .cdn-client-hero__tag-toggle-red {
