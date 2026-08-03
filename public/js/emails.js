@@ -700,21 +700,41 @@
         }, displayTime);
     }
 
+    // Match config/app.php — never use browser local TZ for email timestamps.
+    const appTimezone = (
+        (document.getElementById('outlookContainer') || {}).dataset
+        || (document.querySelector('.email-interface-container') || {}).dataset
+        || {}
+    ).appTimezone || 'Australia/Melbourne';
+
     /**
-     * Format a Date object as dd/mm/yyyy hh:mm am/pm
+     * Format a Date object as dd/mm/yyyy hh:mm am/pm in CRM timezone (Melbourne).
      */
     function formatDateFromObject(date) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        let hours = date.getHours();
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const ampm = hours >= 12 ? 'pm' : 'am';
-        hours = hours % 12;
-        if (hours === 0) {
-            hours = 12;
+        try {
+            const formatted = new Intl.DateTimeFormat('en-AU', {
+                timeZone: appTimezone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).format(date);
+            return formatted.replace(',', '').toLowerCase();
+        } catch (e) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            if (hours === 0) {
+                hours = 12;
+            }
+            return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
         }
-        return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
     }
 
     /**
@@ -748,11 +768,13 @@
      * Get the email date to display (prefers sent date over upload date)
      */
     function getEmailDate(email) {
-        // Prefer fetch_mail_sent_time (email's original sent date)
+        // Prefer original mail sent time (Melbourne-normalised) over CRM sent_at / created_at
+        if (email.fetch_mail_sent_time_display) {
+            return email.fetch_mail_sent_time_display;
+        }
         if (email.fetch_mail_sent_time) {
             return email.fetch_mail_sent_time;
         }
-        // Fallback to received_date if available
         if (email.received_date) {
             return email.received_date;
         }

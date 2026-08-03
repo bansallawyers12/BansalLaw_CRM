@@ -25,14 +25,26 @@ class EmailLog extends Authenticatable
 
     public const SYNC_SOURCE_COMPOSE = 'compose';
 
+    /** Staff drag/drop or file-picker upload of .msg/.eml onto a client. */
+    public const SYNC_SOURCE_UPLOAD = 'upload';
+
     public static function syncSourceLabel(?string $source): string
     {
         return match ($source) {
             self::SYNC_SOURCE_MANUAL => 'Manual sync',
             self::SYNC_SOURCE_CRON => 'Auto fetch',
             self::SYNC_SOURCE_COMPOSE => 'CRM sent',
+            self::SYNC_SOURCE_UPLOAD => 'Manual upload',
             default => '',
         };
+    }
+
+    /**
+     * Whether this log row came from IMAP/synced-inbox assignment (not a pure file upload).
+     */
+    public function isSyncedInboxOrigin(): bool
+    {
+        return ! empty($this->synced_email_id);
     }
 
 	protected $table = 'email_logs';

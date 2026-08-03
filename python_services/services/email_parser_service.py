@@ -16,7 +16,7 @@ from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 from email.header import decode_header
 import email
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -432,9 +432,12 @@ class EmailParserService:
         if not value:
             return None
         try:
+            from utils.datetime_format import DEFAULT_TIMEZONE, resolve_timezone
+
             parsed = parsedate_to_datetime(str(value))
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
+                # No offset on Date header → CRM local (Melbourne), not UTC.
+                parsed = parsed.replace(tzinfo=resolve_timezone(DEFAULT_TIMEZONE))
             return parsed.isoformat()
         except Exception:
             return self._safe_get(value, None)
@@ -578,11 +581,12 @@ class EmailParserService:
             except:
                 return str(value)
         elif isinstance(value, datetime):
-            # Ensure datetime is timezone-aware before converting to ISO
-            # If naive (no timezone), assume UTC to preserve the exact time
+            # Ensure datetime is timezone-aware before converting to ISO.
+            # Outlook .msg often yields naive local datetimes; treat as Melbourne
+            # (CRM timezone), not UTC, so winter AEST times are not shifted.
             if value.tzinfo is None:
-                # Naive datetime - assume UTC to preserve original time
-                value = value.replace(tzinfo=timezone.utc)
+                from utils.datetime_format import DEFAULT_TIMEZONE, resolve_timezone
+                value = value.replace(tzinfo=resolve_timezone(DEFAULT_TIMEZONE))
             return value.isoformat()
         elif isinstance(value, (int, float, bool)):
             return value

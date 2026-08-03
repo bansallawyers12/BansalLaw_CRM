@@ -80,7 +80,10 @@ return [
             'prefix' => '',
             'schema' => 'public',
             'sslmode' => 'prefer',
-            
+            // Align DB session with CRM (AEST/AEDT). Machine default can be
+            // Asia/Calcutta which shifts NOW()/casts relative to Melbourne.
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'Australia/Melbourne')),
+
             // TIER 1 OPTIMIZATION: Performance options for PostgreSQL
             'options' => extension_loaded('pdo_pgsql') ? [
                 PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false), // Connection pooling (disable in dev, enable in production)

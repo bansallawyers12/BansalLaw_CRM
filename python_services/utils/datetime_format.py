@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Optional
 
 from dateutil import tz as dateutil_tz
@@ -46,14 +46,15 @@ def parse_datetime_value(value: Any) -> Optional[datetime]:
         return None
 
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        # Naive values are CRM local wall time (Melbourne), never silent UTC.
+        dt = dt.replace(tzinfo=resolve_timezone(DEFAULT_TIMEZONE))
     return dt
 
 
 def format_laravel_datetime(value: Any, tz_name: Optional[str] = None) -> str:
     """
     Format a datetime like Laravel's d/m/Y h:i a (e.g. 25/06/2026 02:30 pm).
-    Converts from UTC/offset-aware source into the requested CRM timezone.
+    Converts from offset-aware or Melbourne-local source into the requested CRM timezone.
     """
     dt = parse_datetime_value(value)
     if dt is None:

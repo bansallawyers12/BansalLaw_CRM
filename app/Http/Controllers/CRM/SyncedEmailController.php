@@ -665,47 +665,29 @@ class SyncedEmailController extends Controller
 
 
     protected function canUnlinkSyncedEmail(int $emailLogId): bool
-
     {
-
         $staff = Auth::guard('admin')->user();
 
         if (! $staff instanceof Staff) {
-
             return false;
-
         }
-
-
 
         $emailLog = EmailLog::query()
-
             ->whereKey($emailLogId)
-
             ->whereNotNull('client_id')
-
-            ->first(['id', 'client_id']);
+            ->whereNotNull('synced_email_id')
+            ->first(['id', 'client_id', 'synced_email_id']);
 
         if (! $emailLog) {
-
             return false;
-
         }
-
-
 
         if (StaffClientVisibility::canAccessClientOrLead((int) $emailLog->client_id, $staff)) {
-
             return true;
-
         }
 
-
-
         return $staff->canSyncInboxEmails() && $this->canAccessSyncedEmail($emailLogId);
-
     }
-
 }
 
 

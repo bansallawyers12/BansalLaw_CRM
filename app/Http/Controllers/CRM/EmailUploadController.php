@@ -809,6 +809,15 @@ class EmailUploadController extends Controller
                 if (array_key_exists('mail_is_read', $syncMeta) && $syncMeta['mail_is_read'] !== null) {
                     $mailReport->mail_is_read = (bool) $syncMeta['mail_is_read'];
                 }
+            } else {
+                // Explicit pure file upload (not IMAP): no reassignment / unlink path.
+                $mailReport->synced_email_id = null;
+                $mailReport->sync_assignment_status = null;
+                $mailReport->imap_uid = null;
+                $mailReport->mailbox_email = null;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+                    $mailReport->sync_source = EmailLog::SYNC_SOURCE_UPLOAD;
+                }
             }
             
             try {
@@ -1866,33 +1875,47 @@ class EmailUploadController extends Controller
      * Never pass locale display strings (e.g. d/m/Y) to PostgreSQL — server DateStyle (MDY vs DMY) differs
      * between machines; bind proper timestamps only.
      */
-    protected function parseEmailDateTimeForStorage(string $dateString): Carbon
+    /**
+     * Parse email sent/received timestamps for DB storage as Melbourne wall time.
+     *
+     * Offset-aware values (ISO-8601 / RFC2822) are converted to the app timezone.
+     * Naive values are treated as Australia/Melbourne local time — never UTC —
+     * so Outlook/MSG and formatted dates keep the correct Melbourne clock face.
+     */
+    public function parseEmailDateTimeForStorage(string $dateString): Carbon
     {
         $dateString = trim($dateString);
-        $appTimezone = config('app.timezone', 'Australia/Melbourne');
+        $appTimezone = (string) config('app.timezone', 'Australia/Melbourne');
 
         if ($dateString === '') {
             return now($appTimezone);
         }
 
         try {
-            if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $dateString) || preg_match('/[+-]\d{2}:\d{2}$|Z$/', $dateString)) {
+            // ISO-8601 with explicit offset or Z → convert absolute instant to app TZ.
+            if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $dateString) || preg_match('/(?:[+-]\d{2}:?\d{2}|Z)$/i', $dateString)) {
                 return Carbon::parse($dateString)->timezone($appTimezone);
             }
         } catch (\Throwable $e) {
             // fall through to explicit formats
         }
 
-        $formats = ['d/m/Y h:i a', 'd/m/Y g:i a', 'd/m/Y H:i', 'Y-m-d H:i:s'];
+        // Naive wall-clock formats (MSG/exports) are CRM local time, not UTC.
+        $formats = ['d/m/Y h:i a', 'd/m/Y g:i a', 'd/m/Y H:i:s', 'd/m/Y H:i', 'Y-m-d H:i:s', 'Y-m-d H:i'];
         foreach ($formats as $fmt) {
-            $dt = \DateTime::createFromFormat($fmt, $dateString, new \DateTimeZone('UTC'));
-            if ($dt !== false) {
-                return Carbon::instance($dt)->timezone($appTimezone);
+            try {
+                $dt = Carbon::createFromFormat($fmt, $dateString, $appTimezone);
+                if ($dt instanceof Carbon) {
+                    return $dt;
+                }
+            } catch (\Throwable $e) {
+                continue;
             }
         }
 
         try {
-            return Carbon::parse($dateString, 'UTC')->timezone($appTimezone);
+            // RFC2822 etc.: honour embedded offset when present; otherwise app TZ.
+            return Carbon::parse($dateString, $appTimezone)->timezone($appTimezone);
         } catch (\Throwable $e) {
             Log::warning('Could not parse email date, using now()', ['raw' => $dateString, 'error' => $e->getMessage()]);
 

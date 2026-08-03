@@ -774,7 +774,7 @@ class IncomingEmailSyncService
             }
 
             try {
-                return \Carbon\Carbon::parse((string) $parsedData[$key]);
+                return $this->uploadController->parseEmailDateTimeForStorage((string) $parsedData[$key]);
             } catch (\Throwable) {
                 continue;
             }

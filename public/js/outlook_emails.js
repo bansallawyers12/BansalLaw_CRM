@@ -461,12 +461,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Uploaded .msg/.eml filed onto a client (not Zoho-synced).
-        const mailType = parseInt(email.mail_type, 10);
-        if (email.client_id && !email.synced_email_id && mailType === 1) {
+        // Do not treat empty assignment status as sync-origin for pure uploads.
+        if (isManualFileUploadEmail(email)) {
             return 'manual_upload';
         }
 
         return null;
+    }
+
+    /**
+     * True when the email was dragged/uploaded as .msg/.eml on a client matter,
+     * not imported via IMAP inbox sync.
+     */
+    function isManualFileUploadEmail(email) {
+        if (!email) {
+            return false;
+        }
+
+        const mailType = parseInt(email.mail_type, 10);
+        if (mailType !== 1) {
+            return false;
+        }
+
+        if (!email.client_id) {
+            return false;
+        }
+
+        // Explicit source set on file upload path (new records).
+        if (String(email.sync_source || '').trim() === 'upload') {
+            return true;
+        }
+
+        // Any positive synced-mailbox id means inbox sync origin.
+        if (hasSyncedMailboxOrigin(email)) {
+            return false;
+        }
+
+        const status = String(email.sync_assignment_status || '').trim();
+        if (status === 'auto_assigned' || status === 'manual_assigned' || status === 'unassigned') {
+            return false;
+        }
+
+        // IMAP-synced rows usually also set mailbox_email; pure uploads leave it empty.
+        if (String(email.mailbox_email || '').trim()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function hasSyncedMailboxOrigin(email) {
+        if (!email) {
+            return false;
+        }
+        const syncedId = Number(email.synced_email_id);
+        return Number.isFinite(syncedId) && syncedId > 0;
+    }
+
+    /**
+     * Reassign/Unlink is only for Zoho-synced emails that were assigned to a client.
+     * Manual .msg/.eml uploads stay on the matter and must not show "Reassign Client".
+     */
+    function canReassignSyncedEmail(email) {
+        if (!email || !email.client_id) {
+            return false;
+        }
+        if (email.can_unlink_synced_email === false) {
+            return false;
+        }
+        if (isManualFileUploadEmail(email)) {
+            return false;
+        }
+        if (!hasSyncedMailboxOrigin(email)) {
+            return false;
+        }
+        const status = String(email.sync_assignment_status || '').trim();
+        return status === 'auto_assigned'
+            || status === 'manual_assigned'
+            || status === '';
     }
 
     function renderSyncedClientBadge(email) {
@@ -3127,7 +3199,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!email) {
             return null;
         }
-        return email.sent_at || email.failed_at || email.fetch_mail_sent_time_display || email.fetch_mail_sent_time || email.received_date || email.created_at || null;
+        // Prefer pre-formatted Melbourne display from API; then original mail time;
+        // sent_at only for CRM-composed outbound (no fetch_mail_sent_time).
+        return email.fetch_mail_sent_time_display
+            || email.fetch_mail_sent_time
+            || email.sent_at
+            || email.failed_at
+            || email.received_date
+            || email.created_at
+            || null;
     }
 
     function formatFileSize(bytes) {
@@ -3708,14 +3788,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (btnUnlinkFromClient) {
-            const canUnlink = !!email.client_id
-                && email.can_unlink_synced_email !== false
-                && (
-                    email.sync_assignment_status === 'auto_assigned'
-                    || email.sync_assignment_status === 'manual_assigned'
-                    || !email.sync_assignment_status
-                );
-            btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canUnlink;
+            btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canReassignSyncedEmail(email);
         }
 
         if (assignmentReviewBanner) {

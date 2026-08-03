@@ -89,7 +89,7 @@ return [
     |
     */
 
-    'timezone' => 'Australia/Melbourne',
+    'timezone' => env('APP_TIMEZONE', 'Australia/Melbourne'),
 
     /*
     |--------------------------------------------------------------------------
