@@ -8845,8 +8845,6 @@ class ClientsController extends Controller
             $email->client_url = '';
             $email->assignment_review = $autoAssignmentReviewItems[(int) $email->id] ?? null;
             $email->can_unlink_synced_email = $email->client_id
-                && ! empty($email->synced_email_id)
-                && in_array((string) ($email->sync_assignment_status ?? ''), ['auto_assigned', 'manual_assigned', ''], true)
                 && $staff instanceof \App\Models\Staff
                 && (
                     $canSyncInbox

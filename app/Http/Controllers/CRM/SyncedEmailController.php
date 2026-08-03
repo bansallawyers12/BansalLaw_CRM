@@ -128,52 +128,29 @@ class SyncedEmailController extends Controller
 
 
 
-        if (! $this->canUnlinkSyncedEmail((int) $validated['email_log_id'])) {
-
+        if (! $this->canReassignOrUnlinkEmail((int) $validated['email_log_id'], (string) $validated['action'])) {
             return response()->json([
-
                 'success' => false,
-
-                'message' => 'Email not found or you do not have permission to unlink it.',
-
+                'message' => 'Email not found or you do not have permission to reassign it.',
             ], 403);
-
         }
-
-
 
         if ($validated['action'] === 'client') {
-
             $result = $assignmentService->assignToClient(
-
                 (int) $validated['email_log_id'],
-
                 (int) $validated['client_id'],
-
                 (int) $validated['client_matter_id'],
-
                 Auth::id(),
-
                 true
-
             );
-
         } else {
-
             $result = $assignmentService->unlinkFromClient(
-
                 (int) $validated['email_log_id'],
-
                 Auth::id()
-
             );
-
         }
 
-
-
         return response()->json($result, $result['success'] ? 200 : 422);
-
     }
 
 
@@ -666,6 +643,15 @@ class SyncedEmailController extends Controller
 
     protected function canUnlinkSyncedEmail(int $emailLogId): bool
     {
+        return $this->canReassignOrUnlinkEmail($emailLogId, 'unassigned');
+    }
+
+    /**
+     * Reassign-to-client works for any client-linked email staff can access.
+     * Move-to-Unassigned requires a Zoho-synced origin (synced_email_id).
+     */
+    protected function canReassignOrUnlinkEmail(int $emailLogId, string $action): bool
+    {
         $staff = Auth::guard('admin')->user();
 
         if (! $staff instanceof Staff) {
@@ -675,10 +661,18 @@ class SyncedEmailController extends Controller
         $emailLog = EmailLog::query()
             ->whereKey($emailLogId)
             ->whereNotNull('client_id')
-            ->whereNotNull('synced_email_id')
-            ->first(['id', 'client_id', 'synced_email_id']);
+            ->first(['id', 'client_id', 'synced_email_id', 'mail_type']);
 
         if (! $emailLog) {
+            return false;
+        }
+
+        // CRM compose / outbound is not reassigned via this endpoint.
+        if ((int) ($emailLog->mail_type ?? 0) === 2) {
+            return false;
+        }
+
+        if ($action === 'unassigned' && empty($emailLog->synced_email_id)) {
             return false;
         }
 
@@ -686,7 +680,16 @@ class SyncedEmailController extends Controller
             return true;
         }
 
-        return $staff->canSyncInboxEmails() && $this->canAccessSyncedEmail($emailLogId);
+        if (! $staff->canSyncInboxEmails()) {
+            return false;
+        }
+
+        // Sync-inbox staff may reassign/unlink rows they can see in the synced queue.
+        if (! empty($emailLog->synced_email_id)) {
+            return $this->canAccessSyncedEmail($emailLogId);
+        }
+
+        return false;
     }
 }
 

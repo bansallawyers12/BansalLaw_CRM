@@ -519,26 +519,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Reassign/Unlink is only for Zoho-synced emails that were assigned to a client.
-     * Manual .msg/.eml uploads stay on the matter and must not show "Reassign Client".
+     * Reassign Client is available for any email already linked to a client
+     * (synced or file upload). Pure CRM compose (mail_type 2) is left alone.
+     * Move-to-Unassigned is gated separately via selectedEmailCanReturnToUnassigned().
      */
-    function canReassignSyncedEmail(email) {
+    function canShowReassignClient(email) {
         if (!email || !email.client_id) {
             return false;
         }
         if (email.can_unlink_synced_email === false) {
             return false;
         }
-        if (isManualFileUploadEmail(email)) {
-            return false;
-        }
-        if (!hasSyncedMailboxOrigin(email)) {
+        // CRM-sent compose rows are not reassigned via the synced-mail flow.
+        if (parseInt(email.mail_type, 10) === 2) {
             return false;
         }
         const status = String(email.sync_assignment_status || '').trim();
+        // Allow auto/manual assigned, pure uploads (empty status), and legacy rows.
         return status === 'auto_assigned'
             || status === 'manual_assigned'
-            || status === '';
+            || status === ''
+            || status === 'unassigned'
+            || isManualFileUploadEmail(email)
+            || hasSyncedMailboxOrigin(email);
     }
 
     function renderSyncedClientBadge(email) {
@@ -3788,7 +3791,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (btnUnlinkFromClient) {
-            btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canReassignSyncedEmail(email);
+            btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canShowReassignClient(email);
         }
 
         if (assignmentReviewBanner) {
