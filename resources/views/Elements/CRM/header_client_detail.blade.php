@@ -2,14 +2,15 @@
     $_staffTop = Auth::user();
     $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff && $_staffTop->canAccessAdminConsole();
     $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
-    $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
-    $_canViewSyncedInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
+    $_inboxSyncMasterOn = \App\Services\EmailSync\InboxSyncMasterControl::isEnabled();
+    $_canSyncInboxNav = $_inboxSyncMasterOn && $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
+    $_canViewSyncedInboxNav = $_inboxSyncMasterOn && $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
     $_canViewAllSyncedInbox = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewAllSyncedInboxMail();
     $_unassignedMailCount = 0;
     if ($_canViewSyncedInboxNav && $_staffTop instanceof \App\Models\Staff) {
         $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
     }
-    $_showUnassignedNavOption = $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
+    $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">

@@ -38,10 +38,10 @@ class IncomingEmailSyncService
 
         $this->currentSyncSource = in_array($syncSource, ['manual', 'cron', 'compose'], true) ? $syncSource : 'cron';
 
-        if (! config('imap_sync.enabled', true)) {
+        if (! InboxSyncMasterControl::isEnabled()) {
             return [
                 'success' => false,
-                'message' => 'Inbox sync is disabled (MAIL_INBOX_SYNC_ENABLED=false).',
+                'message' => InboxSyncMasterControl::disabledMessage(),
                 'mailboxes' => [],
             ];
         }

@@ -17,19 +17,71 @@
 			        	@include('../Elements/CRM/setting')
 		        </div>
 				<div class="col-9 col-md-9 col-lg-9">
+					@if(!empty($canControlInboxSyncMaster))
+					@php
+						$masterOn = !empty($inboxSyncMaster['enabled']);
+					@endphp
+					<div class="card mb-3 border {{ $masterOn ? 'border-success' : 'border-danger' }}">
+						<div class="card-body py-3">
+							<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+								<div class="me-3">
+									<h5 class="mb-1">
+										<i class="fa-solid fa-toggle-{{ $masterOn ? 'on text-success' : 'off text-danger' }}"></i>
+										Inbox auto-sync (Super Admin)
+									</h5>
+									<p class="mb-0 text-muted small">
+										When <strong>OFF</strong>: cron auto-fetch stops immediately, manual Sync is blocked, and
+										Unassigned Mail is hidden from the main menu for everyone.
+										@if(!empty($inboxSyncMaster['updated_at']))
+											<br>Last changed: {{ \Carbon\Carbon::parse($inboxSyncMaster['updated_at'])->timezone(config('app.timezone'))->format('d/m/Y h:i a') }}
+										@endif
+									</p>
+								</div>
+								<div class="d-flex align-items-center gap-2">
+									<span class="badge {{ $masterOn ? 'bg-success' : 'bg-danger' }}">
+										{{ $masterOn ? 'ON' : 'OFF' }}
+									</span>
+									@if($masterOn)
+									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" onsubmit="return confirm('Turn OFF inbox auto-sync? Cron, Sync Now, and Unassigned Mail will stop for everyone.');">
+										@csrf
+										<input type="hidden" name="enabled" value="0">
+										<button type="submit" class="btn btn-outline-danger btn-sm">
+											<i class="fa-solid fa-power-off"></i> Turn off
+										</button>
+									</form>
+									@else
+									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" onsubmit="return confirm('Turn ON inbox auto-sync? Cron and Unassigned Mail will resume for eligible staff.');">
+										@csrf
+										<input type="hidden" name="enabled" value="1">
+										<button type="submit" class="btn btn-success btn-sm">
+											<i class="fa-solid fa-plug"></i> Turn on
+										</button>
+									</form>
+									@endif
+								</div>
+							</div>
+						</div>
+					</div>
+					@endif
+
 					<div class="card">
 						<div class="card-header">
 							<h4>All Emails</h4>
 							<div class="card-header-action">
 								<form method="POST" action="{{ route('adminconsole.features.emails.sync-now') }}" class="d-inline">
 									@csrf
-									<button type="submit" class="btn btn-primary btn-sm">
+									<button type="submit" class="btn btn-primary btn-sm" @if(empty($inboxSyncMaster['enabled']) && !empty($canControlInboxSyncMaster)) disabled title="Inbox auto-sync is OFF" @elseif(isset($inboxSyncMaster) && empty($inboxSyncMaster['enabled'])) disabled title="Inbox auto-sync is OFF" @endif>
 										<i class="fa-solid fa-rotate"></i> Sync All Inboxes Now
 									</button>
 								</form>
 							</div>
 						</div>
 						<div class="card-body">
+							@if(isset($inboxSyncMaster) && empty($inboxSyncMaster['enabled']))
+							<div class="alert alert-warning mb-3 py-2 small">
+								Inbox auto-sync is currently OFF. Use the Super Admin control above to turn it back on.
+							</div>
+							@endif
 							<div class="table-responsive common_table">
 								<table class="table text_wrap">
 								<thead>

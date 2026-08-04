@@ -20,8 +20,8 @@ class SyncInboxEmails extends Command
     {
         IncomingEmailSyncService::configureSyncRuntime();
 
-        if (! config('imap_sync.enabled', true)) {
-            $this->warn('Inbox sync is disabled. Set MAIL_INBOX_SYNC_ENABLED=true to enable.');
+        if (! \App\Services\EmailSync\InboxSyncMasterControl::isEnabled()) {
+            $this->warn(\App\Services\EmailSync\InboxSyncMasterControl::disabledMessage());
 
             return self::SUCCESS;
         }

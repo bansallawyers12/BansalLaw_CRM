@@ -128,8 +128,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
 
-        // Automatic inbox fetch every N minutes (default 5). No nightly full sync.
-        if (config('imap_sync.enabled', true)) {
+        // Automatic inbox fetch every N minutes (default 5). Super Admin master
+        // switch can turn this off immediately (checked at every schedule:run).
+        if (\App\Services\EmailSync\InboxSyncMasterControl::isEnabled()) {
             $minutes = max(1, (int) config('imap_sync.schedule_minutes', 5));
             $mailboxes = $this->syncEnabledMailboxes();
 

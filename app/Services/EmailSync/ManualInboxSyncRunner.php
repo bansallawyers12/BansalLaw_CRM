@@ -17,6 +17,17 @@ class ManualInboxSyncRunner
      */
     public function prepare(Staff $staff, string $syncRange, string $email = ''): array
     {
+        if (InboxSyncMasterControl::isDisabled()) {
+            return [
+                'success' => false,
+                'message' => InboxSyncMasterControl::disabledMessage(),
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => 0,
+            ];
+        }
+
         $syncRange = strtolower(trim($syncRange));
         $email = strtolower(trim($email));
 

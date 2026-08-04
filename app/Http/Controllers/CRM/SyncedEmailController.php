@@ -156,35 +156,29 @@ class SyncedEmailController extends Controller
 
 
     public function unassignedIndex()
-
     {
+        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+            return redirect()->route('dashboard')->with(
+                'error',
+                \App\Services\EmailSync\InboxSyncMasterControl::disabledMessage()
+            );
+        }
 
         $staff = Auth::guard('admin')->user();
 
         if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
-
             abort(403, 'You do not have permission to view unassigned synced emails.');
-
         }
 
-
-
         if (! $staff->canViewAllSyncedInboxMail()) {
-
             $unassignedCount = IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff);
 
             if ($unassignedCount === 0) {
-
                 return redirect()->route('dashboard')->with('error', 'You currently have no unassigned emails.');
-
             }
-
         }
 
-
-
         return view('crm.unassigned_emails.index');
-
     }
 
 
@@ -210,35 +204,29 @@ class SyncedEmailController extends Controller
 
 
     public function unassignedCount()
-
     {
+        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+            return response()->json([
+                'success' => true,
+                'count' => 0,
+                'disabled' => true,
+            ]);
+        }
 
         $staff = Auth::guard('admin')->user();
 
         if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'You do not have permission to view unassigned synced emails.',
-
                 'count' => 0,
-
             ], 403);
-
         }
 
-
-
         return response()->json([
-
             'success' => true,
-
             'count' => IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff),
-
         ]);
-
     }
 
 

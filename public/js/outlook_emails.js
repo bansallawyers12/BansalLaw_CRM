@@ -400,26 +400,113 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasIndicator = emailHasCalendarIndicator(email);
         if (!hasIndicator) {
             bannerEl.hidden = true;
+            bannerEl.classList.remove('email-calendar-banner--expanded', 'email-calendar-banner--compact');
             bannerEl.innerHTML = '';
             return;
         }
 
         const events = Array.isArray(calendar.events) ? calendar.events : [];
-        let html = '<div class="email-calendar-banner__header">'
-            + '<i class="fa-solid fa-calendar-check" aria-hidden="true"></i>'
-            + '<strong>Calendar</strong>'
-            + '</div>';
+        const mergedCount = Number(calendar.merged_count || 0);
+        const pendingCount = Number(calendar.pending_count || 0);
+        const totalCount = Number(calendar.count || events.length || 0) || events.length;
+
+        const summaryBits = [];
+        if (mergedCount > 0) {
+            summaryBits.push(mergedCount + ' added to calendar');
+        }
+        if (pendingCount > 0) {
+            summaryBits.push(pendingCount + ' awaiting assignment');
+        }
+        if (summaryBits.length === 0 && totalCount > 0) {
+            summaryBits.push(totalCount + ' event' + (totalCount === 1 ? '' : 's'));
+        }
+        if (summaryBits.length === 0) {
+            summaryBits.push('Calendar invite detected');
+        }
+
+        // Compact summary keeps the reading pane focused on the email body.
+        // Event details are available on demand so long lists cannot fill the preview.
+        let html = ''
+            + '<div class="email-calendar-banner__summary">'
+            + '  <div class="email-calendar-banner__summary-main">'
+            + '    <span class="email-calendar-banner__icon" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>'
+            + '    <div class="email-calendar-banner__summary-text">'
+            + '      <strong>Calendar</strong>'
+            + '      <span class="email-calendar-banner__summary-meta">' + escapeHtml(summaryBits.join(' · ')) + '</span>'
+            + '    </div>'
+            + '  </div>';
 
         if (events.length > 0) {
+            html += ''
+                + '  <button type="button" class="email-calendar-banner__toggle" aria-expanded="false" aria-controls="readCalendarBannerDetails">'
+                + '    <span class="email-calendar-banner__toggle-label">Show ' + events.length + ' event' + (events.length === 1 ? '' : 's') + '</span>'
+                + '    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>'
+                + '  </button>';
+        }
+
+        html += '</div>';
+
+        if (events.length > 0) {
+            html += '<div class="email-calendar-banner__details" id="readCalendarBannerDetails" hidden>';
             html += '<ul class="email-calendar-banner__list">';
-            events.forEach((ev) => {
-                html += '<li><i class="fa-solid fa-clock"></i> ' + escapeHtml(ev.title || 'Event') + ' (' + escapeHtml(ev.status || '') + ')</li>';
+            events.forEach(function (ev) {
+                const title = (ev.event_title || ev.title || formatCalendarEventType(ev.event_type) || 'Event').trim();
+                const when = String(ev.starts_at || '').trim();
+                const where = String(ev.location || '').trim();
+                const status = String(ev.status || '').toLowerCase();
+                const statusLabel = status === 'merged'
+                    ? 'Added'
+                    : (status === 'pending' ? 'Pending' : (status || ''));
+                const statusClass = status === 'merged'
+                    ? ' email-calendar-banner__status--merged'
+                    : (status === 'pending' ? ' email-calendar-banner__status--pending' : '');
+
+                html += '<li class="email-calendar-banner__item">';
+                html += '  <div class="email-calendar-banner__item-main">';
+                html += '    <div class="email-calendar-banner__title">' + escapeHtml(title) + '</div>';
+                if (when) {
+                    html += '    <div class="email-calendar-banner__when"><i class="fa-solid fa-clock" aria-hidden="true"></i> ' + escapeHtml(when) + '</div>';
+                }
+                if (where) {
+                    html += '    <div class="email-calendar-banner__where"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ' + escapeHtml(where) + '</div>';
+                }
+                html += '  </div>';
+                if (statusLabel) {
+                    html += '  <span class="email-calendar-banner__status' + statusClass + '">' + escapeHtml(statusLabel) + '</span>';
+                }
+                html += '</li>';
             });
-            html += '</ul>';
+            html += '</ul></div>';
         }
 
         bannerEl.hidden = false;
+        bannerEl.classList.add('email-calendar-banner--compact');
+        bannerEl.classList.remove('email-calendar-banner--expanded');
         bannerEl.innerHTML = html;
+
+        const toggle = bannerEl.querySelector('.email-calendar-banner__toggle');
+        const details = bannerEl.querySelector('.email-calendar-banner__details');
+        if (toggle && details) {
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const opening = details.hidden;
+                details.hidden = !opening;
+                toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+                const label = toggle.querySelector('.email-calendar-banner__toggle-label');
+                if (label) {
+                    label.textContent = opening
+                        ? 'Hide events'
+                        : ('Show ' + events.length + ' event' + (events.length === 1 ? '' : 's'));
+                }
+                const icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-chevron-down', !opening);
+                    icon.classList.toggle('fa-chevron-up', opening);
+                }
+                bannerEl.classList.toggle('email-calendar-banner--expanded', opening);
+            });
+        }
     }
 
     function renderSyncSourceBadge(email) {

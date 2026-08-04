@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
+use App\Services\EmailSync\InboxSyncMasterControl;
 use App\Services\StaffMailboxService;
 
 use Auth;
@@ -81,7 +82,16 @@ class EmailController extends Controller
 
 		$totalData = count($lists);
 
-		return view('AdminConsole.features.emails.index', compact(['lists', 'totalData']));
+		$staff = Auth::guard('admin')->user();
+		$canControlInboxSyncMaster = $staff instanceof Staff && InboxSyncMasterControl::canControl($staff);
+		$inboxSyncMaster = InboxSyncMasterControl::statusPayload();
+
+		return view('AdminConsole.features.emails.index', compact([
+			'lists',
+			'totalData',
+			'canControlInboxSyncMaster',
+			'inboxSyncMaster',
+		]));
 
 		//return view('AdminConsole\.features\.producttype.index');
 	}
@@ -212,6 +222,15 @@ class EmailController extends Controller
 
 	public function syncNow(Request $request, \App\Services\EmailSync\IncomingEmailSyncService $syncService)
 	{
+		if (InboxSyncMasterControl::isDisabled()) {
+			$message = InboxSyncMasterControl::disabledMessage();
+			if ($request->expectsJson()) {
+				return response()->json(['success' => false, 'message' => $message], 403);
+			}
+
+			return redirect()->route('adminconsole.features.emails.index')->with('error', $message);
+		}
+
 		$email = trim((string) $request->input('email', ''));
 		$summary = $syncService->syncAll($email !== '' ? $email : null);
 
@@ -225,6 +244,47 @@ class EmailController extends Controller
 			(int) ($summary['total_skipped'] ?? 0),
 			(int) ($summary['total_failed'] ?? 0)
 		);
+
+		return redirect()->route('adminconsole.features.emails.index')->with('success', $message);
+	}
+
+	/**
+	 * Super Admin only: turn global Zoho inbox sync (cron + manual + Unassigned) on/off.
+	 * Takes effect immediately without redeploy or config:cache.
+	 */
+	public function updateInboxSyncMaster(Request $request)
+	{
+		$staff = Auth::guard('admin')->user();
+		if (! InboxSyncMasterControl::canControl($staff instanceof Staff ? $staff : null)) {
+			if ($request->expectsJson()) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Only Super Admin can change the inbox sync master switch.',
+				], 403);
+			}
+
+			return redirect()->route('adminconsole.features.emails.index')
+				->with('error', 'Only Super Admin can change the inbox sync master switch.');
+		}
+
+		$validated = $request->validate([
+			'enabled' => 'required|boolean',
+		]);
+
+		$enabled = (bool) $validated['enabled'];
+		InboxSyncMasterControl::setEnabled($enabled, $staff instanceof Staff ? $staff : null);
+
+		$message = $enabled
+			? 'Inbox auto-sync is ON. Cron and manual sync will run again; Unassigned Mail is available in the menu.'
+			: 'Inbox auto-sync is OFF. Cron, manual sync, and Unassigned Mail are stopped until Super Admin turns it back on.';
+
+		if ($request->expectsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => $message,
+				'status' => InboxSyncMasterControl::statusPayload(),
+			]);
+		}
 
 		return redirect()->route('adminconsole.features.emails.index')->with('success', $message);
 	}

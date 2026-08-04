@@ -401,6 +401,10 @@ class Staff extends Authenticatable
      */
     public function canSyncInboxEmails(): bool
     {
+        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+            return false;
+        }
+
         if (in_array((int) ($this->role ?? 0), self::inboxSyncGrantRoleIds(), true)) {
             return true;
         }
@@ -457,9 +461,14 @@ class Staff extends Authenticatable
     /**
      * Any staff with an email may open synced inbox views; non-Super Admin
      * lists are filtered to their To/Cc/Bcc recipients.
+     * Fully disabled when Super Admin turns off the global inbox-sync master switch.
      */
     public function canViewSyncedInboxMail(): bool
     {
+        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+            return false;
+        }
+
         return trim((string) ($this->email ?? '')) !== '';
     }
 
