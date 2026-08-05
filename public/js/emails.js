@@ -1527,6 +1527,7 @@
         const from = email.from_mail || 'Unknown sender';
         const to = cleanRecipients(email.to_mail) || 'Unknown recipient';
         const cc = cleanRecipients(email.cc);
+        const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));
         const isRead = email.mail_is_read == 1;
 
@@ -1562,6 +1563,7 @@
             <div class="email-sender">From: ${escapeHtml(from)}</div>
             <div class="email-sender" style="font-size: 12px; color: #999;">To: ${escapeHtml(to)}</div>
             ${cc ? `<div class="email-sender" style="font-size: 12px; color: #999;">Cc: ${escapeHtml(cc)}</div>` : ''}
+            ${bcc ? `<div class="email-sender" style="font-size: 12px; color: #999;">Bcc: ${escapeHtml(bcc)}</div>` : ''}
             <div class="email-badges">
                 ${labelBadges}
             </div>
@@ -1677,6 +1679,7 @@
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
         const cc = cleanRecipients(email.cc);
+        const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));
 
         // Get all attachments (including inline) - show all so users can download important files like payment receipts
@@ -1777,6 +1780,7 @@
                             <span class="gmail-to-label">to</span>
                             <span class="gmail-to-value">${escapeHtml(to)}</span>
                             ${cc ? `<span class="gmail-cc-label">cc</span><span class="gmail-cc-value">${escapeHtml(cc)}</span>` : ''}
+                            ${bcc ? `<span class="gmail-cc-label">bcc</span><span class="gmail-cc-value">${escapeHtml(bcc)}</span>` : ''}
                             <button class="gmail-details-toggle" onclick="this.closest('.gmail-header').querySelector('.gmail-details-expanded').classList.toggle('show')">
                                 <i class="fa-solid fa-chevron-down"></i>
                             </button>
@@ -1785,6 +1789,7 @@
                             <div class="gmail-detail-line"><strong>From:</strong> ${escapeHtml(from)}</div>
                             <div class="gmail-detail-line"><strong>To:</strong> ${escapeHtml(to)}</div>
                             ${cc ? `<div class="gmail-detail-line"><strong>Cc:</strong> ${escapeHtml(cc)}</div>` : ''}
+                            ${bcc ? `<div class="gmail-detail-line"><strong>Bcc:</strong> ${escapeHtml(bcc)}</div>` : ''}
                             <div class="gmail-detail-line"><strong>Date:</strong> ${date}</div>
                         </div>
                     </div>
@@ -2143,6 +2148,7 @@
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
         const cc = cleanRecipients(email.cc);
+        const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));
         const subject = email.subject || '(No subject)';
         const message = email.text_preview || '(No content)';
@@ -2156,6 +2162,9 @@
             quotedText += 'To: ' + to + '\n';
             if (cc) {
                 quotedText += 'Cc: ' + cc + '\n';
+            }
+            if (bcc) {
+                quotedText += 'Bcc: ' + bcc + '\n';
             }
             quotedText += 'Date: ' + date + '\n';
             quotedText += 'Subject: ' + subject + '\n\n';

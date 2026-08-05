@@ -195,6 +195,7 @@ class EmailRendererService:
         sent_date = email_data.get('sent_date', '')
         recipients = email_data.get('to_recipients') or email_data.get('recipients', [])
         cc_recipients = email_data.get('cc_recipients', [])
+        bcc_recipients = email_data.get('bcc_recipients', [])
         
         formatted_date = self._format_sent_date(sent_date, display_timezone) if sent_date else ''
         
@@ -289,6 +290,7 @@ class EmailRendererService:
                 <strong>From:</strong> {self._escape_html(sender_name or sender_email)}<br>
                 {f'<strong>To:</strong> {", ".join([self._escape_html(r) for r in recipients[:8]])}' if recipients else ''}
                 {f'<br><strong>Cc:</strong> {", ".join([self._escape_html(r) for r in cc_recipients[:8]])}' if cc_recipients else ''}
+                {f'<br><strong>Bcc:</strong> {", ".join([self._escape_html(r) for r in bcc_recipients[:8]])}' if bcc_recipients else ''}
                 {f'<br><strong>Date:</strong> {formatted_date}' if formatted_date else ''}
             </div>
         </div>
@@ -677,6 +679,7 @@ class EmailRendererService:
         sender = str(email_data.get('sender_name') or email_data.get('sender_email') or '').strip()
         recipients = email_data.get('to_recipients') or email_data.get('recipients') or []
         cc_recipients = email_data.get('cc_recipients') or []
+        bcc_recipients = email_data.get('bcc_recipients') or []
         sent_date = str(email_data.get('sent_date') or '').strip()
 
         body_text = str(text_preview or email_data.get('text_content') or '').strip()
@@ -738,6 +741,9 @@ class EmailRendererService:
         if cc_recipients:
             cc_line = ', '.join(str(r) for r in cc_recipients[:8])
             story.append(Paragraph(f'<b>Cc:</b> {self._escape_reportlab(cc_line)}', meta_style))
+        if bcc_recipients:
+            bcc_line = ', '.join(str(r) for r in bcc_recipients[:8])
+            story.append(Paragraph(f'<b>Bcc:</b> {self._escape_reportlab(bcc_line)}', meta_style))
         if sent_date:
             formatted_date = self._format_sent_date(sent_date, display_timezone)
             story.append(Paragraph(f'<b>Date:</b> {self._escape_reportlab(formatted_date)}', meta_style))

@@ -4333,6 +4333,9 @@ class ClientsController extends Controller
                 // Add preview_url to the array
                 $emailArray['preview_url'] = $previewUrl;
                 $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
+                $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
+                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? null);
+                $emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? null);
                 
                 return $emailArray;
             });
@@ -4606,6 +4609,8 @@ class ClientsController extends Controller
 				$emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
 				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
 				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
+				$emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? null);
+				$emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? null);
 				$emailArray['subject'] = $emailArray['subject'] ?? '';
 				$emailArray['message'] = $emailArray['message'] ?? '';
 				
@@ -4737,6 +4742,8 @@ class ClientsController extends Controller
                 $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
                 $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
                 $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? 'lead');
+                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? 'lead');
+                $emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? 'lead');
                 $emailArray['subject'] = $emailArray['subject'] ?? '';
                 $emailArray['message'] = $emailArray['message'] ?? '';
                 return $emailArray;

@@ -1048,7 +1048,8 @@ body, html {
     margin-top: 2px;
 }
 
-.meta-cc {
+.meta-cc,
+.meta-bcc {
     color: #64748b;
 }
 

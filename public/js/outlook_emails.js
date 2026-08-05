@@ -3819,17 +3819,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const readToEl = document.getElementById('readTo');
         const readCcEl = document.getElementById('readCc');
+        const readBccEl = document.getElementById('readBcc');
+        const cleanedTo = cleanRecipients(email.to_mail) || 'Unknown';
         const toLine = formatRecipientLine('To', email.to_mail);
+        const ccLine = formatRecipientLine('Cc', email.cc);
+        const bccLine = formatRecipientLine('Bcc', email.bcc);
+
         if (isGmailUiMode()) {
-            readToEl.innerHTML = '<span class="gmail-to-me">to me <i class="fa-solid fa-caret-down" aria-hidden="true"></i></span>';
-            readToEl.title = toLine || 'To: Unknown';
+            // Show actual To addresses (with caret for tooltip of full header lines).
+            readToEl.innerHTML = '<span class="gmail-to-me">to ' + escapeHtml(cleanedTo)
+                + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></span>';
+            const tooltipParts = [toLine || ('To: ' + cleanedTo)];
+            if (ccLine) {
+                tooltipParts.push(ccLine);
+            }
+            if (bccLine) {
+                tooltipParts.push(bccLine);
+            }
+            readToEl.title = tooltipParts.join('\n');
         } else {
             readToEl.textContent = toLine || 'To: Unknown';
             readToEl.removeAttribute('title');
         }
 
         if (readCcEl) {
-            const ccLine = formatRecipientLine('Cc', email.cc);
             if (ccLine) {
                 readCcEl.textContent = ccLine;
                 readCcEl.hidden = false;
@@ -3839,9 +3852,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        const readBccEl = document.getElementById('readBcc');
+        // Bcc only when present (privacy-friendly: hidden when empty / unknown).
         if (readBccEl) {
-            const bccLine = formatRecipientLine('Bcc', email.bcc);
             if (bccLine) {
                 readBccEl.textContent = bccLine;
                 readBccEl.hidden = false;
@@ -4099,12 +4111,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function buildQuoteHtml(email, action, emailHtml) {
         const emailDate = formatEmailDate(getEmailDate(email));
         const ccLine = cleanRecipients(email.cc);
+        const bccLine = cleanRecipients(email.bcc);
         if (action === 'forward') {
             let header = '---------- Forwarded message ---------<br>From: <strong>' +
                 escapeHtml(email.from_mail) + '</strong><br>Date: ' + escapeHtml(emailDate) +
                 '<br>Subject: ' + escapeHtml(email.subject);
             if (ccLine) {
                 header += '<br>Cc: ' + escapeHtml(ccLine);
+            }
+            if (bccLine) {
+                header += '<br>Bcc: ' + escapeHtml(bccLine);
             }
             return '<br><br><div dir="ltr">' + header +
                 '</div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
@@ -4118,6 +4134,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (ccLine) {
             header += '<br><b>Cc:</b> ' + escapeHtml(ccLine);
+        }
+        if (bccLine) {
+            header += '<br><b>Bcc:</b> ' + escapeHtml(bccLine);
         }
         return '<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
             header + '<br><br>' + emailHtml + '</blockquote>';
