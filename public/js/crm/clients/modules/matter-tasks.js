@@ -1,6 +1,6 @@
 /**
- * Client-scoped task list on client detail Tasks tab (not filtered by selected matter).
- * Requires: jQuery, ClientDetailConfig.urls.matterTask*, clientId, csrfToken
+ * Matter-scoped task list on client detail Tasks tab.
+ * Requires: jQuery, ClientDetailConfig.urls.matterTask*, clientId, clientMatterId, csrfToken
  */
 (function ($) {
     'use strict';
@@ -24,6 +24,18 @@
     function clientId() {
         var id = cfg().clientId;
         return id !== undefined && id !== null && String(id) !== '' ? String(id) : null;
+    }
+
+    function matterId() {
+        var shared = window.ClientDetailShared;
+        if (shared && typeof shared.getSelectedClientDetailMatterId === 'function') {
+            var selected = shared.getSelectedClientDetailMatterId();
+            var selectedId = safeId(selected);
+            if (selectedId) {
+                return selectedId;
+            }
+        }
+        return safeId(cfg().clientMatterId);
     }
 
     function csrf() {
@@ -115,8 +127,9 @@
             return;
         }
         var cid = clientId();
+        var mid = matterId();
         var storeUrl = urlMap().matterTaskStore;
-        var unlocked = !!(cid && storeUrl);
+        var unlocked = !!(cid && mid && storeUrl);
         var busy = $wrap.hasClass('cdn-matter-tasks--busy');
         $inp.prop('disabled', !unlocked || busy);
         $btn.prop('disabled', !unlocked || busy);
@@ -278,7 +291,7 @@
                 '<div class="cdn-matter-task__empty">' +
                     '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>' +
                     '<p class="cdn-matter-task__empty-title">No tasks yet</p>' +
-                    '<p class="cdn-matter-task__empty-hint">Add a task above. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
+                    '<p class="cdn-matter-task__empty-hint">Add a task for this matter. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
                     '</div>'
             );
         }
@@ -381,10 +394,18 @@
         }
 
         var cid = clientId();
+        var mid = matterId();
         var $list = $wrap.find('.cdn-matter-task__list');
 
         if (!cid) {
             $list.html(statusBlock('muted', '<p class="small mb-0">Unable to load tasks for this record.</p>'));
+            updateStats(0, 0);
+            syncComposerLock();
+            return;
+        }
+
+        if (!mid) {
+            $list.html(statusBlock('muted', '<p class="small mb-0">Select a matter to view its tasks.</p>'));
             updateStats(0, 0);
             syncComposerLock();
             return;
@@ -405,7 +426,7 @@
             url: indexUrl,
             type: 'GET',
             dataType: 'json',
-            data: { client_id: cid },
+            data: { client_id: cid, matter_id: mid },
             complete: function () {
                 syncComposerLock();
             },
@@ -460,9 +481,10 @@
                 return;
             }
             var cid = clientId();
+            var mid = matterId();
             var storeUrl = urlMap().matterTaskStore;
-            if (!cid || !storeUrl) {
-                notifyError('Unable to add a task for this record.');
+            if (!cid || !mid || !storeUrl) {
+                notifyError(!mid ? 'Select a matter before adding a task.' : 'Unable to add a task for this record.');
                 return;
             }
 
@@ -480,6 +502,7 @@
                 },
                 data: {
                     client_id: cid,
+                    matter_id: mid,
                     title: title,
                     _token: csrf()
                 },
