@@ -4,95 +4,242 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
+<link rel="stylesheet" href="{{ asset('css/other-parties-list.css') }}?v={{ @filemtime(public_path('css/other-parties-list.css')) ?: time() }}">
 @endsection
 
 @section('content')
-<div class="listing-container">
-    <section class="listing-section" style="padding-top: 40px;">
+@php
+    $opFilters = collect([
+        'client_id' => request('client_id'),
+        'name' => request('name'),
+        'email' => request('email'),
+        'phone' => request('phone'),
+    ]);
+    $activeOpFilters = $opFilters->filter(fn ($value) => $value !== null && $value !== '')->count();
+    $totalCount = method_exists($lists, 'total') ? $lists->total() : (int) ($totalData ?? 0);
+    $shownCount = method_exists($lists, 'count') ? $lists->count() : (is_countable($lists) ? count($lists) : 0);
+@endphp
+
+<div class="listing-container other-parties-listing">
+    <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
 
             <div class="card">
                 <div class="card-header">
-                    <h4>Other Parties</h4>
-                    <div class="card-header-actions">
-                        <a href="{{ route('leads.create', ['other_party' => 1]) }}" class="btn btn-primary">Create Other Party</a>
-                        <select name="per_page" id="per_page" class="form-control per-page-select" style="max-width:120px;">
-                            @foreach([10, 20, 50, 100] as $option)
-                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }} / page</option>
-                            @endforeach
-                        </select>
+                    <div class="op-page-header">
+                        <div class="op-page-header__title">
+                            <span class="op-page-header__icon" aria-hidden="true">
+                                <i class="fa-solid fa-user-tag"></i>
+                            </span>
+                            <div>
+                                <h4>Other Parties</h4>
+                                <p class="op-page-header__subtitle">
+                                    {{ number_format($totalCount) }} {{ Str::plural('party', $totalCount) }}
+                                    &middot; Conflicts, opposing parties and related contacts
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card-header-actions">
+                            <div class="per-page-wrap">
+                                <label for="per_page">Show</label>
+                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
+                                    @foreach([10, 20, 50, 100] as $option)
+                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeOpFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
+                                <i class="fa-solid fa-filter"></i> Filter
+                                @if($activeOpFilters > 0)
+                                    <span class="filter-count-badge">{{ $activeOpFilters }}</span>
+                                @endif
+                            </a>
+                            <a href="{{ route('leads.create', ['other_party' => 1]) }}" class="btn btn-theme btn-theme-sm">
+                                <i class="fa-solid fa-user-plus"></i> Create Other Party
+                            </a>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <ul class="nav nav-pills mb-3">
-                        <li class="nav-item"><a class="nav-link" href="{{ URL::to('/clients') }}">Clients</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ URL::to('/leads') }}">Leads</a></li>
-                        <li class="nav-item"><a class="nav-link active" href="{{ route('leads.other_parties.index') }}">Other Parties</a></li>
-                    </ul>
+                    <div class="op-toolbar">
+                        <ul class="op-tabs nav" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ URL::to('/clients') }}">Clients</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ URL::to('/leads') }}">Leads</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="{{ route('leads.other_parties.index') }}" aria-current="page">Other Parties</a>
+                            </li>
+                        </ul>
+                    </div>
 
-                    <form action="{{ route('leads.other_parties.index') }}" method="get" class="mb-3">
-                        <div class="row g-2">
-                            <div class="col-md-3">
-                                <input type="text" name="client_id" class="form-control" placeholder="ID ref" value="{{ request('client_id') }}">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" name="name" class="form-control" placeholder="Name" value="{{ request('name') }}">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" name="email" class="form-control" placeholder="Email" value="{{ request('email') }}">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" name="phone" class="form-control" placeholder="Phone" value="{{ request('phone') }}">
-                            </div>
+                    <div class="filter_panel{{ $activeOpFilters > 0 ? ' is-open' : '' }}" id="opFilterPanel">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <h4 class="mb-0">
+                                Filter other parties
+                                @if($activeOpFilters > 0)
+                                    <span class="active-filters-badge">
+                                        <i class="fa-solid fa-filter"></i> {{ $activeOpFilters }} active
+                                    </span>
+                                @endif
+                            </h4>
+                            @if($activeOpFilters > 0)
+                                <a href="{{ route('leads.other_parties.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fa-solid fa-rotate-left"></i> Clear filters
+                                </a>
+                            @endif
                         </div>
-                        <div class="mt-2">
-                            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                            <a href="{{ route('leads.other_parties.index') }}" class="btn btn-secondary btn-sm">Reset</a>
-                        </div>
-                    </form>
+
+                        <form action="{{ route('leads.other_parties.index') }}" method="get" id="opFilterForm">
+                            @if(request()->filled('per_page'))
+                                <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+                            @endif
+                            <div class="row g-3">
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label for="op_client_id">ID ref</label>
+                                        <input type="text" name="client_id" id="op_client_id" class="form-control" placeholder="e.g. RANS2600117" value="{{ request('client_id') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label for="op_name">Name</label>
+                                        <input type="text" name="name" id="op_name" class="form-control" placeholder="First or last name" value="{{ request('name') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label for="op_email">Email</label>
+                                        <input type="text" name="email" id="op_email" class="form-control" placeholder="email@example.com" value="{{ request('email') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label for="op_phone">Phone</label>
+                                        <input type="text" name="phone" id="op_phone" class="form-control" placeholder="Phone number" value="{{ request('phone') }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="filter-actions mt-3">
+                                <button type="submit" class="btn btn-theme btn-theme-sm">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Apply filters
+                                </button>
+                                <a href="{{ route('leads.other_parties.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="op-results-bar">
+                        <span>
+                            Showing <strong>{{ number_format($shownCount) }}</strong>
+                            of <strong>{{ number_format($totalCount) }}</strong>
+                        </span>
+                        @if($activeOpFilters > 0)
+                            <span class="op-results-bar__filtered">
+                                <i class="fa-solid fa-filter"></i> Filtered
+                            </span>
+                        @endif
+                    </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>@sortablelink('first_name', 'Name')</th>
+                                    <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
                                     <th>Ref</th>
                                     <th>Phone</th>
                                     <th>Email</th>
-                                    <th>@sortablelink('created_at', 'Created')</th>
-                                    <th>Actions</th>
+                                    <th class="sortable-header">@sortablelink('created_at', 'Created')</th>
+                                    <th style="width: 72px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($lists as $list)
+                                    @php
+                                        $fullName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                                        $detailUrl = route('clients.detail', base64_encode(convert_uuencode($list->id)));
+                                        $editUrl = route('clients.edit', base64_encode(convert_uuencode($list->id)));
+                                    @endphp
                                     <tr>
                                         <td>
-                                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($list->id))) }}">
-                                                {{ $list->first_name }} {{ $list->last_name }}
+                                            <a href="{{ $detailUrl }}" class="op-name-link" title="Open {{ $fullName }}">
+                                                {{ $fullName !== '' ? $fullName : '—' }}
                                             </a>
                                         </td>
-                                        <td>{{ $list->client_id }}</td>
-                                        <td>{{ $list->phone ?: '—' }}</td>
-                                        <td>{{ $list->email ?: '—' }}</td>
-                                        <td>{{ $list->created_at ? $list->created_at->format('d/m/Y') : '—' }}</td>
                                         <td>
-                                            <a href="{{ route('clients.edit', base64_encode(convert_uuencode($list->id))) }}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                                <i class="fa-solid fa-pen"></i>
-                                            </a>
+                                            @if(!empty($list->client_id))
+                                                <span class="op-ref">{{ $list->client_id }}</span>
+                                            @else
+                                                <span class="op-contact__muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if(!empty($list->phone))
+                                                <span class="op-contact">{{ $list->phone }}</span>
+                                            @else
+                                                <span class="op-contact__muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if(!empty($list->email))
+                                                <a href="mailto:{{ $list->email }}" class="op-name-link" style="font-weight: 500;">{{ $list->email }}</a>
+                                            @else
+                                                <span class="op-contact__muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="op-date">{{ $list->created_at ? $list->created_at->format('d/m/Y') : '—' }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="op-actions">
+                                                <a href="{{ $editUrl }}" class="op-action-btn" title="Edit">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-muted text-center py-4">No other parties found.</td></tr>
+                                    <tr>
+                                        <td colspan="6" class="op-empty">
+                                            <div class="op-empty__inner">
+                                                <i class="fa-solid fa-user-tag" aria-hidden="true"></i>
+                                                <strong>No other parties found</strong>
+                                                <span>
+                                                    @if($activeOpFilters > 0)
+                                                        Try clearing filters or adjust your search.
+                                                    @else
+                                                        Create an other party to use in conflict checks and matter roles.
+                                                    @endif
+                                                </span>
+                                                @if($activeOpFilters === 0)
+                                                    <a href="{{ route('leads.create', ['other_party' => 1]) }}" class="btn btn-theme btn-theme-sm mt-2">
+                                                        <i class="fa-solid fa-user-plus"></i> Create Other Party
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="text-muted small">Showing {{ $lists->count() }} of {{ $totalData ?? 0 }}</div>
-                        {{ $lists->links() }}
+                    <div class="op-footer">
+                        <div class="op-footer__meta">
+                            @if($totalCount > 0)
+                                Showing {{ number_format($shownCount) }} of {{ number_format($totalCount) }}
+                            @else
+                                No records
+                            @endif
+                        </div>
+                        <div>
+                            {{ $lists->links() }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -103,10 +250,24 @@
 
 @section('scripts')
 <script>
-document.getElementById('per_page')?.addEventListener('change', function () {
-    var url = new URL(window.location.href);
-    url.searchParams.set('per_page', this.value);
-    window.location.href = url.toString();
-});
+(function () {
+    var perPage = document.getElementById('per_page');
+    if (perPage) {
+        perPage.addEventListener('change', function () {
+            var url = new URL(window.location.href);
+            url.searchParams.set('per_page', this.value);
+            window.location.href = url.toString();
+        });
+    }
+
+    var toggleBtn = document.getElementById('filterToggleBtn');
+    var panel = document.getElementById('opFilterPanel');
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            panel.classList.toggle('is-open');
+        });
+    }
+})();
 </script>
 @endsection
