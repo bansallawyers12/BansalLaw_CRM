@@ -29,22 +29,56 @@ class ClientMatterTaskController extends Controller
         return ClientMatter::where('id', $matterId)->where('client_id', $clientId)->first();
     }
 
+    /**
+     * Resolve the client_matters row from request (numeric id and/or matter ref like FAM_1).
+     */
+    private function resolveMatterFromRequest(Request $request, int $clientId): ?ClientMatter
+    {
+        if ($clientId < 1) {
+            return null;
+        }
+
+        $matterId = (int) ($request->input('matter_id')
+            ?: $request->input('client_matter_id')
+            ?: $request->query('matter_id')
+            ?: $request->query('client_matter_id')
+            ?: 0);
+
+        if ($matterId > 0) {
+            $matter = $this->resolveMatter($clientId, $matterId);
+            if ($matter) {
+                return $matter;
+            }
+        }
+
+        $matterRef = trim((string) ($request->input('matter_ref')
+            ?: $request->query('matter_ref')
+            ?: $request->input('matter_ref_no')
+            ?: $request->query('matter_ref_no')
+            ?: ''));
+
+        if ($matterRef === '') {
+            return null;
+        }
+
+        return ClientMatter::query()
+            ->where('client_id', $clientId)
+            ->where('client_unique_matter_no', $matterRef)
+            ->first();
+    }
+
     public function index(Request $request)
     {
         $clientId = (int) $request->query('client_id');
-        $matterId = (int) $request->query('matter_id');
         if ($clientId < 1) {
             return response()->json(['status' => false, 'message' => 'Invalid client'], 422);
-        }
-        if ($matterId < 1) {
-            return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
         }
 
         $this->ensureCrmRecordAccess($clientId);
 
-        $matter = $this->resolveMatter($clientId, $matterId);
+        $matter = $this->resolveMatterFromRequest($request, $clientId);
         if (! $matter) {
-            return response()->json(['status' => false, 'message' => 'Matter not found for this client'], 422);
+            return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
         }
 
         $tasks = ClientMatterTask::query()
@@ -61,14 +95,17 @@ class ClientMatterTaskController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'client_id' => 'required|integer|min:1',
-            'matter_id' => 'required|integer|min:1',
-            'title'     => 'required|string|max:500',
+            'client_id'         => 'required|integer|min:1',
+            'matter_id'         => 'nullable|integer|min:1',
+            'client_matter_id'  => 'nullable|integer|min:1',
+            'matter_ref'        => 'nullable|string|max:50',
+            'matter_ref_no'     => 'nullable|string|max:50',
+            'title'             => 'required|string|max:500',
         ]);
 
         $clientId = (int) $validated['client_id'];
         $this->ensureCrmRecordAccess($clientId);
-        $matter = $this->resolveMatter($clientId, (int) $validated['matter_id']);
+        $matter = $this->resolveMatterFromRequest($request, $clientId);
         if (! $matter) {
             return response()->json(['status' => false, 'message' => 'Matter not found for this client. Select a matter before creating tasks.'], 422);
         }

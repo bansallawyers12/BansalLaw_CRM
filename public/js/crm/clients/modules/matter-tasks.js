@@ -26,16 +26,61 @@
         return id !== undefined && id !== null && String(id) !== '' ? String(id) : null;
     }
 
+    function matterRef() {
+        var shared = window.ClientDetailShared;
+        if (shared && typeof shared.parseClientDetailMatterRefFromUrl === 'function') {
+            var fromUrl = shared.parseClientDetailMatterRefFromUrl();
+            if (fromUrl) {
+                return String(fromUrl).trim();
+            }
+        }
+        var ref = cfg().matterRefNo || cfg().matterId || '';
+        ref = ref == null ? '' : String(ref).trim();
+        if (!ref) {
+            return null;
+        }
+        if (shared && typeof shared.isClientDetailTabSlug === 'function' && shared.isClientDetailTabSlug(ref)) {
+            return null;
+        }
+        return ref;
+    }
+
+    function matterIdFromSelectByRef(ref) {
+        if (!ref) {
+            return null;
+        }
+        var found = null;
+        $('#sel_matter_id_client_detail option').each(function () {
+            var optRef = $(this).attr('data-clientuniquematterno') || $(this).data('clientuniquematterno');
+            if (optRef != null && String(optRef) === String(ref)) {
+                found = safeId($(this).val());
+                return false;
+            }
+        });
+        return found;
+    }
+
     function matterId() {
+        // Prefer URL/server context so Tasks stay on the matter in the path (e.g. FAM_1).
+        var fromConfig = safeId(cfg().clientMatterId);
+        if (fromConfig) {
+            return fromConfig;
+        }
+
         var shared = window.ClientDetailShared;
         if (shared && typeof shared.getSelectedClientDetailMatterId === 'function') {
-            var selected = shared.getSelectedClientDetailMatterId();
-            var selectedId = safeId(selected);
+            var selectedId = safeId(shared.getSelectedClientDetailMatterId());
             if (selectedId) {
                 return selectedId;
             }
         }
-        return safeId(cfg().clientMatterId);
+
+        var selectVal = safeId($('#sel_matter_id_client_detail').val());
+        if (selectVal) {
+            return selectVal;
+        }
+
+        return matterIdFromSelectByRef(matterRef());
     }
 
     function csrf() {
@@ -128,8 +173,9 @@
         }
         var cid = clientId();
         var mid = matterId();
+        var ref = matterRef();
         var storeUrl = urlMap().matterTaskStore;
-        var unlocked = !!(cid && mid && storeUrl);
+        var unlocked = !!(cid && (mid || ref) && storeUrl);
         var busy = $wrap.hasClass('cdn-matter-tasks--busy');
         $inp.prop('disabled', !unlocked || busy);
         $btn.prop('disabled', !unlocked || busy);
@@ -404,7 +450,8 @@
             return;
         }
 
-        if (!mid) {
+        var ref = matterRef();
+        if (!mid && !ref) {
             $list.html(statusBlock('muted', '<p class="small mb-0">Select a matter to view its tasks.</p>'));
             updateStats(0, 0);
             syncComposerLock();
@@ -422,11 +469,20 @@
         syncComposerLock();
         $list.html(skeletonHtml());
 
+        var listData = { client_id: cid };
+        if (mid) {
+            listData.matter_id = mid;
+            listData.client_matter_id = mid;
+        }
+        if (ref) {
+            listData.matter_ref = ref;
+        }
+
         $.ajax({
             url: indexUrl,
             type: 'GET',
             dataType: 'json',
-            data: { client_id: cid, matter_id: mid },
+            data: listData,
             complete: function () {
                 syncComposerLock();
             },
@@ -482,15 +538,32 @@
             }
             var cid = clientId();
             var mid = matterId();
+            var ref = matterRef();
             var storeUrl = urlMap().matterTaskStore;
-            if (!cid || !mid || !storeUrl) {
-                notifyError(!mid ? 'Select a matter before adding a task.' : 'Unable to add a task for this record.');
+            if (!cid || !storeUrl) {
+                notifyError('Unable to add a task for this record.');
+                return;
+            }
+            if (!mid && !ref) {
+                notifyError('Select a matter before adding a task.');
                 return;
             }
 
             var $btn = $(this);
             setBusy(true);
             $btn.prop('disabled', true);
+            var storeData = {
+                client_id: cid,
+                title: title,
+                _token: csrf()
+            };
+            if (mid) {
+                storeData.matter_id = mid;
+                storeData.client_matter_id = mid;
+            }
+            if (ref) {
+                storeData.matter_ref = ref;
+            }
             $.ajax({
                 url: storeUrl,
                 type: 'POST',
@@ -500,12 +573,7 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     Accept: 'application/json'
                 },
-                data: {
-                    client_id: cid,
-                    matter_id: mid,
-                    title: title,
-                    _token: csrf()
-                },
+                data: storeData,
                 success: function (res) {
                     if (res && res.status) {
                         $inp.val('');
