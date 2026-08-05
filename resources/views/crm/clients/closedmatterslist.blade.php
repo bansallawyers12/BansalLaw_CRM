@@ -5,73 +5,36 @@
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
+<link rel="stylesheet" href="{{ asset('css/matters-list.css') }}">
 <style>
-    .listing-container .table th:first-child,
-    .listing-container .table td:first-child {
-        min-width: 250px;
-        max-width: 300px;
-        width: 25%;
-    }
-    .listing-container .table th:first-child { width: 25%; }
-    .listing-container .table td .closed-matter-reopen {
-        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
-        border: 1px solid var(--navy) !important;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        color: white !important;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-    }
-    .listing-container .table td .closed-matter-reopen:hover {
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
-        border-color: #5a6fd8 !important;
-        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
-        color: white !important;
-    }
-    .listing-container .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-    .listing-container .card-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .listing-container .per-page-select {
-        border: 1px solid white !important;
-        border-radius: 8px !important;
-        background: white !important;
-        color: var(--navy) !important;
-        font-weight: 600 !important;
-        padding: 8px 16px !important;
-        min-width: 110px;
-    }
-    .listing-container .filter_panel {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-        display: none;
-        border: 1px solid #e2e8f0;
-    }
-    .listing-container .filter_panel h4 { color: #1e293b; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
-    .active-filters-badge {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 4px 12px;
-        font-size: 12px;
-        font-weight: 700;
-    }
-    .sortable-header a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
-    .thCls,.tdCls { white-space: initial !important; }
-    .badge-closed { background: #6b7280; color: white; }
-    .badge-discontinued { background: #dc2626; color: white; }
-    .badge-complete { background: #188038; color: white; }
-    .closed-matter-checklist-summary {
+    .matters-listing .badge-closed { background: #6b7280; color: white; }
+    .matters-listing .badge-discontinued { background: #a83020; color: white; }
+    .matters-listing .badge-complete { background: #1e7a52; color: white; }
+    .matters-listing .closed-matter-checklist-summary {
         display: block;
         margin-top: 4px;
         font-size: 11px;
-        color: #059669;
+        color: var(--success, #1e7a52);
         font-weight: 600;
+    }
+    .matters-listing .closed-matter-reopen {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px !important;
+        font-size: 0.8125rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        background: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        min-width: auto !important;
+        width: auto !important;
+        box-shadow: none !important;
+    }
+    .matters-listing .closed-matter-reopen:hover {
+        background: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
     }
 </style>
 @include('crm.clients.partials.enhanced-date-filter-styles')
@@ -83,67 +46,92 @@
     $_cmEffectiveSa = $_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasEffectiveSuperAdminPrivileges();
     $_cmCanReopen = $_cmEffectiveSa || ($_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasCrmModule('45'));
     $_cmInsightsBtn = $_cmViewer && ($_cmEffectiveSa || in_array((int) ($_cmViewer->role ?? 0), [1, 12], true));
+    $matterFilters = collect([
+        'sel_matter_id' => request('sel_matter_id'),
+        'client_id' => request('client_id'),
+        'name' => request('name'),
+        'sel_legal_practitioner' => request('sel_legal_practitioner'),
+        'sel_person_responsible' => request('sel_person_responsible'),
+        'sel_person_assisting' => request('sel_person_assisting'),
+        'closure_status' => request('closure_status'),
+        'quick_date_range' => request('quick_date_range'),
+        'from_date' => request('from_date'),
+        'to_date' => request('to_date'),
+        'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
+    ]);
+    $activeMatterFilters = $matterFilters->filter(fn($v) => $v !== null && $v !== '')->count();
+    $totalCount = method_exists($lists, 'total') ? $lists->total() : (int) ($totalData ?? 0);
 @endphp
-<div class="listing-container">
-    <section class="listing-section" style="padding-top: 40px;">
+<div class="listing-container matters-listing">
+    <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
 
             <div class="card">
                 <div class="custom-error-msg"></div>
                 <div class="card-header">
-                    <h4>All Clients Matters</h4>
-                    <div class="card-header-actions">
-                        @if($_cmInsightsBtn)
-                        <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
-                            <i class="fa-solid fa-chart-line"></i> Insights
-                        </a>
-                        @endif
-                        <select name="per_page" id="per_page" class="form-control per-page-select">
-                            @foreach([10, 20, 50, 100, 200] as $option)
-                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }} / page</option>
-                            @endforeach
-                        </select>
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
+                    <div class="matters-page-header">
+                        <div class="matters-page-header__title">
+                            <span class="matters-page-header__icon" aria-hidden="true">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </span>
+                            <div>
+                                <h4>Closed Matters</h4>
+                                <p class="matters-page-header__subtitle">
+                                    {{ number_format($totalCount) }} closed {{ Str::plural('matter', $totalCount) }}
+                                    &middot; Review history and reopen when needed
+                                </p>
+                            </div>
+                        </div>
+                        <div class="card-header-actions">
+                            @if($_cmInsightsBtn)
+                            <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
+                                <i class="fa-solid fa-chart-line"></i> Insights
+                            </a>
+                            @endif
+                            <div class="per-page-wrap">
+                                <label for="per_page">Show</label>
+                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
+                                    @foreach([10, 20, 50, 100, 200] as $option)
+                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeMatterFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
+                                <i class="fa-solid fa-filter"></i> Filter
+                                @if($activeMatterFilters > 0)
+                                    <span class="filter-count-badge">{{ $activeMatterFilters }}</span>
+                                @endif
+                            </a>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <ul class="nav nav-pills" id="matter_tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link" id="matters-tab" href="{{ route('clients.clientsmatterslist') }}">Matters</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" id="closed-matters-tab" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
-                        </li>
-                    </ul>
+                    <div class="matters-toolbar">
+                        <ul class="matters-tabs nav" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('clients.clientsmatterslist') }}">Active Matters</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
+                            </li>
+                        </ul>
+                    </div>
 
                     @php
-                        $matterFilters = collect([
-                            'sel_matter_id' => request('sel_matter_id'),
-                            'client_id' => request('client_id'),
-                            'name' => request('name'),
-                            'sel_legal_practitioner' => request('sel_legal_practitioner'),
-                            'sel_person_responsible' => request('sel_person_responsible'),
-                            'sel_person_assisting' => request('sel_person_assisting'),
-                            'closure_status' => request('closure_status'),
-                            'quick_date_range' => request('quick_date_range'),
-                            'from_date' => request('from_date'),
-                            'to_date' => request('to_date'),
-                            'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
-                        ]);
-                        $activeMatterFilters = $matterFilters->filter(fn($v) => $v !== null && $v !== '')->count();
+                        // $matterFilters / $activeMatterFilters defined above
                     @endphp
-                    <div class="filter_panel">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap">
-                            <h4>
-                                Search By Details
+                    <div class="filter_panel{{ $activeMatterFilters > 0 ? ' is-open' : '' }}" id="matterFilterPanel">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <h4 class="mb-0">
+                                Filter closed matters
                                 @if($activeMatterFilters > 0)
-                                    <span class="active-filters-badge"><i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} Active</span>
+                                    <span class="active-filters-badge"><i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} active</span>
                                 @endif
                             </h4>
                             @if($activeMatterFilters > 0)
-                                <button type="button" class="clear-filter-btn" id="clearMatterFilters"><i class="fa-solid fa-undo"></i> Clear Filters</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearMatterFilters"><i class="fa-solid fa-rotate-left"></i> Clear filters</button>
                             @endif
                         </div>
                         <form action="{{ route('clients.closedmatterslist') }}" method="get" id="matterFilterForm">
@@ -244,7 +232,7 @@
                                         <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">From Date</label>
                                         <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control">
                                     </div>
-                                    <span class="date-range-arrow">â†’</span>
+                                    <span class="date-range-arrow">&rarr;</span>
                                     <div class="form-group">
                                         <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">To Date</label>
                                         <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control">
@@ -408,8 +396,8 @@ jQuery(document).ready(function($){
     $('#clearMatterFilters').on('click', function(){
         window.location.href = "{{ route('clients.closedmatterslist') }}";
     });
-    $('.listing-container .filter_btn').on('click', function(){
-        $('.listing-container .filter_panel').toggle();
+    $('.listing-container .filter_btn, #filterToggleBtn').on('click', function(){
+        $('#matterFilterPanel').toggleClass('is-open');
     });
 
     $(document).on('click', '.closed-matter-reopen', function(e){

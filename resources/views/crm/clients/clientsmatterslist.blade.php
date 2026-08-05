@@ -1,249 +1,11 @@
 ﻿@extends('layouts.crm_client_detail')
-@section('title', 'Clients Matters')
+@section('title', 'Clients Matters List')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
-<style>
-    /* Page-specific styles for clientsmatterslist */
-    .listing-container .table th:first-child,
-    .listing-container .table td:first-child {
-        min-width: 250px;
-        max-width: 300px;
-        width: 25%;
-    }
-    
-    .listing-container .table th:first-child {
-        width: 25%;
-    }
-    
-    /* Professional Action Button Design */
-    .listing-container .table td .dropdown-toggle {
-        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
-        border: 1px solid var(--navy) !important;
-        min-width: 80px;
-        max-width: 90px;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        color: white !important;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-    }
-    
-    .listing-container .table td .dropdown-toggle:hover {
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
-        border-color: #5a6fd8 !important;
-        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
-    }
-    
-    .listing-container .table td .dropdown-toggle:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.25);
-    }
-    
-    .listing-container .table td .dropdown-toggle::after {
-        content: '';
-        display: inline-block;
-        margin-left: 4px;
-        vertical-align: middle;
-        border-top: 4px solid;
-        border-right: 4px solid transparent;
-        border-bottom: 0;
-        border-left: 4px solid transparent;
-    }
-    
-    .listing-container .table td .dropdown-toggle.show::after {
-        transform: rotate(180deg);
-    }
-    
-    /* Enhanced Dropdown Menu */
-    .listing-container .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(30, 61, 96, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-clip: padding-box;
-        z-index: 9999 !important;
-        transform: none !important;
-        max-height: none !important;
-        overflow: visible !important;
-        backdrop-filter: blur(10px);
-    }
-    
-    .listing-container .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-    
-    /* Dropdown Items Styling */
-    .listing-container .dropdown-item {
-        display: block;
-        width: 100%;
-        padding: 10px 20px;
-        clear: both;
-        font-weight: 500;
-        color: #495057;
-        text-align: inherit;
-        white-space: nowrap;
-        background-color: transparent;
-        border: 0;
-        text-decoration: none;
-        border-radius: 4px;
-        margin: 2px 8px;
-        width: calc(100% - 16px);
-    }
-    
-    .listing-container .dropdown-item:hover {
-        color: var(--navy);
-        text-decoration: none;
-        background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-        box-shadow: 0 2px 8px rgba(30, 61, 96, 0.15);
-    }
-    
-    .listing-container .dropdown-item:active {
-        background: linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%);
-    }
-    
-    .listing-container .dropdown-item.has-icon {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .listing-container .dropdown-item.has-icon i {
-        width: 16px;
-        text-align: center;
-    }
-    
-    /* Ensure all dropdown items are visible */
-    .listing-container .dropdown-menu .dropdown-item {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        height: auto !important;
-        min-height: 32px !important;
-        line-height: 1.5 !important;
-    }
-    
-    /* Remove any potential overflow restrictions */
-    .listing-container .table td {
-        overflow: visible !important;
-    }
-    
-    .listing-container .table td .dropdown {
-        overflow: visible !important;
-        position: relative;
-        display: inline-block;
-    }
-    
-    /* Ensure dropdown container doesn't clip content */
-    .listing-container .dropdown {
-        overflow: visible !important;
-    }
-
-    .listing-container .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .listing-container .card-header-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .listing-container .per-page-select {
-        border: 1px solid white !important;
-        border-radius: 8px !important;
-        background: white !important;
-        color: var(--navy) !important;
-        font-weight: 600 !important;
-        padding: 8px 16px !important;
-        min-width: 110px;
-        width: auto !important;
-        flex: 0 0 auto;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .listing-container .per-page-select:focus {
-        outline: none;
-        border-color: var(--navy) !important;
-        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.2);
-    }
-
-    .listing-container .per-page-select option {
-        background: white;
-        color: var(--navy);
-    }
-
-    .listing-container .filter_panel {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-        display: none;
-        border: 1px solid #e2e8f0;
-    }
-
-    .listing-container .filter_panel h4 {
-        color: #1e293b;
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .active-filters-badge {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 4px 12px;
-        font-size: 12px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .sortable-header a {
-        color: inherit;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .sortable-header i {
-        color: #94a3b8;
-    }
-    .thCls,.tdCls {
-        white-space: initial !important;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/matters-list.css') }}">
 @include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
 
@@ -252,112 +14,158 @@
     $_cmViewer = Auth::user();
     $_cmEffectiveSa = $_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasEffectiveSuperAdminPrivileges();
     $_cmInsightsBtn = $_cmViewer && ($_cmEffectiveSa || in_array((int) ($_cmViewer->role ?? 0), [1, 12], true));
+
+    $matterFilters = collect([
+        'sel_matter_id' => request('sel_matter_id'),
+        'client_id' => request('client_id'),
+        'name' => request('name'),
+        'sel_legal_practitioner' => request('sel_legal_practitioner'),
+        'sel_person_responsible' => request('sel_person_responsible'),
+        'sel_person_assisting' => request('sel_person_assisting'),
+        'quick_date_range' => request('quick_date_range'),
+        'from_date' => request('from_date'),
+        'to_date' => request('to_date'),
+        'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
+    ]);
+    $activeMatterFilters = $matterFilters->filter(fn ($value) => $value !== null && $value !== '')->count();
+
+    $currentSort = request('sort', 'cm.id');
+    $currentDirection = request('direction', 'desc');
+    $nextDirection = function ($column) use ($currentSort, $currentDirection) {
+        return ($currentSort === $column && $currentDirection === 'asc') ? 'desc' : 'asc';
+    };
+    $buildSortUrl = function ($column) use ($nextDirection) {
+        $query = request()->except('page');
+        $query['sort'] = $column;
+        $query['direction'] = $nextDirection($column);
+        return request()->url() . '?' . http_build_query($query);
+    };
+    $sortIcon = function ($column) use ($currentSort, $currentDirection) {
+        if ($currentSort !== $column) {
+            return '<i class="fa-solid fa-sort text-muted"></i>';
+        }
+        return $currentDirection === 'asc'
+            ? '<i class="fa-solid fa-sort-up"></i>'
+            : '<i class="fa-solid fa-sort-down"></i>';
+    };
+
+    $staffName = function ($staff) {
+        if (! $staff) {
+            return '—';
+        }
+        $name = trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
+        return $name !== '' ? $name : '—';
+    };
+
+    $totalCount = method_exists($lists, 'total') ? $lists->total() : (int) ($totalData ?? 0);
 @endphp
-<div class="listing-container">
-    <section class="listing-section" style="padding-top: 40px;">
+
+<div class="listing-container matters-listing">
+    <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
-            
+
             <div class="card">
-                <div class="custom-error-msg">
-                </div>
+                <div class="custom-error-msg"></div>
+
                 <div class="card-header">
-                    <h4>All Clients Matters</h4>
-                    <div class="card-header-actions">
-                        @if($_cmInsightsBtn)
-                        <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
-                            <i class="fa-solid fa-chart-line"></i> Insights
-                        </a>
-                        @endif
-                        <select name="per_page" id="per_page" class="form-control per-page-select">
-                            @foreach([10, 20, 50, 100, 200] as $option)
-                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
-                                    {{ $option }} / page
-                                </option>
-                            @endforeach
-                        </select>
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
+                    <div class="matters-page-header">
+                        <div class="matters-page-header__title">
+                            <span class="matters-page-header__icon" aria-hidden="true">
+                                <i class="fa-solid fa-folder-open"></i>
+                            </span>
+                            <div>
+                                <h4>Client Matters</h4>
+                                <p class="matters-page-header__subtitle">
+                                    {{ number_format($totalCount) }} active {{ Str::plural('matter', $totalCount) }}
+                                    &middot; Search, filter and open matter files
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card-header-actions">
+                            @if($_cmInsightsBtn)
+                            <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
+                                <i class="fa-solid fa-chart-line"></i> Insights
+                            </a>
+                            @endif
+                            <div class="per-page-wrap">
+                                <label for="per_page">Show</label>
+                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
+                                    @foreach([10, 20, 50, 100, 200] as $option)
+                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeMatterFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
+                                <i class="fa-solid fa-filter"></i> Filter
+                                @if($activeMatterFilters > 0)
+                                    <span class="filter-count-badge">{{ $activeMatterFilters }}</span>
+                                @endif
+                            </a>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="card-body">
-                    <ul class="nav nav-pills" id="matter_tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="matters-tab" href="{{ route('clients.clientsmatterslist') }}">Matters</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="closed-matters-tab" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
-                        </li>
-                    </ul>
 
-                    @php
-                        $matterFilters = collect([
-                            'sel_matter_id' => request('sel_matter_id'),
-                            'client_id' => request('client_id'),
-                            'name' => request('name'),
-                            'sel_legal_practitioner' => request('sel_legal_practitioner'),
-                            'sel_person_responsible' => request('sel_person_responsible'),
-                            'sel_person_assisting' => request('sel_person_assisting'),
-                            'quick_date_range' => request('quick_date_range'),
-                            'from_date' => request('from_date'),
-                            'to_date' => request('to_date'),
-                            'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
-                        ]);
-                        $activeMatterFilters = $matterFilters->filter(function ($value) {
-                            return $value !== null && $value !== '';
-                        })->count();
-                    @endphp
-                    <div class="filter_panel">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap">
-                            <h4>
-                                Search By Details
+                <div class="card-body">
+                    <div class="matters-toolbar">
+                        <ul class="matters-tabs nav" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="{{ route('clients.clientsmatterslist') }}">Active Matters</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="filter_panel{{ $activeMatterFilters > 0 ? ' is-open' : '' }}" id="matterFilterPanel">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <h4 class="mb-0">
+                                Filter matters
                                 @if($activeMatterFilters > 0)
                                     <span class="active-filters-badge">
-                                        <i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} Active
+                                        <i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} active
                                     </span>
                                 @endif
                             </h4>
                             @if($activeMatterFilters > 0)
-                                <button type="button" class="clear-filter-btn" id="clearMatterFilters">
-                                    <i class="fa-solid fa-undo"></i> Clear Filters
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearMatterFilters">
+                                    <i class="fa-solid fa-rotate-left"></i> Clear filters
                                 </button>
                             @endif
                         </div>
-                        <form action="{{URL::to('/clientsmatterslist')}}" method="get" id="matterFilterForm">
-                            <div class="row">
+
+                        <form action="{{ route('clients.clientsmatterslist') }}" method="get" id="matterFilterForm">
+                            <div class="row g-3">
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="sel_matter_id" class="col-form-label" style="color:#4a5568 !important;">Matter</label>
+                                    <div class="form-group mb-0">
+                                        <label for="sel_matter_id">Matter type</label>
                                         <select class="form-control" name="sel_matter_id" id="sel_matter_id">
-                                            <option value="">Select Matter</option>
+                                            <option value="">All matter types</option>
                                             @foreach(\App\Models\Matter::orderBy('title', 'asc')->get() as $matter)
                                                 <option value="{{ $matter->id }}" {{ request('sel_matter_id') == $matter->id ? 'selected' : '' }}>{{ $matter->title }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
-                                        <input type="text" name="client_id" value="{{ request('client_id') }}" class="form-control" autocomplete="off" placeholder="Client ID" id="client_id">
+                                    <div class="form-group mb-0">
+                                        <label for="client_id">Client ID</label>
+                                        <input type="text" name="client_id" value="{{ request('client_id') }}" class="form-control" autocomplete="off" placeholder="e.g. TEST2600026" id="client_id">
                                     </div>
                                 </div>
-
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="name" class="col-form-label" style="color:#4a5568 !important;">Client Name</label>
-                                        <input type="text" name="name" value="{{ request('name') }}" class="form-control agent_company_name" autocomplete="off" placeholder="Name" id="name">
+                                    <div class="form-group mb-0">
+                                        <label for="name">Client name</label>
+                                        <input type="text" name="name" value="{{ request('name') }}" class="form-control" autocomplete="off" placeholder="Search by name" id="name">
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="sel_legal_practitioner" class="col-form-label" style="color:#4a5568 !important;">Legal Practitioner</label>
+                                    <div class="form-group mb-0">
+                                        <label for="sel_legal_practitioner">Legal practitioner</label>
                                         <select class="form-control" name="sel_legal_practitioner" id="sel_legal_practitioner">
-                                            <option value="">All Agents</option>
+                                            <option value="">Anyone</option>
                                             @foreach(($teamMembers ?? collect()) as $member)
                                                 <option value="{{ $member->id }}" {{ request('sel_legal_practitioner') == $member->id ? 'selected' : '' }}>
                                                     {{ $member->first_name }} {{ $member->last_name }}
@@ -367,10 +175,10 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="sel_person_responsible" class="col-form-label" style="color:#4a5568 !important;">Person Responsible</label>
+                                    <div class="form-group mb-0">
+                                        <label for="sel_person_responsible">Person responsible</label>
                                         <select class="form-control" name="sel_person_responsible" id="sel_person_responsible">
-                                            <option value="">All</option>
+                                            <option value="">Anyone</option>
                                             @foreach(($teamMembers ?? collect()) as $member)
                                                 <option value="{{ $member->id }}" {{ request('sel_person_responsible') == $member->id ? 'selected' : '' }}>
                                                     {{ $member->first_name }} {{ $member->last_name }}
@@ -380,10 +188,10 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="sel_person_assisting" class="col-form-label" style="color:#4a5568 !important;">Person Assisting</label>
+                                    <div class="form-group mb-0">
+                                        <label for="sel_person_assisting">Person assisting</label>
                                         <select class="form-control" name="sel_person_assisting" id="sel_person_assisting">
-                                            <option value="">All</option>
+                                            <option value="">Anyone</option>
                                             @foreach(($teamMembers ?? collect()) as $member)
                                                 <option value="{{ $member->id }}" {{ request('sel_person_assisting') == $member->id ? 'selected' : '' }}>
                                                     {{ $member->first_name }} {{ $member->last_name }}
@@ -398,10 +206,10 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="date_filter_field" class="col-form-label" style="color:#4a5568 !important;">Date Field</label>
+                                            <label for="date_filter_field"><i class="fa-solid fa-calendar-days"></i> Date field</label>
                                             <select name="date_filter_field" id="date_filter_field" class="form-control">
-                                                <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
-                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
+                                                <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created date</option>
+                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last updated</option>
                                             </select>
                                         </div>
                                     </div>
@@ -426,163 +234,189 @@
                                         </span>
                                     @endforeach
                                 </div>
-                                <div class="divider-text">Or Custom Range</div>
+                                <div class="divider-text">Or custom range</div>
                                 <div class="date-range-wrapper">
                                     <div class="form-group">
-                                        <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">From Date</label>
-                                        <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control" placeholder="Start date">
+                                        <label for="from_date">From</label>
+                                        <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control">
                                     </div>
-                                    <span class="date-range-arrow">â†’</span>
+                                    <span class="date-range-arrow" aria-hidden="true">&rarr;</span>
                                     <div class="form-group">
-                                        <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">To Date</label>
-                                        <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control" placeholder="End date">
+                                        <label for="to_date">To</label>
+                                        <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control">
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row">
-                                <div class="col-md-12 text-center">
-                                    <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg me-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/clientsmatterslist')}}">Reset</a>
-                                    </div>
+                            <div class="text-center mt-3">
+                                <div class="filter-buttons-container">
+                                    <button type="submit" class="btn btn-primary btn-theme-lg me-2">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Apply filters
+                                    </button>
+                                    <a class="btn btn-outline-secondary" href="{{ route('clients.clientsmatterslist') }}">Reset</a>
                                 </div>
                             </div>
                         </form>
                     </div>
-                    @php
-                        $currentSort = request('sort', 'cm.id');
-                        $currentDirection = request('direction', 'desc');
-                        $nextDirection = function ($column) use ($currentSort, $currentDirection) {
-                            return ($currentSort === $column && $currentDirection === 'asc') ? 'desc' : 'asc';
-                        };
-                        $buildSortUrl = function ($column) use ($nextDirection) {
-                            $query = request()->except('page');
-                            $query['sort'] = $column;
-                            $query['direction'] = $nextDirection($column);
-                            return request()->url() . '?' . http_build_query($query);
-                        };
-                        $sortIcon = function ($column) use ($currentSort, $currentDirection) {
-                            if ($currentSort !== $column) {
-                                return '<i class="fa-solid fa-sort text-muted"></i>';
-                            }
-                            return $currentDirection === 'asc'
-                                ? '<i class="fa-solid fa-sort-up"></i>'
-                                : '<i class="fa-solid fa-sort-down"></i>';
-                        };
-                    @endphp
+
+                    @if($totalCount > 0 && method_exists($lists, 'firstItem'))
+                    <div class="matters-results-bar">
+                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }}
+                        of {{ number_format($totalCount) }} matters
+                        @if($activeMatterFilters > 0)
+                            <span class="matters-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
+                        @endif
+                    </div>
+                    @endif
+
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th class="thCls sortable-header">
-                                        <a href="{{ $buildSortUrl('ma.title') }}">
-                                            Matter {!! $sortIcon('ma.title') !!}
-                                        </a>
+                                    <th class="sortable-header">
+                                        <a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a>
                                     </th>
-                                    <th class="thCls sortable-header">
-                                        <a href="{{ $buildSortUrl('ad.client_id') }}">
-                                            Client ID {!! $sortIcon('ad.client_id') !!}
-                                        </a>
+                                    <th class="sortable-header">
+                                        <a href="{{ $buildSortUrl('ad.first_name') }}">Client {!! $sortIcon('ad.first_name') !!}</a>
                                     </th>
-                                    <th class="thCls sortable-header">
-                                        <a href="{{ $buildSortUrl('ad.first_name') }}">
-                                            Client Name {!! $sortIcon('ad.first_name') !!}
-                                        </a>
+                                    <th class="sortable-header">
+                                        <a href="{{ $buildSortUrl('ad.dob') }}">DOB {!! $sortIcon('ad.dob') !!}</a>
                                     </th>
-                                    <th class="thCls sortable-header">
-                                        <a href="{{ $buildSortUrl('ad.dob') }}">
-                                            DOB {!! $sortIcon('ad.dob') !!}
-                                        </a>
+                                    <th>Team</th>
+                                    <th class="sortable-header">
+                                        <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                                     </th>
-                                    <th class="thCls">Legal Practitioner</th>
-                                    <th class="thCls">Person Responsible</th>
-                                    <th class="thCls">Person Assisting</th>
-                                    <th class="thCls sortable-header">
-                                        <a href="{{ $buildSortUrl('cm.created_at') }}">
-                                            Created At {!! $sortIcon('cm.created_at') !!}
-                                        </a>
-                                    </th>
-                                    <th class="thCls">Office</th>
-                                    @if($_cmEffectiveSa)
-                                    <th class="thCls">Action</th>
-                                    @endif
+                                    <th>Office</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="tdata">
-                                @if(@$totalData !== 0)
-                                <?php $i=0; ?>
-                                    @foreach (@$lists as $list)
-                                        <?php
-                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
-                                        $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
-                                        $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
-                                        $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
-                                        ?>
-                                        <tr id="id_{{@$list->id}}">
-                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }}) </a></td>
-                                            <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
-                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
-                                            <td class="tdCls">{{ @$list->dob == "" ? config('constants.empty') : (strtotime(@$list->dob) ? date('d/m/Y', strtotime(@$list->dob)) : Str::limit(@$list->dob, '50', '...')) }}</td>
-                                            <td class="tdCls">{{ @$legal_practitioner_info->first_name == "" ? config('constants.empty') : Str::limit(@$legal_practitioner_info->first_name, '50', '...') }} {{ @$legal_practitioner_info->last_name == "" ? config('constants.empty') : Str::limit(@$legal_practitioner_info->last_name, '50', '...') }}</td>
-                                            <td class="tdCls">{{ @$person_responsible->first_name == "" ? config('constants.empty') : Str::limit(@$person_responsible->first_name, '50', '...') }} {{ @$person_responsible->last_name == "" ? config('constants.empty') : Str::limit(@$person_responsible->last_name, '50', '...') }}</td>
-                                            <td class="tdCls">{{ @$person_assisting->first_name == "" ? config('constants.empty') : Str::limit(@$person_assisting->first_name, '50', '...') }} {{ @$person_assisting->last_name == "" ? config('constants.empty') : Str::limit(@$person_assisting->last_name, '50', '...') }}</td>
-                                            <td class="tdCls">{{date('d/m/Y', strtotime($list->created_at))}}</td>
-                                            <td class="tdCls">
-                                                @if($matter_office)
-                                                    <span class="badge bg-info text-dark" style="font-size: 12px;">
-                                                        <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
-                                                    </span>
-                                                    <br>
-                                                    <a href="javascript:;" class="btn btn-sm btn-outline-primary mt-1 edit-office-btn" 
-                                                       data-matter-id="{{ $list->id }}" 
-                                                       data-matter-no="{{ $list->client_unique_matter_no }}"
-                                                       data-matter-title="{{ $list->title }}"
-                                                       data-office-id="{{ $list->office_id }}"
-                                                       title="Change Office">
-                                                        <i class="fa-solid fa-pen-to-square"></i> Change
-                                                    </a>
-                                                @else
-                                                    <span class="badge bg-warning text-dark" style="font-size: 11px;">
-                                                        <i class="fa-solid fa-triangle-exclamation"></i> Not Assigned
-                                                    </span>
-                                                    <br>
-                                                    <a href="javascript:;" class="btn btn-sm btn-success mt-1 assign-office-btn" 
-                                                       data-matter-id="{{ $list->id }}" 
-                                                       data-matter-no="{{ $list->client_unique_matter_no }}"
-                                                       data-matter-title="{{ $list->title }}"
-                                                       title="Assign Office">
-                                                        <i class="fa-solid fa-plus"></i> Assign
-                                                    </a>
-                                                @endif
+                                @if($totalCount !== 0)
+                                    @foreach($lists as $list)
+                                        @php
+                                            $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
+                                            $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
+                                            $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
+                                            $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
+                                            $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
+                                            $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
+                                            $dobDisplay = ! empty($list->dob) && strtotime($list->dob)
+                                                ? date('d/m/Y', strtotime($list->dob))
+                                                : '—';
+                                            $createdDisplay = ! empty($list->created_at)
+                                                ? date('d/m/Y', strtotime($list->created_at))
+                                                : '—';
+                                            $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                                            if ($clientName === '') {
+                                                $clientName = '—';
+                                            }
+                                        @endphp
+                                        <tr id="id_{{ $list->id }}">
+                                            <td>
+                                                <a class="matter-cell-primary" href="{{ $matterDetailUrl }}" title="Open matter">
+                                                    {{ $list->title ?: 'Untitled matter' }}
+                                                </a>
+                                                <span class="matter-cell-meta">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
                                             </td>
-                                            @if($_cmEffectiveSa)
-                                            <td class="tdCls">
-                                                <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
-                                                    <div class="dropdown-menu dropdown-menu-end">
-                                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'client_matters')"><i class="fa-solid fa-trash"></i> Delete Matter</a>
+                                            <td>
+                                                <a class="matter-cell-primary" href="{{ $clientDetailUrl }}" title="Open client">
+                                                    {{ $clientName }}
+                                                </a>
+                                                <span class="matter-cell-meta">{{ $list->client_unique_id ?: ('#' . $list->client_id) }}</span>
+                                            </td>
+                                            <td><span class="matter-date">{{ $dobDisplay }}</span></td>
+                                            <td>
+                                                <div class="matter-team">
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Legal practitioner">LP</span>
+                                                        <span class="name">{{ $staffName($legal_practitioner_info) }}</span>
+                                                    </div>
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Person responsible">PR</span>
+                                                        <span class="name">{{ $staffName($person_responsible) }}</span>
+                                                    </div>
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Person assisting">PA</span>
+                                                        <span class="name">{{ $staffName($person_assisting) }}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            @endif
+                                            <td><span class="matter-date">{{ $createdDisplay }}</span></td>
+                                            <td>
+                                                <div class="matter-office">
+                                                    @if($matter_office)
+                                                        <span class="matter-office-badge is-set">
+                                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
+                                                        </span>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-outline-primary matter-office-btn edit-office-btn"
+                                                            data-matter-id="{{ $list->id }}"
+                                                            data-matter-no="{{ $list->client_unique_matter_no }}"
+                                                            data-matter-title="{{ $list->title }}"
+                                                            data-office-id="{{ $list->office_id }}"
+                                                            title="Change office">
+                                                            <i class="fa-solid fa-pen-to-square"></i> Change
+                                                        </button>
+                                                    @else
+                                                        <span class="matter-office-badge is-unset">
+                                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
+                                                        </span>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-success matter-office-btn assign-office-btn"
+                                                            data-matter-id="{{ $list->id }}"
+                                                            data-matter-no="{{ $list->client_unique_matter_no }}"
+                                                            data-matter-title="{{ $list->title }}"
+                                                            title="Assign office">
+                                                            <i class="fa-solid fa-plus"></i> Assign
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="matter-actions">
+                                                    <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
+                                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                                    </a>
+                                                    @if($_cmEffectiveSa)
+                                                    <div class="dropdown">
+                                                        <button class="matter-action-btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="More actions">
+                                                            <i class="fa-solid fa-ellipsis"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li>
+                                                                <a class="dropdown-item text-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'client_matters')">
+                                                                    <i class="fa-solid fa-trash"></i> Delete matter
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </td>
                                         </tr>
-                                        <?php $i++; ?>
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ $_cmEffectiveSa ? '10' : '9' }}" style="text-align: center; padding: 20px;">
-                                            No Record Found
+                                        <td colspan="7">
+                                            <div class="matters-empty">
+                                                <i class="fa-regular fa-folder-open"></i>
+                                                <p>No matters found</p>
+                                                <span>Try clearing filters or searching with a different client name.</span>
+                                                @if($activeMatterFilters > 0)
+                                                    <div class="mt-3">
+                                                        <a href="{{ route('clients.clientsmatterslist') }}" class="btn btn-theme btn-theme-sm">Clear filters</a>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endif
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Pagination -->
+
                     <div class="card-footer">
-                    {!! $lists->appends(\Request::except('page'))->render() !!}
+                        {!! $lists->appends(\Request::except('page'))->render() !!}
                     </div>
                 </div>
             </div>
@@ -590,10 +424,9 @@
     </section>
 </div>
 
-{{-- Include Office Assignment Modal --}}
 @include('crm.clients.modals.edit-matter-office')
-
 @endsection
+
 @push('scripts')
 <script>
 jQuery(document).ready(function($){
@@ -616,212 +449,62 @@ jQuery(document).ready(function($){
     });
 
     $('#clearMatterFilters').on('click', function(){
-        window.location.href = "{{ URL::to('/clientsmatterslist') }}";
+        window.location.href = "{{ route('clients.clientsmatterslist') }}";
     });
 
-    $('.listing-container .filter_btn').on('click', function(){
-        $('.listing-container .filter_panel').toggle();
+    $('#filterToggleBtn, .matters-listing .filter_btn').on('click', function(){
+        $('#matterFilterPanel').toggleClass('is-open');
     });
 
-    $('.listing-container [data-checkboxes]').each(function () {
-        var me = $(this),
-        group = me.data('checkboxes'),
-        role = me.data('checkbox-role');
-        me.change(function () {
-            var all = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"])'),
-            checked = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"]):checked'),
-            dad = $('.listing-container [data-checkboxes="' + group + '"][data-checkbox-role="dad"]'),
-            total = all.length,
-            checked_length = checked.length;
-            if (role == 'dad') {
-                if (me.is(':checked')) {
-                    all.prop('checked', true);
-                    $('.listing-container .is_checked_clientn').hide();
-                } else {
-                    all.prop('checked', false);
-                    $('.listing-container .is_checked_clientn').show();
-                }
-            } else {
-                if (checked_length >= total) {
-                    dad.prop('checked', true);
-                    $('.listing-container .is_checked_clientn').hide();
-                } else {
-                    dad.prop('checked', false);
-                    $('.listing-container .is_checked_clientn').show();
-                }
-            }
-        });
-    });
-
-    var clickedOrder = [];
-    var clickedIds = [];
-    $(document).delegate('.listing-container .your-checkbox', 'click', function(){
-        var clicked_id = $(this).data('id');
-        var nameStr = $(this).attr('data-name');
-        var clientidStr = $(this).attr('data-clientid');
-        var finalStr = nameStr+'('+clientidStr+')';
-        if ($(this).is(':checked')) {
-            clickedOrder.push(finalStr);
-            clickedIds.push(clicked_id);
-        } else {
-            var index = clickedOrder.indexOf(finalStr);
-            if (index !== -1) {
-                clickedOrder.splice(index, 1);
-            }
-            var index1 = clickedIds.indexOf(clicked_id);
-            if (index1 !== -1) {
-                clickedIds.splice(index1, 1);
-            }
-        }
-    });
-
-    $('.listing-container .cb-element').change(function () {
-        if ($('.listing-container .cb-element:checked').length == $('.listing-container .cb-element').length){
-            $('.listing-container #checkbox-all').prop('checked',true);
-        } else {
-            $('.listing-container #checkbox-all').prop('checked',false);
-        }
-    });
-
-    var crmRecipientsUrl = '{{ URL::to('/clients/get-recipients') }}';
-
-    $(document).delegate('.listing-container .clientemail', 'click', function(){
-        $('#emailmodal').modal('show');
-        var array = [];
-        var data = [];
-        var id = $(this).attr('data-id');
-        array.push(id);
-        var email = $(this).attr('data-email');
-        var name = $(this).attr('data-name');
-        var status = 'Client';
-        data.push({
-            id: id,
-            name: name,
-            email: email,
-            status: status
-        });
-        var $to = $('#emailmodal .js-data-example-ajax');
-        if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
-            initRecipientsMultiTomSelectPreload($to[0], { url: crmRecipientsUrl, dropdownParent: '#emailmodal', options: data, items: array });
-        }
-    });
-
-    $(document).delegate('.listing-container .selecttemplate', 'change', function(){
-        var v = $(this).val();
-        $.ajax({
-            url: '{{URL::to('/get-templates')}}',
-            type:'GET',
-            datatype:'json',
-            data:{id:v},
-            success: function(response){
-                var res = JSON.parse(response);
-                $('.selectedsubject').val(res.subject);
-                // Clear and set TinyMCE editor content
-                $(".tinymce-editor").each(function() {
-                    var editorId = $(this).attr('id');
-                    if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
-                        tinymce.get(editorId).setContent(res.description || '');
-                    } else {
-                        $(this).val(res.description || '');
-                    }
-                });
-            }
-        });
-    });
-
-    if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function') {
-        $('#emailmodal .js-data-example-ajax').each(function () {
-            initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
-                url: crmRecipientsUrl,
-                dropdownParent: '#emailmodal',
-                enableRemoteLoad: true
-            }));
-        });
-        $('#emailmodal .js-data-example-ajaxcc').each(function () {
-            initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
-                url: crmRecipientsUrl,
-                dropdownParent: '#emailmodal',
-                enableRemoteLoad: true
-            }));
-        });
-    }
-
-    // ============================================
-    // MATTER OFFICE ASSIGNMENT HANDLERS
-    // ============================================
-    
-    // Handle Assign Office button click
     $(document).on('click', '.assign-office-btn, .edit-office-btn', function(e) {
         e.preventDefault();
-        
         var matterId = $(this).data('matter-id');
         var matterNo = $(this).data('matter-no');
         var matterTitle = $(this).data('matter-title');
         var officeId = $(this).data('office-id') || '';
-        
-        // Populate modal
+
         $('#edit_matter_id').val(matterId);
         $('#modal_matter_number').text(matterNo);
         $('#modal_matter_title').text(matterTitle || 'N/A');
         $('#edit_office_id').val(officeId).trigger('change');
-        
-        // Show modal
         $('#editMatterOfficeModal').modal('show');
     });
-    
-    // Handle form submission
+
     $('#editMatterOfficeForm').on('submit', function(e) {
         e.preventDefault();
-        
         var formData = $(this).serialize();
         var submitBtn = $(this).find('button[type="submit"]');
         var originalText = submitBtn.html();
-        
-        // Disable button and show loading
         submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
-        
+
         $.ajax({
             url: '{{ route("matters.update-office") }}',
             method: 'POST',
             data: formData,
             dataType: 'json',
             success: function(response) {
-                if(response.success) {
-                    // Show success message
-                    iziToast.success({
-                        title: 'Success!',
-                        message: response.message,
-                        position: 'topRight'
-                    });
-                    // Reload page to show updated office after a short delay
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1500);
+                if (response.success) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Success', message: response.message, position: 'topRight' });
+                    }
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
-                    iziToast.error({
-                        title: 'Error!',
-                        message: response.message || 'Failed to update office',
-                        position: 'topRight'
-                    });
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Failed to update office', position: 'topRight' });
+                    }
                     submitBtn.prop('disabled', false).html(originalText);
                 }
             },
             error: function(xhr) {
-                var errorMsg = 'An error occurred. Please try again.';
-                if(xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMsg = xhr.responseJSON.message;
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred. Please try again.';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: errorMsg, position: 'topRight' });
                 }
-                iziToast.error({
-                    title: 'Error!',
-                    message: errorMsg,
-                    position: 'topRight'
-                });
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
     });
-    
-    // Reset form when modal is closed
+
     $('#editMatterOfficeModal').on('hidden.bs.modal', function() {
         $('#editMatterOfficeForm')[0].reset();
         $('#edit_office_id').val('').trigger('change');
@@ -829,6 +512,3 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
-
-
-
