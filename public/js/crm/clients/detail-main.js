@@ -942,7 +942,7 @@ $(document).ready(function() {
         var safeLabel = $('<div/>').text(label).html();
         var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
         var showToggleList = options.showToggleList !== false;
-        var isOfficePreview = normalizedType.match(/^(docx?|pptx?|rtf|odt|odp)$/);
+        var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
         var typeBadge = isOfficePreview
             ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
             : '';
@@ -1150,22 +1150,21 @@ $(document).ready(function() {
         return /^(xls|xlsx|csv|ods)$/.test(normalizedType);
     }
 
-    function previewFile(fileType, fileUrl, containerId, fileLabel) {
-        // Excel/CSV: always download; do not open the in-pane preview.
-        if (isSpreadsheetFileType(fileType)) {
-            if (!fileLabel) {
-                var spreadsheetDocId = extractDocumentIdFromPreviewUrl(fileUrl);
-                if (spreadsheetDocId) {
-                    var nameEl = document.querySelector('#id_' + spreadsheetDocId + ' .doc-row span');
-                    if (nameEl) {
-                        fileLabel = nameEl.textContent.trim();
-                    }
-                }
-            }
-            downloadDocumentFile(fileUrl, fileLabel);
+    /**
+     * Expand the preview pane to full width (hide checklist list) for document viewing.
+     */
+    function enableFullDocumentPreviewLayout(container) {
+        if (!container || !container.length) {
             return;
         }
+        var $pane = container.closest('.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane');
+        if ($pane.length) {
+            $pane.addClass('hide-list-view');
+            $pane.find('.client-doc-preview-toggle-list-btn').addClass('is-active');
+        }
+    }
 
+    function previewFile(fileType, fileUrl, containerId, fileLabel) {
         const container = resolvePreviewContainer(containerId);
         if (!container.length) {
             console.error('Preview container not found:', containerId);
@@ -1198,13 +1197,20 @@ $(document).ready(function() {
 
 
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
-        const normalizedType = (fileType || '').toLowerCase();
-        const isOfficePreview = normalizedType.match(/^(docx?|pptx?|rtf|odt|odp)$/);
+        const normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        const isSpreadsheet = isSpreadsheetFileType(normalizedType);
+        // Excel/Word/etc. use the shared office→PDF/HTML embed preview.
+        const isOfficePreview = !!(normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/) || isSpreadsheet);
         const inDocPane = isClientDocPreviewPane(container);
         const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, {
             showToggleList: true
         });
         const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
+
+        // Spreadsheets open in full-width document view (list hidden; toolbar toggle restores it).
+        if (isSpreadsheet) {
+            enableFullDocumentPreviewLayout(container);
+        }
 
         container.html(`
             <div class="preview-content preview-content-loading" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
@@ -1217,6 +1223,11 @@ $(document).ready(function() {
                 </div>
             </div>
         `);
+
+        // Re-apply toggle active state after header is rendered.
+        if (isSpreadsheet) {
+            enableFullDocumentPreviewLayout(container);
+        }
 
         if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
             window.scheduleClientDocumentsPanelHeightAdjust();
@@ -1278,6 +1289,9 @@ $(document).ready(function() {
                 frameHeight: getPreviewFrameHeight(container, isOfficePreview),
                 onError: showPreviewError
             });
+            if (isSpreadsheet) {
+                enableFullDocumentPreviewLayout(container);
+            }
         } else if (normalizedType === 'eml') {
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
@@ -1342,6 +1356,7 @@ $(document).ready(function() {
     window.documentFileIconClass = documentFileIconClass;
     window.downloadDocumentFile = downloadDocumentFile;
     window.isSpreadsheetFileType = isSpreadsheetFileType;
+    window.enableFullDocumentPreviewLayout = enableFullDocumentPreviewLayout;
 
 
 
