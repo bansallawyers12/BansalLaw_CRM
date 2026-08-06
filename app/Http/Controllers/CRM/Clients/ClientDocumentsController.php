@@ -2395,6 +2395,32 @@ class ClientDocumentsController extends Controller
                         return response($this->officePreviewErrorHtml('The document file could not be loaded from storage. Use <strong>Download original</strong> or re-upload the file.'), 404)
                             ->header('Content-Type', 'text/html; charset=UTF-8');
                     }
+
+                    // Spreadsheets: prefer HTML table preview. Live LibreOffice/Python PDF conversion
+                    // often produces unreadable multi-page dumps instead of a sheet layout.
+                    if ($this->isSpreadsheetDocumentType($displayFilename, (string) ($document->filetype ?? ''))) {
+                        $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
+                        if ($htmlPreview !== null) {
+                            return response($htmlPreview, 200, [
+                                'Content-Type' => 'text/html; charset=UTF-8',
+                                'Cache-Control' => 'private, max-age=60',
+                            ]);
+                        }
+
+                        $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
+                        if ($pdfBytes !== null) {
+                            $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
+
+                            return response($pdfBytes, 200, [
+                                'Content-Type' => 'application/pdf',
+                                'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
+                            ]);
+                        }
+
+                        return response($this->officePreviewErrorHtml('This spreadsheet could not be converted for preview. Use <strong>Download</strong> to open it in Excel.'), 503)
+                            ->header('Content-Type', 'text/html; charset=UTF-8');
+                    }
+
                     $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
                     if ($pdfBytes !== null) {
                         $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
@@ -2535,6 +2561,14 @@ class ClientDocumentsController extends Controller
         return in_array($ext, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp', 'csv'], true);
     }
 
+    private function isSpreadsheetDocumentType(string $filename, string $fileType = ''): bool
+    {
+        $ext = strtolower(trim($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION)));
+        $ext = ltrim($ext, '.');
+
+        return in_array($ext, ['xls', 'xlsx', 'csv', 'ods'], true);
+    }
+
     private function convertOfficeDocumentToPdfBytes(string $fileContent, string $filename): ?string
     {
         $converter = app(PythonConverterService::class);
@@ -2648,11 +2682,14 @@ class ClientDocumentsController extends Controller
 
             // If writer returned a full HTML doc, inject styles; otherwise wrap.
             $styles = '<style>'
-                . 'body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:13px;color:#222;margin:0;padding:16px;background:#fff;}'
-                . 'table{border-collapse:collapse;width:auto;max-width:100%;margin-bottom:24px;}'
-                . 'td,th{border:1px solid #c5c5c5;padding:4px 8px;white-space:nowrap;}'
-                . 'th{background:#f3f4f6;font-weight:600;}'
-                . 'h2,h3{font-size:15px;margin:18px 0 8px;color:#1f2937;}'
+                . 'html,body{margin:0;padding:0;background:#f8fafc;}'
+                . 'body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:13px;color:#111827;padding:16px;}'
+                . 'table{border-collapse:collapse;width:max-content;max-width:none;margin:0 0 28px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.06);}'
+                . 'td,th{border:1px solid #cbd5e1;padding:5px 10px;white-space:nowrap;vertical-align:top;}'
+                . 'th{background:#e2e8f0;font-weight:600;position:sticky;top:0;z-index:1;}'
+                . 'tr:nth-child(even) td{background:#f8fafc;}'
+                . 'h1,h2,h3{font-size:15px;margin:0 0 10px;color:#0f172a;}'
+                . 'a{color:#1d4ed8;word-break:break-all;}'
                 . '</style>';
 
             if (stripos($body, '<html') !== false) {
