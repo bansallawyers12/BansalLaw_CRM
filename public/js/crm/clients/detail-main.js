@@ -942,7 +942,7 @@ $(document).ready(function() {
         var safeLabel = $('<div/>').text(label).html();
         var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
         var showToggleList = options.showToggleList !== false;
-        var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
+        var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
         var typeBadge = isOfficePreview
             ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
             : '';
@@ -1102,10 +1102,16 @@ $(document).ready(function() {
         if (normalizedType === 'pdf') {
             return 'fa-file-pdf';
         }
-        if (/^docx?$/.test(normalizedType)) {
+        if (/^docx?$/.test(normalizedType) || /^(rtf|odt)$/.test(normalizedType)) {
             return 'fa-file-word';
         }
-        return 'fa-file-image';
+        if (/^xlsx?$/.test(normalizedType) || /^(csv|ods)$/.test(normalizedType)) {
+            return 'fa-file-excel';
+        }
+        if (/^pptx?$/.test(normalizedType) || normalizedType === 'odp') {
+            return 'fa-file-powerpoint';
+        }
+        return 'fa-file';
     }
 
     function previewVideoMimeType(fileType) {
@@ -1157,7 +1163,7 @@ $(document).ready(function() {
 
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();
-        const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
+        const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
         const inDocPane = isClientDocPreviewPane(container);
         const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, {
             showToggleList: true
@@ -1245,26 +1251,6 @@ $(document).ready(function() {
                 onError: showPreviewError
             });
         } else if (normalizedType === 'txt') {
-            fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error('HTTP ' + response.status);
-                    }
-                    return response.text();
-                })
-                .then(function(text) {
-                    const escaped = $('<div/>').text(text).html();
-                    container.html(`
-                        <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
-                            ${previewHeaderHtml}
-                            <div class="preview-text-body" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff; min-height: 0;">
-                                <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
-                            </div>
-                        </div>
-                    `);
-                })
-                .catch(showPreviewError);
-        } else if (normalizedType === 'csv') {
             fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
                 .then(function(response) {
                     if (!response.ok) {

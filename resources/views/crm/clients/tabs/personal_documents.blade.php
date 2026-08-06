@@ -98,8 +98,8 @@
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="bulk-upload-hint">PDF, images, Word docs, and videos (MP4, WebM, MOV, etc.) — up to 50MB (200MB for videos)</p>
-                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4,.webm,.mov,.m4v,.avi,.mkv">
+                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), and videos (MP4, WebM, MOV, etc.) — up to 50MB (200MB for videos)</p>
+                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count">0</span></h5>
@@ -134,7 +134,18 @@
                                                     
                                                     // Private S3: use app preview route (presigned redirect), not a direct bucket URL
                                                     $previewUrl = url('/documents/preview/' . $fetch->id);
-                                                    $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
+                                                    $fileExt = strtolower((string) ($fetch->filetype ?? ''));
+                                                    if (in_array($fileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                                                        $fileIcon = 'fa-file-video';
+                                                    } elseif (in_array($fileExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+                                                        $fileIcon = 'fa-file-excel';
+                                                    } elseif (in_array($fileExt, ['doc', 'docx', 'rtf', 'odt'], true)) {
+                                                        $fileIcon = 'fa-file-word';
+                                                    } elseif ($fileExt === 'pdf') {
+                                                        $fileIcon = 'fa-file-pdf';
+                                                    } else {
+                                                        $fileIcon = 'fa-file-image';
+                                                    }
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -186,7 +197,7 @@
                                                                                data-doccategory="<?= $id ?>" 
                                                                                type="file" 
                                                                                name="document_upload"
-                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4,.webm,.mov,.m4v,.avi,.mkv"
+                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv"
                                                                                style="display: none;"/>
                                                                     </form>
                                                                 </div>
@@ -214,7 +225,18 @@
                                                 <?php
                                                 $previewUrlGrid = url('/documents/preview/' . $fetch->id);
                                                 $dlFilenameGrid = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
-                                                $gridFileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
+                                                $gridExt = strtolower((string) ($fetch->filetype ?? ''));
+                                                if (in_array($gridExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                                                    $gridFileIcon = 'fa-file-video';
+                                                } elseif (in_array($gridExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+                                                    $gridFileIcon = 'fa-file-excel';
+                                                } elseif (in_array($gridExt, ['doc', 'docx', 'rtf', 'odt'], true)) {
+                                                    $gridFileIcon = 'fa-file-word';
+                                                } elseif ($gridExt === 'pdf') {
+                                                    $gridFileIcon = 'fa-file-pdf';
+                                                } else {
+                                                    $gridFileIcon = 'fa-file-image';
+                                                }
                                                 ?>
                                                 <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                     <div class="grid_col">
@@ -1796,7 +1818,7 @@
                     const maxSize = 50 * 1024 * 1024; // 50MB
                     const maxVideoSize = 200 * 1024 * 1024; // 200MB
                     const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
-                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'].concat(videoExtensions);
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
                     const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
@@ -1834,7 +1856,7 @@
                     }
                     
                     if (bulkUploadFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, or video files (MP4, WebM, MOV, etc.) under the size limit.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, or video files (MP4, WebM, MOV, etc.) under the size limit.');
                         return;
                     }
                     

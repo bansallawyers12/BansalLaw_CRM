@@ -27,7 +27,9 @@ use App\Support\StaffClientVisibility;
 use App\Services\PythonConverterService;
 use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Http\JsonResponse;
-use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
+use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
+use PhpOffice\PhpSpreadsheet\Writer\Html as SpreadsheetHtmlWriter;
 use League\Flysystem\UnableToCheckFileExistence;
 
 class ClientDocumentsController extends Controller
@@ -2530,7 +2532,7 @@ class ClientDocumentsController extends Controller
     {
         $ext = strtolower($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION));
 
-        return in_array($ext, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp'], true);
+        return in_array($ext, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp', 'csv'], true);
     }
 
     private function convertOfficeDocumentToPdfBytes(string $fileContent, string $filename): ?string
@@ -2557,6 +2559,11 @@ class ClientDocumentsController extends Controller
     private function convertOfficeDocumentToHtml(string $fileContent, string $filename): ?string
     {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        if (in_array($extension, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+            return $this->convertSpreadsheetDocumentToHtml($fileContent, $filename, $extension);
+        }
+
         if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
             return null;
         }
@@ -2572,8 +2579,8 @@ class ClientDocumentsController extends Controller
         file_put_contents($inputPath, $fileContent);
 
         try {
-            $phpWord = IOFactory::load($inputPath);
-            $writer = IOFactory::createWriter($phpWord, 'HTML');
+            $phpWord = PhpWordIOFactory::load($inputPath);
+            $writer = PhpWordIOFactory::createWriter($phpWord, 'HTML');
             ob_start();
             $writer->save('php://output');
             $body = ob_get_clean();
@@ -2589,6 +2596,77 @@ class ClientDocumentsController extends Controller
                 . '</body></html>';
         } catch (\Throwable $e) {
             Log::warning('PhpWord HTML office preview failed', [
+                'file' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        } finally {
+            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
+                @unlink($tempFile);
+            }
+            @rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Build a table HTML preview for Excel/CSV when PDF conversion is unavailable.
+     */
+    private function convertSpreadsheetDocumentToHtml(string $fileContent, string $filename, string $extension): ?string
+    {
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('spreadsheet.' . $extension);
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_sheet_html_' . uniqid('', true);
+
+        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+            return null;
+        }
+
+        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
+        file_put_contents($inputPath, $fileContent);
+
+        try {
+            $spreadsheet = SpreadsheetIOFactory::load($inputPath);
+
+            // Cap very large sheets so preview stays responsive.
+            foreach ($spreadsheet->getAllSheets() as $sheet) {
+                $highestRow = (int) $sheet->getHighestDataRow();
+                if ($highestRow > 500) {
+                    $sheet->removeRow(501, $highestRow - 500);
+                }
+            }
+
+            $writer = new SpreadsheetHtmlWriter($spreadsheet);
+            $writer->setPreCalculateFormulas(false);
+            $writer->setEmbedImages(false);
+            $tmpHtml = $tempDir . DIRECTORY_SEPARATOR . 'preview.html';
+            $writer->save($tmpHtml);
+            $body = @file_get_contents($tmpHtml);
+
+            if ($body === false || trim($body) === '') {
+                return null;
+            }
+
+            // If writer returned a full HTML doc, inject styles; otherwise wrap.
+            $styles = '<style>'
+                . 'body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:13px;color:#222;margin:0;padding:16px;background:#fff;}'
+                . 'table{border-collapse:collapse;width:auto;max-width:100%;margin-bottom:24px;}'
+                . 'td,th{border:1px solid #c5c5c5;padding:4px 8px;white-space:nowrap;}'
+                . 'th{background:#f3f4f6;font-weight:600;}'
+                . 'h2,h3{font-size:15px;margin:18px 0 8px;color:#1f2937;}'
+                . '</style>';
+
+            if (stripos($body, '<html') !== false) {
+                if (stripos($body, '</head>') !== false) {
+                    return (string) preg_replace('/<\/head>/i', $styles . '</head>', $body, 1);
+                }
+
+                return $styles . $body;
+            }
+
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Spreadsheet preview</title>'
+                . $styles . '</head><body>' . $body . '</body></html>';
+        } catch (\Throwable $e) {
+            Log::warning('PhpSpreadsheet HTML office preview failed', [
                 'file' => $filename,
                 'error' => $e->getMessage(),
             ]);

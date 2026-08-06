@@ -154,8 +154,8 @@
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="matter-bulk-dropzone-hint">You can select multiple files at once</p>
-                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV) — up to 50MB. You can select multiple files.</p>
+                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count-visa">0</span></h5>
@@ -215,10 +215,22 @@
                                                             <?php if ($fetch->file_name): ?>
                                                                 <?php
                                                                 $displayFileName = $fetch->file_name . '.' . ($fetch->filetype ?? '');
+                                                                $matterFileExt = strtolower((string) ($fetch->filetype ?? ''));
+                                                                if (in_array($matterFileExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+                                                                    $matterFileIcon = 'fa-file-excel';
+                                                                } elseif (in_array($matterFileExt, ['doc', 'docx', 'rtf', 'odt'], true)) {
+                                                                    $matterFileIcon = 'fa-file-word';
+                                                                } elseif ($matterFileExt === 'pdf') {
+                                                                    $matterFileIcon = 'fa-file-pdf';
+                                                                } elseif (in_array($matterFileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                                                                    $matterFileIcon = 'fa-file-video';
+                                                                } else {
+                                                                    $matterFileIcon = 'fa-file-image';
+                                                                }
                                                                 ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode($matterPreviewContainerId) ?>)'>
-                                                                        <i class="fa-solid fa-file-image matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
+                                                                        <i class="fa-solid <?= $matterFileIcon ?> matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -237,7 +249,7 @@
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
-                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" style="display: none;"/>
+                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv" style="display: none;"/>
                                                                     </form>
                                                                 </div>
                                                             <?php endif; ?>
@@ -373,11 +385,21 @@
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
                                                     $gridDownloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+                                                    $gridExt = strtolower((string) ($fetch->filetype ?? ''));
+                                                    if (in_array($gridExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+                                                        $gridFileIcon = 'fa-file-excel';
+                                                    } elseif (in_array($gridExt, ['doc', 'docx', 'rtf', 'odt'], true)) {
+                                                        $gridFileIcon = 'fa-file-word';
+                                                    } elseif ($gridExt === 'pdf') {
+                                                        $gridFileIcon = 'fa-file-pdf';
+                                                    } else {
+                                                        $gridFileIcon = 'fa-file-image';
+                                                    }
                                                     ?>
                                                     <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                         <div class="grid_col">
                                                             <div class="grid_icon">
-                                                                <i class="fa-solid fa-file-image"></i>
+                                                                <i class="fa-solid <?= $gridFileIcon ?>"></i>
                                                             </div>
                                                             <div class="grid_content">
                                                                 <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
@@ -1247,7 +1269,7 @@
                     // Validate and add files to array
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
-                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'];
                     const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
@@ -1282,7 +1304,7 @@
                     }
                     
                     if (bulkUploadVisaFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, or DOCX files under 50MB.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, or CSV files under 50MB.');
                         return;
                     }
                     
