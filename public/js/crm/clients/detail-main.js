@@ -942,7 +942,7 @@ $(document).ready(function() {
         var safeLabel = $('<div/>').text(label).html();
         var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
         var showToggleList = options.showToggleList !== false;
-        var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
+        var isOfficePreview = normalizedType.match(/^(docx?|pptx?|rtf|odt|odp)$/);
         var typeBadge = isOfficePreview
             ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
             : '';
@@ -1128,7 +1128,43 @@ $(document).ready(function() {
         return mimeMap[normalizedType] || 'video/mp4';
     }
 
+    function downloadDocumentFile(fileUrl, fileLabel) {
+        if (!fileUrl) {
+            return;
+        }
+        var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
+        var link = document.createElement('a');
+        link.href = downloadUrl;
+        link.rel = 'noopener';
+        if (fileLabel) {
+            link.setAttribute('download', String(fileLabel));
+        }
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function isSpreadsheetFileType(fileType) {
+        var normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        return /^(xls|xlsx|csv|ods)$/.test(normalizedType);
+    }
+
     function previewFile(fileType, fileUrl, containerId, fileLabel) {
+        // Excel/CSV: always download; do not open the in-pane preview.
+        if (isSpreadsheetFileType(fileType)) {
+            if (!fileLabel) {
+                var spreadsheetDocId = extractDocumentIdFromPreviewUrl(fileUrl);
+                if (spreadsheetDocId) {
+                    var nameEl = document.querySelector('#id_' + spreadsheetDocId + ' .doc-row span');
+                    if (nameEl) {
+                        fileLabel = nameEl.textContent.trim();
+                    }
+                }
+            }
+            downloadDocumentFile(fileUrl, fileLabel);
+            return;
+        }
 
         const container = resolvePreviewContainer(containerId);
         if (!container.length) {
@@ -1163,7 +1199,7 @@ $(document).ready(function() {
 
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();
-        const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
+        const isOfficePreview = normalizedType.match(/^(docx?|pptx?|rtf|odt|odp)$/);
         const inDocPane = isClientDocPreviewPane(container);
         const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, {
             showToggleList: true
@@ -1304,6 +1340,8 @@ $(document).ready(function() {
     window.previewFile = previewFile;
     window.resolvePreviewContainer = resolvePreviewContainer;
     window.documentFileIconClass = documentFileIconClass;
+    window.downloadDocumentFile = downloadDocumentFile;
+    window.isSpreadsheetFileType = isSpreadsheetFileType;
 
 
 
