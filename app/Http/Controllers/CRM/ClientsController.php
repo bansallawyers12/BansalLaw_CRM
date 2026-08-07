@@ -88,10 +88,11 @@ use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
 use App\Traits\LogsClientActivity;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 
 class ClientsController extends Controller
 {
-    use ClientAuthorization, ClientHelpers, ClientQueries, LogsClientActivity;
+    use ClientAuthorization, ClientHelpers, ClientQueries, LogsClientActivity, EnsuresCrmRecordAccess;
     
     protected $openAiClient;
     protected $smsManager;
@@ -3566,203 +3567,99 @@ class ClientsController extends Controller
         $fromId = (int) ($request->merge_from ?? 0);
         $toId = (int) ($request->merge_into ?? 0);
 
-        if ($fromId > 0 && $toId > 0) {
+        if ($fromId > 0 && $toId > 0 && $fromId !== $toId) {
             $this->ensureCrmRecordAccess($fromId);
             $this->ensureCrmRecordAccess($toId);
 
             DB::beginTransaction();
             try {
-                // Soft-delete the SOURCE record (merge_from), NOT the survivor (merge_into)
+                // 1. Backfill missing personal details on survivor (toId) from source (fromId)
+                $fromAdmin = DB::table('admins')->where('id', $fromId)->first();
+                $toAdmin = DB::table('admins')->where('id', $toId)->first();
+
+                if ($fromAdmin && $toAdmin) {
+                    $fieldsToBackfill = [
+                        'first_name', 'last_name', 'email', 'phone', 'country_code', 'country',
+                        'state', 'city', 'address', 'zip', 'marital_status', 'refer_by', 'dob',
+                        'age', 'gender', 'dob_verified_date', 'dob_verified_by', 'australian_study',
+                        'australian_study_date', 'specialist_education', 'specialist_education_date',
+                        'regional_study', 'regional_study_date', 'naati_test', 'py_test',
+                        'naati_date', 'py_date', 'email_type', 'contact_type', 'tagname'
+                    ];
+
+                    $updates = [];
+                    foreach ($fieldsToBackfill as $field) {
+                        if (property_exists($fromAdmin, $field) && property_exists($toAdmin, $field)) {
+                            $fromVal = $fromAdmin->$field;
+                            $toVal = $toAdmin->$field;
+                            if ((is_null($toVal) || trim((string)$toVal) === '') && (!is_null($fromVal) && trim((string)$fromVal) !== '')) {
+                                $updates[$field] = $fromVal;
+                            }
+                        }
+                    }
+
+                    if (!empty($updates)) {
+                        DB::table('admins')->where('id', $toId)->update($updates);
+                    }
+                }
+
+                // 2. Soft-delete the SOURCE record (merge_from), NOT the survivor (merge_into)
                 DB::table('admins')->where('id', $fromId)->update(['is_deleted' => now()]);
 
-                // Migrate client_matters
-                DB::table('client_matters')->where('client_id', $fromId)->update(['client_id' => $toId]);
+                // 3. Migrate all client-referencing tables atomically
+                $tablesToMigrate = [
+                    'client_matters' => ['client_id'],
+                    'account_client_receipts' => ['client_id'],
+                    'account_all_invoice_receipts' => ['client_id'],
+                    'trust_withdrawal_authorities' => ['client_id'],
+                    'client_relationships' => ['client_id', 'admin_id', 'related_client_id'],
+                    'client_spouse_details' => ['client_id', 'related_client_id'],
+                    'client_qualifications' => ['client_id', 'admin_id'],
+                    'client_emails' => ['client_id', 'admin_id'],
+                    'client_contacts' => ['client_id', 'admin_id'],
+                    'client_addresses' => ['client_id', 'admin_id'],
+                    'client_characters' => ['client_id', 'admin_id'],
+                    'client_experiences' => ['client_id', 'admin_id'],
+                    'client_occupations' => ['client_id', 'admin_id'],
+                    'client_passport_informations' => ['client_id', 'admin_id'],
+                    'client_testscore' => ['client_id', 'admin_id'],
+                    'client_travel_informations' => ['client_id', 'admin_id'],
+                    'client_visa_countries' => ['client_id', 'admin_id'],
+                    'client_conflict_checks' => ['client_id'],
+                    'client_conflict_parties' => ['client_id'],
+                    'client_court_hearings' => ['client_id'],
+                    'client_legal_forms' => ['client_id'],
+                    'client_matter_tasks' => ['client_id'],
+                    'activities_logs' => ['client_id'],
+                    'notes' => ['client_id'],
+                    'documents' => ['client_id'],
+                    'appointments' => ['client_id'],
+                    'booking_appointments' => ['client_id'],
+                    'quotations' => ['client_id'],
+                    'cost_assignment_forms' => ['client_id'],
+                    'email_logs' => ['client_id'],
+                    'checkin_logs' => ['client_id'],
+                    'front_desk_check_ins' => ['client_id', 'admin_id'],
+                    'company_directors' => ['director_client_id'],
+                    'company_nominations' => ['nominated_client_id'],
+                    'companies' => ['admin_id'],
+                    'email_verifications' => ['client_id'],
+                    'phone_verifications' => ['client_id'],
+                    'nomination_document_types' => ['client_id'],
+                    'personal_document_types' => ['client_id'],
+                    'visa_document_types' => ['client_id'],
+                    'sms_logs' => ['client_id'],
+                    'staff_calendar_events' => ['client_id'],
+                    'client_access_grants' => ['admin_id'],
+                ];
 
-                // Migrate receipts
-                DB::table('account_client_receipts')->where('client_id', $fromId)->update(['client_id' => $toId]);
-
-                // Migrate relationships
-                DB::table('client_relationships')->where('client_id', $fromId)->update(['client_id' => $toId]);
-
-                // Migrate qualifications
-                DB::table('client_qualifications')->where('client_id', $fromId)->update(['client_id' => $toId]);
-
-                // Migrate emails & contacts & addresses
-                DB::table('client_emails')->where('client_id', $fromId)->update(['client_id' => $toId]);
-                DB::table('client_contacts')->where('client_id', $fromId)->update(['client_id' => $toId]);
-                DB::table('client_addresses')->where('client_id', $fromId)->update(['client_id' => $toId]);
-
-                // activities_logs
-                $activitiesLogs = DB::table('activities_logs')->where('client_id', $fromId)->get();
-                if(!empty($activitiesLogs)){
-                    foreach($activitiesLogs as $actkey=>$actval){
-                        DB::table('activities_logs')->insert(
-                            [
-                                'client_id' => $toId,
-                                'created_by' => $actval->created_by,
-                                'description' => $actval->description,
-                                'created_at' => $actval->created_at,
-                                'updated_at' => $actval->updated_at,
-                                'subject' => $actval->subject,
-                                'use_for' => $actval->use_for,
-                                'followup_date' => $actval->followup_date,
-                                'task_group' => $actval->task_group,
-                                'task_status' => $actval->task_status,
-                                'source' => $actval->source ?? null
-                            ]
-                        );
-                    }
-                }
-
-                // notes
-                $notes = DB::table('notes')->where('client_id', $fromId)->get();
-                if(!empty($notes)){
-                    foreach($notes as $notekey=>$noteval){
-                        DB::table('notes')->insert(
-                            [
-                                'user_id'=> $noteval->user_id,
-                                'client_id' => $toId,
-                                'lead_id' => $noteval->lead_id,
-                                'title' => $noteval->title,
-                                'description' => $noteval->description,
-                                'created_at' => $noteval->created_at,
-                                'updated_at' => $noteval->updated_at,
-                                'mail_id' => $noteval->mail_id,
-                                'type' => $noteval->type,
-                                'pin' => $noteval->pin,
-                                'action_date' => $noteval->action_date,
-                                'is_action' => $noteval->is_action,
-                                'assigned_to' => $noteval->assigned_to,
-                                'status' => $noteval->status,
-                                'task_group' => $noteval->task_group,
-                            ]
-                        );
-                    }
-                }
-
-                // documents
-                $documents = DB::table('documents')->where('client_id', $fromId)->get();
-                if(!empty($documents)){
-                    foreach($documents as $dockey=>$docval){
-                        DB::table('documents')->insert(
-                            [
-                                'document'=> $docval->document,
-                                'filetype' => $docval->filetype,
-                                'myfile' => $docval->myfile,
-                                'user_id' => $docval->user_id,
-                                'client_id' => $toId,
-                                'file_size' => $docval->file_size,
-                                'type' => $docval->type,
-                                'doc_type' => $docval->doc_type,
-                                'created_at' => $docval->created_at,
-                                'updated_at' => $docval->updated_at
-                            ]
-                        );
-                    }
-                }
-
-                // appointments
-                $appointments = DB::table('appointments')->where('client_id', $fromId)->get();
-                if(!empty($appointments)){
-                    foreach($appointments as $appkey=>$appval){
-                        DB::table('appointments')->insert(
-                            [
-                                'user_id'=> $appval->user_id,
-                                'client_id' => $toId,
-                                'service_id' => $appval->service_id,
-                                'noe_id' => $appval->noe_id,
-                                'full_name' => $appval->full_name,
-                                'email' => $appval->email,
-                                'phone' => $appval->phone,
-                                'timezone' => $appval->timezone,
-                                'date' => $appval->date,
-                                'time' => $appval->time,
-                                'timeslot_full' => $appval->timeslot_full,
-                                'title' => $appval->title,
-                                'description' => $appval->description,
-                                'invites' => $appval->invites,
-                                'appointment_details' => $appval->appointment_details,
-                                'status' => $appval->status,
-                                'assignee' => $appval->assignee,
-                                'priority' => $appval->priority,
-                                'priority_no' => $appval->priority_no,
-                                'created_at' => $appval->created_at,
-                                'updated_at' => $appval->updated_at,
-                                'related_to' => $appval->related_to,
-                                'order_hash' => $appval->order_hash
-                            ]
-                        );
-                    }
-                }
-
-                // quotations
-                $quotations = DB::table('quotations')->where('client_id', $fromId)->get();
-                if(!empty($quotations)){
-                    foreach($quotations as $quotekey=>$quoteval){
-                        DB::table('quotations')->insert(
-                            [
-                                'client_id' => $toId,
-                                'user_id'=> $quoteval->user_id,
-                                'total_fee' => $quoteval->total_fee,
-                                'status' => $quoteval->status,
-                                'due_date' => $quoteval->due_date,
-                                'created_by' => $quoteval->created_by,
-                                'created_at' => $quoteval->created_at,
-                                'updated_at' => $quoteval->updated_at,
-                                'currency' => $quoteval->currency,
-                                'is_archive' => $quoteval->is_archive
-                            ]
-                        );
-                    }
-                }
-
-                // email_logs
-                $conversations = DB::table('email_logs')->where('client_id', $fromId)->get();
-                if(!empty($conversations)){
-                    foreach($conversations as $mailkey=>$mailval){
-                        DB::table('email_logs')->insert(
-                            [
-                                'user_id' => $mailval->user_id,
-                                'from_mail' => $mailval->from_mail,
-                                'to_mail' => $mailval->to_mail,
-                                'cc' => $mailval->cc,
-                                'template_id' => $mailval->template_id,
-                                'subject' => $mailval->subject,
-                                'message' => $mailval->message,
-                                'created_at' => $mailval->created_at,
-                                'updated_at' => $mailval->updated_at,
-                                'type' => $mailval->type,
-                                'reciept_id' => $mailval->reciept_id,
-                                'attachments' => $mailval->attachments,
-                                'mail_type' => $mailval->mail_type,
-                                'client_id' => $toId
-                            ]
-                        );
-                    }
-                }
-
-                // checkin_logs
-                $checkinLogs = DB::table('checkin_logs')->where('client_id', $fromId)->get();
-                if(!empty($checkinLogs)){
-                    foreach($checkinLogs as $checkkey=>$checkval){
-                        DB::table('checkin_logs')->insert(
-                            [
-                                 'client_id' => $toId,
-                                 'contact_type' => $checkval->contact_type,
-                                 'user_id' => $checkval->user_id,
-                                 'visit_purpose' => $checkval->visit_purpose,
-                                 'status' => $checkval->status,
-                                 'date' => $checkval->date,
-                                 'sesion_start' => $checkval->sesion_start,
-                                 'sesion_end' => $checkval->sesion_end,
-                                 'created_at' => $checkval->created_at,
-                                 'updated_at' => $checkval->updated_at,
-                                 'wait_time' => $checkval->wait_time,
-                                 'attend_time' => $checkval->attend_time,
-                                 'office' => $checkval->office,
-                                 'wait_type' => $checkval->wait_type
-                            ]
-                        );
+                foreach ($tablesToMigrate as $tableName => $cols) {
+                    if (Schema::hasTable($tableName)) {
+                        foreach ($cols as $col) {
+                            if (Schema::hasColumn($tableName, $col)) {
+                                DB::table($tableName)->where($col, $fromId)->update([$col => $toId]);
+                            }
+                        }
                     }
                 }
 
