@@ -294,16 +294,16 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		$note = Note::find($note_id);
-		if($note){
-			$this->ensureCrmRecordAccess((int) $note->client_id);
-			$data = Note::select('title','description','task_group','mobile_number')->where('id',$note_id)->first();
-			$response['status'] 	= 	true;
-			$response['data']	=	$data;
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+		if (!$note) {
+			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
-		echo json_encode($response);
+		$this->ensureCrmRecordAccess((int) $note->client_id);
+		$data = Note::select('title','description','task_group','mobile_number')->where('id',$note_id)->first();
+		
+		return response()->json([
+			'status' => true,
+			'data' => $data
+		]);
 	}
 
     /**
@@ -316,19 +316,19 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		$note = Note::find($note_id);
-		if($note){
-			$this->ensureCrmRecordAccess((int) $note->client_id);
-			$data = Note::select('title','description','user_id','updated_at')->where('id',$note_id)->first();
-			$admin = Admin::where('id', $data->user_id)->first();
-			$s = substr(@$admin->first_name, 0, 1);
-			$data->admin = $s;
-			$response['status'] 	= 	true;
-			$response['data']	=	$data;
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+		if (!$note) {
+			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
-		echo json_encode($response);
+		$this->ensureCrmRecordAccess((int) $note->client_id);
+		$data = Note::select('title','description','user_id','updated_at')->where('id',$note_id)->first();
+		$admin = Admin::where('id', $data->user_id)->first();
+		$s = substr(@$admin->first_name, 0, 1);
+		$data->admin = $s;
+
+		return response()->json([
+			'status' => true,
+			'data' => $data
+		]);
 	}
 
     /**
@@ -341,19 +341,19 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		$act = \App\Models\ActivitiesLog::where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->first();
-		if($act){
-			$this->ensureCrmRecordAccess((int) $act->client_id);
-			$data = \App\Models\ActivitiesLog::select('subject as title','description','created_by as user_id','updated_at')->where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->first();
-			$admin = Admin::where('id', $data->user_id)->first();
-			$s = substr(@$admin->first_name, 0, 1);
-			$data->admin = $s;
-			$response['status'] 	= 	true;
-			$response['data']	=	$data;
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+		if (!$act) {
+			return response()->json(['status' => false, 'message' => 'Application note not found'], 404);
 		}
-		echo json_encode($response);
+		$this->ensureCrmRecordAccess((int) $act->client_id);
+		$data = \App\Models\ActivitiesLog::select('subject as title','description','created_by as user_id','updated_at')->where('activity_type','note')->where('use_for','matter')->where('id',$note_id)->first();
+		$admin = Admin::where('id', $data->user_id)->first();
+		$s = substr(@$admin->first_name, 0, 1);
+		$data->admin = $s;
+
+		return response()->json([
+			'status' => true,
+			'data' => $data
+		]);
 	}
 
     /**
@@ -462,41 +462,42 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		$note = Note::find($note_id);
-		if($note){
-			$this->ensureCrmRecordAccess((int) $note->client_id);
-			$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
-			$res = DB::table('notes')->where('id', @$note_id)->delete();
-			if($res){
-				if($data->type == 'client'){
-                    // Enhanced delete logging with note type
-                    $taskGroup = $data->task_group ?? 'General';
-                    $noteTypeFormatted = ucfirst(strtolower($taskGroup));
-                    
-                    $mnDel = trim((string) ($data->mobile_number ?? ''));
-                    $deletePhonePrefix = $mnDel !== ''
-                        ? '<p class="activity-note-call-number"><strong>Number:</strong> ' . htmlspecialchars($mnDel, ENT_QUOTES, 'UTF-8') . '</p>'
-                        : '';
-                    $description = $deletePhonePrefix . $data->description;
-                    
-                    // Format as "deleted Call Notes"
-                    $this->logClientActivity(
-                        $data->client_id,
-                        "deleted {$noteTypeFormatted} Notes",
-                        $description,
-                        'note'
-                    );
-				}
-			    $response['status'] 	= 	true;
-			    $response['data']	=	$data;
-			}else{
-				$response['status'] 	= 	false;
-			    $response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+		if (!$note) {
+			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
-		echo json_encode($response);
+		$this->ensureCrmRecordAccess((int) $note->client_id);
+		$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
+		$res = DB::table('notes')->where('id', @$note_id)->delete();
+		if ($res) {
+			if ($data->type == 'client') {
+				// Enhanced delete logging with note type
+				$taskGroup = $data->task_group ?? 'General';
+				$noteTypeFormatted = ucfirst(strtolower($taskGroup));
+				
+				$mnDel = trim((string) ($data->mobile_number ?? ''));
+				$deletePhonePrefix = $mnDel !== ''
+					? '<p class="activity-note-call-number"><strong>Number:</strong> ' . htmlspecialchars($mnDel, ENT_QUOTES, 'UTF-8') . '</p>'
+					: '';
+				$description = $deletePhonePrefix . $data->description;
+				
+				// Format as "deleted Call Notes"
+				$this->logClientActivity(
+					$data->client_id,
+					"deleted {$noteTypeFormatted} Notes",
+					$description,
+					'note'
+				);
+			}
+			return response()->json([
+				'status' => true,
+				'data' => $data
+			]);
+		}
+
+		return response()->json([
+			'status' => false,
+			'message' => 'Please try again'
+		]);
 	}
 
     /**
@@ -511,7 +512,7 @@ class ClientNotesController extends Controller
 
 		$note = Note::find($noteId);
 		if (!$note) {
-			return response()->json(['status' => false, 'message' => 'Record not found']);
+			return response()->json(['status' => false, 'message' => 'Record not found'], 404);
 		}
 		$this->ensureCrmRecordAccess((int) $note->client_id);
 

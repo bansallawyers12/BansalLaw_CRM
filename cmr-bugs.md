@@ -64,9 +64,9 @@ Status key (2026-08-07):
 - **Now:** Enforces `StaffClientVisibility` check on `matchingDoc` and falls back to client resolution via path prefix. Denies access (403) when document/client access cannot be authorized.
 
 ### 1.5 High — Notes CRUD is IDOR (no CRM access checks)
-- **Status:** Partial
-- **Files:** `ClientNotesController.php`
-- **Now:** Uses `EnsuresCrmRecordAccess`; missing note returns 404 instead of null-deref. Confirm every notes route (incl. GET delete/pin) is covered; see also #12.1.
+- **Status:** Fixed
+- **Files:** `ClientNotesController.php`, `routes/clients.php`
+- **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses. Verified access control and HTTP 302 authentication redirects.
 
 ### 1.6 High — Matter tasks API has no CRM access checks
 - **Status:** Open\*
