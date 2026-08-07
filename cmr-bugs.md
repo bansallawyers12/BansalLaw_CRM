@@ -43,10 +43,12 @@ Severity key:
 - **Now:** Enforces `StaffClientVisibility` check on `matchingDoc` and falls back to client resolution via path prefix. Denies access (403) when document/client access cannot be authorized.
 
 ### 1.5 High — Notes CRUD is IDOR (no CRM access checks)
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientNotesController.php` (~49–511)
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/CRM/Clients/ClientNotesController.php`, `routes/clients.php`
 - **What goes wrong:** Create/update/list/delete/pin/get note by `client_id` / `note_id` with no `canAccessClientOrLead`.
 - **Also:** invalid `noteid` → `Note::find` null → `$obj->replicate()` null dereference (~57–59).
 - **Impact:** Staff can read/alter notes on clients they cannot open; possible 500 on bad IDs.
+- **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses.
 
 ### 1.6 High — Matter tasks API has no CRM access checks
 - **Files:** `app/Http/Controllers/CRM/Clients/ClientMatterTaskController.php` (~46–157)
