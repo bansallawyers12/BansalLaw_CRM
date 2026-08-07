@@ -51,9 +51,11 @@ Severity key:
 - **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses.
 
 ### 1.6 High — Matter tasks API has no CRM access checks
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientMatterTaskController.php` (~46–157)
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/CRM/Clients/ClientMatterTaskController.php`
 - **What goes wrong:** `index`/`store`/`update`/`destroy` only check `client_id` matches the task row. No visibility gate.
 - **Impact:** Any staff can list/create/toggle/delete another client’s tasks.
+- **Now:** All matter task endpoints (`index`, `store`, `update`, `destroy`) enforce `ensureCrmRecordAccess` on `client_id` directly from resolved records/models without reliance on client-controlled parameter tampering.
 
 ### 1.7 High — Most document mutations only enforce access for restricted PA roles
 - **Files:** `ClientDocumentsController.php` (~84–114, ~129–131, ~1714–1716, ~1809–1810)
