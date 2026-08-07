@@ -15,7 +15,6 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookingCalendarExternalFeed;
 use App\Services\Booking\StaffCalendarFeedService;
 use App\Models\StaffCalendarEvent;
-use App\Services\CalendarSync\CrmToZohoCalendarSyncService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -178,17 +177,9 @@ class BookingAppointmentsController extends Controller
 
         try {
             $extra = $this->staffCalendarFeed->eventsForCalendarRequest($request);
-            // eventsForCalendarRequest already attaches staff/hearing sync status; re-attach after merge for bookings
             $response['data'] = array_merge($response['data'] ?? [], $extra);
         } catch (Exception $e) {
             Log::warning('Important calendar events merge failed', ['error' => $e->getMessage()]);
-        }
-
-        try {
-            $response['data'] = app(\App\Services\CalendarSync\CalendarSyncStatusAttacher::class)
-                ->attach($response['data'] ?? []);
-        } catch (Exception $e) {
-            Log::debug('Zoho sync status attach skipped', ['error' => $e->getMessage()]);
         }
 
         return $response;
@@ -360,8 +351,6 @@ class BookingAppointmentsController extends Controller
             'created_by_staff_id' => $user ? (int) $user->id : null,
         ]);
 
-        $this->queueZohoCalendarPush($event);
-
         return response()->json([
             'success' => true,
             'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
@@ -403,8 +392,6 @@ class BookingAppointmentsController extends Controller
 
         $event->update($validated);
 
-        $this->queueZohoCalendarPush($event);
-
         return response()->json([
             'success' => true,
             'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
@@ -415,35 +402,9 @@ class BookingAppointmentsController extends Controller
     {
         $event = StaffCalendarEvent::findOrFail($id);
         $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
-
-        try {
-            app(CrmToZohoCalendarSyncService::class)->deleteStaffEvent($event);
-        } catch (\Throwable $e) {
-            Log::warning('Zoho calendar delete on CRM destroy failed', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
         $event->delete();
 
         return response()->json(['success' => true]);
-    }
-
-    /**
-     * Queue CRM staff event for Zoho calendar push (no-op until OAuth is live).
-     * Failures must never break calendar create/update for staff.
-     */
-    protected function queueZohoCalendarPush(StaffCalendarEvent $event): void
-    {
-        try {
-            app(CrmToZohoCalendarSyncService::class)->pushStaffEvent($event);
-        } catch (\Throwable $e) {
-            Log::warning('Zoho calendar push queue failed', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     /**
