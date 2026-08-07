@@ -401,6 +401,7 @@ class BookingCalendarExternalFeed
             'id' => $appointment->id,
             'crm_appointment_id' => $appointment->id,
             'bansal_appointment_id' => $appointment->bansal_appointment_id,
+            'event_kind' => 'booking',
             'read_only' => false,
             'client_id' => $appointment->client_id,
             'client_id_encoded' => $encodedClientId,

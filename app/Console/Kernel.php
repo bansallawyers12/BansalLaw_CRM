@@ -61,6 +61,8 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\SyncInboxEmails',
 
+        '\App\Console\Commands\SyncZohoCalendarEvents',
+
         // Font Awesome FA6 migration (one-time DB icon class updates)
         '\App\Console\Commands\MigrateFontAwesomeDbIcons',
     ];
@@ -148,6 +150,18 @@ class Kernel extends ConsoleKernel
                         ->withoutOverlapping(10)
                         ->appendOutputTo($logFile);
                 }
+            }
+        }
+
+        // Zoho calendar pull → CRM (master switch checked at schedule:run)
+        if (\App\Services\CalendarSync\CalendarSyncMasterControl::isEnabled()) {
+            $calMinutes = (int) config('zoho_calendar.schedule_minutes', 15);
+            if ($calMinutes > 0) {
+                $calMinutes = max(1, min(60, $calMinutes));
+                $schedule->command('calendar:sync-from-zoho')
+                    ->cron('*/' . $calMinutes . ' * * * *')
+                    ->withoutOverlapping(12)
+                    ->appendOutputTo(storage_path('logs/calendar-sync/zoho-calendar-sync.log'));
             }
         }
     }

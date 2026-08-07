@@ -488,6 +488,7 @@ function mapImportantCalendarRow(apt) {
     const style = getImportantEventStyle(apt.event_type || 'other');
     const endTime = apt.ends_at || apt.appointment_datetime;
     const readOnly = apt.event_kind === 'court_hearing' || apt.read_only === true;
+    const syncClass = zohoSyncClassName(apt.zoho_sync_status);
 
     return {
         id: String(apt.id),
@@ -498,12 +499,31 @@ function mapImportantCalendarRow(apt) {
         backgroundColor: style.bg,
         borderColor: style.border,
         textColor: style.text,
-        classNames: [style.className, 'event-important'],
+        classNames: [style.className, 'event-important', syncClass].filter(Boolean),
         extendedProps: Object.assign({}, apt, {
             event_kind: apt.event_kind,
-            read_only: readOnly
+            read_only: readOnly,
+            zoho_sync_status: apt.zoho_sync_status || null,
+            zoho_sync_label: apt.zoho_sync_label || null
         })
     };
+}
+
+function zohoSyncClassName(status) {
+    if (!status) return '';
+    if (status === 'linked') return 'fc-zoho-synced';
+    if (status === 'failed') return 'fc-zoho-failed';
+    if (status === 'pending') return 'fc-zoho-pending';
+    return 'fc-zoho-other';
+}
+
+function zohoSyncBadgeHtml(status, label) {
+    if (!status) return '';
+    const text = label || status;
+    const tone = status === 'linked' ? 'success' : (status === 'failed' ? 'danger' : 'secondary');
+    return '<span class="badge bg-' + tone + ' fc-zoho-sync-badge" title="' + String(text).replace(/"/g, '&quot;') + '">' +
+        (status === 'linked' ? '↻' : (status === 'failed' ? '!' : '…')) +
+        '</span>';
 }
 
 /**
@@ -674,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         backgroundColor: backgroundColor,
                         borderColor: borderColor,
                         textColor: textColor,
-                        classNames: ['event-' + apt.status, apt.status === 'paid' ? 'event-paid' : ''],
+                        classNames: ['event-' + apt.status, apt.status === 'paid' ? 'event-paid' : '', zohoSyncClassName(apt.zoho_sync_status)].filter(Boolean),
                         extendedProps: {
                             client_id: apt.client_id,
                             client_id_encoded: apt.client_id_encoded,
@@ -699,6 +719,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             read_only: !!apt.read_only,
                             crm_appointment_id: apt.crm_appointment_id,
                             bansal_appointment_id: apt.bansal_appointment_id,
+                            zoho_sync_status: apt.zoho_sync_status || null,
+                            zoho_sync_label: apt.zoho_sync_label || null,
                             ...(apt.status === 'paid' && { 'data-paid': 'true' })
                         }
                     };
@@ -999,8 +1021,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit',
                 hour12: true
             });
+            const syncTip = props.zoho_sync_label ? (' · ' + props.zoho_sync_label) : '';
             $(info.el).tooltip({
-                title: info.event.title + ' - ' + formattedTime,
+                title: info.event.title + ' - ' + formattedTime + syncTip,
                 placement: 'top',
                 trigger: 'hover',
                 container: 'body'
@@ -1010,6 +1033,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 info.el.style.setProperty('background-color', 'var(--navy)', 'important');
                 info.el.style.setProperty('border-color', 'var(--navy)', 'important');
                 info.el.style.setProperty('color', '#fff', 'important');
+            }
+
+            if (props.zoho_sync_status) {
+                const titleEl = info.el.querySelector('.fc-event-title, .fc-list-event-title');
+                if (titleEl && !titleEl.querySelector('.fc-zoho-sync-badge')) {
+                    titleEl.insertAdjacentHTML('beforeend', ' ' + zohoSyncBadgeHtml(props.zoho_sync_status, props.zoho_sync_label));
+                }
             }
         }
     });

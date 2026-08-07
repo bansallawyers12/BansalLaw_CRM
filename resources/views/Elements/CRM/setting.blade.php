@@ -16,6 +16,7 @@
 			}
 		} else {
 			$module_access = [];
+			$_settingUser = null;
 			$_isApproverOrAdmin = false;
 		}
 ?>
@@ -26,6 +27,9 @@
         <li class="{{(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.workflow.')) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.workflow.index')}}">Workflows</a></li>
 
         <li class="{{(Route::currentRouteName() == 'adminconsole.features.emails.index' || Route::currentRouteName() == 'adminconsole.features.emails.create' || Route::currentRouteName() == 'adminconsole.features.emails.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.emails.index')}}">Email</a></li>
+		@if(!empty($_settingUser) && $_settingUser instanceof \App\Models\Staff && \App\Services\CalendarSync\CalendarSyncMasterControl::canControl($_settingUser))
+		<li class="{{ str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.calendarsync.') ? 'active' : '' }}"><a class="nav-link" href="{{ route('adminconsole.features.calendarsync.index') }}">Calendar Sync</a></li>
+		@endif
 		<li class="{{(Route::currentRouteName() == 'adminconsole.features.crmemailtemplate.index' || Route::currentRouteName() == 'adminconsole.features.crmemailtemplate.create' || Route::currentRouteName() == 'adminconsole.features.crmemailtemplate.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.crmemailtemplate.index')}}">Crm Email Template</a></li>
 
 			<?php

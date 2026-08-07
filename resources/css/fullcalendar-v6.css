@@ -326,3 +326,21 @@
 .booking-calendar-page .calendar-v6-container .fc-event-time {
     font-weight: 600;
 }
+
+/* Zoho / Outlook sync badges on booking calendar */
+.booking-calendar-page .fc-zoho-sync-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    vertical-align: middle;
+    margin-left: 2px;
+    opacity: 0.95;
+}
+.booking-calendar-page .fc-zoho-synced {
+    box-shadow: inset 3px 0 0 #0f766e;
+}
+.booking-calendar-page .fc-zoho-failed {
+    box-shadow: inset 3px 0 0 #b91c1c;
+}
+.booking-calendar-page .fc-zoho-pending {
+    box-shadow: inset 3px 0 0 #a16207;
+}

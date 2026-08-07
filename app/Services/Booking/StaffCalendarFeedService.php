@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Models\Admin;
 use App\Models\ClientCourtHearing;
 use App\Models\StaffCalendarEvent;
+use App\Services\CalendarSync\CalendarSyncStatusAttacher;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Exception;
@@ -30,7 +31,7 @@ class StaffCalendarFeedService
         $staffEvents = $this->staffEventsPayload($request, $type, $startOfToday, $includePast);
         $courtEvents = $this->courtHearingsPayload($request, $startOfToday, $includePast);
 
-        return array_merge($staffEvents, $courtEvents);
+        return app(CalendarSyncStatusAttacher::class)->attach(array_merge($staffEvents, $courtEvents));
     }
 
     /**

@@ -58,6 +58,7 @@
             ['Client', props.client_name],
             ['Location', props.location],
             ['Notes', props.notes],
+            ['Outlook / Zoho', props.zoho_sync_label || props.zoho_sync_status],
         ];
 
         var html = '<dl class="dashboard-event-detail-list">';
@@ -264,6 +265,20 @@
                     info.jsEvent.preventDefault();
                     var props = info.event.extendedProps || {};
                     showEventDetail(Object.assign({ title: info.event.title }, props));
+                },
+                eventDidMount: function (info) {
+                    var props = info.event.extendedProps || {};
+                    if (!props.zoho_sync_status) return;
+                    var titleEl = info.el.querySelector('.fc-event-title, .fc-list-event-title');
+                    if (!titleEl || titleEl.querySelector('.fc-zoho-sync-badge')) return;
+                    var status = props.zoho_sync_status;
+                    var label = props.zoho_sync_label || status;
+                    var tone = status === 'linked' ? 'success' : (status === 'failed' ? 'danger' : 'secondary');
+                    var mark = status === 'linked' ? '↻' : (status === 'failed' ? '!' : '…');
+                    titleEl.insertAdjacentHTML(
+                        'beforeend',
+                        ' <span class="badge bg-' + tone + ' fc-zoho-sync-badge" title="' + String(label).replace(/"/g, '&quot;') + '">' + mark + '</span>'
+                    );
                 },
                 dateClick: function (info) {
                     var addBtn = document.getElementById('btnAddPersonalEvent');
