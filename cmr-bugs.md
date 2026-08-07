@@ -36,9 +36,11 @@ Severity key:
 - **Impact:** Silent incomplete merge; finance and matters stay on the wrong/orphaned record.
 
 ### 1.4 Critical — Document download via `filelink` skips access control
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` (~2934–3002)
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` (`download_document`)
 - **What goes wrong:** With `document_id`, access is checked. Without it, any auth staff can pass an S3 URL/`filelink`, resolve the key, and get a temporary download for any object on the disk if the path is known/guessable.
 - **Impact:** Cross-client document disclosure for any logged-in staff.
+- **Now:** Enforces `StaffClientVisibility` check on `matchingDoc` and falls back to client resolution via path prefix. Denies access (403) when document/client access cannot be authorized.
 
 ### 1.5 High — Notes CRUD is IDOR (no CRM access checks)
 - **Files:** `app/Http/Controllers/CRM/Clients/ClientNotesController.php` (~49–511)

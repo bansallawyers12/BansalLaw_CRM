@@ -3186,11 +3186,34 @@ class ClientDocumentsController extends Controller
                 }
 
                 $matchingDoc = Document::where('document', $s3Key)
-                    ->orWhere('myfile', basename($s3Key))
                     ->orWhere('myfile_key', $s3Key)
+                    ->orWhere('myfile', $s3Key)
+                    ->orWhere('myfile', $fileUrl)
+                    ->orWhere('myfile', 'LIKE', '%' . $s3Key)
+                    ->orWhere('myfile', 'LIKE', '%' . basename($s3Key))
                     ->first();
+
                 if ($matchingDoc) {
-                    if (! StaffClientVisibility::canAccessClientOrLead((int) $matchingDoc->client_id)) {
+                    $clientId = (int) ($matchingDoc->client_id ?? $matchingDoc->lead_id);
+                    if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
+                        return abort(403, 'Unauthorized');
+                    }
+                } else {
+                    $pathSegments = explode('/', $s3Key);
+                    $firstSegment = $pathSegments[0] ?? null;
+                    $admin = null;
+
+                    if ($firstSegment !== null && $firstSegment !== '') {
+                        $admin = Admin::where('client_id', $firstSegment)
+                            ->orWhere('id', $firstSegment)
+                            ->first();
+                    }
+
+                    if ($admin) {
+                        if (! StaffClientVisibility::canAccessClientOrLead((int) $admin->id)) {
+                            return abort(403, 'Unauthorized');
+                        }
+                    } else {
                         return abort(403, 'Unauthorized');
                     }
                 }
