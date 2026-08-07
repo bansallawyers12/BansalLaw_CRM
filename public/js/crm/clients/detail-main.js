@@ -7971,11 +7971,66 @@ success: function(response) {
         
         // Matter documents - upload handler
         
-        function handleVisaDocDragDrop(dragZone, file) {
-            var fileid = dragZone.data('fileid');
-            var visa_doc_cat = dragZone.data('doccategory');
-            var formId = dragZone.data('formid');
-            var form = $('#' + formId);
+        function isMatterDocVideoFile(file) {
+            if (typeof isPersonalDocVideoFile === 'function') {
+                return isPersonalDocVideoFile(file);
+            }
+            if (!file || !file.name) {
+                return false;
+            }
+            var ext = (file.name.split('.').pop() || '').toLowerCase();
+            return /^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext);
+        }
+
+        function validateMatterDocFile(file) {
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
+            if (!validNameRegex.test(file.name)) {
+                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+                return false;
+            }
+            var ext = (file.name.split('.').pop() || '').toLowerCase();
+            var videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
+            if (!allowedExtensions.includes(ext)) {
+                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), and videos (MP4, WebM, MOV, etc.).');
+                return false;
+            }
+            var maxSize = 50 * 1024 * 1024;
+            var maxVideoSize = 200 * 1024 * 1024;
+            var sizeLimit = videoExtensions.includes(ext) ? maxVideoSize : maxSize;
+            var sizeLabel = videoExtensions.includes(ext) ? '200MB' : '50MB';
+            if (file.size > sizeLimit) {
+                alert('File exceeds the maximum allowed size of ' + sizeLabel + '.');
+                return false;
+            }
+            return true;
+        }
+
+        function applyMatterDocUploadSuccess(fileid, visa_doc_cat, laneDocType, previewPane, contextMenuFn, ress) {
+            var row = $('#id_' + fileid);
+            var docNameWithoutExt = (ress.filename || '').replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+            var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileid));
+            var documentId = ress.document_id || fileid;
+
+            row.find('td').eq(1).html(
+                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                    '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
+                        '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                    '</a>' +
+                '</div>'
+            );
+
+            row.find('td').eq(2).html(
+                '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
+                '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
+                '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
+            );
+
+            row.addClass('drow');
+        }
+
+        function performMatterDocUpload(file, fileid, visa_doc_cat, form, dragZone) {
             var laneDocType = (form.find('input[name="doctype"]').val() || 'matter').toLowerCase();
             if (laneDocType === 'visa') { laneDocType = 'matter'; }
             var uploadUrl = laneDocType === 'nomination'
@@ -7985,28 +8040,25 @@ success: function(response) {
                 ? 'preview-container-nomdocumnetlist'
                 : 'preview-container-matter-' + visa_doc_cat;
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
-            
-            // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
-                return false;
-            }
-            
-            // Create FormData with all form fields
+            var isVideoUpload = isMatterDocVideoFile(file);
+
             var formData = new FormData(form[0]);
-            
-            // Override the file input with dragged file
             formData.set('document_upload', file);
-            
-            // Add extra data
             formData.append('visa_doc_cat', visa_doc_cat);
-            
-            // Visual feedback
-            dragZone.addClass('uploading');
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
-            
-            // Upload via AJAX
+
+            if (dragZone && dragZone.length) {
+                dragZone.addClass('uploading');
+            }
+            if (isVideoUpload && typeof showPersonalVideoUploadLoader === 'function') {
+                showPersonalVideoUploadLoader({
+                    filename: file.name,
+                    fileSize: file.size,
+                    message: 'Uploading video to server…'
+                });
+            } else {
+                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
+            }
+
             $.ajax({
                 url: uploadUrl,
                 type: 'POST',
@@ -8014,49 +8066,131 @@ success: function(response) {
                 data: formData,
                 contentType: false,
                 processData: false,
-                success: function(ress) {
-                    dragZone.removeClass('uploading');
-                    
-                    if (ress.status) {
-                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
-                        
-                        var row = $('#id_' + fileid);
-                        var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileid));
-                        var documentId = ress.document_id || fileid;
-                        
-                        // Replace upload TD content (Column 1 = File Name)
-                        var uploadTd = row.find('td').eq(1);
-                        uploadTd.html(
-                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
-                                    '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
-                                '</a>' +
-                            '</div>'
-                        );
-                        
-                        // Add hidden elements for context menu actions (Column 2 = Actions)
-                        var actionTd = row.find('td').eq(2);
-                        actionTd.html(
-                            '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
-                            '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
-                        );
-                        
-                        row.addClass('drow');
-                    } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
+                timeout: isVideoUpload ? 0 : undefined,
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    if (isVideoUpload && typeof updatePersonalVideoUploadLoader === 'function') {
+                        xhr.upload.addEventListener('progress', function(e) {
+                            if (e.lengthComputable) {
+                                var uploadPct = Math.round((e.loaded / e.total) * 100);
+                                var overallPct = Math.round((e.loaded / e.total) * 45);
+                                updatePersonalVideoUploadLoader('upload', overallPct, 'Uploading video… ' + uploadPct + '%');
+                                if (uploadPct >= 100 && typeof startPersonalVideoProcessingPulse === 'function') {
+                                    startPersonalVideoProcessingPulse('processing', 48, 88, 'Saving video to cloud storage…');
+                                }
+                            }
+                        }, false);
                     }
-                    
-                    getallactivities();
+                    return xhr;
+                },
+                success: function(ress) {
+                    if (ress.queued && ress.upload_token && isVideoUpload && typeof pollPersonalVideoUploadStatus === 'function') {
+                        if (typeof updatePersonalVideoUploadLoader === 'function') {
+                            updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Starting background processing…');
+                        }
+                        setTimeout(function() {
+                            pollPersonalVideoUploadStatus(ress.upload_token, function(success, message) {
+                                if (dragZone && dragZone.length) {
+                                    dragZone.removeClass('uploading');
+                                }
+                                if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                    hidePersonalVideoUploadLoader(success ? 700 : 900);
+                                }
+                                if (typeof showPersonalDocVideoToast === 'function') {
+                                    showPersonalDocVideoToast(success, message);
+                                }
+                                if (success) {
+                                    setTimeout(function() { location.reload(); }, 800);
+                                }
+                            });
+                        }, 300);
+                        return;
+                    }
+
+                    if (dragZone && dragZone.length) {
+                        dragZone.removeClass('uploading');
+                    }
+
+                    if (!ress.status) {
+                        if (isVideoUpload && typeof updatePersonalVideoUploadLoader === 'function') {
+                            if (typeof clearPersonalVideoProcessingPulse === 'function') {
+                                clearPersonalVideoProcessingPulse();
+                            }
+                            updatePersonalVideoUploadLoader('error', typeof _pvuCurrentPercent !== 'undefined' ? _pvuCurrentPercent : 0, ress.message || 'Video upload failed.');
+                            if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                hidePersonalVideoUploadLoader(900);
+                            }
+                            if (typeof showPersonalDocVideoToast === 'function') {
+                                showPersonalDocVideoToast(false, ress.message || 'Video upload failed.');
+                            }
+                        } else {
+                            $('.custom-error-msg').html('<span class="alert alert-danger">' + (ress.message || 'Upload failed') + '</span>');
+                        }
+                        return;
+                    }
+
+                    if (isVideoUpload && typeof updatePersonalVideoUploadLoader === 'function') {
+                        if (typeof clearPersonalVideoProcessingPulse === 'function') {
+                            clearPersonalVideoProcessingPulse();
+                        }
+                        updatePersonalVideoUploadLoader('complete', 100, 'Video uploaded successfully!');
+                        if (typeof hidePersonalVideoUploadLoader === 'function') {
+                            hidePersonalVideoUploadLoader(700);
+                        }
+                        if (typeof showPersonalDocVideoToast === 'function') {
+                            showPersonalDocVideoToast(true, ress.message || 'Video uploaded successfully.');
+                        }
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
+                    }
+
+                    applyMatterDocUploadSuccess(fileid, visa_doc_cat, laneDocType, previewPane, contextMenuFn, ress);
+                    if (typeof getallactivities === 'function') {
+                        getallactivities();
+                    }
                 },
                 error: function(xhr, status, error) {
-                    dragZone.removeClass('uploading');
-                    $('.custom-error-msg').html('<span class="alert alert-danger">Upload failed. Please try again.</span>');
+                    if (dragZone && dragZone.length) {
+                        dragZone.removeClass('uploading');
+                    }
+                    var errorMessage = (xhr.responseJSON && xhr.responseJSON.message)
+                        ? xhr.responseJSON.message
+                        : 'Upload failed. Please try again.';
+                    if (status === 'timeout') {
+                        errorMessage = 'Upload timed out. Large videos can take several minutes — please keep this tab open and try again on a stable connection.';
+                    }
+                    if (isVideoUpload && typeof updatePersonalVideoUploadLoader === 'function') {
+                        if (typeof clearPersonalVideoProcessingPulse === 'function') {
+                            clearPersonalVideoProcessingPulse();
+                        }
+                        updatePersonalVideoUploadLoader('error', typeof _pvuCurrentPercent !== 'undefined' ? _pvuCurrentPercent : 0, errorMessage);
+                        if (typeof hidePersonalVideoUploadLoader === 'function') {
+                            hidePersonalVideoUploadLoader(900);
+                        }
+                        if (typeof showPersonalDocVideoToast === 'function') {
+                            showPersonalDocVideoToast(false, errorMessage);
+                        }
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                    }
                     console.error('Visa doc upload error:', error);
                 }
             });
+        }
+
+        function handleVisaDocDragDrop(dragZone, file) {
+            if (!validateMatterDocFile(file)) {
+                return false;
+            }
+            var fileid = dragZone.data('fileid');
+            var visa_doc_cat = dragZone.data('doccategory');
+            var formId = dragZone.data('formid');
+            var form = $('#' + formId);
+            if (!form.length) {
+                alert('Error: Upload form not found. Please refresh the page.');
+                return false;
+            }
+            performMatterDocUpload(file, fileid, visa_doc_cat, form, dragZone);
         }
 
 
@@ -8229,172 +8363,25 @@ success: function(response) {
         $(document).delegate('.migdocupload', 'change', function() {
 
             var fileInput = this.files[0];
-
-
-
             if (!fileInput) return; // Prevent empty uploads
 
-
-
-            var fileName = fileInput.name;  //alert(fileName);
-
-
-
-            // Allowed: letters, numbers, dash, underscore, space, dot, dollar sign, parentheses, comma, ampersand, plus
-
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-
-
-
-            if (!validNameRegex.test(fileName)) {
-
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
-
-                $(this).val(''); // Clear the file input
-
+            if (!validateMatterDocFile(fileInput)) {
+                $(this).val('');
                 return false;
-
             }
 
-
-
             var fileidL1 = $(this).attr("data-fileid");
-
-           
-
-
-
             var visa_doc_cat = $(this).attr("data-doccategory");
-
-            
-
-
-
-            // Show immediate feedback that upload is starting
-
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
-
-            
-
-            // Create FormData before clearing the input
-
             var $form = $('#mig_upload_form_'+fileidL1);
-            var laneDocType = ($form.find('input[name="doctype"]').val() || 'matter').toLowerCase();
-            if (laneDocType === 'visa') { laneDocType = 'matter'; }
-            var uploadUrl = laneDocType === 'nomination'
-                ? site_url+'/documents/upload-nomination-document'
-                : site_url+'/documents/upload-matter-document';
-            var previewPane = laneDocType === 'nomination'
-                ? 'preview-container-nomdocumnetlist'
-                : 'preview-container-matter-' + visa_doc_cat;
-            var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
-            var formData = new FormData($form[0]);
+            if (!$form.length) {
+                alert('Error: Upload form not found. Please refresh the page.');
+                $(this).val('');
+                return false;
+            }
 
-            // Append extra data manually
-
-            formData.append('visa_doc_cat', visa_doc_cat);
-
-            
-
-            // Clear the file input after creating FormData to allow next upload
-
+            // Clear the file input early so the same file can be re-selected if needed
             $(this).val('');
-
-            
-
-            $.ajax({
-
-                url: uploadUrl,
-
-                type:'POST',
-
-                dataType: 'json',
-
-                data: formData,
-
-                contentType: false,
-
-                processData: false,
-
-                success: function(ress) {
-
-                    if (ress.status) {
-
-                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
-
-
-
-                        var row = $('#id_' + fileidL1);
-
-                        var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileidL1));
-                        var documentId = ress.document_id || fileidL1;
-
-
-
-                        // Replace upload TD content (Column 1 = File Name)
-
-                        var uploadTd = row.find('td').eq(1);
-
-                        uploadTd.html(
-
-                            '<div data-id="' + fileidL1 + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileidL1 + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
-
-                                    '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
-
-                                '</a>' +
-
-                            '</div>'
-
-                        );
-
-
-
-                        // Add hidden elements for context menu actions (Column 2 = Actions)
-
-                        var actionTd = row.find('td').eq(2);
-
-                        actionTd.html(
-
-                            '<a class="renamechecklist" data-id="' + fileidL1 + '" href="javascript:;" style="display: none;"></a>' +
-
-                            '<a class="renamedoc" data-id="' + fileidL1 + '" href="javascript:;" style="display: none;"></a>' +
-
-                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
-
-                            '<a class="notuseddoc" data-id="' + fileidL1 + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
-
-                        );
-
-                        
-
-                        // Ensure the row has the proper class for event delegation
-
-                        row.addClass('drow');
-
-                    } else {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
-
-                    }
-
-                    getallactivities();
-
-                },
-
-                error: function(xhr, status, error) {
-
-                    $('.custom-error-msg').html('<span class="alert alert-danger">Upload failed. Please try again.</span>');
-
-                    console.error('Upload error:', error);
-
-                    getallactivities();
-
-                }
-
-            });
+            performMatterDocUpload(fileInput, fileidL1, visa_doc_cat, $form, null);
 
         });
 

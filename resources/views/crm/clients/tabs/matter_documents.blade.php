@@ -154,8 +154,8 @@
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV) — up to 50MB. You can select multiple files.</p>
-                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv">
+                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), and videos (MP4, WebM, MOV, etc.) — up to 50MB (200MB for videos). You can select multiple files.</p>
+                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count-visa">0</span></h5>
@@ -249,7 +249,7 @@
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
-                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv" style="display: none;"/>
+                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv" style="display: none;"/>
                                                                     </form>
                                                                 </div>
                                                             <?php endif; ?>
@@ -1266,21 +1266,26 @@
                         bulkUploadVisaFiles[categoryId] = [];
                     }
                     
-                    // Validate and add files to array
+                    // Validate and add files to array (aligned with personal documents)
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
-                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'];
+                    const maxVideoSize = 200 * 1024 * 1024; // 200MB
+                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
                     const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        const sizeLimit = videoExtensions.includes(ext) ? maxVideoSize : maxSize;
+                        const sizeLabel = videoExtensions.includes(ext) ? '200MB' : '50MB';
+
                         // Check file size
-                        if (file.size > maxSize) {
-                            invalidFiles.push(file.name + ' (exceeds 50MB)');
+                        if (file.size > sizeLimit) {
+                            invalidFiles.push(file.name + ' (exceeds ' + sizeLabel + ')');
                             return;
                         }
                         
                         // Check file extension
-                        const ext = file.name.split('.').pop().toLowerCase();
                         if (!allowedExtensions.includes(ext)) {
                             invalidFiles.push(file.name + ' (invalid file type)');
                             return;
@@ -1304,7 +1309,7 @@
                     }
                     
                     if (bulkUploadVisaFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, or CSV files under 50MB.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, or video files (MP4, WebM, MOV, etc.) under the size limit.');
                         return;
                     }
                     
@@ -1686,18 +1691,38 @@
                     formData.append('matterid', matterId || '');
                     formData.append('doctype', 'visa');
                     formData.append('type', 'client');
+
+                    const fileList = Array.from(files);
+                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+                    const videoFiles = fileList.filter(function(file) {
+                        const ext = (file.name.split('.').pop() || '').toLowerCase();
+                        return videoExtensions.includes(ext);
+                    });
+                    const hasVideos = videoFiles.length > 0;
                     
                     // Add files
-                    Array.from(files).forEach((file, index) => {
+                    fileList.forEach((file, index) => {
                         formData.append('files[]', file);
                         const mapping = mappings[index] || { type: 'new', name: extractChecklistNameFromFile(file.name) };
                         formData.append('mappings[]', JSON.stringify(mapping));
                     });
                     
                     // Show progress
-                    $('#bulk-upload-progress').show();
-                    $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
                     $('#confirm-bulk-upload').prop('disabled', true);
+                    if (hasVideos && typeof showPersonalVideoUploadLoader === 'function') {
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
+                        showPersonalVideoUploadLoader({
+                            title: videoFiles.length === fileList.length ? 'Uploading Videos' : 'Uploading Files',
+                            filename: videoFiles.length === 1 ? videoFiles[0].name : (videoFiles.length + ' video(s) in batch'),
+                            fileSize: videoFiles.reduce(function(sum, f) { return sum + (f.size || 0); }, 0),
+                            message: 'Uploading files to server…'
+                        });
+                    } else {
+                        $('#bulk-upload-progress').show();
+                        $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
+                    }
                     
                     $.ajax({
                         url: '{{ route("clients.documents.bulkUploadMatterDocuments") }}',
@@ -1705,30 +1730,76 @@
                         data: formData,
                         processData: false,
                         contentType: false,
+                        timeout: hasVideos ? 0 : undefined,
                         xhr: function() {
                             const xhr = new window.XMLHttpRequest();
                             xhr.upload.addEventListener('progress', function(e) {
                                 if (e.lengthComputable) {
                                     const percentComplete = (e.loaded / e.total) * 100;
-                                    $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                        const overallPct = Math.round((e.loaded / e.total) * 45);
+                                        updatePersonalVideoUploadLoader(
+                                            'upload',
+                                            overallPct,
+                                            'Uploading… ' + Math.round(percentComplete) + '%'
+                                        );
+                                        if (percentComplete >= 100 && typeof startPersonalVideoProcessingPulse === 'function') {
+                                            startPersonalVideoProcessingPulse(
+                                                'processing',
+                                                48,
+                                                88,
+                                                'Saving video(s) to cloud storage…'
+                                            );
+                                        }
+                                    } else {
+                                        $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                                    }
                                 }
                             }, false);
                             return xhr;
                         },
                         success: function(response) {
                             if (response.status) {
-                                let message = response.message || 'Files uploaded successfully!';
-                                if (response.errors && response.errors.length > 0) {
-                                    message += '\n\nWarnings:\n' + response.errors.join('\n');
+                                var queuedVideos = response.queued_videos || [];
+                                var tokens = queuedVideos.map(function(item) {
+                                    return item.token;
+                                }).filter(Boolean);
+
+                                var afterVideos = function() {
+                                    let message = response.message || 'Files uploaded successfully!';
+                                    if (response.errors && response.errors.length > 0) {
+                                        message += '\n\nWarnings:\n' + response.errors.join('\n');
+                                    }
+                                    if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                        hidePersonalVideoUploadLoader(700);
+                                    }
+                                    showBulkUploadSuccessToast(message);
+                                    refreshMatterDocumentFolder(categoryId, matterId).always(function() {
+                                        finishBulkVisaUploadUi(categoryId);
+                                    });
+                                };
+
+                                if (tokens.length > 0 && typeof waitForPersonalVideoUploads === 'function') {
+                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                        updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Processing video(s) in queue…');
+                                    }
+                                    waitForPersonalVideoUploads(tokens, function(success, message) {
+                                        if (typeof showPersonalDocVideoToast === 'function') {
+                                            showPersonalDocVideoToast(success, message);
+                                        }
+                                        afterVideos();
+                                    });
+                                    return;
                                 }
-                                showBulkUploadSuccessToast(message);
-                                refreshMatterDocumentFolder(categoryId, matterId).always(function() {
-                                    finishBulkVisaUploadUi(categoryId);
-                                });
+
+                                afterVideos();
                             } else {
                                 let errorMsg = response.message || 'Upload failed';
                                 if (response.errors && response.errors.length > 0) {
                                     errorMsg += '\n\nDetails:\n' + response.errors.join('\n');
+                                }
+                                if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                    hidePersonalVideoUploadLoader(0);
                                 }
                                 if (typeof crmNotify !== 'undefined') {
                                     crmNotify.error({
@@ -1746,6 +1817,9 @@
                             }
                         },
                         error: function(xhr) {
+                            if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                hidePersonalVideoUploadLoader(0);
+                            }
                             let errorMsg = 'Upload failed';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMsg = xhr.responseJSON.message;

@@ -805,7 +805,8 @@ class ClientDocumentsController extends Controller
                                                    data-fileid="<?php echo $fetch->id;?>" 
                                                    data-doccategory="<?php echo $fetch->folder_name;?>" 
                                                    type="file" 
-                                                   name="document_upload" 
+                                                   name="document_upload"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv"
                                                    style="display: none;"/>
                                         </form>
                                     </div>
@@ -1206,6 +1207,90 @@ class ClientDocumentsController extends Controller
                             'user_id' => Auth::user()->id ?? 'unknown'
                         ]);
                         $response['message'] = 'Checklist name not found. Please try again.';
+                        ob_end_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode($response);
+                        exit;
+                    }
+
+                    // Large videos: stream via same pipeline as personal documents
+                    if (PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
+                        if ($size > $maxVideoBytes) {
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
+                            ob_end_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode($response);
+                            exit;
+                        }
+
+                        $videoService = app(PersonalDocumentVideoUploadService::class);
+
+                        if ($videoService->usesDirectUpload()) {
+                            $result = $videoService->uploadVideoDirect(
+                                $file,
+                                $obj,
+                                (int) $clientid,
+                                (int) Auth::user()->id,
+                                $doctype,
+                                (string) ($request->type ?? 'client'),
+                                (string) ($request->doccategory ?? '')
+                            );
+
+                            if ($result['success']) {
+                                if (isset($request->client_matter_id) && $request->client_matter_id != '') {
+                                    $obj1 = ClientMatter::find($request->client_matter_id);
+                                    if ($obj1) {
+                                        $obj1->updated_at = date('Y-m-d H:i:s');
+                                        $obj1->save();
+                                    }
+                                }
+
+                                $obj->refresh();
+                                $response['status'] = true;
+                                $response['completed'] = true;
+                                $response['message'] = $doctype === 'nomination'
+                                    ? 'You have successfully uploaded your nomination document'
+                                    : 'You have successfully uploaded your matter document';
+                                $response['filename'] = $result['filename'];
+                                $response['filetype'] = $result['filetype'];
+                                $response['fileurl'] = $result['preview_url'];
+                                $response['document_id'] = $result['document_id'];
+                                $response['preview_url'] = $result['preview_url'];
+                                $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
+                                $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
+                                $response['filekey'] = $result['filename'];
+                                $response['doccategory'] = $obj->checklist;
+                                $response['doctype'] = $doctype;
+                                $response['visa_doc_cat'] = $request->visa_doc_cat;
+                                $response['status_value'] = $obj->status ?? 'draft';
+                            } else {
+                                $response['message'] = $result['message'];
+                            }
+
+                            ob_end_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode($response);
+                            exit;
+                        }
+
+                        $queued = $videoService->queueUpload(
+                            $file,
+                            $obj,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            (string) ($request->type ?? 'client'),
+                            (string) ($request->doccategory ?? '')
+                        );
+
+                        $response['status'] = true;
+                        $response['queued'] = true;
+                        $response['upload_token'] = $queued['token'];
+                        $response['message'] = 'Video upload queued for processing.';
+                        $response['doctype'] = $doctype;
+                        $response['visa_doc_cat'] = $request->visa_doc_cat;
                         ob_end_clean();
                         header('Content-Type: application/json');
                         echo json_encode($response);
@@ -4230,6 +4315,7 @@ class ClientDocumentsController extends Controller
             
             $uploadedCount = 0;
             $errors = [];
+            $queuedVideos = [];
             
             foreach ($files as $index => $file) {
                 try {
@@ -4328,6 +4414,58 @@ class ClientDocumentsController extends Controller
                     
                     // Use document's current checklist name (not mapping name) to ensure consistency
                     $checklistName = $finalChecklistName;
+                    $extension = strtolower($file->getClientOriginalExtension());
+
+                    // Videos (same formats/limits as personal documents)
+                    if (PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
+                        if ($size > $maxVideoBytes) {
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
+                            continue;
+                        }
+
+                        $videoService = app(PersonalDocumentVideoUploadService::class);
+
+                        if ($videoService->usesDirectUpload()) {
+                            $result = $videoService->uploadVideoDirect(
+                                $file,
+                                $document,
+                                (int) $clientid,
+                                (int) Auth::user()->id,
+                                $doctype,
+                                $type,
+                                (string) $categoryid
+                            );
+
+                            if ($result['success']) {
+                                $uploadedCount++;
+                            } else {
+                                $errors[] = "Error uploading video '{$fileName}': " . $result['message'];
+                            }
+                            continue;
+                        }
+
+                        $stagingToken = \Illuminate\Support\Str::uuid()->toString() . '_' . $index;
+                        $tempPath = $videoService->storeTempFile($file, $stagingToken);
+                        $queued = $videoService->queueFromStoredTemp(
+                            $tempPath,
+                            $document,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            $type,
+                            (string) $categoryid,
+                            $fileName,
+                            (int) $size,
+                            $extension
+                        );
+                        $queuedVideos[] = [
+                            'token' => $queued['token'],
+                            'filename' => $fileName,
+                        ];
+                        continue;
+                    }
                     
                     // Upload file
                     $extension = $file->getClientOriginalExtension();
@@ -4388,19 +4526,21 @@ class ClientDocumentsController extends Controller
                 }
             }
             
-            if ($uploadedCount > 0) {
-                // Log activity
-                $matterRef = $this->getMatterReference($clientid, $matterid);
-                $docLabel = $doctype === 'nomination' ? 'nomination' : 'matter';
-                $subject = $this->bulkUploadActivitySubject($uploadedCount, $docLabel, $matterRef ?: null);
-                $description = $this->bulkUploadActivityDescription($uploadedCount, $docLabel);
-                
-                $this->logClientActivity(
-                    $clientid,
-                    $subject,
-                    $description,
-                    'document'
-                );
+            if ($uploadedCount > 0 || count($queuedVideos) > 0) {
+                if ($uploadedCount > 0) {
+                    // Log activity
+                    $matterRef = $this->getMatterReference($clientid, $matterid);
+                    $docLabel = $doctype === 'nomination' ? 'nomination' : 'matter';
+                    $subject = $this->bulkUploadActivitySubject($uploadedCount, $docLabel, $matterRef ?: null);
+                    $description = $this->bulkUploadActivityDescription($uploadedCount, $docLabel);
+                    
+                    $this->logClientActivity(
+                        $clientid,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+                }
                 
                 // Update matter date
                 if ($matterid) {
@@ -4412,8 +4552,16 @@ class ClientDocumentsController extends Controller
                 }
                 
                 $response['status'] = true;
-                $response['message'] = "Successfully uploaded {$uploadedCount} file(s)";
+                $parts = [];
+                if ($uploadedCount > 0) {
+                    $parts[] = "Successfully uploaded {$uploadedCount} file(s)";
+                }
+                if (count($queuedVideos) > 0) {
+                    $parts[] = count($queuedVideos) . ' video(s) queued for processing';
+                }
+                $response['message'] = implode('. ', $parts) . '.';
                 $response['uploaded'] = $uploadedCount;
+                $response['queued_videos'] = $queuedVideos;
                 $response['errors'] = $errors;
             } else {
                 $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
