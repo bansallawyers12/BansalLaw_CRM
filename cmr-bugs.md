@@ -58,9 +58,10 @@ Status key (2026-08-07):
 - **Now:** Migrates matters, receipts, relationships, qualifications, emails, contacts, addresses, activities, and related sets. Edge tables may still be incomplete — confirm against product checklist before treating as fully closed.
 
 ### 1.4 Critical — Document download via `filelink` skips access control
-- **Status:** Open\*
-- **Files:** `ClientDocumentsController.php` (~2934–3002)
+- **Status:** Fixed
+- **Files:** `ClientDocumentsController.php` (`download_document`)
 - **Impact:** Cross-client document disclosure if path/URL known.
+- **Now:** Enforces `StaffClientVisibility` check on `matchingDoc` and falls back to client resolution via path prefix. Denies access (403) when document/client access cannot be authorized.
 
 ### 1.5 High — Notes CRUD is IDOR (no CRM access checks)
 - **Status:** Partial
