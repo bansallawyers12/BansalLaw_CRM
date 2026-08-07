@@ -39,7 +39,7 @@
                 return;
             }
 
-            /* Dedicated Activity/Timeline tab: stretch feed to viewport (no fixed px height). */
+            /* Timeline tab: feed is in-pane; let CSS max-height + flex scroll handle layout. */
             if ($container.hasClass('crm-container--activity-tab')) {
                 $container.css('align-items', 'stretch');
                 $('.activity-feed').css('max-height', '');

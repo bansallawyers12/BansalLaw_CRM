@@ -378,9 +378,6 @@ use App\Http\Controllers\Controller;
             </div>
         </div>
     </main>
-
-    <!-- Activity Feed (visible on Company Details tab; same partial as client detail) -->
-    @include('crm.clients.tabs.activity_feed')
 </div>
 
 @include('crm.clients.addclientmodal')

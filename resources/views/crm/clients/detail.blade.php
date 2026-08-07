@@ -46,7 +46,8 @@ use App\Http\Controllers\Controller;
     $cdnActiveTabSlug = strtolower((string) ($activeTab ?? 'personaldetails'));
     $cdnActivityTabOnly = $cdnActiveTabSlug === 'activityfeed';
 @endphp
-<div class="crm-container crm-container--unified{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : ' crm-container--no-feed' }}{{ !empty($isClosedMatterView) ? ' crm-container--closed-matter-view' : '' }}" data-client-id="{{ $fetchedData->id }}" @if(!empty($isClosedMatterView)) data-closed-matter-view="1" @endif>
+{{-- Feed lives inside #activityfeed-tab (main column); always use no-feed grid so Timeline is not an empty side rail. --}}
+<div class="crm-container crm-container--unified crm-container--no-feed{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : '' }}{{ !empty($isClosedMatterView) ? ' crm-container--closed-matter-view' : '' }}" data-client-id="{{ $fetchedData->id }}" @if(!empty($isClosedMatterView)) data-closed-matter-view="1" @endif>
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰
@@ -369,7 +370,7 @@ use App\Http\Controllers\Controller;
             </div>
         </div>
 
-        {{-- Tab strip lives in the aside (cdn-topbar) so it is NEVER hidden when activityfeed tab fires setMainColumnForTab(). --}}
+        {{-- Tab strip lives in the aside (cdn-topbar); Timeline feed renders inside #activityfeed-tab in main. --}}
         <div class="cdn-tabs-strip cdn-main-tab-bar">
         <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
@@ -577,9 +578,6 @@ use App\Http\Controllers\Controller;
             </div>
         </div>
     </main>
-
-    <!-- Activity Feed (Personal Details, Activity nav, etc.) -->
-    @include('crm.clients.tabs.activity_feed')
 </div>
 </div>
 
