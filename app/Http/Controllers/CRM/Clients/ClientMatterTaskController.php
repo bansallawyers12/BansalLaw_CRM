@@ -134,12 +134,12 @@ class ClientMatterTaskController extends Controller
 
     public function update(Request $request, ClientMatterTask $task)
     {
-        $clientId = (int) $request->input('client_id');
-        if ($clientId < 1 || (int) $task->client_id !== $clientId) {
+        $this->ensureCrmRecordAccess((int) $task->client_id);
+
+        $clientIdInput = (int) $request->input('client_id');
+        if ($clientIdInput > 0 && $clientIdInput !== (int) $task->client_id) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
-
-        $this->ensureCrmRecordAccess((int) $task->client_id);
 
         $changed = false;
 
@@ -178,12 +178,12 @@ class ClientMatterTaskController extends Controller
 
     public function destroy(Request $request, ClientMatterTask $task)
     {
-        $clientId = (int) $request->input('client_id');
-        if ($clientId < 1 || (int) $task->client_id !== $clientId) {
+        $this->ensureCrmRecordAccess((int) $task->client_id);
+
+        $clientIdInput = (int) $request->input('client_id');
+        if ($clientIdInput > 0 && $clientIdInput !== (int) $task->client_id) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
-
-        $this->ensureCrmRecordAccess((int) $task->client_id);
 
         app(ClientMatterTaskSyncService::class)->onClientTaskDeleted($task);
         $task->delete();

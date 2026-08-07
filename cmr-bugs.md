@@ -69,8 +69,9 @@ Status key (2026-08-07):
 - **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses. Verified access control and HTTP 302 authentication redirects.
 
 ### 1.6 High — Matter tasks API has no CRM access checks
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientMatterTaskController.php`
+- **Now:** All matter task endpoints (`index`, `store`, `update`, `destroy`) enforce `ensureCrmRecordAccess` on `client_id` directly from resolved records/models without reliance on client-controlled parameter tampering.
 
 ### 1.7 High — Most document mutations only enforce access for restricted PA roles
 - **Status:** Open\*
