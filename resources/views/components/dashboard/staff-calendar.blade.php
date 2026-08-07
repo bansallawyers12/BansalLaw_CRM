@@ -39,14 +39,6 @@
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--court"></span> Court / Hearing</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--deadline"></span> Deadlines</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--meeting"></span> Meetings &amp; Events</span>
-            @php
-                $_calUser = Auth::guard('admin')->user();
-                $_showZohoLegend = $_calUser instanceof \App\Models\Staff
-                    && \App\Services\CalendarSync\CalendarSyncMasterControl::canControl($_calUser);
-            @endphp
-            @if($_showZohoLegend)
-            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--zoho"></span> ↻ Outlook synced</span>
-            @endif
         </div>
 
         <div class="dashboard-calendar-wrapper">

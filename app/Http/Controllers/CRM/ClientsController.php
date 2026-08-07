@@ -5596,8 +5596,6 @@ class ClientsController extends Controller
             'reminder_minutes' => $validated['reminder_minutes'] ?? null,
         ]);
 
-        $this->queueZohoHearingPush($hearing);
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'hearing' => $hearing]);
         }
@@ -5661,8 +5659,6 @@ class ClientsController extends Controller
         $hearing->update($updateData);
         $hearing->refresh();
 
-        $this->queueZohoHearingPush($hearing);
-
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -5699,37 +5695,12 @@ class ClientsController extends Controller
     public function deleteCourtHearing(Request $request, $id)
     {
         $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
-
-        try {
-            app(\App\Services\CalendarSync\CrmToZohoCalendarSyncService::class)->deleteHearing($hearing);
-        } catch (\Throwable $e) {
-            Log::warning('Zoho calendar delete on hearing destroy failed', [
-                'hearing_id' => $hearing->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
         $hearing->delete();
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);
         }
         return redirect()->back()->with('success', 'Court hearing deleted.');
-    }
-
-    /**
-     * Best-effort CRM → Zoho push for court hearings (never blocks the CRM UX).
-     */
-    protected function queueZohoHearingPush(\App\Models\ClientCourtHearing $hearing): void
-    {
-        try {
-            app(\App\Services\CalendarSync\CrmToZohoCalendarSyncService::class)->pushHearing($hearing);
-        } catch (\Throwable $e) {
-            Log::warning('Zoho calendar hearing push failed', [
-                'hearing_id' => $hearing->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     public function storeLeadMatterFromEdit(Request $request)

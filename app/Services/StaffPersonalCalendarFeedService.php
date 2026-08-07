@@ -42,12 +42,6 @@ class StaffPersonalCalendarFeedService
             (string) ($b['starts_at'] ?? '')
         ));
 
-        try {
-            $events = app(\App\Services\CalendarSync\CalendarSyncStatusAttacher::class)->attach($events);
-        } catch (Exception) {
-            // table may not exist yet
-        }
-
         return $events;
     }
 
@@ -386,16 +380,6 @@ class StaffPersonalCalendarFeedService
 
         $textColor = ($type === 'reminder' && $kind === 'staff_event') ? '#1A2C40' : '#fff';
 
-        $classNames = ['event-' . $type, 'event-kind-' . $kind];
-        $syncStatus = $row['zoho_sync_status'] ?? null;
-        if ($syncStatus === 'linked') {
-            $classNames[] = 'fc-zoho-synced';
-        } elseif ($syncStatus === 'failed') {
-            $classNames[] = 'fc-zoho-failed';
-        } elseif ($syncStatus === 'pending') {
-            $classNames[] = 'fc-zoho-pending';
-        }
-
         return [
             'id' => (string) ($row['id'] ?? uniqid('evt-', true)),
             'title' => (string) ($row['title'] ?? 'Event'),
@@ -405,7 +389,7 @@ class StaffPersonalCalendarFeedService
             'backgroundColor' => $color,
             'borderColor' => $color,
             'textColor' => $textColor,
-            'classNames' => $classNames,
+            'classNames' => ['event-' . $type, 'event-kind-' . $kind],
             'extendedProps' => $row,
         ];
     }
