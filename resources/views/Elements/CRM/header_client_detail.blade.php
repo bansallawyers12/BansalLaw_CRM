@@ -11,6 +11,17 @@
         $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
     }
     $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
+    $_calendarSyncMasterOn = \App\Services\CalendarSync\CalendarSyncMasterControl::isEnabled();
+    $_canControlCalendarSync = $_staffTop instanceof \App\Models\Staff
+        && \App\Services\CalendarSync\CalendarSyncMasterControl::canControl($_staffTop);
+    $_unlinkedCalendarCount = 0;
+    if ($_calendarSyncMasterOn && $_canControlCalendarSync) {
+        try {
+            $_unlinkedCalendarCount = \App\Services\CalendarSync\ZohoToCrmCalendarSyncService::openUnlinkedCount();
+        } catch (\Throwable) {
+            $_unlinkedCalendarCount = 0;
+        }
+    }
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -73,6 +84,14 @@
                 <i class="fa-solid fa-user-clock"></i>
                 @if($_unassignedMailCount > 0)
                     <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
+                @endif
+            </a>
+            @endif
+            @if($_canControlCalendarSync && $_calendarSyncMasterOn)
+            <a href="{{ route('adminconsole.features.calendarsync.index') }}" class="icon-btn {{ request()->routeIs('adminconsole.features.calendarsync.*') ? 'active' : '' }}" title="Unlinked calendar (Zoho)" style="position: relative;">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                @if($_unlinkedCalendarCount > 0)
+                    <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unlinkedCalendarCount }}</span>
                 @endif
             </a>
             @endif

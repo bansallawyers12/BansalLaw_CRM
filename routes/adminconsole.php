@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminConsole\MatterController;
 use App\Http\Controllers\AdminConsole\WorkflowController;
 use App\Http\Controllers\AdminConsole\EmailController;
+use App\Http\Controllers\AdminConsole\CalendarSyncController;
 use App\Http\Controllers\AdminConsole\CrmEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
@@ -73,6 +74,19 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::put('/emails/{id}', [EmailController::class, 'update'])->name('emails.update');
         Route::post('/emails/sync-now', [EmailController::class, 'syncNow'])->name('emails.sync-now');
         Route::post('/emails/inbox-sync-master', [EmailController::class, 'updateInboxSyncMaster'])->name('emails.inbox-sync-master');
+
+        // Zoho calendar sync (Super Admin; OAuth + staff maps local)
+        Route::get('/calendar-sync', [CalendarSyncController::class, 'index'])->name('calendarsync.index');
+        Route::post('/calendar-sync/master', [CalendarSyncController::class, 'updateMaster'])->name('calendarsync.master');
+        Route::get('/calendar-sync/connect', [CalendarSyncController::class, 'connect'])->name('calendarsync.connect');
+        Route::get('/calendar-sync/callback', [CalendarSyncController::class, 'callback'])->name('calendarsync.callback');
+        Route::post('/calendar-sync/staff-credentials', [CalendarSyncController::class, 'storeStaffCredential'])->name('calendarsync.staff-credentials.store');
+        Route::put('/calendar-sync/staff-credentials/{staffId}', [CalendarSyncController::class, 'updateStaffCredential'])->name('calendarsync.staff-credentials.update');
+        Route::delete('/calendar-sync/staff-credentials/{staffId}', [CalendarSyncController::class, 'deleteStaffCredential'])->name('calendarsync.staff-credentials.delete');
+        Route::post('/calendar-sync/staff-credentials/{staffId}/disconnect', [CalendarSyncController::class, 'disconnectStaff'])->name('calendarsync.staff-credentials.disconnect');
+        Route::post('/calendar-sync/sync-now', [CalendarSyncController::class, 'syncNow'])->name('calendarsync.sync-now');
+        Route::post('/calendar-sync/unlinked/assign', [CalendarSyncController::class, 'assignUnlinked'])->name('calendarsync.unlinked.assign');
+        Route::post('/calendar-sync/unlinked/dismiss', [CalendarSyncController::class, 'dismissUnlinked'])->name('calendarsync.unlinked.dismiss');
         
         // CRM Email Template routes
         Route::get('/crm-email-template', [CrmEmailTemplateController::class, 'index'])->name('crmemailtemplate.index');
