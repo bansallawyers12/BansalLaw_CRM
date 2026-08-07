@@ -859,22 +859,18 @@ $(document).ready(function() {
 
 
 
-    // Initialize Activity Feed visibility on page load (Timeline tab only)
-
-    var showFeedOnLoad = $('#activityfeed-tab').hasClass('active');
-
+    // Timeline feed lives inside #activityfeed-tab; main column always stays visible.
     if (window.SidebarTabs && typeof window.SidebarTabs.syncFeedGridLayout === 'function') {
-        window.SidebarTabs.syncFeedGridLayout(showFeedOnLoad);
+        window.SidebarTabs.syncFeedGridLayout(false);
     } else if ($('.crm-container.crm-container--unified').length) {
-        $('.crm-container.crm-container--unified').toggleClass('crm-container--no-feed', !showFeedOnLoad);
+        $('.crm-container.crm-container--unified').addClass('crm-container--no-feed');
     }
 
-    if (showFeedOnLoad) {
+    $('#main-content').show();
 
-        // activityfeed tab: show feed, hide main content column
-        $('#activity-feed').show();
-        $('#main-content').hide();
+    if ($('#activityfeed-tab').hasClass('active')) {
         $('.crm-container').addClass('crm-container--activity-tab');
+        $('#activity-feed').show();
         if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
             window.ActivityFeed.ensureTimelineFiltersVisible();
         }
@@ -882,11 +878,6 @@ $(document).ready(function() {
         setTimeout(function() {
             adjustActivityFeedHeight();
         }, 150);
-
-    } else {
-
-        $('#activity-feed').hide();
-
     }
 
 });

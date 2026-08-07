@@ -62,14 +62,15 @@
     }
 
     function setMainColumnForTab(tabId) {
+        // Timeline feed is rendered inside #activityfeed-tab — keep main column visible.
+        $('#main-content').show();
         if (tabId === 'activityfeed') {
-            $('#main-content').hide();
             $('.crm-container').addClass('crm-container--activity-tab');
+            $('#activity-feed').show();
             if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
                 window.ActivityFeed.ensureTimelineFiltersVisible();
             }
         } else {
-            $('#main-content').show();
             $('.crm-container').removeClass('crm-container--activity-tab');
             if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
                 window.ActivityFeed.ensureTimelineFiltersVisible();
@@ -214,13 +215,11 @@
         // Update URL
         updateUrl(tabId);
         
-        // Handle activity feed visibility
+        // Timeline feed sits inside the tab pane; grid never reserves a side rail.
+        syncFeedGridLayout(false);
+        setMainColumnForTab(tabId);
+
         if (isActivityFeedTab(tabId)) {
-            syncFeedGridLayout(true);
-            $('#activity-feed').show();
-            setMainColumnForTab(tabId);
-            
-            // Adjust Activity Feed height when it becomes visible
             setTimeout(function() {
                 if (typeof adjustActivityFeedHeight === 'function') {
                     adjustActivityFeedHeight();
@@ -228,9 +227,6 @@
             }, 100);
         } else {
             handleMatterSpecificTab(tabId);
-            syncFeedGridLayout(false);
-            $('#activity-feed').hide();
-            setMainColumnForTab(tabId);
 
             if (tabId === 'matterdocuments' || tabId === 'personaldocuments') {
                 setTimeout(function() {
@@ -478,7 +474,6 @@
         const defaultTabs = ['personaldetails', 'companydetails'];
         if (defaultTabs.includes(tabId)) {
             syncFeedGridLayout(false);
-            $('#activity-feed').hide();
             setMainColumnForTab(tabId);
             syncAriaForTabs(tabId);
             return;

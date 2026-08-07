@@ -51,13 +51,14 @@
             || isTaskOrActionTimelineItem($item);
     }
 
-    var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">' +
-        '<i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
+    var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 28px 20px; color: #5e7a90;">' +
+        '<i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;" aria-hidden="true"></i>' +
         '<p class="mb-0 small">No activities match your filters</p></li>';
 
-    var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">' +
-        '<i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>' +
-        '<p>No activities found</p></li>';
+    var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">' +
+        '<i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;" aria-hidden="true"></i>' +
+        '<p class="mb-1" style="color: #1e3d60; font-weight: 600;">No activities yet</p>' +
+        '<p class="mb-0 small">Notes, tasks, documents, and stage changes will appear here.</p></li>';
 
     /**
      * Initialize Activity Feed functionality
@@ -72,7 +73,8 @@
     }
 
     function isOnActivityTab() {
-        return $('.crm-container').hasClass('crm-container--activity-tab');
+        return $('#activityfeed-tab').hasClass('active')
+            || $('.crm-container').hasClass('crm-container--activity-tab');
     }
 
     function isFilterBarCollapsed() {

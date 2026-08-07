@@ -1,79 +1,80 @@
-<!-- Activity Feed (Personal Details, Company Details, Activity nav; single #activity-feed instance) -->
+<!-- Activity Feed (Timeline tab; single #activity-feed instance) -->
 <aside class="activity-feed" id="activity-feed">
     <div class="activity-feed-header">
-        <h2><i class="fa-solid fa-history"></i> Activity Feed</h2>
+        <h2><i class="fa-solid fa-history" aria-hidden="true"></i> Activity Feed</h2>
         <div class="activity-feed-header-actions">
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-filter-toggle" id="activity-feed-filter-toggle" title="Hide filters" aria-expanded="true" aria-controls="activity-feed-filter-bar" hidden>
                 <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
             </button>
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-refresh" id="activity-feed-refresh" title="Refresh">
-                <i class="fa-solid fa-rotate"></i>
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
             </button>
-            <label for="increase-activity-feed-width">
+            <label for="increase-activity-feed-width" class="activity-feed-expand-label">
                 <input type="checkbox" id="increase-activity-feed-width" title="Expand Width">
+                <span>Expand</span>
             </label>
         </div>
     </div>
-    
-    <!-- Extended Filters (visible only when checkbox is ticked / wide-mode) -->
+
+    <!-- Extended Filters (visible on Timeline tab; toggleable) -->
     <div class="activity-feed-filter-bar" id="activity-feed-filter-bar" style="display: none;">
         <div class="activity-feed-filter-row">
-            <input type="text" 
-                   class="form-control form-control-sm activity-feed-search" 
-                   id="activity-feed-search" 
-                   placeholder="Search activities..." 
+            <input type="text"
+                   class="form-control form-control-sm activity-feed-search"
+                   id="activity-feed-search"
+                   placeholder="Search activities..."
                    autocomplete="off">
         </div>
         <div class="activity-feed-filter-row">
-            <input type="text" 
-                   class="form-control form-control-sm activity-feed-date" 
-                   id="activity-feed-date-from" 
-                   placeholder="From" 
+            <input type="text"
+                   class="form-control form-control-sm activity-feed-date"
+                   id="activity-feed-date-from"
+                   placeholder="From"
                    autocomplete="off">
-            <input type="text" 
-                   class="form-control form-control-sm activity-feed-date" 
-                   id="activity-feed-date-to" 
-                   placeholder="To" 
+            <input type="text"
+                   class="form-control form-control-sm activity-feed-date"
+                   id="activity-feed-date-to"
+                   placeholder="To"
                    autocomplete="off">
         </div>
         <div class="activity-feed-filter-actions">
             <button type="button" class="btn btn-sm btn-primary activity-feed-apply" id="activity-feed-apply">
-                <i class="fa-solid fa-search"></i> Apply
+                <i class="fa-solid fa-search" aria-hidden="true"></i> Apply
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary activity-feed-reset" id="activity-feed-reset">
-                <i class="fa-solid fa-arrow-rotate-right"></i> Reset
+                <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i> Reset
             </button>
         </div>
     </div>
-    
+
     <!-- Activity Type Filters -->
-    <div class="activity-filters">
-        <button class="activity-filter-btn active" data-filter="all">
-            <i class="fa-solid fa-list"></i> All
+    <div class="activity-filters" role="toolbar" aria-label="Filter activity types">
+        <button type="button" class="activity-filter-btn active" data-filter="all">
+            <i class="fa-solid fa-list" aria-hidden="true"></i> All
         </button>
-        <button class="activity-filter-btn" data-filter="activity">
-            <i class="fa-solid fa-bolt"></i> Activity
+        <button type="button" class="activity-filter-btn" data-filter="activity">
+            <i class="fa-solid fa-bolt" aria-hidden="true"></i> Activity
         </button>
-        <button class="activity-filter-btn" data-filter="note">
-            <i class="fa-solid fa-note-sticky"></i> Notes
+        <button type="button" class="activity-filter-btn" data-filter="note">
+            <i class="fa-solid fa-note-sticky" aria-hidden="true"></i> Notes
         </button>
-        <button class="activity-filter-btn" data-filter="document">
-            <i class="fa-solid fa-file-lines"></i> Documents
+        <button type="button" class="activity-filter-btn" data-filter="document">
+            <i class="fa-solid fa-file-lines" aria-hidden="true"></i> Documents
         </button>
-        <button class="activity-filter-btn" data-filter="signature">
-            <i class="fa-solid fa-file-signature"></i> Signatures
+        <button type="button" class="activity-filter-btn" data-filter="signature">
+            <i class="fa-solid fa-file-signature" aria-hidden="true"></i> Signatures
         </button>
-        <button class="activity-filter-btn" data-filter="accounting">
-            <i class="fa-solid fa-dollar-sign"></i> Accounting
+        <button type="button" class="activity-filter-btn" data-filter="accounting">
+            <i class="fa-solid fa-dollar-sign" aria-hidden="true"></i> Accounting
         </button>
     </div>
-    
+
     <ul class="feed-list">
         @php
         // Handle search parameters
         $staff_search = $_REQUEST['staff'] ?? $_REQUEST['user'] ?? ''; // 'user' kept for backward compatibility
         $keyword_search = $_REQUEST['keyword'] ?? '';
-        
+
         // Query activities based on search parameters
         if ($staff_search != "" || $keyword_search != "") {
             if ($staff_search != "" && $keyword_search != "") {
@@ -120,7 +121,7 @@
                 ->get();
         }
         @endphp
-        
+
         @if($activities->count() > 0)
             @foreach($activities as $activit)
                 @php
@@ -132,16 +133,16 @@
                     'clientId' => $fetchedData->id
                 ])
             @endforeach
-            <li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">
-                <i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>
+            <li class="feed-item feed-item-no-results" style="text-align: center; padding: 28px 20px; color: #5e7a90;">
+                <i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;" aria-hidden="true"></i>
                 <p class="mb-0 small">No activities match your filters</p>
             </li>
         @else
-            <li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">
-                <i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
-                <p>No activities found</p>
+            <li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">
+                <i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;" aria-hidden="true"></i>
+                <p class="mb-1 font-weight-semibold" style="color: #1e3d60;">No activities yet</p>
+                <p class="mb-0 small">Notes, tasks, documents, and stage changes will appear here.</p>
             </li>
         @endif
     </ul>
 </aside>
-
