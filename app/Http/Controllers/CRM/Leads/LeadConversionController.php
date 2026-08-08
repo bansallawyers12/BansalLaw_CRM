@@ -147,24 +147,29 @@ class LeadConversionController extends Controller
         
         $requestData = $request->all();
         
-        if(!isset($requestData['lead_ids']) || !is_array($requestData['lead_ids'])) {
-            return redirect()->back()->with('error', 'No leads selected');
+        if (!isset($requestData['lead_ids']) || !is_array($requestData['lead_ids']) || empty($requestData['lead_ids'])) {
+            return redirect()->back()->with('error', 'No leads selected for conversion.');
         }
 
         $leadIds = $requestData['lead_ids'];
         $convertedCount = 0;
         $errors = [];
 
-        foreach($leadIds as $leadId) {
+        foreach ($leadIds as $leadId) {
             try {
                 $lead = Lead::withArchived()->find($leadId);
-                if(!$lead) {
+                if (!$lead) {
                     $errors[] = "Lead ID {$leadId}: Lead not found.";
                     continue;
                 }
 
-                if (! ClientMatter::clientHasActiveAssignedMatter((int) $lead->id)) {
-                    $errors[] = "Lead ID {$leadId}: Active assigned matter is required before conversion.";
+                if (!StaffClientVisibility::canAccessClientOrLead((int) $lead->id, $actor)) {
+                    $errors[] = "Lead ID {$leadId}: Unauthorized access.";
+                    continue;
+                }
+
+                if (!ClientMatter::clientHasActiveAssignedMatter((int) $lead->id)) {
+                    $errors[] = "Lead '{$lead->first_name} {$lead->last_name}' (#{$leadId}): Active assigned matter is required before conversion.";
                     continue;
                 }
 
@@ -175,12 +180,13 @@ class LeadConversionController extends Controller
             }
         }
 
-        $message = "Successfully converted {$convertedCount} leads to clients";
-        if(!empty($errors)) {
-            $message .= ". Errors: " . implode(', ', $errors);
+        if ($convertedCount > 0 && empty($errors)) {
+            return redirect()->back()->with('success', "Successfully converted {$convertedCount} lead(s) to client(s).");
+        } elseif ($convertedCount > 0) {
+            return redirect()->back()->with('warning', "Converted {$convertedCount} lead(s) with warnings/errors: " . implode(' | ', $errors));
         }
 
-        return redirect()->back()->with('success', $message);
+        return redirect()->back()->with('error', "Failed to convert leads: " . implode(' | ', $errors));
     }
 
     /**

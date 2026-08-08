@@ -134,9 +134,9 @@ Severity key:
 - **Now:** `printPreview` validates numeric receipt ID, aborts 404 if receipt is missing, enforces `ensureCrmRecordAccess`, and provides null-coalescing safeguards for view properties.
 
 ### 1.20 Low/Medium — `EnsuresCrmRecordAccess` silently allows non-client/lead IDs
-- **Files:** `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php` (~20–34)
-- **What goes wrong:** If `adminId` is not `type in (client,lead)`, gate returns without abort. Callers that trust this for “any id” can skip ACL when a non-CRM id is supplied.
-- **Impact:** ACL bypass when misused by callers (also relevant to trust posts — see Area 6).
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php`
+- **Now:** `ensureCrmRecordAccess` aborts 403 when `$adminId <= 0`, when matching record is missing, or when type is not `client` or `lead`. Callers with optional client IDs use `ensureCrmRecordAccessForOptionalClientId`.
 
 ---
 
@@ -153,9 +153,9 @@ Severity key:
   ```
 
 ### 2.2 High — Bulk convert ignores matter requirement / silent failures
-- **Files:** `LeadConversionController::bulkConvertToClient` (~154–188); `Lead::convertToClient` (~149–171)
-- **What goes wrong:** Single convert enforces active assigned matter; bulk / #2.1 do not. Failures swallowed (`catch` empty / continue).
-- **Impact:** Leads become clients without matters; ops/analytics diverge from single-convert rules.
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `bulkConvertToClient` enforces `StaffClientVisibility` ACL and `ClientMatter::clientHasActiveAssignedMatter` per lead, validates non-empty selection, and sets appropriate flash message types (`success`, `warning`, `error`).
 
 ### 2.3 Medium — Conversion matter numbers race (duplicate refs)
 - **Files:** `LeadConversionController::convertSingleLead` (~118–127); `ClientsController::changetype` (~6322–6324)
