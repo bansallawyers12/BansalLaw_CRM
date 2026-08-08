@@ -74,8 +74,9 @@ Status key (2026-08-07):
 - **Now:** All matter task endpoints (`index`, `store`, `update`, `destroy`) enforce `ensureCrmRecordAccess` on `client_id` directly from resolved records/models without reliance on client-controlled parameter tampering.
 
 ### 1.7 High — Most document mutations only enforce access for restricted PA roles
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientDocumentsController.php`
+- **Now:** All document, checklist, and category mutation endpoints in `ClientDocumentsController.php` enforce `StaffClientVisibility` client access authorization on target `client_id`s, validate `client_matter_id` ownership, prevent cross-client folder moves, and restrict global folder creation to superadmins.
 
 ### 1.8 High — Email HTML preview has no client access check
 - **Status:** Open\*
