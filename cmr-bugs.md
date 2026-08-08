@@ -158,7 +158,9 @@ Status key (2026-08-07):
 - **Now:** `bulkConvertToClient` enforces `StaffClientVisibility` ACL and `ClientMatter::clientHasActiveAssignedMatter` per lead, validates non-empty selection, and sets appropriate flash message types (`success`, `warning`, `error`).
 
 ### 2.3 Medium — Conversion matter numbers race (duplicate refs)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatter.php`, `LeadConversionController.php`, `ClientsController.php`
+- **Now:** Added `ClientMatter::generateUniqueMatterNumber(int $clientId, int $matterId)` helper that guarantees collision-free, sequence-checked `client_unique_matter_no` references during conversion and creation.
 
 ### 2.4 Medium — Single convert can set arbitrary `user_id`
 - **Status:** Open\*

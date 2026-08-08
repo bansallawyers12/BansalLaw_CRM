@@ -6025,9 +6025,7 @@ class ClientsController extends Controller
             $obj5->sel_person_assisting = $requestData['person_assisting'];
             $obj5->sel_matter_id = $requestData['matter_id'];
             
-            $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$requestData['matter_id'])->where('client_id',$requestData['client_id'])->count();
-            $client_matters_current_no = $client_matters_cnt_per_client+1;
-            $obj5->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $requestData['matter_id']) . '_' . $client_matters_current_no;
+            $obj5->client_unique_matter_no = \App\Models\ClientMatter::generateUniqueMatterNumber((int) $requestData['client_id'], (int) $requestData['matter_id']);
             $matterType = Matter::find($requestData['matter_id']);
             $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
             $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
@@ -6394,9 +6392,7 @@ class ClientsController extends Controller
                         'legal_practitioner' => $request['legal_practitioner'],
                     ]);
 
-                    $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',(int) $id)->count();
-                    $client_matters_current_no = $client_matters_cnt_per_client+1;
-                    $matter->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $request['matter_id']) . '_' . $client_matters_current_no;
+                    $matter->client_unique_matter_no = \App\Models\ClientMatter::generateUniqueMatterNumber((int) $id, (int) $request['matter_id']);
                     Log::info('ConvertLeadToClient: client_unique_matter_no', ['client_unique_matter_no' => $matter->client_unique_matter_no]);
 
                     $matterType = Matter::find($request['matter_id']);

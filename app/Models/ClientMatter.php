@@ -298,4 +298,28 @@ class ClientMatter extends Model
             ->exists();
     }
 
+    /**
+     * Generate a unique client matter reference number (client_unique_matter_no)
+     * avoiding duplicate reference race conditions.
+     */
+    public static function generateUniqueMatterNumber(int $clientId, int $matterId): string
+    {
+        $prefix = Matter::clientUniqueMatterNoPrefix($matterId);
+        
+        $count = self::query()
+            ->where('sel_matter_id', $matterId)
+            ->where('client_id', $clientId)
+            ->count();
+
+        $seqNo = $count + 1;
+        $candidateRef = $prefix . '_' . $seqNo;
+
+        while (self::query()->where('client_id', $clientId)->where('client_unique_matter_no', $candidateRef)->exists()) {
+            $seqNo++;
+            $candidateRef = $prefix . '_' . $seqNo;
+        }
+
+        return $candidateRef;
+    }
+
 }
