@@ -35,21 +35,23 @@ class LeadAssignmentController extends Controller
      */
     public function getAssignableStaff(Request $request)
     {
-        // Check if requesting for a specific lead (ownership verification)
+        $user = Auth::user();
+        if (! ($user instanceof Staff) || (int) $user->status !== 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         $leadId = $request->input('lead_id');
-        
-        if ($leadId) {
+        if ($leadId !== null && $leadId !== '') {
             $lead = Lead::find($leadId);
             if (! $lead) {
                 return response()->json(['error' => 'Lead not found'], 404);
             }
-            if (! StaffClientVisibility::canAccessClientOrLead((int) $lead->id, Auth::user())) {
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $lead->id, $user)) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
         } else {
-            $user = Auth::user();
-            if (! ($user instanceof Staff) || (int) $user->status !== 1) {
-                return response()->json(['error' => 'Unauthorized'], 403);
+            if (! $user->hasEffectiveSuperAdminPrivileges()) {
+                return response()->json(['error' => 'Lead ID is required to view assignable staff.'], 422);
             }
         }
         

@@ -928,7 +928,19 @@ class ClientPersonalDetailsController extends Controller
         }
 
         if ($saved) {
+            $wasLeadBefore = false;
+            $adminCheck = \App\Models\Admin::query()->find($postedClientId);
+            if ($adminCheck) {
+                $typeNorm = mb_strtolower(trim((string) $adminCheck->type));
+                if ($typeNorm === 'lead' || in_array($typeNorm, \App\Models\Lead::LEAD_TYPE_VALUES, true)) {
+                    $wasLeadBefore = true;
+                }
+            }
+
             \App\Services\LeadMatterAssignedConversion::applyForAdminId($postedClientId);
+
+            $adminAfter = \App\Models\Admin::query()->find($postedClientId);
+            $wasConverted = $wasLeadBefore && $adminAfter && $adminAfter->type === 'client';
 
             $objs = new \App\Models\ActivitiesLog;
             $objs->client_id = $requstData['client_id'];
@@ -940,7 +952,9 @@ class ClientPersonalDetailsController extends Controller
             $objs->save();
 
             $response['status'] = true;
-            $response['message'] = 'Matter details updated successfully.';
+            $response['message'] = $wasConverted
+                ? 'Matter details updated successfully. Lead was automatically converted to a client.'
+                : 'Matter details updated successfully.';
         } else {
             $response['message'] = 'Record could not be updated. Please try again.';
         }

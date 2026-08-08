@@ -54,11 +54,13 @@ class LeadAnalyticsController extends Controller
         $startDate = $this->parseDateSafely($request->get('start_date'), false);
         $endDate   = $this->parseDateSafely($request->get('end_date'), true);
         
+        $filter = $request->get('filter', 'all');
+        
         // Get comprehensive statistics
         $dashboardStats = $this->analyticsService->getDashboardStats($startDate, $endDate);
         $conversionFunnel = $this->analyticsService->getConversionFunnel($startDate, $endDate);
         $sourcePerformance = $this->analyticsService->getSourcePerformance($startDate, $endDate);
-        $agentPerformance = $this->analyticsService->getAgentPerformance($startDate, $endDate);
+        $agentPerformance = $this->analyticsService->getAgentPerformance($startDate, $endDate, $filter);
         $leadQuality = $this->analyticsService->getLeadQualityDistribution($startDate, $endDate);
         
         return view('crm.leads.analytics.dashboard', compact(
@@ -68,7 +70,8 @@ class LeadAnalyticsController extends Controller
             'agentPerformance',
             'leadQuality',
             'startDate',
-            'endDate'
+            'endDate',
+            'filter'
         ));
     }
     

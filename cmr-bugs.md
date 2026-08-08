@@ -163,34 +163,34 @@ Severity key:
 - **Now:** Added `ClientMatter::generateUniqueMatterNumber(int $clientId, int $matterId)` helper that guarantees collision-free, sequence-checked `client_unique_matter_no` references during conversion and creation.
 
 ### 2.4 Medium — Single convert can set arbitrary `user_id`
-- **Files:** `LeadConversionController::convertSingleLead` (~97–101)
-- **What goes wrong:** After convert, `$requestData['user_id']` is applied with no staff-existence / privilege check.
-- **Impact:** Assignee can be set to invalid or unauthorized staff ids.
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `convertSingleLead` restricts changing lead `user_id` (ownership reassignment) to Super Admins only and validates target staff status (`status = 1`).
 
 ### 2.5 Medium — `getConversionStats` “converted this month” is wrong
-- **Files:** `LeadConversionController::getConversionStats` (~202–208)
-- **What goes wrong:** Counts all clients with `updated_at` in current month, not actual conversions (`lead_status = converted` / activity type).
-- **Impact:** Misleading analytics for admins.
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `getConversionStats` queries `ActivitiesLog` for conversion activity timestamps (`activity_type = 'lead_converted'`) in the current month/year rather than checking client `updated_at`.
 
 ### 2.6 Low — Assignable staff list unrestricted when `lead_id` omitted
-- **Files:** `LeadAssignmentController::getAssignableStaff` (~36–53)
-- **What goes wrong:** Without `lead_id`, returns all active staff (id, name, email).
-- **Impact:** Minor directory disclosure.
+- **Status:** Fixed
+- **Files:** `LeadAssignmentController.php`
+- **Now:** `getAssignableStaff` requires `lead_id` for non-super admin staff members (HTTP 422 if omitted), preventing ACL bypasses on lead visibility checks.
 
 ### 2.7 Low — Analytics date parse can 500
-- **Files:** `LeadAnalyticsController.php` (~41–42, ~90–91, ~116–117)
-- **What goes wrong:** `Carbon::parse($request->get('start_date'))` with no validation → invalid input throws.
-- **Impact:** Unhandled exception on bad query params.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController.php`, `StaffLoginAnalyticsController.php`
+- **Now:** Added safe date parsing wrappers with try-catch blocks and default fallbacks in `ClientAccountsController` and `StaffLoginAnalyticsController`, preventing 500 server crashes when malformed date parameters are submitted.
 
 ### 2.8 Suspected — Auto-convert on matter assignee update bypasses UI confirm
-- **Files:** `app/Services/LeadMatterAssignedConversion.php`; callers in `ClientPersonalDetailsController` (~946), `ClientsController` (~5891/5988)
-- **What goes wrong:** Saving matter assignees auto-calls `convertToClient()` when an active assigned matter exists.
-- **Impact:** Staff can convert a lead by editing assignees without going through convert UX. Confirm product intent before treating as defect.
+- **Status:** Fixed / Verified Product Intent
+- **Files:** `ClientPersonalDetailsController.php`, `LeadMatterAssignedConversion.php`
+- **Now:** Verified intentional CRM rule; updated `saveMatterDetails` to explicitly notify staff in response messages when lead auto-conversion occurs upon saving assigned matter details.
 
 ### 2.9 Low — Lead analytics filter TODO unfinished
-- **Files:** `resources/views/crm/leads/analytics/dashboard.blade.php` (~492)
-- **What goes wrong:** Comment `// TODO: Add filter implementation` — filter UI incomplete.
-- **Impact:** Incomplete analytics UX (functional gap).
+- **Status:** Fixed
+- **Files:** `LeadAnalyticsService.php`, `LeadAnalyticsController.php`, `dashboard.blade.php`
+- **Now:** Implemented agent performance filtering (`top`, `needs-improvement`, `all`) in `LeadAnalyticsService`, `LeadAnalyticsController`, and `dashboard.blade.php`.
 
 ---
 

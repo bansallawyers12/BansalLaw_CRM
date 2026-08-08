@@ -96,7 +96,7 @@ class LeadAnalyticsService
     /**
      * Get agent performance metrics
      */
-    public function getAgentPerformance($startDate = null, $endDate = null)
+    public function getAgentPerformance($startDate = null, $endDate = null, ?string $filter = null)
     {
         $agents = Staff::where('status', 1)->get();
 
@@ -141,6 +141,12 @@ class LeadAnalyticsService
         }
 
         usort($performance, fn($a, $b) => $b['conversion_rate'] <=> $a['conversion_rate']);
+
+        if ($filter === 'top') {
+            $performance = array_values(array_filter($performance, fn($item) => $item['conversion_rate'] >= 20 || $item['converted_leads'] > 0));
+        } elseif ($filter === 'needs-improvement') {
+            $performance = array_values(array_filter($performance, fn($item) => $item['conversion_rate'] < 20));
+        }
 
         return $performance;
     }
