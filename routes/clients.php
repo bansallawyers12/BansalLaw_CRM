@@ -290,8 +290,6 @@ Route::post('/leads/updateOccupation', [ClientPersonalDetailsController::class, 
 
 /*---------- Client Relationships ----------*/
 Route::post('/clients/search-partner', [ClientPersonalDetailsController::class, 'searchPartner'])->name('clients.searchPartner');
-Route::get('/clients/search-partner-test', [ClientPersonalDetailsController::class, 'searchPartnerTest'])->name('clients.searchPartnerTest');
-Route::get('/clients/test-bidirectional', [ClientPersonalDetailsController::class, 'testBidirectionalRemoval'])->name('clients.testBidirectional');
 Route::post('/clients/save-relationship', [ClientPersonalDetailsController::class, 'saveRelationship'])->name('clients.saveRelationship');
 
 /*---------- Client Agreements & Forms ----------*/

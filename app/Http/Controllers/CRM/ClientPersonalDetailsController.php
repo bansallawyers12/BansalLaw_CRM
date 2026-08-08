@@ -654,14 +654,16 @@ class ClientPersonalDetailsController extends Controller
 
         // Loop through the relationship data to insert each relationship
         if (is_array($request->relationship_type)) {
+            $staffUserId = Auth::guard('admin')->check() ? Auth::guard('admin')->id() : (Auth::check() ? Auth::id() : null);
             foreach ($request->relationship_type as $index => $relationshipType) {
                 ClientRelationship::create([
+                    'admin_id' => $staffUserId,
                     'client_id' => $clientId,
                     'relationship_type' => $relationshipType,
-                    'name' => $request->name[$index] ?? '',
-                    'phone_number' => $request->phone_number[$index] ?? '',
-                    'email_address' => $request->email_address[$index] ?? '',
-                    'crm_reference' => $request->crm_reference[$index] ?? null,
+                    'first_name' => $request->name[$index] ?? '',
+                    'phone' => $request->phone_number[$index] ?? '',
+                    'email' => $request->email_address[$index] ?? '',
+                    'details' => $request->crm_reference[$index] ?? null,
                 ]);
             }
         }
@@ -721,41 +723,9 @@ class ClientPersonalDetailsController extends Controller
         }
     }
 
-    // Test method to debug search functionality
     public function searchPartnerTest(Request $request)
     {
-        if (!app()->environment('local')) {
-            abort(404);
-        }
-        $query = $request->input('query', 'vip');
-        
-        // Get total clients count
-        $totalClients = Admin::whereIn('type', ['client', 'lead'])->count();
-        
-        // Get sample clients
-        $sampleClients = Admin::whereIn('type', ['client', 'lead'])
-            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id')
-            ->limit(5)
-            ->get();
-        
-        // Test search
-        $searchResults = Admin::whereIn('type', ['client', 'lead'])
-            ->where(function ($q) use ($query) {
-                $queryLower = strtolower($query);
-                $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $queryLower . '%'])
-                  ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $queryLower . '%'])
-                  ->orWhereRaw('LOWER(email) LIKE ?', ['%' . $queryLower . '%']);
-            })
-            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id')
-            ->get();
-        
-        return response()->json([
-            'total_clients' => $totalClients,
-            'sample_clients' => $sampleClients->toArray(),
-            'search_query' => $query,
-            'search_results' => $searchResults->toArray(),
-            'search_count' => $searchResults->count()
-        ]);
+        abort(404);
     }
 
     public function fetchClientMatterAssignee(Request $request)
@@ -6250,38 +6220,9 @@ class ClientPersonalDetailsController extends Controller
         }
     }
 
-    // Test method to debug specific scenario
     public function testBidirectionalRemoval(Request $request)
     {
-        if (!app()->environment('local')) {
-            abort(404);
-        }
-        try {
-            $clientAId = $request->input('client_a_id', '36464');
-            $clientBId = $request->input('client_b_id', '36465');
-            
-            // Get current state
-            $clientA = Admin::find($clientAId);
-            $clientB = Admin::find($clientBId);
-            
-            $result = [
-                'client_a' => [
-                    'id' => $clientAId,
-                    'name' => $clientA ? $clientA->first_name . ' ' . $clientA->last_name : 'Not found',
-                    'related_files' => $clientA ? $clientA->related_files : 'Not found'
-                ],
-                'client_b' => [
-                    'id' => $clientBId,
-                    'name' => $clientB ? $clientB->first_name . ' ' . $clientB->last_name : 'Not found',
-                    'related_files' => $clientB ? $clientB->related_files : 'Not found'
-                ]
-            ];
-            
-            return response()->json($result);
-            
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        abort(404);
     }
 
     /**
