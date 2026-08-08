@@ -4280,8 +4280,20 @@ class ClientsController extends Controller
                 ], 404);
             }
 
-            if ($emailLog->client_id) {
-                $this->ensureCrmRecordAccess((int) $emailLog->client_id);
+            $logClientId = (int) ($emailLog->client_id ?? 0);
+            if ($logClientId <= 0 && ! empty($emailLog->client_matter_id)) {
+                $logClientId = (int) \App\Models\ClientMatter::where('id', $emailLog->client_matter_id)->value('client_id');
+            }
+
+            if ($logClientId > 0) {
+                $this->ensureCrmRecordAccess($logClientId);
+            } else {
+                if (! ($user instanceof \App\Models\Staff && ($user->canViewSyncedInboxMail() || $user->canSyncInboxEmails() || $user->hasEffectiveSuperAdminPrivileges()))) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized: You do not have permission to delete unassigned emails.',
+                    ], 403);
+                }
             }
 
             $matterId = $request->input('client_matter_id');
@@ -4294,7 +4306,7 @@ class ClientsController extends Controller
                     ], 403);
                 }
             } elseif ($clientId !== null && $clientId !== '') {
-                if ((int) $emailLog->client_id !== (int) $clientId) {
+                if ($logClientId !== (int) $clientId) {
                     return response()->json([
                         'success' => false,
                         'message' => 'This email does not belong to the open client or lead.',

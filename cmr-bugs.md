@@ -84,8 +84,9 @@ Status key (2026-08-07):
 - **Now:** `getParsedEmailHtml` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email logs are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.9 High — Email delete lacks client-record authorization
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientsController.php`
+- **Now:** `deleteEmailLog` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email deletions are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.10 High — Activity log delete/pin and cost-agreement delete lack access checks
 - **Status:** Open\*
