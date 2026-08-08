@@ -114,16 +114,14 @@ Severity key:
 - **Now:** `notpickedcall` validates numeric client `id` > 0, enforces `ensureCrmRecordAccess`, verifies target record existence, and handles SMS sending safely with JSON responses.
 
 ### 1.16 Medium — `saveRelationship` writes against staff Auth id, not CRM client
-- **Files:** `ClientPersonalDetailsController.php` (~646–662); `routes/clients.php` (~294)
-- **What goes wrong:** `$clientId = Auth::id()` (staff), then inserts `ClientRelationship` with that id. Relationships never attach to the CRM client.
-- **Impact:** Broken partner/relationship data for that legacy route.
+- **Status:** Fixed
+- **Files:** `ClientPersonalDetailsController.php`
+- **Now:** `saveRelationship` maps `client_id` to the CRM client's `id` ($clientId) and populates `admin_id` with the authenticated staff ID (`Auth::guard('admin')->id()`), matching `ClientRelationship` model schema.
 
 ### 1.17 Medium/High — Debug endpoints leak client PII
-- **Files:**
-  - `ClientPersonalDetailsController::searchPartnerTest` (~718–748); route GET `clients/search-partner-test`
-  - `ClientPersonalDetailsController::testBidirectionalRemoval` (~6020–6043); route GET `clients/test-bidirectional`
-- **What goes wrong:** Unrestricted (auth only) endpoints return names, emails, phones, `related_files` for sample/search clients. No access filtering.
-- **Impact:** PII disclosure to any logged-in staff.
+- **Status:** Fixed
+- **Files:** `searchPartnerTest`, `testBidirectionalRemoval` routes
+- **Now:** Removed debug routes `/clients/search-partner-test` and `/clients/test-bidirectional` from `routes/clients.php`. Updated controller methods in `ClientPersonalDetailsController.php` to `abort(404)`.
 
 ### 1.18 Medium — Void invoice can null-deref / proceed inconsistently
 - **Files:** `ClientAccountsController.php` (~4390–4427)
