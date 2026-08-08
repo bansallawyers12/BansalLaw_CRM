@@ -99,8 +99,9 @@ Status key (2026-08-07):
 - **Now:** `convertLeadOnly` enforces `ensureCrmRecordAccess`, sets active status (`status = 'active'`), generates missing client reference IDs via `ClientReferenceService`, and eliminates user_id parameter tampering.
 
 ### 1.12 High — Lead↔client type change via GET (CSRF + demotion)
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientsController.php`; `routes/clients.php`
+- **Now:** `changetype` route restricted to POST with CSRF verification. Method enforces `ensureCrmRecordAccess`, disallows client-to-lead demotion, updates active status (`status = 'active'`), generates missing client reference IDs, and eliminates `user_id` parameter tampering.
 
 ### 1.13 High — Trust receipt matter fix is a mutating GET with no access check
 - **Status:** Open\*
