@@ -6412,7 +6412,22 @@ class ClientsController extends Controller
 
         $obj->type = 'client';
         $obj->lead_status = 'converted';
-        $obj->user_id = $request->input('user_id', Auth::user()->id);
+        $obj->status = 'active';
+        if (empty($obj->user_id)) {
+            $obj->user_id = Auth::user()->id;
+        }
+
+        if (empty($obj->client_id) || empty($obj->client_counter)) {
+            try {
+                $refService = app(\App\Services\ClientReferenceService::class);
+                $reference = $refService->generateClientReference($obj->first_name ?: 'Client');
+                $obj->client_id = $reference['client_id'];
+                $obj->client_counter = $reference['client_counter'];
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('convertLeadOnly: failed generating client reference', ['error' => $e->getMessage()]);
+            }
+        }
+
         $obj->save();
 
         $activity = new \App\Models\ActivitiesLog;

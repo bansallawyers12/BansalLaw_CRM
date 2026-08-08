@@ -94,8 +94,9 @@ Status key (2026-08-07):
 - **Now:** `deleteactivitylog`, `pinactivitylog`, and `deletecostagreement` resolve `client_id` directly or from parent matter IDs, enforcing `ensureCrmRecordAccess` and rejecting unresolvable client IDs with HTTP 403.
 
 ### 1.11 High — `convertLeadOnly` skips access control and incomplete status transition
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientsController.php`; `routes/clients.php`
+- **Now:** `convertLeadOnly` enforces `ensureCrmRecordAccess`, sets active status (`status = 'active'`), generates missing client reference IDs via `ClientReferenceService`, and eliminates user_id parameter tampering.
 
 ### 1.12 High — Lead↔client type change via GET (CSRF + demotion)
 - **Status:** Open\*
