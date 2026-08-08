@@ -3682,41 +3682,56 @@ class ClientsController extends Controller
     //not picked call button click
     public function notpickedcall(Request $request){
         $data = $request->all();
-        $this->ensureCrmRecordAccess((int) ($data['id'] ?? 0));
-        //Get client phone and send message via UnifiedSmsManager
-        $clientInfo = Admin::select('id','country_code','phone')->where('id', $data['id'])->first();
+        $clientId = (int) ($data['id'] ?? 0);
+        if ($clientId <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Client ID is required.'
+            ], 422);
+        }
+
+        $this->ensureCrmRecordAccess($clientId);
+
+        $clientInfo = Admin::select('id','country_code','phone')->where('id', $clientId)->first();
+        if (!$clientInfo) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Client record not found.'
+            ], 404);
+        }
         
         $smsResult = null;
-        if ($clientInfo) {
-            $message = $data['message'];
-            $clientPhone = $clientInfo->country_code."".$clientInfo->phone;
-            
-            // Use UnifiedSmsManager with proper context (auto-creates activity log)
+        $message = trim((string) ($data['message'] ?? ''));
+        $clientPhone = trim((string) ($clientInfo->country_code . "" . $clientInfo->phone));
+
+        if ($message !== '' && $clientPhone !== '') {
             $smsResult = $this->smsManager->sendSms($clientPhone, $message, 'notification', [
-                'client_id' => $data['id']
+                'client_id' => $clientId
             ]);
         }
         
-        $recExist = Admin::where('id', $data['id'])->update(['not_picked_call' => $data['not_picked_call']]);
-        if($recExist){
-            if($data['not_picked_call'] == 1){ //if checked true
-                $response['status'] 	= 	true;
-                $response['message']	=	$smsResult && $smsResult['success'] 
+        $notPickedVal = (int) ($data['not_picked_call'] ?? 0);
+        $recExist = Admin::where('id', $clientId)->update(['not_picked_call' => $notPickedVal]);
+
+        if ($recExist) {
+            if ($notPickedVal === 1) {
+                $response['status'] = true;
+                $response['message'] = $smsResult && !empty($smsResult['success']) 
                     ? 'Call not picked. SMS sent successfully!' 
-                    : 'Call not picked. SMS failed to send.';
-                $response['not_picked_call'] 	= 	$data['not_picked_call'];
-            }
-            else if($data['not_picked_call'] == 0){
-                $response['status'] 	= 	true;
-                $response['message']	=	'You have updated call not picked bit. Please try again';
-                $response['not_picked_call'] 	= 	$data['not_picked_call'];
+                    : 'Call not picked. SMS failed to send or no message supplied.';
+                $response['not_picked_call'] = $notPickedVal;
+            } else {
+                $response['status'] = true;
+                $response['message'] = 'Updated call not picked status successfully.';
+                $response['not_picked_call'] = $notPickedVal;
             }
         } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            $response['not_picked_call'] 	= 	$data['not_picked_call'];
+            $response['status'] = false;
+            $response['message'] = 'Please try again';
+            $response['not_picked_call'] = $notPickedVal;
         }
-        echo json_encode($response);
+
+        return response()->json($response);
     }
 
     public function deleteactivitylog(Request $request){
@@ -3795,18 +3810,41 @@ class ClientsController extends Controller
 
     //Re-assign inbox email
     public function reassiginboxemail(Request $request) {
-		$requestData = $request->all();
-		$uploaded_doc_id = $requestData['uploaded_doc_id'] ?? 0;
+        $requestData = $request->all();
+        $uploaded_doc_id = (int) ($requestData['uploaded_doc_id'] ?? 0);
         $dest_assign_client_id = (int) ($requestData['reassign_client_id'] ?? 0);
-        $saved_mail_report_info = false;
+        $email_id = (int) ($requestData['memail_id'] ?? 0);
+        $target_matter_id = !empty($requestData['reassign_client_matter_id']) ? (int) $requestData['reassign_client_matter_id'] : null;
 
-        $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
-        if ($document_info && $dest_assign_client_id > 0) {
-            $source_doc_client_id = (int) $document_info['client_id'];
-            $this->ensureCrmRecordAccess($source_doc_client_id);
-            $this->ensureCrmRecordAccess($dest_assign_client_id);
+        if ($dest_assign_client_id <= 0) {
+            return redirect()->back()->with('error', 'Destination client ID is required.');
+        }
 
-            $source_doc_myfile = $document_info['myfile'];
+        $email_log_info = \App\Models\EmailLog::find($email_id);
+        if (!$email_log_info) {
+            return redirect()->back()->with('error', 'Email log not found.');
+        }
+
+        $document_info = null;
+        if ($uploaded_doc_id > 0) {
+            $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
+        }
+
+        $source_client_id = (int) ($email_log_info->client_id ?? ($document_info['client_id'] ?? 0));
+        if ($source_client_id > 0) {
+            $this->ensureCrmRecordAccess($source_client_id);
+        }
+        $this->ensureCrmRecordAccess($dest_assign_client_id);
+
+        if ($target_matter_id !== null && $target_matter_id > 0) {
+            if (!\App\Models\ClientMatter::where('id', $target_matter_id)->where('client_id', $dest_assign_client_id)->exists()) {
+                return redirect()->back()->with('error', 'Selected matter does not belong to the destination client.');
+            }
+        }
+
+        if ($document_info && !empty($document_info->myfile)) {
+            $source_doc_client_id = (int) ($document_info->client_id ?: $source_client_id);
+            $source_doc_myfile = $document_info->myfile;
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
             $source_doc_client_unique_id = $source_doc_admin_info['client_id'] ?? '';
@@ -3814,79 +3852,100 @@ class ClientsController extends Controller
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
             $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'] ?? '';
 
-            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
-            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+            if ($source_doc_client_unique_id !== '' && $dest_doc_client_unique_id !== '') {
+                $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+                $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
 
-            try {
-                if (Storage::disk('s3')->exists($sourcePath)) {
-                    Storage::disk('s3')->copy($sourcePath, $destinationPath);
-                    Storage::disk('s3')->delete($sourcePath);
+                try {
+                    if (Storage::disk('s3')->exists($sourcePath)) {
+                        Storage::disk('s3')->copy($sourcePath, $destinationPath);
+                        Storage::disk('s3')->delete($sourcePath);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error copying S3 object in reassiginboxemail: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                Log::error('Error copying S3 object: ' . $e->getMessage());
             }
 
             $upd_doc_info = \App\Models\Document::find($uploaded_doc_id);
             if ($upd_doc_info) {
                 $upd_doc_info->client_id = $dest_assign_client_id;
                 $upd_doc_info->user_id = Auth::user()->id;
-                $upd_doc_info->client_matter_id = $requestData['reassign_client_matter_id'] ?? null;
-                $saved_doc_info = $upd_doc_info->save();
-                if($saved_doc_info){
-                    $id = $requestData['memail_id'] ?? 0;
-                    $email_log_info = \App\Models\EmailLog::find($id);
-                    if ($email_log_info) {
-                        $email_log_info->client_id = $dest_assign_client_id;
-                        $email_log_info->user_id = Auth::user()->id;
-                        $email_log_info->client_matter_id = $requestData['reassign_client_matter_id'] ?? null;
-                        $saved_mail_report_info = $email_log_info->save();
-                        if($saved_mail_report_info){
-                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_client_matter_id'] ?? 0)->first();
-                            $subject = 'Inbox Email Re-assign';
-                            $objs = new \App\Models\ActivitiesLog;
-                            $objs->client_id = $dest_assign_client_id;
-                            $objs->created_by = Auth::user()->id;
-                            $objs->description = $dest_doc_client_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
-                            $objs->subject = $subject;
-                            $objs->task_status = 0;
-                            $objs->pin = 0;
-                            $objs->save();
-                        }
-                    }
+                $upd_doc_info->client_matter_id = $target_matter_id;
+                $upd_doc_info->save();
+            }
+        }
 
-                    if( isset( $requestData['reassign_client_matter_id'] ) && $requestData['reassign_client_matter_id'] != ""){
-                        $obj1 = \App\Models\ClientMatter::find($requestData['reassign_client_matter_id']);
-                        if ($obj1) {
-                            $obj1->updated_at = date('Y-m-d H:i:s');
-                            $obj1->save();
-                        }
-                    }
+        $email_log_info->client_id = $dest_assign_client_id;
+        $email_log_info->user_id = Auth::user()->id;
+        $email_log_info->client_matter_id = $target_matter_id;
+        $saved = $email_log_info->save();
+
+        if ($saved) {
+            $dest_admin = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
+            $dest_unique_id = $dest_admin['client_id'] ?? '';
+            $client_matter_info = $target_matter_id ? \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $target_matter_id)->first() : null;
+
+            $objs = new \App\Models\ActivitiesLog;
+            $objs->client_id = $dest_assign_client_id;
+            $objs->created_by = Auth::user()->id;
+            $objs->description = $dest_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
+            $objs->subject = 'Inbox Email Re-assign';
+            $objs->task_status = 0;
+            $objs->pin = 0;
+            $objs->save();
+
+            if ($target_matter_id) {
+                $obj1 = \App\Models\ClientMatter::find($target_matter_id);
+                if ($obj1) {
+                    $obj1->updated_at = date('Y-m-d H:i:s');
+                    $obj1->save();
                 }
             }
-            if(!$saved_mail_report_info) {
-                return redirect()->back()->with('error', config('constants.server_error'));
-            } else {
-                return redirect()->back()->with('success', 'Inbox email re-assigned successfully');
-            }
-        } else {
-            return redirect()->back()->with('error', config('constants.server_error'));
-		}
+
+            return redirect()->back()->with('success', 'Inbox email re-assigned successfully');
+        }
+
+        return redirect()->back()->with('error', config('constants.server_error'));
     }
 
     //Re-assign sent email
+
     public function reassigsentemail(Request $request) {
-		$requestData = $request->all();
-		$uploaded_doc_id = $requestData['uploaded_doc_id'] ?? 0;
+        $requestData = $request->all();
+        $uploaded_doc_id = (int) ($requestData['uploaded_doc_id'] ?? 0);
         $dest_assign_client_id = (int) ($requestData['reassign_sent_client_id'] ?? 0);
-        $saved_mail_report_info = false;
+        $email_id = (int) ($requestData['memail_id'] ?? 0);
+        $target_matter_id = !empty($requestData['reassign_sent_client_matter_id']) ? (int) $requestData['reassign_sent_client_matter_id'] : null;
 
-        $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
-        if ($document_info && $dest_assign_client_id > 0) {
-            $source_doc_client_id = (int) $document_info['client_id'];
-            $this->ensureCrmRecordAccess($source_doc_client_id);
-            $this->ensureCrmRecordAccess($dest_assign_client_id);
+        if ($dest_assign_client_id <= 0) {
+            return redirect()->back()->with('error', 'Destination client ID is required.');
+        }
 
-            $source_doc_myfile = $document_info['myfile'];
+        $email_log_info = \App\Models\EmailLog::find($email_id);
+        if (!$email_log_info) {
+            return redirect()->back()->with('error', 'Email log not found.');
+        }
+
+        $document_info = null;
+        if ($uploaded_doc_id > 0) {
+            $document_info = \App\Models\Document::select('id','file_name','filetype','myfile','client_id')->where('id', '=', $uploaded_doc_id)->first();
+        }
+
+        $source_client_id = (int) ($email_log_info->client_id ?? ($document_info['client_id'] ?? 0));
+        if ($source_client_id > 0) {
+            $this->ensureCrmRecordAccess($source_client_id);
+        }
+        $this->ensureCrmRecordAccess($dest_assign_client_id);
+
+        if ($target_matter_id !== null && $target_matter_id > 0) {
+            if (!\App\Models\ClientMatter::where('id', $target_matter_id)->where('client_id', $dest_assign_client_id)->exists()) {
+                return redirect()->back()->with('error', 'Selected matter does not belong to the destination client.');
+            }
+        }
+
+        if ($document_info && !empty($document_info->myfile)) {
+            $source_doc_client_id = (int) ($document_info->client_id ?: $source_client_id);
+            $source_doc_myfile = $document_info->myfile;
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
             $source_doc_client_unique_id = $source_doc_admin_info['client_id'] ?? '';
@@ -3894,63 +3953,60 @@ class ClientsController extends Controller
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
             $dest_doc_client_unique_id = $dest_doc_admin_info['client_id'] ?? '';
 
-            $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
-            $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+            if ($source_doc_client_unique_id !== '' && $dest_doc_client_unique_id !== '') {
+                $sourcePath = $source_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
+                $destinationPath = $dest_doc_client_unique_id.'/conversion_email_fetch/'.($requestData['mail_type'] ?? '').'/'.$source_doc_myfile;
 
-            try {
-                if (Storage::disk('s3')->exists($sourcePath)) {
-                    Storage::disk('s3')->copy($sourcePath, $destinationPath);
-                    Storage::disk('s3')->delete($sourcePath);
+                try {
+                    if (Storage::disk('s3')->exists($sourcePath)) {
+                        Storage::disk('s3')->copy($sourcePath, $destinationPath);
+                        Storage::disk('s3')->delete($sourcePath);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error copying S3 object in reassigsentemail: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                Log::error('Error copying S3 object: ' . $e->getMessage());
             }
 
             $upd_doc_info = \App\Models\Document::find($uploaded_doc_id);
             if ($upd_doc_info) {
                 $upd_doc_info->client_id = $dest_assign_client_id;
                 $upd_doc_info->user_id = Auth::user()->id;
-                $upd_doc_info->client_matter_id = $requestData['reassign_sent_client_matter_id'] ?? null;
-                $saved_doc_info = $upd_doc_info->save();
-                if($saved_doc_info){
-                    $id = $requestData['memail_id'] ?? 0;
-                    $email_log_info = \App\Models\EmailLog::find($id);
-                    if ($email_log_info) {
-                        $email_log_info->client_id = $dest_assign_client_id;
-                        $email_log_info->user_id = Auth::user()->id;
-                        $email_log_info->client_matter_id = $requestData['reassign_sent_client_matter_id'] ?? null;
-                        $saved_mail_report_info = $email_log_info->save();
-                        if($saved_mail_report_info){
-                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_sent_client_matter_id'] ?? 0)->first();
-                            $subject = 'Sent Email Re-assign';
-                            $objs = new \App\Models\ActivitiesLog;
-                            $objs->client_id = $dest_assign_client_id;
-                            $objs->created_by = Auth::user()->id;
-                            $objs->description = $dest_doc_client_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
-                            $objs->subject = $subject;
-                            $objs->task_status = 0;
-                            $objs->pin = 0;
-                            $objs->save();
-                        }
-                    }
+                $upd_doc_info->client_matter_id = $target_matter_id;
+                $upd_doc_info->save();
+            }
+        }
 
-                    if( isset($requestData['reassign_sent_client_matter_id']) && $requestData['reassign_sent_client_matter_id'] != ""){
-                        $obj1 = \App\Models\ClientMatter::find($requestData['reassign_sent_client_matter_id']);
-                        if ($obj1) {
-                            $obj1->updated_at = date('Y-m-d H:i:s');
-                            $obj1->save();
-                        }
-                    }
+        $email_log_info->client_id = $dest_assign_client_id;
+        $email_log_info->user_id = Auth::user()->id;
+        $email_log_info->client_matter_id = $target_matter_id;
+        $saved = $email_log_info->save();
+
+        if ($saved) {
+            $dest_admin = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
+            $dest_unique_id = $dest_admin['client_id'] ?? '';
+            $client_matter_info = $target_matter_id ? \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $target_matter_id)->first() : null;
+
+            $objs = new \App\Models\ActivitiesLog;
+            $objs->client_id = $dest_assign_client_id;
+            $objs->created_by = Auth::user()->id;
+            $objs->description = $dest_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
+            $objs->subject = 'Sent Email Re-assign';
+            $objs->task_status = 0;
+            $objs->pin = 0;
+            $objs->save();
+
+            if ($target_matter_id) {
+                $obj1 = \App\Models\ClientMatter::find($target_matter_id);
+                if ($obj1) {
+                    $obj1->updated_at = date('Y-m-d H:i:s');
+                    $obj1->save();
                 }
             }
-            if(!$saved_mail_report_info) {
-                return redirect()->back()->with('error', config('constants.server_error'));
-            } else {
-                return redirect()->back()->with('success', 'Sent email re-assigned successfully');
-            }
-        } else {
-            return redirect()->back()->with('error', config('constants.server_error'));
-		}
+
+            return redirect()->back()->with('success', 'Sent email re-assigned successfully');
+        }
+
+        return redirect()->back()->with('error', config('constants.server_error'));
     }
 
     //Fetch selected client all matters at assign email to client popup

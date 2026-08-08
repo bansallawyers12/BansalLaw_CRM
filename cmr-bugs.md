@@ -109,12 +109,14 @@ Status key (2026-08-07):
 - **Now:** `fixClientFundReceiptMatterAndRegenerate` route restricted to POST with CSRF verification. Method checks `$request->isMethod('post')`, uses `$request->input(...)`, and enforces `ensureCrmRecordAccess` on receipt's `client_id`.
 
 ### 1.14 High — Inbox email reassign: no access checks + null-deref risk
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientsController.php`
+- **Now:** `reassiginboxemail` and `reassigsentemail` enforce `ensureCrmRecordAccess` on both source and destination client IDs, validate destination matter ownership, and permit email reassign when document rows are missing without null-dereference errors.
 
 ### 1.15 High — `notpickedcall` lacks access control (SMS + flag)
-- **Status:** Open\*
+- **Status:** Fixed
 - **Files:** `ClientsController.php`
+- **Now:** `notpickedcall` validates numeric client `id` > 0, enforces `ensureCrmRecordAccess`, verifies target record existence, and handles SMS sending safely with JSON responses.
 
 ### 1.16 Medium — `saveRelationship` writes against staff Auth id, not CRM client
 - **Status:** Open\*
