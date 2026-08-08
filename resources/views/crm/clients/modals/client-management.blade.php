@@ -30,7 +30,7 @@
 				<hr class="my-4">
 				<p class="text-muted small mb-2">Or create a new matter and convert:</p>
 				@endif
-                <form method="get" action="{{URL::to('/clients/changetype/'.base64_encode(convert_uuencode($fetchedData->id)).'/client')}}" name="convert_lead_to_client" autocomplete="off" id="convert_lead_to_client">
+                <form method="post" action="{{URL::to('/clients/changetype/'.base64_encode(convert_uuencode($fetchedData->id)).'/client')}}" name="convert_lead_to_client" autocomplete="off" id="convert_lead_to_client">
 				    @csrf
                     <div class="row">
                         <input type="hidden" name="client_id" value="{{$fetchedData->id}}">

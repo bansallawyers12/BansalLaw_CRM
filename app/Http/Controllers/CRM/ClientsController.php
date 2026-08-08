@@ -6275,6 +6275,10 @@ class ClientsController extends Controller
      * Change client type (lead to client conversion)
      */
     public function changetype(Request $request,$id = Null, $slug = Null){
+        if (! $request->isMethod('post')) {
+            return Redirect::to('/clients')->with('error', 'Invalid request method.');
+        }
+
         Log::info('ConvertLeadToClient: changetype called', ['id_raw' => $id, 'slug' => $slug, 'query' => $request->query()]);
         if(isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
@@ -6283,10 +6287,10 @@ class ClientsController extends Controller
                 $obj = Admin::find($id);
                 $client_type = $obj->type;
                 Log::info('ConvertLeadToClient: admin found', ['admin_id' => $id, 'client_type' => $client_type]);
-                if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
-                    return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
-                }
-                if($slug == 'client') {
+                
+                $this->ensureCrmRecordAccess((int) $id);
+
+                if($slug === 'client') {
                     // Cross-check: form client_id must match the URL-encoded id
                     if ((int) ($request['client_id'] ?? 0) !== (int) $id) {
                         Log::warning('ConvertLeadToClient: client_id mismatch', ['url_id' => $id, 'form_client_id' => $request['client_id']]);
@@ -6297,14 +6301,29 @@ class ClientsController extends Controller
                         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('error', 'This matter type is not valid for this client record.');
                     }
 
-                    $obj->type = $slug;
+                    $obj->type = 'client';
                     $obj->lead_status = 'converted';
-                    $obj->user_id = $request['user_id'];
+                    $obj->status = 'active';
+                    if (empty($obj->user_id)) {
+                        $obj->user_id = Auth::user()->id;
+                    }
+
+                    if (empty($obj->client_id) || empty($obj->client_counter)) {
+                        try {
+                            $refService = app(\App\Services\ClientReferenceService::class);
+                            $reference = $refService->generateClientReference($obj->first_name ?: 'Client');
+                            $obj->client_id = $reference['client_id'];
+                            $obj->client_counter = $reference['client_counter'];
+                        } catch (\Throwable $e) {
+                            Log::warning('changetype: failed generating client reference', ['error' => $e->getMessage()]);
+                        }
+                    }
+
                     $saved = $obj->save();
                     Log::info('ConvertLeadToClient: admin type updated to client', ['saved' => $saved]);
 
                     $matter = new ClientMatter();
-                    $matter->user_id = $request['user_id'];
+                    $matter->user_id = $obj->user_id;
                     $matter->client_id = (int) $id;
                     $matter->office_id = $request['office_id'] ?? optional(Auth::user())->office_id ?? null;
                     $matter->sel_legal_practitioner = $request['legal_practitioner'];
@@ -6313,7 +6332,7 @@ class ClientsController extends Controller
                     $matter->sel_matter_id = $request['matter_id'];
                     Log::info('ConvertLeadToClient: matter payload', [
                         'client_id' => $request['client_id'],
-                        'user_id' => $request['user_id'],
+                        'user_id' => $matter->user_id,
                         'matter_id' => $request['matter_id'],
                         'office_id' => $matter->office_id,
                         'legal_practitioner' => $request['legal_practitioner'],
@@ -6363,11 +6382,6 @@ class ClientsController extends Controller
                     $redirectUrl = '/clients/detail/'.base64_encode(convert_uuencode(@$id)).'/'.$matter->client_unique_matter_no;
                     Log::info('ConvertLeadToClient: success, redirecting', ['redirect_url' => $redirectUrl]);
                     return Redirect::to($redirectUrl)->with('success', $msg);
-                } else if($slug == 'lead' ) {
-                    $obj->type = $slug;
-                    $obj->user_id = "";
-                    $saved = $obj->save();
-                    Log::info('ConvertLeadToClient: reverted to lead');
                 }
                 Log::info('ConvertLeadToClient: redirecting to detail (slug was '.$slug.')');
                 return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');

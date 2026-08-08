@@ -63,7 +63,7 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
 /*---------- Client Actions & Activities ----------*/
 Route::post('/clients/action/store', [ClientsController::class, 'actionStore']);
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
-Route::match(['get', 'post'], '/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
+Route::post('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLeadOnly'])->name('clients.convertLeadOnly');
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
 Route::get('/clients/removetag', [ClientsController::class, 'removetag']);
