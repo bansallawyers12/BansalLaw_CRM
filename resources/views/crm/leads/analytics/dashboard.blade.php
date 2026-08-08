@@ -317,9 +317,9 @@
             <h3 class="chart-title">Agent Performance</h3>
             <div class="chart-actions">
                 <select class="btn-chart-action" onchange="filterAgents(this.value)">
-                    <option value="all">All Agents</option>
-                    <option value="top">Top Performers</option>
-                    <option value="needs-improvement">Needs Improvement</option>
+                    <option value="all" {{ ($filter ?? 'all') === 'all' ? 'selected' : '' }}>All Agents</option>
+                    <option value="top" {{ ($filter ?? '') === 'top' ? 'selected' : '' }}>Top Performers</option>
+                    <option value="needs-improvement" {{ ($filter ?? '') === 'needs-improvement' ? 'selected' : '' }}>Needs Improvement</option>
                 </select>
             </div>
         </div>

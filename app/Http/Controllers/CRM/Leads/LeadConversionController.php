@@ -67,8 +67,14 @@ class LeadConversionController extends Controller
         }
 
         // Validate user_id if provided
-        if (isset($requestData['user_id']) && $requestData['user_id'] !== '') {
-            $validStaff = Staff::where('id', $requestData['user_id'])->where('status', 1)->exists();
+        $targetUserId = isset($requestData['user_id']) && $requestData['user_id'] !== '' ? (int) $requestData['user_id'] : null;
+        if ($targetUserId !== null && $targetUserId !== (int) $lead->user_id) {
+            $actor = Auth::user();
+            if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
+                return redirect()->back()->with('error', 'Only super admin can reassign lead ownership during conversion.');
+            }
+
+            $validStaff = Staff::where('id', $targetUserId)->where('status', 1)->exists();
             if (!$validStaff) {
                 return redirect()->back()->with('error', 'Selected staff member is invalid or inactive.');
             }
@@ -81,9 +87,9 @@ class LeadConversionController extends Controller
             // Convert lead to client using Lead model method
             $client = $lead->convertToClient();
             
-            // Update user_id if provided
-            if(isset($requestData['user_id']) && $requestData['user_id'] !== '') {
-                $client->user_id = $requestData['user_id'];
+            // Update user_id if provided and authorized
+            if ($targetUserId !== null && $targetUserId !== (int) $lead->user_id) {
+                $client->user_id = $targetUserId;
                 $client->save();
             }
 
@@ -193,11 +199,24 @@ class LeadConversionController extends Controller
         
         $totalLeads = Lead::count();
         $totalClients = Admin::where('type', 'client')->count();
-        $convertedThisMonth = Admin::where('type', 'client')
-            ->where('lead_status', 'converted')
-            ->whereMonth('updated_at', now()->month)
-            ->whereYear('updated_at', now()->year)
-            ->count();
+
+        $convertedThisMonth = DB::table('activities_logs')
+            ->where(function($q) {
+                $q->where('activity_type', 'lead_converted')
+                  ->orWhere('subject', 'LIKE', 'Lead converted%');
+            })
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->distinct('client_id')
+            ->count('client_id');
+
+        if ($convertedThisMonth === 0) {
+            $convertedThisMonth = Admin::where('type', 'client')
+                ->where('lead_status', 'converted')
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+        }
 
         return [
             'total_leads' => $totalLeads,

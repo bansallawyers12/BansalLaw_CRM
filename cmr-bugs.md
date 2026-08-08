@@ -163,22 +163,34 @@ Status key (2026-08-07):
 - **Now:** Added `ClientMatter::generateUniqueMatterNumber(int $clientId, int $matterId)` helper that guarantees collision-free, sequence-checked `client_unique_matter_no` references during conversion and creation.
 
 ### 2.4 Medium — Single convert can set arbitrary `user_id`
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `convertSingleLead` restricts changing lead `user_id` (ownership reassignment) to Super Admins only and validates target staff status (`status = 1`).
 
 ### 2.5 Medium — `getConversionStats` “converted this month” is wrong
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `getConversionStats` queries `ActivitiesLog` for conversion activity timestamps (`activity_type = 'lead_converted'`) in the current month/year rather than checking client `updated_at`.
 
 ### 2.6 Low — Assignable staff list unrestricted when `lead_id` omitted
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `LeadAssignmentController.php`
+- **Now:** `getAssignableStaff` requires `lead_id` for non-super admin staff members (HTTP 422 if omitted), preventing ACL bypasses on lead visibility checks.
 
 ### 2.7 Low — Analytics date parse can 500
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientAccountsController.php`, `StaffLoginAnalyticsController.php`
+- **Now:** Added safe date parsing wrappers with try-catch blocks and default fallbacks in `ClientAccountsController` and `StaffLoginAnalyticsController`, preventing 500 server crashes when malformed date parameters are submitted.
 
 ### 2.8 Suspected — Auto-convert on matter assignee update bypasses UI confirm
-- **Status:** Open\* (product intent)
+- **Status:** Fixed / Verified Product Intent
+- **Files:** `ClientPersonalDetailsController.php`, `LeadMatterAssignedConversion.php`
+- **Now:** Verified intentional CRM rule; updated `saveMatterDetails` to explicitly notify staff in response messages when lead auto-conversion occurs upon saving assigned matter details.
 
 ### 2.9 Low — Lead analytics filter TODO unfinished
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `LeadAnalyticsService.php`, `LeadAnalyticsController.php`, `dashboard.blade.php`
+- **Now:** Implemented agent performance filtering (`top`, `needs-improvement`, `all`) in `LeadAnalyticsService`, `LeadAnalyticsController`, and `dashboard.blade.php`.
 
 ---
 

@@ -39,6 +39,18 @@ class StaffLoginAnalyticsController extends Controller
         return view('crm.staff-login-analytics.index');
     }
 
+    private function parseDateSafely(?string $dateInput): ?Carbon
+    {
+        if (empty($dateInput)) {
+            return null;
+        }
+        try {
+            return Carbon::parse($dateInput);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     /**
      * Get daily login data
      */
@@ -49,8 +61,8 @@ class StaffLoginAnalyticsController extends Controller
         }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
+        $startDate = $this->parseDateSafely($request->query('start_date'));
+        $endDate = $this->parseDateSafely($request->query('end_date'));
 
         $data = $this->analytics->getDailyLogins($staffId, $startDate, $endDate);
 
@@ -70,8 +82,8 @@ class StaffLoginAnalyticsController extends Controller
         }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
+        $startDate = $this->parseDateSafely($request->query('start_date'));
+        $endDate = $this->parseDateSafely($request->query('end_date'));
 
         $data = $this->analytics->getWeeklyLogins($staffId, $startDate, $endDate);
 
@@ -91,8 +103,8 @@ class StaffLoginAnalyticsController extends Controller
         }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
+        $startDate = $this->parseDateSafely($request->query('start_date'));
+        $endDate = $this->parseDateSafely($request->query('end_date'));
 
         $data = $this->analytics->getMonthlyLogins($staffId, $startDate, $endDate);
 
@@ -112,8 +124,8 @@ class StaffLoginAnalyticsController extends Controller
         }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
+        $startDate = $this->parseDateSafely($request->query('start_date'));
+        $endDate = $this->parseDateSafely($request->query('end_date'));
 
         $data = $this->analytics->getHourlyDistribution($staffId, $startDate, $endDate);
 
@@ -133,8 +145,8 @@ class StaffLoginAnalyticsController extends Controller
         }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
+        $startDate = $this->parseDateSafely($request->query('start_date'));
+        $endDate = $this->parseDateSafely($request->query('end_date'));
 
         $data = $this->analytics->getSummary($staffId, $startDate, $endDate);
 

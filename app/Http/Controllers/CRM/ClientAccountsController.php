@@ -4837,13 +4837,21 @@ class ClientAccountsController extends Controller
       $quickSelect = $request->input('quick_select', '');
       
       // Get date range from request or default to current month
-      $startDate = $request->has('start_date') 
-          ? Carbon::parse($request->input('start_date')) 
-          : Carbon::now()->startOfMonth();
+      try {
+          $startDate = $request->filled('start_date') 
+              ? Carbon::parse($request->input('start_date')) 
+              : Carbon::now()->startOfMonth();
+      } catch (\Throwable $e) {
+          $startDate = Carbon::now()->startOfMonth();
+      }
       
-      $endDate = $request->has('end_date') 
-          ? Carbon::parse($request->input('end_date')) 
-          : Carbon::now()->endOfMonth();
+      try {
+          $endDate = $request->filled('end_date') 
+              ? Carbon::parse($request->input('end_date')) 
+              : Carbon::now()->endOfMonth();
+      } catch (\Throwable $e) {
+          $endDate = Carbon::now()->endOfMonth();
+      }
       
       // Get receipt_type filter (null = all, 1-4 = specific type)
       $receiptType = $request->has('receipt_type') && $request->input('receipt_type') !== ''
