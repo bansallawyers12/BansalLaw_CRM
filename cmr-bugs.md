@@ -104,14 +104,14 @@ Severity key:
 - **Now:** `fixClientFundReceiptMatterAndRegenerate` route restricted to POST with CSRF verification. Method checks `$request->isMethod('post')`, uses `$request->input(...)`, and enforces `ensureCrmRecordAccess` on receipt's `client_id`.
 
 ### 1.14 High — Inbox email reassign: no access checks + null-deref risk
-- **Files:** `ClientsController.php` (~3841–3915)
-- **What goes wrong:** Reassigns documents/emails to any `reassign_client_id` without visibility checks. Missing source/dest admin → null deref; missing email log → null deref; undefined `$saved_mail_report_info` if doc save fails.
-- **Impact:** Wrong-client email attachment; 500 errors.
+- **Status:** Fixed
+- **Files:** `ClientsController.php`
+- **Now:** `reassiginboxemail` and `reassigsentemail` enforce `ensureCrmRecordAccess` on both source and destination client IDs, validate destination matter ownership, and permit email reassign when document rows are missing without null-dereference errors.
 
 ### 1.15 High — `notpickedcall` lacks access control (SMS + flag)
-- **Files:** `ClientsController.php` (~3754–3792)
-- **What goes wrong:** Updates `not_picked_call` and can send SMS to any admin id’s phone. No `canAccessClientOrLead`.
-- **Impact:** Abuse / privacy / SMS cost.
+- **Status:** Fixed
+- **Files:** `ClientsController.php`
+- **Now:** `notpickedcall` validates numeric client `id` > 0, enforces `ensureCrmRecordAccess`, verifies target record existence, and handles SMS sending safely with JSON responses.
 
 ### 1.16 Medium — `saveRelationship` writes against staff Auth id, not CRM client
 - **Files:** `ClientPersonalDetailsController.php` (~646–662); `routes/clients.php` (~294)
