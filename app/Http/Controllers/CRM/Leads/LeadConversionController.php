@@ -102,16 +102,7 @@ class LeadConversionController extends Controller
                 $matter->sel_person_assisting = $requestData['person_assisting'] ?? null;
                 $matter->sel_matter_id = $requestData['matter_id'];
 
-                // Generate unique matter number with lock to prevent race conditions
-                $client_matters_cnt_per_client = DB::table('client_matters')
-                    ->where('sel_matter_id', $requestData['matter_id'])
-                    ->where('client_id', $client->id)
-                    ->lockForUpdate()
-                    ->count();
-                    
-                $client_matters_current_no = $client_matters_cnt_per_client + 1;
-
-                $matter->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $requestData['matter_id']) . '_' . $client_matters_current_no;
+                $matter->client_unique_matter_no = ClientMatter::generateUniqueMatterNumber((int) $client->id, (int) $requestData['matter_id']);
                 
                 $matterType = Matter::find($requestData['matter_id']);
                 $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
