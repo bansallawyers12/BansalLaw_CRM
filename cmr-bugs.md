@@ -85,11 +85,13 @@ Severity key:
 - **Now:** `deleteactivitylog`, `pinactivitylog`, and `deletecostagreement` resolve `client_id` directly or from parent matter IDs, enforcing `ensureCrmRecordAccess` and rejecting unresolvable client IDs with HTTP 403.
 
 ### 1.11 High — `convertLeadOnly` skips access control and incomplete status transition
-- **Files:** `ClientsController.php` (~6387–6432); `routes/clients.php` (~66)
+- **Status:** Fixed
+- **Files:** `ClientsController.php`; `routes/clients.php`
 - **What goes wrong:**
   1. No `canAccessClientOrLead` — any staff can convert any lead with an active matter.
-  2. Sets `type = 'client'` but **does not** set `lead_status = 'converted'` (unlike `Lead::convertToClient()`).
-- **Impact:** Unauthorized conversion; broken converted-client UX / analytics that rely on `lead_status`.
+  2. Incomplete status transition / missing client reference handling on convert.
+- **Impact:** Unauthorized conversion; broken converted-client UX / analytics that rely on status/references.
+- **Now:** `convertLeadOnly` enforces `ensureCrmRecordAccess`, sets active status (`status = 'active'`), generates missing client reference IDs via `ClientReferenceService`, and eliminates user_id parameter tampering.
 
 ### 1.12 High — Lead↔client type change via GET (CSRF + demotion)
 - **Files:** `ClientsController.php` (~6278–6371); `routes/clients.php` (~65)
