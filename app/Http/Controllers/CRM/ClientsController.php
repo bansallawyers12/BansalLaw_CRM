@@ -3723,7 +3723,20 @@ class ClientsController extends Controller
 		$activitylogid = $request->activitylogid;
 		$activity = \App\Models\ActivitiesLog::find($activitylogid);
 		if($activity){
-			$this->ensureCrmRecordAccess((int) $activity->client_id);
+            $clientId = (int) ($activity->client_id ?? 0);
+            if ($clientId <= 0 && ! empty($activity->client_matter_id)) {
+                $clientId = (int) \App\Models\ClientMatter::where('id', $activity->client_matter_id)->value('client_id');
+            }
+
+            if ($clientId <= 0) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+                }
+                abort(403, 'Unauthorized access to activity log');
+            }
+
+            $this->ensureCrmRecordAccess($clientId);
+
 			$data = \App\Models\ActivitiesLog::select('client_id','subject','description')->where('id',$activitylogid)->first();
 			$res = DB::table('activities_logs')->where('id', @$activitylogid)->delete();
 			if($res){
@@ -3735,7 +3748,7 @@ class ClientsController extends Controller
 			}
 		}else{
 			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+			$response['message']	=	'Activity log record not found';
 		}
 		echo json_encode($response);
 	}
@@ -3744,7 +3757,20 @@ class ClientsController extends Controller
 		$requestData = $request->all();
 		$activity = \App\Models\ActivitiesLog::find($requestData['activity_id'] ?? 0);
         if($activity){
-			$this->ensureCrmRecordAccess((int) $activity->client_id);
+            $clientId = (int) ($activity->client_id ?? 0);
+            if ($clientId <= 0 && ! empty($activity->client_matter_id)) {
+                $clientId = (int) \App\Models\ClientMatter::where('id', $activity->client_matter_id)->value('client_id');
+            }
+
+            if ($clientId <= 0) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+                }
+                abort(403, 'Unauthorized access to activity log');
+            }
+
+            $this->ensureCrmRecordAccess($clientId);
+
 			if($activity->pin == 0){
 				$obj = \App\Models\ActivitiesLog::find($activity->id);
 				$obj->pin = 1;
@@ -5493,7 +5519,19 @@ class ClientsController extends Controller
             ]);
         }
 
-        $this->ensureCrmRecordAccess((int) $costAssignment->client_id);
+        $clientId = (int) ($costAssignment->client_id ?? 0);
+        if ($clientId <= 0 && ! empty($costAssignment->client_matter_id)) {
+            $clientId = (int) \App\Models\ClientMatter::where('id', $costAssignment->client_matter_id)->value('client_id');
+        }
+
+        if ($clientId <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: Unable to resolve client record for cost agreement'
+            ], 403);
+        }
+
+        $this->ensureCrmRecordAccess($clientId);
 
         $client_id = $costAssignment->client_id;
         $matter = \App\Models\ClientMatter::find($costAssignment->client_matter_id);
