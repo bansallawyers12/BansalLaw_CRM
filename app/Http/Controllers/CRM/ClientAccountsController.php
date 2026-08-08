@@ -5374,6 +5374,10 @@ class ClientAccountsController extends Controller
      */
     public function fixClientFundReceiptMatterAndRegenerate(Request $request, $id = null)
     {
+        if (! $request->isMethod('post')) {
+            abort(405, 'Method Not Allowed. Use POST method.');
+        }
+
         $receiptId = null;
         if ($id !== null && $id !== '') {
             if (!ctype_digit((string) $id)) {
@@ -5381,14 +5385,14 @@ class ClientAccountsController extends Controller
             }
             $receiptId = (int) $id;
         } elseif ($request->filled('receipt_id')) {
-            $rid = $request->query('receipt_id');
+            $rid = $request->input('receipt_id');
             if (!ctype_digit((string) $rid)) {
                 abort(422, 'receipt_id must be a positive integer.');
             }
             $receiptId = (int) $rid;
         } elseif ($request->filled('trans_no') && $request->filled('client_id')) {
-            $transNo = trim((string) $request->query('trans_no'));
-            $clientId = $request->query('client_id');
+            $transNo = trim((string) $request->input('trans_no'));
+            $clientId = $request->input('client_id');
             if ($transNo === '' || !ctype_digit((string) $clientId)) {
                 abort(422, 'trans_no and client_id (numeric admins.id) are required when not using receipt id.');
             }
@@ -5456,9 +5460,9 @@ class ClientAccountsController extends Controller
         $receiptClientId = (int) $receiptClientId;
         $shortCode = null;
         if ($request->filled('matter')) {
-            $shortCode = trim((string) $request->query('matter'));
+            $shortCode = trim((string) $request->input('matter'));
         } elseif ($request->filled('matter_no')) {
-            $shortCode = trim((string) $request->query('matter_no'));
+            $shortCode = trim((string) $request->input('matter_no'));
         }
 
         if ($shortCode !== null && $shortCode !== '') {
@@ -5477,7 +5481,7 @@ class ClientAccountsController extends Controller
             return null;
         }
 
-        $raw = trim((string) $request->query('client_matter_id'));
+        $raw = trim((string) $request->input('client_matter_id'));
         if ($raw === '') {
             return null;
         }

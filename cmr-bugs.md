@@ -99,9 +99,9 @@ Severity key:
 - **Now:** `changetype` route restricted to POST with CSRF verification. Method enforces `ensureCrmRecordAccess`, disallows client-to-lead demotion, updates active status (`status = 'active'`), generates missing client reference IDs, and eliminates `user_id` parameter tampering.
 
 ### 1.13 High — Trust receipt matter fix is a mutating GET with no access check
-- **Files:** `ClientAccountsController.php` (~5457–5524); `routes/clients.php` (~256–257)
-- **What goes wrong:** `GET /clients/fix-client-fund-receipt-matter/{id}` updates `client_matter_id` on a trust ledger row then redirects to regenerate PDF. No `ensureCrmRecordAccess`.
-- **Impact:** Any auth staff (or CSRF via image/link) can reattribute trust receipts.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController.php`; `routes/clients.php`
+- **Now:** `fixClientFundReceiptMatterAndRegenerate` route restricted to POST with CSRF verification. Method checks `$request->isMethod('post')`, uses `$request->input(...)`, and enforces `ensureCrmRecordAccess` on receipt's `client_id`.
 
 ### 1.14 High — Inbox email reassign: no access checks + null-deref risk
 - **Files:** `ClientsController.php` (~3841–3915)
