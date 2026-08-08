@@ -667,6 +667,16 @@ class ClientDocumentsController extends Controller
             if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
                 exit;
             }
+
+            if (!empty($request->client_matter_id)) {
+                if (!ClientMatter::where('id', $request->client_matter_id)->where('client_id', $clientid)->exists()) {
+                    $response['message'] = 'Selected matter does not belong to this client';
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                }
+            }
+
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
             if(!empty($admin_info1)){
                 $client_unique_id = $admin_info1->client_id;
@@ -900,6 +910,15 @@ class ClientDocumentsController extends Controller
                 return;
             }
 
+            if (!empty($request->client_matter_id)) {
+                if (!ClientMatter::where('id', $request->client_matter_id)->where('client_id', $clientid)->exists()) {
+                    $response['message'] = 'Selected matter does not belong to this client';
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    return;
+                }
+            }
+
             $doctype = $request->doctype ?? '';
 
             if (!$request->has('nomination_checklist')) {
@@ -1116,6 +1135,16 @@ class ClientDocumentsController extends Controller
         if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
             ob_end_clean();
             exit;
+        }
+
+        if (!empty($request->client_matter_id)) {
+            if (!ClientMatter::where('id', $request->client_matter_id)->where('client_id', $clientid)->exists()) {
+                $response['message'] = 'Selected matter does not belong to this client.';
+                ob_end_clean();
+                header('Content-Type: application/json');
+                echo json_encode($response);
+                exit;
+            }
         }
         $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
@@ -1913,6 +1942,11 @@ class ClientDocumentsController extends Controller
                     $response['message'] = 'Target folder not found';
                     return response()->json($response);
                 }
+
+                if ($category->client_id !== null && (int) $category->client_id !== (int) $document->client_id) {
+                    $response['message'] = 'Target folder does not belong to this client';
+                    return response()->json($response, 403);
+                }
                 
                 $document->type       = 'client';
                 $document->doc_type   = 'personal';
@@ -1930,6 +1964,16 @@ class ClientDocumentsController extends Controller
                     $response['message'] = 'Target matter document folder not found';
                     return response()->json($response);
                 }
+
+                if ($category->client_id !== null && (int) $category->client_id !== (int) $document->client_id) {
+                    $response['message'] = 'Target folder does not belong to this client';
+                    return response()->json($response, 403);
+                }
+
+                if ($category->client_matter_id !== null && !ClientMatter::where('id', $category->client_matter_id)->where('client_id', $document->client_id)->exists()) {
+                    $response['message'] = 'Target matter does not belong to this client';
+                    return response()->json($response, 403);
+                }
                 
                 $document->type       = 'client';
                 $document->doc_type   = 'matter';
@@ -1945,6 +1989,16 @@ class ClientDocumentsController extends Controller
                 if (!$category) {
                     $response['message'] = 'Target nomination folder not found';
                     return response()->json($response);
+                }
+
+                if ($category->client_id !== null && (int) $category->client_id !== (int) $document->client_id) {
+                    $response['message'] = 'Target folder does not belong to this client';
+                    return response()->json($response, 403);
+                }
+
+                if ($category->client_matter_id !== null && !ClientMatter::where('id', $category->client_matter_id)->where('client_id', $document->client_id)->exists()) {
+                    $response['message'] = 'Target matter does not belong to this client';
+                    return response()->json($response, 403);
                 }
 
                 $document->type = 'client';
@@ -3310,9 +3364,17 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
-        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+        if ($clientId !== null && $clientId !== '' && is_numeric($clientId) && (int) $clientId > 0) {
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
                 return $deny;
+            }
+        } else {
+            $viewer = Auth::user();
+            if (! ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Client ID is required to create a personal document folder.'
+                ]);
             }
         }
 
@@ -3451,9 +3513,29 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
-        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+        if (empty($clientId) && !empty($clientMatterId)) {
+            $clientId = ClientMatter::where('id', $clientMatterId)->value('client_id');
+        }
+
+        if (!empty($clientId) && is_numeric($clientId) && (int) $clientId > 0) {
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
                 return $deny;
+            }
+            if (!empty($clientMatterId)) {
+                if (!ClientMatter::where('id', $clientMatterId)->where('client_id', $clientId)->exists()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Selected matter does not belong to this client.'
+                    ]);
+                }
+            }
+        } else {
+            $viewer = Auth::user();
+            if (! ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Client ID is required to create a matter document folder.'
+                ]);
             }
         }
 
@@ -3521,10 +3603,9 @@ class ClientDocumentsController extends Controller
             return response()->json(['status' => false, 'message' => 'Only client-matter-generated folders can be updated.']);
         }
 
-        if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
-            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $category->client_id)) {
-                return $deny;
-            }
+        $resolvedClientId = $category->client_id ?? ClientMatter::where('id', $category->client_matter_id)->value('client_id');
+        if (empty($resolvedClientId) || ($deny = $this->denyJsonUnlessStaffClientAccess((int) $resolvedClientId))) {
+            return $deny ?? response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
         }
 
         $categoryTitle = trim($request->input('title'));
@@ -3597,9 +3678,29 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
-        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+        if (empty($clientId) && !empty($clientMatterId)) {
+            $clientId = ClientMatter::where('id', $clientMatterId)->value('client_id');
+        }
+
+        if (!empty($clientId) && is_numeric($clientId) && (int) $clientId > 0) {
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
                 return $deny;
+            }
+            if (!empty($clientMatterId)) {
+                if (!ClientMatter::where('id', $clientMatterId)->where('client_id', $clientId)->exists()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Selected matter does not belong to this client.',
+                    ]);
+                }
+            }
+        } else {
+            $viewer = Auth::user();
+            if (! ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Client ID is required to create a nomination document folder.',
+                ]);
             }
         }
 
@@ -3662,10 +3763,9 @@ class ClientDocumentsController extends Controller
             return response()->json(['status' => false, 'message' => 'Only client-matter-generated folders can be updated.']);
         }
 
-        if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
-            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $category->client_id)) {
-                return $deny;
-            }
+        $resolvedClientId = $category->client_id ?? ClientMatter::where('id', $category->client_matter_id)->value('client_id');
+        if (empty($resolvedClientId) || ($deny = $this->denyJsonUnlessStaffClientAccess((int) $resolvedClientId))) {
+            return $deny ?? response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
         }
 
         $categoryTitle = trim($request->input('title'));
@@ -4309,6 +4409,13 @@ class ClientDocumentsController extends Controller
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
                 return $deny;
+            }
+
+            if (!empty($matterid)) {
+                if (!ClientMatter::where('id', $matterid)->where('client_id', $clientid)->exists()) {
+                    $response['message'] = 'Selected matter does not belong to this client.';
+                    return response()->json($response, 403);
+                }
             }
             
             $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();

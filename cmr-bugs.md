@@ -58,9 +58,11 @@ Severity key:
 - **Now:** All matter task endpoints (`index`, `store`, `update`, `destroy`) enforce `ensureCrmRecordAccess` on `client_id` directly from resolved records/models without reliance on client-controlled parameter tampering.
 
 ### 1.7 High — Most document mutations only enforce access for restricted PA roles
-- **Files:** `ClientDocumentsController.php` (~84–114, ~129–131, ~1714–1716, ~1809–1810)
+- **Status:** Fixed
+- **Files:** `ClientDocumentsController.php`
 - **What goes wrong:** `denyJsonUnlessStaffClientAccess` / `blockEchoUnlessStaffClientAccess` return early (allow) unless `isRestrictedPersonAssisting`. Non-PA staff can upload/delete/move checklists for unallocated clients while list/detail are restricted.
 - **Impact:** Inconsistent ACL — mutations weaker than reads for non-restricted roles.
+- **Now:** All document, checklist, and category mutation endpoints in `ClientDocumentsController.php` enforce `StaffClientVisibility` client access authorization on target `client_id`s, validate `client_matter_id` ownership, prevent cross-client folder moves, and restrict global folder creation to superadmins.
 
 ### 1.8 High — Email HTML preview has no client access check
 - **Files:** `ClientsController.php` (~8386–8427); `routes/clients.php` (~389)
