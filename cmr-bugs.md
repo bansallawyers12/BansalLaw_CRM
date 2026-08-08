@@ -124,9 +124,9 @@ Severity key:
 - **Now:** Removed debug routes `/clients/search-partner-test` and `/clients/test-bidirectional` from `routes/clients.php`. Updated controller methods in `ClientPersonalDetailsController.php` to `abort(404)`.
 
 ### 1.18 Medium — Void invoice can null-deref / proceed inconsistently
-- **Files:** `ClientAccountsController.php` (~4390–4427)
-- **What goes wrong:** Access checked only when a matching receipt row exists. Bulk update runs regardless. Loop then uses `$invoice_info->client_id` / `$client_info->client_id` with no null guards.
-- **Impact:** 500 mid-void if a selected id is missing/wrong type after update.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController.php`
+- **Now:** `void_invoice` validates `$request->clickedReceiptIds` (HTTP 422 for missing/invalid arrays), checks target receipt existence up-front, enforces `ensureCrmRecordAccess` for all target clients, and uses safe staff ID retrieval.
 
 ### 1.19 Medium — `printPreview` assumes receipt exists
 - **Files:** `ClientAccountsController.php` (~5231–5247)
