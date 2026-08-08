@@ -89,8 +89,9 @@ Status key (2026-08-07):
 - **Now:** `deleteEmailLog` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email deletions are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.10 High — Activity log delete/pin and cost-agreement delete lack access checks
-- **Status:** Open\*
-- **Files:** `ClientsController` (`deleteactivitylog`, `pinactivitylog`, `deletecostagreement`)
+- **Status:** Fixed
+- **Files:** `ClientsController.php` (`deleteactivitylog`, `pinactivitylog`, `deletecostagreement`)
+- **Now:** `deleteactivitylog`, `pinactivitylog`, and `deletecostagreement` resolve `client_id` directly or from parent matter IDs, enforcing `ensureCrmRecordAccess` and rejecting unresolvable client IDs with HTTP 403.
 
 ### 1.11 High — `convertLeadOnly` skips access control and incomplete status transition
 - **Status:** Open\*
