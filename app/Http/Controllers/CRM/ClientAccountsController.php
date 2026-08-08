@@ -5169,21 +5169,35 @@ class ClientAccountsController extends Controller
   }
 
   public function printPreview(Request $request, $id){
-      $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->get();
-      if ($record_get->isEmpty()) {
-          return abort(404, 'Receipt not found');
+      if (!is_numeric($id) || (int) $id <= 0) {
+          abort(404, 'Receipt not found');
       }
-      $this->ensureCrmRecordAccess((int) $record_get[0]->client_id);
-      $clientname = DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id',$record_get[0]->client_id)->first();
-      $agentname = $record_get[0]->agent_id
-          ? DB::table('agent_details')->where('id', $record_get[0]->agent_id)->first()
+
+      $record_get = DB::table('account_client_receipts')->where('id', (int) $id)->get();
+      if ($record_get->isEmpty()) {
+          abort(404, 'Receipt not found');
+      }
+
+      $receipt = $record_get->first();
+      if ($receipt->client_id) {
+          $this->ensureCrmRecordAccess((int) $receipt->client_id);
+      }
+
+      $clientname = $receipt->client_id 
+          ? DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id', $receipt->client_id)->first()
           : null;
-      $admin = DB::table('staff')->select('company_name','business_address as address','state','city','zip','email','business_phone as phone')->where('id',$record_get[0]->user_id)->first();
+      $agentname = $receipt->agent_id
+          ? DB::table('agent_details')->where('id', $receipt->agent_id)->first()
+          : null;
+      $admin = $receipt->user_id
+          ? DB::table('staff')->select('company_name','business_address as address','state','city','zip','email','business_phone as phone')->where('id', $receipt->user_id)->first()
+          : null;
+
       $pdf = PDF::setOptions([
           'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
           'logOutputFile' => storage_path('logs/log.htm'),
           'tempDir' => storage_path('logs/')
-      ])->loadView('emails.printpreview',compact(['record_get','clientname','agentname','admin']));
+      ])->loadView('emails.printpreview', compact(['record_get','clientname','agentname','admin']));
       return $pdf->stream('ClientReceipt.pdf');
   }
 

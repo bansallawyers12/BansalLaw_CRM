@@ -129,9 +129,9 @@ Severity key:
 - **Now:** `void_invoice` validates `$request->clickedReceiptIds` (HTTP 422 for missing/invalid arrays), checks target receipt existence up-front, enforces `ensureCrmRecordAccess` for all target clients, and uses safe staff ID retrieval.
 
 ### 1.19 Medium — `printPreview` assumes receipt exists
-- **Files:** `ClientAccountsController.php` (~5231–5247)
-- **What goes wrong:** If no receipt, `$record_get[0]` throws. Access check skipped when empty, then crash.
-- **Impact:** Unhandled 500 for bad IDs.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController.php`
+- **Now:** `printPreview` validates numeric receipt ID, aborts 404 if receipt is missing, enforces `ensureCrmRecordAccess`, and provides null-coalescing safeguards for view properties.
 
 ### 1.20 Low/Medium — `EnsuresCrmRecordAccess` silently allows non-client/lead IDs
 - **Files:** `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php` (~20–34)
