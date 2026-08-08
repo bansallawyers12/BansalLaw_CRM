@@ -139,9 +139,9 @@ Status key (2026-08-07):
 - **Now:** `printPreview` validates numeric receipt ID, aborts 404 if receipt is missing, enforces `ensureCrmRecordAccess`, and provides null-coalescing safeguards for view properties.
 
 ### 1.20 Low/Medium — `EnsuresCrmRecordAccess` silently allows non-client/lead IDs
-- **Status:** Partial
+- **Status:** Fixed
 - **Files:** `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php`
-- **Now:** Non-client/lead types abort 403. Missing/`adminId <= 0` still returns without abort — callers can skip ACL when id is invalid/missing.
+- **Now:** `ensureCrmRecordAccess` aborts 403 when `$adminId <= 0`, when matching record is missing, or when type is not `client` or `lead`. Callers with optional client IDs use `ensureCrmRecordAccessForOptionalClientId`.
 
 ---
 
@@ -153,8 +153,9 @@ Status key (2026-08-07):
 - **Now:** Unselected bulk conversion disabled; redirects with safety error.
 
 ### 2.2 High — Bulk convert ignores matter requirement / silent failures
-- **Status:** Partial / mitigated
-- **Notes:** Dangerous GET bulk path (#2.1) disabled. Selected bulk / single-convert matter rules still worth confirming.
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** `bulkConvertToClient` enforces `StaffClientVisibility` ACL and `ClientMatter::clientHasActiveAssignedMatter` per lead, validates non-empty selection, and sets appropriate flash message types (`success`, `warning`, `error`).
 
 ### 2.3 Medium — Conversion matter numbers race (duplicate refs)
 - **Status:** Open\*

@@ -20,12 +20,22 @@ trait EnsuresCrmRecordAccess
     protected function ensureCrmRecordAccess(int $adminId): void
     {
         if ($adminId <= 0) {
-            return;
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(
+                    response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
+            abort(403, 'Unauthorized access: Invalid client record ID');
         }
 
         $adminRow = Admin::query()->where('id', $adminId)->first(['id', 'type']);
         if (!$adminRow) {
-            return;
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(
+                    response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
+            abort(403, 'Unauthorized access: Client record not found');
         }
 
         if (!in_array($adminRow->type, ['client', 'lead'], true)) {
