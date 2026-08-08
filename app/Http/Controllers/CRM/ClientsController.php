@@ -8469,8 +8469,21 @@ class ClientsController extends Controller
     {
         try {
             $emailLog = \App\Models\EmailLog::findOrFail($id);
-            if ($emailLog->client_id) {
-                $this->ensureCrmRecordAccess((int) $emailLog->client_id);
+            $clientId = (int) ($emailLog->client_id ?? 0);
+            if ($clientId <= 0 && ! empty($emailLog->client_matter_id)) {
+                $clientId = (int) \App\Models\ClientMatter::where('id', $emailLog->client_matter_id)->value('client_id');
+            }
+
+            if ($clientId > 0) {
+                $this->ensureCrmRecordAccess($clientId);
+            } else {
+                $staff = auth('admin')->user();
+                if (! ($staff instanceof \App\Models\Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Unauthorized access to email log'
+                    ], 403);
+                }
             }
             if (!$emailLog->s3_path) {
                 return response()->json(['error' => 'No S3 path found for this email'], 404);

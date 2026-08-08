@@ -65,9 +65,11 @@ Severity key:
 - **Now:** All document, checklist, and category mutation endpoints in `ClientDocumentsController.php` enforce `StaffClientVisibility` client access authorization on target `client_id`s, validate `client_matter_id` ownership, prevent cross-client folder moves, and restrict global folder creation to superadmins.
 
 ### 1.8 High — Email HTML preview has no client access check
-- **Files:** `ClientsController.php` (~8386–8427); `routes/clients.php` (~389)
+- **Status:** Fixed
+- **Files:** `ClientsController.php`; `routes/clients.php`
 - **What goes wrong:** `GET /email-logs/{id}/preview-html` loads any `EmailLog` by id from S3 and returns parsed HTML. No `canAccessClientOrLead` on `emailLog->client_id`.
 - **Impact:** Cross-client email content disclosure for any logged-in staff.
+- **Now:** `getParsedEmailHtml` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email logs are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.9 High — Email delete lacks client-record authorization
 - **Files:** `ClientsController.php` (~4333–4434)
