@@ -15,7 +15,7 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Models\Staff::where('role',1)->first();
+	$admin = $admin ?? \App\Models\Staff::where('role',1)->first();
 	?>
 		<div class="invoice_table" style="padding: 10px;">
 			<table width="100%" border="0">
@@ -23,17 +23,17 @@
 					<tr>
 						<td><img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 180px; height: auto;"/></td>
 						<td>
-							<span style="font-size:21px;line-height:24px;color:#000;"><b>{{$admin->company_name}}</b></span>
-							<p style="font-size: 15px;line-height: 21px;color: #1a1a1a;font-weight: normal;margin: 10px 0px 0px;"> {{$admin->address}}<br/>
-                                {{$admin->state}} {{$admin->city}} {{$admin->zip}}<br/>
-							<b>Email:</b> {{$admin->email ?? ''}}<br/>
-							<b>Phone:</b> {{$admin->phone}}</p>
+							<span style="font-size:21px;line-height:24px;color:#000;"><b>{{ $admin->company_name ?? '' }}</b></span>
+							<p style="font-size: 15px;line-height: 21px;color: #1a1a1a;font-weight: normal;margin: 10px 0px 0px;"> {{ $admin->address ?? '' }}<br/>
+                                {{ $admin->state ?? '' }} {{ $admin->city ?? '' }} {{ $admin->zip ?? '' }}<br/>
+							<b>Email:</b> {{ $admin->email ?? '' }}<br/>
+							<b>Phone:</b> {{ $admin->phone ?? '' }}</p>
 						</td>
 						<td style="text-align: right;">
 							<h2 style="color:#1e40af">Tax Invoice</h2>
                             <p style="font-size: 15px;line-height: 21px;color: #1a1a1a;font-weight: normal;margin: 10px 0px 0px;"><b>ISSUED:</b> {{date('d/m/Y')}}<br/>
                             <b>DUE:</b> {{date('d/m/Y')}}<br/>
-							<b>INVOICE NO:</b> {{$record_get[0]->invoice_no}}</p>
+							<b>INVOICE NO:</b> {{ $record_get[0]->invoice_no ?? '' }}</p>
 						</td>
 					</tr>
 					<tr>
@@ -52,10 +52,10 @@
 						<td colspan="2">
 							<span style="font-size: 18px;line-height: 21px;color: #000;margin: 20px 0px 0px;display:block;"><b>Bill To:</b></span>
                             <p style="font-size: 13px;line-height: 16px;color: #000;font-weight: normal;margin: 0px 0px 5px;">
-                                {{@$clientname->first_name}} {{@$clientname->last_name}}<br/>
-                                {{$clientname->address}}<br/>
-                                {{$clientname->state}} {{$clientname->city}} {{$clientname->zip}}<br/>
-                                {{$clientname->country}}
+                                {{ $clientname->first_name ?? '' }} {{ $clientname->last_name ?? '' }}<br/>
+                                {{ $clientname->address ?? '' }}<br/>
+                                {{ $clientname->state ?? '' }} {{ $clientname->city ?? '' }} {{ $clientname->zip ?? '' }}<br/>
+                                {{ $clientname->country ?? '' }}
                             </p>
                         </td>
 					</tr>
