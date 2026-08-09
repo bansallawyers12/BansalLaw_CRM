@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "CONTEXT7_API_KEY": "YOUR_CONTEXT7_API_KEY"
+      }
+    },
+    "graphify": {
+      "command": "py",
+      "args": [
+        "-m",
+        "graphify.serve",
+        "graphify-out/graph.json"
+      ]
+    }
+  }
+}
