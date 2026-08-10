@@ -1843,12 +1843,14 @@ class ClientDocumentsController extends Controller
                     : "deleted {$documentType}: {$documentName}";
                 $description = "<p>Deleted {$documentType} document</p>";
 
-                $this->logClientActivity(
-                    $data->client_id,
-                    $subject,
-                    $description,
-                    'document'
-                );
+                if (!empty($data->client_id)) {
+                    $this->logClientActivity(
+                        $data->client_id,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+                }
                 $response['status'] 	= 	true;
                 $response['data']	=	'Document removed successfully';
                 if(isset($data->doc_type) && $data->doc_type == 'personal'){
