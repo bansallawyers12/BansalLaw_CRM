@@ -207,9 +207,9 @@ Severity key:
 - **Now:** All discontinue and reopen/revert methods validate permission model (`canCloseDiscontinueMatter` / module 45 / super-admin) and enforce client visibility via `ensureCrmRecordAccess`.
 
 ### 3.3 High — Completing/discontinuing a matter hard-deletes all matter email history
-- **Files:** `ClientMatterHubController.php` (~88–102, ~740–742, ~1422–1423, ~2530–2552)
-- **What goes wrong:** `completestage`, `discontinueClientMatter`, and `discontinueMatter` call `deleteEmailConversationsForMatter()`, which permanently deletes `email_logs`, attachments DB rows, and label pivots. Reopen does not restore them.
-- **Impact:** Closing a matter destroys CRM email history; S3 may remain orphaned; sync may re-import oddly (see #5.5).
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php`
+- **Now:** Removed automatic email history deletion on matter discontinue/completion (`deleteEmailConversationsForMatter` disabled), ensuring email history is preserved for audit and legal compliance.
 
 ### 3.4 High — Legacy stage APIs query non-existent `w_id` column
 - **Files:** `ClientMatterHubController.php` (~109–186, ~1196–1204, ~1441–1442); `app/Models/WorkflowStage.php` (fillable: `workflow_id` only)
