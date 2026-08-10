@@ -9,9 +9,16 @@ use App\Http\Controllers\CRM\ClientMatterWorkflowController;
 
 Route::get('/client-portal/detail', [ClientMatterWorkflowController::class, 'getClientPortalDetail']);
 Route::post('/client-portal/load-matter-upsert', [ClientMatterWorkflowController::class, 'loadMatterUpsert']);
-Route::match(['get', 'post'], '/updatestage', [ClientMatterWorkflowController::class, 'updatestage']);
-Route::match(['get', 'post'], '/completestage', [ClientMatterWorkflowController::class, 'completestage']);
-Route::match(['get', 'post'], '/updatebackstage', [ClientMatterWorkflowController::class, 'updatebackstage']);
+
+// Legacy stage mutation URLs: POST only (CSRF). GET is rejected without mutating state.
+Route::get('/updatestage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);
+Route::get('/completestage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);
+Route::get('/updatebackstage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);
+Route::post('/updatestage', [ClientMatterWorkflowController::class, 'updatestage']);
+Route::post('/completestage', [ClientMatterWorkflowController::class, 'completestage']);
+Route::post('/updatebackstage', [ClientMatterWorkflowController::class, 'updatebackstage']);
+
+// Preferred Workflow-tab endpoints
 Route::post('/clients/matter/update-next-stage', [ClientMatterWorkflowController::class, 'updateClientMatterNextStage'])->name('clients.matter.update-next-stage');
 Route::post('/clients/matter/update-previous-stage', [ClientMatterWorkflowController::class, 'updateClientMatterPreviousStage'])->name('clients.matter.update-previous-stage');
 Route::post('/clients/matter/discontinue', [ClientMatterWorkflowController::class, 'discontinueClientMatter'])->name('clients.matter.discontinue');

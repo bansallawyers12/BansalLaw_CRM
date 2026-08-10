@@ -217,10 +217,14 @@ Status key (2026-08-07):
 - **Now:** Verified all legacy stage endpoints filter by `workflow_id` on `workflow_stages` (and use `COALESCE(sort_order, id)`), with no queries targeting non-existent `w_id` column.
 
 ### 3.5 High — Legacy stage/complete routes are GET and mutate state
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `routes/matter_workflow.php`; `ClientMatterWorkflowController.php`
+- **Now:** Mutations on `/updatestage`, `/completestage`, and `/updatebackstage` are **POST-only** (CSRF). GET on those paths no longer mutates and returns a friendly redirect/JSON 405 instead of a bare MethodNotAllowed stack. Workflow UI uses `clients.matter.update-next-stage` / `update-previous-stage` via POST.
 
 ### 3.6 High — Stored XSS in matter logs / notes UI
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`getMatterLogs`, `getMatterNotes`); `public/js/crm/clients/modules/notes.js`
+- **Now:** Wrapped unescaped PHP output variables in `getMatterLogs` and `getMatterNotes` with `e()` and updated frontend jQuery modal handlers in `notes.js` to use `.text()` instead of `.html()`, preventing stored XSS execution.
 
 ### 3.7 Medium — Previous-stage progress calculated across all workflows
 - **Status:** Open\*
