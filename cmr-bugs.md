@@ -325,10 +325,14 @@ Status key (2026-08-07):
 - **Now:** Enforced `allowReassign` flag validation and added explicit `StaffClientVisibility::canAccessClientOrLead($previousClientId, $user)` access check prior to reassigning an email from one client to another, preventing unauthorized cross-client email reassignment.
 
 ### 5.3 Medium — Orphan email attachments skip access gate
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `EmailLogAttachmentController.php`
+- **Now:** Verified and enforced `ensureCrmRecordAccessForOptionalClientId($clientId)` across `download()`, `preview()`, and `downloadAll()` in `EmailLogAttachmentController.php`, guaranteeing staff client access enforcement even if attachment or email log records have null client associations.
 
 ### 5.4 Medium — Staff signature lookup by `from_email` leaks other users’ signatures
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ComposeSendersController.php` (`staffSignature`)
+- **Now:** Updated `staffSignature()` in `ComposeSendersController.php` to strictly query and return the signature of the authenticated staff member (`$authUser->id`), eliminating cross-user signature exposure when selecting arbitrary sender addresses.
 
 ### 5.5 Suspected / Medium — Closing matter + email wipe interacts badly with synced inbox
 - **Status:** Open\* (depends on #3.3)
