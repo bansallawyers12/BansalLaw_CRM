@@ -36,8 +36,7 @@ use App\Http\Controllers\CRM\DocToPdfController;
 | Route Names: documents.* and signatures.*
 */
 
-// Admin routes will be moved after public routes to avoid conflicts
-
+// Admin routes group begins
 Route::middleware('auth:admin')->group(function () {
 
 /*---------- Admin Utilities ----------*/
@@ -52,9 +51,8 @@ Route::get('/doc-to-pdf/test', [DocToPdfController::class, 'testLocalConversion'
 Route::get('/doc-to-pdf/test-python', [DocToPdfController::class, 'testPythonConversion'])->name('doc-to-pdf.test-python');
 Route::get('/doc-to-pdf/debug', [DocToPdfController::class, 'debugConfig'])->name('doc-to-pdf.debug');
 
-/*---------- Signature Dashboard Routes ----------*/
+/*---------- Signature Dashboard Routes (Legacy top group) ----------*/
 Route::prefix('signatures')->group(function () {
-    Route::get('/', [SignatureDashboardController::class, 'index'])->name('signatures.index');
     Route::get('/create', [SignatureDashboardController::class, 'create'])->name('signatures.create');
     Route::post('/', [SignatureDashboardController::class, 'store'])->name('signatures.store');
     Route::post('/suggest-association', [SignatureDashboardController::class, 'suggestAssociation'])->name('signatures.suggest-association');
@@ -81,9 +79,7 @@ Route::prefix('signatures')->group(function () {
 /*---------- Client Matters API ----------*/
 Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getClientMatters'])->name('clients.matters');
 
-}); // End of admin routes group
-
-// Debug route for testing PDF page generation (temporary - outside admin group)
+// Debug route for PDF page generation (protected by auth:admin)
 Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
     // Clear any output buffers to prevent corruption
     if (ob_get_level()) {
@@ -161,6 +157,8 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
         return response()->json(['error' => $e->getMessage()], 500);
     }
 })->name('debug.pdf.page');
+
+}); // End of admin routes group
 
 /*
 |--------------------------------------------------------------------------

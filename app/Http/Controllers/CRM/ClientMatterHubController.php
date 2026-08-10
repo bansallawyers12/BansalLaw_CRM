@@ -210,28 +210,31 @@ class ClientMatterHubController extends Controller
 				], 422);
 			}
 
-			// Get the client matter
-			$clientMatter = ClientMatter::find($matterId);
-			
-			if (!$clientMatter) {
-				return response()->json([
-					'status' => false,
-					'message' => 'Client matter not found'
-				], 404);
-			}
+			return DB::transaction(function () use ($request, $matterId) {
+				// Get the client matter with pessimistic locking
+				$clientMatter = ClientMatter::where('id', $matterId)->lockForUpdate()->first();
 
-			// Get current stage
-			$currentStageId = $clientMatter->workflow_stage_id;
-			
-			if (!$currentStageId) {
-				return response()->json([
-					'status' => false,
-					'message' => 'Current stage not found'
-				], 404);
-			}
+				if (!$clientMatter) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Client matter not found'
+					], 404);
+				}
 
-			// Get current stage details
-			$currentStage = WorkflowStage::find($currentStageId);
+				$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
+				// Get current stage
+				$currentStageId = $clientMatter->workflow_stage_id;
+
+				if (!$currentStageId) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Current stage not found'
+					], 404);
+				}
+
+				// Get current stage details
+				$currentStage = WorkflowStage::find($currentStageId);
 			
 			if (!$currentStage) {
 				return response()->json([
@@ -409,6 +412,7 @@ class ClientMatterHubController extends Controller
 					'message' => 'Failed to update matter stage. Please try again.'
 				], 500);
 			}
+			});
 
 		} catch (\Exception $e) {
 			Log::error('Error updating client matter next stage: ' . $e->getMessage(), [
@@ -444,25 +448,28 @@ class ClientMatterHubController extends Controller
 				], 422);
 			}
 
-			$clientMatter = ClientMatter::find($matterId);
+			return DB::transaction(function () use ($request, $matterId) {
+				$clientMatter = ClientMatter::where('id', $matterId)->lockForUpdate()->first();
 
-			if (!$clientMatter) {
-				return response()->json([
-					'status' => false,
-					'message' => 'Client matter not found'
-				], 404);
-			}
+				if (!$clientMatter) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Client matter not found'
+					], 404);
+				}
 
-			$currentStageId = $clientMatter->workflow_stage_id;
+				$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 
-			if (!$currentStageId) {
-				return response()->json([
-					'status' => false,
-					'message' => 'Current stage not found'
-				], 404);
-			}
+				$currentStageId = $clientMatter->workflow_stage_id;
 
-			$currentStage = WorkflowStage::find($currentStageId);
+				if (!$currentStageId) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Current stage not found'
+					], 404);
+				}
+
+				$currentStage = WorkflowStage::find($currentStageId);
 
 			if (!$currentStage) {
 				return response()->json([
@@ -556,6 +563,7 @@ class ClientMatterHubController extends Controller
 				'status' => false,
 				'message' => 'Failed to update matter stage. Please try again.'
 			], 500);
+			});
 
 		} catch (\Exception $e) {
 			Log::error('Error updating client matter previous stage: ' . $e->getMessage(), [
@@ -1408,8 +1416,8 @@ class ClientMatterHubController extends Controller
 				$response['status'] 	= 	true;
 				$response['message']	=	'Email Sent Successfully';
 			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
+				$response['status'] 	= 	false;
+				$response['message']	=	'Failed to send email. Please try again.';
 			}
 
 		echo json_encode($response);
@@ -2422,12 +2430,10 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 
 		$affectedRows = DB::table('documents')->where('id', $documentId)->update($data);
 
-		if ($affectedRows > 0) {
+		if ($affectedRows >= 0) {
 			$this->notifyClientAndCreateActionForDocumentStatusChange($documentId, $status === 1 ? 'approved' : 'rejected');
 			return response()->json(['success' => true]);
 		}
-
-		return response()->json(['success' => false, 'message' => 'Document not found or status unchanged.'], 400);
 	}
 
 	/**
