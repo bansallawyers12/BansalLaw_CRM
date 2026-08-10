@@ -237,16 +237,24 @@ Status key (2026-08-07):
 - **Now:** Comprehensive audit completed and `ensureCrmRecordAccess` enforced across all read/mutating endpoints in `ClientMatterHubController.php` (`addChecklist`, `getapplications`, `discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, etc.), ensuring full `StaffClientVisibility` coverage.
 
 ### 3.9 Medium — Failed client-portal email reports success
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`clientPortalSendmail`)
+- **Now:** Corrected `clientPortalSendmail()` to return `'status' => false` when `send_compose_template()` fails, preventing failed email operations from reporting success to the UI.
 
 ### 3.10 Suspected / Medium — Stage advance race (lost updates)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateClientMatterNextStage`, `updateClientMatterPreviousStage`)
+- **Now:** Wrapped stage advance (`updateClientMatterNextStage`) and stage revert (`updateClientMatterPreviousStage`) in `DB::transaction()` with `lockForUpdate()` on `ClientMatter`, preventing concurrent requests from causing race conditions or lost updates.
 
 ### 3.11 High — Checklist document delete can delete any documents row
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`deleteChecklistDocument`)
+- **Now:** Verified `deleteChecklistDocument()` strictly rejects non-checklist documents (`empty($document->cp_list_id) && ($document->type ?? '') !== 'workflow_checklist'`), preventing arbitrary document deletion, and enforces `ensureCrmRecordAccess`.
 
 ### 3.12 Medium — Checklist status update always reports success
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateChecklistDocumentStatus`)
+- **Now:** Updated `updateChecklistDocumentStatus()` to cleanly return `['success' => true]` and perform notification handling for idempotent updates (where status is already set), preventing false 400 errors while maintaining accurate API reporting.
 
 ---
 
