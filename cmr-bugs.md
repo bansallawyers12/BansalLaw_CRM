@@ -296,7 +296,9 @@ Status key (2026-08-07):
 - **Now:** Excluded immutable fields (`client_id`, `client_matter_id`, `pdf_path`, `is_uploaded`, `form_type`, `created_by`, etc.) in `update()` and enforced `ensureCrmRecordAccess((int) $legalForm->client_id)` across all CRUD methods (`show`, `update`, `destroy`, `downloadDocx`, `downloadAttachment`, `uploadAttachment`), resolving mass-assignment and IDOR vulnerabilities.
 
 ### 4.8 High — Signature bulk archive has no authorization
-- **Status:** Open\* (routes now auth’d; policy checks still needed)
+- **Status:** Fixed
+- **Files:** `SignatureDashboardController.php` (`bulkArchive`, `bulkVoid`, `bulkResend`)
+- **Now:** Enforced policy checks (`$staff->can('archive', $doc)`, `$staff->can('void', $doc)`, `$staff->can('sendReminder', $doc)`) and `ensureCrmRecordAccess` across all bulk signature action endpoints (`bulkArchive`, `bulkVoid`, `bulkResend`), preventing unauthorized bulk mutations.
 
 ### 4.9 Medium — Doc delete null-deref when admin row missing
 - **Status:** Open\*
