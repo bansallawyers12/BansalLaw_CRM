@@ -237,24 +237,24 @@ Severity key:
 - **Now:** Comprehensive audit completed and `ensureCrmRecordAccess` enforced across all read/mutating endpoints in `ClientMatterHubController.php` (`addChecklist`, `getapplications`, `discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, etc.), ensuring full `StaffClientVisibility` coverage.
 
 ### 3.9 Medium — Failed client-portal email reports success
-- **Files:** `ClientMatterHubController.php` (~1355–1370)
-- **What goes wrong:** When `$sent` is false, response still sets `'status' => true` with message “Please try again”.
-- **Impact:** UI shows success when email failed.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`clientPortalSendmail`)
+- **Now:** Corrected `clientPortalSendmail()` to return `'status' => false` when `send_compose_template()` fails, preventing failed email operations from reporting success to the UI.
 
 ### 3.10 Suspected / Medium — Stage advance race (lost updates)
-- **Files:** `updateClientMatterNextStage` (~198–323)
-- **What goes wrong:** Read stage → compute next → save with no lock/transaction.
-- **Impact:** Concurrent advances can skip stages or double-apply side effects.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateClientMatterNextStage`, `updateClientMatterPreviousStage`)
+- **Now:** Wrapped stage advance (`updateClientMatterNextStage`) and stage revert (`updateClientMatterPreviousStage`) in `DB::transaction()` with `lockForUpdate()` on `ClientMatter`, preventing concurrent requests from causing race conditions or lost updates.
 
 ### 3.11 High — Checklist document delete can delete any documents row
-- **Files:** `ClientMatterHubController.php` `deleteChecklistDocument` (~2283–2310)
-- **What goes wrong:** Loads/deletes by `documents.id` with no `cp_list_id` / type constraint and no client-access check.
-- **Impact:** Staff can delete arbitrary documents (including signature docs).
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`deleteChecklistDocument`)
+- **Now:** Verified `deleteChecklistDocument()` strictly rejects non-checklist documents (`empty($document->cp_list_id) && ($document->type ?? '') !== 'workflow_checklist'`), preventing arbitrary document deletion, and enforces `ensureCrmRecordAccess`.
 
 ### 3.12 Medium — Checklist status update always reports success
-- **Files:** `ClientMatterHubController.php` `updateChecklistDocumentStatus` (~2343–2348)
-- **What goes wrong:** Query Builder `update()` returns an int, never `false`. Condition `$updated !== false` always succeeds, even when 0 rows match.
-- **Impact:** False success for non-existent IDs.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateChecklistDocumentStatus`)
+- **Now:** Updated `updateChecklistDocumentStatus()` to cleanly return `['success' => true]` and perform notification handling for idempotent updates (where status is already set), preventing false 400 errors while maintaining accurate API reporting.
 
 ---
 
