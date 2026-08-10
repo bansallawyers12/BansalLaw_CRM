@@ -202,7 +202,9 @@ Status key (2026-08-07):
 - **Now:** Requires effective super-admin or `canCloseDiscontinueMatter`; only `matter_status === 0`; still enforces 1-year age; uses `ensureCrmRecordAccess`.
 
 ### 3.2 High — Legacy discontinue/reopen bypass permission model
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, `discontinueMatter`, `revertMatter`)
+- **Now:** All discontinue and reopen/revert methods validate permission model (`canCloseDiscontinueMatter` / module 45 / super-admin) and enforce client visibility via `ensureCrmRecordAccess`.
 
 ### 3.3 High — Completing/discontinuing a matter hard-deletes all matter email history
 - **Status:** Open\*
