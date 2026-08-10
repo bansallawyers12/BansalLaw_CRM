@@ -1435,13 +1435,13 @@ class DocumentController extends Controller
 
             if( isset($request->doc_type) && $request->doc_type == 'agreement')
             {
-                $token = $request->pdf_sign_token;
+                $token = Str::random(64);
                 $isDocumentExistInSignerTbl = $document->signers()->where('document_id', $documentId )->first();
                 if($isDocumentExistInSignerTbl)
                 {
                     // Update existing document in signer table
-                    $signer = $isDocumentExistInSignerTbl->update(['email' => $signerEmail,'name' => $signerName,'token' => $token,'status' => 'pending']);
-                    //$signer = $document->signers()->where('token', $token)->first();
+                    $isDocumentExistInSignerTbl->update(['email' => $signerEmail,'name' => $signerName,'token' => $token,'status' => 'pending']);
+                    $signer = $isDocumentExistInSignerTbl;
                 }
                 else
                 {
