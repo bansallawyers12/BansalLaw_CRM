@@ -227,10 +227,14 @@ Status key (2026-08-07):
 - **Now:** Wrapped unescaped PHP output variables in `getMatterLogs` and `getMatterNotes` with `e()` and updated frontend jQuery modal handlers in `notes.js` to use `.text()` instead of `.html()`, preventing stored XSS execution.
 
 ### 3.7 Medium — Previous-stage progress calculated across all workflows
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateClientMatterPreviousStage`)
+- **Now:** Scoped `totalStages`, `currentStageIndex`, and `isFirstStage` queries in `updateClientMatterPreviousStage()` to the matter's specific `workflow_id`, matching `updateClientMatterNextStage()` and eliminating cross-workflow stage order mismatch.
 
 ### 3.8 Medium — Matter Hub lacks `StaffClientVisibility` on mutating/read endpoints
-- **Status:** Open\* (some endpoints now call `ensureCrmRecordAccess`; coverage incomplete)
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php`
+- **Now:** Comprehensive audit completed and `ensureCrmRecordAccess` enforced across all read/mutating endpoints in `ClientMatterHubController.php` (`addChecklist`, `getapplications`, `discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, etc.), ensuring full `StaffClientVisibility` coverage.
 
 ### 3.9 Medium — Failed client-portal email reports success
 - **Status:** Open\*
