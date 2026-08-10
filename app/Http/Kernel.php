@@ -67,6 +67,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'adminconsole' => \App\Http\Middleware\EnsureAdminConsoleAccess::class,
         'extend.video.upload' => \App\Http\Middleware\ExtendVideoUploadLimits::class,
+        'migration.crm.token' => \App\Http\Middleware\VerifyMigrationCrmToken::class,
     ];
 
     /**

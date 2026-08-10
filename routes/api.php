@@ -99,7 +99,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/countries', [PublicListingController::class, 'getCountries']);
 
+// Public create-lead (website / other sources) — unchanged.
 Route::post('/leads', [LeadBookingApiController::class, 'storeLead'])->middleware('throttle:5,1');
+
+// Migration CRM only — separate path + token required + higher rate limit.
+Route::post('/migration-crm/leads', [LeadBookingApiController::class, 'storeLead'])
+    ->middleware(['migration.crm.token', 'throttle:migration-crm-leads']);
+
 Route::post('/booking-appointments', [LeadBookingApiController::class, 'storeBookingAppointment']);
 
 Route::get('/appointment-variable-lists', [PublicBookingController::class, 'getAppointmentVariableLists']);

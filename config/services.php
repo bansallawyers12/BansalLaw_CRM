@@ -192,6 +192,16 @@ return [
     ],
 
     /*
+    | Optional Migration CRM → Legal CRM lead handoff.
+    | Public POST /api/leads is unchanged. Dedicated route:
+    | POST /api/migration-crm/leads (requires MIGRATION_CRM_API_TOKEN Bearer).
+    */
+    'migration_crm' => [
+        'token' => env('MIGRATION_CRM_API_TOKEN'),
+        'rate_limit' => (int) env('MIGRATION_CRM_LEAD_RATE_LIMIT', 60),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Stripe Payment Configuration
     |--------------------------------------------------------------------------
