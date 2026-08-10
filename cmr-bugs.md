@@ -301,7 +301,9 @@ Status key (2026-08-07):
 - **Now:** Enforced policy checks (`$staff->can('archive', $doc)`, `$staff->can('void', $doc)`, `$staff->can('sendReminder', $doc)`) and `ensureCrmRecordAccess` across all bulk signature action endpoints (`bulkArchive`, `bulkVoid`, `bulkResend`), preventing unauthorized bulk mutations.
 
 ### 4.9 Medium — Doc delete null-deref when admin row missing
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientDocumentsController.php` (`deletedocs`), `PublicDocumentController.php`
+- **Now:** Added null-safe checks on `$admin` row lookups and `$data->client_id` during document deletion in `deletedocs()`, preventing null dereference errors when client or admin database records are missing.
 
 ### 4.10 Medium — Doc-to-PDF debug endpoints unauthenticated
 - **Status:** Partial
