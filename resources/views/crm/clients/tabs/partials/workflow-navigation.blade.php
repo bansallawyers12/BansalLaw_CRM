@@ -32,10 +32,10 @@
 
         @if(!empty($workflowInModal))
             <div class="dropdown workflow-nav-more">
-                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">
+                <button type="button" class="btn btn-sm dropdown-toggle workflow-nav-more__btn" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">
                     More
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu dropdown-menu-end workflow-nav-more__menu">
                     @if($workflowCanDiscontinue)
                         <li>
                             <button type="button" class="dropdown-item text-danger" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}">

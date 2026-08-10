@@ -212,7 +212,9 @@ Status key (2026-08-07):
 - **Now:** Removed automatic email history deletion on matter discontinue/completion (`deleteEmailConversationsForMatter` disabled), ensuring email history is preserved for audit and legal compliance.
 
 ### 3.4 High — Legacy stage APIs query non-existent `w_id` column
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updatestage`, `updatebackstage`, `completestage`)
+- **Now:** Verified all legacy stage endpoints filter by `workflow_id` on `workflow_stages` (and use `COALESCE(sort_order, id)`), with no queries targeting non-existent `w_id` column.
 
 ### 3.5 High — Legacy stage/complete routes are GET and mutate state
 - **Status:** Open\*

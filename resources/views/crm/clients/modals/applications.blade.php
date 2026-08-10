@@ -262,31 +262,31 @@
 	</div>
 </div>
 
-{{-- 2c. Change Workflow Modal (for existing matters) --}}
+{{-- 2c. Change Workflow Modal (for existing matters; stacked above Update Stage when opened from it) --}}
 <div class="modal fade custom_modal" id="change-workflow-modal" tabindex="-1" role="dialog" aria-labelledby="changeWorkflowModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-dialog-centered change-workflow-modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="changeWorkflowModalLabel">Change Workflow</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+				<x-crm.modal-close />
 			</div>
 			<div class="modal-body">
 				<input type="hidden" id="change-workflow-matter-id" value="">
-				<div class="form-group">
-					<label for="change-workflow-select">Select Workflow</label>
+				<p class="text-muted small mb-3">Pick a new workflow for this matter. The current stage is matched by name when possible; otherwise the first stage is used.</p>
+				<div class="form-group mb-0">
+					<label for="change-workflow-select">Select Workflow <span class="span_req">*</span></label>
 					<select class="form-control" id="change-workflow-select">
 						@foreach(\App\Models\Workflow::orderBy('name')->get() as $wf)
 						<option value="{{ $wf->id }}">{{ $wf->name }}{{ $wf->matter ? ' (' . $wf->matter->title . ')' : '' }}</option>
 						@endforeach
 					</select>
-					<small class="form-text text-muted">Stage will be mapped by name; if no match, first stage is used.</small>
 				</div>
+			</div>
+			<div class="modal-footer change-workflow-modal-footer">
+				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" id="change-workflow-submit">
 					<i class="fa-solid fa-right-left"></i> Change Workflow
 				</button>
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>
 		</div>
 	</div>
