@@ -227,14 +227,14 @@ Severity key:
 - **Now:** Wrapped unescaped PHP output variables in `getMatterLogs` and `getMatterNotes` with `e()` and updated frontend jQuery modal handlers in `notes.js` to use `.text()` instead of `.html()`, preventing stored XSS execution.
 
 ### 3.7 Medium — Previous-stage progress calculated across all workflows
-- **Files:** `ClientMatterHubController.php` (~493–497)
-- **What goes wrong:** After moving previous stage, progress uses `WorkflowStage::count()` and unscoped order queries, while next-stage path scopes by `workflow_id`.
-- **Impact:** Wrong progress % / first-stage flags when multiple workflows exist.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updateClientMatterPreviousStage`)
+- **Now:** Scoped `totalStages`, `currentStageIndex`, and `isFirstStage` queries in `updateClientMatterPreviousStage()` to the matter's specific `workflow_id`, matching `updateClientMatterNextStage()` and eliminating cross-workflow stage order mismatch.
 
 ### 3.8 Medium — Matter Hub lacks `StaffClientVisibility` on mutating/read endpoints
-- **Files:** `ClientMatterHubController.php` (stage, deadline, ownership, checklist, document approve/delete, etc.)
-- **What goes wrong:** Restricted Person Assisting staff can act on any matter ID if they know/guess it, despite allocation enforcement elsewhere.
-- **Impact:** Allocation bypass for restricted roles.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php`
+- **Now:** Comprehensive audit completed and `ensureCrmRecordAccess` enforced across all read/mutating endpoints in `ClientMatterHubController.php` (`addChecklist`, `getapplications`, `discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, etc.), ensuring full `StaffClientVisibility` coverage.
 
 ### 3.9 Medium — Failed client-portal email reports success
 - **Files:** `ClientMatterHubController.php` (~1355–1370)

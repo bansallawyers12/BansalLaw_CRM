@@ -494,11 +494,19 @@ class ClientMatterHubController extends Controller
 			if ($saved) {
 				// applications table removed - workflow tracked via client_matters
 
-				$totalStages = WorkflowStage::count();
+				$progressQuery = WorkflowStage::query();
+				if ($clientMatter->workflow_id) {
+					$progressQuery->where('workflow_id', $clientMatter->workflow_id);
+				} elseif ($prevStage->workflow_id) {
+					$progressQuery->where('workflow_id', $prevStage->workflow_id);
+				}
+				$totalStages = (clone $progressQuery)->count();
 				$prevOrder = $prevStage->sort_order ?? $prevStage->id;
-				$currentStageIndex = WorkflowStage::whereRaw('COALESCE(sort_order, id) <= ?', [$prevOrder])->count();
+				$currentStageIndex = (clone $progressQuery)->whereRaw('COALESCE(sort_order, id) <= ?', [$prevOrder])->count();
 				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
-				$isFirstStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$prevOrder])->exists();
+
+				$isFirstStageQuery = (clone $progressQuery)->whereRaw('COALESCE(sort_order, id) < ?', [$prevOrder]);
+				$isFirstStage = !$isFirstStageQuery->exists();
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
@@ -1578,6 +1586,8 @@ class ClientMatterHubController extends Controller
 			return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
 		}
 
+		$this->ensureCrmRecordAccess((int) $matter->client_id);
+
 		$stageQuery = DB::table('workflow_stages')->where('name', $wfStage);
 		if (!empty($matter->workflow_id)) {
 			$stageQuery->where('workflow_id', $matter->workflow_id);
@@ -1970,7 +1980,10 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 	}
 
 	public function getapplications(Request $request){
-		$client_id = $request->client_id;
+		$client_id = (int) $request->client_id;
+		if ($client_id > 0) {
+			$this->ensureCrmRecordAccess($client_id);
+		}
 		$matters = ClientMatter::where('client_id', '=', $client_id)->orderBy('id','desc')->get();
 		ob_start();
 		?>
