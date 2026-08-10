@@ -207,8 +207,9 @@ Status key (2026-08-07):
 - **Now:** All discontinue and reopen/revert methods validate permission model (`canCloseDiscontinueMatter` / module 45 / super-admin) and enforce client visibility via `ensureCrmRecordAccess`.
 
 ### 3.3 High — Completing/discontinuing a matter hard-deletes all matter email history
-- **Status:** Open\*
-- **Impact:** Still a major data-loss risk if still called from active paths.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php`
+- **Now:** Removed automatic email history deletion on matter discontinue/completion (`deleteEmailConversationsForMatter` disabled), ensuring email history is preserved for audit and legal compliance.
 
 ### 3.4 High — Legacy stage APIs query non-existent `w_id` column
 - **Status:** Open\*
