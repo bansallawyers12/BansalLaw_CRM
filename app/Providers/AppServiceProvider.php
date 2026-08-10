@@ -8,6 +8,9 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use App\Helpers\SortableHelper;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Models\Admin;
@@ -31,6 +34,12 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
         Paginator::useBootstrap();
+
+        // Dedicated Migration CRM lead handoff route rate limit (token already verified by middleware).
+        RateLimiter::for('migration-crm-leads', function (Request $request) {
+            return Limit::perMinute((int) config('services.migration_crm.rate_limit', 60))
+                ->by('migration-crm');
+        });
 
         // Register sortable link directive
         Blade::directive('sortablelink', function ($expression) {

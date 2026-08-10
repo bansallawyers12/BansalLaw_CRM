@@ -19,6 +19,8 @@ class LeadBookingApiController extends BaseController
 {
     /**
      * Create a CRM lead (row in admins with type lead, plus primary email and phone rows).
+     *
+     * Also used by Migration CRM "Send For Legal CRM" (additive fields only; public callers unchanged).
      */
     public function storeLead(Request $request)
     {
@@ -32,6 +34,8 @@ class LeadBookingApiController extends BaseController
             'source' => ['nullable', 'string', 'max:255'],
             'refer_by' => ['nullable', 'string', 'max:255'],
             'lead_status' => ['nullable', 'string', 'max:100'],
+            // Optional Migration CRM handoff metadata (ignored by public/website callers).
+            'migration_lead_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $hasFullName = trim((string) ($validated['full_name'] ?? '')) !== '';
@@ -42,18 +46,50 @@ class LeadBookingApiController extends BaseController
             ], 422);
         }
 
+        // If Migration CRM sends migration_lead_id without source, tag origin clearly.
+        if (! empty($validated['migration_lead_id']) && empty($validated['source'])) {
+            $validated['source'] = 'Migration CRM';
+        }
+        if (! empty($validated['migration_lead_id']) && empty($validated['refer_by'])) {
+            $validated['refer_by'] = 'Migration CRM';
+        }
+
         $email = strtolower(trim($validated['email']));
+        $isMigrationHandoff = $this->isMigrationCrmLeadHandoff($request, $validated);
+
         $existing = Admin::whereIn('type', ['client', 'lead'])
             ->whereRaw('LOWER(email) = ?', [$email])
             ->first();
 
         if ($existing) {
+            $existingContext = [
+                'legal_lead_id' => $existing->id,
+                'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+                'source' => $validated['source'] ?? null,
+                'email' => $email,
+                'phone' => $validated['phone'] ?? null,
+                'path' => $request->path(),
+            ];
+
+            if ($isMigrationHandoff) {
+                Log::channel('migration_legal_crm')->info('Migration CRM handoff matched existing lead/client', $existingContext);
+            } else {
+                Log::info('API storeLead matched existing lead/client', [
+                    'lead_id' => $existing->id,
+                    'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+                    'source' => $validated['source'] ?? null,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Thank you for reaching out. Your request has been received.',
+                'lead_id' => $existing->id,
                 'data' => [
+                    'id' => $existing->id,
                     'lead_id' => $existing->id,
                     'is_existing' => true,
+                    'migration_lead_id' => $validated['migration_lead_id'] ?? null,
                 ],
             ], 200);
         }
@@ -130,21 +166,73 @@ class LeadBookingApiController extends BaseController
                 return $admin;
             });
         } catch (\Throwable $e) {
-            Log::error('API storeLead failed', [
+            $failContext = [
                 'message' => $e->getMessage(),
                 'email' => $email,
-            ]);
+                'phone' => $validated['phone'] ?? null,
+                'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+                'source' => $validated['source'] ?? null,
+                'path' => $request->path(),
+            ];
+
+            if ($isMigrationHandoff) {
+                Log::channel('migration_legal_crm')->error('Migration CRM handoff create failed', $failContext);
+            } else {
+                Log::error('API storeLead failed', [
+                    'message' => $e->getMessage(),
+                    'email' => $email,
+                ]);
+            }
 
             return $this->sendError('Could not create lead.', [], 500);
         }
 
-        return $this->leadStoreJsonResponse($lead, false);
+        $createdContext = [
+            'legal_lead_id' => $lead->id,
+            'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+            'source' => $validated['source'] ?? null,
+            'refer_by' => $validated['refer_by'] ?? null,
+            'email' => $email,
+            'phone' => $phoneForStorage,
+            'first_name' => $lead->first_name,
+            'last_name' => $lead->last_name,
+            'client_reference' => $lead->client_id,
+            'path' => $request->path(),
+        ];
+
+        if ($isMigrationHandoff) {
+            Log::channel('migration_legal_crm')->info('Migration CRM handoff created lead', $createdContext);
+        } else {
+            Log::info('API storeLead created lead', [
+                'lead_id' => $lead->id,
+                'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+                'source' => $validated['source'] ?? null,
+            ]);
+        }
+
+        return $this->leadStoreJsonResponse($lead, false, $validated['migration_lead_id'] ?? null);
+    }
+
+    /**
+     * Detect Migration CRM dedicated handoff (separate route or migration_lead_id payload).
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function isMigrationCrmLeadHandoff(Request $request, array $validated): bool
+    {
+        if (! empty($validated['migration_lead_id'])) {
+            return true;
+        }
+
+        $path = $request->path();
+
+        return str_contains($path, 'migration-crm/leads');
     }
 
     /**
      * Same JSON shape for POST /api/leads whether the row was just created or already existed (by email).
      */
-    private function leadStoreJsonResponse(Admin $lead, bool $alreadyExists): JsonResponse
+    private function leadStoreJsonResponse(Admin $lead, bool $alreadyExists, ?int $migrationLeadId = null): JsonResponse
     {
         $payload = [
             'success' => true,
@@ -161,6 +249,7 @@ class LeadBookingApiController extends BaseController
                 'last_name' => $lead->last_name,
                 'email' => $lead->email,
                 'phone' => $lead->phone,
+                'migration_lead_id' => $migrationLeadId,
             ],
         ];
 

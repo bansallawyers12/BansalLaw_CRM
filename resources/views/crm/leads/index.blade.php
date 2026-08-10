@@ -950,6 +950,15 @@
                                     $stageKey = $list->lead_status ?: 'new';
                                     $stageLabel = ($leadStageLabels[$stageKey] ?? ucfirst(str_replace('_', ' ', $stageKey)));
                                     $stageSlug = \Illuminate\Support\Str::slug($stageKey, '_');
+                                    // Display-only label for Migration CRM handoff; does not change lead_status / filters / pipeline.
+                                    $syncedFromMigration = (
+                                        strcasecmp(trim((string) ($list->source ?? '')), 'Migration CRM') === 0
+                                        || strcasecmp(trim((string) ($list->refer_by ?? '')), 'Migration CRM') === 0
+                                    );
+                                    if ($syncedFromMigration && $stageKey === 'new') {
+                                        $stageLabel = 'Synced From Bansal Immigration';
+                                        $stageSlug = 'new'; // keep existing New Enquiry badge colour
+                                    }
                                     $contactAt = \Carbon\Carbon::parse($list->created_at);
                                     ?>
                                     <tr id="id_{{ @$list->id }}" class="client-data-row">

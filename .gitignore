@@ -30,6 +30,10 @@ crm_backup_*.dump
 *.dump
 .env.backup
 sample env need fix.txt
+
+# Local MCP config may contain API keys
+.cursor/mcp.json
+
 pdftk_server_installer.exe
 
 *.backup

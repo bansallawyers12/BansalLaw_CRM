@@ -1,9 +1,10 @@
 # CRM Bugs Audit
 
-**Date:** 2026-07-26  
-**Scope:** Full CRM codebase audit (read-only; no fixes applied)  
-**Branch:** master  
-**Method:** Static code review of controllers, routes, services, and related JS/views, area by area
+**Original audit date:** 2026-07-26  
+**Re-verified:** 2026-08-07 (static code + graphify MCP; no fixes applied in this pass)  
+**Scope:** Full CRM codebase audit  
+**Branch:** master (at re-verify)  
+**Method:** Original static review of controllers, routes, services, JS/views; 2026-08-07 pass re-checked critical/high items against current code
 
 Severity key:
 
@@ -15,82 +16,86 @@ Severity key:
 | **Low** | Info disclosure / edge cases with limited impact |
 | **Suspected** | Likely bug; needs product or runtime confirmation |
 
+Status key (2026-08-07):
+
+| Status | Meaning |
+|--------|---------|
+| **Fixed** | Current code no longer matches the finding |
+| **Partial** | Materially improved; residual risk remains |
+| **Open** | Still present / still exploitable as described |
+| **Open\*** | Not re-spot-checked line-by-line; treat as open until proven fixed |
+
+---
+
+## Status snapshot (2026-08-07)
+
+| Bucket | Approx. |
+|--------|---------|
+| Fixed | ~20 |
+| Partial | ~15 |
+| Still open / open\* | ~80+ |
+
+**Do not start from item 1.1.** Many early criticals are fixed. Prioritize remaining ACL, CSRF/XSS, trust races, booking metadata ownership, and leftover public/debug surfaces (see end of file).
+
 ---
 
 ## Area 1 — Clients
 
 ### 1.1 Critical — Client merge soft-deletes the survivor (`merge_into`), not the source
-- **Files:** `app/Http/Controllers/CRM/ClientsController.php` (~3562–3564); `public/js/crm/clients/clients-listing-spa.js` (~345–362)
-- **What goes wrong:** UI sends `merge_from` → `merge_into` and removes the *source* row from the list. Backend copies related rows from `merge_from` into `merge_into`, then soft-deletes **`merge_into`** (the intended survivor). Result: survivor is deleted; source remains.
-- **Impact:** Destructive data loss / wrong record retained after merge. Combined with incomplete merge (#1.3) this is especially severe.
-- **Evidence:** `DB::table('admins')->where('id', $request->merge_into)->update(['is_deleted' => now()]);` while frontend does `removeClientRow(clickedIds[0])` for `merge_from`.
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/CRM/ClientsController.php` (`merge_records`)
+- **What went wrong:** Backend soft-deleted `merge_into` (survivor) while UI removed `merge_from`.
+- **Now:** Soft-deletes `merge_from` and migrates related rows into `merge_into`.
 
 ### 1.2 High — Client merge has no authorization / ownership checks
-- **Files:** `ClientsController::merge_records` (~3556–3750); `routes/clients.php` (~363)
-- **What goes wrong:** Any authenticated staff can POST arbitrary `merge_from` / `merge_into` IDs. No `StaffClientVisibility` / role gate.
-- **Impact:** Destructive IDOR — staff can merge (and soft-delete) clients they cannot normally access.
+- **Status:** Fixed
+- **Files:** `ClientsController::merge_records`
+- **Now:** Calls `ensureCrmRecordAccess` on both `merge_from` and `merge_into`.
 
 ### 1.3 Medium — Merge omits core CRM data (matters, trust, invoices, personal details)
-- **Files:** `ClientsController::merge_records` (~3556–3746)
-- **What goes wrong:** Even if delete direction were fixed, merge copies notes/docs/emails/activities but **not** `client_matters`, `account_client_receipts`, personal-details tables, etc.
-- **Impact:** Silent incomplete merge; finance and matters stay on the wrong/orphaned record.
+- **Status:** Partial
+- **Files:** `ClientsController::merge_records`
+- **Now:** Migrates matters, receipts, relationships, qualifications, emails, contacts, addresses, activities, and related sets. Edge tables may still be incomplete — confirm against product checklist before treating as fully closed.
 
 ### 1.4 Critical — Document download via `filelink` skips access control
 - **Status:** Fixed
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` (`download_document`)
-- **What goes wrong:** With `document_id`, access is checked. Without it, any auth staff can pass an S3 URL/`filelink`, resolve the key, and get a temporary download for any object on the disk if the path is known/guessable.
-- **Impact:** Cross-client document disclosure for any logged-in staff.
+- **Files:** `ClientDocumentsController.php` (`download_document`)
+- **Impact:** Cross-client document disclosure if path/URL known.
 - **Now:** Enforces `StaffClientVisibility` check on `matchingDoc` and falls back to client resolution via path prefix. Denies access (403) when document/client access cannot be authorized.
 
 ### 1.5 High — Notes CRUD is IDOR (no CRM access checks)
 - **Status:** Fixed
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientNotesController.php`, `routes/clients.php`
-- **What goes wrong:** Create/update/list/delete/pin/get note by `client_id` / `note_id` with no `canAccessClientOrLead`.
-- **Also:** invalid `noteid` → `Note::find` null → `$obj->replicate()` null dereference (~57–59).
-- **Impact:** Staff can read/alter notes on clients they cannot open; possible 500 on bad IDs.
-- **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses.
+- **Files:** `ClientNotesController.php`, `routes/clients.php`
+- **Now:** All notes endpoints (`createnote`, `updateNoteDatetime`, `getnotedetail`, `viewnotedetail`, `viewapplicationnote`, `getnotes`, `deletenote`, `pinnote`) enforce `EnsuresCrmRecordAccess` on `client_id`, return 404 on non-existent records, and output standard JSON responses. Verified access control and HTTP 302 authentication redirects.
 
 ### 1.6 High — Matter tasks API has no CRM access checks
 - **Status:** Fixed
-- **Files:** `app/Http/Controllers/CRM/Clients/ClientMatterTaskController.php`
-- **What goes wrong:** `index`/`store`/`update`/`destroy` only check `client_id` matches the task row. No visibility gate.
-- **Impact:** Any staff can list/create/toggle/delete another client’s tasks.
+- **Files:** `ClientMatterTaskController.php`
 - **Now:** All matter task endpoints (`index`, `store`, `update`, `destroy`) enforce `ensureCrmRecordAccess` on `client_id` directly from resolved records/models without reliance on client-controlled parameter tampering.
 
 ### 1.7 High — Most document mutations only enforce access for restricted PA roles
 - **Status:** Fixed
 - **Files:** `ClientDocumentsController.php`
-- **What goes wrong:** `denyJsonUnlessStaffClientAccess` / `blockEchoUnlessStaffClientAccess` return early (allow) unless `isRestrictedPersonAssisting`. Non-PA staff can upload/delete/move checklists for unallocated clients while list/detail are restricted.
-- **Impact:** Inconsistent ACL — mutations weaker than reads for non-restricted roles.
 - **Now:** All document, checklist, and category mutation endpoints in `ClientDocumentsController.php` enforce `StaffClientVisibility` client access authorization on target `client_id`s, validate `client_matter_id` ownership, prevent cross-client folder moves, and restrict global folder creation to superadmins.
 
 ### 1.8 High — Email HTML preview has no client access check
 - **Status:** Fixed
 - **Files:** `ClientsController.php`; `routes/clients.php`
-- **What goes wrong:** `GET /email-logs/{id}/preview-html` loads any `EmailLog` by id from S3 and returns parsed HTML. No `canAccessClientOrLead` on `emailLog->client_id`.
-- **Impact:** Cross-client email content disclosure for any logged-in staff.
 - **Now:** `getParsedEmailHtml` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email logs are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.9 High — Email delete lacks client-record authorization
 - **Status:** Fixed
 - **Files:** `ClientsController.php`
-- **What goes wrong:** Requires delete-email privilege, but never checks the user may access the email’s client. Optional `client_id`/`client_matter_id` match only if the caller supplies them.
-- **Impact:** Privileged staff can delete emails (and attachment rows) for any client by id.
 - **Now:** `deleteEmailLog` resolves `client_id` directly from `EmailLog->client_id` or `client_matter_id` and enforces `ensureCrmRecordAccess`. Unassigned email deletions are gated to staff with synced inbox permissions or superadmin privileges.
 
 ### 1.10 High — Activity log delete/pin and cost-agreement delete lack access checks
 - **Status:** Fixed
 - **Files:** `ClientsController.php` (`deleteactivitylog`, `pinactivitylog`, `deletecostagreement`)
-- **Impact:** Delete/pin any activity by id; delete any cost agreement by id across clients.
 - **Now:** `deleteactivitylog`, `pinactivitylog`, and `deletecostagreement` resolve `client_id` directly or from parent matter IDs, enforcing `ensureCrmRecordAccess` and rejecting unresolvable client IDs with HTTP 403.
 
 ### 1.11 High — `convertLeadOnly` skips access control and incomplete status transition
 - **Status:** Fixed
 - **Files:** `ClientsController.php`; `routes/clients.php`
-- **What goes wrong:**
-  1. No `canAccessClientOrLead` — any staff can convert any lead with an active matter.
-  2. Incomplete status transition / missing client reference handling on convert.
-- **Impact:** Unauthorized conversion; broken converted-client UX / analytics that rely on status/references.
 - **Now:** `convertLeadOnly` enforces `ensureCrmRecordAccess`, sets active status (`status = 'active'`), generates missing client reference IDs via `ClientReferenceService`, and eliminates user_id parameter tampering.
 
 ### 1.12 High — Lead↔client type change via GET (CSRF + demotion)
@@ -143,14 +148,9 @@ Severity key:
 ## Area 2 — Leads
 
 ### 2.1 Critical — GET bulk-converts up to 500 leads (including archived)
-- **Files:** `app/Http/Controllers/CRM/Leads/LeadConversionController.php` (~33–56); `routes/web.php` (~217)
-- **What goes wrong:** `GET /leads/convert` (super-admin only) runs `Lead::withArchived()->paginate(500)` and converts **every** row on that page — not a selected set. Mutating GET → CSRF if a super-admin session loads a malicious page/link.
-- **Impact:** Mass incorrect status + activity spam; accidental conversion of archived leads.
-- **Evidence:**
-  ```php
-  $enqdatas = Lead::withArchived()->paginate(500);
-  foreach ($enqdatas as $lead) { $lead->convertToClient(); }
-  ```
+- **Status:** Fixed
+- **Files:** `LeadConversionController.php`
+- **Now:** Unselected bulk conversion disabled; redirects with safety error.
 
 ### 2.2 High — Bulk convert ignores matter requirement / silent failures
 - **Status:** Fixed
@@ -197,9 +197,9 @@ Severity key:
 ## Area 3 — Matters / Matter Hub / Workflow
 
 ### 3.1 Critical — Permanent matter delete has no permission or closed-status check
-- **Files:** `app/Http/Controllers/CRM/ClientMatterHubController.php` (~1070–1116); `routes/matter_workflow.php` (~20)
-- **What goes wrong:** `deleteClientMatter` only checks that the matter is older than one year. It does **not** require `matter_status = 0`, and has **no** `canCloseDiscontinueMatter` / admin / module check.
-- **Impact:** Any authenticated staff can permanently delete an **active** matter older than 1 year.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController::deleteClientMatter`
+- **Now:** Requires effective super-admin or `canCloseDiscontinueMatter`; only `matter_status === 0`; still enforces 1-year age; uses `ensureCrmRecordAccess`.
 
 ### 3.2 High — Legacy discontinue/reopen bypass permission model
 - **Status:** Fixed
@@ -258,6 +258,8 @@ Severity key:
 
 ---
 
+## Area 4 — Documents & E-Signatures
+
 ### 4.1 Critical — Signature dashboard & related routes registered outside `auth:admin`
 - **Status:** Fixed
 - **Files:** `routes/documents.php`
@@ -294,562 +296,420 @@ Severity key:
 - **Now:** Excluded immutable fields (`client_id`, `client_matter_id`, `pdf_path`, `is_uploaded`, `form_type`, `created_by`, etc.) in `update()` and enforced `ensureCrmRecordAccess((int) $legalForm->client_id)` across all CRUD methods (`show`, `update`, `destroy`, `downloadDocx`, `downloadAttachment`, `uploadAttachment`), resolving mass-assignment and IDOR vulnerabilities.
 
 ### 4.8 High — Signature bulk archive has no authorization
-- **Files:** `SignatureDashboardController.php` `bulkArchive` (~908–920)
-- **What goes wrong:** Archives any document IDs without policy/`authorize` checks (unlike bulk void). Combined with unauthenticated signature routes (#4.1), especially severe.
-- **Impact:** Mass archive of signature documents.
+- **Status:** Open\* (routes now auth’d; policy checks still needed)
 
 ### 4.9 Medium — Doc delete null-deref when admin row missing
-- **Files:** `ClientDocumentsController.php` `deletedocs` (~1717–1723)
-- **What goes wrong:** After loading document, `$admin = ...->first()` may be null; code uses `$admin->client_id` for S3 delete.
-- **Impact:** Fatal error / failed cleanup.
+- **Status:** Open\*
 
 ### 4.10 Medium — Doc-to-PDF debug endpoints unauthenticated
-- **Files:** `routes/documents.php` (~47–51); `DocToPdfController.php` `debugConfig` (~51–59)
-- **What goes wrong:** `/doc-to-pdf/debug` exposes converter URL/timeout/app URL; convert/test endpoints have no auth.
-- **Impact:** Config leak / resource abuse of converter.
+- **Status:** Partial
+- **Now:** Doc-to-pdf admin utilities are behind `auth:admin`. `/debug-pdf-page/{id}/{page}` still public.
 
 ---
 
 ## Area 5 — Email integration
 
 ### 5.1 High — Email label apply skips client-access check (remove has it)
-- **Files:** `EmailLabelController.php` `apply` (~124–149) vs `remove` (~177–180)
-- **What goes wrong:** Applying a label to any `email_logs` row has no `ensureCrmRecordAccessForOptionalClientId`. Restricted staff can mutate labels on emails for clients they cannot access.
-- **Impact:** Label IDOR; inconsistent with remove path.
+- **Status:** Open\*
 
 ### 5.2 High — Assignment service can reassign already-assigned mail to another client
-- **Files:** `UnassignedEmailAssignmentService.php` (~24–73); called from `SyncedEmailController::assignToClient`
-- **What goes wrong:** Only short-circuits if already assigned to the **same** client+matter. Otherwise relocates S3 objects and rewrites `client_id` / matter — even if mail was already on another client. No `StaffClientVisibility` on target client.
-- **Impact:** Data loss / wrong-client attachment of privileged email.
+- **Status:** Open\*
 
 ### 5.3 Medium — Orphan email attachments skip access gate
-- **Files:** `EmailLogAttachmentController.php` `download` / `preview` (~55–60, ~178–183)
-- **What goes wrong:** Access check runs only `if ($emailLog)`. If relation missing, attachment downloads with no client check.
-- **Impact:** Orphan attachment disclosure.
+- **Status:** Open\*
 
 ### 5.4 Medium — Staff signature lookup by `from_email` leaks other users’ signatures
-- **Files:** `ComposeSendersController.php` `staffSignature` (~79–91)
-- **What goes wrong:** Fallback queries any active staff signature matching `from_email`, exposing another user’s HTML signature to the requester.
-- **Impact:** Signature content disclosure across staff.
+- **Status:** Open\*
 
 ### 5.5 Suspected / Medium — Closing matter + email wipe interacts badly with synced inbox
-- **Files:** Area 3 #3.3 + `IncomingEmailSyncService` / assignment services
-- **What goes wrong:** After discontinue deletes `email_logs`, IMAP sync may re-import as “new” unassigned/auto-assigned mail (depending on message-id dedupe), or leave S3 orphans with no CRM index.
-- **Impact:** Duplicate/orphan mail after matter close.
+- **Status:** Open\* (depends on #3.3)
 
 ### 5.6 Low — Compose senders list exposes all active Zoho/SES From addresses
-- **Files:** `ComposeSendersController.php` (~97–134)
-- **What goes wrong:** Returns all active mailbox From addresses (not scoped to caller).
-- **Impact:** Info disclosure in multi-office setups (may be intentional).
+- **Status:** Open\* (may be intentional)
 
 ---
 
 ## Area 6 — Trust Accounting & Financial
 
 ### 6.1 Critical — Fee-transfer “residual deposit” creates phantom trust money
-- **Files:** `app/Http/Controllers/CRM/ClientAccountsController.php` (~718–857)
-- **What goes wrong:** When a Fee Transfer exceeds the invoice remaining balance, the code caps the withdrawal, then inserts a synthetic `Deposit` for the unused remainder. Unlike office-receipt overpayments (real money in), fee transfers *remove* trust money. Crediting a residual deposit restores the ledger as if the excess never left, while the invoice still shows paid — trust balance is inflated vs bank.
-- **Impact:** Trust ledger / bank reconciliation mismatch; inflated funds held.
+- **Status:** Partial / likely fixed
+- **Files:** `ClientAccountsController::saveaccountreport`
+- **Now:** Invoice fee-transfer path posts withdrawals and recalculates invoice paid totals; synthetic residual Deposit for unused fee-transfer remainder not observed in current loop. Confirm with finance QA before closing permanently.
 
 ### 6.2 Critical — Void invoice fallback can void unrelated fee transfers
-- **Files:** `ClientAccountsController.php` (~4520–4548)
-- **What goes wrong:** If no fee transfer matches `invoice_no`, Method 2 matches by `withdraw_amount = $invoiceAmount` and allows `invoice_no` NULL/empty. That can void another matter’s/client’s fee transfer of the same dollar amount.
-- **Impact:** Incorrect trust money returned; cross-matter/client corruption.
+- **Status:** Open\*
 
 ### 6.3 High — Matter-scoped funds check inconsistent (cross-matter withdrawal)
-- **Files:** `ClientAccountsController.php` (~495–548 vs ~941–944); `TrustLedgerBalanceService.php` (~27–48)
-- **What goes wrong:** Invoice fee-transfer path: if `client_matter_id` is empty, balance includes **all** matters. No-invoice path / `currentFundsHeld(null)` uses `whereNull('client_matter_id')` only.
-- **Impact:** Staff can withdraw against the wrong pool or understate/overstate available funds depending on path.
+- **Status:** Open\*
 
 ### 6.4 High — Concurrent trust posts race (TOCTOU overdraw)
-- **Files:** `ClientAccountsController::saveaccountreport` (~538–568, ~939–993)
-- **What goes wrong:** Funds-held check is read-then-insert with no `lockForUpdate` / enclosing transaction.
-- **Impact:** Two simultaneous withdrawals can both pass the check and overdraw trust.
+- **Status:** Open
 
 ### 6.5 High — Invoice void has no privilege gate (trust-affecting)
-- **Files:** `ClientAccountsController.php` (~4390–4405)
-- **What goes wrong:** `delete_receipt` requires effective super-admin; `void_invoice` only uses `ensureCrmRecordAccess`. Any staff with client access can void invoices and reverse fee transfers.
-- **Impact:** Unauthorized trust-affecting voids.
+- **Status:** Open\*
 
 ### 6.6 High — `ensureCrmRecordAccess` allows missing / non-client IDs (trust posts)
-- **Files:** `EnsuresCrmRecordAccess.php` (~20–34); used by `saveaccountreport` (~406)
-- **What goes wrong:** If `admins.id` is not type `client|lead` (or missing), the trait **returns without aborting**. Callers can post ledger rows against arbitrary/nonexistent `client_id`.
-- **Impact:** Orphan / invalid trust ledger rows.
+- **Status:** Partial
+- **Notes:** Same as #1.20 — wrong type now blocked; missing id still soft-passes.
 
 ### 6.7 Medium — Spoofable actor on trust posts / Rule 42 authority
-- **Files:** `ClientAccountsController.php` (~662, ~697, ~969, ~1031, ~5124)
-- **What goes wrong:** `user_id` / Rule 42 `authorised_by_staff_id` taken from request `loggedin_staffid` / `loggedin_userid` instead of only `Auth::id()`.
-- **Impact:** Broken audit attribution / spoofed authority.
+- **Status:** Partial
+- **Now:** Some ledger inserts use `Auth::guard('admin')->id()`. Confirm all paths (incl. void / authority) no longer trust request `loggedin_staffid`.
 
 ### 6.8 Medium — Receipt ID generation race
-- **Files:** `ClientAccountsController.php` (~491–492)
-- **What goes wrong:** `receipt_id = max + 1` without locking; concurrent posts can collide or reuse IDs.
-- **Impact:** Duplicate receipt IDs.
+- **Status:** Open\*
 
 ### 6.9 Medium — Trust sequence first-row race
-- **Files:** `TrustReceiptSequenceService.php` (~40–63)
-- **What goes wrong:** When no sequence row exists, two concurrent transactions can both insert `last_sequence = 1` (duplicate `TR-YYYY-000001`) or fail uniquely depending on DB constraints.
-- **Impact:** Duplicate or failed trust receipt numbers.
+- **Status:** Open\*
 
 ### 6.10 Medium — `getInvoiceAmount` IDOR
-- **Files:** `ClientAccountsController.php` (~6109–6131)
-- **What goes wrong:** Returns invoice `balance_amount` by `invoice_no` with no CRM access check.
-- **Impact:** Cross-client invoice balance disclosure.
+- **Status:** Open\*
 
 ### 6.11 Suspected / Medium — Disbursement/Refund may overdraw (only logged)
-- **Files:** `ClientAccountsController.php` (~997–1007); `TrustLedgerBalanceService.php` (~51–69)
-- **What goes wrong:** Overdrawn Disbursement/Refund is logged (`overdrawn_transaction_posted`) but not blocked (unlike Fee Transfer).
-- **Impact:** If practice policy forbids overdraw, this is a money bug; if Rule 40 “allow + report” is intentional, severity drops.
+- **Status:** Fixed
+- **Now:** Disbursement/Refund overdraw is blocked with 422 (insufficient funds), not merely logged.
 
 ---
 
 ## Area 7 — Dashboard, Assignee, Office Visits, Broadcasts, Booking
 
 ### 7.1 High — Any staff can delete any assignee action by ID
-- **Files:** `AssigneeController.php` (~590–708); `routes/web.php` (~327–342)
-- **What goes wrong:** `destroy`, `destroy_by_me`, `destroy_to_me`, `destroy_activity`, `destroy_complete_activity` load by ID and soft-delete with no ownership / assignee / client-access check.
-- **Impact:** Cross-user task deletion.
+- **Status:** Fixed
+- **Files:** `AssigneeController`
+- **Now:** `authorizeNoteManagement` requires creator, assignee, or effective super-admin; also `ensureCrmRecordAccess` when `client_id` present.
 
 ### 7.2 High — Stored XSS in assignee action list
-- **Files:** `AssigneeController.php` (~455–500); `Utf8Helper.php` (~14–26)
-- **What goes wrong:** `note_description` is returned via DataTables `rawColumns` after `safeSanitize`, which only fixes encoding — **does not strip HTML**.
-- **Impact:** Script in action descriptions executes for viewers.
+- **Status:** Open\*
 
 ### 7.3 High — Dashboard can update any office-visit status
-- **Files:** `DashboardController.php` (~250–277)
-- **What goes wrong:** `updateCheckinStatus` updates any `CheckinLog` by `checkin_id` with no assignee/client access check and no status validation.
-- **Impact:** Unauthorized visit status changes.
+- **Status:** Open\*
 
 ### 7.4 High — Office visit mutations null-deref / skip auth when missing
-- **Files:** `OfficeVisitController.php` (~457–605)
-- **What goes wrong:** `update_visit_purpose`, `change_assignee`, `attend_session`, `complete_session` call `ensureCrmRecordAccess` only if row exists, then dereference `$obj` without null guard → 500 or silent skip of auth then crash.
-- **Impact:** Crashes; inconsistent auth on missing rows.
+- **Status:** Open\*
 
 ### 7.5 Medium — Broadcasts: any authenticated staff can blast “all”
-- **Files:** `BroadcastNotificationAjaxController.php` (~26–50); `BroadcastNotificationService.php` (~21–51)
-- **What goes wrong:** No role gate on `store`; `scope=all` resolves all recipients.
-- **Impact:** Internal spam/phishing vector.
+- **Status:** Open\*
 
 ### 7.6 Medium — Audit login log readable by any staff
-- **Files:** `AuditLogController.php` (~31–37)
-- **What goes wrong:** Unlike Staff Login Analytics (roles 1/12/super), audit log index has only `auth:admin`.
-- **Impact:** Login history disclosure beyond intended roles.
+- **Status:** Open\*
 
 ### 7.7 Critical — Public wallet payment marks appointment paid without Stripe verify
-- **Files:** `routes/api.php` (~38–39); `PublicBookingController.php` (~2770–2835; also ~2509–2586 authenticated wallet twin)
-- **What goes wrong:** `record-payment-without-login-wallet` / wallet path `updateOrCreate` payment as `succeeded` and sets `is_paid` / `status=paid` using client-supplied `payment_intent_id` with **no** `StripePaymentService::recordPaymentByIntent`.
-- **Impact:** Anyone can mark any appointment paid without paying.
+- **Status:** Partial
+- **Files:** `PublicBookingController::recordAppointmentPaymentWithoutLoginWallet`
+- **Now:** Uses `StripePaymentService::recordPaymentByIntent`. Residual risk: optional metadata ownership when PI metadata empty (#14.11).
 
 ---
 
 ## Area 8 — Admin Console & Auth / Access
 
 ### 8.1 High — Phone OTP IDOR (any contact)
-- **Files:** `PhoneVerificationController.php` (~23–37); `PhoneVerificationService.php` (~26–28)
-- **What goes wrong:** Auth’d staff can send/verify OTP for any `client_contacts.id` with no `ensureCrmRecordAccess` on parent client.
-- **Impact:** SMS spam and contact verification hijack.
+- **Status:** Open\*
 
 ### 8.2 High — Email verification status IDOR
-- **Files:** `EmailVerificationController.php` (~95–111)
-- **What goes wrong:** `getStatus($emailId)` returns verification state for any email id under `auth:admin` without client access check.
-- **Impact:** Cross-client verification status disclosure.
+- **Status:** Open\*
 
 ### 8.3 Medium — Hardcoded privileged staff IDs in config
-- **Files:** `config/crm_access.php` (~17–41, ~99–101 via `CrmAccessService::isExemptRole`)
-- **What goes wrong:** Default `exempt_staff_ids` embeds production staff IDs when env is blank.
-- **Impact:** Wrong deploy/env → unintended allocation bypass / front-desk privileges.
+- **Status:** Open\*
 
 ### 8.4 Medium — Admin Console feature controllers rely only on coarse middleware
-- **Files:** `routes/adminconsole.php` (~36); many `AdminConsole\*Controller` (Matter, Branches, SMS send, etc.)
-- **What goes wrong:** Middleware `adminconsole` gates by role list; many feature controllers lack per-action `checkAuthorizationAction` (unlike Staff/Roles).
-- **Impact:** Privilege concentration if role 12/17 is broad (may be intentional).
+- **Status:** Open\* (may be intentional)
 
 ### 8.5 Low — SuperAdmin elevation itself looks sound
-- **Files:** `SuperAdminElevationController.php` (~14–36); `CrmAccessService.php` (~43–76)
-- **Note:** Toggle requires `grant_super_admin_access` and non-role-1; effective privileges need session flag. **No bug found** — recorded for completeness.
+- **Status:** No bug (unchanged)
 
 ### 8.6 Low — Incoming SMS webhook handling unfinished
-- **Files:** `app/Http/Controllers/AdminConsole/Sms/SmsWebhookController.php` (~57, ~108)
-- **What goes wrong:** TODO comments — incoming message handling not implemented.
-- **Impact:** Incomplete two-way SMS (functional gap).
+- **Status:** Open\*
 
 ---
 
 ## Area 9 — SMS, API, Infrastructure
 
 ### 9.1 Critical — Unauthenticated Stripe PaymentIntent creation
-- **Files:** `routes/api.php` (~41–114)
-- **What goes wrong:** Public POST creates PaymentIntents with caller-chosen `amount`/`currency`/`metadata` using the practice Stripe secret.
-- **Impact:** Fraud charges, PI spam, cost/abuse against Stripe account.
+- **Status:** Fixed
+- **Files:** `routes/api.php`
+- **Now:** Behind `auth:sanctum` + throttle.
 
 ### 9.2 Critical — Service-account token endpoint ignores credentials
-- **Files:** `routes/api.php` (~116); `ServiceAccountController.php` (~18–49)
-- **What goes wrong:** Accepts `admin_email`/`admin_password` but never validates them; returns a “token” and logs email. Comment says “For local development”.
-- **Impact:** Dangerous if reachable in production — fake auth success.
+- **Status:** Partial
+- **Files:** `ServiceAccountController`
+- **Now:** Validates admin email/password; disabled outside `local`/`testing`. Still returns mock token in local — keep out of production exposure.
 
 ### 9.3 High — SMS webhooks: CSRF blocks providers + no signature verification
-- **Files:** `routes/sms.php` (~19–28); `VerifyCsrfToken.php` (~21–34); `SmsWebhookController.php` (~21–98)
-- **What goes wrong:**
-  1. SMS routes use `web` middleware (CSRF). `webhooks/sms/*` is not in `$except` → Twilio/Cellcast POSTs get **419**; delivery status never updates.
-  2. Handlers trust `MessageSid`/`message_id` + status from the body with no Twilio signature / Cellcast secret check. Once CSRF is excepted, anyone can forge delivery status.
-- **Impact:** Broken delivery tracking today; spoofable status once CSRF is fixed without signatures.
+- **Status:** Open\*
 
 ### 9.4 High — Unauthenticated lead API discloses existing PII
-- **Files:** `routes/api.php` (~27); `LeadBookingApiController.php` (~45–52, ~140–158)
-- **What goes wrong:** `POST /api/leads` with an existing email returns `lead_id`, name, phone, client reference — email enumeration + PII leak.
-- **Impact:** Public PII disclosure / enumeration.
+- **Status:** Open\*
+- **Files:** `LeadBookingApiController`; `POST /api/leads`
 
 ### 9.5 Medium — Manual SMS send: any Admin Console user → any phone
-- **Files:** `SmsSendController.php` (~36–63)
-- **What goes wrong:** No client-access check; `phone` + optional `client_id` arbitrary.
-- **Impact:** Cost/abuse SMS.
+- **Status:** Open\*
 
 ### 9.6 Suspected / Medium — Compose email SSRF via document URL
-- **Files:** `CRMUtilityController.php` (~1547–1561)
-- **What goes wrong:** `file_get_contents($fileUrl)` on `Document.myfile` when URL-shaped. If `myfile` can be attacker-controlled, server-side fetch of internal URLs.
-- **Impact:** SSRF if document URLs are writable by untrusted parties.
+- **Status:** Open\*
 
 ### 9.7 Critical — `/delete_action` deletes arbitrary table rows for any logged-in staff
-- **Files:** `routes/web.php` (~123); `CRMUtilityController.php` (~697–843); used by Admin Console JS (`matter.js`, `document-checklist.js`)
-- **What goes wrong:** Under `auth:admin` only (no role/table allowlist in the default branch). Client supplies `table` + `id`; else-branch does `DB::table($table)->where('id', $id)->delete()`.
-- **Impact:** Any authenticated staff can destroy matters, checklists, staff rows, etc.
+- **Status:** Partial
+- **Files:** `CRMUtilityController::deleteAction`
+- **Now:** Default branch uses an allowlist (matters, workflows, branches, templates, checklists, etc.). No longer fully arbitrary, but allowlisted hard-deletes remain too powerful for normal authenticated staff.
 
 ### 9.8 Critical — `/move_action` arbitrary column zeroing
-- **Files:** `routes/web.php` (~124); `CRMUtilityController.php` (~365–389)
-- **What goes wrong:** No `viewerCanMutateAnyRecord` check. Sets `$requestData['col'] = 0` on any existing table/id.
-- **Impact:** Mass data corruption across arbitrary tables.
+- **Status:** Partial
+- **Files:** `CRMUtilityController::moveAction`
+- **Now:** Column allowlist (`status`, `is_active`, `is_archive`, `is_trash`) + role/super-admin style gate. Residual: still broad table targeting for authorized roles.
 
 ### 9.9 High — `/update_action` arbitrary column toggle (super-admin path)
-- **Files:** `CRMUtilityController.php` (~291–326); `public/js/adminconsole/staff.js` (~547–561)
-- **What goes wrong:** For effective super-admins, updates `$requestData['col']` on any `$requestData['table']` with no column allowlist. Non–super-admin Admin Console roles get “not authorized” so staff status toggle fails for them.
-- **Impact:** Super-admin can toggle arbitrary columns; roles 12/17 cannot toggle staff active/inactive via UI.
+- **Status:** Open\*
 
 ### 9.10 Medium — `PythonService::mergePdfs` uses invalid HTTP attach API
-- **Files:** `PythonService.php` (~100–114)
-- **What goes wrong:** Builds a multipart array then calls `Http::attach($multipart)`. Laravel’s `attach($name, $contents, $filename)` expects scalar args → merge requests fail/malform.
-- **Impact:** PDF merge integration broken when called.
+- **Status:** Open\*
 
 ### 9.11 Medium — Device token reassignment across users
-- **Files:** `StaffApiAuthController.php` (~215–226)
-- **What goes wrong:** Existing `device_token` row is reassigned to the newly logging-in staff with no ownership check.
-- **Impact:** Push notifications can be hijacked by presenting another device’s token.
+- **Status:** Open\*
 
 ### 9.12 High — Staff API login leaves orphan Sanctum tokens on refresh-token failure
-- **Files:** `StaffApiAuthController.php` (~55–86)
-- **What goes wrong:** `$staff->createToken(...)` runs before refresh-token insert. On DB failure the API returns 500 but the Sanctum personal access token remains valid.
-- **Impact:** Partial login / orphaned valid API credentials.
+- **Status:** Open\*
 
 ### 9.13 High — Staff API login has no rate limiting / lockout
-- **Files:** `StaffApiAuthController.php` (~26–53); `routes/api.php` (~18)
-- **What goes wrong:** `POST /api/admin-login` has no throttle (unlike web login’s RateLimiter).
-- **Impact:** Online password spraying against staff accounts.
+- **Status:** Fixed
+- **Files:** `routes/api.php`
+- **Now:** `POST /api/admin-login` has `throttle:5,1`.
 
 ---
 
 ## Area 10 — Authentication & Authorization (supplement)
 
 ### 10.1 Critical — Plaintext password stored in “Remember Me” cookie
-- **Files:** `AdminLoginController.php` (~112–114); `resources/views/auth/admin-login.blade.php` (~26–40, 57)
-- **What goes wrong:** On successful login with `remember` set, cookies named `email` and `password` store the submitted plaintext password; the login view reads them back into the password input.
-- **Impact:** Credential secrecy defeated (XSS on login page, shared browsers, cookie theft).
+- **Status:** Fixed
+- **Files:** `AdminLoginController::authenticated`
+- **Now:** Only queues `email` cookie; explicitly forgets `password` cookie.
 
 ### 10.2 Critical — reCAPTCHA runs after authentication; failed captcha leaves session logged in
-- **Files:** `AdminLoginController.php` (~54–58, 88–109)
-- **What goes wrong:** `attemptLogin()` succeeds and session is regenerated **before** `authenticated()` verifies reCAPTCHA. On captcha failure the method redirects with an error but **does not log the user out**.
-- **Impact:** Captcha is not an effective login gate; valid password alone establishes a usable admin session.
+- **Status:** Fixed
+- **Files:** `AdminLoginController::login`
+- **Now:** `verifyRecaptcha()` runs before `attemptLogin()`.
 
 ### 10.3 High — Inactive staff can still log in via web CRM
-- **Files:** `AdminLoginController.php` (~66–71); contrast `StaffApiAuthController.php` (~43–46) which requires `status = 1`
-- **What goes wrong:** Web login only calls `Auth::guard('admin')->attempt(email/password)` with no active-status filter.
-- **Impact:** Deactivated staff retain CRM access through the web UI.
+- **Status:** Fixed
+- **Files:** `AdminLoginController::attemptLogin`
+- **Now:** Credentials include `status => 1`.
 
 ### 10.4 Medium — Login response enumerates valid emails
-- **Files:** `AdminLoginController.php` (~131–139)
-- **What goes wrong:** Failed login returns `"Wrong password"` when the email exists in `staff`, vs generic failure otherwise.
-- **Impact:** Confirms account existence.
+- **Status:** Open\*
 
 ### 10.5 Medium — Logout audit user id taken from request body, not session
-- **Files:** `AdminLoginController.php` (~158–168); `resources/views/layouts/app.blade.php` (~63–65)
-- **What goes wrong:** `$user = $request->id` logs whatever `id` the client posts instead of `Auth::guard('admin')->id()`.
-- **Impact:** Audit logs can be forged / mis-attributed.
+- **Status:** Open\*
 
 ### 10.6 Medium — Quick access grant check-then-create race
-- **Files:** `CrmAccessService.php` (~159–203, 344–355); `AccessGrantController.php` (~47–78)
-- **What goes wrong:** `hasDuplicateActiveQuickGrant()` then `create()` is not transactional/locked.
-- **Impact:** Concurrent requests can create multiple active quick grants for the same staff+record.
+- **Status:** Open\*
 
 ### 10.7 Critical — Module authorization query hits non-existent `usertype` column
-- **Files:** `app/Http/Controllers/Controller.php` (~253–276); used by `StaffController.php`, `UserroleController.php`
-- **What goes wrong:** `checkAuthorizationAction()` runs `UserRole::where('usertype', $role)`. Live `user_roles` columns are only `id, name, description, module_access` (no `usertype`). Staff `role` is FK to `user_roles.id`. For non–Super-Admin actors this throws SQL error instead of allowing/denying.
-- **Impact:** Role 12/17 (or any non-bypassed role) hits 500 on Staff create/edit/store/update or User Roles actions. Even if column were fixed, helper treats `module_access` as controller name strings while CRM uses numeric module keys — wrong allow/deny.
+- **Status:** Fixed
+- **Files:** `Controller::checkAuthorizationAction`
+- **Now:** Uses `UserRole::find($role)` and numeric/`module_access` key matching.
 
 ### 10.8 High — Any successful staff save can assign Super Admin role
-- **Files:** `StaffController.php` (~387–398); staff form partials (~124–128)
-- **What goes wrong:** `fillStaffFromRequest()` sets `$obj->role` from the request with no restriction. Role dropdown includes Super Admin id `1`. `grant_super_admin_access` is gated, but permanent `role = 1` is not.
-- **Impact:** Permanent privilege escalation via staff create/update.
+- **Status:** Open\*
 
 ### 10.9 High — Invited staff tab returns all staff
-- **Files:** `StaffController.php` (~335–339)
-- **What goes wrong:** `'invited' => Staff::query()` has no invite/status filter.
-- **Impact:** Invited tab lists every staff row, not invitees.
+- **Status:** Open\*
 
 ### 10.10 Medium — Staff timezone endpoint lacks module authorization
-- **Files:** `StaffController.php` (~294–312); `routes/adminconsole.php` (~168)
-- **What goes wrong:** `savezone` only requires `auth:admin` (+ adminconsole middleware). Any Admin Console user can set any staff member’s `time_zone` by `user_id`.
-- **Impact:** Cross-staff timezone mutation.
+- **Status:** Open\*
 
 ---
 
 ## Area 11 — Dashboard (supplement)
 
 ### 11.1 High — Matter stage update has no authorization / ownership check (IDOR)
-- **Files:** `DashboardController.php` (~85–97); `DashboardService.php` (~437–448)
-- **What goes wrong:** Any authenticated staff can set `workflow_stage_id` on **any** `client_matters` row by `item_id`.
-- **Impact:** Cross-team matter stage tampering.
+- **Status:** Partial
+- **Files:** `DashboardService::updateClientMatterStage`
+- **Now:** Non–all-matters viewers must be assigned on the matter or pass `canAccessClientOrLead`. Viewers who “see all matters/actions” can still update broadly.
 
 ### 11.2 High — Action complete / deadline extend have no access checks (IDOR)
-- **Files:** `DashboardController.php` (~138–190); `DashboardService.php` (~520–586)
-- **What goes wrong:** `extendNoteDeadline` / `updateActionCompleted` update notes by id/group with no assignee/owner/client access check.
-- **Impact:** Complete or extend another user’s actions.
+- **Status:** Open\* (assignee destroy side fixed in #7.1; dashboard complete/extend still confirm)
 
 ### 11.3 High — Dashboard matter list bypasses allocation for most roles
-- **Files:** `DashboardService.php` (~57–95, 236–251)
-- **What goes wrong:** `applyRoleBasedFiltering` only restricts roles `12`, `13`, `16`. Other non–super-admin roles get **no** matter filter.
-- **Impact:** Firm-wide matters shown despite allocation elsewhere.
+- **Status:** Open\*
 
 ### 11.4 Medium — Active/closed matter counters are global, not viewer-scoped
-- **Files:** `DashboardService.php` (~257–286)
-- **What goes wrong:** Counts cache firm-wide totals with no staff filter.
-- **Impact:** Leaks org-wide volume to every dashboard user.
+- **Status:** Open\*
 
 ### 11.5 Medium — Visa expiry message endpoint lacks client access check
-- **Files:** `DashboardController.php` (~215–223); `DashboardService.php` (~632–636)
-- **What goes wrong:** `getVisaExpiryMessage($clientId)` reads visa data for any `client_id` without access check.
-- **Impact:** Cross-client visa data disclosure.
+- **Status:** Open\*
 
 ---
 
 ## Area 12 — Clients / Leads (supplement)
 
 ### 12.1 High — Note delete/pin via GET (CSRF-friendly state change)
-- **Files:** `routes/clients.php` (~135, 142); `ClientNotesController.php` (~447–510)
-- **What goes wrong:** Destructive note actions are `GET` routes, bypassing CSRF.
-- **Impact:** Crafted link while a staff session is open can delete/pin notes.
+- **Status:** Open\*
 
 ### 12.2 High — Global client search returns PII for inaccessible records
-- **Files:** `ClientsController.php` (~2861–3230, 3242–3261); `StaffClientVisibility.php` (~170–197)
-- **What goes wrong:** `getallclients` searches all clients/leads; `enrichGlobalSearchItem` only sets `locked` — it does **not** redact name/email/phones.
-- **Impact:** Allocation bypassed for discovery/PII via header search.
+- **Status:** Open\*
 
 ### 12.3 High — Parents/siblings/others save via `saveSection` fatals on PHP 8
-- **Files:** `ClientPersonalDetailsController.php` (~1916–1921 vs ~6053, 6198, 6333)
-- **What goes wrong:** `saveSection` calls `saveParentsInfoSection($request, $client)` (2 args) but those methods only accept `Request $request`. On PHP 8.3 → `ArgumentCountError`.
-- **Impact:** Those sections cannot save through the primary AJAX path.
+- **Status:** Fixed
+- **Files:** `ClientPersonalDetailsController`
+- **Now:** `saveParentsInfoSection(Request $request, $client = null)` accepts the second arg.
 
 ### 12.4 High — Hardcoded AusPost AUTH-KEY in source
-- **Files:** `ClientPersonalDetailsController.php` (~122–134)
-- **What goes wrong:** Live API key string is embedded in code and sent on every `updateAddress` call.
-- **Impact:** Credential leak / API abuse.
+- **Status:** Fixed
+- **Files:** `ClientPersonalDetailsController::updateAddress`
+- **Now:** Uses `config('services.auspost.auth_key')` / `env('AUSPOST_AUTH_KEY')`.
 
 ### 12.5 High — Legacy test-score update has no access check + null deref
-- **Files:** `ClientsController.php` (~1967–1987); `routes/clients.php` (~47)
-- **What goes wrong:** `editTestScores` deletes/recreates scores for any `client_id` without access check; also reads `$client->type` before null guard.
-- **Impact:** Cross-client score mutation; 500 on bad id.
+- **Status:** Open\*
 
 ### 12.6 Medium — Contact match / uniqueness endpoints leak existence/PII
-- **Files:** `LeadController.php` (~2016–2127); `routes/web.php` (~204)
-- **What goes wrong:** `is_email_unique`, `is_contactno_unique`, `checkContactMatch` query all clients/leads with no allocation filter. Phone uniqueness uses `LIKE '%contact%'` (false positives).
-- **Impact:** Account/contact enumeration; blocked valid creates on substring matches.
+- **Status:** Open\*
 
 ### 12.7 Low — `POST /clients/edit` (`clients.update`) cannot receive route `{id}`
-- **Files:** `routes/clients.php` (~41–42); `ClientsController.php` (~1930–1960)
-- **What goes wrong:** Named update route has no `{id}` parameter, so native form POST hits `edit($id = null)` and redirects unauthorized. JS save-section avoids this; full form submit remains broken.
-- **Impact:** Non-AJAX edit form submit fails.
+- **Status:** Open\*
 
 ---
 
 ## Area 13 — Matters / Documents / Email / Assignee (supplement)
 
 ### 13.1 High — Empty `unique_group_id` can mass-complete actions
-- **Files:** `AssigneeController.php` (~97–101)
-- **What goes wrong:** Defaults `unique_group_id` to `''`, then `where('unique_group_id', '')` + `whereNotNull('unique_group_id')`. Empty string is not NULL, so **all** notes with `unique_group_id = ''` and an assignee get `status = 1`.
-- **Impact:** Mass unintended action completion.
+- **Status:** Open\*
 
 ### 13.2 High — Complete/reopen any action by id (no assignee/assigner check)
-- **Files:** `AssigneeController.php` (~93–105, ~164–170, ~746–775)
-- **What goes wrong:** `updateActionCompleted` / `updateAction` can complete any note by id with no check that actor is assignee, assigner, or admin.
-- **Impact:** Cross-user action completion (in addition to destroy IDOR in #7.1).
+- **Status:** Partial
+- **Notes:** Destroy paths use `authorizeNoteManagement` (#7.1). Complete/reopen paths still need confirm.
 
 ### 13.3 High — Signature associate accepts matter from another client
-- **Files:** `SignatureDashboardController.php` (~843–858); `SignatureService.php` (~475–486)
-- **What goes wrong:** Validates `matter_id` exists in `client_matters`, not that it belongs to `entity_id`.
-- **Impact:** Document attached to client A with client B’s matter id.
+- **Status:** Open\*
 
 ### 13.4 High — Manual email upload does not verify matter belongs to client
-- **Files:** `EmailUploadController.php` (~513–517, ~608–649)
-- **What goes wrong:** Uses `upload_*_mail_client_matter_id` as-is after client access check only. Smart import correctly checks via `matterBelongsToClient`.
-- **Impact:** Cross-client matter linkage / wrong filing.
+- **Status:** Open\*
 
 ### 13.5 Medium — Checklist stage resolved by name only (cross-workflow collision)
-- **Files:** `ClientMatterHubController.php` (~1539–1540)
-- **What goes wrong:** `workflow_stages` looked up by `name` alone. Duplicate stage names across workflows attach the wrong `wf_stage_id`.
-- **Impact:** Wrong checklist stage binding when names collide (e.g. `"New"`).
+- **Status:** Open\*
 
 ### 13.6 Medium — Reopen request null-deref on missing matter type
-- **Files:** `ClientMatterHubController.php` (~885, ~964)
-- **What goes wrong:** `Matter::find($clientMatter->sel_matter_id)->title` — if `sel_matter_id` is null/orphan, property access throws.
-- **Impact:** Reopen request/approve notifications fail.
+- **Status:** Open\*
 
 ### 13.7 Medium — Admin `submitSignatures` requires constructed S3 key (breaks URL-based docs)
-- **Files:** `DocumentController.php` (~2042–2057)
-- **What goes wrong:** Builds `$s3Key` from admin `client_id` + `doc_type` + `myfile_key` with no null/URL fallback (public path has fallbacks).
-- **Impact:** Staff signing fails for docs stored only via full `myfile` URL / missing `myfile_key`.
+- **Status:** Open\*
 
 ### 13.8 Medium — `getClientMatters` / `suggestAssociation` leak client–matter graph
-- **Files:** `SignatureDashboardController.php` (~737–830)
-- **What goes wrong:** No `ensureCrmRecordAccess` on client id / email lookup; returns matters for any client id or email match.
-- **Impact:** Cross-client matter graph disclosure.
+- **Status:** Open\*
 
 ### 13.9 Medium — SMS template `usage_count` incremented before send succeeds
-- **Files:** `UnifiedSmsManager.php` (~245–252)
-- **What goes wrong:** `increment('usage_count')` runs before `sendSms()`. Failed sends still inflate usage; delete guard then blocks deleting unused-but-failed templates.
-- **Impact:** Inflated usage stats; templates stuck undeleteable.
+- **Status:** Open\*
 
 ### 13.10 Medium — Non-delivered SMS status clears `delivered_at`
-- **Files:** `SmsWebhookController.php` (~36–39, ~87–90); `UnifiedSmsManager.php` (~400–404)
-- **What goes wrong:** Updates set `'delivered_at' => in_array($status, ['delivered']) ? now() : null`. Later `sent`/`queued` callbacks wipe a previously set delivery timestamp.
-- **Impact:** Lost delivery evidence after out-of-order callbacks.
+- **Status:** Open\*
 
 ### 13.11 Medium — Workflow stages can be created with `workflow_id = null`
-- **Files:** `WorkflowController.php` (~275–279, ~354–368)
-- **What goes wrong:** If `workflow_id` omitted and no workflow named exactly `General` exists, stages insert with `workflow_id = null`.
-- **Impact:** Orphaned stages detached from all workflows.
+- **Status:** Open\*
 
 ### 13.12 Medium — Matter / first-email templates saved with no validation
-- **Files:** `MatterEmailTemplateController.php` (~58–80, ~110–132)
-- **What goes wrong:** `store`/`update` accept unsanitized fields with no `validate()`; `matter_id` not checked against `matters`.
-- **Impact:** Empty/invalid templates persist; bad matter links.
+- **Status:** Open\*
 
 ---
 
 ## Area 14 — Trust / Financial / Booking (supplement)
 
 ### 14.1 Critical — Trust void excludes original and also posts a reversing entry (double impact)
-- **Files:** `ClientAccountsController.php` (~5106–5168, helpers ~67–115); `TrustLedgerBalanceService.php` (~13–48); `TrustReportQueryService.php` (~19–31)
-- **What goes wrong:** Void path sets `trust_voided_at` on the original (excluded from balances/reports) **and** inserts a swap deposit/withdraw reversal that still counts. Net change ≈ **−2×** original movement, not zero.
-- **Impact:** Trial balance, statements, journals, overdrawn report, and bank-recon lists corrupted.
+- **Status:** Fixed
+- **Files:** `TrustLedgerBalanceService`, `ClientAccountsController::trustLedgerRowExcludedFromBalance`
+- **Now:** Rows with `trust_voided_at` **or** `trust_reversal_of_entry_id` are excluded from balances/reports → void + reversal no longer double-counts.
 
 ### 14.2 High — EFTPOS surcharge added into trust deposit amount
-- **Files:** `ClientAccountsController.php` (~478–487, ~934–936)
-- **What goes wrong:** For trust `Deposit` + EFTPOS, `deposit_amount = principal + surcharge`. Surcharge is typically firm income, not client money.
-- **Impact:** Current Funds Held / trial balance overstated.
+- **Status:** Open\*
 
 ### 14.3 High — Allocating a deposit creates fee transfer for full deposit (no invoice cap)
-- **Files:** `ClientAccountsController.php` (~2803–2864, ~2902–2950)
-- **What goes wrong:** `updateClientFundLedger` withdraws the entire deposit as Fee Transfer without capping to invoice outstanding. Invoice can be overpaid; status forced to Paid with balance clamped to 0.
-- **Impact:** Over-allocation of trust to invoices.
+- **Status:** Open\*
 
 ### 14.4 High — Hard-delete of office/journal receipts does not recalculate invoice status
-- **Files:** `ClientAccountsController.php` (~5195–5228)
-- **What goes wrong:** Non-trust `delete_receipt` hard-deletes the row. If it was an office receipt applied to an invoice, invoice status/partial/balance stay stale.
-- **Impact:** Invoice can remain Paid with payments gone.
+- **Status:** Partial
+- **Notes:** Some delete paths now call `recalculateInvoiceStatusAndBalance` — confirm all office-receipt deletes covered.
 
 ### 14.5 High — Void invoice stores wrong `withdraw_amount_before_void`
-- **Files:** `ClientAccountsController.php` (~4454–4458)
-- **What goes wrong:** Saves `withdraw_amount_before_void` from `balance_amount` (outstanding), not the invoice total `withdraw_amount`.
-- **Impact:** Recovery/audit of voided invoice totals corrupted.
+- **Status:** Open\*
 
 ### 14.6 Medium — Invoice void does not reverse/unallocate office receipts
-- **Files:** `ClientAccountsController.php` (~4401–4636)
-- **What goes wrong:** Voids invoice and fee transfers only. Office receipts keep `invoice_no` pointing at a zeroed/voided invoice.
-- **Impact:** Money appears applied with no live invoice.
+- **Status:** Open\*
 
 ### 14.7 Medium — Office-receipt payment totals ignore `trust_voided_at` on fee transfers
-- **Files:** `ClientAccountsController.php` (~2039–2049, ~2436–2446)
-- **What goes wrong:** Fee-transfer sums for invoice status filter `void_fee_transfer` but not `trust_voided_at`.
-- **Impact:** Inconsistent paid/outstanding after trust voids.
+- **Status:** Partial
+- **Notes:** Fee-transfer sum paths observed filtering `trust_voided_at` in places; confirm all invoice status calculators.
 
 ### 14.8 Medium — Period lock uses strict `d/m/Y`; bad dates can bypass lock check
-- **Files:** `TrustPeriodService.php` (~27–45)
-- **What goes wrong:** `Carbon::createFromFormat('d/m/Y', $ddMmYyyy)` throws/mis-parses non-conforming `trans_date` values.
-- **Impact:** Locked period may not be enforced for malformed dates (or whole post fails inconsistently).
+- **Status:** Open\*
 
 ### 14.9 Critical — Unauthenticated booking API accepts `is_paid` / `payment_status=completed`
-- **Files:** `LeadBookingApiController.php` (~166–355); `routes/api.php` (~27–28)
-- **What goes wrong:** Public `POST /api/booking-appointments` allows callers to set `is_paid`, `payment_status`, `paid_at`, amounts, and status. Forces paid + `paid_at` when those flags are set. No auth.
-- **Impact:** Anyone can create “paid” appointments without payment.
+- **Status:** Partial
+- **Files:** `LeadBookingApiController::storeBookingAppointment`
+- **Now:** Unauthenticated callers force `is_paid=false`, `payment_status=pending`, and demote `status=paid` → `pending`. Authenticated admin callers can still set paid fields — confirm that is intentional.
 
 ### 14.10 High — Paid bookings created with `is_paid = true` before payment
-- **Files:** `PublicBookingController.php` (~652–655, ~748–755, ~987–990, ~1071–1078)
-- **What goes wrong:** For paid services (`service_id` 1/3), CRM sets `is_paid => true` while `payment_status` may still be `pending`. Also accepts request `payment_status === 'completed'` to set CRM `status = 'paid'` without a charge.
-- **Impact:** Appointments marked paid before Stripe succeeds.
+- **Status:** Open\*
 
 ### 14.11 High — `recordPaymentByIntent` weak ownership when metadata empty
-- **Files:** `StripePaymentService.php` (~409–444); used by public record-payment (~2659–2703)
-- **What goes wrong:** Metadata `appointment_id` is only checked if present. A succeeded PI of matching cent amount (currency not checked) can be attached to any unpaid appointment via unauthenticated `record-payment-without-login`.
-- **Impact:** Cross-appointment payment attachment / free booking abuse.
+- **Status:** Open
+- **Files:** `StripePaymentService::recordPaymentByIntent`
+- **Now:** Amount + AUD currency checked; metadata appointment match only enforced when metadata present. Empty metadata + matching cents can still attach a succeeded PI to another unpaid appointment.
 
 ### 14.12 High — Logged-in booking ignores Bansal slot-unavailable and still creates locally
-- **Files:** `PublicBookingController.php` (~682–718)
-- **What goes wrong:** On Bansal create failure, authenticated `addAppointment` always falls back to a temporary `bansal_appointment_id` and creates the CRM row. Guest flow aborts on slot conflicts; login flow does not.
-- **Impact:** Double-booked slots for authenticated users.
+- **Status:** Open\*
 
 ### 14.13 Medium — Duplicate-slot check is per-client only (race + multi-client)
-- **Files:** `PublicBookingController.php` (~582–594)
-- **What goes wrong:** Uniqueness is only same `client_id` + datetime; no DB lock across clients.
-- **Impact:** Two clients can book the same slot concurrently.
+- **Status:** Open\*
 
 ### 14.14 Medium — Client can self-complete appointments
-- **Files:** `PublicBookingController.php` (~1680–1734)
-- **What goes wrong:** Authenticated client may set status to `completed` with no staff confirmation / time check.
-- **Impact:** Premature completion without staff oversight.
+- **Status:** Open\*
 
 ### 14.15 Medium — Sync skip-on-existing never updates payment/status from website
-- **Files:** `AppointmentSyncService.php` (~140–143)
-- **What goes wrong:** Existing `bansal_appointment_id` always `skipped`. Website payment/status changes never refresh CRM via polling sync.
-- **Impact:** Stale paid/cancelled state in CRM.
+- **Status:** Open\*
 
 ### 14.16 Medium — Front-desk submit does not enforce “today” on appointment
-- **Files:** `FrontDeskCheckInController.php` (~187–194); contrast `CheckInAppointmentService.php` (~16–27)
-- **What goes wrong:** Comment says validate appointment is today; code only checks `client_id` match.
-- **Impact:** Past/future appointments can be linked / claimed at check-in.
+- **Status:** Open\*
 
 ### 14.17 Medium — Stored XSS in office-visit detail HTML
-- **Files:** `OfficeVisitController.php` (~284, ~390)
-- **What goes wrong:** `visit_purpose` and history `description` are echoed unescaped into HTML returned by `getcheckin`.
-- **Impact:** Script execution when viewing visit detail modal.
+- **Status:** Open\*
 
 ---
 
-## Cross-cutting summary
+## Cross-cutting summary (updated 2026-08-07)
 
-| Severity | Approx. count | Dominant themes |
-|----------|---------------|-----------------|
-| Critical | ~20+ | Merge survivor deleted; open signature routes; unsigned PDF download; wallet/booking pay without Stripe; open PaymentIntent + service-token APIs; `/delete_action`/`/move_action`; trust void double-count; fee-transfer phantom deposit; plaintext password cookie; reCAPTCHA bypass; `usertype` authz SQL break |
-| High | ~55+ | Widespread IDOR; CSRF mutating GETs; XSS; matter email wipe; SMS CSRF+unsigned; global search PII; PHP 8 parents save crash; privilege escalation via role assign |
-| Medium | ~40+ | Incomplete merge; races; null derefs; wrong stats; booking slot races; period lock; orphan stages |
-| Low / Suspected | ~12 | Directory disclosure; unfinished TODOs; product-intent edge cases |
+| Severity | Original count | Current take |
+|----------|----------------|--------------|
+| Critical | ~20+ | ~8–10 Fixed/Partial; remainder Open / Open\* |
+| High | ~55+ | Majority still Open\* (IDOR, CSRF, XSS dominant) |
+| Medium | ~40+ | Mostly Open\*; some Partial trust/booking improvements |
+| Low / Suspected | ~12 | Unchanged unless product confirms |
+
+### Dominant remaining themes
+1. Inconsistent CRM ACL (`canAccessClientOrLead` / `ensureCrmRecordAccess` not applied everywhere)
+2. Mutating GETs (CSRF)
+3. Stored XSS
+4. Trust races / money edge cases
+5. Booking payment metadata ownership
+6. Leftover public debug routes + over-broad utility deletes
 
 ---
 
-## Suggested fix priority (documentation only — not applied)
+## Suggested fix priority (documentation only — updated for current code)
 
-1. Stop storing passwords in cookies; verify reCAPTCHA **before** login / logout on failure; enforce `status = 1` on web login; fix `checkAuthorizationAction` (`usertype` → role id + real module ACL).
-2. Lock down `/delete_action` / `/move_action` / `/update_action` (table/column allowlists + role gates).
-3. Auth-wrap / remove public duplicate routes in `routes/documents.php`; token-gate `getPage` / `downloadSigned` / public reminder; fix agreement token overwrite.
-4. Invert merge delete target (`merge_from`); add access checks; move/relink matters & trust or block merge until complete.
-5. Fix wallet + public booking payment paths (verify Stripe; reject client-supplied `is_paid`); lock down PaymentIntent + service-account token endpoints.
-6. Fix fee-transfer residual deposit; trust void double-count; EFTPOS surcharge in trust; amount-only void fallback; add locking for trust posts.
-7. Add `canAccessClientOrLead` consistently to notes, tasks, document mutations, email preview/delete, dashboard mutates, assignee complete/destroy, convert paths; redact global search for locked rows.
-8. Change mutating GETs to POST + CSRF; except SMS webhooks from CSRF **and** add provider signature verification.
-9. Stop hard-deleting matter emails on discontinue; fix legacy `w_id` → `workflow_id`; fix `saveSection` parents/siblings signatures; empty-`unique_group_id` mass complete.
-10. Remove or gate debug routes; remove hardcoded AusPost key; gate Super Admin role assignment.
+1. **Booking / payments:** Require PI metadata `appointment_id` (or equivalent) always; close #14.11; audit #14.10 paid-before-charge paths.
+2. **Trust:** Confirm #6.1 closed with QA; fix void-by-amount fallback (#6.2); add locking for posts (#6.4); EFTPOS surcharge (#14.2); spoofable actor fields (#6.7).
+3. **ACL sweep:** Apply `canAccessClientOrLead` / `ensureCrmRecordAccess` to notes/tasks/docs/email preview-delete/dashboard/assignee complete/convert paths; redact locked global search (#12.2).
+4. **Utilities:** Further restrict `/delete_action` / `/update_action` (super-admin only + narrower allowlists) (#9.7–9.9).
+5. **Public surface:** Remove or auth-gate `/debug-pdf-page`; confirm signing token rules on all public doc routes (#4.1–4.5, #4.10).
+6. **CSRF:** Convert mutating GETs to POST + CSRF (#1.12, #12.1, #3.5, #1.13).
+7. **XSS:** Sanitize matter logs, assignee actions, office visits, EML HTML preview (#3.6, #7.2, #14.17, #4.6).
+8. **Matter email wipe:** Stop hard-deleting email history on discontinue (#3.3); fix legacy `w_id` (#3.4).
+9. **API / SMS:** Lead enumeration (#9.4); SMS webhook CSRF except + provider signatures (#9.3); gate Super Admin role assignment (#10.8).
+10. **Hygiene:** Remove/gate debug partner endpoints (#1.17); finish Open\* re-verification pass.
 
 ---
 
 ## Notes
 
-- This audit is **static** (code review). Runtime/QA confirmation is still recommended for Suspected items and money paths.
-- Vendor / TinyMCE TODOs in `public/js/tinymce/**` and bundler TODOs in `public/js/app.js` were excluded as third-party noise.
-- No code fixes were applied in this pass — findings only.
-- **Supplement (Areas 10–14):** Added after deeper parallel audits completed; covers Auth, Dashboard, Admin Console ACL, `/delete_action`, trust void double-count, booking payment spoofing, and related gaps not fully listed in Areas 1–9.
+- Original audit was **static** (2026-07-26). Re-verify on 2026-08-07 was also static + graphify orientation; runtime/QA still recommended for money paths and Suspected items.
+- **Open\*** means “not re-confirmed line-by-line on 2026-08-07” — assume still present until proven otherwise.
+- Vendor / TinyMCE TODOs in `public/js/tinymce/**` and bundler TODOs in `public/js/app.js` remain excluded as third-party noise.
+- No code fixes were applied in the 2026-08-07 documentation pass — status annotations only.
+- **Supplement (Areas 10–14):** Original deeper parallel audits; statuses updated where re-checked.
