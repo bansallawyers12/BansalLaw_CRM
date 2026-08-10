@@ -335,10 +335,14 @@ Status key (2026-08-07):
 - **Now:** Updated `staffSignature()` in `ComposeSendersController.php` to strictly query and return the signature of the authenticated staff member (`$authUser->id`), eliminating cross-user signature exposure when selecting arbitrary sender addresses.
 
 ### 5.5 Suspected / Medium — Closing matter + email wipe interacts badly with synced inbox
-- **Status:** Open\* (depends on #3.3)
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`deleteEmailConversationsForMatter`)
+- **Now:** Verified that `deleteEmailConversationsForMatter()` is deprecated and disabled (`return;`), preserving email history and preventing synced inbox disruption when matters are discontinued or completed.
 
 ### 5.6 Low — Compose senders list exposes all active Zoho/SES From addresses
-- **Status:** Open\* (may be intentional)
+- **Status:** Fixed
+- **Files:** `ComposeSendersController.php` (`getZohoComposeSenders`)
+- **Now:** Filtered the compose senders list so non-superadmin staff users only see Zoho email accounts assigned to their `user_id` or shared firm accounts (`user_id` null/0), preventing unauthorized exposure of other staff members' private senders.
 
 ---
 

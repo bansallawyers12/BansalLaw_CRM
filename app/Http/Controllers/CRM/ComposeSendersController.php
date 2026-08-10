@@ -77,14 +77,25 @@ class ComposeSendersController extends Controller
 
     private function getZohoComposeSenders(): array
     {
-        return Email::query()
+        $query = Email::query()
             ->where('status', true)
             ->where(function ($q) {
                 $q->where('mail_provider', 'zoho')
                     ->orWhereNull('mail_provider')
                     ->orWhere('mail_provider', '');
-            })
-            ->orderBy('email')
+            });
+
+        $user = auth('admin')->user();
+        if ($user && empty($user->role)) {
+            // For non-superadmin staff, restrict Zoho accounts to those assigned to them or unassigned/shared
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereNull('user_id')
+                    ->orWhere('user_id', 0);
+            });
+        }
+
+        return $query->orderBy('email')
             ->get()
             ->map(function (Email $account) {
                 return [
