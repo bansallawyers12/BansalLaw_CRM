@@ -50,7 +50,11 @@ class UnassignedEmailAssignmentService
 
         $user = Auth::guard('admin')->user();
         if ($user && ! StaffClientVisibility::canAccessClientOrLead($clientId, $user)) {
-            return ['success' => false, 'message' => 'Unauthorized access to client.'];
+            return ['success' => false, 'message' => 'Unauthorized access to target client.'];
+        }
+
+        if ($user && $isReassigning && $previousClientId > 0 && ! StaffClientVisibility::canAccessClientOrLead($previousClientId, $user)) {
+            return ['success' => false, 'message' => 'Unauthorized access to current assigned client.'];
         }
 
         $client = Admin::query()->where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();

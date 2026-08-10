@@ -306,18 +306,23 @@ Status key (2026-08-07):
 - **Now:** Added null-safe checks on `$admin` row lookups and `$data->client_id` during document deletion in `deletedocs()`, preventing null dereference errors when client or admin database records are missing.
 
 ### 4.10 Medium — Doc-to-PDF debug endpoints unauthenticated
-- **Status:** Partial
-- **Now:** Doc-to-pdf admin utilities are behind `auth:admin`. `/debug-pdf-page/{id}/{page}` still public.
+- **Status:** Fixed
+- **Files:** `routes/documents.php`
+- **Now:** All doc-to-pdf admin utility endpoints (`/doc-to-pdf`, `/doc-to-pdf/convert`, `/doc-to-pdf/test`, `/doc-to-pdf/test-python`, `/doc-to-pdf/debug`) and `/debug-pdf-page/{id}/{page}` are strictly registered inside the `auth:admin` middleware group, ensuring zero unauthenticated debug access.
 
 ---
 
 ## Area 5 — Email integration
 
 ### 5.1 High — Email label apply skips client-access check (remove has it)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `EmailLabelController.php`
+- **Now:** Verified and enforced `ensureCrmRecordAccessForOptionalClientId` in both `apply()` and `remove()` in `EmailLabelController.php`, guaranteeing staff client record access validation before applying or removing email labels.
 
 ### 5.2 High — Assignment service can reassign already-assigned mail to another client
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `UnassignedEmailAssignmentService.php` (`assignToClient`)
+- **Now:** Enforced `allowReassign` flag validation and added explicit `StaffClientVisibility::canAccessClientOrLead($previousClientId, $user)` access check prior to reassigning an email from one client to another, preventing unauthorized cross-client email reassignment.
 
 ### 5.3 Medium — Orphan email attachments skip access gate
 - **Status:** Open\*
