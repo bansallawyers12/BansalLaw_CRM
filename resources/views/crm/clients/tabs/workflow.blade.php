@@ -426,7 +426,22 @@
             });
         }
 
-        // Workflow tab: Change Workflow button - opens modal
+        // Workflow tab: Change Workflow button - opens modal (must stack above Update Stage when nested)
+        function stackChangeWorkflowModalOnTop() {
+            var modalEl = document.getElementById('change-workflow-modal');
+            if (!modalEl || !modalEl.classList.contains('show')) return;
+            var updateStage = document.getElementById('cdn-update-stage-modal');
+            var nested = updateStage && updateStage.classList.contains('show');
+            if (!nested && document.querySelectorAll('.modal.show').length < 2) return;
+            modalEl.style.zIndex = '1085';
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length) {
+                var topBackdrop = backdrops[backdrops.length - 1];
+                topBackdrop.classList.add('change-workflow-backdrop-stack');
+                topBackdrop.style.zIndex = '1080';
+            }
+        }
+
         var changeWorkflowBtn = document.getElementById('workflow-tab-change-workflow');
         if (changeWorkflowBtn) {
             changeWorkflowBtn.addEventListener('click', function() {
@@ -438,7 +453,18 @@
                 if (select && currentWorkflowId) {
                     select.value = currentWorkflowId;
                 }
-                $('#change-workflow-modal').modal('show');
+                var $modal = $('#change-workflow-modal');
+                $modal.off('shown.bs.modal.stackFix').one('shown.bs.modal.stackFix', stackChangeWorkflowModalOnTop);
+                $modal.off('hidden.bs.modal.stackFix').one('hidden.bs.modal.stackFix', function() {
+                    this.style.zIndex = '';
+                    document.querySelectorAll('.modal-backdrop.change-workflow-backdrop-stack').forEach(function(el) {
+                        el.classList.remove('change-workflow-backdrop-stack');
+                        el.style.zIndex = '';
+                    });
+                });
+                $modal.modal('show');
+                // Also apply immediately — BS backdrop timing can race with shown event
+                setTimeout(stackChangeWorkflowModalOnTop, 10);
             });
         }
         var changeWorkflowSubmit = document.getElementById('change-workflow-submit');

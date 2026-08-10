@@ -212,9 +212,9 @@ Severity key:
 - **Now:** Removed automatic email history deletion on matter discontinue/completion (`deleteEmailConversationsForMatter` disabled), ensuring email history is preserved for audit and legal compliance.
 
 ### 3.4 High — Legacy stage APIs query non-existent `w_id` column
-- **Files:** `ClientMatterHubController.php` (~109–186, ~1196–1204, ~1441–1442); `app/Models/WorkflowStage.php` (fillable: `workflow_id` only)
-- **What goes wrong:** Legacy `updatestage` / `updatebackstage` / `getMatterLogs` / `revertMatter` filter with `where('w_id', ...)`. Schema has `workflow_id`, not `w_id`. Stage advancement also orders by `id` instead of `sort_order` in places.
-- **Impact:** SQL errors or incorrect stage behavior when workflow id is present.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`updatestage`, `updatebackstage`, `completestage`)
+- **Now:** Verified all legacy stage endpoints filter by `workflow_id` on `workflow_stages` (and use `COALESCE(sort_order, id)`), with no queries targeting non-existent `w_id` column.
 
 ### 3.5 High — Legacy stage/complete routes are GET and mutate state
 - **Files:** `routes/matter_workflow.php` (~12–14)
