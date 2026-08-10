@@ -950,15 +950,24 @@ class SignatureDashboardController extends Controller
         try {
             $documents = Document::whereIn('id', $ids)->notArchived()->get();
             $archivedCount = 0;
+            $skipped = 0;
             foreach ($documents as $doc) {
                 if (!empty($doc->client_id)) {
                     $this->ensureCrmRecordAccess((int) $doc->client_id);
                 }
-                $doc->update(['status' => 'archived']);
-                $archivedCount++;
+                if (Auth::guard('admin')->user()->can('archive', $doc)) {
+                    $doc->update(['status' => 'archived']);
+                    $archivedCount++;
+                } else {
+                    $skipped++;
+                }
             }
             
-            return back()->with('success', "Successfully archived {$archivedCount} document(s)");
+            $message = "Successfully archived {$archivedCount} document(s)";
+            if ($skipped > 0) {
+                $message .= " ({$skipped} skipped due to permissions)";
+            }
+            return back()->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to archive documents: ' . $e->getMessage());
         }
@@ -985,6 +994,9 @@ class SignatureDashboardController extends Controller
             $skipped = 0;
             
             foreach ($documents as $doc) {
+                if (!empty($doc->client_id)) {
+                    $this->ensureCrmRecordAccess((int) $doc->client_id);
+                }
                 // Check authorization using Gate instead of policy directly
                 if ($staff->can('void', $doc)) {
                     if ($this->signatureService->void($doc, $request->reason)) {
@@ -1018,19 +1030,27 @@ class SignatureDashboardController extends Controller
         $request->validate(['ids' => 'required|array|min:1']);
         
         try {
+            $staff = Auth::guard('admin')->user();
             $documents = Document::with('signers')->whereIn('id', $ids)->get();
             $sent = 0;
             $skipped = 0;
             
             foreach ($documents as $doc) {
-                foreach ($doc->signers as $signer) {
-                    if ($signer->status === 'pending') {
-                        if ($this->signatureService->remind($signer)) {
-                            $sent++;
-                        } else {
-                            $skipped++;
+                if (!empty($doc->client_id)) {
+                    $this->ensureCrmRecordAccess((int) $doc->client_id);
+                }
+                if ($staff->can('sendReminder', $doc)) {
+                    foreach ($doc->signers as $signer) {
+                        if ($signer->status === 'pending') {
+                            if ($this->signatureService->remind($signer)) {
+                                $sent++;
+                            } else {
+                                $skipped++;
+                            }
                         }
                     }
+                } else {
+                    $skipped++;
                 }
             }
             
