@@ -87,7 +87,7 @@
             <button class="preview-close" id="closePreviewBtn">&times;</button>
         </div>
         <div class="preview-modal-body">
-            <iframe id="previewFrame" src=""></iframe>
+            <iframe id="previewFrame" src="" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email preview"></iframe>
         </div>
     </div>
 </div>

@@ -258,42 +258,40 @@ Severity key:
 
 ---
 
-## Area 4 — Documents & E-Signatures
-
 ### 4.1 Critical — Signature dashboard & related routes registered outside `auth:admin`
-- **Files:** `routes/documents.php` (~41–80 unauthenticated block; second copy inside auth ~211–303); `web.php` loads documents routes
-- **What goes wrong:** First registrations for `/signatures/*`, `/clients/{id}/matters`, doc-to-pdf, and `/debug-pdf-page/{id}/{page}` have **no** auth middleware. Laravel matches the first route.
-- **Impact:** Unauthenticated callers can hit signature admin actions and client-matters API.
+- **Status:** Fixed
+- **Files:** `routes/documents.php`
+- **Now:** All admin signature, doc-to-pdf, and `/debug-pdf-page/{id}/{page}` routes are registered inside the `auth:admin` middleware group, preventing unauthenticated access to signature tools or PDF page renders.
 
 ### 4.2 Critical — Public PDF page render with no signing token
-- **Files:** `routes/documents.php` (~182–183); `PublicDocumentController::getPage` (~859–1059); also unauthenticated `/debug-pdf-page/{id}/{page}` (~85–161)
-- **What goes wrong:** Anyone who knows a document ID can render PDF pages. Pages may also be cached under `storage/app/public/pdf_pages/` (world-readable if `storage:link` exists).
-- **Impact:** Public document content disclosure.
+- **Status:** Fixed
+- **Files:** `PublicDocumentController::getPage`
+- **Now:** Enforces valid signer `token` validation in `PublicDocumentController::getPage()` or an active admin session, and all debug routes (`/debug-pdf-page`) are enclosed inside `auth:admin`.
 
 ### 4.3 Critical — Public signed-document download with no token
-- **Files:** `routes/documents.php` (~189–190); `PublicDocumentController::downloadSigned` (~1068–1128)
-- **What goes wrong:** `/documents/{id}/download-signed` serves/redirects the signed PDF with only the numeric ID — no token, no auth. Same pattern for download-and-thankyou path.
-- **Impact:** Anyone with a document ID can download signed PDFs.
+- **Status:** Fixed
+- **Files:** `PublicDocumentController::downloadSigned`, `PublicDocumentController::downloadSignedAndThankyou`
+- **Now:** Enforces valid signer `token` or active admin session checks on both `downloadSigned()` and `downloadSignedAndThankyou()`, blocking unauthenticated tokenless downloads.
 
 ### 4.4 Critical — Agreement signing accepts/overwrites arbitrary token
-- **Files:** `PublicDocumentController::sign` (~61–67); `DocumentController::sendSigningLink` (~1436–1443)
-- **What goes wrong:** For `doc_type == 'agreement'`, a pending signer’s token is **replaced** with whatever token appears in the URL (if format-valid). Sending also accepts client-supplied `pdf_sign_token`.
-- **Impact:** Attacker with document ID can mint a link and take over signing.
+- **Status:** Fixed
+- **Files:** `PublicDocumentController::sign`, `DocumentController.php`
+- **Now:** Validated URL token lookups on public signing views and updated `DocumentController.php` to generate cryptographically secure server-side tokens (`Str::random(64)`), completely eliminating client-supplied `pdf_sign_token` overwrites.
 
 ### 4.5 Critical — Unauthenticated public reminder send
-- **Files:** `routes/documents.php` (~199–200); `PublicDocumentController::sendReminder` (~1253–1288)
-- **What goes wrong:** Public POST can trigger signing reminders for any document/signer with no auth/token proof.
-- **Impact:** Spam / harassment / info leak via email.
+- **Status:** Fixed
+- **Files:** `PublicDocumentController::sendReminder`
+- **Now:** Verified `PublicDocumentController::sendReminder()` strictly enforces token validation (`$signer->token === $token`) or active admin session authorization, preventing unauthenticated public reminder triggering.
 
 ### 4.6 High — Stored XSS via EML HTML preview
-- **Files:** `ClientDocumentsController.php` `extractHtmlFromEml` / `decodeEmlPart` (~2476–2519); used in `preview_document` (~2378–2389)
-- **What goes wrong:** HTML parts of `.eml` files are returned as `text/html` without sanitization.
-- **Impact:** Malicious email content stored as a document executes in staff browsers.
+- **Status:** Fixed
+- **Files:** `emails.js`, `emails_outlook.blade.php`, `emails.blade.php`, `emails_lead.blade.php`
+- **Now:** Enforced HTML iframe sandboxing (`sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"`) across all EML/MSG and synced email body preview renderers, preventing stored XSS script execution while preserving rich HTML email rendering.
 
 ### 4.7 High — Legal form update mass-assignment / IDOR
-- **Files:** `LegalFormsController.php` `update` (~195–232); `ClientLegalForm` fillable includes `client_id`, `pdf_path`, trust account fields, `is_uploaded`, etc.
-- **What goes wrong:** `$data = $request->all()` then `$legalForm->update($data)` allows rewriting client association, paths, trust BSB/account, form type, etc. No `StaffClientVisibility` on show/destroy/download either.
-- **Impact:** Ownership hijack / trust details rewrite / path manipulation.
+- **Status:** Fixed
+- **Files:** `LegalFormsController.php`
+- **Now:** Excluded immutable fields (`client_id`, `client_matter_id`, `pdf_path`, `is_uploaded`, `form_type`, `created_by`, etc.) in `update()` and enforced `ensureCrmRecordAccess((int) $legalForm->client_id)` across all CRUD methods (`show`, `update`, `destroy`, `downloadDocx`, `downloadAttachment`, `uploadAttachment`), resolving mass-assignment and IDOR vulnerabilities.
 
 ### 4.8 High — Signature bulk archive has no authorization
 - **Files:** `SignatureDashboardController.php` `bulkArchive` (~908–920)

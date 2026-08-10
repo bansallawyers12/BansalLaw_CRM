@@ -1148,6 +1148,12 @@ class PublicDocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
+
+            $token = request('token');
+            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
+            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+                abort(403, 'Unauthorized download access.');
+            }
             
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;

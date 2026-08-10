@@ -505,7 +505,7 @@
             <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>
 
             <div class="reading-body">
-                <iframe id="readBody"></iframe>
+                <iframe id="readBody" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe>
             </div>
 
             <div class="gmail-read-footer" id="gmailReadingFooter" hidden>

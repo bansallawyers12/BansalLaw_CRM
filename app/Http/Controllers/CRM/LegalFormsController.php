@@ -253,6 +253,7 @@ class LegalFormsController extends Controller
 
     public function destroy(ClientLegalForm $legalForm): JsonResponse
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         $this->deleteStoredFile($legalForm->pdf_path);
         $this->deleteStoredFile($legalForm->attachment_path);
         $legalForm->delete();
@@ -265,6 +266,7 @@ class LegalFormsController extends Controller
 
     public function downloadDocx(ClientLegalForm $legalForm)
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         if ($legalForm->is_uploaded) {
             return $this->downloadUploadedFormFile($legalForm);
         }
@@ -289,6 +291,7 @@ class LegalFormsController extends Controller
 
     public function downloadAttachment(ClientLegalForm $legalForm)
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         $path = $legalForm->attachment_path;
         if (! $path) {
             abort(404, 'Attachment not found.');
@@ -306,6 +309,7 @@ class LegalFormsController extends Controller
 
     public function uploadAttachment(Request $request, ClientLegalForm $legalForm): JsonResponse
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         $request->validate([
             'attachment' => 'required|file|mimes:jpg,jpeg,png,gif,webp,bmp,pdf,doc,docx,txt,xls,xlsx|max:10240',
         ]);
