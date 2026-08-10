@@ -202,9 +202,9 @@ Severity key:
 - **Impact:** Any authenticated staff can permanently delete an **active** matter older than 1 year.
 
 ### 3.2 High — Legacy discontinue/reopen bypass permission model
-- **Files:** `ClientMatterHubController.php` (~1410–1447); `routes/crm_matter_hub.php` (~13–14)
-- **What goes wrong:** Newer `discontinueClientMatter` / `reopenClientMatter` enforce `canCloseDiscontinueMatter()` / module `45`. Legacy `discontinueMatter` and `revertMatter` do not.
-- **Impact:** Any staff can close or reopen any matter via legacy routes.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`discontinueClientMatter`, `reopenClientMatter`, `requestReopenMatter`, `discontinueMatter`, `revertMatter`)
+- **Now:** All discontinue and reopen/revert methods validate permission model (`canCloseDiscontinueMatter` / module 45 / super-admin) and enforce client visibility via `ensureCrmRecordAccess`.
 
 ### 3.3 High — Completing/discontinuing a matter hard-deletes all matter email history
 - **Files:** `ClientMatterHubController.php` (~88–102, ~740–742, ~1422–1423, ~2530–2552)

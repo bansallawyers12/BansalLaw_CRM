@@ -732,6 +732,8 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
+			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
 			$clientMatter->matter_status = 0;
 			$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
 			$clientMatter->discontinue_reason = $reason;
@@ -875,6 +877,8 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
+			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
 			if ($clientMatter->matter_status == 1) {
 				return response()->json(['status' => false, 'message' => 'Matter is already open.'], 400);
 			}
@@ -950,6 +954,8 @@ class ClientMatterHubController extends Controller
 			if (!$clientMatter) {
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
+
+			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 
 			$requesterId = $clientMatter->reopen_requested_by;
 
