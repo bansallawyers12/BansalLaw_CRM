@@ -1274,9 +1274,10 @@ $(document).ready(function() {
             getInterestedService: '{{ URL::to("/getintrestedservice") }}',
             getInterestedServiceEdit: '{{ URL::to("/getintrestedserviceedit") }}',
             fetchClientMatterAssignee: '{{ URL::to("/clients/fetchClientMatterAssignee") }}',
-            updateStage: '{{ URL::to("/updatestage") }}',
+            // Stage mutations: POST + CSRF only. Prefer Workflow-tab named routes for UI actions.
+            updateStage: '{{ route("clients.matter.update-next-stage") }}',
             completeStage: '{{ URL::to("/completestage") }}',
-            updateBackStage: '{{ URL::to("/updatebackstage") }}',
+            updateBackStage: '{{ route("clients.matter.update-previous-stage") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',

@@ -216,8 +216,8 @@
                     $('.popuploader').hide();
                     var res = safeParse(response);
                     if (!res || !res.status) return;
-                    $('#view_note .modal-body .note_content h5').html(res.data.title);
-                    $("#view_note .modal-body .note_content p").html(res.data.description);
+                    $('#view_note .modal-body .note_content h5').text(res.data.title);
+                    $("#view_note .modal-body .note_content p").text(res.data.description);
                 }
             });
         });
@@ -236,8 +236,8 @@
                     $('.popuploader').hide();
                     var res = safeParse(response);
                     if (!res || !res.status) return;
-                    $('#view_matter_note .modal-body .note_content h5').html(res.data.title);
-                    $("#view_matter_note .modal-body .note_content p").html(res.data.description);
+                    $('#view_matter_note .modal-body .note_content h5').text(res.data.title);
+                    $("#view_matter_note .modal-body .note_content p").text(res.data.description);
                 }
             });
         });

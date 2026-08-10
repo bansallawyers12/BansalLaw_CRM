@@ -1262,17 +1262,17 @@ class ClientMatterHubController extends Controller
 					?>
 						<div class="activity_col">
 							<div class="activity_txt_time">
-								<span class="span_txt"><b><?php echo $staff ? $staff->first_name : 'System'; ?></b> <?php echo $applicationlist->description; ?></span>
+								<span class="span_txt"><b><?php echo e($staff ? $staff->first_name : 'System'); ?></b> <?php echo e($applicationlist->description); ?></span>
 								<span class="span_time"><?php echo date('d D, M Y h:i A', strtotime($applicationlist->created_at)); ?></span>
 							</div>
 							<?php if($applicationlist->subject != ''){ ?>
 							<div class="app_description">
 								<div class="app_card">
-									<div class="app_title"><?php echo $applicationlist->subject; ?></div>
+									<div class="app_title"><?php echo e($applicationlist->subject); ?></div>
 								</div>
 								<?php if($applicationlist->description != ''){ ?>
 								<div class="log_desc">
-									<?php echo $applicationlist->description; ?>
+									<?php echo e($applicationlist->description); ?>
 								</div>
 								<?php } ?>
 							</div>
@@ -1337,13 +1337,13 @@ class ClientMatterHubController extends Controller
 				?>
 					<div class="note_col" id="note_id_<?php echo $list->id; ?>">
 						<div class="note_content">
-						<h4><a class="viewmatternote" data-id="<?php echo $list->id; ?>" href="javascript:;"><?php echo @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, 19, '...'); ?></a></h4>
-						<p><?php echo @$list->description == "" ? config('constants.empty') : Str::limit(@$list->description, 15, '...'); ?></p>
+						<h4><a class="viewmatternote" data-id="<?php echo $list->id; ?>" href="javascript:;"><?php echo e(@$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, 19, '...')); ?></a></h4>
+						<p><?php echo e(@$list->description == "" ? config('constants.empty') : Str::limit(@$list->description, 15, '...')); ?></p>
 						</div>
 						<div class="extra_content">
 							<div class="left">
 								<div class="author">
-									<a href="#"><?php echo $staff ? substr($staff->first_name, 0, 1) : '?'; ?></a>
+									<a href="#"><?php echo e($staff ? substr($staff->first_name, 0, 1) : '?'); ?></a>
 								</div>
 								<div class="note_modify">
 									<small>Last Modified <span><?php echo date('Y-m-d', strtotime($list->updated_at)); ?></span></small>

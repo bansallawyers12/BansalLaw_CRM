@@ -217,14 +217,14 @@ Severity key:
 - **Now:** Verified all legacy stage endpoints filter by `workflow_id` on `workflow_stages` (and use `COALESCE(sort_order, id)`), with no queries targeting non-existent `w_id` column.
 
 ### 3.5 High — Legacy stage/complete routes are GET and mutate state
-- **Files:** `routes/matter_workflow.php` (~12–14)
-- **What goes wrong:** `/updatestage`, `/completestage`, `/updatebackstage` are `Route::get` but mutate matter status/stage (and can delete emails).
-- **Impact:** CSRF via img/link and accidental prefetch.
+- **Status:** Fixed
+- **Files:** `routes/matter_workflow.php`; `ClientMatterWorkflowController.php`
+- **Now:** Mutations on `/updatestage`, `/completestage`, and `/updatebackstage` are **POST-only** (CSRF). GET on those paths no longer mutates and returns a friendly redirect/JSON 405 instead of a bare MethodNotAllowed stack. Workflow UI uses `clients.matter.update-next-stage` / `update-previous-stage` via POST.
 
 ### 3.6 High — Stored XSS in matter logs / notes UI
-- **Files:** `ClientMatterHubController.php` (~1236–1252 `getMatterLogs`, ~1265–1277 `addNote`, ~1304–1307 `getMatterNotes`)
-- **What goes wrong:** Note/activity `subject` and `description` are stored from request and echoed raw into HTML (`<?php echo $applicationlist->description; ?>`). No `e()` / `htmlspecialchars`.
-- **Impact:** Staff (or compromised account) can inject script into any matter’s activity UI.
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController.php` (`getMatterLogs`, `getMatterNotes`); `public/js/crm/clients/modules/notes.js`
+- **Now:** Wrapped unescaped PHP output variables in `getMatterLogs` and `getMatterNotes` with `e()` and updated frontend jQuery modal handlers in `notes.js` to use `.text()` instead of `.html()`, preventing stored XSS execution.
 
 ### 3.7 Medium — Previous-stage progress calculated across all workflows
 - **Files:** `ClientMatterHubController.php` (~493–497)
