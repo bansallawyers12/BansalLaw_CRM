@@ -38,43 +38,26 @@ class TrustReceiptSequenceService
         $prefix = ($type === self::TYPE_JOURNAL) ? self::TYPE_JOURNAL : self::TYPE_RECEIPT;
 
         return DB::transaction(function () use ($trustYearStart, $prefix) {
+            DB::table('trust_practice_sequences')->insertOrIgnore([
+                'sequence_type'        => $prefix,
+                'trust_year_start_year' => $trustYearStart,
+                'last_sequence'        => 0,
+                'created_at'           => now(),
+                'updated_at'           => now(),
+            ]);
+
             $row = DB::table('trust_practice_sequences')
                 ->where('trust_year_start_year', $trustYearStart)
                 ->where('sequence_type', $prefix)
                 ->lockForUpdate()
                 ->first();
 
-            if (! $row) {
-                DB::table('trust_practice_sequences')->insertOrIgnore([
-                    'sequence_type'        => $prefix,
-                    'trust_year_start_year' => $trustYearStart,
-                    'last_sequence'        => 1,
-                    'created_at'           => now(),
-                    'updated_at'           => now(),
-                ]);
+            $seq = ((int) ($row->last_sequence ?? 0)) + 1;
 
-                $row = DB::table('trust_practice_sequences')
-                    ->where('trust_year_start_year', $trustYearStart)
-                    ->where('sequence_type', $prefix)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($row && (int) $row->last_sequence > 1) {
-                    $seq = (int) $row->last_sequence + 1;
-                    DB::table('trust_practice_sequences')
-                        ->where('trust_year_start_year', $trustYearStart)
-                        ->where('sequence_type', $prefix)
-                        ->update(['last_sequence' => $seq, 'updated_at' => now()]);
-                } else {
-                    $seq = 1;
-                }
-            } else {
-                $seq = (int) $row->last_sequence + 1;
-                DB::table('trust_practice_sequences')
-                    ->where('trust_year_start_year', $trustYearStart)
-                    ->where('sequence_type', $prefix)
-                    ->update(['last_sequence' => $seq, 'updated_at' => now()]);
-            }
+            DB::table('trust_practice_sequences')
+                ->where('trust_year_start_year', $trustYearStart)
+                ->where('sequence_type', $prefix)
+                ->update(['last_sequence' => $seq, 'updated_at' => now()]);
 
             return $prefix . '-' . $trustYearStart . '-' . str_pad((string) $seq, 6, '0', STR_PAD_LEFT);
         });

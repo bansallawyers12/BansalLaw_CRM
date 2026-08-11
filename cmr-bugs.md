@@ -389,10 +389,14 @@ Status key (2026-08-07):
 - **Now:** Standardized receipt ID generation via `getNextReceiptId($receipt_type)` with pessimistic locking (`lockForUpdate()`) across all trust, invoice adjustment, invoice creation, office receipt, and journal posting paths. Serialized concurrent receipt ID generation to prevent duplicate receipt IDs across concurrent requests. Verified via automated test `receipt_ids_are_generated_without_race_conditions`.
 
 ### 6.9 Medium — Trust sequence first-row race
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `TrustReceiptSequenceService::nextTransNo`, `TrustAccountingSecurityTest.php`
+- **Now:** Refactored `nextTransNo` in `TrustReceiptSequenceService` to use atomic `insertOrIgnore` with `last_sequence = 0` followed by pessimistic row locking (`lockForUpdate()`). Guaranteed that initial sequence row creation for new trust financial years is race-free under high concurrency. Verified via automated test `trust_sequence_first_row_generation_is_concurrency_safe`.
 
 ### 6.10 Medium — `getInvoiceAmount` IDOR
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::getInvoiceAmount`, `TrustAccountingSecurityTest.php`
+- **Now:** Ensured CRM record access control via `$this->ensureCrmRecordAccess((int) $invoice->client_id)` when an invoice record is found. Unauthorized access yields a 403 response. Verified via automated test `get_invoice_amount_requires_crm_record_access`.
 
 ### 6.11 Suspected / Medium — Disbursement/Refund may overdraw (only logged)
 - **Status:** Fixed

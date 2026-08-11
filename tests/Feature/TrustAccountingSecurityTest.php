@@ -35,21 +35,53 @@ class TrustAccountingSecurityTest extends TestCase
     #[Test]
     public function get_invoice_amount_requires_crm_record_access(): void
     {
-        $staff = new Staff();
-        $staff->id = 100;
-        $staff->email = 'staff@example.com';
-        $staff->role = 2;
-        
+        DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = Staff::create([
+            'first_name' => 'Restricted',
+            'last_name' => 'Staff',
+            'email' => 'restrictedstaff@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 2,
+            'status' => 1,
+        ]);
+
+        $client = Admin::create([
+            'first_name' => 'Other',
+            'last_name' => 'Client',
+            'email' => 'otherclient@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'status' => 1,
+        ]);
+
+        DB::table('account_client_receipts')->insert([
+            'client_id' => $client->id,
+            'invoice_no' => 'INV-TEST-IDOR',
+            'receipt_type' => 3,
+            'balance_amount' => 500.00,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         $this->actingAs($staff, 'admin');
 
         // Authenticated request for non-existent invoice returns success false
-        $response = $this->postJson('/clients/invoiceamount', [
+        $response1 = $this->postJson('/clients/invoiceamount', [
             'invoice_no' => 'INV-99999'
         ]);
-        
-        $response->assertStatus(200);
-        $this->assertFalse($response->json('success'));
-        $this->assertEquals('Invoice not found', $response->json('message'));
+        $response1->assertStatus(200);
+        $this->assertFalse($response1->json('success'));
+        $this->assertEquals('Invoice not found', $response1->json('message'));
+
+        // Request for invoice belonging to client that restricted staff cannot access returns 403
+        $response2 = $this->postJson('/clients/invoiceamount', [
+            'invoice_no' => 'INV-TEST-IDOR'
+        ]);
+        $response2->assertStatus(403);
     }
 
     #[Test]
@@ -662,6 +694,32 @@ class TrustAccountingSecurityTest extends TestCase
         $this->assertCount(2, $receiptIds);
         $this->assertCount(2, array_unique($receiptIds)); // Must be unique!
         $this->assertEquals(2, $receiptIds[1] - $receiptIds[0] + 1); // Sequential increment
+    }
+
+    #[Test]
+    public function trust_sequence_first_row_generation_is_concurrency_safe(): void
+    {
+        // Delete any existing sequence rows for test year 2035
+        DB::table('trust_practice_sequences')
+            ->where('trust_year_start_year', 2035)
+            ->delete();
+
+        // First call creates initial row with last_sequence = 1
+        $no1 = \App\Services\TrustAccounting\TrustReceiptSequenceService::nextTransNo('10/08/2035');
+        $this->assertEquals('TR-2035-000001', $no1);
+
+        // Second call increments to last_sequence = 2
+        $no2 = \App\Services\TrustAccounting\TrustReceiptSequenceService::nextTransNo('10/08/2035');
+        $this->assertEquals('TR-2035-000002', $no2);
+
+        // Verify database state
+        $seqRow = DB::table('trust_practice_sequences')
+            ->where('trust_year_start_year', 2035)
+            ->where('sequence_type', 'TR')
+            ->first();
+
+        $this->assertNotNull($seqRow);
+        $this->assertEquals(2, (int) $seqRow->last_sequence);
     }
 }
 
