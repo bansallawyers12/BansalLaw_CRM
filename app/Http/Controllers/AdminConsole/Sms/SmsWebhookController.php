@@ -61,8 +61,8 @@ class SmsWebhookController extends Controller
 
         if ($from && $body) {
             $contact = null;
-            $cleanPhone = preg_replace('/[^\d]/', '', $from);
-            $lastDigits = strlen($cleanPhone) >= 10 ? substr($cleanPhone, -10) : $cleanPhone;
+            $cleanPhone = preg_replace('/[^\d]/', '', (string)$from);
+            $lastDigits = strlen($cleanPhone) >= 9 ? substr($cleanPhone, -9) : $cleanPhone;
             if ($lastDigits !== '') {
                 $contact = \App\Models\ClientContact::where('phone', 'LIKE', '%' . $lastDigits)->first();
             }
@@ -74,11 +74,12 @@ class SmsWebhookController extends Controller
                 'recipient_phone' => $from,
                 'formatted_phone' => $from,
                 'message_content' => $body,
-                'message_type' => 'incoming',
+                'message_type' => 'notification',
                 'provider' => 'twilio',
                 'provider_message_id' => $messageSid,
-                'status' => 'received',
+                'status' => 'delivered',
                 'sent_at' => now(),
+                'delivered_at' => now(),
             ]);
 
             Log::info('Incoming Twilio SMS saved', ['from' => $from, 'sid' => $messageSid]);
@@ -137,7 +138,7 @@ class SmsWebhookController extends Controller
         if ($from && $body) {
             $contact = null;
             $cleanPhone = preg_replace('/[^\d]/', '', (string)$from);
-            $lastDigits = strlen($cleanPhone) >= 10 ? substr($cleanPhone, -10) : $cleanPhone;
+            $lastDigits = strlen($cleanPhone) >= 9 ? substr($cleanPhone, -9) : $cleanPhone;
             if ($lastDigits !== '') {
                 $contact = \App\Models\ClientContact::where('phone', 'LIKE', '%' . $lastDigits)->first();
             }
@@ -149,11 +150,12 @@ class SmsWebhookController extends Controller
                 'recipient_phone' => (string)$from,
                 'formatted_phone' => (string)$from,
                 'message_content' => (string)$body,
-                'message_type' => 'incoming',
+                'message_type' => 'notification',
                 'provider' => 'cellcast',
                 'provider_message_id' => $messageId,
-                'status' => 'received',
+                'status' => 'delivered',
                 'sent_at' => now(),
+                'delivered_at' => now(),
             ]);
 
             Log::info('Incoming Cellcast SMS saved', ['from' => $from, 'id' => $messageId]);

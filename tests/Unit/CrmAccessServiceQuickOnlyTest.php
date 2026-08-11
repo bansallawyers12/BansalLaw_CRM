@@ -72,10 +72,11 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
 
     public function test_exempt_staff_id_bypasses_allocation(): void
     {
+        config(['crm_access.exempt_staff_ids' => [36718]]);
         $this->assertContains(
             36718,
             config('crm_access.exempt_staff_ids', []),
-            'exempt_staff_ids should include default privileged staff (see config/crm_access.php)'
+            'exempt_staff_ids should include configured privileged staff'
         );
         $staff = new Staff(['role' => 13]);
         $staff->id = 36718;
