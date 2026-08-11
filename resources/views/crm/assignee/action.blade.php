@@ -1856,12 +1856,12 @@ $(function () {
         $('.update_task').popover('hide');
         $('.btn_readmore').popover('hide');
         
-        // Set popover content and show
+        // Set popover content and show safely with HTML escaping
         $button.popover('dispose');
         $button.popover({
             html: true,
-            sanitize: false,
-            content: fullContent,
+            sanitize: true,
+            content: escapeHtml(fullContent),
             trigger: 'manual',
             placement: 'top'
         }).popover('show');

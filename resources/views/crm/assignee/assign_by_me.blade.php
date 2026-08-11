@@ -255,11 +255,11 @@
                                                     <td>{{ $list->task_group ?? 'N/P' }}</td>
                                                     <td>
                                                         @if (isset($list->description) && $list->description != "")
-                                                            @if (strlen($list->description) > 190)
-                                                                {!! substr($list->description, 0, 190) !!}
-                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ $list->description }}">Read more</button>
+                                                            @if (mb_strlen($list->description) > 190)
+                                                                {{ mb_substr($list->description, 0, 190) }}
+                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
                                                             @else
-                                                                {!! $list->description !!}
+                                                                {{ $list->description }}
                                                             @endif
                                                         @else
                                                             N/P
