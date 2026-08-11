@@ -11,7 +11,7 @@ class SyncInboxEmails extends Command
 {
     protected $signature = 'emails:sync-inbox
                             {email? : Optional mailbox address to sync}
-                            {--today : Fetch only today\'s incoming mail (app timezone)}
+                            {--today : Fetch only mail since today start time (default 9:00 AM, app timezone)}
                             {--full : Reset UID tracking and re-fetch recent mail (backfill history)}';
 
     protected $description = 'Fetch incoming mail from Zoho IMAP for active CRM mailboxes';
@@ -49,8 +49,13 @@ class SyncInboxEmails extends Command
         $since = null;
         if ($this->option('today')) {
             $timezone = (string) config('app.timezone', 'UTC');
-            $since = now($timezone)->startOfDay();
-            $this->info('Fetching mail since ' . $since->format('d/m/Y') . ' (' . $timezone . ') only.');
+            $since = IncomingEmailSyncService::resolveTodaySyncSince();
+            $this->info(
+                'Fetching mail since ' . $since->format('d/m/Y g:i a')
+                . ' (' . $timezone . ') only — messages before '
+                . IncomingEmailSyncService::formatTodaySyncStartForDisplay()
+                . ' today are excluded.'
+            );
         }
 
         $this->info('Starting inbox sync' . ($email ? " for {$email}" : ' for all mailboxes') . '...');
