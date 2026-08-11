@@ -68,6 +68,11 @@ trait EnsuresCrmRecordAccess
     protected function ensureCrmRecordAccessStrict(int $adminId): void
     {
         if ($adminId <= 0) {
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(
+                    response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
             abort(404);
         }
 
@@ -77,6 +82,11 @@ trait EnsuresCrmRecordAccess
             ->first(['id', 'type']);
 
         if (! $row) {
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(
+                    response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
             abort(404);
         }
 
