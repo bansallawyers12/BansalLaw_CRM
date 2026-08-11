@@ -147,7 +147,10 @@ class ZohoImapFetcher
         $port = (int) ($mailbox->imap_port ?: config('imap_sync.default_port', 993));
         $encryption = $mailbox->imap_encryption ?: config('imap_sync.default_encryption', 'ssl');
 
+        // Zoho rejects quoted SEARCH dates/UID ranges (BAD CLIENTBUG unexpected '"').
+        // Keep RFC3501 date-text format and leave SINCE/BEFORE unquoted.
         $manager = new ClientManager([
+            'date_format' => 'd-M-Y',
             'options' => $this->imapOptions(),
         ]);
 
@@ -178,6 +181,8 @@ class ZohoImapFetcher
             'sequence' => IMAP::ST_UID,
             'fetch_body' => true,
             'fetch_flags' => true,
+            // Prevents SINCE "11-Aug-2026" (quoted) which Zoho IMAP rejects.
+            'unescaped_search_dates' => true,
         ];
     }
 
@@ -216,7 +221,10 @@ class ZohoImapFetcher
         }
 
         if ($afterUid > 0) {
-            return $folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit);
+            // CUSTOM avoids webklex quoting the range as UID "n:*" (Zoho BAD CLIENTBUG).
+            return $folder->query()
+                ->where('CUSTOM UID ' . ($afterUid + 1) . ':*')
+                ->limit($limit);
         }
 
         return $folder->messages()->all()->limit($limit)->setFetchOrderDesc();
@@ -273,6 +281,9 @@ class ZohoImapFetcher
             return array_values(array_unique($uids));
         } catch (Throwable $e) {
             Log::warning('IMAP candidate UID discovery failed; treating messages as unread for restore', [
+                'after_uid' => $afterUid,
+                'limit' => $limit,
+                'since' => $since?->format('c'),
                 'error' => $e->getMessage(),
             ]);
 
