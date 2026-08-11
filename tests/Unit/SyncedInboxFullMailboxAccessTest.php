@@ -39,7 +39,10 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
 
         $ranges = IncomingEmailSyncService::syncRangeOptionsForUnassignedTab($staff);
 
-        $this->assertSame(['today' => 'Today'], $ranges);
+        $this->assertSame(
+            ['today' => IncomingEmailSyncService::todaySyncRangeLabel()],
+            $ranges
+        );
     }
 
     #[Test]

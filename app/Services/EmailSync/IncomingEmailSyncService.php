@@ -816,6 +816,14 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Human label for the "today from configured start time" range.
+     */
+    public static function todaySyncRangeLabel(): string
+    {
+        return 'Today (from ' . self::formatTodaySyncStartForDisplay() . ')';
+    }
+
+    /**
      * Sync ranges for Admin / Super Admin on the Unassigned mail tab.
      *
      * @return array<string, string>
@@ -828,7 +836,7 @@ class IncomingEmailSyncService
             '1hour' => '1 hour',
             '2hours' => '2 hours',
             '5hours' => '5 hours',
-            'today' => 'Today',
+            'today' => self::todaySyncRangeLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -850,7 +858,7 @@ class IncomingEmailSyncService
         }
 
         return [
-            'today' => 'Today',
+            'today' => self::todaySyncRangeLabel(),
         ];
     }
 
@@ -872,7 +880,7 @@ class IncomingEmailSyncService
             '1hour' => '1 hrs',
             '2hours' => '2 hrs',
             '5hours' => '5 hrs',
-            'today' => 'Today',
+            'today' => self::todaySyncRangeLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -887,6 +895,50 @@ class IncomingEmailSyncService
         return array_key_exists(strtolower(trim($range)), self::syncRangeOptions());
     }
 
+    /**
+     * Configured wall-clock start for the "today" sync range (app timezone).
+     *
+     * @return array{0: int, 1: int} [hour, minute]
+     */
+    public static function todaySyncStartParts(): array
+    {
+        $raw = trim((string) config('imap_sync.today_sync_start', '09:00'));
+        if (! preg_match('/^(\d{1,2}):(\d{2})$/', $raw, $matches)) {
+            return [9, 0];
+        }
+
+        $hour = max(0, min(23, (int) $matches[1]));
+        $minute = max(0, min(59, (int) $matches[2]));
+
+        return [$hour, $minute];
+    }
+
+    public static function formatTodaySyncStartForDisplay(): string
+    {
+        [$hour, $minute] = self::todaySyncStartParts();
+        $period = $hour >= 12 ? 'pm' : 'am';
+        $hour12 = $hour % 12;
+        if ($hour12 === 0) {
+            $hour12 = 12;
+        }
+
+        return sprintf('%d:%02d %s', $hour12, $minute, $period);
+    }
+
+    /**
+     * Earliest datetime allowed for the "today" range (app timezone).
+     */
+    public static function resolveTodaySyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    {
+        $timezone = (string) config('app.timezone', 'UTC');
+        $base = $relativeTo !== null
+            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            : now($timezone);
+        [$hour, $minute] = self::todaySyncStartParts();
+
+        return $base->copy()->startOfDay()->setTime($hour, $minute, 0);
+    }
+
     public static function resolveSyncSince(string $range): ?\Carbon\Carbon
     {
         $normalized = strtolower(trim($range));
@@ -896,8 +948,9 @@ class IncomingEmailSyncService
 
         $timezone = (string) config('app.timezone', 'UTC');
         $now = now($timezone);
+        $todayFloor = self::resolveTodaySyncSince($now);
 
-        return match ($normalized) {
+        $since = match ($normalized) {
             '10min', '10minutes', '10_minutes' => $now->copy()->subMinutes(10),
             '20min', '20minutes', '20_minutes' => $now->copy()->subMinutes(20),
             '30min', '30minutes', '30_minutes' => $now->copy()->subMinutes(30),
@@ -909,8 +962,25 @@ class IncomingEmailSyncService
             '1week' => $now->copy()->subDays(6)->startOfDay(),
             '2weeks' => $now->copy()->subDays(13)->startOfDay(),
             '1month' => $now->copy()->subDays(29)->startOfDay(),
-            default => $now->copy()->startOfDay(),
+            'today' => $todayFloor,
+            default => $todayFloor,
         };
+
+        // Short "lookback" ranges must not pull mail from before today's start time.
+        $isShortLookback = in_array($normalized, [
+            '10min', '10minutes', '10_minutes',
+            '20min', '20minutes', '20_minutes',
+            '30min', '30minutes', '30_minutes',
+            '1hour', '1hrs', '1_hour', '1_hrs',
+            '2hours', '2hrs', '2_hours', '2_hrs',
+            '5hours', '5hrs', '5_hours', '5_hrs',
+        ], true);
+
+        if ($isShortLookback && $since->lt($todayFloor)) {
+            return $todayFloor;
+        }
+
+        return $since;
     }
 
     /**

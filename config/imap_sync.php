@@ -55,6 +55,15 @@ return [
 
     'schedule_minutes' => (int) env('MAIL_SYNC_SCHEDULE_MINUTES', 5),
 
+    /*
+    |--------------------------------------------------------------------------
+    | "Today" manual/CLI sync start time (app timezone)
+    |--------------------------------------------------------------------------
+    | HH:MM wall-clock time. Emails before this time today are not fetched
+    | when the "today" range or --today flag is used.
+    */
+    'today_sync_start' => env('MAIL_SYNC_TODAY_START', '09:00'),
+
     'unassigned_storage_prefix' => 'sync-inbox',
 
     'queue' => env('MAIL_INBOX_SYNC_QUEUE', 'default'),

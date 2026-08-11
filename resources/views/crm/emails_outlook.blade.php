@@ -89,7 +89,7 @@
     $unassignedSyncRangeOptions = ($authStaff instanceof \App\Models\Staff && $unassignedOnly)
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptionsForUnassignedTab($authStaff)
         : [];
-    $defaultUnassignedSyncRange = $canSelectSyncMailbox ? '10min' : 'today';
+    $defaultUnassignedSyncRange = 'today';
     $listMailboxFilterOptions = ($unassignedOnly && $canSelectSyncMailbox)
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
         : [];
