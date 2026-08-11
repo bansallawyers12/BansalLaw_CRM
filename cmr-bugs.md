@@ -412,24 +412,34 @@ Status key (2026-08-07):
 - **Now:** `authorizeNoteManagement` requires creator, assignee, or effective super-admin; also `ensureCrmRecordAccess` when `client_id` present.
 
 ### 7.2 High — Stored XSS in assignee action list
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `AssigneeController::getAction`, `resources/views/crm/assignee/action.blade.php`, `resources/views/crm/assignee/assign_by_me.blade.php`, `Area7SecurityTest.php`
+- **Now:** Ensured description in DataTables and Blade views is strictly HTML-escaped with `htmlspecialchars()` / `{{ }}` and `btn_readmore` popovers enable `sanitize: true` with escaped content. Verified via automated test `assignee_action_list_escapes_note_descriptions_preventing_xss`.
 
 ### 7.3 High — Dashboard can update any office-visit status
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `DashboardController::updateCheckinStatus`, `Area7SecurityTest.php`
+- **Now:** Enforced authorization in `updateCheckinStatus` requiring the user to be the assigned staff member, have front-desk access, or possess effective super-admin privileges, in addition to enforcing `ensureCrmRecordAccess` on linked `client_id`. Verified via automated test `regular_staff_cannot_update_unauthorized_office_visit_checkin_status`.
 
 ### 7.4 High — Office visit mutations null-deref / skip auth when missing
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `OfficeVisitController::getcheckin`, `OfficeVisitController` endpoints (`update_visit_purpose`, `update_visit_comment`, `change_assignee`, `attend_session`, `complete_session`), `Area7SecurityTest.php`
+- **Now:** Guaranteed that all office visit endpoints (`getcheckin`, `update_visit_purpose`, `update_visit_comment`, `change_assignee`, `attend_session`, `complete_session`) check for `CheckinLog` record existence and return a 404 error if missing, preventing null dereferences and unauthorized access bypass. Verified via automated test `office_visit_getcheckin_returns_404_when_record_missing`.
 
 ### 7.5 Medium — Broadcasts: any authenticated staff can blast “all”
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `BroadcastNotificationAjaxController::store`, `Area7SecurityTest.php`
+- **Now:** Restricted `scope=all` broadcasts to super-admins and designated admin roles (`1`, `12`, `17`). Non-admin staff attempting to send all-staff broadcasts are rejected with a 403 response. Verified via automated test `regular_staff_cannot_broadcast_to_all_staff`.
 
 ### 7.6 Medium — Audit login log readable by any staff
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `AuditLogController::index`, `Area7SecurityTest.php`
+- **Now:** Restricted access to `/audit-logs` endpoint (`AuditLogController::index`) to super-administrators and authorized admin roles (`1`, `12`, `17`). Unprivileged staff users attempting to view audit logs receive an HTTP 403 response. Verified via automated test `regular_staff_cannot_view_audit_logs`.
 
 ### 7.7 Critical — Public wallet payment marks appointment paid without Stripe verify
-- **Status:** Partial
-- **Files:** `PublicBookingController::recordAppointmentPaymentWithoutLoginWallet`
-- **Now:** Uses `StripePaymentService::recordPaymentByIntent`. Residual risk: optional metadata ownership when PI metadata empty (#14.11).
+- **Status:** Closed / Fixed
+- **Files:** `PublicBookingController::recordAppointmentPaymentWithoutLoginWallet`, `StripePaymentService::recordPaymentByIntent`, `Area7SecurityTest.php`
+- **Now:** Replaced raw payment status updates in `recordAppointmentPaymentWithoutLoginWallet` with mandatory server-side Stripe verification (`StripePaymentService::recordPaymentByIntent`). Ensures PaymentIntent status is `succeeded`, amount/currency match appointment details, and metadata matches appointment ownership. Verified via automated test `public_wallet_payment_verifies_stripe_payment_intent`.
 
 ---
 

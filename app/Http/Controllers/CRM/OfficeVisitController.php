@@ -214,8 +214,11 @@ class OfficeVisitController extends Controller
 
 	public function getcheckin(Request $request)
 	{
-		$CheckinLog 		= CheckinLog::where('id', '=', $request->id)->first();
-		if ($CheckinLog && $CheckinLog->client_id) {
+		$CheckinLog = CheckinLog::where('id', '=', $request->id)->first();
+		if (!$CheckinLog) {
+			return response()->json(['status' => false, 'message' => 'Checkin log record not found'], 404);
+		}
+		if ($CheckinLog->client_id) {
 			$this->ensureCrmRecordAccess((int) $CheckinLog->client_id);
 		}
 
