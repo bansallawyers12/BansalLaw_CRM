@@ -349,15 +349,19 @@ Status key (2026-08-07):
 ## Area 6 — Trust Accounting & Financial
 
 ### 6.1 Critical — Fee-transfer “residual deposit” creates phantom trust money
-- **Status:** Partial / likely fixed
-- **Files:** `ClientAccountsController::saveaccountreport`
-- **Now:** Invoice fee-transfer path posts withdrawals and recalculates invoice paid totals; synthetic residual Deposit for unused fee-transfer remainder not observed in current loop. Confirm with finance QA before closing permanently.
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::saveaccountreport`, `TrustAccountingSecurityTest.php`
+- **Now:** Invoice fee-transfer path posts withdrawals and recalculates invoice paid totals without generating synthetic/phantom residual Deposit rows. Fixed missing method reference `assertInvoiceEligibleForWithdrawal` during fee-transfer authority checks and verified via automated test `fee_transfer_does_not_create_phantom_trust_deposit_rows`.
 
 ### 6.2 Critical — Void invoice fallback can void unrelated fee transfers
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::void_invoice`, `TrustAccountingSecurityTest.php`
+- **Now:** Removed unsafe fallback query in `void_invoice` that matched fee transfers by amount and wildcard `LIKE '%%'`. Unified fee transfer lookup to strictly match non-empty `invoice_no` / `trans_no` references on `account_client_receipts` or via `trust_withdrawal_authorities` records. Verified via automated test `void_invoice_does_not_void_unrelated_fee_transfers`.
 
 ### 6.3 High — Matter-scoped funds check inconsistent (cross-matter withdrawal)
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`, `TrustAccountingSecurityTest.php`
+- **Now:** Enforced strict matter scoping when checking funds held for invoice fee transfers and deposit allocations. Blocked cross-matter fee transfer requests where the invoice matter differs from the selected matter (`422 Cross-matter fee transfer blocked`), ensured funds checks evaluate the target invoice's matter balance, and recorded fee transfer withdrawals under the invoice's matter ID. Verified via automated test `cross_matter_fee_transfer_is_blocked`.
 
 ### 6.4 High — Concurrent trust posts race (TOCTOU overdraw)
 - **Status:** Open

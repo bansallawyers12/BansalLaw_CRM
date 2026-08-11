@@ -540,33 +540,9 @@ class ClientAccountsController extends Controller
                 // Process Fee Transfers with invoice numbers
                 foreach ($feeTransferByInvoice as $invoiceNo => $feeTransfers) {
                     $totalWithdrawAmount = array_sum(array_column($feeTransfers, 'withdraw_amount'));
-       
-                    // Validate Fee Transfer amount against Current Funds Held
-                    $currentFundsHeld = TrustLedgerBalanceService::currentFundsHeld(
-                        (int) $requestData['client_id'],
-                        $requestData['client_matter_id'] ?? null
-                    );
-                    $totalWithdrawAmount = round($totalWithdrawAmount, 2);
-                    
-                    if ($totalWithdrawAmount > $currentFundsHeld) {
-                        $response['status'] = false;
-                        $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
-                        $response['requestData'] = [];
-                        $response['awsUrl'] = "";
-                        $response['invoices'] = [];
-                        return response()->json($response, 422);
-                    }
 
-                    if ($authorityPayload !== null) {
-                        TrustWithdrawalAuthorityService::assertInvoiceFeeTransferAuthority(
-                            $invoiceNo,
-                            $totalWithdrawAmount,
-                            $authorityPayload
-                        );
-                    }
-       
                     $invoice = DB::table('account_client_receipts')
-                        ->select('balance_amount', 'invoice_no', 'withdraw_amount', 'partial_paid_amount')
+                        ->select('balance_amount', 'invoice_no', 'withdraw_amount', 'partial_paid_amount', 'client_matter_id')
                         ->where('receipt_type', 3)
                         ->where('invoice_no', $invoiceNo)
                         ->where('client_id', $requestData['client_id'])
@@ -574,7 +550,7 @@ class ClientAccountsController extends Controller
        
                     if (!$invoice) {
                         $invoice = DB::table('account_client_receipts')
-                            ->select('balance_amount', 'invoice_no', 'withdraw_amount', 'partial_paid_amount')
+                            ->select('balance_amount', 'invoice_no', 'withdraw_amount', 'partial_paid_amount', 'client_matter_id')
                             ->where('receipt_type', 3)
                             ->where('invoice_no', 'LIKE', '%' . $invoiceNo . '%')
                             ->where('client_id', $requestData['client_id'])
@@ -588,6 +564,43 @@ class ClientAccountsController extends Controller
                         $response['awsUrl'] = "";
                         $response['invoices'] = [];
                         return response()->json($response, 400);
+                    }
+
+                    $targetMatterId = !empty($invoice->client_matter_id) ? $invoice->client_matter_id : ($requestData['client_matter_id'] ?? null);
+
+                    if (!empty($requestData['client_matter_id']) && !empty($invoice->client_matter_id) && (string)$requestData['client_matter_id'] !== (string)$invoice->client_matter_id) {
+                        $response['status'] = false;
+                        $response['message'] = 'Cross-matter fee transfer blocked: Invoice ' . $invoiceNo . ' belongs to a different matter than selected.';
+                        $response['requestData'] = [];
+                        $response['awsUrl'] = "";
+                        $response['invoices'] = [];
+                        return response()->json($response, 422);
+                    }
+       
+                    // Validate Fee Transfer amount against Current Funds Held for target matter
+                    $currentFundsHeld = TrustLedgerBalanceService::currentFundsHeld(
+                        (int) $requestData['client_id'],
+                        $targetMatterId
+                    );
+                    $totalWithdrawAmount = round($totalWithdrawAmount, 2);
+                    
+                    if ($totalWithdrawAmount > $currentFundsHeld) {
+                        $response['status'] = false;
+                        $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
+                        $response['requestData'] = [];
+                        $response['awsUrl'] = "";
+                        $response['invoices'] = [];
+                        return response()->json($response, 422);
+                    }
+
+                    if ($authorityPayload !== null) {
+                        TrustWithdrawalAuthorityService::assertInvoiceEligibleForWithdrawal(
+                            (string) $invoiceNo,
+                            (int) $requestData['client_id'],
+                            (string) ($feeTransfers[0]['trans_date'] ?? ''),
+                            Auth::user(),
+                            $authorityPayload
+                        );
                     }
        
                     $canonicalInvoiceNo = $invoice->invoice_no;
@@ -614,7 +627,7 @@ class ClientAccountsController extends Controller
                         $feeTransferRowId = DB::table('account_client_receipts')->insertGetId(array_merge([
                             'user_id' => Auth::guard('admin')->id() ?? Auth::id(),
                             'client_id' => $requestData['client_id'],
-                            'client_matter_id' => $requestData['client_matter_id'] ?? null,
+                            'client_matter_id' => $targetMatterId,
                             'receipt_id' => $receipt_id,
                             'receipt_type' => $requestData['receipt_type'],
                             'trans_date' => $feeTransfer['trans_date'],
@@ -4409,81 +4422,46 @@ class ClientAccountsController extends Controller
                }
            }
 
-           // **NEW: REVERSE FEE TRANSFERS - Return money to client funds ledger**
-           // Find all fee transfers linked to this invoice
-           // Try multiple methods to find related fee transfers
-           
-           Log::info('Starting fee transfer search', [
-               'invoice_info' => [
-                   'client_id' => $invoice_info->client_id ?? 'NULL',
-                   'client_matter_id' => $invoice_info->client_matter_id ?? 'NULL',
-                   'invoice_no' => $invoice_info->invoice_no ?? 'NULL',
-                   'trans_no' => $invoice_info->trans_no ?? 'NULL',
-               ],
-               'calculated_amount' => $invoiceAmount
-           ]);
-           
-           // Method 1: By invoice number (if stored)
-           $feeTransfersQuery = DB::table('account_client_receipts')
-               ->where('receipt_type', 1)
-               ->where('client_fund_ledger_type', 'Fee Transfer')
-               ->where('client_id', $invoice_info->client_id);
-           
-           if(!empty($invoice_info->client_matter_id)){
-               $feeTransfersQuery->where('client_matter_id', $invoice_info->client_matter_id);
-           }
-           
-           // Try with invoice_no first
-           $feeTransfers = $feeTransfersQuery->where('invoice_no', $invoice_info->invoice_no)->get();
-           
-           // TEMPORARY DEBUG: Dump what we're searching for
-           if(count($feeTransfers) == 0){
-               // Let's see what's in the database
-               $debugCheck = DB::table('account_client_receipts')
-                   ->select('id','trans_no','invoice_no','client_id','client_matter_id')
-                   ->where('receipt_type', 1)
-                   ->where('client_fund_ledger_type', 'Fee Transfer')
-                   ->where('client_id', $invoice_info->client_id)
-                   ->get();
-               
-               Log::error('Fee transfer NOT found - Debug Info', [
-                   'searching_for' => [
-                       'invoice_no' => $invoice_info->invoice_no,
-                       'client_id' => $invoice_info->client_id,
-                       'client_matter_id' => $invoice_info->client_matter_id,
-                   ],
-                   'all_fee_transfers_for_client' => $debugCheck->toArray()
-               ]);
-           }
-           
-           // Method 2: If no results, search by invoice amount and NOT already voided (must match invoice link)
-           if(count($feeTransfers) == 0){
-               Log::info('No fee transfers found by invoice_no, trying by amount and date', [
-                   'invoice_amount' => $invoiceAmount
-               ]);
-               
-               if($invoiceAmount > 0){
-                   $feeTransfersQuery2 = DB::table('account_client_receipts')
-                       ->where('receipt_type', 1)
-                       ->where('client_fund_ledger_type', 'Fee Transfer')
-                       ->where('client_id', $invoice_info->client_id)
-                       ->where('withdraw_amount', $invoiceAmount)
-                   ->where(function($q) {
-                       $q->whereNull('void_fee_transfer')
-                         ->orWhere('void_fee_transfer', 0);
-                   })
-                   ->where(function($q) use ($invoice_info) {
-                       $q->where('invoice_no', $invoice_info->invoice_no)
-                         ->orWhere('invoice_no', 'LIKE', '%'.$invoice_info->trans_no.'%');
-                   });
-                   
-                   if(!empty($invoice_info->client_matter_id)){
-                       $feeTransfersQuery2->where('client_matter_id', $invoice_info->client_matter_id);
-                   }
-                   
-                   $feeTransfers = $feeTransfersQuery2->get();
-               }
-           }
+            // **REVERSE FEE TRANSFERS - Return money to client funds ledger**
+            // Collect non-empty invoice reference strings (both invoice_no and trans_no)
+            $invoiceRefs = array_values(array_unique(array_filter([
+                trim((string) ($invoice_info->invoice_no ?? '')),
+                trim((string) ($invoice_info->trans_no ?? '')),
+            ])));
+
+            $feeTransfers = collect();
+
+            if (!empty($invoiceRefs)) {
+                $hasAuthorityTable = Schema::hasTable('trust_withdrawal_authorities');
+
+                $feeTransfersQuery = DB::table('account_client_receipts as acr')
+                    ->select('acr.*')
+                    ->where('acr.receipt_type', 1)
+                    ->where('acr.client_fund_ledger_type', 'Fee Transfer')
+                    ->where('acr.client_id', $invoice_info->client_id)
+                    ->where(function($q) {
+                        $q->whereNull('acr.void_fee_transfer')
+                          ->orWhere('acr.void_fee_transfer', 0);
+                    });
+
+                if (!empty($invoice_info->client_matter_id)) {
+                    $feeTransfersQuery->where('acr.client_matter_id', $invoice_info->client_matter_id);
+                }
+
+                $feeTransfersQuery->where(function($q) use ($invoiceRefs, $hasAuthorityTable) {
+                    $q->whereIn('acr.invoice_no', $invoiceRefs);
+                    if ($hasAuthorityTable) {
+                        $q->orWhereExists(function($subQuery) use ($invoiceRefs) {
+                            $subQuery->select(DB::raw(1))
+                                ->from('trust_withdrawal_authorities as twa')
+                                ->whereColumn('twa.account_client_receipt_id', 'acr.id')
+                                ->whereIn('twa.invoice_no', $invoiceRefs);
+                        });
+                    }
+                });
+
+                $feeTransfers = $feeTransfersQuery->get();
+            }
 
            // Debug: Log what we found
            Log::info('Void Invoice - Fee Transfer Search Results', [
