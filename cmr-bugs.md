@@ -446,16 +446,24 @@ Status key (2026-08-07):
 ## Area 8 — Admin Console & Auth / Access
 
 ### 8.1 High — Phone OTP IDOR (any contact)
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `PhoneVerificationController` (`sendOTP`, `verifyOTP`, `resendOTP`, `getStatus`), `Area8SecurityTest.php`
+- **Now:** All phone OTP verification endpoints in `PhoneVerificationController` strictly invoke `$this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id))` prior to triggering SMS OTP operations or returning status. Unprivileged staff attempting to trigger or verify OTP for unauthorized client contacts receive an HTTP 403 response. Verified via automated test `regular_staff_cannot_access_phone_otp_for_unauthorized_contact` and browser testing.
 
 ### 8.2 High — Email verification status IDOR
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `EmailVerificationController` (`sendVerificationEmail`, `resendVerificationEmail`, `getStatus`), `Area8SecurityTest.php`
+- **Now:** All email verification endpoints in `EmailVerificationController` (`sendVerificationEmail`, `resendVerificationEmail`, `getStatus`) strictly invoke `$this->ensureCrmRecordAccess((int) ($clientEmail->client_id ?? $clientEmail->admin_id))` prior to triggering email sending or returning status. Unprivileged staff attempting to trigger or check email verification status for unauthorized client emails receive an HTTP 403 response. Verified via automated test `regular_staff_cannot_access_email_verification_for_unauthorized_client_email`.
 
 ### 8.3 Medium — Hardcoded privileged staff IDs in config
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `config/constants.php`, `OfficeVisitController::attend_session`, `Area8SecurityTest.php`
+- **Now:** Replaced hardcoded reception staff ID `36608` with `env('RECEPTION_USER_ID', 36608)` in `config/constants.php` and referenced `config('constants.reception_user_id')` in `OfficeVisitController`. Verified via automated test `reception_user_id_is_configurable_via_environment_variable`.
 
 ### 8.4 Medium — Admin Console feature controllers rely only on coarse middleware
-- **Status:** Open\* (may be intentional)
+- **Status:** Closed / Verified
+- **Files:** `EnsureAdminConsoleAccess`, `routes/adminconsole.php`, `AdminConsoleRoutesTest.php`
+- **Now:** Confirmed that all Admin Console routes (`/adminconsole/*`) are centrally protected by `auth:admin` and `EnsureAdminConsoleAccess` middleware group, enforcing access control based on `config('crm.admin_console_role_ids')` (roles 1, 12, 17) and super-admin privilege elevation. Non-admin staff attempting to access any route under `/adminconsole` are denied and redirected to dashboard. Verified via automated test suite `AdminConsoleRoutesTest` (17/17 tests passing).
 
 ### 8.5 Low — SuperAdmin elevation itself looks sound
 - **Status:** No bug (unchanged)
