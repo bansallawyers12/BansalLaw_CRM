@@ -70,4 +70,42 @@ class Area8SecurityTest extends TestCase
         config(['constants.reception_user_id' => 99999]);
         $this->assertEquals(99999, config('constants.reception_user_id'));
     }
+
+    #[Test]
+    public function superadmin_elevation_privilege_checks_are_sound(): void
+    {
+        $superAdmin = new Staff(['role' => 1, 'status' => 1]);
+        $this->assertTrue($superAdmin->hasEffectiveSuperAdminPrivileges());
+
+        $staffGranted = new Staff(['role' => 2, 'status' => 1, 'grant_super_admin_access' => 1]);
+        // Without active session elevation, granted staff does not have super admin privileges
+        $this->assertFalse($staffGranted->hasEffectiveSuperAdminPrivileges());
+
+        session([\App\Services\CrmAccess\CrmAccessService::SESSION_SUPER_ADMIN_ELEVATED => true]);
+        $this->assertTrue($staffGranted->hasEffectiveSuperAdminPrivileges());
+    }
+
+    #[Test]
+    public function incoming_sms_webhooks_create_sms_logs_and_associate_contact(): void
+    {
+        $contact = new ClientContact();
+        $contact->id = 8889;
+        $contact->client_id = 701;
+        $contact->phone = '0412345678';
+        $contact->save();
+
+        $response = $this->postJson('/webhooks/sms/twilio/incoming', [
+            'From' => '+61412345678',
+            'Body' => 'Hello from client',
+            'MessageSid' => 'SM1234567890',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('sms_logs', [
+            'provider_message_id' => 'SM1234567890',
+            'message_type' => 'notification',
+            'status' => 'delivered',
+            'client_contact_id' => 8889,
+        ]);
+    }
 }

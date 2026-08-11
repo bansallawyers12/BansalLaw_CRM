@@ -466,10 +466,14 @@ Status key (2026-08-07):
 - **Now:** Confirmed that all Admin Console routes (`/adminconsole/*`) are centrally protected by `auth:admin` and `EnsureAdminConsoleAccess` middleware group, enforcing access control based on `config('crm.admin_console_role_ids')` (roles 1, 12, 17) and super-admin privilege elevation. Non-admin staff attempting to access any route under `/adminconsole` are denied and redirected to dashboard. Verified via automated test suite `AdminConsoleRoutesTest` (17/17 tests passing).
 
 ### 8.5 Low — SuperAdmin elevation itself looks sound
-- **Status:** No bug (unchanged)
+- **Status:** Closed / Verified (No bug)
+- **Files:** `CrmAccessService::hasEffectiveSuperAdminPrivileges`, `Staff::hasEffectiveSuperAdminPrivileges`, `Area8SecurityTest.php`
+- **Now:** Re-verified SuperAdmin privilege elevation logic in `CrmAccessService` and `Staff`. Confirmed that role 1 staff always possess SuperAdmin privileges, while staff with `grant_super_admin_access = 1` only acquire effective SuperAdmin privileges during active session elevation (`isSuperAdminElevationActive()`). Verified via automated test `superadmin_elevation_privilege_checks_are_sound`.
 
 ### 8.6 Low — Incoming SMS webhook handling unfinished
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `SmsWebhookController` (`twilioIncoming`, `cellcastIncoming`), `Area8SecurityTest.php`
+- **Now:** Completed incoming SMS webhook handlers for Twilio and Cellcast in `SmsWebhookController`. Automatically parses sender phone numbers, resolves matching `ClientContact` / client IDs using suffix matching, and stores incoming SMS logs in `sms_logs`. Verified via automated test `incoming_sms_webhooks_create_sms_logs_and_associate_contact`.
 
 ---
 
