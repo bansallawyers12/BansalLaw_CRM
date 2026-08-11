@@ -364,21 +364,29 @@ Status key (2026-08-07):
 - **Now:** Enforced strict matter scoping when checking funds held for invoice fee transfers and deposit allocations. Blocked cross-matter fee transfer requests where the invoice matter differs from the selected matter (`422 Cross-matter fee transfer blocked`), ensured funds checks evaluate the target invoice's matter balance, and recorded fee transfer withdrawals under the invoice's matter ID. Verified via automated test `cross_matter_fee_transfer_is_blocked`.
 
 ### 6.4 High — Concurrent trust posts race (TOCTOU overdraw)
-- **Status:** Open
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`, `ClientAccountsController::revertClientFundLedger`, `TrustAccountingSecurityTest.php`
+- **Now:** Wrapped all trust posting, deposit allocation, and ledger reversal operations in database transactions (`DB::transaction`) with pessimistic row locking (`DB::table('admins')->where('id', $clientId)->lockForUpdate()->first()`). Concurrent withdrawal requests targeting the same client now serialize, ensuring available funds check and withdrawal execution occur atomically without TOCTOU overdraw. Verified via automated test `concurrent_trust_withdrawals_are_serialized_via_pessimistic_lock`.
 
 ### 6.5 High — Invoice void has no privilege gate (trust-affecting)
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::void_invoice`, `TrustAccountingSecurityTest.php`
+- **Now:** Corrected boolean operator flaw in `void_invoice` privilege check (`! $receiptOk || (config('app.require_super_admin_email') && ...)`). Non-super-admin staff attempts to void invoices are now strictly rejected with HTTP `403 Unauthorized access`. Verified via automated test `non_super_admin_cannot_void_invoice`.
 
 ### 6.6 High — `ensureCrmRecordAccess` allows missing / non-client IDs (trust posts)
-- **Status:** Partial
-- **Notes:** Same as #1.20 — wrong type now blocked; missing id still soft-passes.
+- **Status:** Closed / Fixed
+- **Files:** `EnsuresCrmRecordAccess`, `ClientAccountsController::ensureAccountsClientFromRequest`, `ClientAccountsController::updateClientFundLedger`, `TrustAccountingSecurityTest.php`
+- **Now:** Updated `ensureAccountsClientFromRequest` and trust financial endpoints to enforce `ensureCrmRecordAccessStrict($clientId)`. Required valid, non-zero `client_id` parameter present on all financial requests, throwing HTTP `403` / `400` when missing or when `client_id` does not exist in `admins` table with type `client`/`lead`. Verified via automated test `missing_or_non_client_id_trust_posts_are_blocked`.
 
 ### 6.7 Medium — Spoofable actor on trust posts / Rule 42 authority
-- **Status:** Partial
-- **Now:** Some ledger inserts use `Auth::guard('admin')->id()`. Confirm all paths (incl. void / authority) no longer trust request `loggedin_staffid`.
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController`, `TrustWithdrawalAuthorityService`, `TrustAccountingSecurityTest.php`
+- **Now:** Eliminated all reliance on untrusted request parameters (`loggedin_staffid` / `loggedin_userid`) across all financial creation, editing, voiding, reversing, and Rule 42 authority paths. All actor IDs are now strictly derived from `Auth::guard('admin')->id() ?? Auth::id()`. Verified via automated test `actor_user_id_cannot_be_spoofed_in_request_payload`.
 
 ### 6.8 Medium — Receipt ID generation race
-- **Status:** Open\*
+- **Status:** Closed / Fixed
+- **Files:** `ClientAccountsController::getNextReceiptId`, `ClientAccountsController`, `TrustAccountingSecurityTest.php`
+- **Now:** Standardized receipt ID generation via `getNextReceiptId($receipt_type)` with pessimistic locking (`lockForUpdate()`) across all trust, invoice adjustment, invoice creation, office receipt, and journal posting paths. Serialized concurrent receipt ID generation to prevent duplicate receipt IDs across concurrent requests. Verified via automated test `receipt_ids_are_generated_without_race_conditions`.
 
 ### 6.9 Medium — Trust sequence first-row race
 - **Status:** Open\*

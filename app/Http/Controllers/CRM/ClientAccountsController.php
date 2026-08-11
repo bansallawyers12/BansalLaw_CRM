@@ -56,9 +56,16 @@ class ClientAccountsController extends Controller
 
     protected function ensureAccountsClientFromRequest(Request $request): void
     {
-        if ($request->filled('client_id')) {
-            $this->ensureCrmRecordAccess((int) $request->input('client_id'));
+        $clientId = (int) $request->input('client_id', 0);
+        if ($clientId <= 0) {
+            if ($request->expectsJson() || $request->ajax()) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json(\App\Support\StaffClientVisibility::unauthorizedPayload(), 403)
+                );
+            }
+            abort(403, 'Client ID is required.');
         }
+        $this->ensureCrmRecordAccessStrict($clientId);
     }
 
     /**
@@ -507,8 +514,7 @@ class ClientAccountsController extends Controller
                 DB::table('admins')->where('id', $requestData['client_id'])->lockForUpdate()->first();
 
                 // Generate unique receipt id
-                $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 1)->orderBy('receipt_id', 'desc')->lockForUpdate()->first();
-                $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
+                $receipt_id = $this->getNextReceiptId(1);
        
                 $finalArr = [];
                 $running_balance = TrustLedgerBalanceService::currentFundsHeld(
@@ -917,6 +923,8 @@ class ClientAccountsController extends Controller
             return response()->json($response, 200);
         });
         }
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
         } catch (\RuntimeException $e) {
             return response()->json([
                 'status' => false,
@@ -963,12 +971,7 @@ class ClientAccountsController extends Controller
         {
             if(isset($requestData['trans_date'])){
                 //Generate unique receipt id
-                $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',3)->orderBy('receipt_id', 'desc')->first();
-                if(!$is_record_exist){
-                    $receipt_id = 1;
-                } else {
-                    $receipt_id = $is_record_exist->receipt_id +1;
-                }
+                $receipt_id = $this->getNextReceiptId(3);
                 $finalArr = array();
                 $totalWithdrawAmount = 0;
                 for($i=0; $i<count($requestData['trans_date']); $i++){
@@ -988,7 +991,7 @@ class ClientAccountsController extends Controller
                     $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
    
                     $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                        'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                         'client_id' =>  $requestData['client_id'],
                         'receipt_id'=>  $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
@@ -1024,7 +1027,7 @@ class ClientAccountsController extends Controller
    
                 //main table 'account_client_receipts' entry
                 $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                    'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                     'client_id' =>  $requestData['client_id'],
                     'receipt_id'=>  $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
@@ -1149,12 +1152,7 @@ class ClientAccountsController extends Controller
 
             if(isset($requestData['trans_date'])){
                 //Generate unique receipt id
-                $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',3)->orderBy('receipt_id', 'desc')->first();
-                if(!$is_record_exist){
-                    $receipt_id = 1;
-                } else {
-                    $receipt_id = $is_record_exist->receipt_id +1;
-                }
+                $receipt_id = $this->getNextReceiptId(3);
                 $finalArr = array();
                 $totalWithdrawAmount = 0;
                 $invoiceType = 'INV';
@@ -1190,7 +1188,7 @@ class ClientAccountsController extends Controller
                     $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
    
                     $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                        'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                         'client_id' =>  $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                         'receipt_id'=>  $receipt_id,
@@ -1232,7 +1230,7 @@ class ClientAccountsController extends Controller
    
                 //main table 'account_client_receipts' entry
                 $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                    'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                     'client_id' =>  $requestData['client_id'],
                     'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                     'receipt_id'=>  $receipt_id,
@@ -1825,8 +1823,7 @@ class ClientAccountsController extends Controller
       }
 
       // Handle office receipt processing (receipt_type=2 only)
-      $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 2)->orderBy('receipt_id', 'desc')->first();
-      $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
+      $receipt_id = $this->getNextReceiptId(2);
 
       // Process each transaction individually (no invoice grouping)
       $savedIds = []; // Track all saved receipt IDs
@@ -1853,7 +1850,7 @@ class ClientAccountsController extends Controller
 
           try {
               $insertedId = DB::table('account_client_receipts')->insertGetId([
-                  'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+                  'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                   'client_id' => $requestData['client_id'],
                   'client_matter_id' => $requestData['client_matter_id'] ?? null,
                   'receipt_id' => $receipt_id,
@@ -2607,16 +2604,18 @@ class ClientAccountsController extends Controller
               'client_id' => $clientId
           ]);
 
-          if (!empty($clientId)) {
-              $this->ensureCrmRecordAccess((int) $clientId);
-          }
-          
-          // Get the deposit ledger entry
-          $depositEntry = DB::table('account_client_receipts')
-              ->where('id', $id)
-              ->where('receipt_type', 1)
-              ->where('client_id', $clientId)
-              ->first();
+          $this->ensureCrmRecordAccessStrict((int) $clientId);
+
+          return DB::transaction(function() use ($request, $id, $invoiceNo, $clientId) {
+              // Acquire pessimistic lock on client row to prevent concurrent overdraws (TOCTOU)
+              DB::table('admins')->where('id', $clientId)->lockForUpdate()->first();
+
+              // Get the deposit ledger entry
+              $depositEntry = DB::table('account_client_receipts')
+                  ->where('id', $id)
+                  ->where('receipt_type', 1)
+                  ->where('client_id', $clientId)
+                  ->first();
           
           if (!$depositEntry) {
               return response()->json([
@@ -2939,6 +2938,7 @@ class ClientAccountsController extends Controller
               'status' => true,
               'message' => 'Client fund deposit allocated and fee transfer created successfully',
           ], 200);
+          });
 
       } catch (\RuntimeException $e) {
           return response()->json([
@@ -2980,8 +2980,14 @@ class ClientAccountsController extends Controller
 
   private function getNextReceiptId($receipt_type)
   {
-      $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', $receipt_type)->orderBy('receipt_id', 'desc')->first();
-      return !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
+      $is_record_exist = DB::table('account_client_receipts')
+          ->select('receipt_id')
+          ->where('receipt_type', $receipt_type)
+          ->orderBy('receipt_id', 'desc')
+          ->lockForUpdate()
+          ->first();
+
+      return !$is_record_exist ? 1 : (int) $is_record_exist->receipt_id + 1;
   }
 
   //Save Journal reports
@@ -3076,12 +3082,7 @@ class ClientAccountsController extends Controller
               }
           }
 
-          $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',4)->orderBy('receipt_id', 'desc')->first();
-          if(!$is_record_exist){
-           $receipt_id = 1;
-          } else {
-           $receipt_id = $is_record_exist->receipt_id +1;
-          }
+          $receipt_id = $this->getNextReceiptId(4);
 
           $finalArr = array();
           for($i=0; $i<count($requestData['trans_date']); $i++){
@@ -3098,7 +3099,7 @@ class ClientAccountsController extends Controller
            $finalArr[$i]['withdrawal_amount'] = $withdrawAmount;
 
            $saved    = DB::table('account_client_receipts')->insert([
-               'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
+               'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                'client_id' =>  $requestData['client_id'],
                'agent_id' => !empty($requestData['agent_id']) ? $requestData['agent_id'] : null,
                'receipt_id'=>  $receipt_id,
@@ -4297,7 +4298,7 @@ class ClientAccountsController extends Controller
       $authorizedEmail = config('app.super_admin_email');
       $receiptActor = Auth::user();
       $receiptOk = $receiptActor instanceof \App\Models\Staff && $receiptActor->hasEffectiveSuperAdminPrivileges();
-      if (! $receiptOk && (config('app.require_super_admin_email') && ($receiptActor ? $receiptActor->email : '') != $authorizedEmail)) {
+      if (! $receiptOk || (config('app.require_super_admin_email') && ($receiptActor ? $receiptActor->email : '') != $authorizedEmail)) {
           return response()->json([
               'status' => false,
               'message' => 'Unauthorized access. Voiding trust-affecting invoices requires super admin financial privileges.',
@@ -5032,6 +5033,7 @@ class ClientAccountsController extends Controller
                   if (! $orig || ((int) $orig->receipt_type) !== 1) {
                       throw new \RuntimeException('Receipt not found.');
                   }
+                  DB::table('admins')->where('id', $orig->client_id)->lockForUpdate()->first();
                   if ($orig->client_fund_ledger_type === 'Fee Transfer') {
                       throw new \RuntimeException('Fee transfer cannot be voided.');
                   }
@@ -5044,7 +5046,7 @@ class ClientAccountsController extends Controller
                   $revWithdraw = (float) $orig->deposit_amount;
 
                   $reversalData = [
-                      'user_id' => $request->input('loggedin_staffid') ?? Auth::user()->id,
+                      'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
                       'client_id' => $orig->client_id,
                       'client_matter_id' => $orig->client_matter_id,
                       'receipt_id' => $orig->receipt_id,
