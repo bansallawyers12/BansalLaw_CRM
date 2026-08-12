@@ -34,6 +34,7 @@ use App\Http\Controllers\CRM\AccessGrantController;
 
 /*---------- Client CRUD Operations ----------*/
 Route::get('/clients', [ClientsController::class, 'index'])->name('clients.index');
+Route::get('/clients/search', [ClientsController::class, 'getallclients'])->name('clients.search');
 Route::get('/clientsmatterslist', [ClientsController::class, 'clientsmatterslist'])->name('clients.clientsmatterslist');
 Route::get('/clientsclosedmatterslist', [ClientsController::class, 'closedmatterslist'])->name('clients.closedmatterslist');
 Route::get('/clientsemaillist', [ClientsController::class, 'clientsemaillist'])->name('clients.clientsemaillist');
@@ -133,14 +134,14 @@ Route::prefix('mail-attachments')->name('mail-attachments.')->group(function () 
 Route::post('/create-note', [ClientNotesController::class, 'createnote'])->name('clients.createnote');
 Route::post('/update-note-datetime', [ClientNotesController::class, 'updateNoteDatetime'])->name('clients.updateNoteDatetime');
 Route::get('/getnotedetail', [ClientNotesController::class, 'getnotedetail'])->name('clients.getnotedetail');
-Route::match(['get', 'post'], '/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
+Route::post('/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
 Route::get('/viewmatternote', [ClientNotesController::class, 'viewapplicationnote'])->name('clients.viewmatternote');
 Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']); // backward compat
 // REMOVED Phase 4: prev_visa column dropped - Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
-Route::match(['get', 'post'], '/pinnote', [ClientNotesController::class, 'pinnote']);
+Route::post('/pinnote', [ClientNotesController::class, 'pinnote']);
 
 Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index'])->name('clients.matterTask.index');
 Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');
@@ -155,10 +156,10 @@ Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clien
 Route::post('/unarchive/{id}', [ClientsController::class, 'unarchive'])->name('clients.unarchive');
 Route::get('/change-client-status', [ClientsController::class, 'updateclientstatus'])->name('clients.updateclientstatus');
 Route::get('/get-activities', [ClientsController::class, 'activities'])->name('clients.activities');
-Route::match(['get', 'post'], '/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');
-Route::get('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
+Route::post('/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');
+Route::post('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
-Route::get('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
+Route::post('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
 
 /*---------- Client Services ----------*/
 // Interested Services routes REMOVED - feature deprecated (no UI access, modals deleted, controllers don't exist)

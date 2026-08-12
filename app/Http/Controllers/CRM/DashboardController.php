@@ -244,7 +244,7 @@ class DashboardController extends Controller
 
         $message = $this->dashboardService->getVisaExpiryMessage($request->client_id, $user);
         
-        return $message;
+        return response()->json(['message' => $message]);
     }
 
     /**

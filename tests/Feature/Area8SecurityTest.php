@@ -971,4 +971,142 @@ class Area8SecurityTest extends TestCase
         $dataUnassigned = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
         $this->assertEquals(0, $dataUnassigned['count_active_matter']);
     }
+
+    #[Test]
+    public function unauthorized_staff_cannot_fetch_visa_expiry_message_idor(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $unassignedStaff = new Staff();
+        $unassignedStaff->email = 'staff990@bansallawyers.com.au';
+        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $unassignedStaff->role = 14;
+        $unassignedStaff->status = 1;
+        $unassignedStaff->save();
+
+        $client = new \App\Models\Admin();
+        $client->email = 'client990@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->user_id = 9999;
+        $client->save();
+
+        $visa = new \App\Models\ClientVisaCountry();
+        $visa->client_id = $client->id;
+        $visa->visa_expiry_date = now()->subDays(10)->format('Y-m-d');
+        $visa->save();
+
+        $this->actingAs($unassignedStaff, 'admin');
+
+        // Unassigned staff attempts to fetch visa expiry message for client 990
+        $response = $this->getJson('/dashboard/fetch-visa-expiry-messages?client_id=' . $client->id);
+        $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function note_delete_and_pin_require_post_method(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 12],
+            ['name' => 'Admin Role', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->email = 'staff1010@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staff->role = 12;
+        $staff->status = 1;
+        $staff->save();
+
+        $client = new \App\Models\Admin();
+        $client->email = 'client1010@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->user_id = $staff->id;
+        $client->save();
+
+        $note = new \App\Models\Note();
+        $note->client_id = $client->id;
+        $note->user_id = $staff->id;
+        $note->description = 'Test note description';
+        $note->pin = 0;
+        $note->save();
+
+        $this->actingAs($staff, 'admin');
+
+        // 1. GET /deletenote should be rejected (405 Method Not Allowed)
+        $responseGetDelete = $this->getJson('/deletenote?note_id=' . $note->id);
+        $this->assertTrue(in_array($responseGetDelete->getStatusCode(), [405, 404], true));
+        $this->assertNotNull(\App\Models\Note::find($note->id));
+
+        // 2. GET /pinnote should be rejected (405 Method Not Allowed)
+        $responseGetPin = $this->getJson('/pinnote?note_id=' . $note->id);
+        $this->assertTrue(in_array($responseGetPin->getStatusCode(), [405, 404], true));
+        $this->assertEquals(0, (int)$note->fresh()->pin);
+
+        // 3. POST /pinnote succeeds
+        $responsePostPin = $this->postJson('/pinnote', ['note_id' => $note->id]);
+        $responsePostPin->assertStatus(200);
+        $this->assertEquals(1, (int)$note->fresh()->pin);
+
+        // 4. POST /deletenote succeeds
+        $responsePostDelete = $this->postJson('/deletenote', ['note_id' => $note->id]);
+        $responsePostDelete->assertStatus(200);
+        $this->assertNull(\App\Models\Note::find($note->id));
+    }
+
+    #[Test]
+    public function global_client_search_masks_pii_for_inaccessible_records(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $unassignedStaff = new Staff();
+        $unassignedStaff->email = 'staff1020@bansallawyers.com.au';
+        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $unassignedStaff->role = 14;
+        $unassignedStaff->status = 1;
+        $unassignedStaff->save();
+
+        $clientSecret = new \App\Models\Admin();
+        $clientSecret->first_name = 'Secret';
+        $clientSecret->last_name = 'Person';
+        $clientSecret->email = 'secret.person1020@bansallawyers.com.au';
+        $clientSecret->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $clientSecret->type = 'client';
+        $clientSecret->status = 1;
+        $clientSecret->user_id = 9999;
+        $clientSecret->save();
+
+        $matter = new \App\Models\ClientMatter();
+        $matter->client_id = $clientSecret->id;
+        $matter->client_unique_matter_no = 'MAT1020';
+        $matter->workflow_stage_id = 1;
+        $matter->matter_status = 1;
+        $matter->sel_legal_practitioner = 9999;
+        $matter->save();
+
+        $this->actingAs($unassignedStaff, 'admin');
+
+        $responseSearch = $this->getJson('/clients/search?q=Secret');
+        $responseSearch->assertStatus(200);
+
+        $items = $responseSearch->json('items');
+        $this->assertNotEmpty($items);
+
+        $restrictedItem = collect($items)->firstWhere('cid', $clientSecret->id);
+        $this->assertNotNull($restrictedItem);
+        $this->assertTrue($restrictedItem['locked']);
+        $this->assertEquals('Restricted Record', $restrictedItem['name']);
+        $this->assertEquals('***@***', $restrictedItem['email']);
+        $this->assertEquals('***@***', $restrictedItem['emails']);
+        $this->assertStringNotContainsString('secret.person1020@bansallawyers.com.au', json_encode($restrictedItem));
+    }
 }

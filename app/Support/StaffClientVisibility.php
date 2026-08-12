@@ -202,16 +202,22 @@ final class StaffClientVisibility
             if (isset($item['last_name'])) {
                 $item['last_name'] = 'Record';
             }
-            if (isset($item['email']) && $item['email'] !== '') {
+            if (array_key_exists('email', $item)) {
                 $item['email'] = '***@***';
             }
-            if (isset($item['phone']) && $item['phone'] !== '') {
+            if (array_key_exists('emails', $item)) {
+                $item['emails'] = '***@***';
+            }
+            if (array_key_exists('phone', $item)) {
                 $item['phone'] = '***';
             }
-            if (isset($item['mobile']) && $item['mobile'] !== '') {
+            if (array_key_exists('phones', $item)) {
+                $item['phones'] = '***';
+            }
+            if (array_key_exists('mobile', $item)) {
                 $item['mobile'] = '***';
             }
-            if (isset($item['telephone']) && $item['telephone'] !== '') {
+            if (array_key_exists('telephone', $item)) {
                 $item['telephone'] = '***';
             }
         }

@@ -3188,7 +3188,7 @@ class ClientsController extends Controller
                             $item = $this->mapGlobalSearchMatterRow($matterRow);
                             $item['phones'] = $allPhones;
                             $item['emails'] = $allEmails;
-                            $results[] = $item;
+                            $results[] = StaffClientVisibility::enrichGlobalSearchItem($item, (string) $matterRow->type);
                         }
                     } else {
                         $results[] = StaffClientVisibility::enrichGlobalSearchItem([
