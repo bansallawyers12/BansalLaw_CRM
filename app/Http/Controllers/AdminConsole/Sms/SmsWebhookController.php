@@ -20,6 +20,10 @@ class SmsWebhookController extends Controller
      */
     public function twilioStatus(Request $request)
     {
+        if (!$this->verifyTwilioSignature($request)) {
+            return response('Unauthorized', 401);
+        }
+
         Log::info('Twilio Status Webhook', $request->all());
 
         $messageSid = $request->input('MessageSid');
@@ -53,6 +57,10 @@ class SmsWebhookController extends Controller
      */
     public function twilioIncoming(Request $request)
     {
+        if (!$this->verifyTwilioSignature($request)) {
+            return response('Unauthorized', 401);
+        }
+
         Log::info('Twilio Incoming Message', $request->all());
 
         $from = $request->input('From');
@@ -93,6 +101,10 @@ class SmsWebhookController extends Controller
      */
     public function cellcastStatus(Request $request)
     {
+        if (!$this->verifyCellcastSignature($request)) {
+            return response('Unauthorized', 401);
+        }
+
         Log::info('Cellcast Status Webhook', $request->all());
 
         $messageId = $request->input('message_id');
@@ -129,6 +141,10 @@ class SmsWebhookController extends Controller
      */
     public function cellcastIncoming(Request $request)
     {
+        if (!$this->verifyCellcastSignature($request)) {
+            return response('Unauthorized', 401);
+        }
+
         Log::info('Cellcast Incoming Message', $request->all());
 
         $from = $request->input('from') ?? $request->input('sender');
@@ -162,6 +178,82 @@ class SmsWebhookController extends Controller
         }
 
         return response('OK', 200);
+    }
+
+    /**
+     * Verify Twilio webhook signature
+     */
+    protected function verifyTwilioSignature(Request $request): bool
+    {
+        $authToken = config('services.twilio.auth_token');
+        if (empty($authToken)) {
+            Log::warning('Twilio webhook signature verification skipped: TWILIO_TOKEN / TWILIO_AUTH_TOKEN is not set');
+            return true;
+        }
+
+        $signature = $request->header('X-Twilio-Signature');
+        if (empty($signature)) {
+            if (app()->environment('testing')) {
+                return true;
+            }
+            Log::warning('Twilio webhook signature verification failed: missing X-Twilio-Signature header');
+            return false;
+        }
+
+        $url = $request->fullUrl();
+        $postData = $request->post();
+        ksort($postData);
+
+        $data = $url;
+        foreach ($postData as $key => $value) {
+            $data .= $key . $value;
+        }
+
+        $expectedSignature = base64_encode(hash_hmac('sha1', $data, $authToken, true));
+
+        if (!hash_equals($expectedSignature, (string)$signature)) {
+            Log::warning('Twilio webhook signature verification failed: signature mismatch');
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Verify Cellcast webhook signature or secret token
+     */
+    protected function verifyCellcastSignature(Request $request): bool
+    {
+        $secret = config('services.cellcast.webhook_secret') ?: config('services.cellcast.api_key');
+        if (empty($secret)) {
+            Log::warning('Cellcast webhook signature verification skipped: CELLCAST_WEBHOOK_SECRET / CELLCAST_API_KEY is not set');
+            return true;
+        }
+
+        $signature = $request->header('X-Cellcast-Signature')
+            ?? $request->header('X-Signature')
+            ?? $request->input('secret')
+            ?? $request->input('token');
+
+        if (empty($signature)) {
+            if (app()->environment('testing')) {
+                return true;
+            }
+            Log::warning('Cellcast webhook signature verification failed: missing signature/secret');
+            return false;
+        }
+
+        if (hash_equals((string)$secret, (string)$signature)) {
+            return true;
+        }
+
+        $computedSignature = hash_hmac('sha256', $request->getContent(), $secret);
+        if (hash_equals($computedSignature, (string)$signature)) {
+            return true;
+        }
+
+        Log::warning('Cellcast webhook signature verification failed: signature mismatch');
+        return false;
     }
 
     /**

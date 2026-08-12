@@ -133,7 +133,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapSmsRoutes()
     {
-        Route::middleware('web')
+        Route::middleware('api')
              ->namespace($this->namespace)
              ->group(base_path('routes/sms.php'));
     }

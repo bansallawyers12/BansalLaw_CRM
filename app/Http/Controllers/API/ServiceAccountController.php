@@ -35,25 +35,19 @@ class ServiceAccountController extends Controller
                 ], 401);
             }
 
-            if (!app()->environment('local', 'testing')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Service account token generation is disabled in production',
-                ], 403);
-            }
-
-            $mockToken = 'local_token_' . Str::random(32) . '_' . time();
+            // Generate genuine Sanctum API token for staff member
+            $token = $user->createToken($request->service_name)->plainTextToken;
             
             $response = [
                 'success' => true,
-                'token' => $mockToken,
-                'message' => 'Token generated successfully for local development',
+                'token' => $token,
+                'message' => 'Service account token generated successfully',
                 'service_name' => $request->service_name,
                 'admin_email' => $request->admin_email,
                 'generated_at' => now()->toISOString()
             ];
 
-            Log::info('Local service account token generated', [
+            Log::info('Service account token generated', [
                 'service_name' => $request->service_name,
                 'admin_email' => $request->admin_email,
             ]);
@@ -61,7 +55,7 @@ class ServiceAccountController extends Controller
             return response()->json($response, 200);
 
         } catch (\Exception $e) {
-            Log::error('Failed to generate local service account token', [
+            Log::error('Failed to generate service account token', [
                 'error' => $e->getMessage(),
                 'request_data' => $request->all()
             ]);
@@ -88,29 +82,29 @@ class ServiceAccountController extends Controller
                 'service_token' => 'required|string',
             ]);
 
-            // For local development, we'll accept any service token
-            // In production, this would validate against the actual service token
-            $authToken = 'local_auth_token_' . time() . '_' . substr(md5($request->service_token), 0, 16);
-            
-            $response = [
+            $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($request->service_token);
+            if (!$tokenModel || !$tokenModel->tokenable) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired service token',
+                ], 401);
+            }
+
+            return response()->json([
                 'success' => true,
                 'data' => [
-                    'token' => $authToken,
-                    'expires_at' => now()->addHours(24)->toISOString()
+                    'token' => $request->service_token,
+                    'user' => [
+                        'id' => $tokenModel->tokenable->id,
+                        'email' => $tokenModel->tokenable->email,
+                    ],
+                    'expires_at' => $tokenModel->expires_at?->toISOString()
                 ],
-                'message' => 'Authentication successful for local development'
-            ];
-
-            // Log the authentication
-            Log::info('Local service account authentication', [
-                'service_token_length' => strlen($request->service_token),
-                'auth_token' => $authToken
-            ]);
-
-            return response()->json($response, 200);
+                'message' => 'Authentication successful'
+            ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Failed to authenticate local service account', [
+            Log::error('Failed to authenticate service account', [
                 'error' => $e->getMessage(),
                 'request_data' => $request->all()
             ]);
