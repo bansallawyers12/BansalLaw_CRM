@@ -495,19 +495,24 @@ Status key (2026-08-07):
 - **Now:** Moved SMS webhook routes (`/webhooks/sms/*`) from `web` middleware group to `api` middleware group to prevent CSRF blocking of external providers. Implemented Twilio signature (`X-Twilio-Signature`) and Cellcast signature (`X-Cellcast-Signature` / secret token) verification in `SmsWebhookController`. Verified via automated tests `incoming_sms_webhooks_create_sms_logs_and_associate_contact` and `test_13_10_webhook_preserves_existing_delivered_at`.
 
 ### 9.4 High — Unauthenticated lead API discloses existing PII
-- **Status:** Open\*
-- **Files:** `LeadBookingApiController`; `POST /api/leads`
+- **Status:** Fixed
+- **Files:** `LeadBookingApiController`, `Area8SecurityTest.php`
+- **Now:** Standard public unauthenticated `POST /api/leads` calls now return generic non-disclosing response payloads (`Thank you for reaching out...`) without returning internal lead IDs, existing PII, or `data` objects. Authenticated Migration CRM handoffs (`/api/migration-crm/leads`) retain full structured payload responses. Verified via automated test `public_lead_api_does_not_disclose_existing_pii_or_lead_ids` and browser session verification.
 
 ### 9.5 Medium — Manual SMS send: any Admin Console user → any phone
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `SmsSendController.php`, `Area8SecurityTest.php`
+- **Now:** Updated `SmsSendController` (`send` and `sendFromTemplate` endpoints) to enforce `ensureCrmRecordAccess` for linked clients/contacts and restrict unlinked arbitrary phone number SMS sends strictly to SuperAdmins (`hasEffectiveSuperAdminPrivileges()`). Verified via automated test `regular_staff_cannot_send_manual_sms_to_unlinked_arbitrary_numbers`.
 
 ### 9.6 Suspected / Medium — Compose email SSRF via document URL
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `CRMUtilityController.php`, `Area8SecurityTest.php`
+- **Now:** Hardened `CRMUtilityController::sendmail` attachment processing against Server-Side Request Forgery (SSRF) and Local File Inclusion (LFI). URL document attachments now require valid HTTP/HTTPS schemes, allowed host domains (`amazonaws.com` / `bansallawyers.com.au`), and non-private/non-loopback public IP addresses. Local file attachments validate canonical paths against allowed directory roots (`public/img/documents`, `storage/app`). Verified via automated test `compose_email_document_url_blocks_ssrf_and_lfi_attempts`.
 
 ### 9.7 Critical — `/delete_action` deletes arbitrary table rows for any logged-in staff
-- **Status:** Partial
-- **Files:** `CRMUtilityController::deleteAction`
-- **Now:** Default branch uses an allowlist (matters, workflows, branches, templates, checklists, etc.). No longer fully arbitrary, but allowlisted hard-deletes remain too powerful for normal authenticated staff.
+- **Status:** Fixed
+- **Files:** `CRMUtilityController::deleteAction`, `Area8SecurityTest.php`
+- **Now:** Hardened `CRMUtilityController::deleteAction` by categorizing target tables into strict system-configuration allowlists (requiring Admin Console or SuperAdmin privileges) and client-record allowlists (requiring `ensureCrmRecordAccess` record-level authorization). All unlisted tables are rejected with an authorization failure response. Verified via automated test `regular_staff_cannot_delete_system_tables_or_unauthorized_records_via_delete_action`.
 
 ### 9.8 Critical — `/move_action` arbitrary column zeroing
 - **Status:** Partial

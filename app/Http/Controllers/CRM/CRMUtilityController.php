@@ -712,170 +712,173 @@ class CRMUtilityController extends Controller
 
 	public function deleteAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
+		$status = 0;
 		if ($request->isMethod('post'))
 		{
-			$requestData 	= 	$request->all(); //dd($requestData);
-            $requestData['id'] = trim($requestData['id']);
-			$requestData['table'] = trim($requestData['table']);
-            if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['table']) && !empty($requestData['table']))
+			$requestData = $request->all();
+            $id = (int) trim($requestData['id'] ?? 0);
+			$table = trim((string)($requestData['table'] ?? ''));
+
+            $systemTables = [
+                'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
+                'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+                'templates', 'products', 'document_checklists', 'personal_document_types',
+                'matter_document_types', 'teams'
+            ];
+
+            $clientTables = [
+                'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+            ];
+
+            if ($id > 0 && !empty($table))
 			{
-				$tableExist = Schema::hasTable(trim($requestData['table']));
-                if($tableExist)
+				if (!in_array($table, array_merge($systemTables, $clientTables), true) || !Schema::hasTable($table))
 				{
-					$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-                    if($recordExist)
-					{
-						if($requestData['table'] == 'admins'){
-                            $o = \App\Models\Admin::where('id', $requestData['id'])->first();
-							if($o->status == 1){
-								$is_status = 0;
-							}else{
-								$is_status = 1;
-							}
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['status' => $is_status, 'updated_at' => date('Y-m-d H:i:s')]);
-							if($response) {
-								$status = 1;
-                                if($is_status == 0 ) {
-                                    $message = 'Record has been inactive successfully.';
-                                } else {
-                                    $message = 'Record has been active successfully.';
-                                }
-                            }
-							else {
-								$message = config('constants.server_error');
-							}
-						}
-                        else if($requestData['table'] == 'client_matters'){
-                            $response = DB::table($requestData['table'])->where('id', $requestData['id'])->update(['matter_status' => 0]);
-							if($response) {
-								$status = 1;
-								$message = 'Record has been enabled successfully.';
-								// Delete email conversations from database (keep S3 attachments)
-								$matter = \App\Models\ClientMatter::find($requestData['id']);
-								if ($matter) {
-									$emailLogIds = \App\Models\EmailLog::where('client_id', $matter->client_id)
-										->where('client_matter_id', $matter->id)
-										->pluck('id');
-									if ($emailLogIds->isNotEmpty()) {
-										DB::table('email_label_email_log')->whereIn('email_log_id', $emailLogIds)->delete();
-										DB::table('email_log_attachments')->whereIn('email_log_id', $emailLogIds)->delete();
-										\App\Models\EmailLog::whereIn('id', $emailLogIds)->delete();
-									}
-								}
-							} else {
-								$message = config('constants.server_error');
-							}
-						}
-                        else if($requestData['table'] == 'quotations'){
-                            $response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['is_archive' => 1]);
-							if($response) {
-								$status = 1;
-								$message = 'Record has been enabled successfully.';
-							} else {
-								$message = config('constants.server_error');
-							}
-						}
-                        else if($requestData['table'] == 'templates'){
-                            $isexist	=	$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-                            if($isexist){
-                                $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                                DB::table('template_infos')->where('quotation_id', @$requestData['id'])->delete();
-                                if($response) {
-                                    $status = 1;
-                                    $message = 'Record has been deleted successfully.';
-                                } else {
-                                    $message = config('constants.server_error');
-                                }
-                            }else{
-                                $message = 'ID does not exist, please check it once again.';
-                            }
-						}
-                        else if($requestData['table'] == 'products'){
-                            // applications table removed - product_id check no longer needed
-                            $applicationisexist = false;
+                    return response()->json(['status' => 0, 'message' => 'Deletion is not authorized for this table.']);
+				}
 
-                            if($applicationisexist){
-                                $message = "Can't Delete its have relation with other records";
-                            }else{
-                                $isexist	=	$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-                                if($isexist){
-                                $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                                DB::table('template_infos')->where('quotation_id', @$requestData['id'])->delete();
+                // 1. Authorization check for system-wide configuration tables
+                if (in_array($table, $systemTables, true)) {
+                    $user = Auth::guard('admin')->user();
+                    $staff = $user instanceof \App\Models\Staff ? $user : null;
+                    $canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
 
-                                if($response) {
-                                    $status = 1;
-                                    $message = 'Record has been deleted successfully.';
-                                } else {
-                                    $message = config('constants.server_error');
-                                }
-                                }else{
-                                    $message = 'ID does not exist, please check it once again.';
-                                }
-                            }
-                        }
-                        else if($requestData['table'] == 'email_labels'){
-                            $label = DB::table($requestData['table'])->where('id', $requestData['id'])->first();
-                            if($label && $label->type == 'system'){
-                                $message = 'System labels cannot be deleted.';
-                            } else {
-                                $isexist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-                                if($isexist){
-                                    $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                                    if($response) {
-                                        $status = 1;
-                                        $message = 'Record has been deleted successfully.';
-                                    } else {
-                                        $message = config('constants.server_error');
-                                    }
-                                }else{
-                                    $message = 'ID does not exist, please check it once again.';
-                                }
-                            }
-                        }
-                        else if ($requestData['table'] == 'workflow_stages') {
-                            $row = DB::table('workflow_stages')->where('id', $requestData['id'])->first();
-                            if ($row && WorkflowStageFreeze::isFrozen($row->name)) {
-                                $message = 'This workflow stage is frozen and cannot be deleted.';
-                            } else {
-                                $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                                if ($response) {
-                                    $status = 1;
-                                    $message = 'Record has been deleted successfully.';
-                                } else {
-                                    $message = config('constants.server_error');
-                                }
-                            }
-                        }
-                        else {
-                            $allowedDeleteTables = [
-                                'matters', 'workflows', 'workflow_stages', 'branches',
-                                'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
-                                'email_labels', 'document_checklists', 'personal_document_types',
-                                'matter_document_types', 'teams', 'client_matter_tasks'
-                            ];
-                            if (in_array($requestData['table'], $allowedDeleteTables, true)) {
-                                $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                                if ($response) {
-                                    $status = 1;
-                                    $message = 'Record has been deleted successfully.';
-                                } else {
-                                    $message = config('constants.server_error');
-                                }
-                            } else {
-                                $message = 'Deletion is not authorized for this table.';
-                            }
-                        }
-					}
-                    else
-                    {
-                        $message = 'ID does not exist, please check it once again.';
+                    if (!$canManageSystem) {
+                        return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.']);
                     }
                 }
+
+                $recordExist = DB::table($table)->where('id', $id)->exists();
+                if ($recordExist)
+				{
+					if ($table === 'admins') {
+                        $o = \App\Models\Admin::where('id', $id)->first();
+						$is_status = ($o && $o->status == 1) ? 0 : 1;
+						$response = DB::table($table)->where('id', $id)->update(['status' => $is_status, 'updated_at' => date('Y-m-d H:i:s')]);
+						if ($response) {
+							$status = 1;
+                            $message = ($is_status === 0) ? 'Record has been inactive successfully.' : 'Record has been active successfully.';
+                        } else {
+							$message = config('constants.server_error');
+						}
+					}
+                    else if ($table === 'client_matters') {
+                        $matter = \App\Models\ClientMatter::find($id);
+                        if ($matter && $matter->client_id) {
+                            $this->ensureCrmRecordAccess((int) $matter->client_id);
+                        }
+                        $response = DB::table($table)->where('id', $id)->update(['matter_status' => 0]);
+						if ($response) {
+							$status = 1;
+							$message = 'Record has been enabled successfully.';
+							if ($matter) {
+								$emailLogIds = \App\Models\EmailLog::where('client_id', $matter->client_id)
+									->where('client_matter_id', $matter->id)
+									->pluck('id');
+								if ($emailLogIds->isNotEmpty()) {
+									DB::table('email_label_email_log')->whereIn('email_log_id', $emailLogIds)->delete();
+									DB::table('email_log_attachments')->whereIn('email_log_id', $emailLogIds)->delete();
+									\App\Models\EmailLog::whereIn('id', $emailLogIds)->delete();
+								}
+							}
+						} else {
+							$message = config('constants.server_error');
+						}
+					}
+                    else if ($table === 'quotations') {
+                        $quotation = DB::table('quotations')->where('id', $id)->first();
+                        if ($quotation && !empty($quotation->client_id)) {
+                            $this->ensureCrmRecordAccess((int) $quotation->client_id);
+                        }
+                        $response = DB::table($table)->where('id', $id)->update(['is_archive' => 1]);
+						if ($response) {
+							$status = 1;
+							$message = 'Record has been enabled successfully.';
+						} else {
+							$message = config('constants.server_error');
+						}
+					}
+                    else if ($table === 'client_matter_tasks') {
+                        $task = DB::table('client_matter_tasks')->where('id', $id)->first();
+                        if ($task && !empty($task->client_id)) {
+                            $this->ensureCrmRecordAccess((int) $task->client_id);
+                        }
+                        $response = DB::table($table)->where('id', $id)->delete();
+                        if ($response) {
+                            $status = 1;
+                            $message = 'Task has been deleted successfully.';
+                        } else {
+                            $message = config('constants.server_error');
+                        }
+                    }
+                    else if ($table === 'templates') {
+                        $response = DB::table($table)->where('id', $id)->delete();
+                        DB::table('template_infos')->where('quotation_id', $id)->delete();
+                        if ($response) {
+                            $status = 1;
+                            $message = 'Record has been deleted successfully.';
+                        } else {
+                            $message = config('constants.server_error');
+                        }
+					}
+                    else if ($table === 'products') {
+                        $response = DB::table($table)->where('id', $id)->delete();
+                        DB::table('template_infos')->where('quotation_id', $id)->delete();
+                        if ($response) {
+                            $status = 1;
+                            $message = 'Record has been deleted successfully.';
+                        } else {
+                            $message = config('constants.server_error');
+                        }
+                    }
+                    else if ($table === 'email_labels') {
+                        $label = DB::table($table)->where('id', $id)->first();
+                        if ($label && $label->type === 'system') {
+                            $message = 'System labels cannot be deleted.';
+                        } else {
+                            if ($label && !empty($label->user_id) && (int)$label->user_id !== (int)Auth::id()) {
+                                $user = Auth::guard('admin')->user();
+                                $staff = $user instanceof \App\Models\Staff ? $user : null;
+                                if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+                                    return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only delete your own custom email labels.']);
+                                }
+                            }
+                            $response = DB::table($table)->where('id', $id)->delete();
+                            if ($response) {
+                                $status = 1;
+                                $message = 'Record has been deleted successfully.';
+                            } else {
+                                $message = config('constants.server_error');
+                            }
+                        }
+                    }
+                    else if ($table === 'workflow_stages') {
+                        $row = DB::table('workflow_stages')->where('id', $id)->first();
+                        if ($row && WorkflowStageFreeze::isFrozen($row->name)) {
+                            $message = 'This workflow stage is frozen and cannot be deleted.';
+                        } else {
+                            $response = DB::table($table)->where('id', $id)->delete();
+                            if ($response) {
+                                $status = 1;
+                                $message = 'Record has been deleted successfully.';
+                            } else {
+                                $message = config('constants.server_error');
+                            }
+                        }
+                    }
+                    else {
+                        $response = DB::table($table)->where('id', $id)->delete();
+                        if ($response) {
+                            $status = 1;
+                            $message = 'Record has been deleted successfully.';
+                        } else {
+                            $message = config('constants.server_error');
+                        }
+                    }
+				}
                 else
                 {
-                    $message = 'Table does not exist, please check it once again.';
+                    $message = 'ID does not exist, please check it once again.';
                 }
             }
             else
@@ -886,8 +889,7 @@ class CRMUtilityController extends Controller
 		else {
 			$message = config('constants.post_method');
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		die;
+		return response()->json(['status' => $status, 'message' => $message]);
 	}
 
 	public function getStates(Request $request)
@@ -1568,7 +1570,11 @@ public function getChapters(Request $request)
     		        foreach($checklistfiles as $checklistfile){
     		           $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
     		           if($filechecklist){
-    		            $array['files'][] =  public_path() . '/' .'checklists/'.$filechecklist->file;
+    		               $safePath = realpath(public_path('checklists/' . basename($filechecklist->file)));
+    		               $allowedChecklistDir = realpath(public_path('checklists'));
+    		               if ($safePath && $allowedChecklistDir && str_starts_with($safePath, $allowedChecklistDir)) {
+    		                   $array['files'][] = $safePath;
+    		               }
     		           }
     		        }
     		    }
@@ -1580,29 +1586,81 @@ public function getChapters(Request $request)
                     foreach($checklistfiles_documents as $checklistfile1){
                         $filechecklist_doc =  \App\Models\Document::where('id', $checklistfile1)->first();
                         if($filechecklist_doc){
+                            // Check CRM record access permission for client document
+                            if (!empty($filechecklist_doc->client_id)) {
+                                $this->ensureCrmRecordAccess((int) $filechecklist_doc->client_id);
+                            }
+
                             if( $filechecklist_doc->doc_type == "education" || $filechecklist_doc->doc_type == "migration" ){
-                                $array['files'][] =  public_path() . '/' .'img/documents/'.$filechecklist_doc->myfile;
+                                $safeDocPath = realpath(public_path('img/documents/' . basename($filechecklist_doc->myfile)));
+                                $allowedPublicDocDir = realpath(public_path('img/documents'));
+                                if ($safeDocPath && $allowedPublicDocDir && str_starts_with($safeDocPath, $allowedPublicDocDir)) {
+                                    $array['files'][] = $safeDocPath;
+                                }
                             }
                             else if( $filechecklist_doc->doc_type == "documents") {
-                                $fileUrl = $filechecklist_doc->myfile; // AWS S3 link
+                                $fileUrl = $filechecklist_doc->myfile; // AWS S3 link or local path
 
-                                // Check if it's a URL and validate domain
+                                // Check if it's a URL and validate scheme, host, and IP to prevent SSRF
                                 if (filter_var($fileUrl, FILTER_VALIDATE_URL)) {
-                                    $parsedHost = parse_url($fileUrl, PHP_URL_HOST);
-                                    $isAllowedDomain = $parsedHost && (
-                                        str_ends_with($parsedHost, 'amazonaws.com') ||
-                                        str_ends_with($parsedHost, 'bansallawyers.com.au')
-                                    );
-                                    if ($isAllowedDomain) {
-                                        $tempPath = sys_get_temp_dir() . '/' . basename($fileUrl);
-                                        $fileContent = @file_get_contents($fileUrl);
-                                        if ($fileContent !== false) {
-                                            file_put_contents($tempPath, $fileContent);
-                                            $array['files'][] = $tempPath; // Attach the temp file
+                                    $parsedScheme = strtolower((string) parse_url($fileUrl, PHP_URL_SCHEME));
+                                    $parsedHost = strtolower((string) parse_url($fileUrl, PHP_URL_HOST));
+
+                                    if (in_array($parsedScheme, ['http', 'https'], true) && !empty($parsedHost)) {
+                                        $ip = gethostbyname($parsedHost);
+                                        // Block private/loopback/reserved IP ranges
+                                        $isPublicIp = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+
+                                        $isAllowedDomain = (
+                                            str_ends_with($parsedHost, 'amazonaws.com') ||
+                                            str_ends_with($parsedHost, 'bansallawyers.com.au')
+                                        );
+
+                                        if ($isAllowedDomain && $isPublicIp) {
+                                            $tempPath = sys_get_temp_dir() . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', basename(parse_url($fileUrl, PHP_URL_PATH) ?? 'doc.pdf'));
+                                            $fileContent = @file_get_contents($fileUrl);
+                                            if ($fileContent !== false) {
+                                                file_put_contents($tempPath, $fileContent);
+                                                $array['files'][] = $tempPath; // Attach the temp file
+                                            }
+                                        } else {
+                                            \Illuminate\Support\Facades\Log::warning('Compose email SSRF attempt blocked', [
+                                                'doc_id' => $checklistfile1,
+                                                'url' => $fileUrl,
+                                                'host' => $parsedHost,
+                                                'ip' => $ip,
+                                            ]);
                                         }
                                     }
                                 } else {
-                                    $array['files'][] = $fileUrl; // Local file
+                                    // Local file path validation (prevent arbitrary local file inclusion)
+                                    $baseName = basename($fileUrl);
+                                    $candidatePublic = realpath(public_path('img/documents/' . $baseName));
+                                    $candidateStorage = realpath(storage_path('app/' . ltrim($fileUrl, '/\\')));
+                                    $candidateStoragePublic = realpath(storage_path('app/public/' . ltrim($fileUrl, '/\\')));
+
+                                    $validPath = null;
+                                    $allowedRootStorage = realpath(storage_path('app'));
+                                    $allowedRootPublic = realpath(public_path());
+
+                                    foreach ([$candidatePublic, $candidateStorage, $candidateStoragePublic] as $cand) {
+                                        if ($cand && file_exists($cand) && is_file($cand)) {
+                                            if (($allowedRootStorage && str_starts_with($cand, $allowedRootStorage)) || 
+                                                ($allowedRootPublic && str_starts_with($cand, $allowedRootPublic))) {
+                                                $validPath = $cand;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if ($validPath) {
+                                        $array['files'][] = $validPath;
+                                    } else {
+                                        \Illuminate\Support\Facades\Log::warning('Compose email arbitrary local file attachment path blocked', [
+                                            'doc_id' => $checklistfile1,
+                                            'path' => $fileUrl,
+                                        ]);
+                                    }
                                 }
                             }
                         }
