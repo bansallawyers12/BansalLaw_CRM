@@ -460,6 +460,10 @@ class ClientNotesController extends Controller
      */
     public function deletenote(Request $request)
     {
+        if (!$request->isMethod('post')) {
+            return response()->json(['status' => false, 'message' => 'Method not allowed'], 405);
+        }
+
 		$note_id = $request->note_id;
 		$note = Note::find($note_id);
 		if (!$note) {
@@ -508,6 +512,10 @@ class ClientNotesController extends Controller
      */
     public function pinnote(Request $request)
     {
+        if (!$request->isMethod('post')) {
+            return response()->json(['status' => false, 'message' => 'Method not allowed'], 405);
+        }
+
 		$noteId = $request->input('note_id');
 
 		$note = Note::find($noteId);

@@ -623,17 +623,23 @@ Status key (2026-08-07):
 - **Now:** Updated `DashboardService::getActiveMatterCount` and `DashboardService::getClosedMatterCount` to resolve authenticated user via `Auth::guard('admin')->user() ?: Auth::user()` and apply `applyRoleBasedFiltering($query, $user)`. Active and closed matter counter queries now strictly calculate viewer-scoped matter counts for staff, caching per staff ID (`active_matter_count_staff_{id}` / `closed_matter_count_staff_{id}`). Verified via automated unit test `active_and_closed_matter_counters_are_viewer_scoped`.
 
 ### 11.5 Medium — Visa expiry message endpoint lacks client access check
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `DashboardController::fetchVisaExpiryMessages`, `DashboardService::getVisaExpiryMessage`, `routes/web.php`, `Area8SecurityTest.php`
+- **Now:** Added route `GET /dashboard/fetch-visa-expiry-messages` and updated `DashboardController::fetchVisaExpiryMessages` & `DashboardService::getVisaExpiryMessage` to enforce client visibility checks via `StaffClientVisibility::canAccessClientOrLead((int) $clientId, $user)`. Unauthorized requests return HTTP 403. Verified via automated unit test `unauthorized_staff_cannot_fetch_visa_expiry_message_idor`.
 
 ---
 
 ## Area 12 — Clients / Leads (supplement)
 
 ### 12.1 High — Note delete/pin via GET (CSRF-friendly state change)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientNotesController::deletenote`, `ClientNotesController::pinnote`, `routes/clients.php`, `Area8SecurityTest.php`
+- **Now:** Restricted note deletion (`/deletenote`), note pinning (`/pinnote`), cost agreement deletion (`/deletecostagreement`), activity log deletion (`/deleteactivitylog`), and activity log pinning (`/pinactivitylog`) strictly to `POST` methods. `deletenote` and `pinnote` in `ClientNotesController` explicitly reject non-POST requests with HTTP 405 Method Not Allowed, mitigating CSRF state mutations via GET requests. Verified via automated unit test `note_delete_and_pin_require_post_method`.
 
 ### 12.2 High — Global client search returns PII for inaccessible records
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `StaffClientVisibility::enrichGlobalSearchItem`, `ClientsController::getallclients`, `routes/clients.php`, `Area8SecurityTest.php`
+- **Now:** Added route `GET /clients/search` mapping to `ClientsController::getallclients`. Updated `StaffClientVisibility::enrichGlobalSearchItem` to mask `emails` and `phones` fields (in addition to `name`, `first_name`, `last_name`, `email`, `phone`, `mobile`, `telephone`) whenever a record is locked (`!canAccessClientOrLead`), replacing sensitive PII with masked placeholders (`***@***` / `***`). Updated matter search mapping in `ClientsController::getallclients` to pass matter results through `enrichGlobalSearchItem`. Verified via automated unit test `global_client_search_masks_pii_for_inaccessible_records`.
 
 ### 12.3 High — Parents/siblings/others save via `saveSection` fatals on PHP 8
 - **Status:** Fixed
