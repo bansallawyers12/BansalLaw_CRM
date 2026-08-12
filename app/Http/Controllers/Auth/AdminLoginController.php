@@ -74,10 +74,20 @@ class AdminLoginController extends Controller
             ['status' => 1]
         );
 
-        return $this->guard()->attempt(
+        $attemptResult = $this->guard()->attempt(
             $credentials,
             $request->boolean('remember')
         );
+
+        if (!$attemptResult) {
+            // Perform dummy password check to equalize timing when email is invalid or inactive
+            \Illuminate\Support\Facades\Hash::check(
+                (string) $request->input('password', ''),
+                '$2y$10$e0MYzXyjpJS7Pd0RVvHwHe1FX5X1D2u.w8Y4vL.N.o8Y4vL.N.o8Y'
+            );
+        }
+
+        return $attemptResult;
     }
 
     protected function validateLogin(Request $request): void
@@ -170,15 +180,18 @@ class AdminLoginController extends Controller
 
     public function logout(Request $request): mixed
     {
-        $user = Auth::guard('admin')->id();
+        $user = Auth::guard('admin')->user();
+        $userId = $user ? $user->id : null;
 
-        $obj             = new \App\Models\StaffLoginLog;
-        $obj->level      = 'info';
-        $obj->user_id    = $user;
-        $obj->ip_address = $request->getClientIp();
-        $obj->user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $obj->message    = 'Logged out successfully';
-        $obj->save();
+        if ($userId) {
+            $obj             = new \App\Models\StaffLoginLog;
+            $obj->level      = 'info';
+            $obj->user_id    = $userId;
+            $obj->ip_address = $request->getClientIp();
+            $obj->user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            $obj->message    = 'Logged out successfully';
+            $obj->save();
+        }
 
         Auth::guard('admin')->logout();
         $request->session()->flush();

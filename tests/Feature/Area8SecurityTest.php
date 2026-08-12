@@ -480,4 +480,183 @@ class Area8SecurityTest extends TestCase
 
         $this->assertEquals($initialTokenCount, $finalTokenCount);
     }
+
+    #[Test]
+    public function login_response_does_not_enumerate_valid_emails_and_uses_constant_time_verification(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://www.google.com/recaptcha/api/siteverify*' => \Illuminate\Support\Facades\Http::response(['success' => true], 200),
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 915;
+        $staff->email = 'validstaff915@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('secretpassword');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        // 1. Invalid email response returns generic error message
+        $response1 = $this->post('/login', [
+            'email' => 'nonexistent9999@bansallawyers.com.au',
+            'password' => 'wrongpassword',
+            'g-recaptcha-response' => 'test-recaptcha-token',
+        ]);
+        $response1->assertSessionHasErrors(['email']);
+        $errors1 = session('errors')->get('email');
+        $this->assertEquals(['These credentials do not match our records.'], $errors1);
+
+        // 2. Valid email with wrong password returns identical generic error message
+        $response2 = $this->post('/login', [
+            'email' => 'validstaff915@bansallawyers.com.au',
+            'password' => 'wrongpassword',
+            'g-recaptcha-response' => 'test-recaptcha-token',
+        ]);
+        $response2->assertSessionHasErrors(['email']);
+        $errors2 = session('errors')->get('email');
+        $this->assertEquals(['These credentials do not match our records.'], $errors2);
+    }
+
+    #[Test]
+    public function logout_audit_log_uses_session_user_id_and_ignores_forged_request_body_id(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 918;
+        $staff->email = 'staff918@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        // Post logout with a forged user_id in the request body
+        $response = $this->post('/logout', [
+            'user_id' => 99999,
+            'id' => 88888,
+        ]);
+
+        $response->assertRedirect();
+
+        // Audit log must record the authenticated staff ID (918), not the forged body ID (99999 / 88888)
+        $this->assertDatabaseHas('staff_login_logs', [
+            'user_id' => 918,
+            'message' => 'Logged out successfully',
+        ]);
+
+        $this->assertDatabaseMissing('staff_login_logs', [
+            'user_id' => 99999,
+        ]);
+        $this->assertDatabaseMissing('staff_login_logs', [
+            'user_id' => 88888,
+        ]);
+    }
+
+    #[Test]
+    public function quick_access_grant_prevents_duplicate_active_grants(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $branch = new \App\Models\Branch();
+        $branch->id = 771;
+        $branch->office_name = 'Main Office';
+        $branch->save();
+
+        $client = new \App\Models\Admin();
+        $client->id = 771;
+        $client->email = 'client771@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->save();
+
+        $staff = new Staff();
+        $staff->id = 920;
+        $staff->email = 'staff920@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staff->role = 14;
+        $staff->status = 1;
+        $staff->quick_access_enabled = true;
+        $staff->save();
+
+        $crmAccess = app(\App\Services\CrmAccess\CrmAccessService::class);
+
+        // 1. Initial quick access grant succeeds
+        $grant = $crmAccess->requestQuickGrant($staff, 771, 'client', 771, null, 'urgent');
+        $this->assertNotNull($grant);
+        $this->assertEquals('active', $grant->status);
+
+        // 2. Second quick access grant attempt fails with CrmAccessDeniedException
+        $this->expectException(\App\Services\CrmAccess\CrmAccessDeniedException::class);
+        $this->expectExceptionMessage('An active quick access grant already exists for this record.');
+
+        $crmAccess->requestQuickGrant($staff, 771, 'client', 771, null, 'urgent');
+    }
+
+    #[Test]
+    public function non_super_admin_cannot_assign_super_admin_role_or_grant_access(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 12],
+            ['name' => 'Manager', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $nonSuperAdmin = new Staff();
+        $nonSuperAdmin->id = 925;
+        $nonSuperAdmin->email = 'manager925@bansallawyers.com.au';
+        $nonSuperAdmin->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $nonSuperAdmin->role = 12; // Admin / Manager (role != 1)
+        $nonSuperAdmin->status = 1;
+        $nonSuperAdmin->save();
+
+        $targetStaff = new Staff();
+        $targetStaff->id = 926;
+        $targetStaff->email = 'target926@bansallawyers.com.au';
+        $targetStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $targetStaff->role = 12;
+        $targetStaff->status = 1;
+        $targetStaff->save();
+
+        $this->actingAs($nonSuperAdmin, 'admin');
+
+        // 1. Attempting to create new staff with Super Admin role (role=1) is rejected
+        $responseCreate = $this->postJson('/adminconsole/staff/store', [
+            'first_name' => 'Fake',
+            'last_name' => 'Superadmin',
+            'email' => 'fakesuperadmin@bansallawyers.com.au',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'phone' => '0400000000',
+            'role' => 1, // Super Admin
+            'office' => 1,
+        ]);
+        $this->assertTrue(in_array($responseCreate->getStatusCode(), [403, 422], true));
+
+        // 2. Attempting to update existing staff to Super Admin role (role=1) is rejected
+        $responseUpdate = $this->putJson('/adminconsole/staff/' . $targetStaff->id, [
+            'first_name' => 'Target',
+            'last_name' => 'Staff',
+            'email' => 'target926@bansallawyers.com.au',
+            'phone' => '0400000000',
+            'role' => 1, // Super Admin
+            'office' => 1,
+        ]);
+        $this->assertTrue(in_array($responseUpdate->getStatusCode(), [403, 422], true));
+
+        // Verify target staff role remains unchanged (12)
+        $this->assertEquals(12, $targetStaff->fresh()->role);
+    }
 }

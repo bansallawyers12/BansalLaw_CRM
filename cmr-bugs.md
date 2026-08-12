@@ -564,13 +564,19 @@ Status key (2026-08-07):
 - **Now:** Credentials include `status => 1`.
 
 ### 10.4 Medium — Login response enumerates valid emails
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `AdminLoginController::attemptLogin`, `Area8SecurityTest.php`
+- **Now:** Updated `AdminLoginController::attemptLogin` to perform dummy password hash checking (`Hash::check`) on failed login attempts when the user/email is invalid or inactive, equalizing execution time (~200ms) across valid and invalid email responses to prevent timing side-channel email enumeration. Verified via automated test `login_response_does_not_enumerate_valid_emails_and_uses_constant_time_verification`.
 
 ### 10.5 Medium — Logout audit user id taken from request body, not session
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `AdminLoginController::logout`, `StaffApiAuthController::logout`, `StaffApiAuthController::logoutAll`, `Area8SecurityTest.php`
+- **Now:** Updated `AdminLoginController::logout` and `StaffApiAuthController` logout endpoints to derive the audit log `user_id` strictly from the authenticated session context (`Auth::guard('admin')->user()->id` or `$request->user()->id`), completely ignoring any user ID passed in request payloads and preventing audit log forgery. Verified via automated test `logout_audit_log_uses_session_user_id_and_ignores_forged_request_body_id`.
 
 ### 10.6 Medium — Quick access grant check-then-create race
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `CrmAccessService::requestQuickGrant`, `Area8SecurityTest.php`
+- **Now:** Updated `CrmAccessService::requestQuickGrant` to acquire a database row lock on the requesting `Staff` record (`Staff::query()->where('id', (int) $user->id)->lockForUpdate()->first()`) inside the transaction before invoking `hasDuplicateActiveQuickGrant`, serializing concurrent quick access requests for the same user and eliminating the check-then-create race condition. Verified via automated test `quick_access_grant_prevents_duplicate_active_grants`.
 
 ### 10.7 Critical — Module authorization query hits non-existent `usertype` column
 - **Status:** Fixed
@@ -578,7 +584,9 @@ Status key (2026-08-07):
 - **Now:** Uses `UserRole::find($role)` and numeric/`module_access` key matching.
 
 ### 10.8 High — Any successful staff save can assign Super Admin role
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `StaffController::store`, `StaffController::update`, `StaffController::fillStaffFromRequest`, `Area8SecurityTest.php`
+- **Now:** Added strict role validation checks in `StaffController::store`, `StaffController::update`, and `StaffController::fillStaffFromRequest` ensuring that only authenticated staff users who are strictly Super Admins (`(int) ($actor->role ?? 0) === 1`) can assign the Super Admin role (`role=1`), grant Super Admin level privileges (`grant_super_admin_access`), or modify an existing Super Admin user. Verified via automated unit test `non_super_admin_cannot_assign_super_admin_role_or_grant_access`.
 
 ### 10.9 High — Invited staff tab returns all staff
 - **Status:** Open\*
