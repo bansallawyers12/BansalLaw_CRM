@@ -102,10 +102,20 @@ class AssigneeController extends Controller
 
         if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
             $uid = (int) $user->id;
-            $isAssigneeOrOwner = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
-            $hasClientAccess = $noteData->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$noteData->client_id, $user) : false;
-            if (!$isAssigneeOrOwner && !$hasClientAccess) {
-                return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+            $notesToCheck = collect([$noteData]);
+            if ($uniqueGroupId !== '') {
+                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)->whereNotNull('unique_group_id')->get();
+                if ($groupNotes->isNotEmpty()) {
+                    $notesToCheck = $groupNotes;
+                }
+            }
+
+            foreach ($notesToCheck as $checkNote) {
+                $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
+                $hasClientAccess = $checkNote->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user) : false;
+                if (!$isAssigneeOrOwner && !$hasClientAccess) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                }
             }
         }
 

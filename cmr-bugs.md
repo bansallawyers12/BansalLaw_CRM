@@ -603,18 +603,24 @@ Status key (2026-08-07):
 ## Area 11 — Dashboard (supplement)
 
 ### 11.1 High — Matter stage update has no authorization / ownership check (IDOR)
-- **Status:** Partial
-- **Files:** `DashboardService::updateClientMatterStage`
-- **Now:** Non–all-matters viewers must be assigned on the matter or pass `canAccessClientOrLead`. Viewers who “see all matters/actions” can still update broadly.
+- **Status:** Fixed
+- **Files:** `DashboardService::updateClientMatterStage`, `DashboardController::updateStage`, `Area8SecurityTest.php`
+- **Now:** Added strict ownership and client visibility checks in `DashboardService::updateClientMatterStage` and stage ID validation via `WorkflowStage::where('id', $stageId)->exists()`. Non–super-admin staff must be assigned to the matter (`sel_legal_practitioner`, `sel_person_responsible`, `sel_person_assisting`) or pass `StaffClientVisibility::canAccessClientOrLead` before updating a matter's stage. Unauthorized attempts return HTTP 403. Verified via automated unit test `unauthorized_staff_cannot_update_matter_stage_idor`.
 
 ### 11.2 High — Action complete / deadline extend have no access checks (IDOR)
-- **Status:** Open\* (assignee destroy side fixed in #7.1; dashboard complete/extend still confirm)
+- **Status:** Fixed
+- **Files:** `DashboardService::extendNoteDeadline`, `DashboardService::updateActionCompleted`, `AssigneeController::updateActionCompleted`, `Area8SecurityTest.php`
+- **Now:** Enforced comprehensive group authorization checks across `DashboardService::extendNoteDeadline`, `DashboardService::updateActionCompleted`, and `AssigneeController::updateActionCompleted`. For action completion or deadline extension, all target notes in a group must satisfy ownership (`user_id`), assignment (`assigned_to`), or client visibility (`StaffClientVisibility::canAccessClientOrLead`). Unauthorized modification attempts return HTTP 403. Verified via automated unit test `unauthorized_staff_cannot_complete_or_extend_action_idor`.
 
 ### 11.3 High — Dashboard matter list bypasses allocation for most roles
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `DashboardService::applyRoleBasedFiltering`, `Area8SecurityTest.php`
+- **Now:** Updated `DashboardService::applyRoleBasedFiltering` to enforce full row-level allocation and security policy using `StaffClientVisibility`. Exempt roles/staff (`StaffClientVisibility::isExemptFromAllocation`) and Super Admins retain full visibility, non-super-admin users exclude locked files via `excludeSuperAdminOnlyLockedClientsFromAdminQuery`, and non-exempt staff are strictly scoped to matters where they are assigned (`sel_legal_practitioner`, `sel_person_responsible`, `sel_person_assisting`), own the client (`admins.user_id`), or hold active cross-access grants (`client_access_grants`). Verified via automated unit test `dashboard_matter_list_respects_exempt_roles_and_allocation`.
 
 ### 11.4 Medium — Active/closed matter counters are global, not viewer-scoped
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `DashboardService::getActiveMatterCount`, `DashboardService::getClosedMatterCount`, `Area8SecurityTest.php`
+- **Now:** Updated `DashboardService::getActiveMatterCount` and `DashboardService::getClosedMatterCount` to resolve authenticated user via `Auth::guard('admin')->user() ?: Auth::user()` and apply `applyRoleBasedFiltering($query, $user)`. Active and closed matter counter queries now strictly calculate viewer-scoped matter counts for staff, caching per staff ID (`active_matter_count_staff_{id}` / `closed_matter_count_staff_{id}`). Verified via automated unit test `active_and_closed_matter_counters_are_viewer_scoped`.
 
 ### 11.5 Medium — Visa expiry message endpoint lacks client access check
 - **Status:** Open\*

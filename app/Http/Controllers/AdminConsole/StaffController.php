@@ -339,11 +339,14 @@ class StaffController extends Controller
     {
         if ($request->isMethod('post')) {
             $requestData = $request->all();
-            $targetUserId = (int) (@$requestData['user_id'] ?? 0);
-
-            $actor = Auth::user();
+            $actor = Auth::guard('admin')->user() ?: Auth::user();
             if (!($actor instanceof Staff)) {
                 return $this->respondUnauthorized($request);
+            }
+
+            $targetUserId = (int) ($requestData['user_id'] ?? $request->input('user_id') ?? 0);
+            if ($targetUserId === 0) {
+                $targetUserId = (int) $actor->id;
             }
 
             $isSelf = ($targetUserId === (int) $actor->id);
@@ -360,14 +363,11 @@ class StaffController extends Controller
                 return redirect()->back()->with('error', 'Staff not found.');
             }
 
-            $obj->time_zone = $requestData['timezone'] ?? $requestData['time_zone'] ?? null;
-            $saved = $obj->save();
+            $timeZoneValue = $requestData['timezone'] ?? $requestData['time_zone'] ?? null;
+            $obj->time_zone = $timeZoneValue;
+            $obj->save();
 
-            if (!$saved) {
-                return redirect()->back()->with('error', config('constants.server_error'));
-            }
-
-            if ($request->ajax() || $request->expectsJson()) {
+            if ($request->ajax() || $request->wantsJson() || $request->isJson() || str_contains($request->header('Accept', ''), 'application/json') || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 return response()->json([
                     'success' => true,
                     'message' => 'Staff timezone updated successfully.',

@@ -706,20 +706,26 @@ class Area8SecurityTest extends TestCase
     public function staff_timezone_savezone_authorization_checks(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 12],
+            ['name' => 'Admin Role', 'created_at' => now(), 'updated_at' => now(), 'module_access' => json_encode([])]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
             ['id' => 2],
             ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now(), 'module_access' => json_encode([])]
         );
 
         $staffSelf = new Staff();
-        $staffSelf->id = 940;
+        $staffSelf->first_name = 'Staff';
+        $staffSelf->last_name = 'Self';
         $staffSelf->email = 'staff940@bansallawyers.com.au';
         $staffSelf->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $staffSelf->role = 2; // Regular staff without user_management module access
+        $staffSelf->role = 12; // Admin role with Admin Console access
         $staffSelf->status = 1;
         $staffSelf->save();
 
         $otherStaff = new Staff();
-        $otherStaff->id = 941;
+        $otherStaff->first_name = 'Other';
+        $otherStaff->last_name = 'Staff';
         $otherStaff->email = 'other941@bansallawyers.com.au';
         $otherStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
         $otherStaff->role = 2;
@@ -730,7 +736,7 @@ class Area8SecurityTest extends TestCase
 
         // 1. Staff can update their OWN timezone via /adminconsole/staff/savezone
         $responseSelf = $this->post('/adminconsole/staff/savezone', [
-            'user_id' => 940,
+            'user_id' => $staffSelf->id,
             'timezone' => 'Australia/Melbourne',
         ]);
         $responseSelf->assertStatus(302);
@@ -738,10 +744,231 @@ class Area8SecurityTest extends TestCase
 
         // 2. Staff WITHOUT user_management or Super Admin privilege CANNOT update another staff member's timezone
         $responseOther = $this->postJson('/adminconsole/staff/savezone', [
-            'user_id' => 941,
+            'user_id' => $otherStaff->id,
             'timezone' => 'Australia/Sydney',
         ]);
         $this->assertTrue(in_array($responseOther->getStatusCode(), [403, 302], true));
         $this->assertNotEquals('Australia/Sydney', $otherStaff->fresh()->time_zone);
+    }
+
+    #[Test]
+    public function unauthorized_staff_cannot_update_matter_stage_idor(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $branch1 = new \App\Models\Branch();
+        $branch1->id = 950;
+        $branch1->office_name = 'Branch 950';
+        $branch1->save();
+
+        $branch2 = new \App\Models\Branch();
+        $branch2->id = 951;
+        $branch2->office_name = 'Branch 951';
+        $branch2->save();
+
+        $client = new \App\Models\Admin();
+        $client->id = 950;
+        $client->email = 'client950@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->save();
+
+        $unassignedStaff = new Staff();
+        $unassignedStaff->id = 955;
+        $unassignedStaff->email = 'staff955@bansallawyers.com.au';
+        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $unassignedStaff->role = 14;
+        $unassignedStaff->status = 1;
+        $unassignedStaff->office_id = 950; // Belongs to branch 950
+        $unassignedStaff->save();
+
+        $stage1 = new \App\Models\WorkflowStage();
+        $stage1->id = 950;
+        $stage1->name = 'Initial Stage';
+        $stage1->save();
+
+        $stage2 = new \App\Models\WorkflowStage();
+        $stage2->id = 951;
+        $stage2->name = 'Next Stage';
+        $stage2->save();
+
+        $matter = new \App\Models\ClientMatter();
+        $matter->id = 950;
+        $matter->client_id = 950;
+        $matter->workflow_stage_id = 950;
+        $matter->sel_legal_practitioner = 999;
+        $matter->sel_person_responsible = 999;
+        $matter->sel_person_assisting = 999;
+        $matter->save();
+
+        $this->actingAs($unassignedStaff, 'admin');
+
+        // Unassigned staff attempts IDOR stage update on client matter 950
+        $response = $this->postJson('/dashboard/update-stage', [
+            'item_id' => 950,
+            'stage_id' => 951,
+        ]);
+
+        $response->assertStatus(403);
+        $this->assertEquals(950, $matter->fresh()->workflow_stage_id);
+    }
+
+    #[Test]
+    public function unauthorized_staff_cannot_complete_or_extend_action_idor(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $unassignedStaff = new Staff();
+        $unassignedStaff->email = 'staff960@bansallawyers.com.au';
+        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $unassignedStaff->role = 14;
+        $unassignedStaff->status = 1;
+        $unassignedStaff->save();
+
+        $note = new \App\Models\Note();
+        $note->client_id = 9999;
+        $note->user_id = 8888;
+        $note->assigned_to = 8888;
+        $note->unique_group_id = 'group_960';
+        $note->description = 'Original action description';
+        $note->note_deadline = now()->addDays(5)->format('Y-m-d');
+        $note->status = 0;
+        $note->save();
+
+        $this->actingAs($unassignedStaff, 'admin');
+
+        // 1. Unauthorized action completion attempt
+        $responseComplete = $this->postJson('/dashboard/update-action-completed', [
+            'id' => $note->id,
+            'unique_group_id' => 'group_960',
+            'completion_notes' => 'Attempted IDOR completion'
+        ]);
+
+        $responseComplete->assertStatus(403);
+        $this->assertEquals(0, (int)$note->fresh()->status);
+
+        // 2. Unauthorized action deadline extension attempt
+        $responseExtend = $this->postJson('/dashboard/extend-deadline', [
+            'note_id' => $note->id,
+            'unique_group_id' => 'group_960',
+            'description' => 'Extended description',
+            'note_deadline' => now()->addDays(10)->format('Y-m-d')
+        ]);
+
+        $responseExtend->assertStatus(403);
+        $this->assertEquals('Original action description', $note->fresh()->description);
+    }
+
+    #[Test]
+    public function dashboard_matter_list_respects_exempt_roles_and_allocation(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 17],
+            ['name' => 'Exempt Admin Role', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $exemptStaff = new Staff();
+        $exemptStaff->email = 'exempt970@bansallawyers.com.au';
+        $exemptStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $exemptStaff->role = 17; // Exempt role 17
+        $exemptStaff->status = 1;
+        $exemptStaff->save();
+
+        $restrictedStaff = new Staff();
+        $restrictedStaff->email = 'restricted971@bansallawyers.com.au';
+        $restrictedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $restrictedStaff->role = 14;
+        $restrictedStaff->status = 1;
+        $restrictedStaff->save();
+
+        $client = new \App\Models\Admin();
+        $client->email = 'client970@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->user_id = 9999;
+        $client->save();
+
+        $matter = new \App\Models\ClientMatter();
+        $matter->client_id = $client->id;
+        $matter->workflow_stage_id = 1;
+        $matter->matter_status = 1;
+        $matter->sel_legal_practitioner = 9999;
+        $matter->sel_person_responsible = 9999;
+        $matter->sel_person_assisting = 9999;
+        $matter->save();
+
+        // 1. Exempt staff (role 17) can view dashboard matter list
+        $this->actingAs($exemptStaff, 'admin');
+        $responseExempt = $this->getJson('/dashboard');
+        $responseExempt->assertStatus(200);
+
+        // 2. Restricted unassigned staff (role 14) cannot view unassigned matter
+        $this->actingAs($restrictedStaff, 'admin');
+        $dashboardService = app(\App\Services\DashboardService::class);
+        $dataRestricted = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
+        $mattersRestricted = $dataRestricted['data'];
+        $this->assertFalse(collect($mattersRestricted->items())->contains('id', $matter->id));
+    }
+
+    #[Test]
+    public function active_and_closed_matter_counters_are_viewer_scoped(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 14],
+            ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staffAssigned = new Staff();
+        $staffAssigned->email = 'staff_assigned_980@bansallawyers.com.au';
+        $staffAssigned->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staffAssigned->role = 14;
+        $staffAssigned->status = 1;
+        $staffAssigned->save();
+
+        $staffUnassigned = new Staff();
+        $staffUnassigned->email = 'staff_unassigned_981@bansallawyers.com.au';
+        $staffUnassigned->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staffUnassigned->role = 14;
+        $staffUnassigned->status = 1;
+        $staffUnassigned->save();
+
+        $client = new \App\Models\Admin();
+        $client->email = 'client980@bansallawyers.com.au';
+        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $client->type = 'client';
+        $client->status = 1;
+        $client->user_id = 9999;
+        $client->save();
+
+        $activeMatter = new \App\Models\ClientMatter();
+        $activeMatter->client_id = $client->id;
+        $activeMatter->workflow_stage_id = 1;
+        $activeMatter->matter_status = 1;
+        $activeMatter->sel_legal_practitioner = $staffAssigned->id;
+        $activeMatter->save();
+
+        $dashboardService = app(\App\Services\DashboardService::class);
+
+        // Assigned staff sees the active matter in their count
+        $this->actingAs($staffAssigned, 'admin');
+        $dataAssigned = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
+        $this->assertGreaterThanOrEqual(1, $dataAssigned['count_active_matter']);
+
+        // Unassigned staff sees 0 active matters for this assigned client
+        $this->actingAs($staffUnassigned, 'admin');
+        $dataUnassigned = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
+        $this->assertEquals(0, $dataUnassigned['count_active_matter']);
     }
 }
