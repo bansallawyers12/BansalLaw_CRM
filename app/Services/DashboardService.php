@@ -31,7 +31,7 @@ class DashboardService
      */
     public function getDashboardData($request): array
     {
-        $user = Auth::user();
+        $user = Auth::guard('admin')->user() ?: Auth::user();
         
         return [
             'data' => $this->getClientMatters($request, $user),
@@ -239,63 +239,72 @@ class DashboardService
             return;
         }
 
+        if (!$user) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        // Exclude super-admin-only locked clients for non-super-admins
+        $query->whereHas('client', function ($q) use ($user) {
+            StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
+        });
+
+        // Exempt roles / staff see all non-locked matters
+        if (StaffClientVisibility::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        // Non-exempt staff: must be assigned on matter, client owner, or have active cross-access grant
         $uid = (int) $user->id;
         $query->where(function ($q) use ($uid) {
             $q->where('client_matters.sel_legal_practitioner', $uid)
                 ->orWhere('client_matters.sel_person_responsible', $uid)
-                ->orWhere('client_matters.sel_person_assisting', $uid);
+                ->orWhere('client_matters.sel_person_assisting', $uid)
+                ->orWhereHas('client', function ($clientQ) use ($uid) {
+                    $clientQ->where('user_id', $uid);
+                })
+                ->orWhereExists(function ($sub) use ($uid) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', 'client_matters.client_id')
+                        ->where('client_access_grants.staff_id', $uid)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()');
+                });
         });
     }
 
     /**
-     * Get active matter count with caching
+     * Get active matter count with caching (viewer-scoped)
      */
     private function getActiveMatterCount($user = null): int
     {
-        $user = $user ?? Auth::user();
-        if ($this->viewerSeesAllMattersAndActions($user)) {
-            return Cache::remember('active_matter_count_all', 300, function () {
-                return ClientMatter::where('matter_status', 1)->count();
-            });
-        }
-
+        $user = $user ?? (Auth::guard('admin')->user() ?: Auth::user());
         $userId = $user ? $user->id : 0;
+        
         return Cache::remember('active_matter_count_staff_' . $userId, 300, function () use ($user) {
-            $query = ClientMatter::where('matter_status', 1);
+            $query = ClientMatter::from('client_matters as client_matters')
+                ->join('admins as ad', 'client_matters.client_id', '=', 'ad.id')
+                ->where('ad.is_archived', '=', '0')
+                ->whereIn('ad.type', ['client', 'lead'])
+                ->whereNull('ad.is_deleted')
+                ->where('client_matters.matter_status', 1);
+
             $this->applyRoleBasedFiltering($query, $user);
 
-            return $query->count();
+            return (int) $query->count();
         });
     }
 
     /**
-     * Get closed matter count (mirrors closedmatterslist filters).
+     * Get closed matter count (viewer-scoped, mirrors closedmatterslist filters).
      */
     private function getClosedMatterCount($user = null): int
     {
-        $user = $user ?? Auth::user();
-        if ($this->viewerSeesAllMattersAndActions($user)) {
-            return Cache::remember('closed_matter_count_all', 300, function () {
-                $closedStages = ClientMatter::closedWorkflowStageNames();
-
-                return (int) DB::table('client_matters as cm')
-                    ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-                    ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
-                    ->where('ad.is_archived', '=', '0')
-                    ->whereIn('ad.type', ['client', 'lead'])
-                    ->whereNull('ad.is_deleted')
-                    ->where(function ($q) use ($closedStages) {
-                        $q->where('cm.matter_status', '=', '0')
-                            ->orWhereRaw(
-                                'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
-                                $closedStages
-                            );
-                    })
-                    ->count();
-            });
-        }
-
+        $user = $user ?? (Auth::guard('admin')->user() ?: Auth::user());
         $userId = $user ? $user->id : 0;
+
         return Cache::remember('closed_matter_count_staff_' . $userId, 300, function () use ($user) {
             $closedStages = ClientMatter::closedWorkflowStageNames();
 
@@ -475,6 +484,10 @@ class DashboardService
             return ['success' => false, 'message' => 'Matter not found!'];
         }
 
+        if (!WorkflowStage::where('id', $stageId)->exists()) {
+            return ['success' => false, 'message' => 'Invalid workflow stage!'];
+        }
+
         $user = $user ?? Auth::user();
         if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
             $uid = (int) $user->id;
@@ -627,10 +640,21 @@ class DashboardService
 
         if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
             $uid = (int) $user->id;
-            $isOwnerOrAssignee = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
-            $hasClientAccess = $noteData->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $noteData->client_id, $user) : false;
-            if (!$isOwnerOrAssignee && !$hasClientAccess) {
-                return ['success' => false, 'message' => 'Unauthorized action completion.'];
+            $notesToCheck = collect([$noteData]);
+            $groupId = trim((string) ($uniqueGroupId ?? ''));
+            if ($groupId !== '') {
+                $groupNotes = Note::where('unique_group_id', $groupId)->whereNotNull('unique_group_id')->get();
+                if ($groupNotes->isNotEmpty()) {
+                    $notesToCheck = $groupNotes;
+                }
+            }
+
+            foreach ($notesToCheck as $checkNote) {
+                $isOwnerOrAssignee = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
+                $hasClientAccess = $checkNote->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $checkNote->client_id, $user) : false;
+                if (!$isOwnerOrAssignee && !$hasClientAccess) {
+                    return ['success' => false, 'message' => 'Unauthorized action completion.'];
+                }
             }
         }
 
