@@ -22,8 +22,12 @@
     <td>{{ $roleName }}</td>
     <td>
         @if($tab === 'invited')
+            <span class="badge bg-info text-dark">Invited</span>
+        @elseif($tab === 'all')
             @if((int) $list->status === 1)
                 <span class="badge bg-success">Active</span>
+            @elseif((int) $list->status === 2)
+                <span class="badge bg-info text-dark">Invited</span>
             @else
                 <span class="badge bg-secondary">Inactive</span>
             @endif

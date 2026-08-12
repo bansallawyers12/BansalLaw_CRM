@@ -659,4 +659,89 @@ class Area8SecurityTest extends TestCase
         // Verify target staff role remains unchanged (12)
         $this->assertEquals(12, $targetStaff->fresh()->role);
     }
+
+    #[Test]
+    public function invited_staff_tab_only_returns_invited_staff_and_all_tab_returns_all_staff(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $admin = new Staff();
+        $admin->id = 930;
+        $admin->email = 'admin930@bansallawyers.com.au';
+        $admin->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $admin->role = 1;
+        $admin->status = 1;
+        $admin->save();
+
+        $invitedStaff = new Staff();
+        $invitedStaff->id = 931;
+        $invitedStaff->email = 'invited931@bansallawyers.com.au';
+        $invitedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $invitedStaff->role = 1;
+        $invitedStaff->status = 2; // Status 2 = Invited
+        $invitedStaff->save();
+
+        $this->actingAs($admin, 'admin');
+
+        // 1. Querying invited tab returns only staff with status=2
+        $responseInvited = $this->getJson('/adminconsole/staff?tab=invited');
+        $responseInvited->assertStatus(200);
+        $this->assertEquals(1, $responseInvited->json('total'));
+
+        // 2. Querying active tab returns active staff (status=1)
+        $responseActive = $this->getJson('/adminconsole/staff?tab=active');
+        $responseActive->assertStatus(200);
+        $this->assertTrue($responseActive->json('total') >= 1);
+
+        // 3. Querying all tab returns all staff
+        $responseAll = $this->getJson('/adminconsole/staff?tab=all');
+        $responseAll->assertStatus(200);
+        $this->assertTrue($responseAll->json('total') >= 2);
+    }
+
+    #[Test]
+    public function staff_timezone_savezone_authorization_checks(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now(), 'module_access' => json_encode([])]
+        );
+
+        $staffSelf = new Staff();
+        $staffSelf->id = 940;
+        $staffSelf->email = 'staff940@bansallawyers.com.au';
+        $staffSelf->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staffSelf->role = 2; // Regular staff without user_management module access
+        $staffSelf->status = 1;
+        $staffSelf->save();
+
+        $otherStaff = new Staff();
+        $otherStaff->id = 941;
+        $otherStaff->email = 'other941@bansallawyers.com.au';
+        $otherStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $otherStaff->role = 2;
+        $otherStaff->status = 1;
+        $otherStaff->save();
+
+        $this->actingAs($staffSelf, 'admin');
+
+        // 1. Staff can update their OWN timezone via /adminconsole/staff/savezone
+        $responseSelf = $this->post('/adminconsole/staff/savezone', [
+            'user_id' => 940,
+            'timezone' => 'Australia/Melbourne',
+        ]);
+        $responseSelf->assertStatus(302);
+        $this->assertEquals('Australia/Melbourne', $staffSelf->fresh()->time_zone);
+
+        // 2. Staff WITHOUT user_management or Super Admin privilege CANNOT update another staff member's timezone
+        $responseOther = $this->postJson('/adminconsole/staff/savezone', [
+            'user_id' => 941,
+            'timezone' => 'Australia/Sydney',
+        ]);
+        $this->assertTrue(in_array($responseOther->getStatusCode(), [403, 302], true));
+        $this->assertNotEquals('Australia/Sydney', $otherStaff->fresh()->time_zone);
+    }
 }
