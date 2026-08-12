@@ -589,10 +589,14 @@ Status key (2026-08-07):
 - **Now:** Added strict role validation checks in `StaffController::store`, `StaffController::update`, and `StaffController::fillStaffFromRequest` ensuring that only authenticated staff users who are strictly Super Admins (`(int) ($actor->role ?? 0) === 1`) can assign the Super Admin role (`role=1`), grant Super Admin level privileges (`grant_super_admin_access`), or modify an existing Super Admin user. Verified via automated unit test `non_super_admin_cannot_assign_super_admin_role_or_grant_access`.
 
 ### 10.9 High — Invited staff tab returns all staff
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `StaffController::normalizeStaffTab`, `StaffController::buildStaffListPayload`, `index.blade.php`, `row.blade.php`, `Area8SecurityTest.php`
+- **Now:** Corrected tab button navigation and filtering logic in `index.blade.php`, `row.blade.php`, and `StaffController.php`. The "Invited" tab (`tab=invited`) now strictly filters pending invited staff (`status=2`), while adding explicit "All staff" (`tab=all`) tab support to retrieve all staff records (`status=0`, `status=1`, `status=2`). Verified via automated unit test `invited_staff_tab_only_returns_invited_staff_and_all_tab_returns_all_staff`.
 
 ### 10.10 Medium — Staff timezone endpoint lacks module authorization
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `StaffController::savezone`, `Area8SecurityTest.php`
+- **Now:** Updated `StaffController::savezone` to verify that non-Super Admin users updating another staff member's timezone possess `user_management` module authorization (`checkAuthorizationAction('user_management', 'savezone', $actor->role)`), while permitting staff to update their own timezone. Verified via automated unit test `staff_timezone_savezone_authorization_checks`.
 
 ---
 

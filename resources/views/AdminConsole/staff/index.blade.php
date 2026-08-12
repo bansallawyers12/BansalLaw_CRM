@@ -46,7 +46,10 @@
                                         <button type="button" class="nav-link staff-tab-btn {{ ($tab ?? '') === 'inactive' ? 'active' : '' }}" data-tab="inactive">Inactive</button>
                                     </li>
                                     <li class="nav-item">
-                                        <button type="button" class="nav-link staff-tab-btn {{ ($tab ?? '') === 'invited' ? 'active' : '' }}" data-tab="invited">All staff</button>
+                                        <button type="button" class="nav-link staff-tab-btn {{ ($tab ?? '') === 'invited' ? 'active' : '' }}" data-tab="invited">Invited</button>
+                                    </li>
+                                    <li class="nav-item">
+                                        <button type="button" class="nav-link staff-tab-btn {{ ($tab ?? '') === 'all' ? 'active' : '' }}" data-tab="all">All staff</button>
                                     </li>
                                 </ul>
                                 <div class="staff-list-search-form">

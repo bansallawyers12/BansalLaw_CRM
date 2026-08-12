@@ -337,18 +337,20 @@ class StaffController extends Controller
 
     public function savezone(Request $request)
     {
-        $check = $this->checkAuthorizationAction('user_management', 'savezone', Auth::user()?->role);
-        if ($check) {
-            return $this->respondUnauthorized($request);
-        }
-
         if ($request->isMethod('post')) {
             $requestData = $request->all();
             $targetUserId = (int) (@$requestData['user_id'] ?? 0);
 
             $actor = Auth::user();
-            $isSuperAdmin = $actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
-            if (!$isSuperAdmin && $targetUserId !== (int) ($actor?->id ?? 0)) {
+            if (!($actor instanceof Staff)) {
+                return $this->respondUnauthorized($request);
+            }
+
+            $isSelf = ($targetUserId === (int) $actor->id);
+            $isSuperAdmin = app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
+            $hasUserManagementModule = $this->checkAuthorizationAction('user_management', 'savezone', $actor->role) === null;
+
+            if (!$isSelf && !$isSuperAdmin && !$hasUserManagementModule) {
                 return $this->respondUnauthorized($request);
             }
 
@@ -358,11 +360,19 @@ class StaffController extends Controller
                 return redirect()->back()->with('error', 'Staff not found.');
             }
 
-            $obj->time_zone = @$requestData['timezone'];
+            $obj->time_zone = $requestData['timezone'] ?? $requestData['time_zone'] ?? null;
             $saved = $obj->save();
 
             if (!$saved) {
                 return redirect()->back()->with('error', config('constants.server_error'));
+            }
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Staff timezone updated successfully.',
+                    'timezone' => $obj->time_zone,
+                ]);
             }
 
             return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $targetUserId])->with('success', 'Staff edited successfully.');
@@ -382,7 +392,7 @@ class StaffController extends Controller
     {
         $tab = strtolower(trim((string) $tab));
 
-        return in_array($tab, ['active', 'inactive', 'invited'], true) ? $tab : 'active';
+        return in_array($tab, ['active', 'inactive', 'invited', 'all'], true) ? $tab : 'active';
     }
 
     protected function buildStaffListPayload(Request $request, string $tab): array
@@ -392,6 +402,7 @@ class StaffController extends Controller
         $query = match ($tab) {
             'inactive' => Staff::where('status', 0),
             'invited' => Staff::where('status', 2),
+            'all' => Staff::query(),
             default => Staff::active(),
         };
 
