@@ -515,21 +515,29 @@ Status key (2026-08-07):
 - **Now:** Hardened `CRMUtilityController::deleteAction` by categorizing target tables into strict system-configuration allowlists (requiring Admin Console or SuperAdmin privileges) and client-record allowlists (requiring `ensureCrmRecordAccess` record-level authorization). All unlisted tables are rejected with an authorization failure response. Verified via automated test `regular_staff_cannot_delete_system_tables_or_unauthorized_records_via_delete_action`.
 
 ### 9.8 Critical — `/move_action` arbitrary column zeroing
-- **Status:** Partial
-- **Files:** `CRMUtilityController::moveAction`
-- **Now:** Column allowlist (`status`, `is_active`, `is_archive`, `is_trash`) + role/super-admin style gate. Residual: still broad table targeting for authorized roles.
+- **Status:** Fixed
+- **Files:** `CRMUtilityController::moveAction`, `Area8SecurityTest.php`
+- **Now:** Hardened `CRMUtilityController::moveAction` by enforcing column allowlists (`status`, `is_active`, `is_archive`, `is_trash`) and table allowlists. System configuration tables require Admin Console / SuperAdmin access, while client record tables enforce `ensureCrmRecordAccess` record-level authorization. Verified via automated test `regular_staff_cannot_zero_arbitrary_table_columns_via_move_action`.
 
 ### 9.9 High — `/update_action` arbitrary column toggle (super-admin path)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `CRMUtilityController::updateAction`, `Area8SecurityTest.php`
+- **Now:** Hardened `CRMUtilityController::updateAction` by enforcing column allowlists (`status`, `is_active`, `is_archive`, `is_trash`) and table allowlists. System-wide configuration and staff management tables require Admin Console or SuperAdmin privileges, while client record tables enforce `ensureCrmRecordAccess` record-level authorization. Verified via automated test `regular_staff_cannot_toggle_arbitrary_table_columns_via_update_action`.
 
 ### 9.10 Medium — `PythonService::mergePdfs` uses invalid HTTP attach API
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `app/Services/PythonService.php`, `Area8SecurityTest.php`
+- **Now:** Updated `PythonService::mergePdfs` to properly support `UploadedFile` instances, string file paths, and stream resources without assuming all elements are `UploadedFile` instances, and fixed PendingRequest attachment chaining. Verified via automated test `python_service_merge_pdfs_handles_uploaded_files_and_string_filepaths`.
 
 ### 9.11 Medium — Device token reassignment across users
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/API/StaffApiAuthController.php`, `app/Services/FCMService.php`, `Area8SecurityTest.php`
+- **Now:** Fixed `StaffApiAuthController::handleDeviceToken` to delete previous user records when a physical device token is reassigned to another user upon login (instead of setting `is_active = false`), preventing duplicate token records and cross-user notification leaks. Updated `FCMService.php` token lookup to prioritize active token records. Verified via automated test `device_token_reassignment_removes_token_from_previous_user`.
 
 ### 9.12 High — Staff API login leaves orphan Sanctum tokens on refresh-token failure
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `app/Http/Controllers/API/StaffApiAuthController.php`, `Area8SecurityTest.php`
+- **Now:** Updated `StaffApiAuthController::adminLogin` catch blocks to explicitly revoke and delete newly generated Sanctum personal access tokens (`$tokenObj->accessToken->delete()`) whenever refresh-token generation or database insertion fails, eliminating orphan active tokens. Verified via automated test `staff_api_login_cleans_up_sanctum_token_on_refresh_token_failure`.
 
 ### 9.13 High — Staff API login has no rate limiting / lockout
 - **Status:** Fixed

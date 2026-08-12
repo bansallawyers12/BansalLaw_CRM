@@ -285,4 +285,199 @@ class Area8SecurityTest extends TestCase
         $response2->assertJson(['status' => 0]);
         $this->assertStringContainsString('not authorized', $response2->json('message'));
     }
+
+    #[Test]
+    public function regular_staff_cannot_zero_arbitrary_table_columns_via_move_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 903;
+        $staff->email = 'staff903@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $staff->role = 2; // Regular staff without Admin Console role
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        // 1. Attempting to zero out system table columns (e.g. workflows) is rejected
+        $response1 = $this->postJson('/move_action', [
+            'table' => 'workflows',
+            'id' => 1,
+            'col' => 'status',
+        ]);
+        $response1->assertJson(['status' => 0]);
+        $this->assertStringContainsString('Unauthorized', $response1->json('message'));
+
+        // 2. Attempting to zero out non-allowlisted table or column is rejected
+        $response2 = $this->postJson('/move_action', [
+            'table' => 'staff',
+            'id' => 1,
+            'col' => 'status',
+        ]);
+        $response2->assertJson(['status' => 0]);
+        $this->assertStringContainsString('not authorized', $response2->json('message'));
+    }
+
+    #[Test]
+    public function regular_staff_cannot_toggle_arbitrary_table_columns_via_update_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 904;
+        $staff->email = 'staff904@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $staff->role = 2; // Regular staff without Admin Console role
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        // 1. Attempting to toggle status on system/staff table without Admin Console access is rejected
+        $response1 = $this->postJson('/update_action', [
+            'table' => 'staff',
+            'id' => 1,
+            'colname' => 'status',
+            'current_status' => 1,
+        ]);
+        $response1->assertJson(['status' => 0]);
+        $this->assertStringContainsString('Unauthorized', $response1->json('message'));
+
+        // 2. Attempting to toggle arbitrary non-allowlisted table or column is rejected
+        $response2 = $this->postJson('/update_action', [
+            'table' => 'user_roles',
+            'id' => 1,
+            'colname' => 'status',
+            'current_status' => 1,
+        ]);
+        $response2->assertJson(['status' => 0]);
+        $this->assertStringContainsString('not authorized', $response2->json('message'));
+    }
+
+    #[Test]
+    public function python_service_merge_pdfs_handles_uploaded_files_and_string_filepaths(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            '*/pdf/merge*' => \Illuminate\Support\Facades\Http::response([
+                'success' => true,
+                'merged_pdf_url' => 'http://localhost:5002/output/merged.pdf',
+            ], 200),
+        ]);
+
+        $service = new \App\Services\PythonService();
+
+        // 1. Test with UploadedFile objects
+        $uploadedFile1 = \Illuminate\Http\UploadedFile::fake()->create('doc1.pdf', 100, 'application/pdf');
+        $uploadedFile2 = \Illuminate\Http\UploadedFile::fake()->create('doc2.pdf', 200, 'application/pdf');
+
+        $result = $service->mergePdfs([$uploadedFile1, $uploadedFile2]);
+        $this->assertTrue($result['success']);
+        $this->assertEquals('http://localhost:5002/output/merged.pdf', $result['merged_pdf_url']);
+
+        // 2. Test with string file paths
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdf_test_') . '.pdf';
+        file_put_contents($tempFile, '%PDF-1.4 Dummy PDF Content');
+
+        try {
+            $resultPath = $service->mergePdfs([$tempFile]);
+            $this->assertTrue($resultPath['success']);
+        } finally {
+            if (file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+        }
+    }
+
+    #[Test]
+    public function device_token_reassignment_removes_token_from_previous_user(): void
+    {
+        $user1 = new \App\Models\Admin();
+        $user1->id = 910;
+        $user1->email = 'user910@bansallawyers.com.au';
+        $user1->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $user1->role = 7;
+        $user1->status = 1;
+        $user1->save();
+
+        $user2 = new \App\Models\Admin();
+        $user2->id = 911;
+        $user2->email = 'user911@bansallawyers.com.au';
+        $user2->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $user2->role = 7;
+        $user2->status = 1;
+        $user2->save();
+
+        $sharedToken = 'fcm_shared_device_token_99999';
+        $controller = new \App\Http\Controllers\API\StaffApiAuthController();
+        $reflection = new \ReflectionClass($controller);
+        $method = $reflection->getMethod('handleDeviceToken');
+        $method->setAccessible(true);
+
+        // 1. User 1 registers shared device token
+        $method->invoke($controller, 910, $sharedToken, 'iPhone 15');
+
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => 910,
+            'device_token' => $sharedToken,
+            'is_active' => true,
+        ]);
+
+        // 2. User 2 registers on the same physical device (shared token reassigned)
+        $method->invoke($controller, 911, $sharedToken, 'iPhone 15');
+
+        // Verify token is cleanly reassigned to User 2 and removed for User 1
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => 911,
+            'device_token' => $sharedToken,
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseMissing('device_tokens', [
+            'user_id' => 910,
+            'device_token' => $sharedToken,
+        ]);
+    }
+
+    #[Test]
+    public function staff_api_login_cleans_up_sanctum_token_on_refresh_token_failure(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 12],
+            ['name' => 'Manager', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 912;
+        $staff->email = 'staff912@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staff->role = 12;
+        $staff->status = 1;
+        $staff->save();
+
+        $initialTokenCount = \Illuminate\Support\Facades\DB::table('personal_access_tokens')
+            ->where('tokenable_id', 912)
+            ->count();
+
+        // 1. Attempt login where staff.id 912 triggers refresh_tokens foreign key failure (not present in admins)
+        $response = $this->postJson('/api/admin-login', [
+            'email' => 'staff912@bansallawyers.com.au',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(500);
+
+        // 2. Verify no orphan Sanctum token was left in personal_access_tokens table
+        $finalTokenCount = \Illuminate\Support\Facades\DB::table('personal_access_tokens')
+            ->where('tokenable_id', 912)
+            ->count();
+
+        $this->assertEquals($initialTokenCount, $finalTokenCount);
+    }
 }

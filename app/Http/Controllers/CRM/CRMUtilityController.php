@@ -290,151 +290,173 @@ class CRMUtilityController extends Controller
 
 	public function updateAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
+		$status = 0;
 		if ($request->isMethod('post'))
 		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-			$requestData['current_status'] = trim($requestData['current_status']);
-			$requestData['table'] = trim($requestData['table']);
-			$requestData['col'] = trim($requestData['colname']);
+			$id = (int) trim((string) $request->input('id', 0));
+			$table = trim((string) $request->input('table', ''));
+			$col = trim((string) ($request->input('colname') ?? $request->input('colum') ?? $request->input('col') ?? ''));
+			$cstatus = $request->input('current_status') ?? $request->input('cstatus') ?? $request->input('status');
 
 			$allowedCols = ['status', 'is_active', 'is_archive', 'is_trash'];
-			$userRole = (int) (Auth::user()?->role ?? 0);
-			$isAuthorized = $this->viewerCanMutateAnyRecord() || in_array($userRole, [1, 12, 17], true);
 
-			if ($isAuthorized && in_array($requestData['col'], $allowedCols, true))
-			{
-				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['current_status']) && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
+			$systemTables = [
+				'staff', 'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
+				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+				'templates', 'products', 'document_checklists', 'personal_document_types',
+				'matter_document_types', 'teams'
+			];
 
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
+			$clientTables = [
+				'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+			];
 
-						if($recordExist)
-						{
-							if($requestData['current_status'] == 0)
-							{
-								$updated_status = 1;
-								$message = 'Record has been enabled successfully.';
-							}
-							else
-							{
-								$updated_status = 0;
-								$message = 'Record has been disabled successfully.';
-							}
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update([$requestData['col'] => $updated_status]);
-							if($response)
-							{
-								$status = 1;
-							}
-							else
-							{
-								$message = config('constants.server_error');
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
+			$allowedTables = array_merge($systemTables, $clientTables);
+
+			if ($id <= 0 || empty($table) || empty($col) || $cstatus === null) {
+				return response()->json(['status' => 0, 'message' => 'Missing required parameters.']);
+			}
+
+			if (!in_array($table, $allowedTables, true) || !Schema::hasTable($table)) {
+				return response()->json(['status' => 0, 'message' => 'Status update is not authorized for this table.']);
+			}
+
+			if (!in_array($col, $allowedCols, true) || !Schema::hasColumn($table, $col)) {
+				return response()->json(['status' => 0, 'message' => 'Target column is not authorized or does not exist.']);
+			}
+
+			$user = Auth::guard('admin')->user();
+			$staff = $user instanceof \App\Models\Staff ? $user : null;
+
+			// 1. Authorization check for system-wide configuration / staff management tables
+			if (in_array($table, $systemTables, true)) {
+				$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+
+				if (!$canManageSystem) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system status requires Admin Console privileges.']);
+				}
+			}
+
+			// 2. Authorization check for client-specific records
+			if (in_array($table, $clientTables, true)) {
+				$row = DB::table($table)->where('id', $id)->first();
+				if (!$row) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+
+				$clientId = $row->client_id ?? $row->admin_id ?? null;
+				if ($clientId) {
+					$this->ensureCrmRecordAccess((int) $clientId);
+				} elseif ($table === 'email_labels' && !empty($row->user_id) && (int)$row->user_id !== (int)Auth::id()) {
+					if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.']);
 					}
 				}
-				else
-				{
+			}
+
+			$recordExist = DB::table($table)->where('id', $id)->exists();
+			if ($recordExist) {
+				$updated_status = ((int) $cstatus === 1) ? 0 : 1;
+				$response = DB::table($table)->where('id', $id)->update([
+					$col => $updated_status,
+					'updated_at' => date('Y-m-d H:i:s')
+				]);
+
+				if ($response) {
+					$status = 1;
+					$message = ($updated_status === 1) ? 'Record has been enabled successfully.' : 'Record has been disabled successfully.';
+				} else {
 					$message = config('constants.server_error');
 				}
+			} else {
+				$message = 'ID does not exist, please check it once again.';
 			}
-			else
-			{
-				$message = 'You are not authorized to perform this operation or target column is invalid.';
-			}
-		}
-		else
-		{
-			$message = config('constants.server_error');
+		} else {
+			$message = config('constants.post_method');
 		}
 
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		 die;
-
+		return response()->json(['status' => $status, 'message' => $message]);
 	}
 
 	public function moveAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
+		$status = 0;
 		if ($request->isMethod('post'))
 		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			$requestData['table'] = trim($requestData['table']);
-			$requestData['col'] = trim($requestData['col']);
+			$id = (int) trim($request->input('id', 0));
+			$table = trim((string) $request->input('table', ''));
+			$col = trim((string) $request->input('col', ''));
 
 			$allowedCols = ['status', 'is_active', 'is_archive', 'is_trash'];
-			$userRole = (int) (Auth::user()?->role ?? 0);
-			$isAuthorized = $this->viewerCanMutateAnyRecord() || in_array($userRole, [1, 12, 17], true);
+			$systemTables = [
+				'matters', 'workflows', 'workflow_stages', 'branches',
+				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+				'templates', 'products', 'document_checklists', 'personal_document_types',
+				'matter_document_types', 'teams'
+			];
+			$clientTables = [
+				'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+			];
 
-			if ($isAuthorized && in_array($requestData['col'], $allowedCols, true))
-			{
-				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
+			$allowedTables = array_merge($systemTables, $clientTables);
 
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
+			if ($id <= 0 || empty($table) || empty($col)) {
+				return response()->json(['status' => 0, 'message' => 'Missing required parameters.']);
+			}
 
-						if($recordExist)
-						{
+			if (!in_array($table, $allowedTables, true) || !Schema::hasTable($table)) {
+				return response()->json(['status' => 0, 'message' => 'Column zeroing is not authorized for this table.']);
+			}
 
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update([$requestData['col'] => 0]);
-							if($response)
-							{
-								$status = 1;
-								$message = 'Record successfully moved';
-							}
-							else
-							{
-								$message = config('constants.server_error');
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
+			if (!in_array($col, $allowedCols, true) || !Schema::hasColumn($table, $col)) {
+				return response()->json(['status' => 0, 'message' => 'Target column is not authorized or does not exist.']);
+			}
+
+			$user = Auth::guard('admin')->user();
+			$staff = $user instanceof \App\Models\Staff ? $user : null;
+
+			// 1. Authorization check for system configuration tables
+			if (in_array($table, $systemTables, true)) {
+				$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+				if (!$canManageSystem) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.']);
+				}
+			}
+
+			// 2. Access check for client-specific records
+			if (in_array($table, $clientTables, true)) {
+				$row = DB::table($table)->where('id', $id)->first();
+				if (!$row) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+
+				$clientId = $row->client_id ?? $row->admin_id ?? null;
+				if ($clientId) {
+					$this->ensureCrmRecordAccess((int) $clientId);
+				} elseif ($table === 'email_labels' && !empty($row->user_id) && (int)$row->user_id !== (int)Auth::id()) {
+					if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.']);
 					}
 				}
-				else
-				{
+			}
+
+			$recordExist = DB::table($table)->where('id', $id)->exists();
+			if ($recordExist) {
+				$response = DB::table($table)->where('id', $id)->update([$col => 0, 'updated_at' => date('Y-m-d H:i:s')]);
+				if ($response) {
+					$status = 1;
+					$message = 'Record status successfully changed.';
+				} else {
 					$message = config('constants.server_error');
 				}
+			} else {
+				$message = 'ID does not exist, please check it once again.';
 			}
-			else
-			{
-				$message = 'You are not authorized to perform this operation or target column is invalid.';
-			}
-		}
-		else
-		{
+		} else {
 			$message = config('constants.post_method');
 		}
 
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		die;
+		return response()->json(['status' => $status, 'message' => $message]);
 	}
 
 	public function declinedAction(Request $request)

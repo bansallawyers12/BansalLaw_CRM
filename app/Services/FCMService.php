@@ -351,8 +351,8 @@ class FCMService
             $fcmErrorCode = $failedToken['fcm_error_code'] ?? null;
             $statusCode = $failedToken['status_code'] ?? null;
             
-            // Get the device token record to check its status
-            $tokenRecord = DeviceToken::where('device_token', $deviceToken)->first();
+            // Get the device token record to check its status (prioritize active record)
+            $tokenRecord = DeviceToken::where('device_token', $deviceToken)->orderByDesc('is_active')->first();
             
             if (!$tokenRecord) {
                 Log::warning('Device token not found in database', [
