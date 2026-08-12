@@ -73,25 +73,31 @@ class LeadBookingApiController extends BaseController
 
             if ($isMigrationHandoff) {
                 Log::channel('migration_legal_crm')->info('Migration CRM handoff matched existing lead/client', $existingContext);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Thank you for reaching out. Your request has been received.',
+                    'lead_id' => $existing->id,
+                    'data' => [
+                        'id' => $existing->id,
+                        'lead_id' => $existing->id,
+                        'is_existing' => true,
+                        'migration_lead_id' => $validated['migration_lead_id'] ?? null,
+                    ],
+                ], 200);
             } else {
                 Log::info('API storeLead matched existing lead/client', [
                     'lead_id' => $existing->id,
                     'migration_lead_id' => $validated['migration_lead_id'] ?? null,
                     'source' => $validated['source'] ?? null,
                 ]);
-            }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Thank you for reaching out. Your request has been received.',
-                'lead_id' => $existing->id,
-                'data' => [
-                    'id' => $existing->id,
-                    'lead_id' => $existing->id,
-                    'is_existing' => true,
-                    'migration_lead_id' => $validated['migration_lead_id'] ?? null,
-                ],
-            ], 200);
+                // Standard unauthenticated public response — generic message without revealing internal lead ID or PII presence
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Thank you for reaching out. Your request has been received.',
+                ], 200);
+            }
         }
 
         if ($hasFullName) {
@@ -202,15 +208,19 @@ class LeadBookingApiController extends BaseController
 
         if ($isMigrationHandoff) {
             Log::channel('migration_legal_crm')->info('Migration CRM handoff created lead', $createdContext);
+            return $this->leadStoreJsonResponse($lead, false, $validated['migration_lead_id'] ?? null);
         } else {
             Log::info('API storeLead created lead', [
                 'lead_id' => $lead->id,
                 'migration_lead_id' => $validated['migration_lead_id'] ?? null,
                 'source' => $validated['source'] ?? null,
             ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for reaching out. Your request has been received.',
+            ], 201);
         }
-
-        return $this->leadStoreJsonResponse($lead, false, $validated['migration_lead_id'] ?? null);
     }
 
     /**

@@ -35,7 +35,7 @@ class SmsSendController extends Controller
     }
 
     /**
-     * Send manual SMS (API endpoint - already used in client detail)
+     * Send manual SMS (API endpoint - used in client detail & SMS dashboard)
      */
     public function send(Request $request)
     {
@@ -54,8 +54,25 @@ class SmsSendController extends Controller
             ], 422);
         }
 
-        if ($request->filled('client_id')) {
-            $this->ensureCrmRecordAccess((int) $request->client_id);
+        $clientId = $request->input('client_id');
+        $contactId = $request->input('contact_id');
+
+        if ($contactId && !$clientId) {
+            $contact = \App\Models\ClientContact::find($contactId);
+            $clientId = $contact?->client_id ?? $contact?->admin_id;
+        }
+
+        if ($clientId) {
+            $this->ensureCrmRecordAccess((int) $clientId);
+        } else {
+            // Sending to arbitrary phone numbers without a linked CRM record requires SuperAdmin privileges
+            $user = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+            if (!$user || !$user->hasEffectiveSuperAdminPrivileges()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sending SMS to unlinked arbitrary numbers requires SuperAdmin privileges.',
+                ], 403);
+            }
         }
 
         $result = $this->smsManager->sendSms(
@@ -63,8 +80,8 @@ class SmsSendController extends Controller
             $request->message,
             'manual',
             [
-                'client_id' => $request->client_id,
-                'contact_id' => $request->contact_id,
+                'client_id' => $clientId,
+                'contact_id' => $contactId,
             ]
         );
 
@@ -92,13 +109,33 @@ class SmsSendController extends Controller
             ], 422);
         }
 
+        $clientId = $request->input('client_id');
+        $contactId = $request->input('contact_id');
+
+        if ($contactId && !$clientId) {
+            $contact = \App\Models\ClientContact::find($contactId);
+            $clientId = $contact?->client_id ?? $contact?->admin_id;
+        }
+
+        if ($clientId) {
+            $this->ensureCrmRecordAccess((int) $clientId);
+        } else {
+            $user = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+            if (!$user || !$user->hasEffectiveSuperAdminPrivileges()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sending SMS to unlinked arbitrary numbers requires SuperAdmin privileges.',
+                ], 403);
+            }
+        }
+
         $result = $this->smsManager->sendFromTemplate(
             $request->phone,
             $request->template_id,
             $request->variables ?? [],
             [
-                'client_id' => $request->client_id,
-                'contact_id' => $request->contact_id,
+                'client_id' => $clientId,
+                'contact_id' => $contactId,
             ]
         );
 
