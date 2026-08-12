@@ -53,6 +53,7 @@ class StaffApiAuthController extends Controller
         }
 
         $deviceName = $request->device_name ?? 'admin-portal-app';
+        $tokenObj = null;
 
         try {
             $refreshTokenValue = Str::random(64);
@@ -68,7 +69,7 @@ class StaffApiAuthController extends Controller
                 'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
             ];
 
-            return DB::transaction(function () use ($staff, $deviceName, $request, $refreshTokenValue, $insertData) {
+            return DB::transaction(function () use ($staff, $deviceName, $request, $refreshTokenValue, $insertData, &$tokenObj) {
                 $tokenObj = $staff->createToken($deviceName);
                 $token = $tokenObj->plainTextToken;
 
@@ -94,6 +95,10 @@ class StaffApiAuthController extends Controller
                 ]);
             });
         } catch (\Illuminate\Database\QueryException $e) {
+            if (isset($tokenObj) && isset($tokenObj->accessToken)) {
+                $tokenObj->accessToken->delete();
+            }
+
             $errorDetails = $this->handleRefreshTokenError($e, $staff->id, $insertData ?? [], $refreshTokenValue ?? '');
 
             return response()->json([
@@ -104,6 +109,10 @@ class StaffApiAuthController extends Controller
                 'error_details' => config('app.debug') ? $errorDetails : null,
             ], 500);
         } catch (\Exception $e) {
+            if (isset($tokenObj) && isset($tokenObj->accessToken)) {
+                $tokenObj->accessToken->delete();
+            }
+
             Log::error('Failed to generate refresh token during admin login (non-database error)', [
                 'user_id' => $staff->id,
                 'error' => $e->getMessage(),
@@ -218,29 +227,20 @@ class StaffApiAuthController extends Controller
     private function handleDeviceToken($userId, $deviceToken, $deviceName = null)
     {
         try {
+            // Delete any existing device token record associated with a different user
             DeviceToken::where('device_token', $deviceToken)
                 ->where('user_id', '!=', $userId)
-                ->update(['is_active' => false]);
+                ->delete();
 
-            $existingToken = DeviceToken::where('device_token', $deviceToken)
-                ->where('user_id', $userId)
-                ->first();
-
-            if ($existingToken) {
-                $existingToken->update([
+            // Create or update the device token record for the current user
+            DeviceToken::updateOrCreate(
+                ['user_id' => $userId, 'device_token' => $deviceToken],
+                [
                     'device_name' => $deviceName,
                     'is_active' => true,
                     'last_used_at' => now(),
-                ]);
-            } else {
-                DeviceToken::create([
-                    'user_id' => $userId,
-                    'device_token' => $deviceToken,
-                    'device_name' => $deviceName,
-                    'is_active' => true,
-                    'last_used_at' => now(),
-                ]);
-            }
+                ]
+            );
         } catch (\Exception $e) {
             Log::error('Failed to handle device token: '.$e->getMessage(), [
                 'user_id' => $userId,

@@ -100,9 +100,36 @@ class PythonService
     public function mergePdfs(array $files): array
     {
         try {
+            if (empty($files)) {
+                throw new Exception('No files provided for PDF merging.');
+            }
+
             $httpRequest = Http::timeout($this->timeout);
-            foreach ($files as $file) {
-                $httpRequest->attach('files', file_get_contents($file->getPathname()), $file->getClientOriginalName());
+            $attachedCount = 0;
+
+            foreach ($files as $index => $file) {
+                $contents = null;
+                $filename = null;
+
+                if ($file instanceof UploadedFile) {
+                    $contents = file_get_contents($file->getPathname());
+                    $filename = $file->getClientOriginalName();
+                } elseif (is_string($file) && file_exists($file)) {
+                    $contents = file_get_contents($file);
+                    $filename = basename($file);
+                } elseif (is_resource($file)) {
+                    $contents = stream_get_contents($file);
+                    $filename = "file_{$index}.pdf";
+                }
+
+                if ($contents !== null && $filename !== null) {
+                    $httpRequest = $httpRequest->attach('files', $contents, $filename);
+                    $attachedCount++;
+                }
+            }
+
+            if ($attachedCount === 0) {
+                throw new Exception('No valid or readable PDF files attached for merging.');
             }
 
             $response = $httpRequest->post($this->getUrlWithTimezone('/pdf/merge'));
