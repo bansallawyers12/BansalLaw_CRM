@@ -141,6 +141,14 @@ class StaffApiAuthController extends Controller
                 ->where('user_id', $user->id)
                 ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
+            $log = new \App\Models\StaffLoginLog();
+            $log->level = 'info';
+            $log->user_id = $user->id;
+            $log->ip_address = $request->getClientIp();
+            $log->user_agent = $request->userAgent() ?? '';
+            $log->message = 'Logged out successfully (API)';
+            $log->save();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Logged out successfully',
@@ -168,6 +176,14 @@ class StaffApiAuthController extends Controller
                 ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
             DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
+
+            $log = new \App\Models\StaffLoginLog();
+            $log->level = 'info';
+            $log->user_id = $user->id;
+            $log->ip_address = $request->getClientIp();
+            $log->user_agent = $request->userAgent() ?? '';
+            $log->message = 'Logged out from all devices successfully (API)';
+            $log->save();
 
             return response()->json([
                 'success' => true,

@@ -167,6 +167,9 @@ class CrmAccessService
         }
 
         return DB::transaction(function () use ($user, $adminId, $recordType, $officeId, $teamId, $reasonCode) {
+            // Lock staff record to serialize concurrent quick access requests for the same user and prevent check-then-create race condition
+            Staff::query()->where('id', (int) $user->id)->lockForUpdate()->first();
+
             if ($this->hasDuplicateActiveQuickGrant($user, $adminId, lock: true)) {
                 throw new CrmAccessDeniedException('An active quick access grant already exists for this record.');
             }

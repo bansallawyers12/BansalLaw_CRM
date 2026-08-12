@@ -114,6 +114,16 @@ class StaffController extends Controller
             ]);
 
             $storeActor = Auth::user();
+            $isSuperAdminActor = $storeActor instanceof Staff && (int) ($storeActor->role ?? 0) === 1;
+
+            if (! $isSuperAdminActor && (int) $request->input('role') === 1) {
+                return $this->respondStaffMessage($request, 'Only Superadmin role user can assign the Super Admin role.', 422);
+            }
+
+            if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
+                return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
+            }
+
             $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -253,6 +263,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantFinalInvoiceEditPermission($actor instanceof Staff ? $actor : null) && $request->has('can_edit_final_invoice')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant final invoice edit permission.', 422);
+            }
+
+            if (! $isSuperAdminActor && (int) $request->input('role') === 1) {
+                return $this->respondStaffMessage($request, 'Only Superadmin role user can assign the Super Admin role.', 422);
             }
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
@@ -440,19 +454,19 @@ class StaffController extends Controller
         $obj->phone = @$requestData['phone'];
 
         $actor = Auth::user();
-        $actorCanAssignSuperAdmin = $actor instanceof Staff && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
+        $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
         $requestedRole = (int) (@$requestData['role'] ?? 0);
 
-        if ($requestedRole === 1 && !$actorCanAssignSuperAdmin) {
+        if ($requestedRole === 1 && !$isSuperAdminActor) {
             throw ValidationException::withMessages([
-                'role' => ['You are not authorized to assign the Super Admin role.'],
+                'role' => ['Only Superadmin role user can assign the Super Admin role.'],
             ]);
         }
 
-        if ($obj->exists && (int) $obj->role === 1 && !$actorCanAssignSuperAdmin) {
+        if ($obj->exists && (int) $obj->role === 1 && !$isSuperAdminActor) {
             if ($requestedRole !== 1 && $requestedRole !== 0) {
                 throw ValidationException::withMessages([
-                    'role' => ['You are not authorized to change the role of a Super Admin.'],
+                    'role' => ['Only Superadmin role user can change the role of a Super Admin.'],
                 ]);
             }
             $obj->role = 1;
