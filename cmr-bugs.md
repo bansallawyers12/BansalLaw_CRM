@@ -485,12 +485,14 @@ Status key (2026-08-07):
 - **Now:** Behind `auth:sanctum` + throttle.
 
 ### 9.2 Critical — Service-account token endpoint ignores credentials
-- **Status:** Partial
-- **Files:** `ServiceAccountController`
-- **Now:** Validates admin email/password; disabled outside `local`/`testing`. Still returns mock token in local — keep out of production exposure.
+- **Status:** Fixed
+- **Files:** `ServiceAccountController`, `Area8SecurityTest.php`
+- **Now:** Validates staff admin credentials properly against hashed passwords and generates authentic Laravel Sanctum API tokens. Verified via automated test `service_account_token_endpoint_validates_credentials_and_issues_token`.
 
 ### 9.3 High — SMS webhooks: CSRF blocks providers + no signature verification
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `RouteServiceProvider.php`, `SmsWebhookController.php`, `Area8SecurityTest.php`
+- **Now:** Moved SMS webhook routes (`/webhooks/sms/*`) from `web` middleware group to `api` middleware group to prevent CSRF blocking of external providers. Implemented Twilio signature (`X-Twilio-Signature`) and Cellcast signature (`X-Cellcast-Signature` / secret token) verification in `SmsWebhookController`. Verified via automated tests `incoming_sms_webhooks_create_sms_logs_and_associate_contact` and `test_13_10_webhook_preserves_existing_delivered_at`.
 
 ### 9.4 High — Unauthenticated lead API discloses existing PII
 - **Status:** Open\*

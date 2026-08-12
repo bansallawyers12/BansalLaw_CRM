@@ -94,6 +94,19 @@ class Area8SecurityTest extends TestCase
         $contact->phone = '0412345678';
         $contact->save();
 
+        // 1. With invalid signature, when TWILIO_TOKEN set, fails 401
+        config(['services.twilio.auth_token' => 'secret_token_123']);
+        $unauthResponse = $this->postJson('/webhooks/sms/twilio/incoming', [
+            'From' => '+61412345678',
+            'Body' => 'Hello from client',
+            'MessageSid' => 'SM1234567890',
+        ], [
+            'X-Twilio-Signature' => 'invalid_signature_hash'
+        ]);
+        $unauthResponse->assertStatus(401);
+
+        // 2. Unset secret token allows fallback mode / valid signature mode
+        config(['services.twilio.auth_token' => null]);
         $response = $this->postJson('/webhooks/sms/twilio/incoming', [
             'From' => '+61412345678',
             'Body' => 'Hello from client',
@@ -107,5 +120,41 @@ class Area8SecurityTest extends TestCase
             'status' => 'delivered',
             'client_contact_id' => 8889,
         ]);
+    }
+
+    #[Test]
+    public function service_account_token_endpoint_validates_credentials_and_issues_token(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->email = 'admin1@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('admin123');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        // 1. Invalid password request fails with 401
+        $invalidResponse = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Testing service account',
+            'admin_email' => 'admin1@bansallawyers.com.au',
+            'admin_password' => 'wrongpassword',
+        ]);
+        $invalidResponse->assertStatus(401);
+
+        // 2. Valid password request succeeds and returns token
+        $validResponse = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Testing service account',
+            'admin_email' => 'admin1@bansallawyers.com.au',
+            'admin_password' => 'admin123',
+        ]);
+        $validResponse->assertStatus(200);
+        $validResponse->assertJsonStructure(['success', 'token', 'service_name']);
+        $this->assertTrue($validResponse->json('success'));
     }
 }
