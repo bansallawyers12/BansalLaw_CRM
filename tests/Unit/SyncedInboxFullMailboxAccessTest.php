@@ -22,25 +22,13 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
 
         $this->assertArrayHasKey('10min', $ranges);
         $this->assertArrayHasKey('yesterday6am', $ranges);
-        $this->assertArrayHasKey('from10aug', $ranges);
-        $this->assertArrayHasKey('delete_unassigned_db', $ranges);
-        $this->assertArrayHasKey('delete_unassigned_db_zoho', $ranges);
+        $this->assertArrayNotHasKey('from10aug', $ranges);
+        $this->assertArrayNotHasKey('delete_unassigned_db', $ranges);
+        $this->assertArrayNotHasKey('delete_unassigned_db_zoho', $ranges);
         $this->assertArrayHasKey('full', $ranges);
         $this->assertSame(
             IncomingEmailSyncService::yesterday6amSyncRangeLabel(),
             $ranges['yesterday6am']
-        );
-        $this->assertSame(
-            IncomingEmailSyncService::from10AugSyncRangeLabel(),
-            $ranges['from10aug']
-        );
-        $this->assertSame(
-            'Remove before 10 Aug 2026 from this list (CRM + Zoho)',
-            IncomingEmailSyncService::deleteUnassignedDbAndZohoLabel()
-        );
-        $this->assertSame(
-            'Remove before 10 Aug 2026 from this list (CRM DB only)',
-            IncomingEmailSyncService::deleteUnassignedDbOnlyLabel()
         );
         $this->assertSame(
             IncomingEmailSyncService::adminUnassignedSyncRangeOptions(),
