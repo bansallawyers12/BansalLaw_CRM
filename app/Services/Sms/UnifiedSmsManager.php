@@ -402,10 +402,11 @@ class UnifiedSmsManager
 
             // Update SMS log status if changed
             if ($result['success'] && isset($result['status'])) {
-                $smsLog->update([
-                    'status' => $result['status'],
-                    'delivered_at' => $result['status'] === 'delivered' ? now() : null
-                ]);
+                $updateData = ['status' => $result['status']];
+                if ($result['status'] === 'delivered') {
+                    $updateData['delivered_at'] = $smsLog->delivered_at ?? now();
+                }
+                $smsLog->update($updateData);
             }
 
             return $result;

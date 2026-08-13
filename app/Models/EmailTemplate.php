@@ -19,6 +19,21 @@ class EmailTemplate extends Model
     public const TYPE_MATTER_FIRST = 'matter_first';
     public const TYPE_MATTER_OTHER = 'matter_other';
 
+    protected static function booted()
+    {
+        static::saving(function (EmailTemplate $template) {
+            if (trim((string) $template->name) === '') {
+                throw new \InvalidArgumentException('Email template name cannot be empty.');
+            }
+            if (trim((string) $template->subject) === '') {
+                throw new \InvalidArgumentException('Email template subject cannot be empty.');
+            }
+            if (trim((string) $template->description) === '') {
+                throw new \InvalidArgumentException('Email template content (description) cannot be empty.');
+            }
+        });
+    }
+
     public function matter()
     {
         return $this->belongsTo(Matter::class, 'matter_id');
