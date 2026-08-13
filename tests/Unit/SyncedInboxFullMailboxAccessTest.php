@@ -21,10 +21,30 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
         $ranges = IncomingEmailSyncService::syncRangeOptionsForUnassignedTab($staff);
 
         $this->assertArrayHasKey('10min', $ranges);
+        $this->assertArrayHasKey('yesterday6am', $ranges);
         $this->assertArrayHasKey('full', $ranges);
+        $this->assertSame(
+            IncomingEmailSyncService::yesterday6amSyncRangeLabel(),
+            $ranges['yesterday6am']
+        );
         $this->assertSame(
             IncomingEmailSyncService::adminUnassignedSyncRangeOptions(),
             $ranges
+        );
+    }
+
+    #[Test]
+    public function yesterday_6am_sync_range_resolves_to_yesterday_morning(): void
+    {
+        $timezone = (string) config('app.timezone', 'UTC');
+        $now = now($timezone);
+        $expected = $now->copy()->subDay()->startOfDay()->setTime(6, 0, 0);
+
+        $this->assertTrue(
+            IncomingEmailSyncService::resolveSyncSince('yesterday6am')->eq($expected)
+        );
+        $this->assertTrue(
+            IncomingEmailSyncService::resolveYesterday6amSyncSince($now)->eq($expected)
         );
     }
 
