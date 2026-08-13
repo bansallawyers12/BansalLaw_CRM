@@ -17,6 +17,7 @@ use App\Models\ClientMatter;
 use App\Models\EmailLog;
 use App\Models\WorkflowStage;
 use App\Services\MatterActionNoteService;
+use App\Services\FCMService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
@@ -1597,15 +1598,21 @@ class ClientMatterHubController extends Controller
 		$this->ensureCrmRecordAccess((int) $matter->client_id);
 
 		$stageQuery = DB::table('workflow_stages')->where('name', $wfStage);
+		$hasWorkflowScope = false;
 		if (!empty($matter->workflow_id)) {
 			$stageQuery->where('workflow_id', $matter->workflow_id);
+			$hasWorkflowScope = true;
 		} elseif (!empty($matter->sel_matter_id)) {
 			$wf = DB::table('workflows')->where('matter_id', $matter->sel_matter_id)->first();
 			if ($wf) {
 				$stageQuery->where('workflow_id', $wf->id);
+				$hasWorkflowScope = true;
 			}
 		}
-		$stage     = $stageQuery->first() ?? DB::table('workflow_stages')->where('name', $wfStage)->first();
+		$stage = $stageQuery->first();
+		if (!$stage && !$hasWorkflowScope) {
+			$stage = DB::table('workflow_stages')->where('name', $wfStage)->first();
+		}
 		$wfStageId = $stage ? $stage->id : null;
 
 		$inserted  = [];
@@ -1615,7 +1622,6 @@ class ClientMatterHubController extends Controller
 
 		foreach ($names as $name) {
 			$newId = DB::table('cp_doc_checklists')->insertGetId([
-				'user_id'           => $userId,
 				'client_matter_id'  => $clientMatterId,
 				'client_id'         => $matter->client_id,
 				'wf_stage'          => $wfStage,
