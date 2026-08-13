@@ -706,10 +706,14 @@ Status key (2026-08-07):
 - **Now:** Added Fallback 1b and enhanced local/disk path checks in `PublicDocumentController::submitSignatures` to support URL-based documents (`http://...` / `https://...`) and local storage paths without failing when `$clientId/$docType/$myfileKey` S3 key construction is unavailable or returns no file. Also wrapped legacy spatie media-library method calls in `method_exists` safety guards to prevent fatal method missing exceptions.
 
 ### 13.8 Medium — `getClientMatters` / `suggestAssociation` leak client–matter graph
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::getClientMatters`, `SignatureService::suggestAssociation`, `SignatureDashboardController::suggestAssociation`, `SignatureDashboardController::getClientMatters`
+- **Now:** Added `StaffClientVisibility::canAccessClientOrLead` authorization checks to `ClientsController::getClientMatters` (returning HTTP 403 Forbidden for unauthorized staff) and `SignatureService::suggestAssociation` (filtering out unassigned entities). Also updated `matters` joins from `join` to `leftJoin` across signature association endpoints so matters with missing matter types (`sel_matter_id = null`) are handled safely without dropping records or leaking unauthorized client–matter graphs.
 
 ### 13.9 Medium — SMS template `usage_count` incremented before send succeeds
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `UnifiedSmsManager::sendFromTemplateModel`, `SmsTemplate::incrementUsage`
+- **Now:** Verified and enforced that `SmsTemplate` `usage_count` incrementing occurs strictly inside `sendFromTemplateModel` after evaluating `if (!empty($result['success']))`. Template rendering (`renderTemplateByAlias`) and failed SMS send attempts (provider errors, invalid numbers) leave `usage_count` untouched.
 
 ### 13.10 Medium — Non-delivered SMS status clears `delivered_at`
 - **Status:** Open\*
