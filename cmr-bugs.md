@@ -691,7 +691,9 @@ Status key (2026-08-07):
 - **Now:** Validates that any specified `upload_inbox_mail_client_matter_id`, `upload_sent_mail_client_matter_id`, or `client_matter_id` belongs to `client_id` (`client_matters.client_id === client_id`) prior to upload processing and database insertion, returning an `invalid_matter` validation error if mismatched.
 
 ### 13.5 Medium — Checklist stage resolved by name only (cross-workflow collision)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController::addChecklist`
+- **Now:** Strictly enforces `$hasWorkflowScope` when resolving workflow stage IDs by name (`wf_stage`). When a matter has an assigned workflow (`workflow_id` or `sel_matter_id`), stage name lookup is strictly scoped to that workflow to prevent cross-workflow stage ID collisions.
 
 ### 13.6 Medium — Reopen request null-deref on missing matter type
 - **Status:** Open\*
