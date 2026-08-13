@@ -2152,7 +2152,8 @@ class LeadController extends Controller
             }
         }
 
-        if (!$matchedPerson || !StaffClientVisibility::canAccessClientOrLead((int) $matchedPerson->id, Auth::user())) {
+        $actor = Auth::guard('admin')->user() ?: Auth::user();
+        if (!$actor || !$matchedPerson || !StaffClientVisibility::canAccessClientOrLead((int) $matchedPerson->id, $actor)) {
             return response()->json(['found' => false, 'person' => null]);
         }
 

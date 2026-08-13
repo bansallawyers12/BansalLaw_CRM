@@ -1899,27 +1899,38 @@ public function getChapters(Request $request)
 
 
     public function checkclientexist(Request $request){
-        if($request->type == 'email'){
-         $clientexists = \App\Models\Admin::where('email', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
-            if($clientexists){
-                echo 1;
-            }else{
-                echo 0;
+        $actor = Auth::guard('admin')->user() ?: Auth::user();
+        if (!$actor) {
+            echo 0;
+            return;
+        }
+
+        $val = trim((string) $request->vl);
+        if ($val === '') {
+            echo 0;
+            return;
+        }
+
+        if ($request->type == 'email') {
+            $matchingIds = \App\Models\Admin::where('email', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+        } else if ($request->type == 'clientid') {
+            $matchingIds = \App\Models\Admin::where('client_id', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+        } else {
+            $matchingIds = \App\Models\Admin::where('phone', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+        }
+
+        $hasAccess = false;
+        foreach ($matchingIds as $cId) {
+            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $cId, $actor)) {
+                $hasAccess = true;
+                break;
             }
-        }else if($request->type == 'clientid'){
-         $clientexists = \App\Models\Admin::where('client_id', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
-            if($clientexists){
-                echo 1;
-            }else{
-                echo 0;
-            }
-        }else{
-            $clientexists = \App\Models\Admin::where('phone', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
-            if($clientexists){
-                echo 1;
-            }else{
-                echo 0;
-            }
+        }
+
+        if ($hasAccess) {
+            return response('1');
+        } else {
+            return response('0');
         }
     }
 

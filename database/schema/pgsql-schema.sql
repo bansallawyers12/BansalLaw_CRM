@@ -1898,7 +1898,7 @@ ALTER SEQUENCE public.client_spouse_details_id_seq OWNED BY public.client_spouse
 
 CREATE TABLE public.client_testscore (
     id bigint NOT NULL,
-    overall_score integer,
+    overall_score character varying(32),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     proficiency_level character varying(191),
