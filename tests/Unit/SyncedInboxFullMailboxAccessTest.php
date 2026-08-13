@@ -35,8 +35,12 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
             $ranges['from10aug']
         );
         $this->assertSame(
-            IncomingEmailSyncService::deleteUnassignedDbAndZohoLabel(),
-            $ranges['delete_unassigned_db_zoho']
+            'Remove before 10 Aug 2026 from this list (CRM + Zoho)',
+            IncomingEmailSyncService::deleteUnassignedDbAndZohoLabel()
+        );
+        $this->assertSame(
+            'Remove before 10 Aug 2026 from this list (CRM DB only)',
+            IncomingEmailSyncService::deleteUnassignedDbOnlyLabel()
         );
         $this->assertSame(
             IncomingEmailSyncService::adminUnassignedSyncRangeOptions(),
@@ -76,6 +80,10 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
             'From 10 Aug 2026 (delete older unassigned)',
             IncomingEmailSyncService::from10AugSyncRangeLabel()
         );
+        $this->assertStringContainsString(
+            'COALESCE(fetch_mail_sent_time, received_date, created_at)',
+            IncomingEmailSyncService::syncedMailEffectiveDateSql()
+        );
     }
 
     #[Test]
@@ -92,6 +100,17 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
         $this->assertSame(
             ['today' => IncomingEmailSyncService::todaySyncRangeLabel()],
             $ranges
+        );
+    }
+
+    #[Test]
+    public function syncable_mailbox_helpers_require_zoho_password_scope(): void
+    {
+        $this->assertTrue(
+            method_exists(IncomingEmailSyncService::class, 'applyMailboxHasZohoPasswordScope')
+        );
+        $this->assertTrue(
+            method_exists(IncomingEmailSyncService::class, 'applySyncedMailboxHasZohoPasswordFilter')
         );
     }
 

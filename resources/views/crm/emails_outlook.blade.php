@@ -399,7 +399,7 @@
     <div class="outlook-reading-pane">
         <!-- Empty State -->
         <div class="empty-state" id="emptyState">
-            <i class="fa-regular fa-envelope-open"></i>
+            <i class="fa-solid fa-inbox" aria-hidden="true"></i>
             <p>Select an item to read</p>
         </div>
 
