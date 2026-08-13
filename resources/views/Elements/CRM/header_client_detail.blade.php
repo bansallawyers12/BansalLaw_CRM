@@ -70,7 +70,7 @@
             </div>
             @if($_canViewSyncedInboxNav)
             <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_canViewAllSyncedInbox ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}">
-                <i class="fa-solid fa-user-clock"></i>
+                <i class="fa-solid fa-inbox"></i>
                 @if($_unassignedMailCount > 0)
                     <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
                 @endif

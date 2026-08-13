@@ -51,6 +51,7 @@ class IncomingEmailSyncService
         $query = Email::query()
             ->where('status', true)
             ->where('sync_enabled', true);
+        self::applyMailboxHasZohoPasswordScope($query);
 
         if ($mailboxFilter !== null && $mailboxFilter !== '') {
             $query->whereRaw('LOWER(email) = ?', [strtolower(trim($mailboxFilter))]);
@@ -930,7 +931,7 @@ class IncomingEmailSyncService
         $floor = self::resolveUnassignedAvailableFrom();
         $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
 
-        return 'Delete unassigned before ' . $date . ' (CRM only)';
+        return 'Remove before ' . $date . ' from this list (CRM DB only)';
     }
 
     public static function deleteUnassignedDbAndZohoLabel(): string
@@ -938,7 +939,7 @@ class IncomingEmailSyncService
         $floor = self::resolveUnassignedAvailableFrom();
         $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
 
-        return 'Delete unassigned before ' . $date . ' (CRM + Zoho)';
+        return 'Remove before ' . $date . ' from this list (CRM + Zoho)';
     }
 
     public static function isPurgeOnlySyncRange(string $range): bool
@@ -1106,14 +1107,18 @@ class IncomingEmailSyncService
 
     /**
      * Active CRM mailboxes that may be selected for manual inbox sync.
+     * Only accounts with a Zoho / IMAP app password are eligible.
      *
      * @return list<string>
      */
     public static function syncableMailboxAddresses(): array
     {
-        return Email::query()
+        $query = Email::query()
             ->where('status', true)
-            ->where('sync_enabled', true)
+            ->where('sync_enabled', true);
+        self::applyMailboxHasZohoPasswordScope($query);
+
+        return $query
             ->orderBy('email')
             ->pluck('email')
             ->map(static fn ($address) => strtolower(trim((string) $address)))
@@ -1129,11 +1134,56 @@ class IncomingEmailSyncService
             return null;
         }
 
-        return Email::query()
+        $query = Email::query()
             ->where('status', true)
             ->where('sync_enabled', true)
-            ->whereRaw('LOWER(email) = ?', [$normalized])
-            ->first();
+            ->whereRaw('LOWER(email) = ?', [$normalized]);
+        self::applyMailboxHasZohoPasswordScope($query);
+
+        return $query->first();
+    }
+
+    /**
+     * Restrict mailbox queries to rows that have a Zoho/IMAP password configured.
+     */
+    public static function applyMailboxHasZohoPasswordScope($query): void
+    {
+        $query->whereNotNull('password')
+            ->where('password', '!=', '');
+    }
+
+    /**
+     * @return list<int>
+     */
+    public static function syncableMailboxIds(): array
+    {
+        $query = Email::query()
+            ->where('status', true)
+            ->where('sync_enabled', true);
+        self::applyMailboxHasZohoPasswordScope($query);
+
+        return $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * Limit synced inbox lists to mail imported from mailboxes that have a Zoho password.
+     */
+    public static function applySyncedMailboxHasZohoPasswordFilter($query): void
+    {
+        if (! Schema::hasColumn('email_logs', 'synced_email_id')) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $ids = self::syncableMailboxIds();
+        if ($ids === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereIn('synced_email_id', $ids);
     }
 
     /**
@@ -1146,10 +1196,18 @@ class IncomingEmailSyncService
             $addresses = [strtolower(trim((string) $staff->email))];
         }
 
-        return array_values(array_unique(array_filter(array_map(
+        $allowed = array_values(array_unique(array_filter(array_map(
             static fn (string $address): string => strtolower(trim($address)),
             $addresses
         ))));
+
+        if ($allowed === []) {
+            return [];
+        }
+
+        $syncable = self::syncableMailboxAddresses();
+
+        return array_values(array_intersect($allowed, $syncable));
     }
 
     /**
@@ -1243,22 +1301,32 @@ class IncomingEmailSyncService
     public static function applyUnassignedSyncedInboxScope($query): void
     {
         self::applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query);
+        self::applySyncedMailboxHasZohoPasswordFilter($query);
+        self::applySyncedMailAvailabilityFloor($query);
+    }
 
+    /**
+     * SQL expression for the effective mail date shown in Unassigned/Inbox lists.
+     */
+    public static function syncedMailEffectiveDateSql(): string
+    {
+        return 'COALESCE(fetch_mail_sent_time, received_date, created_at)';
+    }
+
+    /**
+     * Hide synced mail whose effective date is before the availability floor.
+     */
+    public static function applySyncedMailAvailabilityFloor($query): void
+    {
         $availableFrom = self::resolveUnassignedAvailableFrom();
         if ($availableFrom === null) {
             return;
         }
 
-        $cutoff = $availableFrom->format('Y-m-d H:i:s');
-        $query->where(function ($dateQuery) use ($cutoff) {
-            $dateQuery->where(function ($received) use ($cutoff) {
-                $received->whereNotNull('received_date')
-                    ->where('received_date', '>=', $cutoff);
-            })->orWhere(function ($created) use ($cutoff) {
-                $created->whereNull('received_date')
-                    ->where('created_at', '>=', $cutoff);
-            });
-        });
+        $query->whereRaw(
+            self::syncedMailEffectiveDateSql() . ' >= ?',
+            [$availableFrom->format('Y-m-d H:i:s')]
+        );
     }
 
     /**
@@ -1296,15 +1364,7 @@ class IncomingEmailSyncService
         $query = EmailLog::query();
         self::applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query);
 
-        $query->where(function ($dateQuery) use ($cutoff) {
-            $dateQuery->where(function ($received) use ($cutoff) {
-                $received->whereNotNull('received_date')
-                    ->where('received_date', '<', $cutoff);
-            })->orWhere(function ($created) use ($cutoff) {
-                $created->whereNull('received_date')
-                    ->where('created_at', '<', $cutoff);
-            });
-        });
+        $query->whereRaw(self::syncedMailEffectiveDateSql() . ' < ?', [$cutoff]);
 
         if ($mailboxAddresses !== null) {
             $normalized = array_values(array_unique(array_filter(array_map(
@@ -1446,12 +1506,13 @@ class IncomingEmailSyncService
     }
 
     /**
-     * All Zoho-synced inbox mail (assigned + unassigned).
+     * All Zoho-synced inbox mail (assigned + unassigned) from mailboxes with a Zoho password.
      */
     public static function applyAllSyncedInboxScope($query): void
     {
         if (Schema::hasColumn('email_logs', 'synced_email_id')) {
             $query->whereNotNull('synced_email_id');
+            self::applySyncedMailboxHasZohoPasswordFilter($query);
         } else {
             $query->whereRaw('1 = 0');
         }

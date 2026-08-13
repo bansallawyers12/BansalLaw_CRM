@@ -8830,6 +8830,7 @@ class ClientsController extends Controller
         if ($folder === 'inbox') {
             if ($isGlobalSyncedMailView) {
                 \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
             } else {
                 $this->applyIncomingInboxScope($query);
             }
@@ -8884,6 +8885,10 @@ class ClientsController extends Controller
                 if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
                     $query->whereNotNull('synced_email_id');
                 }
+                if ($isGlobalSyncedMailView) {
+                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
+                }
             } else {
                 $query->where('id', '<', 0);
             }
@@ -8893,6 +8898,10 @@ class ClientsController extends Controller
                 $query->where('id', '<', 0);
             } else {
                 $query->whereIn('id', $reviewEmailIds);
+            }
+            if ($isGlobalSyncedMailView) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
             }
         }
 
@@ -9047,8 +9056,11 @@ class ClientsController extends Controller
                 \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($unreadCountQuery);
             } elseif ($folder === 'inbox') {
                 \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($unreadCountQuery);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
             } elseif ($folder === 'review') {
                 $unreadCountQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($unreadCountQuery);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
             } else {
                 if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
                     $unreadCountQuery->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
@@ -9056,6 +9068,8 @@ class ClientsController extends Controller
                     if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
                         $unreadCountQuery->whereNotNull('synced_email_id');
                     }
+                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($unreadCountQuery);
+                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
                 } else {
                     $unreadCountQuery->where('id', '<', 0);
                 }
@@ -9114,18 +9128,23 @@ class ClientsController extends Controller
             \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
         } elseif ($folder === 'inbox') {
             \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } elseif ($folder === 'review') {
             if ($reviewEmailIds === []) {
                 $query->where('id', '<', 0);
             } else {
                 $query->whereIn('id', $reviewEmailIds);
             }
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
                 ->whereNotNull('client_id');
             if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
                 $query->whereNotNull('synced_email_id');
             }
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } else {
             return [
                 'today' => 0,
