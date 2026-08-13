@@ -5330,16 +5330,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            if (syncRange === 'delete_unassigned_db' || syncRange === 'delete_unassigned_db_zoho') {
-                const deletesZoho = syncRange === 'delete_unassigned_db_zoho';
-                const confirmMsg = deletesZoho
-                    ? 'Remove unassigned emails before 10 Aug from this list in the CRM database AND delete them from Zoho? This cannot be undone.'
-                    : 'Remove unassigned emails before 10 Aug from this list in the CRM database only (Zoho untouched)? This cannot be undone.';
-                if (! window.confirm(confirmMsg)) {
-                    return;
-                }
-            }
-
             const originalHtml = btnSyncInbox.innerHTML;
             const startedAt = Date.now();
             const syncEmail = resolveManualSyncEmail();
