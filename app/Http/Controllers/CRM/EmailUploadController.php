@@ -101,6 +101,17 @@ class EmailUploadController extends Controller
         $clientUniqueId = (string) ($clientInfo->client_id ?? '');
         $resolvedType = in_array($clientInfo->type, ['client', 'lead'], true) ? $clientInfo->type : $recordType;
 
+        if ($clientMatterId > 0) {
+            $belongs = \App\Models\ClientMatter::where('id', $clientMatterId)->where('client_id', $clientId)->exists();
+            if (!$belongs) {
+                return [
+                    'success' => false,
+                    'error_code' => 'invalid_matter',
+                    'error' => 'Selected matter does not belong to this client.',
+                ];
+            }
+        }
+
         $payload = [
             'client_id' => $clientId,
             'type' => $resolvedType,
@@ -605,14 +616,18 @@ class EmailUploadController extends Controller
 
             $fileHash = md5_file($file->getRealPath());
             $matterId = $mailType === 'sent'
-                ? $request->upload_sent_mail_client_matter_id
-                : $request->upload_inbox_mail_client_matter_id;
+                ? ($request->upload_sent_mail_client_matter_id ?? $request->client_matter_id ?? $request->matter_id)
+                : ($request->upload_inbox_mail_client_matter_id ?? $request->client_matter_id ?? $request->matter_id);
             $matterId = empty($matterId) ? null : (int) $matterId;
 
             if ($matterId && !empty($clientId)) {
                 $belongs = \App\Models\ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
                 if (!$belongs) {
-                    $matterId = null;
+                    return [
+                        'success' => false,
+                        'error_code' => 'invalid_matter',
+                        'error' => 'Selected matter does not belong to this client.',
+                    ];
                 }
             }
 
@@ -716,10 +731,7 @@ class EmailUploadController extends Controller
             $document->mail_type = $mailType;
             $document->file_size = $fileSize;
             $document->doc_type = $docType;
-            $matterId = $mailType === 'sent' 
-                ? $request->upload_sent_mail_client_matter_id 
-                : $request->upload_inbox_mail_client_matter_id;
-            $document->client_matter_id = empty($matterId) ? null : $matterId;
+            $document->client_matter_id = $matterId;
             try {
                 $document->save();
             } catch (QueryException $e) {
@@ -2092,6 +2104,18 @@ class EmailUploadController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(),
             ], 422);
+        }
+
+        $matterId = $request->upload_sent_mail_client_matter_id ?? $request->upload_inbox_mail_client_matter_id ?? $request->client_matter_id ?? $request->matter_id;
+        if (!empty($matterId) && !empty($request->client_id)) {
+            $belongs = \App\Models\ClientMatter::where('id', (int)$matterId)->where('client_id', (int)$request->client_id)->exists();
+            if (!$belongs) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Selected matter does not belong to this client.',
+                    'error_code' => 'invalid_matter',
+                ], 422);
+            }
         }
 
         $invalidFiles = [];

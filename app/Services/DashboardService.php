@@ -579,12 +579,20 @@ class DashboardService
     {
         try {
             $user = $user ?? Auth::user();
-            $notes = Note::where('unique_group_id', $data['unique_group_id'])
-                ->whereNotNull('unique_group_id')
-                ->get();
+            $uniqueGroupId = trim((string) ($data['unique_group_id'] ?? ''));
+
+            if ($uniqueGroupId !== '') {
+                $notes = Note::where('unique_group_id', $uniqueGroupId)
+                    ->where('unique_group_id', '!=', '')
+                    ->whereNotNull('unique_group_id')
+                    ->get();
+            } else {
+                $noteId = $data['note_id'] ?? $data['id'] ?? 0;
+                $notes = Note::where('id', $noteId)->get();
+            }
 
             if ($notes->isEmpty()) {
-                return ['success' => false, 'message' => 'No notes found with the provided unique group ID'];
+                return ['success' => false, 'message' => 'No notes found with the provided criteria'];
             }
 
             if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
@@ -598,13 +606,23 @@ class DashboardService
                 }
             }
 
-            $updated = Note::where('unique_group_id', $data['unique_group_id'])
-                ->whereNotNull('unique_group_id')
-                ->update([
+            if ($uniqueGroupId !== '') {
+                $updated = Note::where('unique_group_id', $uniqueGroupId)
+                    ->where('unique_group_id', '!=', '')
+                    ->whereNotNull('unique_group_id')
+                    ->update([
+                        'description' => $data['description'],
+                        'note_deadline' => $data['note_deadline'],
+                        'user_id' => $user ? $user->id : Auth::id()
+                    ]);
+            } else {
+                $noteId = $data['note_id'] ?? $data['id'] ?? 0;
+                $updated = Note::where('id', $noteId)->update([
                     'description' => $data['description'],
                     'note_deadline' => $data['note_deadline'],
                     'user_id' => $user ? $user->id : Auth::id()
                 ]);
+            }
 
             if ($updated > 0) {
                 // Create notification and activity log for the first note
@@ -651,8 +669,10 @@ class DashboardService
 
             foreach ($notesToCheck as $checkNote) {
                 $isOwnerOrAssignee = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
-                $hasClientAccess = $checkNote->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $checkNote->client_id, $user) : false;
-                if (!$isOwnerOrAssignee && !$hasClientAccess) {
+                if (!$isOwnerOrAssignee) {
+                    return ['success' => false, 'message' => 'Unauthorized action completion.'];
+                }
+                if ($checkNote->client_id && !StaffClientVisibility::canAccessClientOrLead((int) $checkNote->client_id, $user)) {
                     return ['success' => false, 'message' => 'Unauthorized action completion.'];
                 }
             }
@@ -660,8 +680,10 @@ class DashboardService
 
         // Update all notes in the group (matches Action tab behavior), or single note if no group
         $updated = 0;
-        if (!empty(trim($uniqueGroupId ?? ''))) {
-            $updated = Note::where('unique_group_id', $uniqueGroupId)
+        $groupId = trim((string) ($uniqueGroupId ?? ''));
+        if ($groupId !== '') {
+            $updated = Note::where('unique_group_id', $groupId)
+                ->where('unique_group_id', '!=', '')
                 ->whereNotNull('unique_group_id')
                 ->update(['status' => 1]);
         }

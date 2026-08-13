@@ -472,8 +472,8 @@ class SignatureService
                 default => 'general'
             };
 
-            if ($matterId && $entityType === 'client') {
-                $belongs = ClientMatter::where('id', $matterId)->where('client_id', $entityId)->exists();
+            if ($matterId) {
+                $belongs = \App\Models\ClientMatter::where('id', $matterId)->where('client_id', $entityId)->exists();
                 if (!$belongs) {
                     return false;
                 }

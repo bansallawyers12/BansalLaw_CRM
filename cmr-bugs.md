@@ -671,17 +671,24 @@ Status key (2026-08-07):
 ## Area 13 — Matters / Documents / Email / Assignee (supplement)
 
 ### 13.1 High — Empty `unique_group_id` can mass-complete actions
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `AssigneeController::updateActionCompleted`, `AssigneeController::updateActionNotCompleted`, `DashboardService::extendNoteDeadline`, `DashboardService::updateActionCompleted`
+- **Now:** Enforces `unique_group_id !== ''` checks in database update queries to prevent empty/whitespace strings from matching all un-grouped actions (`WHERE unique_group_id = ''`) and mass-updating action statuses or deadlines.
 
 ### 13.2 High — Complete/reopen any action by id (no assignee/assigner check)
-- **Status:** Partial
-- **Notes:** Destroy paths use `authorizeNoteManagement` (#7.1). Complete/reopen paths still need confirm.
+- **Status:** Fixed
+- **Files:** `AssigneeController::updateActionCompleted`, `AssigneeController::updateActionNotCompleted`, `DashboardService::updateActionCompleted`
+- **Now:** Enforces `$isAssigneeOrOwner` check (`assigned_to === $uid || user_id === $uid` or Super Admin privileges) on `updateActionCompleted` and `updateActionNotCompleted` so unauthorized staff cannot modify, complete, or reopen actions assigned to or created by other staff.
 
 ### 13.3 High — Signature associate accepts matter from another client
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `SignatureDashboardController`, `SignatureService::associateWithCategory`
+- **Now:** Validates that any specified `client_matter_id` / `matter_id` actually belongs to the associated client/lead (`client_matters.client_id === entity_id`), preventing signature documents from being attached to matters owned by a different client.
 
 ### 13.4 High — Manual email upload does not verify matter belongs to client
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `EmailUploadController::validateEmailUploadRequest`, `EmailUploadController::importEmailFromContext`, `EmailUploadController::processEmailFile`
+- **Now:** Validates that any specified `upload_inbox_mail_client_matter_id`, `upload_sent_mail_client_matter_id`, or `client_matter_id` belongs to `client_id` (`client_matters.client_id === client_id`) prior to upload processing and database insertion, returning an `invalid_matter` validation error if mismatched.
 
 ### 13.5 Medium — Checklist stage resolved by name only (cross-workflow collision)
 - **Status:** Open\*

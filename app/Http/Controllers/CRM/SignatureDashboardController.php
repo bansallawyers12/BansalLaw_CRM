@@ -185,11 +185,17 @@ class SignatureDashboardController extends Controller
                     ->first();
                     
                 if ($matter) {
+                    $targetClientId = (int) ($request->selected_client_id ?? $document->client_id ?? 0);
+                    if ($targetClientId > 0 && (int)$matter->client_id !== $targetClientId) {
+                        return back()->with('error', 'Selected matter does not belong to this client.');
+                    }
+
                     // Associate document with the client
                     $client = Admin::find($matter->client_id);
                     if ($client) {
                         $document->update([
                             'client_id' => $client->id,
+                            'client_matter_id' => $matter->id,
                             'lead_id' => null,
                         ]);
                         
