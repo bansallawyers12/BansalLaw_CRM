@@ -904,11 +904,13 @@ class ClientMatterHubController extends Controller
 
 			if ($saved) {
 				// Send notification to admins
-				$admins = \App\Models\Admin::where('role', 1)->where('is_deleted', null)->get();
+				$admins = \App\Models\Admin::where('role', 1)->whereNull('is_deleted')->get();
 				$requesterName = Auth::user() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'A team member';
 				$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;
 				$matterTitle = $matterObj ? $matterObj->title : 'Matter';
-				$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
+				$matterNoSuffix = !empty($clientMatter->client_unique_matter_no) ? '/' . $clientMatter->client_unique_matter_no : '';
+				$matterNoLabel = !empty($clientMatter->client_unique_matter_no) ? ' (' . $clientMatter->client_unique_matter_no . ')' : '';
+				$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . $matterNoSuffix;
 
 				foreach ($admins as $admin) {
 					\App\Models\Notification::create([
@@ -917,7 +919,7 @@ class ClientMatterHubController extends Controller
 						'module_id' => $clientMatter->id,
 						'url' => $url,
 						'notification_type' => 'Matter Reopen Request',
-						'message' => $requesterName . ' has requested to reopen ' . $matterTitle . ' (' . $clientMatter->client_unique_matter_no . ').',
+						'message' => $requesterName . ' has requested to reopen ' . $matterTitle . $matterNoLabel . '.',
 						'receiver_status' => 0,
 						'sender_status' => 0,
 						'seen' => 0
@@ -933,6 +935,9 @@ class ClientMatterHubController extends Controller
 			return response()->json(['status' => false, 'message' => 'Failed to send reopen request.'], 500);
 
 		} catch (\Exception $e) {
+			if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface || $e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+				throw $e;
+			}
 			Log::error('Error requesting to reopen client matter: ' . $e->getMessage(), [
 				'matter_id' => $request->input('matter_id'),
 				'trace' => $e->getTraceAsString()
@@ -990,14 +995,16 @@ class ClientMatterHubController extends Controller
 				if ($requesterId && $requesterId != (Auth::guard('admin')->id() ?? Auth::id())) {
 					$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;
 					$matterTitle = $matterObj ? $matterObj->title : 'Matter';
-					$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
+					$matterNoSuffix = !empty($clientMatter->client_unique_matter_no) ? '/' . $clientMatter->client_unique_matter_no : '';
+					$matterNoLabel = !empty($clientMatter->client_unique_matter_no) ? ' (' . $clientMatter->client_unique_matter_no . ')' : '';
+					$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . $matterNoSuffix;
 					\App\Models\Notification::create([
 						'sender_id' => Auth::guard('admin')->id() ?? Auth::id(),
 						'receiver_id' => $requesterId,
 						'module_id' => $clientMatter->id,
 						'url' => $url,
 						'notification_type' => 'Matter Reopened',
-						'message' => 'Your request to reopen ' . $matterTitle . ' (' . $clientMatter->client_unique_matter_no . ') has been approved.',
+						'message' => 'Your request to reopen ' . $matterTitle . $matterNoLabel . ' has been approved.',
 						'receiver_status' => 0,
 						'sender_status' => 0,
 						'seen' => 0

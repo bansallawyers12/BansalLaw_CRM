@@ -696,10 +696,14 @@ Status key (2026-08-07):
 - **Now:** Strictly enforces `$hasWorkflowScope` when resolving workflow stage IDs by name (`wf_stage`). When a matter has an assigned workflow (`workflow_id` or `sel_matter_id`), stage name lookup is strictly scoped to that workflow to prevent cross-workflow stage ID collisions.
 
 ### 13.6 Medium — Reopen request null-deref on missing matter type
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientMatterHubController::requestReopenMatter`, `ClientMatterHubController::reopenClientMatter`, `ClientsController::clientsmatterslist`, `ClientsController::closedmatterslist`
+- **Now:** Safe fallback handling added for `$matterObj` (`$matterObj ? $matterObj->title : 'Matter'`) and `$clientMatter->client_unique_matter_no` across reopen notification building and URL generation. Updated `matters` table query joins in `ClientsController` from `join` to `leftJoin` so matters with missing or null matter types (`sel_matter_id`) are safely included in matter lists without being excluded or causing null dereferences.
 
 ### 13.7 Medium — Admin `submitSignatures` requires constructed S3 key (breaks URL-based docs)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `PublicDocumentController::submitSignatures`
+- **Now:** Added Fallback 1b and enhanced local/disk path checks in `PublicDocumentController::submitSignatures` to support URL-based documents (`http://...` / `https://...`) and local storage paths without failing when `$clientId/$docType/$myfileKey` S3 key construction is unavailable or returns no file. Also wrapped legacy spatie media-library method calls in `method_exists` safety guards to prevent fatal method missing exceptions.
 
 ### 13.8 Medium — `getClientMatters` / `suggestAssociation` leak client–matter graph
 - **Status:** Open\*

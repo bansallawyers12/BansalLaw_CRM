@@ -198,7 +198,7 @@ class ClientsController extends Controller
 
             $query = DB::table('client_matters as cm')
             ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-            ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+            ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
             ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
@@ -299,7 +299,7 @@ class ClientsController extends Controller
 
             $query = DB::table('client_matters as cm')
             ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-            ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+            ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
             ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
@@ -340,7 +340,7 @@ class ClientsController extends Controller
 
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-                ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+                ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
                 ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
                 ->where('ad.is_archived', '=', '0')
@@ -436,7 +436,7 @@ class ClientsController extends Controller
 
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-                ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+                ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
                 ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
                 ->where('ad.is_archived', '=', '0')
@@ -2941,7 +2941,7 @@ class ClientsController extends Controller
                         $likeMatter = '%' . addcslashes($matterTokenLower, '%_\\') . '%';
                         $slashResults = DB::table('admins')
                             ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
-                            ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                            ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
                             ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
                             ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
                             ->whereIn('admins.type', ['client', 'lead'])
@@ -4017,7 +4017,7 @@ class ClientsController extends Controller
     public function listAllMattersWRTSelClient(Request $request){ //dd($request->all());
         if( ClientMatter::where('client_id', $request->client_id)->exists()){
             //Fetch All client matters
-            $clientMatetrs = ClientMatter::join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+            $clientMatetrs = ClientMatter::leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
             ->select('client_matters.id', 'matters.title','client_matters.client_unique_matter_no')
             ->where('client_id', $request->client_id)
             ->get(); //dd($clientMatetrs);
