@@ -13,6 +13,7 @@ class ClientMatterTask extends Model
         'client_matter_id',
         'client_id',
         'title',
+        'due_date',
         'is_done',
         'sort_order',
         'created_by',
@@ -21,6 +22,7 @@ class ClientMatterTask extends Model
 
     protected $casts = [
         'is_done' => 'boolean',
+        'due_date' => 'date',
     ];
 
     public function clientMatter(): BelongsTo

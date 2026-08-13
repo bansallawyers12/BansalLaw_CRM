@@ -101,6 +101,7 @@ class ClientMatterTaskController extends Controller
             'matter_ref'        => 'nullable|string|max:50',
             'matter_ref_no'     => 'nullable|string|max:50',
             'title'             => 'required|string|max:500',
+            'due_date'          => 'nullable|date',
         ]);
 
         $clientId = (int) $validated['client_id'];
@@ -121,6 +122,7 @@ class ClientMatterTaskController extends Controller
         $task->client_matter_id = $matter->id;
         $task->client_id        = $matter->client_id;
         $task->title            = $title;
+        $task->due_date         = ! empty($validated['due_date']) ? $validated['due_date'] : null;
         $task->is_done          = false;
         $task->sort_order       = $maxSort + 1;
         $task->created_by       = Auth::user()->id;
@@ -160,6 +162,13 @@ class ClientMatterTaskController extends Controller
             $changed = true;
         }
 
+        if ($request->exists('due_date')) {
+            $request->validate(['due_date' => 'nullable|date']);
+            $rawDue = $request->input('due_date');
+            $task->due_date = ($rawDue !== null && trim((string) $rawDue) !== '') ? $rawDue : null;
+            $changed = true;
+        }
+
         if (! $changed) {
             return response()->json(['status' => false, 'message' => 'No changes submitted'], 422);
         }
@@ -171,6 +180,9 @@ class ClientMatterTaskController extends Controller
         }
         if ($request->has('title')) {
             $sync->syncTitleFromClientTask($task);
+        }
+        if ($request->exists('due_date')) {
+            $sync->syncDueDateFromClientTask($task);
         }
 
         return response()->json(['status' => true, 'data' => $task]);
