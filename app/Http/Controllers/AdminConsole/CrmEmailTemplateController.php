@@ -30,7 +30,7 @@ class CrmEmailTemplateController extends Controller
 
     public function store(Request $request)
     {
-        $wantsJson = $request->expectsJson() || $request->ajax();
+        $wantsJson = $request->expectsJson() || $request->ajax() || $request->wantsJson() || $request->isJson();
 
         if (!$request->isMethod('post')) {
             return redirect()->route('adminconsole.features.crmemailtemplate.index');
@@ -38,8 +38,8 @@ class CrmEmailTemplateController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'subject' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -135,8 +135,8 @@ class CrmEmailTemplateController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'subject' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string',
         ]);
 
         if ($validator->fails()) {

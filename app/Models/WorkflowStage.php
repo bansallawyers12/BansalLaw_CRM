@@ -15,7 +15,18 @@ class WorkflowStage extends Model
         'id', 'name', 'workflow_id', 'sort_order', 'created_at', 'updated_at'
     ];
   
-	public $sortable = ['id', 'name', 'created_at', 'updated_at'];
+	protected static function booted()
+	{
+		static::saving(function (WorkflowStage $stage) {
+			if (empty($stage->workflow_id)) {
+				$general = Workflow::firstOrCreate(
+					['name' => 'General'],
+					['description' => 'Default General Workflow', 'status' => 1]
+				);
+				$stage->workflow_id = $general->id;
+			}
+		});
+	}
 
 	/**
 	 * Get the workflow this stage belongs to.

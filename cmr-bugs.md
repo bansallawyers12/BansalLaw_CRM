@@ -716,13 +716,19 @@ Status key (2026-08-07):
 - **Now:** Verified and enforced that `SmsTemplate` `usage_count` incrementing occurs strictly inside `sendFromTemplateModel` after evaluating `if (!empty($result['success']))`. Template rendering (`renderTemplateByAlias`) and failed SMS send attempts (provider errors, invalid numbers) leave `usage_count` untouched.
 
 ### 13.10 Medium — Non-delivered SMS status clears `delivered_at`
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `UnifiedSmsManager::getDeliveryStatus`
+- **Now:** Updated `UnifiedSmsManager::getDeliveryStatus` so status updates preserve `$smsLog->delivered_at` (`$updateData['delivered_at'] = $smsLog->delivered_at ?? now()`). Non-delivered status checks (e.g. `read`, `failed`, `expired`) no longer set `delivered_at` to `null` or overwrite previously established delivery timestamps.
 
 ### 13.11 Medium — Workflow stages can be created with `workflow_id = null`
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `WorkflowStage::booted`, `WorkflowController::store`
+- **Now:** Added a `booted` Eloquent observer on `WorkflowStage` model that intercepts stage saving and automatically assigns unassigned or `null` `workflow_id` instances to the default `General` workflow (`Workflow::firstOrCreate(['name' => 'General'])`). Prevents orphans with `workflow_id = null` across all creation methods.
 
 ### 13.12 Medium — Matter / first-email templates saved with no validation
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `EmailTemplate::booted`, `CrmEmailTemplateController`, `MatterEmailTemplateController`, `MatterOtherEmailTemplateController`
+- **Now:** Added a `booted` Eloquent observer on `EmailTemplate` model enforcing non-empty `name`, `subject`, and `description` on all saves (throwing `InvalidArgumentException` on blank fields). Enforced `required|string|max:255` for `name` and `subject`, and `required|string` for `description` in `CrmEmailTemplateController` store/update endpoints.
 
 ---
 
