@@ -43,7 +43,9 @@ class ClientMatterTaskSyncService
             $note->assigned_to = $assigneeId;
             $note->status = $task->is_done ? '1' : '0';
             $note->pin = 0;
-            $note->action_date = now()->toDateString();
+            $note->action_date = $task->due_date
+                ? $task->due_date->toDateString()
+                : now()->toDateString();
             $note->unique_group_id = 'group_' . uniqid('', true);
             $note->save();
 
@@ -107,6 +109,9 @@ class ClientMatterTaskSyncService
             $task->client_matter_id = $matter->id;
             $task->client_id = (int) $note->client_id;
             $task->title = $title;
+            $task->due_date = ! empty($note->action_date)
+                ? \Carbon\Carbon::parse($note->action_date)->toDateString()
+                : null;
             $task->is_done = (string) $note->status === '1';
             $task->sort_order = $maxSort + 1;
             $task->created_by = (int) ($note->assigned_to ?: $note->user_id);
@@ -160,6 +165,19 @@ class ClientMatterTaskSyncService
         }
 
         Note::where('id', $task->note_id)->update(['description' => $task->title]);
+    }
+
+    public function syncDueDateFromClientTask(ClientMatterTask $task): void
+    {
+        if (! $task->note_id) {
+            return;
+        }
+
+        Note::where('id', $task->note_id)->update([
+            'action_date' => $task->due_date
+                ? $task->due_date->toDateString()
+                : now()->toDateString(),
+        ]);
     }
 
     /**

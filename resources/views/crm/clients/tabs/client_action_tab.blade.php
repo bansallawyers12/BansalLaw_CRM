@@ -12,6 +12,11 @@
                 <div class="cdn-matter-task-composer">
                     <label class="visually-hidden" for="cdn-matter-task-title">Add a task</label>
                     <input type="text" class="form-control cdn-matter-task-composer__input" id="cdn-matter-task-title" maxlength="500" placeholder="Add a task…" autocomplete="off">
+                    <div class="cdn-matter-task-composer__due-wrap">
+                        <i class="fa-regular fa-calendar cdn-matter-task-composer__due-icon" aria-hidden="true"></i>
+                        <label class="visually-hidden" for="cdn-matter-task-due">Due date</label>
+                        <input type="text" class="form-control cdn-matter-task-composer__due" id="cdn-matter-task-due" placeholder="Due date" autocomplete="off" inputmode="numeric" aria-label="Due date">
+                    </div>
                     <button type="button" class="btn btn-primary cdn-matter-task-composer__btn" id="cdn-matter-task-add">
                         <i class="fa-solid fa-plus" aria-hidden="true"></i> Add
                     </button>

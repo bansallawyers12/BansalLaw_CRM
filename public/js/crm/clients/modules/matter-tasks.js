@@ -167,6 +167,7 @@
             return;
         }
         var $inp = $('#cdn-matter-task-title');
+        var $due = $('#cdn-matter-task-due');
         var $btn = $('#cdn-matter-task-add');
         if (!$inp.length || !$btn.length) {
             return;
@@ -178,8 +179,220 @@
         var unlocked = !!(cid && (mid || ref) && storeUrl);
         var busy = $wrap.hasClass('cdn-matter-tasks--busy');
         $inp.prop('disabled', !unlocked || busy);
+        $due.prop('disabled', !unlocked || busy);
+        var fp = $due.data('flatpickr');
+        if (fp && fp.altInput) {
+            fp.altInput.disabled = !unlocked || busy;
+        }
         $btn.prop('disabled', !unlocked || busy);
         $wrap.toggleClass('cdn-matter-tasks--locked', !unlocked);
+    }
+
+    function clearDueDateInput() {
+        var $due = $('#cdn-matter-task-due');
+        var fp = $due.data('flatpickr');
+        clearFieldInvalid($due);
+        if (fp && fp.altInput) {
+            clearFieldInvalid($(fp.altInput));
+        }
+        if (fp && typeof fp.clear === 'function') {
+            fp.clear();
+            return;
+        }
+        $due.val('');
+    }
+
+    function markFieldInvalid($el) {
+        if ($el && $el.length) {
+            $el.addClass('is-invalid');
+        }
+    }
+
+    function clearFieldInvalid($el) {
+        if ($el && $el.length) {
+            $el.removeClass('is-invalid');
+        }
+    }
+
+    function isValidCalendarDate(year, month, day) {
+        if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2200) {
+            return false;
+        }
+        var dt = new Date(year, month - 1, day);
+        return dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day;
+    }
+
+    function pad2(n) {
+        return (n < 10 ? '0' : '') + n;
+    }
+
+    /**
+     * Parse typed due date (optional). Empty is allowed.
+     * Accepts d/m/Y, d-m-Y, or Y-m-d.
+     * @returns {{ok:boolean, empty?:boolean, value?:string, message?:string}}
+     */
+    function parseDueDateInput(raw) {
+        var text = (raw == null ? '' : String(raw)).trim();
+        if (!text) {
+            return { ok: true, empty: true };
+        }
+
+        var iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (iso) {
+            var yIso = parseInt(iso[1], 10);
+            var mIso = parseInt(iso[2], 10);
+            var dIso = parseInt(iso[3], 10);
+            if (!isValidCalendarDate(yIso, mIso, dIso)) {
+                return { ok: false, message: 'Please enter a valid due date (DD/MM/YYYY).' };
+            }
+            return { ok: true, value: yIso + '-' + pad2(mIso) + '-' + pad2(dIso) };
+        }
+
+        var dmy = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (dmy) {
+            var d = parseInt(dmy[1], 10);
+            var m = parseInt(dmy[2], 10);
+            var y = parseInt(dmy[3], 10);
+            if (!isValidCalendarDate(y, m, d)) {
+                return { ok: false, message: 'Please enter a valid due date (DD/MM/YYYY).' };
+            }
+            return { ok: true, value: y + '-' + pad2(m) + '-' + pad2(d) };
+        }
+
+        return { ok: false, message: 'Please enter a valid due date (DD/MM/YYYY).' };
+    }
+
+    function getDueDateTypedValue($due) {
+        var fp = $due.data('flatpickr');
+        if (fp && fp.altInput) {
+            return (fp.altInput.value || '').trim();
+        }
+        return ($due.val() || '').trim();
+    }
+
+    function validateTaskTitle($inp) {
+        var title = ($inp.val() || '').trim();
+        clearFieldInvalid($inp);
+        if (!title) {
+            markFieldInvalid($inp);
+            notifyError('Please enter a task before adding.');
+            $inp.trigger('focus');
+            return null;
+        }
+        return title;
+    }
+
+    /**
+     * Validate optional due date. Returns Y-m-d string, '' if empty, or null if invalid.
+     */
+    function validateTaskDueDate($due) {
+        var fp = $due.data('flatpickr');
+        var $visible = fp && fp.altInput ? $(fp.altInput) : $due;
+        clearFieldInvalid($due);
+        clearFieldInvalid($visible);
+
+        var typed = getDueDateTypedValue($due);
+        var parsed = parseDueDateInput(typed);
+        if (!parsed.ok) {
+            markFieldInvalid($visible);
+            notifyError(parsed.message || 'Please enter a valid due date.');
+            $visible.trigger('focus');
+            return null;
+        }
+        if (parsed.empty) {
+            if (fp && typeof fp.clear === 'function') {
+                fp.clear();
+            } else {
+                $due.val('');
+            }
+            return '';
+        }
+
+        if (fp && typeof fp.setDate === 'function') {
+            try {
+                fp.setDate(parsed.value, true, 'Y-m-d');
+            } catch (e) {
+                markFieldInvalid($visible);
+                notifyError('Please enter a valid due date (DD/MM/YYYY).');
+                $visible.trigger('focus');
+                return null;
+            }
+        } else {
+            $due.val(parsed.value);
+        }
+
+        return parsed.value;
+    }
+
+    function initDueDatePicker() {
+        var el = document.getElementById('cdn-matter-task-due');
+        if (!el || typeof flatpickr === 'undefined') {
+            return;
+        }
+        var $due = $(el);
+        if ($due.data('flatpickr')) {
+            return;
+        }
+
+        var fp = flatpickr(el, {
+            altInput: true,
+            altFormat: 'd/m/Y',
+            dateFormat: 'Y-m-d',
+            altInputClass: 'form-control cdn-matter-task-composer__due-alt',
+            allowInput: true,
+            clickOpens: true,
+            disableMobile: true,
+            monthSelectorType: 'static',
+            locale: {
+                firstDayOfWeek: 1
+            },
+            onReady: function (selectedDates, dateStr, instance) {
+                if (instance.calendarContainer) {
+                    instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
+                }
+                if (instance.altInput) {
+                    $(instance.altInput).on('blur.matterTaskDue', function () {
+                        var typed = (instance.altInput.value || '').trim();
+                        if (!typed) {
+                            clearFieldInvalid($(instance.altInput));
+                            instance.clear();
+                            return;
+                        }
+                        var parsed = parseDueDateInput(typed);
+                        if (!parsed.ok) {
+                            markFieldInvalid($(instance.altInput));
+                            return;
+                        }
+                        clearFieldInvalid($(instance.altInput));
+                        instance.setDate(parsed.value, true, 'Y-m-d');
+                    });
+                    $(instance.altInput).on('input.matterTaskDue', function () {
+                        clearFieldInvalid($(instance.altInput));
+                    });
+                }
+            },
+            onChange: function () {
+                clearFieldInvalid($due);
+                if (fp.altInput) {
+                    clearFieldInvalid($(fp.altInput));
+                }
+            },
+            onOpen: function (selectedDates, dateStr, instance) {
+                if (!instance.calendarContainer) {
+                    return;
+                }
+                instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
+                // Nudge below the input so the header/arrows are not tight against the field.
+                window.requestAnimationFrame(function () {
+                    var top = parseFloat(instance.calendarContainer.style.top || '0');
+                    if (!isNaN(top)) {
+                        instance.calendarContainer.style.top = top + 8 + 'px';
+                    }
+                });
+            }
+        });
+
+        $due.data('flatpickr', fp);
     }
 
     function setBusy(busy) {
@@ -236,6 +449,45 @@
         }
     }
 
+    function parseDateOnly(raw) {
+        if (!raw) {
+            return null;
+        }
+        var s = String(raw).trim();
+        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) {
+            var d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        }
+        return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+    }
+
+    function formatDueDate(raw) {
+        var d = parseDateOnly(raw);
+        if (!d) {
+            return '';
+        }
+        try {
+            return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch (e) {
+            return String(raw).split('T')[0] || String(raw);
+        }
+    }
+
+    function isDueDateOverdue(raw, done) {
+        if (done || !raw) {
+            return false;
+        }
+        var due = parseDateOnly(raw);
+        if (!due) {
+            return false;
+        }
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+        return due.getTime() < today.getTime();
+    }
+
     function creatorName(it) {
         var c = it && it.creator;
         if (!c) {
@@ -254,6 +506,17 @@
         var when = formatCreatedAt(it.created_at);
         if (when) {
             parts.push(esc(when));
+        }
+        var dueLabel = formatDueDate(it.due_date);
+        if (dueLabel) {
+            var overdue = isDueDateOverdue(it.due_date, isTaskDone(it));
+            parts.push(
+                '<span class="cdn-matter-task__due' +
+                    (overdue ? ' is-overdue' : '') +
+                    '"><i class="fa-regular fa-calendar cdn-matter-task__due-icon" aria-hidden="true"></i>Due ' +
+                    esc(dueLabel) +
+                    '</span>'
+            );
         }
         if (!parts.length) {
             return '';
@@ -516,6 +779,7 @@
     }
 
     $(document).ready(function () {
+        initDueDatePicker();
         reload();
 
         $(document).on('click', '[data-tab="clientaction"]', function () {
@@ -532,8 +796,13 @@
 
         $(document).on('click', '#cdn-matter-task-add', function () {
             var $inp = $('#cdn-matter-task-title');
-            var title = ($inp.val() || '').trim();
-            if (!title) {
+            var $due = $('#cdn-matter-task-due');
+            var title = validateTaskTitle($inp);
+            if (title === null) {
+                return;
+            }
+            var dueDate = validateTaskDueDate($due);
+            if (dueDate === null) {
                 return;
             }
             var cid = clientId();
@@ -557,6 +826,9 @@
                 title: title,
                 _token: csrf()
             };
+            if (dueDate) {
+                storeData.due_date = dueDate;
+            }
             if (mid) {
                 storeData.matter_id = mid;
                 storeData.client_matter_id = mid;
@@ -577,6 +849,8 @@
                 success: function (res) {
                     if (res && res.status) {
                         $inp.val('');
+                        clearFieldInvalid($inp);
+                        clearDueDateInput();
                         reload();
                         setTimeout(function () {
                             $inp.trigger('focus');
@@ -607,7 +881,18 @@
             });
         });
 
+        $(document).on('input', '#cdn-matter-task-title', function () {
+            clearFieldInvalid($(this));
+        });
+
         $(document).on('keydown', '#cdn-matter-task-title', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#cdn-matter-task-add').trigger('click');
+            }
+        });
+
+        $(document).on('keydown', '.cdn-matter-task-composer__due-alt', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 $('#cdn-matter-task-add').trigger('click');
