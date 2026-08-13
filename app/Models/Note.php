@@ -179,9 +179,8 @@ class Note extends Model
      */
     public function lead()
     {
-        // Appointment model no longer exists - old appointment system removed
-        // Returning null to prevent errors
-        return null;
+        // Legacy relationship returning empty relation object for eager-loading safety
+        return $this->belongsTo(Admin::class, 'lead_id')->whereRaw('1=0');
     }
 
 }

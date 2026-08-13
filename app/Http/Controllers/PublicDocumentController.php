@@ -304,16 +304,62 @@ class PublicDocumentController extends Controller
                         }
                     }
                 }
-                
-                // Fallback 2: Check if file exists locally
-                if (!$tmpPdfPath && $url && file_exists(storage_path('app/public/' . $url))) {
-                    $tmpPdfPath = storage_path('app/public/' . $url);
-                    $isLocalFile = true;
-                    Log::info('Using local file for document submission', ['path' => $tmpPdfPath]);
+
+                // Fallback 1b: Any HTTP/HTTPS URL (URL-based documents or local storage URLs)
+                if (!$tmpPdfPath && $url && filter_var($url, FILTER_VALIDATE_URL)) {
+                    $urlPath = parse_url($url, PHP_URL_PATH);
+                    if ($urlPath && str_contains($urlPath, '/storage/')) {
+                        $relativeStoragePath = ltrim(substr($urlPath, strpos($urlPath, '/storage/') + 9), '/');
+                        $decodedPath = urldecode($relativeStoragePath);
+                        if (Storage::disk('public')->exists($decodedPath)) {
+                            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                            file_put_contents($tmpPdfPath, Storage::disk('public')->get($decodedPath));
+                            Log::info('Using public disk storage path resolved from URL', ['path' => $tmpPdfPath]);
+                        } elseif (file_exists(storage_path('app/public/' . $decodedPath))) {
+                            $tmpPdfPath = storage_path('app/public/' . $decodedPath);
+                            $isLocalFile = true;
+                            Log::info('Using local storage path resolved from URL', ['path' => $tmpPdfPath]);
+                        }
+                    }
+                    if (!$tmpPdfPath) {
+                        try {
+                            $httpResponse = \Illuminate\Support\Facades\Http::timeout(15)->get($url);
+                            if ($httpResponse->successful() && strlen($httpResponse->body()) > 0) {
+                                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                                file_put_contents($tmpPdfPath, $httpResponse->body());
+                                Log::info('Successfully downloaded PDF from URL for document submission', ['url' => $url]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Failed to download PDF from URL for document submission', ['url' => $url, 'error' => $e->getMessage()]);
+                            $tmpPdfPath = null;
+                        }
+                    }
                 }
                 
-                // Fallback 3: Try media library (legacy support)
-                if (!$tmpPdfPath) {
+                // Fallback 2: Check if file exists locally or on public disk
+                if (!$tmpPdfPath && $url) {
+                    $cleanUrl = ltrim($url, '/');
+                    if (Storage::disk('public')->exists($cleanUrl)) {
+                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                        file_put_contents($tmpPdfPath, Storage::disk('public')->get($cleanUrl));
+                        Log::info('Using public disk file for document submission', ['path' => $tmpPdfPath]);
+                    } elseif (file_exists(storage_path('app/public/' . $cleanUrl))) {
+                        $tmpPdfPath = storage_path('app/public/' . $cleanUrl);
+                        $isLocalFile = true;
+                        Log::info('Using local file for document submission', ['path' => $tmpPdfPath]);
+                    } elseif (file_exists(storage_path('app/' . $cleanUrl))) {
+                        $tmpPdfPath = storage_path('app/' . $cleanUrl);
+                        $isLocalFile = true;
+                        Log::info('Using local app file for document submission', ['path' => $tmpPdfPath]);
+                    } elseif (file_exists(public_path($cleanUrl))) {
+                        $tmpPdfPath = public_path($cleanUrl);
+                        $isLocalFile = true;
+                        Log::info('Using public path file for document submission', ['path' => $tmpPdfPath]);
+                    }
+                }
+                
+                // Fallback 3: Try media library (legacy support if trait used)
+                if (!$tmpPdfPath && method_exists($document, 'getFirstMediaPath')) {
                     $mediaPath = $document->getFirstMediaPath('documents');
                     if ($mediaPath && file_exists($mediaPath)) {
                         $tmpPdfPath = $mediaPath;

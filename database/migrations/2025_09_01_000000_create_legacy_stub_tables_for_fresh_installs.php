@@ -100,7 +100,13 @@ return new class extends Migration
             Schema::create('client_matters', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('client_id')->nullable()->index();
+                $table->unsignedBigInteger('sel_matter_id')->nullable();
+                $table->string('client_unique_matter_no')->nullable();
                 $table->string('matter_status')->nullable();
+                $table->unsignedBigInteger('reopen_requested_by')->nullable();
+                $table->unsignedBigInteger('closed_by')->nullable();
+                $table->string('discontinue_reason')->nullable();
+                $table->text('discontinue_notes')->nullable();
                 $table->timestamps();
             });
         }
@@ -108,9 +114,15 @@ return new class extends Migration
         if (! Schema::hasTable('notifications')) {
             Schema::create('notifications', function (Blueprint $table) {
                 $table->id();
+                $table->unsignedBigInteger('sender_id')->nullable();
                 $table->unsignedBigInteger('receiver_id')->nullable();
+                $table->unsignedBigInteger('module_id')->nullable();
+                $table->string('url')->nullable();
                 $table->string('notification_type')->nullable();
+                $table->text('message')->nullable();
+                $table->unsignedTinyInteger('sender_status')->nullable()->default(0);
                 $table->unsignedTinyInteger('receiver_status')->nullable()->default(0);
+                $table->unsignedTinyInteger('seen')->nullable()->default(0);
                 $table->timestamps();
             });
         }
