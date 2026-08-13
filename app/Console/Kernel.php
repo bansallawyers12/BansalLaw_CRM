@@ -60,6 +60,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\BackfillEmailPdfPreviews',
 
         '\App\Console\Commands\SyncInboxEmails',
+        '\App\Console\Commands\PurgeUnassignedSyncedEmails',
 
         // Font Awesome FA6 migration (one-time DB icon class updates)
         '\App\Console\Commands\MigrateFontAwesomeDbIcons',

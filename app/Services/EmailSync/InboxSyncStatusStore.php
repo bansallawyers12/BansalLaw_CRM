@@ -99,9 +99,37 @@ class InboxSyncStatusStore
      */
     public static function buildResultMessage(array $summary): string
     {
-        $detail = 'Imported: ' . (int) ($summary['total_imported'] ?? 0)
-            . ', Skipped: ' . (int) ($summary['total_skipped'] ?? 0)
-            . ', Failed: ' . (int) ($summary['total_failed'] ?? 0);
+        $syncRange = (string) ($summary['sync_range'] ?? '');
+        $isPurgeOnly = IncomingEmailSyncService::isPurgeOnlySyncRange($syncRange);
+        $purged = (int) ($summary['purged_unassigned_before_cutoff'] ?? 0);
+
+        if ($isPurgeOnly) {
+            $cutoff = (string) ($summary['unassigned_available_from'] ?? '');
+            $detail = 'Deleted unassigned from CRM: ' . $purged
+                . ($cutoff !== '' ? ' (before ' . $cutoff . ')' : '');
+
+            if (IncomingEmailSyncService::purgeRangeDeletesFromImap($syncRange)) {
+                $detail .= ', Deleted from Zoho: ' . (int) ($summary['imap_deleted'] ?? 0);
+                $imapMissing = (int) ($summary['imap_missing'] ?? 0);
+                $imapFailed = (int) ($summary['imap_failed'] ?? 0);
+                if ($imapMissing > 0) {
+                    $detail .= ', Missing on Zoho: ' . $imapMissing;
+                }
+                if ($imapFailed > 0) {
+                    $detail .= ', Zoho delete failed: ' . $imapFailed;
+                }
+            }
+        } else {
+            $detail = 'Imported: ' . (int) ($summary['total_imported'] ?? 0)
+                . ', Skipped: ' . (int) ($summary['total_skipped'] ?? 0)
+                . ', Failed: ' . (int) ($summary['total_failed'] ?? 0);
+
+            if ($purged > 0) {
+                $cutoff = (string) ($summary['unassigned_available_from'] ?? '');
+                $detail .= ', Deleted older unassigned: ' . $purged
+                    . ($cutoff !== '' ? ' (before ' . $cutoff . ')' : '');
+            }
+        }
 
         $mailboxErrors = [];
         $mailboxes = $summary['mailboxes'] ?? [];

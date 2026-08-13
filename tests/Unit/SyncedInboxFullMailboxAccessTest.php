@@ -22,10 +22,21 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
 
         $this->assertArrayHasKey('10min', $ranges);
         $this->assertArrayHasKey('yesterday6am', $ranges);
+        $this->assertArrayHasKey('from10aug', $ranges);
+        $this->assertArrayHasKey('delete_unassigned_db', $ranges);
+        $this->assertArrayHasKey('delete_unassigned_db_zoho', $ranges);
         $this->assertArrayHasKey('full', $ranges);
         $this->assertSame(
             IncomingEmailSyncService::yesterday6amSyncRangeLabel(),
             $ranges['yesterday6am']
+        );
+        $this->assertSame(
+            IncomingEmailSyncService::from10AugSyncRangeLabel(),
+            $ranges['from10aug']
+        );
+        $this->assertSame(
+            IncomingEmailSyncService::deleteUnassignedDbAndZohoLabel(),
+            $ranges['delete_unassigned_db_zoho']
         );
         $this->assertSame(
             IncomingEmailSyncService::adminUnassignedSyncRangeOptions(),
@@ -45,6 +56,25 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
         );
         $this->assertTrue(
             IncomingEmailSyncService::resolveYesterday6amSyncSince($now)->eq($expected)
+        );
+    }
+
+    #[Test]
+    public function from_10_aug_sync_range_resolves_to_configured_floor(): void
+    {
+        config(['imap_sync.unassigned_available_from' => '2026-08-10']);
+        $timezone = (string) config('app.timezone', 'UTC');
+        $expected = \Carbon\Carbon::parse('2026-08-10', $timezone)->startOfDay();
+
+        $this->assertTrue(
+            IncomingEmailSyncService::resolveSyncSince('from10aug')->eq($expected)
+        );
+        $this->assertTrue(
+            IncomingEmailSyncService::resolveFrom10AugSyncSince()->eq($expected)
+        );
+        $this->assertSame(
+            'From 10 Aug 2026 (delete older unassigned)',
+            IncomingEmailSyncService::from10AugSyncRangeLabel()
         );
     }
 
