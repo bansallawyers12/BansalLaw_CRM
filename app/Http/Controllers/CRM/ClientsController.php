@@ -6297,6 +6297,13 @@ class ClientsController extends Controller
 	//Get client matters for activity conversion
 	public function getClientMatters($clientId){
 		try {
+			if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Unauthorized access'
+				], 403);
+			}
+
 			$clientMatters = DB::table('client_matters')
 				->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
 				->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')

@@ -783,7 +783,7 @@ class SignatureDashboardController extends Controller
                 // Get client's matters
                 $matters = \DB::table('client_matters')
                     ->where('client_id', $entity->id)
-                    ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                    ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                     ->select(
                         'client_matters.id',
                         'client_matters.client_unique_matter_no',
@@ -795,7 +795,7 @@ class SignatureDashboardController extends Controller
                     ->map(function($matter) {
                         return [
                             'id' => $matter->id,
-                            'label' => $matter->client_unique_matter_no . ' - ' . $matter->matter_title,
+                            'label' => $matter->client_unique_matter_no . ' - ' . ($matter->matter_title ?? 'Matter'),
                             'status' => $matter->matter_status
                         ];
                     })
@@ -831,7 +831,7 @@ class SignatureDashboardController extends Controller
 
             $matters = \DB::table('client_matters')
                 ->where('client_id', $id)
-                ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                 ->select(
                     'client_matters.id',
                     'client_matters.client_unique_matter_no',
