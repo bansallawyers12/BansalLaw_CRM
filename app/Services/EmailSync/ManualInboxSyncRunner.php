@@ -122,6 +122,37 @@ class ManualInboxSyncRunner
             'addresses' => $addresses,
         ]);
 
+        if (IncomingEmailSyncService::isPurgeOnlySyncRange($syncRange)) {
+            $purge = $this->syncService->purgeUnassignedSyncedBeforeAvailabilityFloor(
+                $addresses !== [] ? $addresses : ($email !== '' ? [$email] : null),
+                IncomingEmailSyncService::purgeRangeDeletesFromImap($syncRange)
+            );
+
+            $summary = [
+                'success' => true,
+                'sync_range' => $syncRange,
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => (int) ($purge['imap_failed'] ?? 0),
+                'purged_unassigned_before_cutoff' => (int) ($purge['deleted'] ?? 0),
+                'unassigned_available_from' => $purge['cutoff'] ?? null,
+                'imap_deleted' => (int) ($purge['imap_deleted'] ?? 0),
+                'imap_missing' => (int) ($purge['imap_missing'] ?? 0),
+                'imap_failed' => (int) ($purge['imap_failed'] ?? 0),
+                'imap_errors' => $purge['imap_errors'] ?? [],
+            ];
+
+            if ((int) ($purge['imap_failed'] ?? 0) > 0) {
+                $summary['message'] = 'CRM unassigned mail was deleted, but some Zoho deletes failed.';
+            }
+
+            InboxSyncLogger::logRunSummary('manual', $summary, $email !== '' ? $email : null);
+            $this->logExecutionResult($summary);
+
+            return $summary;
+        }
+
         $parserStatus = IncomingEmailSyncService::pythonParserStatus();
         if (! $parserStatus['available']) {
             IncomingEmailSyncService::markParserUnavailable();
@@ -152,6 +183,14 @@ class ManualInboxSyncRunner
             $this->syncService->resetUidTracking($email, null);
         }
 
+        $purgedBeforeSync = ['deleted' => 0, 'cutoff' => null];
+        if (in_array($syncRange, ['from10aug', 'from_10_aug', 'from10aug2026'], true)) {
+            $purgedBeforeSync = $this->syncService->purgeUnassignedSyncedBeforeAvailabilityFloor(
+                $addresses !== [] ? $addresses : ($email !== '' ? [$email] : null),
+                false
+            );
+        }
+
         $summary = [
             'success' => true,
             'sync_range' => $syncRange,
@@ -159,6 +198,8 @@ class ManualInboxSyncRunner
             'total_imported' => 0,
             'total_skipped' => 0,
             'total_failed' => 0,
+            'purged_unassigned_before_cutoff' => (int) ($purgedBeforeSync['deleted'] ?? 0),
+            'unassigned_available_from' => $purgedBeforeSync['cutoff'] ?? null,
         ];
 
         foreach ($addresses as $address) {

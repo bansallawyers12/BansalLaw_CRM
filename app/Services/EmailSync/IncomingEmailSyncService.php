@@ -7,11 +7,13 @@ use App\Logging\InboxSyncLogger;
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\EmailLog;
+use App\Models\EmailLogAttachment;
 use App\Models\Staff;
 use App\Services\EmailMatchingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
@@ -202,6 +204,10 @@ class IncomingEmailSyncService
         $days = max(1, (int) config('imap_sync.auto_catchup_days', 7));
         $timezone = (string) config('app.timezone', 'UTC');
         $catchupSince = now($timezone)->subDays($days - 1)->startOfDay();
+        $availabilityFloor = self::resolveUnassignedAvailableFrom();
+        if ($availabilityFloor !== null && $catchupSince->lt($availabilityFloor)) {
+            $catchupSince = $availabilityFloor->copy();
+        }
 
         $reason = $forceCatchup
             ? 'parser_recovery'
@@ -832,6 +838,19 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Human label for the unassigned-mail availability floor range.
+     */
+    public static function from10AugSyncRangeLabel(): string
+    {
+        $floor = self::resolveUnassignedAvailableFrom();
+        if ($floor === null) {
+            return 'From 10 Aug 2026';
+        }
+
+        return 'From ' . $floor->format('j M Y') . ' (delete older unassigned)';
+    }
+
+    /**
      * Sync ranges for Admin / Super Admin on the Unassigned mail tab.
      *
      * @return array<string, string>
@@ -846,6 +865,9 @@ class IncomingEmailSyncService
             '5hours' => '5 hours',
             'today' => self::todaySyncRangeLabel(),
             'yesterday6am' => self::yesterday6amSyncRangeLabel(),
+            'from10aug' => self::from10AugSyncRangeLabel(),
+            'delete_unassigned_db' => self::deleteUnassignedDbOnlyLabel(),
+            'delete_unassigned_db_zoho' => self::deleteUnassignedDbAndZohoLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -891,6 +913,9 @@ class IncomingEmailSyncService
             '5hours' => '5 hrs',
             'today' => self::todaySyncRangeLabel(),
             'yesterday6am' => self::yesterday6amSyncRangeLabel(),
+            'from10aug' => self::from10AugSyncRangeLabel(),
+            'delete_unassigned_db' => self::deleteUnassignedDbOnlyLabel(),
+            'delete_unassigned_db_zoho' => self::deleteUnassignedDbAndZohoLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -900,9 +925,80 @@ class IncomingEmailSyncService
         ];
     }
 
+    public static function deleteUnassignedDbOnlyLabel(): string
+    {
+        $floor = self::resolveUnassignedAvailableFrom();
+        $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
+
+        return 'Delete unassigned before ' . $date . ' (CRM only)';
+    }
+
+    public static function deleteUnassignedDbAndZohoLabel(): string
+    {
+        $floor = self::resolveUnassignedAvailableFrom();
+        $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
+
+        return 'Delete unassigned before ' . $date . ' (CRM + Zoho)';
+    }
+
+    public static function isPurgeOnlySyncRange(string $range): bool
+    {
+        return in_array(strtolower(trim($range)), [
+            'delete_unassigned_db',
+            'delete_unassigned_db_only',
+            'delete_unassigned_db_zoho',
+            'delete_unassigned_db_server',
+        ], true);
+    }
+
+    public static function purgeRangeDeletesFromImap(string $range): bool
+    {
+        return in_array(strtolower(trim($range)), [
+            'delete_unassigned_db_zoho',
+            'delete_unassigned_db_server',
+        ], true);
+    }
+
     public static function isValidSyncRange(string $range): bool
     {
         return array_key_exists(strtolower(trim($range)), self::syncRangeOptions());
+    }
+
+    /**
+     * Earliest calendar date when unassigned synced mail may appear (app timezone).
+     */
+    public static function resolveUnassignedAvailableFrom(): ?\Carbon\Carbon
+    {
+        $raw = trim((string) config('imap_sync.unassigned_available_from', '2026-08-10'));
+        if ($raw === '') {
+            return null;
+        }
+
+        try {
+            $timezone = (string) config('app.timezone', 'UTC');
+
+            return \Carbon\Carbon::parse($raw, $timezone)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Earliest datetime for the "From 10 Aug" sync range (app timezone).
+     */
+    public static function resolveFrom10AugSyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    {
+        $floor = self::resolveUnassignedAvailableFrom();
+        if ($floor !== null) {
+            return $floor->copy();
+        }
+
+        $timezone = (string) config('app.timezone', 'UTC');
+        $base = $relativeTo !== null
+            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            : now($timezone);
+
+        return $base->copy()->year(2026)->month(8)->day(10)->startOfDay();
     }
 
     /**
@@ -986,6 +1082,7 @@ class IncomingEmailSyncService
             '2weeks' => $now->copy()->subDays(13)->startOfDay(),
             '1month' => $now->copy()->subDays(29)->startOfDay(),
             'yesterday6am', 'yesterday_6am' => self::resolveYesterday6amSyncSince($now),
+            'from10aug', 'from_10_aug', 'from10aug2026' => self::resolveFrom10AugSyncSince($now),
             'today' => $todayFloor,
             default => $todayFloor,
         };
@@ -1144,6 +1241,192 @@ class IncomingEmailSyncService
      * True synced inbox queue items still waiting for a client (excludes assigned mail).
      */
     public static function applyUnassignedSyncedInboxScope($query): void
+    {
+        self::applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query);
+
+        $availableFrom = self::resolveUnassignedAvailableFrom();
+        if ($availableFrom === null) {
+            return;
+        }
+
+        $cutoff = $availableFrom->format('Y-m-d H:i:s');
+        $query->where(function ($dateQuery) use ($cutoff) {
+            $dateQuery->where(function ($received) use ($cutoff) {
+                $received->whereNotNull('received_date')
+                    ->where('received_date', '>=', $cutoff);
+            })->orWhere(function ($created) use ($cutoff) {
+                $created->whereNull('received_date')
+                    ->where('created_at', '>=', $cutoff);
+            });
+        });
+    }
+
+    /**
+     * Delete unassigned Zoho-synced emails older than the availability floor.
+     *
+     * @param  list<string>|null  $mailboxAddresses  Lowercase mailbox emails to scope (null = all)
+     * @return array{
+     *     deleted: int,
+     *     cutoff: string|null,
+     *     imap_deleted: int,
+     *     imap_missing: int,
+     *     imap_failed: int,
+     *     imap_errors: list<string>
+     * }
+     */
+    public function purgeUnassignedSyncedBeforeAvailabilityFloor(
+        ?array $mailboxAddresses = null,
+        bool $deleteFromImap = false
+    ): array {
+        $empty = [
+            'deleted' => 0,
+            'cutoff' => null,
+            'imap_deleted' => 0,
+            'imap_missing' => 0,
+            'imap_failed' => 0,
+            'imap_errors' => [],
+        ];
+
+        $floor = self::resolveUnassignedAvailableFrom();
+        if ($floor === null) {
+            return $empty;
+        }
+
+        $cutoff = $floor->format('Y-m-d H:i:s');
+        $query = EmailLog::query();
+        self::applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query);
+
+        $query->where(function ($dateQuery) use ($cutoff) {
+            $dateQuery->where(function ($received) use ($cutoff) {
+                $received->whereNotNull('received_date')
+                    ->where('received_date', '<', $cutoff);
+            })->orWhere(function ($created) use ($cutoff) {
+                $created->whereNull('received_date')
+                    ->where('created_at', '<', $cutoff);
+            });
+        });
+
+        if ($mailboxAddresses !== null) {
+            $normalized = array_values(array_unique(array_filter(array_map(
+                static fn ($address) => strtolower(trim((string) $address)),
+                $mailboxAddresses
+            ))));
+
+            if ($normalized === []) {
+                return array_merge($empty, ['cutoff' => $floor->toDateString()]);
+            }
+
+            $mailboxIds = Email::query()
+                ->where(function ($mailboxQuery) use ($normalized) {
+                    foreach ($normalized as $address) {
+                        $mailboxQuery->orWhereRaw('LOWER(email) = ?', [$address]);
+                    }
+                })
+                ->pluck('id')
+                ->all();
+
+            if ($mailboxIds === []) {
+                return array_merge($empty, ['cutoff' => $floor->toDateString()]);
+            }
+
+            $query->whereIn('synced_email_id', $mailboxIds);
+        }
+
+        $rows = $query->get(['id', 'imap_uid', 'synced_email_id', 'mail_body_type']);
+        if ($rows->isEmpty()) {
+            return array_merge($empty, ['cutoff' => $floor->toDateString()]);
+        }
+
+        $imapDeleted = 0;
+        $imapMissing = 0;
+        $imapFailed = 0;
+        $imapErrors = [];
+
+        if ($deleteFromImap) {
+            $inboxFolder = (string) (((array) config('imap_sync.folders', ['INBOX']))[0] ?? 'INBOX');
+            $sentFolder = (string) (((array) config('imap_sync.sent_folders', ['Sent']))[0] ?? 'Sent');
+            $grouped = [];
+
+            foreach ($rows as $row) {
+                $mailboxId = (int) ($row->synced_email_id ?? 0);
+                $uid = (int) ($row->imap_uid ?? 0);
+                if ($mailboxId <= 0 || $uid <= 0) {
+                    continue;
+                }
+
+                $folderType = strtolower(trim((string) ($row->mail_body_type ?? 'inbox')));
+                $folderName = $folderType === 'sent' ? $sentFolder : $inboxFolder;
+                $grouped[$mailboxId][$folderName][] = $uid;
+            }
+
+            $mailboxesById = Email::query()
+                ->whereIn('id', array_keys($grouped))
+                ->get()
+                ->keyBy('id');
+
+            foreach ($grouped as $mailboxId => $folders) {
+                $mailbox = $mailboxesById->get($mailboxId);
+                if (! $mailbox) {
+                    $imapFailed += array_sum(array_map('count', $folders));
+                    $imapErrors[] = 'Mailbox id ' . $mailboxId . ' not found for IMAP delete.';
+                    continue;
+                }
+
+                foreach ($folders as $folderName => $uids) {
+                    try {
+                        $imapResult = $this->imapFetcher->deleteMessagesByUids(
+                            $mailbox,
+                            array_values(array_unique($uids)),
+                            (string) $folderName
+                        );
+                        $imapDeleted += (int) ($imapResult['deleted'] ?? 0);
+                        $imapMissing += (int) ($imapResult['missing'] ?? 0);
+                        $imapFailed += (int) ($imapResult['failed'] ?? 0);
+                        foreach (($imapResult['errors'] ?? []) as $error) {
+                            $imapErrors[] = $mailbox->email . ' / ' . $folderName . ': ' . $error;
+                        }
+                    } catch (Throwable $e) {
+                        $imapFailed += count($uids);
+                        $imapErrors[] = $mailbox->email . ' / ' . $folderName . ': ' . $e->getMessage();
+                        InboxSyncLogger::error('IMAP purge of unassigned mail failed', [
+                            'mailbox' => $mailbox->email,
+                            'folder' => $folderName,
+                            'error' => $e->getMessage(),
+                        ], $e);
+                    }
+                }
+            }
+        }
+
+        $ids = $rows->pluck('id')->all();
+        DB::table('email_label_email_log')->whereIn('email_log_id', $ids)->delete();
+        EmailLogAttachment::whereIn('email_log_id', $ids)->delete();
+        $deleted = EmailLog::query()->whereIn('id', $ids)->delete();
+
+        InboxSyncLogger::info('Purged unassigned synced mail before availability floor', [
+            'cutoff' => $floor->toDateString(),
+            'deleted' => $deleted,
+            'imap_deleted' => $imapDeleted,
+            'imap_missing' => $imapMissing,
+            'imap_failed' => $imapFailed,
+            'delete_from_imap' => $deleteFromImap,
+            'mailboxes' => $mailboxAddresses,
+        ]);
+
+        return [
+            'deleted' => (int) $deleted,
+            'cutoff' => $floor->toDateString(),
+            'imap_deleted' => $imapDeleted,
+            'imap_missing' => $imapMissing,
+            'imap_failed' => $imapFailed,
+            'imap_errors' => array_values(array_slice($imapErrors, 0, 20)),
+        ];
+    }
+
+    /**
+     * Unassigned synced scope without the availability-date floor (for purge queries).
+     */
+    public static function applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query): void
     {
         if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             $query->whereRaw('1 = 0');

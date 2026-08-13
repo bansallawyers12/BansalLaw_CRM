@@ -406,6 +406,125 @@ class ZohoImapFetcher
     }
 
     /**
+     * Delete messages by IMAP UID from one folder. Returns counts only.
+     *
+     * @param  list<int>  $uids
+     * @return array{deleted: int, missing: int, failed: int, errors: list<string>}
+     */
+    public function deleteMessagesByUids(Email $mailbox, array $uids, string $folderName): array
+    {
+        $uids = array_values(array_unique(array_filter(array_map('intval', $uids), static fn (int $uid): bool => $uid > 0)));
+        $result = [
+            'deleted' => 0,
+            'missing' => 0,
+            'failed' => 0,
+            'errors' => [],
+        ];
+
+        if ($uids === []) {
+            return $result;
+        }
+
+        $password = $this->resolvePassword($mailbox);
+        if ($password === '') {
+            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+        }
+
+        $client = $this->connect($mailbox, $password);
+
+        try {
+            $folder = $client->getFolder($folderName);
+            if ($folder === null) {
+                $result['errors'][] = 'IMAP folder not found: ' . $folderName;
+                $result['failed'] = count($uids);
+
+                return $result;
+            }
+
+            foreach (array_chunk($uids, 40) as $chunk) {
+                foreach ($chunk as $uid) {
+                    try {
+                        $message = $this->findMessageByUid($folder, $uid);
+                        if ($message === null) {
+                            $result['missing']++;
+                            continue;
+                        }
+
+                        if (method_exists($message, 'delete')) {
+                            $message->delete(true);
+                        } elseif (method_exists($message, 'setFlag')) {
+                            $message->setFlag('Deleted');
+                            if (method_exists($folder, 'expunge')) {
+                                $folder->expunge();
+                            }
+                        } else {
+                            throw new \RuntimeException('IMAP delete is not supported by the installed php-imap client.');
+                        }
+
+                        $result['deleted']++;
+                    } catch (Throwable $e) {
+                        $result['failed']++;
+                        $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
+                        Log::warning('IMAP message delete failed', [
+                            'mailbox' => $mailbox->email,
+                            'folder' => $folderName,
+                            'uid' => $uid,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        } finally {
+            try {
+                $client->disconnect();
+            } catch (Throwable) {
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  mixed  $folder
+     */
+    protected function findMessageByUid(mixed $folder, int $uid): ?Message
+    {
+        if (method_exists($folder, 'query')) {
+            try {
+                $messages = $folder->query()->where('CUSTOM UID ' . $uid)->limit(1)->get();
+                $message = $messages->first();
+                if ($message instanceof Message) {
+                    return $message;
+                }
+            } catch (Throwable) {
+            }
+
+            try {
+                if (method_exists($folder->query(), 'whereUid')) {
+                    $messages = $folder->query()->whereUid($uid)->limit(1)->get();
+                    $message = $messages->first();
+                    if ($message instanceof Message) {
+                        return $message;
+                    }
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        if (method_exists($folder, 'messages') && method_exists($folder->messages(), 'getMessageByUid')) {
+            try {
+                $message = $folder->messages()->getMessageByUid($uid);
+                if ($message instanceof Message) {
+                    return $message;
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Read IMAP \Seen state for specific message UIDs in one folder (no body fetch).
      *
      * @param  list<int>  $uids

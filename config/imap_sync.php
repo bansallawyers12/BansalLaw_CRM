@@ -64,6 +64,16 @@ return [
     */
     'today_sync_start' => env('MAIL_SYNC_TODAY_START', '09:00'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Unassigned synced mail availability floor (app timezone)
+    |--------------------------------------------------------------------------
+    | Unassigned Zoho-synced mail before this calendar date is hidden from
+    | Unassigned Mail and removed when the "From 10 Aug" sync option runs.
+    | Use Y-m-d (e.g. 2026-08-10). Empty disables the floor.
+    */
+    'unassigned_available_from' => env('MAIL_SYNC_UNASSIGNED_AVAILABLE_FROM', '2026-08-10'),
+
     'unassigned_storage_prefix' => 'sync-inbox',
 
     'queue' => env('MAIL_INBOX_SYNC_QUEUE', 'default'),
