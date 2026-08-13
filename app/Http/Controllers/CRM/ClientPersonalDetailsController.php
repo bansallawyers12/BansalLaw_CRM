@@ -1521,8 +1521,9 @@ class ClientPersonalDetailsController extends Controller
                         // Update existing test score if ID is provided
                         $existingTestScore = ClientTestScore::find($testScoreId);
                         if ($existingTestScore && $existingTestScore->client_id == $obj->id) {
+                            $actorId = (Auth::guard('admin')->user() ?: Auth::user())?->id;
                             $existingTestScore->update([
-                                'admin_id' => Auth::user()->id,
+                                'admin_id' => $actorId,
                                 'test_type' => $testType,
                                 'listening' => $listening, // Update with text value
                                 'reading' => $reading,     // Update with text value
@@ -1542,8 +1543,9 @@ class ClientPersonalDetailsController extends Controller
 
                         if (!$existingTestScore) {*/
                             // Insert new test score if no duplicate is found
+                            $actorId = (Auth::guard('admin')->user() ?: Auth::user())?->id;
                             ClientTestScore::create([
-                                'admin_id' => Auth::user()->id,
+                                'admin_id' => $actorId,
                                 'client_id' => $obj->id, // Assigning the correct client ID
                                 'test_type' => $testType,
                                 'listening' => $listening, // Set with text value
@@ -5998,8 +6000,9 @@ class ClientPersonalDetailsController extends Controller
                             // Update existing record
                             $existingTestScore = \App\Models\ClientTestScore::find($testScoreId);
                             if ($existingTestScore && $existingTestScore->client_id == $client->id) {
+                                $actorId = (Auth::guard('admin')->user() ?: Auth::user())?->id;
                                 $existingTestScore->update([
-                                    'admin_id' => Auth::user()->id,
+                                    'admin_id' => $actorId,
                                     'test_type' => $testType,
                                     'listening' => $listening,
                                     'reading' => $reading,
@@ -6015,8 +6018,9 @@ class ClientPersonalDetailsController extends Controller
                             }
                         } else {
                             // Create new record
+                            $actorId = (Auth::guard('admin')->user() ?: Auth::user())?->id;
                             \App\Models\ClientTestScore::create([
-                                'admin_id' => Auth::user()->id,
+                                'admin_id' => $actorId,
                                 'client_id' => $client->id,
                                 'test_type' => $testType,
                                 'listening' => $listening,

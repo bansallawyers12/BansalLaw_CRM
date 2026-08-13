@@ -1932,8 +1932,12 @@ class ClientsController extends Controller
     {
         $id = $id ?? request()->input('id') ?? request()->input('user_id') ?? request()->input('client_id');
         if (isset($id) && !empty($id)) {
-            $id = $this->decodeString($id);
-            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+            $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
+            if ($decodedId !== false && !empty($decodedId)) {
+                $id = $decodedId;
+            }
+            $actor = Auth::guard('admin')->user() ?: Auth::user();
+            if (!$actor || ! StaffClientVisibility::canAccessClientOrLead((int) $id, $actor)) {
                 return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
             }
             $crmSubjectTypes = array_merge(['client'], Lead::LEAD_TYPE_VALUES);
@@ -1982,7 +1986,7 @@ class ClientsController extends Controller
             }
 
             $actor = Auth::guard('admin')->user() ?: Auth::user();
-            if ($actor && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
+            if (!$actor || !\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
                 return redirect()->back()->withErrors(['error' => config('constants.unauthorized')])->withInput();
             }
 
@@ -2011,7 +2015,7 @@ class ClientsController extends Controller
                     !empty($requestData['band_score_3_1']) || !empty($requestData['band_score_4_1']) || 
                     !empty($requestData['score_1'])) {
                     ClientTestScore::create([
-                        'admin_id' => Auth::user()->id,
+                        'admin_id' => $actor->id,
                         'client_id' => $clientId,
                         'test_type' => 'TOEFL',
                         'listening' => $requestData['band_score_1_1'] ?? null,
@@ -2045,7 +2049,7 @@ class ClientsController extends Controller
                     !empty($requestData['band_score_7_2']) || !empty($requestData['band_score_8_2']) || 
                     !empty($requestData['score_2'])) {
                     ClientTestScore::create([
-                        'admin_id' => Auth::user()->id,
+                        'admin_id' => $actor->id,
                         'client_id' => $clientId,
                         'test_type' => 'IELTS',
                         'listening' => $requestData['band_score_5_2'] ?? null,
@@ -2079,7 +2083,7 @@ class ClientsController extends Controller
                     !empty($requestData['band_score_11_3']) || !empty($requestData['band_score_12_3']) || 
                     !empty($requestData['score_3'])) {
                     ClientTestScore::create([
-                        'admin_id' => Auth::user()->id,
+                        'admin_id' => $actor->id,
                         'client_id' => $clientId,
                         'test_type' => 'PTE',
                         'listening' => $requestData['band_score_9_3'] ?? null,
@@ -4037,14 +4041,30 @@ class ClientsController extends Controller
 
     public function checkEmail(Request $request)
     {
-        $email = $request->input('email');
+        $actor = Auth::guard('admin')->user() ?: Auth::user();
+        if (!$actor) {
+            return response()->json(['status' => 'available']);
+        }
 
-        // Check if email exists in the database
-        $exists = DB::table('client_emails')->where('email', $email)->exists();
+        $email = trim((string) $request->input('email'));
+        if ($email === '') {
+            return response()->json(['status' => 'available']);
+        }
 
-        $exists_admin = DB::table('admins')->where('email', $email)->exists();
+        // Get matching client IDs
+        $clientIds = DB::table('client_emails')->where('email', $email)->pluck('client_id')
+            ->merge(DB::table('admins')->where('email', $email)->whereIn('type', ['client', 'lead'])->pluck('id'))
+            ->unique();
 
-        if ($exists || $exists_admin) {
+        $hasAccessibleMatch = false;
+        foreach ($clientIds as $clientId) {
+            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
+                $hasAccessibleMatch = true;
+                break;
+            }
+        }
+
+        if ($hasAccessibleMatch) {
             return response()->json(['status' => 'exists']);
         } else {
             return response()->json(['status' => 'available']);
@@ -4053,13 +4073,29 @@ class ClientsController extends Controller
 
     public function checkContact(Request $request)
     {
-        $contact = $request->input('phone');
+        $actor = Auth::guard('admin')->user() ?: Auth::user();
+        if (!$actor) {
+            return response()->json(['status' => 'available']);
+        }
 
-        // Check if the contact number exists in the client_contacts table
-        $exists = DB::table('client_contacts')->where('phone', $contact)->exists();
-        $exists_admin = DB::table('admins')->where('phone', $contact)->exists();
+        $contact = trim((string) $request->input('phone'));
+        if ($contact === '') {
+            return response()->json(['status' => 'available']);
+        }
 
-        if ($exists || $exists_admin) {
+        $clientIds = DB::table('client_contacts')->where('phone', $contact)->pluck('client_id')
+            ->merge(DB::table('admins')->where('phone', $contact)->whereIn('type', ['client', 'lead'])->pluck('id'))
+            ->unique();
+
+        $hasAccessibleMatch = false;
+        foreach ($clientIds as $clientId) {
+            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
+                $hasAccessibleMatch = true;
+                break;
+            }
+        }
+
+        if ($hasAccessibleMatch) {
             return response()->json(['status' => 'exists']);
         } else {
             return response()->json(['status' => 'available']);
@@ -6307,16 +6343,21 @@ class ClientsController extends Controller
         if (empty($string)) {
             return false;
         }
+
+        if (is_numeric($string)) {
+            return (int) $string;
+        }
         
         if (base64_encode(base64_decode($string, true)) === $string) {
             try {
-                return @convert_uudecode(base64_decode($string));
+                $decoded = @convert_uudecode(base64_decode($string));
+                return ($decoded !== false && $decoded !== '') ? $decoded : $string;
             } catch (\ValueError $e) {
-                return false;
+                return $string;
             }
         }
         
-        return false;
+        return $string;
     }
 
     // Service Taken methods REMOVED - client_service_takens table does not exist
@@ -8262,8 +8303,13 @@ class ClientsController extends Controller
                 $q->where('id', '!=', $excludeId);
             })
             ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
-            ->limit(20)
+            ->limit(50)
             ->get()
+            ->filter(function($person) {
+                $actor = Auth::guard('admin')->user() ?: Auth::user();
+                return $actor && \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $person->id, $actor);
+            })
+            ->take(20)
             ->map(function($person) {
                 $fullName = trim($person->first_name . ' ' . $person->last_name);
                 // Show phone and email in display text
@@ -8286,7 +8332,8 @@ class ClientsController extends Controller
                     'client_id' => $person->client_id,
                     'type' => $person->type
                 ];
-            });
+            })
+            ->values();
         
         return response()->json(['results' => $results]);
     }

@@ -652,13 +652,19 @@ Status key (2026-08-07):
 - **Now:** Uses `config('services.auspost.auth_key')` / `env('AUSPOST_AUTH_KEY')`.
 
 ### 12.5 High — Legacy test-score update has no access check + null deref
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::editTestScores`, `ClientPersonalDetailsController`
+- **Now:** Enforces `!$actor || !StaffClientVisibility::canAccessClientOrLead` check and resolves `admin_id` via `$actor->id` instead of `Auth::user()->id` to prevent null dereferences under the `admin` guard.
 
 ### 12.6 Medium — Contact match / uniqueness endpoints leak existence/PII
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `CRMUtilityController::checkclientexist`, `ClientsController::checkEmail`, `ClientsController::checkContact`, `ClientsController::searchContactPerson`, `LeadController::checkContactMatch`
+- **Now:** Enforces authentication and scopes existence/uniqueness and contact matching checks via `StaffClientVisibility::canAccessClientOrLead` to prevent restricted staff or unauthenticated users from probing client existence or reading unassigned client PII.
 
 ### 12.7 Low — `POST /clients/edit` (`clients.update`) cannot receive route `{id}`
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::edit`, `ClientsController::decodeString`
+- **Now:** Checks `is_numeric($id)` before attempting base64/uuencode string decoding in `edit` and `decodeString`, allowing `POST /clients/edit/{id}` or `POST /clients/edit` (with request body ID) to properly resolve unencoded integer IDs.
 
 ---
 

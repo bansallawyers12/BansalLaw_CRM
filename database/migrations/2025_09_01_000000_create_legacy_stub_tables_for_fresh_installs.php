@@ -53,7 +53,7 @@ return new class extends Migration
         if (! Schema::hasTable('client_testscore')) {
             Schema::create('client_testscore', function (Blueprint $table) {
                 $table->id();
-                $table->integer('overall_score')->nullable();
+                $table->string('overall_score', 32)->nullable();
                 $table->timestamps();
             });
         }

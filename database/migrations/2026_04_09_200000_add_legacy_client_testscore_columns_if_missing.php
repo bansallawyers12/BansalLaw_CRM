@@ -57,6 +57,15 @@ return new class extends Migration
                 $table->string('test_reference_no', 191)->nullable();
             }
         });
+
+        foreach (['listening', 'reading', 'writing', 'speaking', 'overall_score'] as $col) {
+            if (Schema::hasColumn('client_testscore', $col)) {
+                try {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE client_testscore ALTER COLUMN {$col} TYPE VARCHAR(32) USING {$col}::text");
+                } catch (\Throwable $e) {
+                }
+            }
+        }
     }
 
     public function down(): void
