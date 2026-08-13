@@ -95,6 +95,8 @@ class AssigneeController extends Controller
         $user = Auth::guard('admin')->user() ?: Auth::user();
         $data = $request->all();
         $noteId = $data['id'] ?? 0;
+        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
+
         $noteData = Note::find($noteId);
         if (!$noteData) {
             return response()->json(['status' => false, 'message' => 'Action not found']);
@@ -104,7 +106,10 @@ class AssigneeController extends Controller
             $uid = (int) $user->id;
             $notesToCheck = collect([$noteData]);
             if ($uniqueGroupId !== '') {
-                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)->whereNotNull('unique_group_id')->get();
+                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)
+                    ->where('unique_group_id', '!=', '')
+                    ->whereNotNull('unique_group_id')
+                    ->get();
                 if ($groupNotes->isNotEmpty()) {
                     $notesToCheck = $groupNotes;
                 }
@@ -112,14 +117,15 @@ class AssigneeController extends Controller
 
             foreach ($notesToCheck as $checkNote) {
                 $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
-                $hasClientAccess = $checkNote->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user) : false;
-                if (!$isAssigneeOrOwner && !$hasClientAccess) {
+                if (!$isAssigneeOrOwner) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                }
+                if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
                     return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
                 }
             }
         }
 
-        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
         $updated = 0;
         if ($uniqueGroupId !== '') {
             $updated = Note::where('unique_group_id', $uniqueGroupId)
@@ -151,7 +157,7 @@ class AssigneeController extends Controller
                     $description .= 'data-activity-id="" ';
                     $description .= 'data-activity-subject="Completion Notes" ';
                     $description .= 'data-activity-description="'.htmlspecialchars($data['completion_notes'], ENT_QUOTES).'" ';
-                    $description .= 'data-activity-created-by="'.Auth::user()->id.'" ';
+                    $description .= 'data-activity-created-by="'.($user?->id ?? 0).'" ';
                     $description .= 'data-activity-created-at="'.now().'" ';
                     $description .= 'data-client-id="'.$note_data['client_id'].'"></i></p>';
                     $description .= '<p>'.nl2br(htmlspecialchars($data['completion_notes'])).'</p>';
@@ -162,10 +168,10 @@ class AssigneeController extends Controller
                 $taskGroup = $note_data['task_group'] ?? '';
                 $objs = new ActivitiesLog;
                 $objs->client_id = $note_data['client_id'];
-                $objs->created_by = Auth::user()->id;
+                $objs->created_by = $user?->id ?? 0;
                 $objs->subject = 'completed action for '.@$assignee_name;
                 $objs->description = $description;
-                if(Auth::user()->id != @$note_data['assigned_to']){
+                if(($user?->id ?? 0) != @$note_data['assigned_to']){
                     $objs->use_for = @$note_data['assigned_to'];
                 } else {
                     $objs->use_for = null;
@@ -185,7 +191,7 @@ class AssigneeController extends Controller
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
         }
-        echo json_encode($response);
+        return response()->json($response);
     }
 
     //Update action to be not complete
@@ -194,6 +200,8 @@ class AssigneeController extends Controller
         $user = Auth::guard('admin')->user() ?: Auth::user();
         $data = $request->all();
         $noteId = $data['id'] ?? 0;
+        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
+
         $noteData = Note::find($noteId);
         if (!$noteData) {
             return response()->json(['status' => false, 'message' => 'Action not found']);
@@ -201,14 +209,28 @@ class AssigneeController extends Controller
 
         if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
             $uid = (int) $user->id;
-            $isAssigneeOrOwner = ((int)$noteData->assigned_to === $uid || (int)$noteData->user_id === $uid);
-            $hasClientAccess = $noteData->client_id ? \App\Support\StaffClientVisibility::canAccessClientOrLead((int)$noteData->client_id, $user) : false;
-            if (!$isAssigneeOrOwner && !$hasClientAccess) {
-                return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+            $notesToCheck = collect([$noteData]);
+            if ($uniqueGroupId !== '') {
+                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)
+                    ->where('unique_group_id', '!=', '')
+                    ->whereNotNull('unique_group_id')
+                    ->get();
+                if ($groupNotes->isNotEmpty()) {
+                    $notesToCheck = $groupNotes;
+                }
+            }
+
+            foreach ($notesToCheck as $checkNote) {
+                $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
+                if (!$isAssigneeOrOwner) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                }
+                if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                }
             }
         }
 
-        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
         $updated = 0;
         if ($uniqueGroupId !== '') {
             $updated = Note::where('unique_group_id', $uniqueGroupId)
@@ -232,7 +254,7 @@ class AssigneeController extends Controller
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
         }
-        echo json_encode($response);
+        return response()->json($response);
     }
 
      //All assigned by me action list which r incomplete
