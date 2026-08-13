@@ -824,6 +824,14 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Human label for the "yesterday from 6:00 am" range.
+     */
+    public static function yesterday6amSyncRangeLabel(): string
+    {
+        return 'Yesterday 6:00 am';
+    }
+
+    /**
      * Sync ranges for Admin / Super Admin on the Unassigned mail tab.
      *
      * @return array<string, string>
@@ -837,6 +845,7 @@ class IncomingEmailSyncService
             '2hours' => '2 hours',
             '5hours' => '5 hours',
             'today' => self::todaySyncRangeLabel(),
+            'yesterday6am' => self::yesterday6amSyncRangeLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -881,6 +890,7 @@ class IncomingEmailSyncService
             '2hours' => '2 hrs',
             '5hours' => '5 hrs',
             'today' => self::todaySyncRangeLabel(),
+            'yesterday6am' => self::yesterday6amSyncRangeLabel(),
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
             '1week' => 'Last 1 week',
@@ -939,6 +949,19 @@ class IncomingEmailSyncService
         return $base->copy()->startOfDay()->setTime($hour, $minute, 0);
     }
 
+    /**
+     * Earliest datetime allowed for the "yesterday 6:00 am" range (app timezone).
+     */
+    public static function resolveYesterday6amSyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    {
+        $timezone = (string) config('app.timezone', 'UTC');
+        $base = $relativeTo !== null
+            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            : now($timezone);
+
+        return $base->copy()->subDay()->startOfDay()->setTime(6, 0, 0);
+    }
+
     public static function resolveSyncSince(string $range): ?\Carbon\Carbon
     {
         $normalized = strtolower(trim($range));
@@ -962,6 +985,7 @@ class IncomingEmailSyncService
             '1week' => $now->copy()->subDays(6)->startOfDay(),
             '2weeks' => $now->copy()->subDays(13)->startOfDay(),
             '1month' => $now->copy()->subDays(29)->startOfDay(),
+            'yesterday6am', 'yesterday_6am' => self::resolveYesterday6amSyncSince($now),
             'today' => $todayFloor,
             default => $todayFloor,
         };
