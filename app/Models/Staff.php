@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Document;
 use App\Services\CrmAccess\CrmAccessService;
+use App\Support\EmailSignatureHtml;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -103,6 +104,17 @@ class Staff extends Authenticatable
         return Attribute::make(
             get: fn () => (int) ($this->attributes['is_solicitor'] ?? 0),
             set: fn ($value) => ['is_solicitor' => ((bool) $value) ? 1 : 0],
+        );
+    }
+
+    /**
+     * Store and return email signatures as real HTML, not escaped source.
+     */
+    protected function emailSignature(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => EmailSignatureHtml::normalize($value),
+            set: fn ($value) => EmailSignatureHtml::normalize(is_string($value) ? $value : null),
         );
     }
 

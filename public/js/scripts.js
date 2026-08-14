@@ -531,8 +531,139 @@ $(function () {
       }
     };
 
-    // Initialize full TinyMCE for .tinymce-editor-full
-    $('.tinymce-editor-full').each(function() {
+    window.crmNormalizeSignatureHtml = window.crmNormalizeSignatureHtml || function (html) {
+      var value = html == null ? '' : String(html);
+      var i;
+      var textarea;
+      var decoded;
+      for (i = 0; i < 3; i++) {
+        if (!/&lt;\s*(?:table|div|p|html|body|span|img|font|!DOCTYPE|br|strong|b|em|i|a)\b/i.test(value)) {
+          break;
+        }
+        textarea = document.createElement('textarea');
+        textarea.innerHTML = value;
+        decoded = textarea.value;
+        if (decoded === value) {
+          break;
+        }
+        value = decoded;
+      }
+      return value;
+    };
+
+    window.crmRenderSignaturePreview = window.crmRenderSignaturePreview || function (iframe, html) {
+      if (!iframe) {
+        return;
+      }
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      var bodyHtml = window.crmNormalizeSignatureHtml(html || '');
+      doc.open();
+      doc.write(
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
+        'html,body{margin:0;padding:0;box-sizing:border-box;}' +
+        'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;color:#242424;padding:12px 14px;}' +
+        'img{max-width:100%;height:auto;}table{max-width:100%;}a{color:#0078d4;}' +
+        '</style></head><body>' +
+        (bodyHtml || '<p style="margin:0;color:#888;">Signature preview will appear here.</p>') +
+        '</body></html>'
+      );
+      doc.close();
+    };
+
+    window.crmLooksLikeHtmlSource = window.crmLooksLikeHtmlSource || function (text) {
+      var trimmed = String(text || '').trim();
+      if (!trimmed) {
+        return false;
+      }
+      if (/^&lt;\s*(table|div|p|html|body|span|img|font|!DOCTYPE)\b/i.test(trimmed)) {
+        return true;
+      }
+      return /^<(table|div|html|body|!DOCTYPE)\b/i.test(trimmed) && /<\/(table|div|html|body)>/i.test(trimmed);
+    };
+
+    window.crmBindSignatureEditorPreview = window.crmBindSignatureEditorPreview || function (editor) {
+      var preview = document.getElementById(editor.id + '_preview');
+      var refresh = function () {
+        if (typeof window.crmRenderSignaturePreview === 'function') {
+          window.crmRenderSignaturePreview(preview, editor.getContent());
+        }
+      };
+      editor.on('init', function () {
+        var content = editor.getContent({ source_view: true });
+        var normalized = window.crmNormalizeSignatureHtml(content);
+        if (normalized !== content) {
+          editor.setContent(normalized);
+        }
+        refresh();
+      });
+      editor.on('change SetContent undo redo keyup', refresh);
+    };
+
+    window.crmSignatureTinyMceConfig = window.crmSignatureTinyMceConfig || function (editorId) {
+      return {
+        license_key: 'gpl',
+        selector: '#' + editorId,
+        height: 280,
+        min_height: 220,
+        menubar: false,
+        statusbar: true,
+        plugins: ['lists', 'link', 'autolink', 'wordcount', 'table', 'image', 'code'],
+        toolbar: 'undo redo | bold italic underline | forecolor | bullist numlist | table | link image | removeformat | code',
+        branding: false,
+        promotion: false,
+        paste_as_text: false,
+        paste_data_images: true,
+        smart_paste: true,
+        entity_encoding: 'raw',
+        convert_urls: false,
+        extended_valid_elements: '*[*]',
+        valid_children: '+body[style|table],+div[table]',
+        table_default_attributes: { border: '1' },
+        table_default_styles: { 'border-collapse': 'collapse', 'width': '100%' },
+        table_resize_bars: true,
+        table_appearance_options: true,
+        content_style: 'body { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; } table { border-collapse: collapse; } td, th { padding: 4px 8px; }',
+        setup: function (editor) {
+          editor.on('paste', function (e) {
+            var clipboard = e.clipboardData || window.clipboardData;
+            var html;
+            var text;
+            if (!clipboard) {
+              return;
+            }
+            html = clipboard.getData('text/html');
+            text = clipboard.getData('text/plain');
+            if (html && html.replace(/<meta[\s\S]*?>/gi, '').trim()) {
+              return;
+            }
+            if (text && window.crmLooksLikeHtmlSource(text)) {
+              e.preventDefault();
+              editor.insertContent(window.crmNormalizeSignatureHtml(text));
+            }
+          });
+          editor.on('change', function () {
+            editor.save();
+          });
+          if (typeof window.crmBindSignatureEditorPreview === 'function') {
+            window.crmBindSignatureEditorPreview(editor);
+          }
+        }
+      };
+    };
+
+    window.crmInitStaffSignatureEditor = window.crmInitStaffSignatureEditor || function (editorEl) {
+      var editorId = editorEl.id;
+      if (!editorId || typeof tinymce === 'undefined') {
+        return;
+      }
+      if (tinymce.get(editorId)) {
+        tinymce.get(editorId).remove();
+      }
+      tinymce.init(window.crmSignatureTinyMceConfig(editorId));
+    };
+
+    // Initialize full TinyMCE for .tinymce-editor-full (skip signature fields; they use a dedicated config)
+    $('.tinymce-editor-full').not('.staff-email-signature').each(function() {
       var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);
       if (!$(this).attr('id')) {
         $(this).attr('id', editorId);
@@ -543,6 +674,12 @@ $(function () {
           ...tinymceFullConfig,
           selector: '#' + editorId
         });
+      }
+    });
+
+    $('.staff-email-signature').each(function () {
+      if (typeof window.crmInitStaffSignatureEditor === 'function') {
+        window.crmInitStaffSignatureEditor(this);
       }
     });
   }

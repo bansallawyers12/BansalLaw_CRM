@@ -1467,7 +1467,7 @@ body, html {
     background: #fff;
     flex-shrink: 0;
     overflow-y: auto;
-    max-height: 140px;
+    max-height: 280px;
 }
 
 .compose-footer {

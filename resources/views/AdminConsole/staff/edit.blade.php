@@ -387,7 +387,12 @@
 								<p class="text-muted mb-3">This signature is automatically added when the staff member composes, replies, or forwards emails using their login email address.</p>
 								<div class="form-group mb-0">
 									<label for="email_signature">Email Signature</label>
-									<textarea class="form-control tinymce-editor-full" name="email_signature" id="email_signature">{{ old('email_signature', @$fetchedData->email_signature) }}</textarea>
+									<p class="text-muted small">Paste HTML via Source code, or insert a table from the toolbar. A live HTML preview is shown below.</p>
+									<textarea class="form-control tinymce-editor-full staff-email-signature" name="email_signature" id="email_signature">{{ old('email_signature', @$fetchedData->email_signature) }}</textarea>
+									<div class="staff-signature-preview-wrap">
+										<div class="staff-signature-preview-label">HTML preview</div>
+										<iframe class="staff-signature-preview" id="email_signature_preview" title="Signature HTML preview"></iframe>
+									</div>
 								</div>
 							</div>
 						</div>

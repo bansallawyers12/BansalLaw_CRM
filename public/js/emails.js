@@ -2072,7 +2072,9 @@
      * Append staff signature below quoted reply/forward content.
      */
     function prependStaffSignatureToMessage(message, signature) {
-        const sig = (signature || getStaffSignatureForComposeFrom() || '').trim();
+        const sig = (typeof window.crmNormalizeSignatureHtml === 'function'
+            ? window.crmNormalizeSignatureHtml(signature || getStaffSignatureForComposeFrom() || '')
+            : (signature || getStaffSignatureForComposeFrom() || '')).trim();
         if (!sig) {
             return message;
         }
@@ -2097,7 +2099,9 @@
             return;
         }
 
-        const signature = await fetchStaffSignatureForCompose();
+        const signature = typeof window.crmNormalizeSignatureHtml === 'function'
+            ? window.crmNormalizeSignatureHtml(await fetchStaffSignatureForCompose())
+            : await fetchStaffSignatureForCompose();
         if (!signature) {
             return;
         }

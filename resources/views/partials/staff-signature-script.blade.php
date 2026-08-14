@@ -4,6 +4,24 @@
 @endif
 <script>
 (function() {
+	window.crmNormalizeSignatureHtml = window.crmNormalizeSignatureHtml || function (html) {
+		var value = html == null ? '' : String(html);
+		var i, textarea, decoded;
+		for (i = 0; i < 3; i++) {
+			if (!/&lt;\s*(?:table|div|p|html|body|span|img|font|!DOCTYPE|br|strong|b|em|i|a)\b/i.test(value)) {
+				break;
+			}
+			textarea = document.createElement('textarea');
+			textarea.innerHTML = value;
+			decoded = textarea.value;
+			if (decoded === value) {
+				break;
+			}
+			value = decoded;
+		}
+		return value;
+	};
+
 	var staffSignatureUrl = '{{ route("crm.staff.email-signature") }}';
 
 	window.crmFetchStaffSignature = function(fromEmail) {
@@ -22,6 +40,7 @@
 			})
 			.then(function(data) {
 				var sig = (data && data.signature) ? String(data.signature) : '';
+				sig = window.crmNormalizeSignatureHtml(sig);
 				if (!fromEmail && sig) {
 					window.__crmCurrentUserSignature = sig;
 				}
@@ -41,7 +60,7 @@
 						fallback = outlookContainer.getAttribute('data-staff-signature') || '';
 					}
 				}
-				return fallback;
+				return window.crmNormalizeSignatureHtml(fallback);
 			});
 	};
 })();

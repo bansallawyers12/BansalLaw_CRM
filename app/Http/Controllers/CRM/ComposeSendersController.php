@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use App\Models\Email;
 use App\Models\Staff;
+use App\Support\EmailSignatureHtml;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -71,7 +72,7 @@ class ComposeSendersController extends Controller
             ->where('status', 1)
             ->value('email_signature');
 
-        $signature = trim((string) ($signature ?? ''));
+        $signature = trim((string) EmailSignatureHtml::normalize((string) ($signature ?? '')));
         return response()->json(['signature' => $signature]);
     }
 

@@ -391,8 +391,12 @@
                 </div>
                 <div class="col-12">
                     <label for="{{ $fieldPrefix }}_email_signature">Email signature</label>
-                    <p class="text-muted small">Added automatically when this staff member sends email from the CRM.</p>
+                    <p class="text-muted small">Added automatically when this staff member sends email from the CRM. Paste HTML via Source code, or insert a table from the toolbar — a live preview is shown below.</p>
                     <textarea class="form-control tinymce-editor-full staff-email-signature" name="email_signature" id="{{ $fieldPrefix }}_email_signature">{{ old('email_signature', $isEdit ? ($fetchedData->email_signature ?? '') : '') }}</textarea>
+                    <div class="staff-signature-preview-wrap">
+                        <div class="staff-signature-preview-label">HTML preview</div>
+                        <iframe class="staff-signature-preview" id="{{ $fieldPrefix }}_email_signature_preview" title="Signature HTML preview"></iframe>
+                    </div>
                     <span class="field-error text-danger small" data-field="email_signature"></span>
                 </div>
             </div>
