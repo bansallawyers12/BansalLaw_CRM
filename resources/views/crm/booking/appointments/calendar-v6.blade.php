@@ -2498,10 +2498,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Show loading state
-        const button = event.target;
-        const originalButtonHtml = button.innerHTML;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
-        button.disabled = true;
+        const button = (typeof event !== 'undefined' && event && event.target)
+            ? event.target.closest('button')
+            : null;
+        const originalButtonHtml = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+            button.disabled = true;
+        }
         dateInput.disabled = true;
         timeInput.disabled = true;
         
@@ -2550,7 +2554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateInput.setAttribute('data-original-time', newTime);
                 
                 // Close the modal and refresh calendar
-                $('#eventModal').modal('hide');
+                hideBootstrapModal(document.getElementById('eventModal'));
                 calendar.refetchEvents();
                 
                 // Show success message
@@ -2594,8 +2598,10 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             // Restore button and input states
-            button.innerHTML = originalButtonHtml;
-            button.disabled = false;
+            if (button) {
+                button.innerHTML = originalButtonHtml;
+                button.disabled = false;
+            }
             dateInput.disabled = false;
             timeInput.disabled = false;
         });
@@ -2733,7 +2739,18 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     function showAlert(type, message) {
-        // Create alert element
+        const iziType = type === 'danger' ? 'error' : type;
+        if (typeof iziToast !== 'undefined' && typeof iziToast[iziType] === 'function') {
+            const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Notice' };
+            iziToast[iziType]({
+                title: titles[iziType] || 'Notice',
+                message: message,
+                position: 'topRight',
+                timeout: iziType === 'error' ? 8000 : 5000
+            });
+            return;
+        }
+
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
@@ -2742,13 +2759,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>&times;</span>
             </button>
         `;
-        
-        // Insert at the top of the page
+
         const container = document.querySelector('.section-body');
         if (container) {
             container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
             setTimeout(() => {
                 if (alertDiv.parentNode) {
                     alertDiv.remove();
