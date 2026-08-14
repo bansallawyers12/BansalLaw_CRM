@@ -215,9 +215,6 @@
             <p style="margin-top: 15px; font-size: 11px; color: #666666;">
                 This is an automated message. Please do not reply to this email.
             </p>
-            <!-- <p style="margin-top: 15px; font-size: 13px;">
-                Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #059669; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-            </p> -->
         </div>
     </div>
 </body>

@@ -270,9 +270,6 @@
                 <div class="footer-disclaimer">
                     This is an automated message. Please do not reply to this email.
                 </div>
-                <!-- <p style="margin-top: 15px; font-size: 13px;">
-                    Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-                </p> -->
             </div>
         </div>
     </div>

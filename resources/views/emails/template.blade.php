@@ -36,9 +36,6 @@
                     <div style="font-size:16px;line-height:24px;font-family:Arial,sans-serif;color:#111827;">
                       {!! isset($array['content']) ? $array['content'] : (isset($content) ? $content : '') !!}
                     </div>
-                    <p style="margin-top:20px;font-size:14px;line-height:22px;font-family:Arial,sans-serif;color:#111827;">
-                      Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color:#2563eb;text-decoration:underline;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-                    </p>
                   </td>
                 </tr>
               </table>
