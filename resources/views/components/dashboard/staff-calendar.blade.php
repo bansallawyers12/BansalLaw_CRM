@@ -11,7 +11,7 @@
                     <i class="fa-solid fa-calendar-days"></i>
                     Calendar
                 </h2>
-                <p class="dashboard-calendar-subtitle">Today and upcoming only. Hover an event for the full title and time.</p>
+                <p class="dashboard-calendar-subtitle">Today and upcoming only. Hover a coloured bar to see the full title and time.</p>
             </div>
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-stats">
@@ -45,6 +45,20 @@
 
         <div class="dashboard-calendar-wrapper">
             <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}"></div>
+        </div>
+
+        <div class="dashboard-upcoming-panel" id="dashboardUpcomingPanel">
+            <div class="dashboard-upcoming-header">
+                <h3>
+                    <i class="fa-solid fa-list"></i>
+                    Upcoming schedule
+                </h3>
+                <span class="dashboard-upcoming-count" id="dashboardUpcomingCount">0</span>
+            </div>
+            <p class="dashboard-upcoming-help">Every hearing, meeting, deadline, reminder and event from today onwards.</p>
+            <div class="dashboard-upcoming-list" id="dashboardUpcomingList" aria-live="polite">
+                <div class="dashboard-upcoming-empty">Loading upcoming items…</div>
+            </div>
         </div>
     </div>
 </section>

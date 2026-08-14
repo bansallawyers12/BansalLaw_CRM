@@ -345,6 +345,141 @@
     border-top-width: 0;
 }
 
+.tooltip.dashboard-cal-event-tooltip {
+    z-index: 2000;
+}
+
+.tooltip.dashboard-cal-event-tooltip .tooltip-inner {
+    max-width: 340px;
+    padding: 8px 12px;
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+    white-space: pre-line;
+    border-radius: 4px;
+}
+
+.tooltip.dashboard-cal-event-tooltip .tooltip-arrow::before {
+    border-top-color: #111;
+}
+
+.tooltip.dashboard-cal-event-tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #111;
+}
+
+.dashboard-upcoming-panel {
+    border-top: 1px solid var(--border-color);
+    padding: 18px 24px 24px;
+    background: var(--card-bg-color);
+}
+
+.dashboard-upcoming-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.dashboard-upcoming-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dashboard-upcoming-count {
+    min-width: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.dashboard-upcoming-help {
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
+    color: var(--text-muted-color);
+}
+
+.dashboard-upcoming-list {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--background-color);
+}
+
+.dashboard-upcoming-empty {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--text-muted-color);
+    font-size: 0.9rem;
+}
+
+.dashboard-upcoming-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.dashboard-upcoming-table th,
+.dashboard-upcoming-table td {
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-upcoming-table th {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted-color);
+    z-index: 1;
+}
+
+.dashboard-upcoming-row {
+    cursor: pointer;
+}
+
+.dashboard-upcoming-row:hover {
+    background: rgba(30, 61, 96, 0.06);
+}
+
+.dashboard-upcoming-title {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.dashboard-upcoming-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-type--court { background: #5c3d8f; }
+.dashboard-upcoming-type--meeting { background: #0d6efd; }
+.dashboard-upcoming-type--deadline { background: #c0392b; }
+.dashboard-upcoming-type--reminder { background: #d97706; color: #1a2c40; }
+.dashboard-upcoming-type--other { background: #111; }
+
 .dashboard-event-detail-list {
     display: grid;
     grid-template-columns: auto 1fr;
