@@ -385,7 +385,8 @@ class BansalApiClient
 
     /**
      * Fetch allowed time-slot start labels (12h) from Bansal.
-     * POST {@see config('services.bansal_api.timeslot_labels_url')}.
+     * GET {@see config('services.bansal_api.timeslot_labels_url')} with query params
+     * (website route supports GET/HEAD only).
      *
      * @return list<string>
      */
@@ -410,7 +411,7 @@ class BansalApiClient
                 ->withToken($this->apiToken)
                 ->acceptJson()
                 ->throw()
-                ->post($url, $payload);
+                ->get($url, $payload);
 
             $data = $response->json() ?? [];
 
