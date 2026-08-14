@@ -89,6 +89,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const composeQuoteToggleLabel = document.getElementById('composeQuoteToggleLabel');
     const composeSignatureWrap = document.getElementById('composeSignatureWrap');
     const composeSignatureFrame = document.getElementById('composeSignatureFrame');
+    const composeCcField = document.getElementById('composeCcField');
+    const composeBccField = document.getElementById('composeBccField');
+    const composeShowCc = document.getElementById('composeShowCc');
+    const composeShowBcc = document.getElementById('composeShowBcc');
     const composeFormatBar = document.getElementById('composeFormatBar');
     const btnSendEl = document.getElementById('btnSend');
     const btnResend = document.getElementById('btnResend');
@@ -1391,8 +1395,26 @@ document.addEventListener('DOMContentLoaded', function() {
         composeQuoteToggle.addEventListener('click', () => {
             const collapsed = composeQuoteWrap.classList.toggle('is-collapsed');
             composeQuoteToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-            if (composeQuoteToggleLabel) {
-                composeQuoteToggleLabel.textContent = collapsed ? 'Show quoted message' : 'Hide quoted message';
+            if (!collapsed && composeQuoteFrame) {
+                sizeComposeContentIframe(composeQuoteFrame);
+            }
+        });
+    }
+
+    if (composeShowCc) {
+        composeShowCc.addEventListener('click', () => {
+            showComposeOptionalField('cc');
+            if (ccInput) {
+                ccInput.focus();
+            }
+        });
+    }
+
+    if (composeShowBcc) {
+        composeShowBcc.addEventListener('click', () => {
+            showComposeOptionalField('bcc');
+            if (bccInput) {
+                bccInput.focus();
             }
         });
     }
@@ -4061,6 +4083,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return html || '';
     }
 
+    function sizeComposeContentIframe(iframe) {
+        if (!iframe) {
+            return;
+        }
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (doc && doc.body) {
+                const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 280);
+                iframe.style.height = (height + 24) + 'px';
+                iframe.style.minHeight = '280px';
+            }
+        } catch (e) {
+            iframe.style.height = '280px';
+            iframe.style.minHeight = '280px';
+        }
+    }
+
     function sizeCompactHtmlIframe(iframe) {
         if (!iframe) {
             return;
@@ -4069,11 +4108,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             if (doc && doc.body) {
                 const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 48);
-                iframe.style.height = Math.min(height + 16, 420) + 'px';
+                iframe.style.height = (height + 16) + 'px';
                 iframe.style.minHeight = '48px';
             }
         } catch (e) {
-            iframe.style.height = '120px';
+            iframe.style.height = '80px';
             iframe.style.minHeight = '48px';
         }
     }
@@ -4098,13 +4137,56 @@ document.addEventListener('DOMContentLoaded', function() {
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
 
-        const resize = opts.compact ? sizeCompactHtmlIframe : resetReadBodyIframeSizing;
+        const resize = opts.composeContent
+            ? sizeComposeContentIframe
+            : (opts.compact ? sizeCompactHtmlIframe : resetReadBodyIframeSizing);
         setTimeout(function() {
             resize(iframe);
         }, 50);
         setTimeout(function() {
             resize(iframe);
         }, 300);
+    }
+
+    function hideComposeOptionalFields() {
+        if (composeCcField) {
+            composeCcField.hidden = true;
+        }
+        if (composeBccField) {
+            composeBccField.hidden = true;
+        }
+        if (composeShowCc) {
+            composeShowCc.hidden = false;
+        }
+        if (composeShowBcc) {
+            composeShowBcc.hidden = false;
+        }
+    }
+
+    function showComposeOptionalField(which) {
+        if (which === 'cc' && composeCcField) {
+            composeCcField.hidden = false;
+            if (composeShowCc) {
+                composeShowCc.hidden = true;
+            }
+        }
+        if (which === 'bcc' && composeBccField) {
+            composeBccField.hidden = false;
+            if (composeShowBcc) {
+                composeShowBcc.hidden = true;
+            }
+        }
+    }
+
+    function syncComposeOptionalFields() {
+        const ccValue = ccInput ? String(ccInput.value || '').trim() : '';
+        const bccValue = bccInput ? String(bccInput.value || '').trim() : '';
+        if (ccValue) {
+            showComposeOptionalField('cc');
+        }
+        if (bccValue) {
+            showComposeOptionalField('bcc');
+        }
     }
 
     function resetComposeEditor() {
@@ -4133,11 +4215,11 @@ document.addEventListener('DOMContentLoaded', function() {
             composeQuoteToggle.setAttribute('aria-expanded', 'true');
         }
         if (composeQuoteToggleLabel) {
-            composeQuoteToggleLabel.textContent = 'Hide quoted message';
+            composeQuoteToggleLabel.textContent = 'Original email';
         }
         if (composeQuoteFrame) {
-            composeQuoteFrame.style.height = '48px';
-            renderHtmlIframe(composeQuoteFrame, '', { compact: true });
+            composeQuoteFrame.style.height = '280px';
+            renderHtmlIframe(composeQuoteFrame, '', { composeContent: true });
         }
         if (composeSignatureWrap) {
             composeSignatureWrap.hidden = true;
@@ -4146,6 +4228,7 @@ document.addEventListener('DOMContentLoaded', function() {
             composeSignatureFrame.style.height = '48px';
             renderHtmlIframe(composeSignatureFrame, '', { compact: true, normalizeSignature: true });
         }
+        hideComposeOptionalFields();
     }
 
     function setComposeQuote(quoteHtml) {
@@ -4163,9 +4246,9 @@ document.addEventListener('DOMContentLoaded', function() {
             composeQuoteToggle.setAttribute('aria-expanded', 'true');
         }
         if (composeQuoteToggleLabel) {
-            composeQuoteToggleLabel.textContent = 'Hide quoted message';
+            composeQuoteToggleLabel.textContent = 'Original email';
         }
-        renderHtmlIframe(composeQuoteFrame, composeQuoteHtml, { compact: true });
+        renderHtmlIframe(composeQuoteFrame, composeQuoteHtml, { composeContent: true });
     }
 
     function setComposeSignature(signatureHtml) {
@@ -4367,6 +4450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         setComposeQuote(buildQuoteHtml(email, action, emailHtml));
+        syncComposeOptionalFields();
 
         try {
             const signatureHtml = await fetchLoggedInStaffSignature(composeFromEmail);
@@ -4402,6 +4486,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bccInput.value = cleanRecipients(email.bcc) || email.bcc || '';
         }
         subjectInput.value = email.subject || '';
+        syncComposeOptionalFields();
 
         setComposeQuote('');
         setComposeSignature('');
