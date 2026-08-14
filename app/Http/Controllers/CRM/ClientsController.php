@@ -8938,8 +8938,7 @@ class ClientsController extends Controller
             $staff,
             $canSyncInbox
         ) {
-            $preview = strip_tags($email->message);
-            $email->text_preview = mb_substr($preview, 0, 100);
+            $email->text_preview = \App\Models\EmailLog::plainTextPreview($email->message, 100);
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
             $email->cc = $email->cc ?? '';

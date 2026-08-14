@@ -40,6 +40,31 @@ class EmailLog extends Authenticatable
     }
 
     /**
+     * Plain-text list snippet from HTML email bodies.
+     * Style/script blocks are removed entirely (strip_tags keeps their inner CSS).
+     */
+    public static function plainTextPreview(?string $html, int $maxLen = 100): string
+    {
+        $html = (string) $html;
+        if ($html === '') {
+            return '';
+        }
+
+        $html = preg_replace('#<(script|style|head|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+        $html = preg_replace('#<(br|p|div|li|tr|h[1-6])\b[^>]*/?>#i', ' ', $html) ?? $html;
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/[.#]?[\w-]+\s*\{[^}]*\}/', ' ', $text) ?? $text;
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        $text = trim($text);
+
+        if ($maxLen > 0 && mb_strlen($text) > $maxLen) {
+            return mb_substr($text, 0, $maxLen);
+        }
+
+        return $text;
+    }
+
+    /**
      * Whether this log row came from IMAP/synced-inbox assignment (not a pure file upload).
      */
     public function isSyncedInboxOrigin(): bool
