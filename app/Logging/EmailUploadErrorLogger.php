@@ -40,5 +40,6 @@ class EmailUploadErrorLogger
         $line = '[' . date('Y-m-d H:i:s') . '] ERROR: Email upload failed ' . ($encoded ?: '{}') . PHP_EOL;
 
         @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+        EmailOpsLogPruner::prune();
     }
 }
