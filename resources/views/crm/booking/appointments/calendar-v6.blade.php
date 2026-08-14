@@ -2525,11 +2525,14 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw { status: response.status, data: errorData };
-                }).catch(() => {
-                    throw { status: response.status, message: 'Server error occurred' };
-                });
+                return response.json().then(
+                    function(errorData) {
+                        throw { status: response.status, data: errorData };
+                    },
+                    function() {
+                        throw { status: response.status, message: 'Server error occurred' };
+                    }
+                );
             }
             
             const contentType = response.headers.get('content-type');

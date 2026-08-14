@@ -1468,6 +1468,25 @@ class BookingAppointmentsController extends Controller
                 ->with('success', $message);
         }
 
+        if ($datetimeChanged) {
+            $slotStart = $newDatetime->copy()->startOfMinute();
+            $slotEnd = $slotStart->copy()->addMinute();
+            $sameTimeExists = BookingAppointment::query()
+                ->where('id', '!=', $appointment->id)
+                ->whereNotIn('status', ['cancelled', 'no_show', 'rescheduled'])
+                ->where('appointment_datetime', '>=', $slotStart)
+                ->where('appointment_datetime', '<', $slotEnd)
+                ->exists();
+
+            if ($sameTimeExists) {
+                return $this->handleUpdateError(
+                    $request,
+                    'Booking of same time is already exist . Pls chose other slot.',
+                    422
+                );
+            }
+        }
+
         // Update appointment fields in local database FIRST (always update locally)
         if ($datetimeChanged) {
             $appointment->appointment_datetime = $newDatetime;
