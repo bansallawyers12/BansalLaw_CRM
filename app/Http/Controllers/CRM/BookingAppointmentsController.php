@@ -1087,7 +1087,7 @@ class BookingAppointmentsController extends Controller
         $appointments = $appointmentsQuery->get();
 
         $calendarTitle = match ($type) {
-            'ajay' => 'Ajay Calendar',
+            'ajay' => 'Ajay',
             'kunal' => 'Michael',
             default => ucfirst($type)
         };
@@ -1110,7 +1110,7 @@ class BookingAppointmentsController extends Controller
 
         $request->validate([
             'status' => 'required|in:pending,paid,confirmed,completed,cancelled,no_show,rescheduled',
-            'cancellation_reason' => 'required_if:status,cancelled|nullable|string'
+            'cancellation_reason' => 'required_if:status,cancelled|nullable|string|max:500'
         ]);
 
         $oldStatus = $appointment->status;
@@ -1126,18 +1126,21 @@ class BookingAppointmentsController extends Controller
                 break;
             case 'cancelled':
                 $appointment->cancelled_at = now();
-                // Cancellation reason is now required when status is cancelled
                 $appointment->cancellation_reason = $request->cancellation_reason ?? null;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('booking_appointments', 'website_status_code')) {
+                    $appointment->website_status_code = 3;
+                }
                 break;
         }
 
         $appointment->save();
 
         $syncError = null;
-        $shouldSyncStatus = in_array($request->status, ['cancelled', 'completed', 'confirmed']);
+        $hasWebsiteId = ! empty($appointment->bansal_appointment_id);
+        $shouldSyncStatus = in_array($request->status, ['cancelled', 'completed', 'confirmed'], true);
 
         if ($shouldSyncStatus) {
-            if ($appointment->bansal_appointment_id) {
+            if ($hasWebsiteId) {
                 try {
                     $this->syncService->pushStatusUpdate(
                         $appointment,
@@ -1166,11 +1169,10 @@ class BookingAppointmentsController extends Controller
                     ])->save();
                 }
             } else {
-                Log::warning('Skipping Bansal sync because appointment is missing bansal_appointment_id', [
+                Log::info('Skipping Bansal sync because appointment is missing bansal_appointment_id', [
                     'appointment_id' => $appointment->id,
                     'status' => $request->status,
                 ]);
-                $syncError = 'Missing website booking identifier.';
             }
         }
 
@@ -1206,9 +1208,19 @@ class BookingAppointmentsController extends Controller
             }
         }
 
-        $message = $syncError
-            ? 'Status updated locally. Sync with website failed: ' . $syncError
-            : 'Status updated successfully';
+        if ($request->status === 'cancelled') {
+            if ($syncError) {
+                $message = 'Cancelled in CRM, but the Bansal Lawyers website was not updated: ' . $syncError;
+            } elseif ($hasWebsiteId) {
+                $message = 'Booking cancelled in CRM and on the Bansal Lawyers website.';
+            } else {
+                $message = 'Booking cancelled in CRM.';
+            }
+        } else {
+            $message = $syncError
+                ? 'Status updated locally. Sync with website failed: ' . $syncError
+                : 'Status updated successfully';
+        }
 
         return response()->json([
             'success' => true,

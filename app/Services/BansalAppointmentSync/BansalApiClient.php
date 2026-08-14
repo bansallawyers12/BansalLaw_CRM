@@ -228,19 +228,62 @@ class BansalApiClient
 
     /**
      * Update appointment status on Bansal API.
+     *
+     * @param  array<string, mixed>  $fallbackContext  Date/time used if /status is missing and update-appointment is used
      */
-    public function updateAppointmentStatus(int $appointmentId, string $type, ?string $reason = null): array
+    public function updateAppointmentStatus(int $appointmentId, string $type, ?string $reason = null, array $fallbackContext = []): array
     {
-        try {
-            $payload = ['type' => $type];
+        $payload = ['type' => $type];
 
-            if (!empty($reason) && $type === 'cancel') {
-                $payload['cancel_reason'] = $reason;
+        if (!empty($reason) && $type === 'cancel') {
+            $payload['cancel_reason'] = $reason;
+        }
+
+        try {
+            $response = $this->client()->post("{$this->baseUrl}/appointments/{$appointmentId}/status", $payload);
+            $json = $response->json();
+
+            if (
+                $type === 'cancel'
+                && is_array($json)
+                && array_key_exists('success', $json)
+                && $json['success'] !== true
+            ) {
+                Log::info('Bansal status endpoint rejected cancel; trying update-appointment', [
+                    'appointment_id' => $appointmentId,
+                    'response' => $json,
+                ]);
+
+                return $this->updateAppointmentStatusViaUpdateAppointment($appointmentId, $type, $reason, $fallbackContext);
             }
 
-            $response = $this->client()->post("{$this->baseUrl}/appointments/{$appointmentId}/status", $payload);
+            return $this->assertSuccessfulStatusResponse($json, $appointmentId, $type);
+        } catch (RequestException $e) {
+            $httpStatus = $e->response?->status();
+            $bodyMessage = $e->response?->json('message')
+                ?? (is_array($e->response?->json()) ? ($e->response->json()['message'] ?? null) : null)
+                ?? $e->getMessage();
 
-            return $response->json();
+            if ($type === 'cancel' && in_array($httpStatus, [404, 405, 422], true)) {
+                Log::info('Bansal /appointments/{id}/status not available; trying update-appointment', [
+                    'appointment_id' => $appointmentId,
+                    'type' => $type,
+                    'http_status' => $httpStatus,
+                ]);
+
+                return $this->updateAppointmentStatusViaUpdateAppointment($appointmentId, $type, $reason, $fallbackContext);
+            }
+
+            Log::error('Bansal API Client Error', [
+                'method' => 'updateAppointmentStatus',
+                'appointment_id' => $appointmentId,
+                'type' => $type,
+                'reason' => $reason,
+                'http_status' => $httpStatus,
+                'error' => $bodyMessage,
+            ]);
+
+            throw new Exception($bodyMessage ?: $e->getMessage(), (int) $e->getCode(), $e);
         } catch (Exception $e) {
             Log::error('Bansal API Client Error', [
                 'method' => 'updateAppointmentStatus',
@@ -252,6 +295,59 @@ class BansalApiClient
 
             throw $e;
         }
+    }
+
+    /**
+     * Fallback for websites that mutate bookings via /appointments/update-appointment only.
+     *
+     * @param  array<string, mixed>  $fallbackContext
+     */
+    protected function updateAppointmentStatusViaUpdateAppointment(int $appointmentId, string $type, ?string $reason, array $fallbackContext): array
+    {
+        $payload = array_merge(
+            array_filter([
+                'appointment_date' => $fallbackContext['appointment_date'] ?? null,
+                'appointment_time' => $fallbackContext['appointment_time'] ?? null,
+                'meeting_type' => $fallbackContext['meeting_type'] ?? null,
+                'preferred_language' => $fallbackContext['preferred_language'] ?? null,
+            ], fn ($value) => $value !== null && $value !== ''),
+            [
+                'appointment_id' => $appointmentId,
+                'type' => $type,
+            ]
+        );
+
+        if ($type === 'cancel') {
+            $payload['status'] = 3;
+            $payload['cancel_reason'] = $reason;
+        }
+
+        $response = $this->client()->post("{$this->baseUrl}/appointments/update-appointment", $payload);
+
+        return $this->assertSuccessfulStatusResponse($response->json(), $appointmentId, $type);
+    }
+
+    /**
+     * @param  mixed  $data
+     * @return array<string, mixed>
+     */
+    protected function assertSuccessfulStatusResponse(mixed $data, int $appointmentId, string $type): array
+    {
+        if (! is_array($data)) {
+            return [];
+        }
+
+        if (array_key_exists('success', $data) && $data['success'] !== true) {
+            $message = $data['message'] ?? 'Website did not accept the status update';
+            Log::warning('Bansal status update returned unsuccessful response', [
+                'appointment_id' => $appointmentId,
+                'type' => $type,
+                'response' => $data,
+            ]);
+            throw new Exception($message);
+        }
+
+        return $data;
     }
 
     /**
