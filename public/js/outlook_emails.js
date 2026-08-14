@@ -3576,7 +3576,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!html) return '';
         const raw = String(html);
         const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        return bodyMatch ? bodyMatch[1] : raw;
+        if (bodyMatch && emailHtmlHasVisibleText(bodyMatch[1])) {
+            return bodyMatch[1];
+        }
+        return raw;
     }
 
     function formatRecipientLine(label, value) {
@@ -4009,6 +4012,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // PDF.js / Chrome viewer needs scripts; the HTML sandbox blocks them and
             // leaves a blank reading pane when the stored body is empty.
             iframe.onload = function () {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    const text = ((doc && doc.body) ? doc.body.innerText : '') || '';
+                    if (/403\s*\|\s*Forbidden/i.test(text) || /^\s*403\b/.test(text.trim())) {
+                        iframe.onload = null;
+                        iframe.removeAttribute('src');
+                        iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
+                        renderHtmlIframe(iframe, '<p>No content available.</p>');
+                        resetReadBodyIframeSizing(iframe);
+                        return;
+                    }
+                } catch (e) {
+                    // Cross-origin PDF viewers are fine.
+                }
                 resetReadBodyIframeSizing(iframe);
             };
             iframe.removeAttribute('srcdoc');
