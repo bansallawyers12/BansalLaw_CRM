@@ -559,6 +559,8 @@
                 <button type="button" class="compose-format-btn" data-cmd="insertUnorderedList" title="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
                 <button type="button" class="compose-format-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
                 <span class="compose-format-sep" aria-hidden="true"></span>
+                <button type="button" class="compose-format-btn" data-cmd="insertTable" title="Insert table"><i class="fa-solid fa-table"></i></button>
+                <span class="compose-format-sep" aria-hidden="true"></span>
                 <button type="button" class="compose-format-btn" data-cmd="removeFormat" title="Clear formatting"><i class="fa-solid fa-eraser"></i></button>
             </div>
             <div id="composeReplyInput" class="compose-reply-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Type your message..."></div>

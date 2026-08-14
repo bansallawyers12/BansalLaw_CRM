@@ -137,8 +137,13 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
-														<label for="status">Company Email Signature</label><br>
-														<textarea class="form-control tinymce-editor" name="email_signature">{{@$fetchedData->email_signature}}</textarea>
+														<label for="email_signature">Company Email Signature</label>
+														<p class="text-muted small">Paste HTML via Source code, or insert a table from the toolbar. A live HTML preview is shown below.</p>
+														<textarea class="form-control tinymce-editor-full staff-email-signature" name="email_signature" id="email_signature">{{@$fetchedData->email_signature}}</textarea>
+														<div class="staff-signature-preview-wrap">
+															<div class="staff-signature-preview-label">HTML preview</div>
+															<iframe class="staff-signature-preview" id="email_signature_preview" title="Signature HTML preview"></iframe>
+														</div>
 													</div>
 												</div>
 											</div>

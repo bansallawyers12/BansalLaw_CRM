@@ -1,6 +1,8 @@
 <?php
 namespace App\Models;
 
+use App\Support\EmailSignatureHtml;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
@@ -106,5 +108,16 @@ class Email extends Authenticatable
         return $byEmail ? (int) $byEmail : null;
     }
 
-	public $sortable = ['id', 'created_at', 'updated_at'];
+    /**
+     * Store and return email signatures as real HTML, not escaped source.
+     */
+    protected function emailSignature(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => EmailSignatureHtml::normalize($value),
+            set: fn ($value) => EmailSignatureHtml::normalize(is_string($value) ? $value : null),
+        );
+    }
+
+    public $sortable = ['id', 'created_at', 'updated_at'];
 } 

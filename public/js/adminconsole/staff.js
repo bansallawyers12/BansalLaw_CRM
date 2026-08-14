@@ -254,7 +254,11 @@
         });
 
         if (typeof tinymce !== 'undefined') {
-            $container.find('.tinymce-editor-full').each(function () {
+            $container.find('.staff-email-signature, .tinymce-editor-full').each(function () {
+                if (this.classList.contains('staff-email-signature') && typeof window.crmInitStaffSignatureEditor === 'function') {
+                    window.crmInitStaffSignatureEditor(this);
+                    return;
+                }
                 var editorId = this.id;
                 if (!editorId) {
                     return;
@@ -262,22 +266,24 @@
                 if (tinymce.get(editorId)) {
                     tinymce.get(editorId).remove();
                 }
-                tinymce.init({
-                    license_key: 'gpl',
-                    selector: '#' + editorId,
-                    height: 260,
-                    menubar: false,
-                    statusbar: true,
-                    plugins: ['lists', 'link', 'autolink', 'wordcount', 'code'],
-                    toolbar: 'undo redo | bold italic underline | bullist numlist | link | removeformat | code',
-                    branding: false,
-                    promotion: false,
-                    setup: function (editor) {
-                        editor.on('change', function () {
-                            editor.save();
-                        });
-                    }
-                });
+                tinymce.init(typeof window.crmSignatureTinyMceConfig === 'function'
+                    ? window.crmSignatureTinyMceConfig(editorId)
+                    : {
+                        license_key: 'gpl',
+                        selector: '#' + editorId,
+                        height: 280,
+                        menubar: false,
+                        statusbar: true,
+                        plugins: ['lists', 'link', 'autolink', 'wordcount', 'table', 'image', 'code'],
+                        toolbar: 'undo redo | bold italic underline | bullist numlist | table | link image | removeformat | code',
+                        branding: false,
+                        promotion: false,
+                        setup: function (editor) {
+                            editor.on('change', function () {
+                                editor.save();
+                            });
+                        }
+                    });
             });
         }
 

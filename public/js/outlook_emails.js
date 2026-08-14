@@ -1377,6 +1377,10 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
             composeReplyInput.focus();
             const cmd = btn.getAttribute('data-cmd');
+            if (cmd === 'insertTable') {
+                insertComposeTable();
+                return;
+            }
             if (cmd) {
                 document.execCommand(cmd, false, null);
             }
@@ -4050,10 +4054,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function renderHtmlIframe(iframe, html) {
+    function normalizeSignatureHtml(html) {
+        if (typeof window.crmNormalizeSignatureHtml === 'function') {
+            return window.crmNormalizeSignatureHtml(html || '');
+        }
+        return html || '';
+    }
+
+    function sizeCompactHtmlIframe(iframe) {
+        if (!iframe) {
+            return;
+        }
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (doc && doc.body) {
+                const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 48);
+                iframe.style.height = Math.min(height + 16, 420) + 'px';
+                iframe.style.minHeight = '48px';
+            }
+        } catch (e) {
+            iframe.style.height = '120px';
+            iframe.style.minHeight = '48px';
+        }
+    }
+
+    function renderHtmlIframe(iframe, html, options) {
         if (!iframe) return;
+        const opts = options || {};
         const doc = iframe.contentDocument || iframe.contentWindow.document;
-        const bodyHtml = html || '';
+        let bodyHtml = html || '';
+        if (opts.normalizeSignature) {
+            bodyHtml = normalizeSignatureHtml(bodyHtml);
+        }
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
             'html,body{margin:0;padding:0;box-sizing:border-box;}' +
@@ -4066,11 +4098,12 @@ document.addEventListener('DOMContentLoaded', function() {
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
 
+        const resize = opts.compact ? sizeCompactHtmlIframe : resetReadBodyIframeSizing;
         setTimeout(function() {
-            resetReadBodyIframeSizing(iframe);
+            resize(iframe);
         }, 50);
         setTimeout(function() {
-            resetReadBodyIframeSizing(iframe);
+            resize(iframe);
         }, 300);
     }
 
@@ -4104,14 +4137,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (composeQuoteFrame) {
             composeQuoteFrame.style.height = '48px';
-            renderHtmlIframe(composeQuoteFrame, '');
+            renderHtmlIframe(composeQuoteFrame, '', { compact: true });
         }
         if (composeSignatureWrap) {
             composeSignatureWrap.hidden = true;
         }
         if (composeSignatureFrame) {
             composeSignatureFrame.style.height = '48px';
-            renderHtmlIframe(composeSignatureFrame, '');
+            renderHtmlIframe(composeSignatureFrame, '', { compact: true, normalizeSignature: true });
         }
     }
 
@@ -4132,11 +4165,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (composeQuoteToggleLabel) {
             composeQuoteToggleLabel.textContent = 'Hide quoted message';
         }
-        renderHtmlIframe(composeQuoteFrame, composeQuoteHtml);
+        renderHtmlIframe(composeQuoteFrame, composeQuoteHtml, { compact: true });
     }
 
     function setComposeSignature(signatureHtml) {
-        composeSignatureHtml = (signatureHtml || '').trim();
+        composeSignatureHtml = normalizeSignatureHtml(signatureHtml || '').trim();
         if (!composeSignatureWrap || !composeSignatureFrame) {
             return;
         }
@@ -4145,7 +4178,36 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         composeSignatureWrap.hidden = false;
-        renderHtmlIframe(composeSignatureFrame, composeSignatureHtml);
+        renderHtmlIframe(composeSignatureFrame, composeSignatureHtml, {
+            compact: true,
+            normalizeSignature: true
+        });
+    }
+
+    function insertComposeTable() {
+        const rowsRaw = window.prompt('Number of rows', '2');
+        if (rowsRaw === null) {
+            return;
+        }
+        const colsRaw = window.prompt('Number of columns', '2');
+        if (colsRaw === null) {
+            return;
+        }
+        const rows = Math.min(Math.max(parseInt(rowsRaw, 10) || 0, 1), 10);
+        const cols = Math.min(Math.max(parseInt(colsRaw, 10) || 0, 1), 8);
+        let tableHtml = '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;">';
+        for (let r = 0; r < rows; r++) {
+            tableHtml += '<tr>';
+            for (let c = 0; c < cols; c++) {
+                tableHtml += '<td>&nbsp;</td>';
+            }
+            tableHtml += '</tr>';
+        }
+        tableHtml += '</table><p><br></p>';
+        if (composeReplyInput) {
+            composeReplyInput.focus();
+        }
+        document.execCommand('insertHTML', false, tableHtml);
     }
 
     function getComposeMessageHtml() {
@@ -4225,10 +4287,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchLoggedInStaffSignature(fromEmail) {
         if (typeof window.crmFetchStaffSignature === 'function') {
-            return (await window.crmFetchStaffSignature(fromEmail || '')).trim();
+            return normalizeSignatureHtml(await window.crmFetchStaffSignature(fromEmail || '')).trim();
         }
         if (window.__crmCurrentUserSignature) {
-            return String(window.__crmCurrentUserSignature).trim();
+            return normalizeSignatureHtml(window.__crmCurrentUserSignature).trim();
         }
         if (!staffSignatureUrl) {
             return '';
@@ -4242,7 +4304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return '';
             }
             const data = await response.json();
-            return (data && data.signature) ? String(data.signature).trim() : '';
+            return normalizeSignatureHtml((data && data.signature) ? String(data.signature) : '').trim();
         } catch (e) {
             return '';
         }

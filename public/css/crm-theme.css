@@ -1173,6 +1173,36 @@ body.sidebar-mini .staff-form-modal .staff-modal-scroll-hint {
   padding: 8px 0 0;
 }
 
+.staff-signature-preview-wrap,
+body.sidebar-mini .staff-form-modal .staff-signature-preview-wrap,
+body.sidebar-mini .adminconsole-staff-page .staff-signature-preview-wrap {
+  margin-top: 10px;
+  border: 1px solid var(--border, #dcdcdc);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.staff-signature-preview-label {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  background: #f8f9fb;
+  border-bottom: 1px solid var(--border, #dcdcdc);
+}
+
+.staff-signature-preview {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  height: 180px;
+  border: 0;
+  background: #fff;
+}
+
 body.sidebar-mini .staff-form-modal .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
