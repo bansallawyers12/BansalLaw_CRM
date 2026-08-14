@@ -1294,40 +1294,6 @@ $(document).ready(function() {
         }
     };
     
-    // Global function to load activities feed
-    window.loadActivities = function() {
-        $.ajax({
-            url: window.ClientDetailConfig.urls.getActivities,
-            type: 'GET',
-            dataType: 'json',
-            data: { id: window.ClientDetailConfig.clientId },
-            success: function(response) {
-                if (response.status && response.data !== undefined && response.data !== null) {
-                    var html = typeof window.buildActivityFeedListHtml === 'function'
-                        ? window.buildActivityFeedListHtml(response.data)
-                        : '';
-
-                    $('#activity-feed .feed-list').html(html);
-                    if (typeof window.initActivityFeedClamps === 'function') {
-                        window.initActivityFeedClamps();
-                    }
-                    if (window.ActivityFeed && typeof window.ActivityFeed.reapplyFilters === 'function') {
-                        window.ActivityFeed.reapplyFilters();
-                    }
-                    
-                    // Adjust Activity Feed height after content update
-                    if (typeof adjustActivityFeedHeight === 'function') {
-                        adjustActivityFeedHeight();
-                    }
-                } else {
-                    console.error('Failed to load activities:', response.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error loading activities:', error);
-            }
-        });
-    };
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}

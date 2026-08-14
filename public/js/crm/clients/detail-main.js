@@ -5277,53 +5277,10 @@ success: function(response) {
 
 
         function getallactivities(){
-
-            $.ajax({
-
-                url: site_url+'/get-activities',
-
-                type:'GET',
-
-                dataType:'json', // Fixed: changed from dataType to dataType (case-sensitive)
-
-                data:{id:window.ClientDetailConfig.clientId},
-
-                success: function(responses){
-                    try {
-                        var ress = safeParseJsonResponse(responses);
-                        if (!ress) return;
-
-                    var html = typeof window.buildActivityFeedListHtml === 'function'
-                        ? window.buildActivityFeedListHtml(ress.data || [])
-                        : '';
-
-                    $('#activity-feed .feed-list').html(html);
-                    if (typeof window.initActivityFeedClamps === 'function') {
-                        window.initActivityFeedClamps();
-                    }
-                    if (window.ActivityFeed && typeof window.ActivityFeed.reapplyFilters === 'function') {
-                        window.ActivityFeed.reapplyFilters();
-                    }
-
-                    //$('.activities').html(html);
-
-                    $('.popuploader').hide();
-
-                    
-
-                    // Adjust Activity Feed height after content update
-
-                    adjustActivityFeedHeight();
-
-                    } catch (error) {
-                        console.error('Error processing activities:', error);
-                        $('.popuploader').hide();
-                    }
-
-                }
-
-            });
-
+            if (typeof window.loadActivities === 'function') {
+                window.loadActivities({ reset: true });
+            }
+            $('.popuploader').hide();
         }
 
 

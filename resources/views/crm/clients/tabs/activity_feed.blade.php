@@ -70,79 +70,8 @@
     </div>
 
     <ul class="feed-list">
-        @php
-        // Handle search parameters
-        $staff_search = $_REQUEST['staff'] ?? $_REQUEST['user'] ?? ''; // 'user' kept for backward compatibility
-        $keyword_search = $_REQUEST['keyword'] ?? '';
-
-        // Query activities based on search parameters
-        if ($staff_search != "" || $keyword_search != "") {
-            if ($staff_search != "" && $keyword_search != "") {
-                // Both staff and keyword search
-                $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
-                    ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
-                    ->where('activities_logs.client_id', $fetchedData->id)
-                    ->where(function($query) use ($staff_search) {
-                        $staffSearchLower = strtolower($staff_search);
-                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$staffSearchLower.'%']);
-                    })
-                    ->where(function($query) use ($keyword_search) {
-                        $query->where('activities_logs.description', 'like', '%'.$keyword_search.'%');
-                        $query->orWhere('activities_logs.subject', 'like', '%'.$keyword_search.'%');
-                    })
-                    ->orderby('activities_logs.created_at', 'DESC')
-                    ->get();
-            } else if ($staff_search == "" && $keyword_search != "") {
-                // Keyword search only
-                $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
-                    ->where('activities_logs.client_id', $fetchedData->id)
-                    ->where(function($query) use ($keyword_search) {
-                        $query->where('activities_logs.description', 'like', '%'.$keyword_search.'%');
-                        $query->orWhere('activities_logs.subject', 'like', '%'.$keyword_search.'%');
-                    })
-                    ->orderby('activities_logs.created_at', 'DESC')
-                    ->get();
-            } else if ($staff_search != "" && $keyword_search == "") {
-                // Staff search only
-                $activities = \App\Models\ActivitiesLog::select('activities_logs.*','staff.first_name','staff.last_name','staff.email')
-                    ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
-                    ->where('activities_logs.client_id', $fetchedData->id)
-                    ->where(function($query) use ($staff_search) {
-                        $staffSearchLower = strtolower($staff_search);
-                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$staffSearchLower.'%']);
-                    })
-                    ->orderby('activities_logs.created_at', 'DESC')
-                    ->get();
-            }
-        } else {
-            // No search - get all activities
-            $activities = \App\Models\ActivitiesLog::where('client_id', $fetchedData->id)
-                ->orderby('created_at', 'DESC')
-                ->get();
-        }
-        @endphp
-
-        @if($activities->count() > 0)
-            @foreach($activities as $activit)
-                @php
-                    $admin = \App\Models\Staff::where('id', $activit->created_by)->first();
-                @endphp
-                @include('crm.clients.tabs.partials._activity_item', [
-                    'activity' => $activit,
-                    'admin' => $admin,
-                    'clientId' => $fetchedData->id
-                ])
-            @endforeach
-            <li class="feed-item feed-item-no-results" style="text-align: center; padding: 28px 20px; color: #5e7a90;">
-                <i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;" aria-hidden="true"></i>
-                <p class="mb-0 small">No activities match your filters</p>
-            </li>
-        @else
-            <li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">
-                <i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;" aria-hidden="true"></i>
-                <p class="mb-1 font-weight-semibold" style="color: #1e3d60;">No activities yet</p>
-                <p class="mb-0 small">Notes, tasks, documents, and stage changes will appear here.</p>
-            </li>
-        @endif
+        <li class="feed-item feed-item--loading" style="text-align: center; padding: 36px 20px; color: #5e7a90;">
+            <p class="mb-0 small">Loading timeline…</p>
+        </li>
     </ul>
 </aside>

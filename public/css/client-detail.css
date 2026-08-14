@@ -3894,8 +3894,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
    Activity Feed — docs/theme.md (powder blue / navy; fixes timeline + icons)
    Scoped to .crm-container so layout .feed-icon width:25px and #0d6efd are overridden.
    ============================================================================= */
-.crm-container .activity-feed {
-    background-color: var(--card-bg, #ffffff) !important;
+.crm-container .activity-feed .feed-load-sentinel {
+    height: 1px;
+    padding: 0 !important;
+    margin: 0;
+    border: 0;
+    list-style: none;
+    overflow: hidden;
+}
     border: 1px solid var(--border, #c8dcef) !important;
     border-radius: 10px !important;
     box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;

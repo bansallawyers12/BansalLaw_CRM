@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\MatterAssigneeDefaults;
+use App\Support\ActivityFeedQuery;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
 
@@ -3324,122 +3325,101 @@ class ClientsController extends Controller
         return $query->paginate(10, ['*'], 'page', $request->page ?? 1)->toArray();
     }
 
-	public function activities(Request $request){ 
-		// Bypass all output buffering
-		while (ob_get_level()) {
-			ob_end_clean();
-		}
-		
-		// Start fresh output buffer
-		ob_start();
-		
-		// Force error reporting off
-		@ini_set('display_errors', '0');
-		@error_reporting(0);
-		
-		// Initialize response with default error state
+	public function activities(Request $request)
+	{
 		$response = [
 			'status' => false,
-			'message' => 'An error occurred while fetching activities'
+			'message' => 'An error occurred while fetching activities',
 		];
 
 		try {
-			// Validate request has id parameter
-			if (!$request->has('id') || empty($request->id)) {
+			if (! $request->has('id') || $request->id === '' || $request->id === null) {
 				$response['message'] = 'Client ID is required';
-				header('Content-Type: application/json');
-				echo json_encode($response);
-				ob_end_flush();
-				exit;
+
+				return response()->json($response);
 			}
 
-			// Check if client exists - role must be integer for PostgreSQL compatibility
-			$clientExists = Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists();
-			
-			if($clientExists && ! StaffClientVisibility::canAccessClientOrLead((int) $request->id, Auth::user())){
+			$clientId = (int) $request->id;
+			$clientExists = Admin::whereIn('type', ['client', 'lead'])->where('id', $clientId)->exists();
+
+			if ($clientExists && ! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
 				$response['message'] = config('constants.unauthorized');
-				header('Content-Type: application/json');
-				echo json_encode($response);
-				ob_end_flush();
-				exit;
+
+				return response()->json($response);
 			}
-			
-			if($clientExists){
-				$activities = ActivitiesLog::where('client_id', $request->id)
-					->orderby('created_at', 'DESC')
-					->get();
-				
-				$data = array();
-				
-				foreach($activities as $activit){
-					$admin = Staff::where('id', $activit->created_by)->first();
-					$fullName = $admin ? $admin->activityFeedDisplayName() : 'Unknown';
-					$subjectWithoutStaffPrefix = ActivitiesLog::displaySubjectWithoutStaffPrefix(
-						$activit->activity_type ?? null,
-						$activit->subject ?? null
-					);
-					$followupDateDisplay = '';
-					if (! empty($activit->followup_date)) {
-						try {
-							$followupDateDisplay = \Carbon\Carbon::parse($activit->followup_date)->format('d M Y, g:i A');
-						} catch (\Throwable $e) {
-							$followupDateDisplay = (string) $activit->followup_date;
-						}
+
+			if (! $clientExists) {
+				$response['message'] = 'Client not found';
+
+				return response()->json($response);
+			}
+
+			$page = ActivityFeedQuery::page($request);
+			$perPage = ActivityFeedQuery::perPage($request);
+
+			$query = ActivitiesLog::query()
+				->where('activities_logs.client_id', $clientId)
+				->with('creator');
+			ActivityFeedQuery::apply($query, $request);
+			$query->orderBy('activities_logs.created_at', 'DESC')->orderBy('activities_logs.id', 'DESC');
+
+			$rows = $query->skip(($page - 1) * $perPage)->take($perPage + 1)->get();
+			$hasMore = $rows->count() > $perPage;
+			$activities = $rows->take($perPage);
+
+			$data = [];
+			foreach ($activities as $activit) {
+				$admin = $activit->creator;
+				$fullName = $admin ? $admin->activityFeedDisplayName() : 'Unknown';
+				$subjectWithoutStaffPrefix = ActivitiesLog::displaySubjectWithoutStaffPrefix(
+					$activit->activity_type ?? null,
+					$activit->subject ?? null
+				);
+				$followupDateDisplay = '';
+				if (! empty($activit->followup_date)) {
+					try {
+						$followupDateDisplay = \Carbon\Carbon::parse($activit->followup_date)->format('d M Y, g:i A');
+					} catch (\Throwable $e) {
+						$followupDateDisplay = (string) $activit->followup_date;
 					}
-					$data[] = array(
-						'activity_id' => $activit->id,
-						'subject' => $activit->subject ?? '',
-						'subject_without_staff_prefix' => $subjectWithoutStaffPrefix,
-						'createdname' => $fullName !== '' && $fullName !== 'Unknown' ? substr($fullName, 0, 1) : '?',
-						'name' => $fullName,
-						'message' => NoteDescriptionHtml::forDisplay($activit->description ?? ''),
-						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
-						'created_at_ymd' => $activit->created_at ? \Carbon\Carbon::parse($activit->created_at)->format('Y-m-d') : '',
-						'followup_date' => $activit->followup_date ?? '',
-						'followup_date_display' => $followupDateDisplay,
-						'task_group' => $activit->task_group ?? '',
-						'pin' => $activit->pin ?? 0,
-						'activity_type' => $activit->activity_type ?? 'note',
-						'created_by' => $activit->created_by,
-						'raw_description' => $activit->description,
-						'raw_created_at' => $activit->created_at ? (string) $activit->created_at : '',
-					);
 				}
-
-				$response['status'] 	= 	true;
-				$response['data']	=	$data;
-				unset($response['message']); // Remove error message on success
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Client not found';
+				$data[] = [
+					'activity_id' => $activit->id,
+					'subject' => $activit->subject ?? '',
+					'subject_without_staff_prefix' => $subjectWithoutStaffPrefix,
+					'createdname' => $fullName !== '' && $fullName !== 'Unknown' ? substr($fullName, 0, 1) : '?',
+					'name' => $fullName,
+					'message' => NoteDescriptionHtml::forDisplay($activit->description ?? ''),
+					'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
+					'created_at_ymd' => $activit->created_at ? \Carbon\Carbon::parse($activit->created_at)->format('Y-m-d') : '',
+					'followup_date' => $activit->followup_date ?? '',
+					'followup_date_display' => $followupDateDisplay,
+					'task_group' => $activit->task_group ?? '',
+					'pin' => $activit->pin ?? 0,
+					'activity_type' => $activit->activity_type ?? 'activity',
+					'created_by' => $activit->created_by,
+					'raw_description' => $activit->description,
+					'raw_created_at' => $activit->created_at ? (string) $activit->created_at : '',
+				];
 			}
-		} catch (\Exception $e) {
-			Log::error('Error fetching activities (Exception): ' . $e->getMessage(), [
-				'client_id' => $request->id ?? 'N/A',
-				'file' => $e->getFile(),
-				'line' => $e->getLine(),
-				'trace' => $e->getTraceAsString()
-			]);
-			$response['status'] = false;
-			$response['message'] = 'Exception: ' . $e->getMessage();
-		} catch (\Throwable $e) {
-			// Catch fatal errors
-			Log::error('Fatal error fetching activities (Throwable): ' . $e->getMessage(), [
-				'client_id' => $request->id ?? 'N/A',
-				'file' => $e->getFile(),
-				'line' => $e->getLine(),
-				'trace' => $e->getTraceAsString()
-			]);
-			$response['status'] = false;
-			$response['message'] = 'Fatal: ' . $e->getMessage();
-		}
 
-		// Ensure JSON response is always returned
-		header('Content-Type: application/json');
-		$jsonOutput = json_encode($response);
-		echo $jsonOutput;
-		ob_end_flush();
-		exit;
+			return response()->json([
+				'status' => true,
+				'data' => $data,
+				'page' => $page,
+				'per_page' => $perPage,
+				'has_more' => $hasMore,
+			]);
+		} catch (\Throwable $e) {
+			Log::error('Error fetching activities: '.$e->getMessage(), [
+				'client_id' => $request->id ?? 'N/A',
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
+			]);
+			$response['message'] = 'An error occurred while fetching activities';
+
+			return response()->json($response);
+		}
 	}
 
 	public function updateclientstatus(Request $request){

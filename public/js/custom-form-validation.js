@@ -3163,88 +3163,10 @@ async function getInvoiceAmount(invoiceNo) {
 
 //Fetch All Activities
 function getallactivities(client_id){
-	$.ajax({
-		url: site_url+'/get-activities',
-		type:'GET',
-		datatype:'json',
-		data:{id:client_id},
-		success: function(responses, textStatus, xhr){
-			// Check if response is empty or invalid
-			if (!responses || responses === '' || (typeof responses === 'string' && responses.trim() === '')) {
-				return; // Exit early to prevent JSON.parse error
-			}
-			
-			// Check if response is already parsed (jQuery might auto-parse JSON)
-			var ress;
-			if (typeof responses === 'object') {
-				ress = responses;
-			} else if (typeof responses === 'string') {
-				// Check if it looks like JSON
-				var trimmed = responses.trim();
-				if (trimmed.charAt(0) !== '{' && trimmed.charAt(0) !== '[') {
-					return; // Exit early if not JSON
-				}
-				
-				try {
-					ress = JSON.parse(responses);
-				} catch(e) {
-					return; // Exit early on parse error
-				}
-			} else {
-				return;
-			}
-			var html = '';
-		$.each(ress.data, function (k, v) {
-			// Determine icon based on activity type
-			var activityType = v.activity_type ?? 'note';
-			var subjectIcon;
-			var iconClass = '';
-			
-			if (activityType === 'sms') {
-				subjectIcon = '<i class="fa-solid fa-sms"></i>';
-				iconClass = 'feed-icon-sms';
-			} else if (activityType === 'activity') {
-				subjectIcon = '<i class="fa-solid fa-bolt"></i>';
-				iconClass = 'feed-icon-activity';
-			} else if (activityType === 'financial') {
-				subjectIcon = '<i class="fa-solid fa-dollar-sign"></i>';
-				iconClass = 'feed-icon-accounting';
-			} else if (v.subject && v.subject.toLowerCase().includes("document")) {
-				subjectIcon = '<i class="fa-solid fa-file-lines"></i>';
-			} else {
-				subjectIcon = '<i class="fa-solid fa-note-sticky"></i>';
-			}
-
-			var subject = v.subject ?? '';
-			var description = v.message ?? '';
-			var taskGroup = v.task_group ?? '';
-			var followupDate = v.followup_date ?? '';
-			var date = v.date ?? '';
-			var createdBy = v.createdname ?? 'Unknown';
-			var fullName = v.name ?? '';
-			var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
-			var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
-
-			html += `
-				<li class="feed-item feed-item--email activity ${activityTypeClass}" id="activity_${v.activity_id}">
-					<span class="feed-icon ${iconClass}">
-						${subjectIcon}
-					</span>
-					<div class="feed-content">
-						<p><strong>${headline}</strong></p>
-						${description !== '' ? `<p>${description}</p>` : ''}
-						${taskGroup !== '' ? `<p>${taskGroup}</p>` : ''}
-						${followupDate !== '' ? `<p>${followupDate}</p>` : ''}
-						<span class="feed-timestamp">${date}</span>
-					</div>
-				</li>
-			`;
-		});
-			$('.feed-list').html(html);
-			$('.popuploader').hide();
-		},
-		error: function(xhr, status, error){
-			// Silent error handling
-		}
-	});
+	if (typeof window.loadActivities === 'function') {
+		window.loadActivities({ reset: true, clientId: client_id });
+		$('.popuploader').hide();
+		return;
+	}
+	$('.popuploader').hide();
 }

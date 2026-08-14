@@ -60,6 +60,16 @@
         '<p class="mb-1" style="color: #1e3d60; font-weight: 600;">No activities yet</p>' +
         '<p class="mb-0 small">Notes, tasks, documents, and stage changes will appear here.</p></li>';
 
+    var FEED_LOAD_SENTINEL_HTML = '<li class="feed-item feed-load-sentinel" aria-hidden="true"></li>';
+
+    var feedState = {
+        page: 0,
+        hasMore: false,
+        loading: false,
+        fillPasses: 0
+    };
+    var sentinelObserver = null;
+
     /**
      * Initialize Activity Feed functionality
      */
@@ -70,6 +80,7 @@
         setupRefreshButton();
         setupFilterBarToggle();
         ensureTimelineFiltersVisible();
+        loadActivities({ reset: true });
     }
 
     function isOnActivityTab() {
@@ -117,7 +128,6 @@
             if (animate) {
                 $bar.stop(true, true).slideDown(200, function() {
                     afterFilterBarLayoutChange();
-                    reapplyFilters();
                 });
             } else {
                 $bar.show();
@@ -129,7 +139,10 @@
             setFilterBarCollapsed(true);
             updateFilterToggleUi(true);
             if (animate) {
-                $bar.stop(true, true).slideUp(200, afterFilterBarLayoutChange);
+                $bar.stop(true, true).slideUp(200, function() {
+                    afterFilterBarLayoutChange();
+                    loadActivities({ reset: true });
+                });
             } else {
                 $bar.hide();
                 afterFilterBarLayoutChange();
@@ -154,17 +167,14 @@
             if (!$('#increase-activity-feed-width').is(':checked')) {
                 $('#activity-feed-filter-bar').hide().removeClass('activity-feed-filter-bar--collapsed');
             }
-            reapplyFilters();
             return;
         }
         $toggle.removeAttr('hidden');
         if (isFilterBarCollapsed()) {
             $('#activity-feed-filter-bar').hide().addClass('activity-feed-filter-bar--collapsed');
             updateFilterToggleUi(true);
-            reapplyFilters();
         } else {
             setFilterBarVisible(true, false);
-            reapplyFilters();
         }
     }
 
@@ -176,7 +186,7 @@
             var expanding = isFilterBarCollapsed();
             setFilterBarVisible(expanding, true);
             if (!expanding) {
-                reapplyFilters();
+                loadActivities({ reset: true });
             }
         });
     }
@@ -188,12 +198,7 @@
         $('#activity-feed-refresh').on('click', function() {
             var $btn = $(this).find('i');
             $btn.addClass('fa-spin');
-            if (typeof window.loadActivities === 'function') {
-                window.loadActivities();
-            }
-            if (typeof getallactivities === 'function') {
-                getallactivities();
-            }
+            loadActivities({ reset: true });
             setTimeout(function() { $btn.removeClass('fa-spin'); }, 800);
         });
     }
@@ -208,11 +213,7 @@
         $root.find('.activity-filter-btn').on('click', function() {
             $root.find('.activity-filter-btn').removeClass('active');
             $(this).addClass('active');
-            if (isExtendedFiltersActive()) {
-                applyExtendedFilters();
-            } else {
-                filterActivities($(this).data('filter'));
-            }
+            loadActivities({ reset: true });
         });
     }
 
@@ -332,14 +333,7 @@
     }
 
     function reapplyFilters() {
-        var $root = feedRoot();
-        if (!$root.length) return;
-        if (isExtendedFiltersActive()) {
-            applyExtendedFilters();
-        } else {
-            var activeType = $root.find('.activity-filter-btn.active').data('filter') || 'all';
-            filterActivities(activeType);
-        }
+        loadActivities({ reset: true });
     }
 
     /**
@@ -402,27 +396,7 @@
      * Apply search and date filters, combined with current type filter
      */
     function applyExtendedFilters() {
-        var $root = feedRoot();
-        if (!$root.length) return;
-        var searchVal = ($('#activity-feed-search').val() || '').trim().toLowerCase();
-        var dateFrom = ($('#activity-feed-date-from').val() || '').trim();
-        var dateTo = ($('#activity-feed-date-to').val() || '').trim();
-        var activeType = $root.find('.activity-filter-btn.active').data('filter') || 'all';
-
-        $root.find('.feed-item.activity').each(function() {
-            var $item = $(this);
-            var typeMatch = matchesTypeFilter($item, activeType);
-            var searchMatch = !searchVal || $item.find('.feed-content').text().toLowerCase().indexOf(searchVal) >= 0;
-            var itemDate = $item.attr('data-created-at') || '';
-            var dateMatch = true;
-            if (itemDate) {
-                if (dateFrom && itemDate < dateFrom) dateMatch = false;
-                if (dateTo && itemDate > dateTo) dateMatch = false;
-            }
-            $item.toggleClass(FILTER_HIDDEN_CLASS, !(typeMatch && searchMatch && dateMatch));
-        });
-
-        updateEmptyState();
+        loadActivities({ reset: true });
     }
 
     /**
@@ -550,9 +524,175 @@
     /**
      * Returns full HTML for all activity rows (replaces .feed-list contents).
      */
-    window.buildActivityFeedListHtml = function (data) {
+    function currentTypeFilter() {
+        var $root = feedRoot();
+        return ($root.find('.activity-filter-btn.active').data('filter') || 'all');
+    }
+
+    function feedRequestParams(page, clientId) {
+        var params = {
+            id: clientId,
+            page: page,
+            per_page: 40,
+            type: currentTypeFilter()
+        };
+        if (isExtendedFiltersActive()) {
+            var keyword = ($('#activity-feed-search').val() || '').trim();
+            var dateFrom = ($('#activity-feed-date-from').val() || '').trim();
+            var dateTo = ($('#activity-feed-date-to').val() || '').trim();
+            if (keyword) params.keyword = keyword;
+            if (dateFrom) params.date_from = dateFrom;
+            if (dateTo) params.date_to = dateTo;
+        }
+        return params;
+    }
+
+    function filtersAreActive() {
+        if (currentTypeFilter() !== 'all') return true;
+        if (!isExtendedFiltersActive()) return false;
+        return !!(($('#activity-feed-search').val() || '').trim()
+            || ($('#activity-feed-date-from').val() || '').trim()
+            || ($('#activity-feed-date-to').val() || '').trim());
+    }
+
+    function disconnectSentinel() {
+        if (sentinelObserver) {
+            sentinelObserver.disconnect();
+            sentinelObserver = null;
+        }
+    }
+
+    function observeSentinel() {
+        disconnectSentinel();
+        var el = document.querySelector('#activity-feed .feed-load-sentinel');
+        if (!el || typeof IntersectionObserver === 'undefined') {
+            return;
+        }
+        sentinelObserver = new IntersectionObserver(function(entries) {
+            if (entries.some(function(e) { return e.isIntersecting; })) {
+                loadActivities({ append: true });
+            }
+        }, { root: null, rootMargin: '120px', threshold: 0 });
+        sentinelObserver.observe(el);
+    }
+
+    function fillViewportIfNeeded() {
+        if (!feedState.hasMore || feedState.loading || feedState.fillPasses >= 8) {
+            return;
+        }
+        var root = document.querySelector('#activity-feed');
+        var list = document.querySelector('#activity-feed .feed-list');
+        if (!root || !list) return;
+        var scroller = root;
+        if (root.scrollHeight <= root.clientHeight + 8) {
+            var parent = root.parentElement;
+            while (parent && parent !== document.body) {
+                var style = window.getComputedStyle(parent);
+                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && parent.scrollHeight > parent.clientHeight + 8) {
+                    scroller = parent;
+                    break;
+                }
+                parent = parent.parentElement;
+            }
+        }
+        if (scroller.scrollHeight <= scroller.clientHeight + 40) {
+            feedState.fillPasses += 1;
+            loadActivities({ append: true });
+        }
+    }
+
+    function afterFeedRender() {
+        if (typeof window.initActivityFeedClamps === 'function') {
+            window.initActivityFeedClamps();
+        }
+        if (typeof adjustActivityFeedHeight === 'function') {
+            adjustActivityFeedHeight();
+        }
+        observeSentinel();
+        fillViewportIfNeeded();
+    }
+
+    function loadActivities(opts) {
+        opts = opts || {};
+        var append = !!opts.append;
+        var $list = $('#activity-feed .feed-list');
+        if (!$list.length) {
+            return;
+        }
+        var clientId = opts.clientId || (window.ClientDetailConfig && window.ClientDetailConfig.clientId);
+        var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getActivities)
+            || (typeof site_url !== 'undefined' ? site_url + '/get-activities' : '/get-activities');
+        if (!clientId) {
+            return;
+        }
+        if (feedState.loading) {
+            return;
+        }
+        if (append && !feedState.hasMore) {
+            return;
+        }
+
+        var page = append ? (feedState.page + 1) : 1;
+        feedState.loading = true;
+        if (!append) {
+            feedState.fillPasses = 0;
+            disconnectSentinel();
+        }
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            data: feedRequestParams(page, clientId),
+            success: function(response) {
+                feedState.loading = false;
+                if (!response || !response.status || response.data === undefined || response.data === null) {
+                    if (!append) {
+                        $list.html(FEED_EMPTY_HTML);
+                    }
+                    return;
+                }
+                var data = response.data || [];
+                feedState.page = response.page || page;
+                feedState.hasMore = !!response.has_more;
+                var html = window.buildActivityFeedListHtml(data, {
+                    has_more: feedState.hasMore,
+                    filtered: filtersAreActive()
+                });
+                if (append) {
+                    $list.find('.feed-load-sentinel').remove();
+                    if (data.length) {
+                        var itemsHtml = window.buildActivityFeedListHtml(data, {
+                            has_more: feedState.hasMore,
+                            filtered: false
+                        });
+                        $list.append(itemsHtml);
+                    } else if (feedState.hasMore) {
+                        $list.append(FEED_LOAD_SENTINEL_HTML);
+                    }
+                } else {
+                    $list.html(html);
+                }
+                afterFeedRender();
+            },
+            error: function() {
+                feedState.loading = false;
+                if (!append) {
+                    $list.html(FEED_EMPTY_HTML);
+                }
+            }
+        });
+    }
+
+    window.loadActivities = loadActivities;
+    window.getallactivities = function(clientId) {
+        loadActivities({ reset: true, clientId: clientId });
+    };
+
+    window.buildActivityFeedListHtml = function (data, options) {
+        options = options || {};
         if (!data || !data.length) {
-            return FEED_EMPTY_HTML;
+            return options.filtered ? FEED_NO_RESULTS_HTML : FEED_EMPTY_HTML;
         }
         var html = '';
         for (var k = 0; k < data.length; k++) {
@@ -560,7 +700,7 @@
             if (v.activity_id == null) {
                 continue;
             }
-            var activityType = v.activity_type || 'note';
+            var activityType = v.activity_type || 'activity';
             var subject = v.subject || '';
             var sl = subject.toLowerCase();
             if (activityType !== 'lead_converted' && sl.indexOf('lead converted') !== -1) {
@@ -650,9 +790,12 @@
             html += liOpen;
         }
         if (!html) {
-            return FEED_EMPTY_HTML;
+            return options.filtered ? FEED_NO_RESULTS_HTML : FEED_EMPTY_HTML;
         }
-        return html + FEED_NO_RESULTS_HTML;
+        if (options.has_more) {
+            html += FEED_LOAD_SENTINEL_HTML;
+        }
+        return html;
     };
 
     function updateClampButtonForChunk($chunk) {
@@ -752,7 +895,8 @@
         init: init,
         filterActivities: filterActivities,
         reapplyFilters: reapplyFilters,
-        ensureTimelineFiltersVisible: ensureTimelineFiltersVisible
+        ensureTimelineFiltersVisible: ensureTimelineFiltersVisible,
+        loadActivities: loadActivities
     };
 
 })(jQuery);

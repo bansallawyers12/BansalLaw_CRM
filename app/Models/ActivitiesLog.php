@@ -37,6 +37,19 @@ class ActivitiesLog extends Authenticatable
 
             $columns = array_flip(Schema::getColumnListing($log->getTable()));
 
+            if (isset($columns['activity_type'])) {
+                $type = $log->activity_type;
+                if ($type === null || $type === '') {
+                    $log->activity_type = 'activity';
+                }
+            }
+            if (isset($columns['task_status']) && $log->task_status === null) {
+                $log->task_status = 0;
+            }
+            if (isset($columns['pin']) && $log->pin === null) {
+                $log->pin = 0;
+            }
+
             $subject = $log->subject;
             if (($subject !== null && $subject !== '')
                 && ! isset($columns['subject'])
