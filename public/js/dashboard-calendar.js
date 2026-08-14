@@ -76,19 +76,50 @@
         });
     }
 
+    function eventTypeKey(props) {
+        var kind = String((props && props.event_kind) || '');
+        if (kind === 'court_hearing') return 'court';
+        if (kind === 'action' || kind === 'matter_deadline') return 'deadline';
+        var type = String((props && props.event_type) || 'other');
+        if (type === 'court' || type === 'meeting' || type === 'deadline' || type === 'reminder') {
+            return type;
+        }
+        return 'other';
+    }
+
+    function eventTypeLabel(props) {
+        switch (eventTypeKey(props)) {
+            case 'court': return 'Court / Hearing';
+            case 'meeting': return 'Meeting';
+            case 'deadline': return 'Deadline';
+            case 'reminder': return 'Reminder';
+            default: return 'Other';
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function buildEventTooltipText(event, tz) {
         var props = event.extendedProps || {};
-        var lines = [event.title || 'Event'];
-        var email = (props.client_email || '').trim();
+        var title = event.title || props.title || 'Event';
+        var lines = [title];
+        var email = String(props.client_email || '').trim();
         if (email) {
             lines.push('<' + email + '>');
         }
-        var location = (props.location || props.court_name || '').trim();
-        if (location && event.title.indexOf(location) === -1) {
+        var location = String(props.location || props.court_name || '').trim();
+        if (location && title.indexOf(location) === -1) {
             lines.push(location);
         }
         var time = formatEventTime(
-            props.appointment_datetime || event.startStr,
+            props.appointment_datetime || props.starts_at || event.startStr || event.start,
             tz,
             event.allDay || props.is_all_day
         );
@@ -112,7 +143,10 @@
     function showEventTooltip(el, text) {
         var tip = getCalendarTooltip();
         tip.textContent = text;
+        tip.style.left = '-9999px';
+        tip.style.top = '0px';
         tip.classList.add('is-visible');
+        void tip.offsetWidth;
 
         var rect = el.getBoundingClientRect();
         var tipRect = tip.getBoundingClientRect();
@@ -133,6 +167,111 @@
         var tip = document.getElementById('dashboardCalTooltip');
         if (tip) {
             tip.classList.remove('is-visible');
+            tip.textContent = '';
+        }
+    }
+
+    function bindEventHoverTitle(el, text) {
+        if (!el || !text) return;
+
+        el.setAttribute('data-event-tip', text);
+        el.setAttribute('aria-label', text.replace(/\n/g, ', '));
+        el.setAttribute('title', text);
+    }
+
+    function formatEventDate(iso, tz) {
+        if (!iso) return '';
+        var date = new Date(iso);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('en-AU', {
+            timeZone: tz || 'Australia/Melbourne',
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        });
+    }
+
+    function renderUpcomingList(events, tz) {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        var countEl = document.getElementById('dashboardUpcomingCount');
+        if (!listEl) return;
+
+        var rows = (events || []).slice().sort(function (a, b) {
+            return String(a.start || '').localeCompare(String(b.start || ''));
+        });
+
+        if (countEl) countEl.textContent = String(rows.length);
+
+        if (!rows.length) {
+            listEl.innerHTML = '<div class="dashboard-upcoming-empty">No upcoming hearings or events.</div>';
+            return;
+        }
+
+        var html = '<table class="dashboard-upcoming-table"><thead><tr>' +
+            '<th>Date</th><th>Time</th><th>Type</th><th>Title</th>' +
+            '</tr></thead><tbody>';
+
+        rows.forEach(function (event, index) {
+            var props = event.extendedProps || {};
+            var typeKey = eventTypeKey(props);
+            var title = event.title || props.title || 'Event';
+            var start = event.start || props.starts_at || props.appointment_datetime;
+            var tip = title;
+            var email = String(props.client_email || '').trim();
+            if (email) tip += '\n<' + email + '>';
+            var when = formatEventTime(start, tz, event.allDay || props.is_all_day);
+            if (when) tip += '\n' + when;
+            html += '<tr class="dashboard-upcoming-row" data-upcoming-index="' + index + '" title="' + escapeHtml(tip).replace(/\n/g, ' — ') + '">' +
+                '<td>' + escapeHtml(formatEventDate(start, tz)) + '</td>' +
+                '<td>' + escapeHtml(formatEventTime(start, tz, event.allDay || props.is_all_day)) + '</td>' +
+                '<td><span class="dashboard-upcoming-type dashboard-upcoming-type--' + typeKey + '">' +
+                escapeHtml(eventTypeLabel(props)) + '</span></td>' +
+                '<td class="dashboard-upcoming-title">' + escapeHtml(title) + '</td>' +
+                '</tr>';
+        });
+
+        html += '</tbody></table>';
+        listEl.innerHTML = html;
+
+        listEl.querySelectorAll('.dashboard-upcoming-row').forEach(function (row) {
+            row.addEventListener('click', function () {
+                var event = rows[Number(row.getAttribute('data-upcoming-index'))];
+                if (!event) return;
+                var props = Object.assign({ title: event.title }, event.extendedProps || {});
+                showEventDetail(props);
+            });
+        });
+    }
+
+    async function loadUpcomingList(tz) {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl) return;
+
+        try {
+            var start = todayDateStr(tz) + 'T00:00:00';
+            var endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + 12);
+            var url = new URL(BOOKING_EVENTS_API, window.location.origin);
+            url.searchParams.set('start', start);
+            url.searchParams.set('end', endDate.toISOString());
+
+            var response = await fetch(url.toString(), {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            var payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Failed to load upcoming items');
+            }
+            updateStats(payload.stats);
+            renderUpcomingList(payload.data || [], tz);
+        } catch (err) {
+            console.error('Dashboard upcoming list error:', err);
+            listEl.innerHTML = '<div class="dashboard-upcoming-empty">Could not load the upcoming schedule.</div>';
         }
     }
 
@@ -288,6 +427,7 @@
                 }
 
                 calendar.refetchEvents();
+                loadUpcomingList(calendarElTz());
 
                 if (typeof window.showToast === 'function') {
                     window.showToast('Event saved to your calendar.', 'success');
@@ -384,15 +524,7 @@
                     }
                 },
                 eventDidMount: function (info) {
-                    var text = buildEventTooltipText(info.event, tz);
-                    info.el.removeAttribute('title');
-                    info.el.setAttribute('aria-label', text.replace(/\n/g, ', '));
-                },
-                eventMouseEnter: function (info) {
-                    showEventTooltip(info.el, buildEventTooltipText(info.event, tz));
-                },
-                eventMouseLeave: function () {
-                    hideEventTooltip();
+                    bindEventHoverTitle(info.el, buildEventTooltipText(info.event, tz));
                 },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
@@ -417,9 +549,29 @@
 
             calendar.render();
             initPersonalEventModal(calendar);
+            loadUpcomingList(tz);
             window.staffDashboardCalendar = calendar;
             document.addEventListener('scroll', hideEventTooltip, true);
             window.addEventListener('resize', hideEventTooltip);
+
+            calendarEl.addEventListener('mouseover', function (e) {
+                var eventEl = e.target.closest('.fc-event');
+                if (!eventEl || !calendarEl.contains(eventEl)) return;
+                var text = eventEl.getAttribute('data-event-tip') || eventEl.getAttribute('title');
+                if (!text) return;
+                eventEl.removeAttribute('title');
+                showEventTooltip(eventEl, text);
+            });
+            calendarEl.addEventListener('mouseout', function (e) {
+                var eventEl = e.target.closest('.fc-event');
+                if (!eventEl) return;
+                if (e.relatedTarget && eventEl.contains(e.relatedTarget)) return;
+                var text = eventEl.getAttribute('data-event-tip');
+                if (text && !eventEl.getAttribute('title')) {
+                    eventEl.setAttribute('title', text);
+                }
+                hideEventTooltip();
+            });
         });
     }
 
