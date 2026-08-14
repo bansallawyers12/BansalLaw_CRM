@@ -73,6 +73,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::put('/emails/{id}', [EmailController::class, 'update'])->name('emails.update');
         Route::post('/emails/sync-now', [EmailController::class, 'syncNow'])->name('emails.sync-now');
         Route::post('/emails/inbox-sync-master', [EmailController::class, 'updateInboxSyncMaster'])->name('emails.inbox-sync-master');
+        Route::post('/emails/toggle-inbox-sync', [EmailController::class, 'toggleMailboxInboxSync'])->name('emails.toggle-inbox-sync');
         
         // CRM Email Template routes
         Route::get('/crm-email-template', [CrmEmailTemplateController::class, 'index'])->name('crmemailtemplate.index');

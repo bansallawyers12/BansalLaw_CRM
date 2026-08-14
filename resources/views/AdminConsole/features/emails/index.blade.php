@@ -111,10 +111,34 @@
 										@endif
 										</td>
 										<td>
-										@if(($list->sync_enabled ?? 1) == 1)
+										@if(!empty($canPauseMailboxInboxSync))
+											<div class="d-flex flex-column gap-1">
+												@if(($list->sync_enabled ?? 1) == 1)
+													<span class="text-success">On</span>
+													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" onsubmit="return confirm('Pause inbox sync for {{ addslashes($list->email) }}? Cron will skip this mailbox until you start it again.');">
+														@csrf
+														<input type="hidden" name="email" value="{{ $list->email }}">
+														<input type="hidden" name="sync_enabled" value="0">
+														<button type="submit" class="btn btn-outline-danger btn-sm">
+															<i class="fa-solid fa-pause"></i> Pause
+														</button>
+													</form>
+												@else
+													<span class="text-muted">Paused</span>
+													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" onsubmit="return confirm('Start inbox sync for {{ addslashes($list->email) }}?');">
+														@csrf
+														<input type="hidden" name="email" value="{{ $list->email }}">
+														<input type="hidden" name="sync_enabled" value="1">
+														<button type="submit" class="btn btn-success btn-sm">
+															<i class="fa-solid fa-play"></i> Start
+														</button>
+													</form>
+												@endif
+											</div>
+										@elseif(($list->sync_enabled ?? 1) == 1)
 											<span class="text-success">On</span>
 										@else
-											<span class="text-muted">Off</span>
+											<span class="text-muted">Paused</span>
 										@endif
 										</td>
 										<td>

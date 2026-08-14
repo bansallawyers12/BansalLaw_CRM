@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 
+use App\Logging\InboxSyncLogger;
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
@@ -69,6 +70,7 @@ class EmailController extends Controller
 			}
 
 			return (object) [
+				'id' => (int) $account->id,
 				'email' => $account->email,
 				'display_name' => $account->display_name ?? '',
 				'email_signature' => $account->email_signature ?? '',
@@ -84,12 +86,14 @@ class EmailController extends Controller
 
 		$staff = Auth::guard('admin')->user();
 		$canControlInboxSyncMaster = $staff instanceof Staff && InboxSyncMasterControl::canControl($staff);
+		$canPauseMailboxInboxSync = $staff instanceof Staff && $staff->canPauseMailboxInboxSync();
 		$inboxSyncMaster = InboxSyncMasterControl::statusPayload();
 
 		return view('AdminConsole.features.emails.index', compact([
 			'lists',
 			'totalData',
 			'canControlInboxSyncMaster',
+			'canPauseMailboxInboxSync',
 			'inboxSyncMaster',
 		]));
 
@@ -283,6 +287,62 @@ class EmailController extends Controller
 				'success' => true,
 				'message' => $message,
 				'status' => InboxSyncMasterControl::statusPayload(),
+			]);
+		}
+
+		return redirect()->route('adminconsole.features.emails.index')->with('success', $message);
+	}
+
+	/**
+	 * Pause or resume automatic IMAP sync for one mailbox.
+	 */
+	public function toggleMailboxInboxSync(Request $request)
+	{
+		$staff = Auth::guard('admin')->user();
+		if (! ($staff instanceof Staff) || ! $staff->canPauseMailboxInboxSync()) {
+			$message = 'You do not have permission to pause or start inbox sync for a mailbox.';
+			if ($request->expectsJson()) {
+				return response()->json(['success' => false, 'message' => $message], 403);
+			}
+
+			return redirect()->route('adminconsole.features.emails.index')->with('error', $message);
+		}
+
+		$validated = $request->validate([
+			'email' => 'required|string|max:255',
+			'sync_enabled' => 'required|boolean',
+		]);
+
+		$address = strtolower(trim((string) $validated['email']));
+		$account = Email::query()->whereRaw('LOWER(email) = ?', [$address])->first();
+		if (! $account) {
+			$message = 'Email account not found.';
+			if ($request->expectsJson()) {
+				return response()->json(['success' => false, 'message' => $message], 404);
+			}
+
+			return redirect()->route('adminconsole.features.emails.index')->with('error', $message);
+		}
+
+		$enabled = (bool) $validated['sync_enabled'];
+		$account->sync_enabled = $enabled ? 1 : 0;
+		$account->save();
+
+		InboxSyncLogger::info($enabled ? 'Mailbox inbox sync started' : 'Mailbox inbox sync paused', [
+			'mailbox' => $account->email,
+			'staff_id' => $staff->id,
+			'sync_enabled' => $enabled,
+		]);
+
+		$message = $enabled
+			? 'Inbox sync is ON for ' . $account->email . '.'
+			: 'Inbox sync is paused for ' . $account->email . '. Cron will skip this mailbox until it is started again.';
+
+		if ($request->expectsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => $message,
+				'sync_enabled' => $enabled,
 			]);
 		}
 

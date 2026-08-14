@@ -25,10 +25,28 @@ class EnsureAdminConsoleAccess
         }
 
         $staff = $user instanceof Staff ? $user : null;
-        if (! $staff || ! $staff->canAccessAdminConsole()) {
+        if (! $staff) {
             return redirect()->route('dashboard')->with('error', 'Unauthorized: You do not have permission to access Admin Console.');
         }
 
-        return $next($request);
+        if ($staff->canAccessAdminConsole()) {
+            return $next($request);
+        }
+
+        if ($staff->canPauseMailboxInboxSync() && $this->isMailboxInboxSyncRoute($request)) {
+            return $next($request);
+        }
+
+        return redirect()->route('dashboard')->with('error', 'Unauthorized: You do not have permission to access Admin Console.');
+    }
+
+    protected function isMailboxInboxSyncRoute(Request $request): bool
+    {
+        $name = $request->route()?->getName();
+
+        return in_array($name, [
+            'adminconsole.features.emails.index',
+            'adminconsole.features.emails.toggle-inbox-sync',
+        ], true);
     }
 }
