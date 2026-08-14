@@ -81,21 +81,20 @@ class Kernel extends ConsoleKernel
         
 
         //InPerson Complete Task Removal daily 1 time
-        /*$schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
+        /*$schedule->command('InPersonCompleteTaskRemoval:daily')->daily();*/
+
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')
             ->everyFiveMinutes()
             ->withoutOverlapping(5) // Max 5 minutes lock time
             ->appendOutputTo(storage_path('logs/appointment-sync.log'));
-        
-        
-        // Appointment Sync System - Send reminders daily at 9 AM
+
+        // Appointment Sync System - Send SMS reminders daily at 9 AM (appointments ~24h ahead)
         $schedule->command('booking:send-reminders')
             ->dailyAt('09:00')
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/appointment-reminders.log'));
-        */
 
         // Court hearing SMS reminders to clients (1 hr / 1 day / 1 week before)
         $schedule->command('court-hearings:send-reminders')

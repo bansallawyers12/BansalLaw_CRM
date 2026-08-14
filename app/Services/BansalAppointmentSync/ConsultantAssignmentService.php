@@ -14,6 +14,16 @@ class ConsultantAssignmentService
      */
     public function assignConsultant(array $appointmentData): ?AppointmentConsultant
     {
+        // Explicit consultant from website push / CRM config
+        if (! empty($appointmentData['consultant_id']) && is_numeric($appointmentData['consultant_id'])) {
+            $byId = AppointmentConsultant::where('id', (int) $appointmentData['consultant_id'])
+                ->where('is_active', true)
+                ->first();
+            if ($byId) {
+                return $byId;
+            }
+        }
+
         $calendarType = $this->determineCalendarType($appointmentData);
         
         if (!$calendarType) {
@@ -45,51 +55,59 @@ class ConsultantAssignmentService
      */
     protected function determineCalendarType(array $appointment): ?string
     {
+        $allowed = ['ajay', 'kunal'];
+        $default = (string) config('booking_calendar.default_website_calendar_type', 'ajay');
+        if (! in_array($default, $allowed, true)) {
+            $default = 'ajay';
+        }
+
+        if (! empty($appointment['calendar_type']) && is_string($appointment['calendar_type'])) {
+            $explicit = strtolower(trim($appointment['calendar_type']));
+            if (in_array($explicit, $allowed, true)) {
+                return $explicit;
+            }
+        }
+
         $location = $appointment['location'] ?? null;
         $inpersonAddress = $appointment['inperson_address'] ?? null;
         $noeId = (int) ($appointment['noe_id'] ?? 0);
         $serviceId = $appointment['service_id'] ?? null;
         $scheme = $appointment['noe_scheme'] ?? 'immigration';
 
+        $resolved = null;
+
         if ($location === 'adelaide' || $inpersonAddress == 1) {
-            return 'adelaide';
-        }
+            $resolved = 'adelaide';
+        } elseif ($location === 'melbourne' || $inpersonAddress == 2 || empty($inpersonAddress)) {
+            $validService = in_array($serviceId, [1, 2, 3], true);
 
-        if (! ($location === 'melbourne' || $inpersonAddress == 2 || empty($inpersonAddress))) {
-            return null;
-        }
-
-        $validService = in_array($serviceId, [1, 2, 3], true);
-
-        if ($scheme === 'crm') {
-            if ($noeId === 11 && $validService) {
-                return 'education';
+            if ($scheme === 'crm') {
+                if ($noeId === 11 && $validService) {
+                    $resolved = 'education';
+                } elseif ($noeId === 12 && $validService) {
+                    $resolved = 'tourist';
+                } else {
+                    $resolved = 'paid';
+                }
+            } elseif ($noeId == 5 && $validService) {
+                $resolved = 'education';
+            } elseif (in_array($noeId, [2, 3], true) && $serviceId == 2) {
+                $resolved = 'jrp';
+            } elseif ($noeId == 4 && $validService) {
+                $resolved = 'tourist';
+            } elseif (($serviceId == 1 || $serviceId == 3) && in_array($noeId, [1, 2, 3, 6, 7, 8], true)) {
+                $resolved = 'paid';
+            } elseif ($serviceId == 2 && in_array($noeId, [1, 6, 7], true)) {
+                $resolved = 'paid';
             }
-            if ($noeId === 12 && $validService) {
-                return 'tourist';
-            }
-
-            return 'paid';
         }
 
-        // Immigration / website booking (noe_id 1–8)
-        if ($noeId == 5 && $validService) {
-            return 'education';
-        }
-        if (in_array($noeId, [2, 3], true) && $serviceId == 2) {
-            return 'jrp';
-        }
-        if ($noeId == 4 && $validService) {
-            return 'tourist';
-        }
-        if (($serviceId == 1 || $serviceId == 3) && in_array($noeId, [1, 2, 3, 6, 7, 8], true)) {
-            return 'paid';
-        }
-        if ($serviceId == 2 && in_array($noeId, [1, 6, 7], true)) {
-            return 'paid';
+        // Legal CRM only has ajay/kunal calendars — remap legacy immigration types.
+        if ($resolved !== null && ! in_array($resolved, $allowed, true)) {
+            return $default;
         }
 
-        return null;
+        return $resolved ?? $default;
     }
 
     /**

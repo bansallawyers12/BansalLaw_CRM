@@ -685,6 +685,8 @@ class BookingCalendarExternalFeed
             $s = strtolower(str_replace(['-', ' '], '_', trim($raw)));
             $legacy = [
                 'pending' => 0,
+                'paid' => 10,
+                'confirmed' => 1,
                 'approved' => 1,
                 'completed' => 2,
                 'rejected' => 3,
@@ -697,6 +699,7 @@ class BookingCalendarExternalFeed
                 'cancelled' => 7,
                 'canceled' => 7,
                 'missed' => 8,
+                'no_show' => 6,
                 'payment_pending' => 9,
                 'pending_payment' => 9,
                 'pending_with_payment_pending' => 9,

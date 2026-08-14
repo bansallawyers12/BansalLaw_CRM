@@ -359,8 +359,8 @@
                 <div class="card-header">
                     <h4>
                         <i class="fa-solid fa-calendar-check me-2"></i>
-                        Bookings
-                        <small class="text-muted">(Leads &amp; clients, appointments, and consultants from CRM)</small>
+                        {{ $bookingsPageTitle ?? 'Bookings' }}
+                        <small class="text-muted">{{ $bookingsPageSubtitle ?? '(Leads & clients, appointments, and consultants from CRM)' }}</small>
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
@@ -482,7 +482,8 @@
                                     <select class="form-control" name="consultant_id" id="filter-consultant">
                                         <option value="">All Consultants</option>
                                         @foreach($consultants as $consultant)
-                                            <option value="{{ $consultant->id }}">
+                                            <option value="{{ $consultant->id }}"
+                                                @if(!empty($isAjayAppointmentsView) && (int) $consultant->id === (int) ($ajayConsultantId ?? 0)) selected @endif>
                                                 {{ $consultant->name }}
                                             </option>
                                         @endforeach
@@ -583,6 +584,7 @@
 const appointmentsListApiUrl = @json(route('booking.api.appointments'));
 const appointmentsListCsrfToken = @json(csrf_token());
 const appointmentsListPerPage = 20;
+const appointmentsListSource = @json($bookingsListSource ?? 'crm');
 let appointmentsListCurrentPage = 1;
 
 function escapeHtml(text) {
@@ -603,6 +605,7 @@ function getAppointmentsListPostData(page) {
     return {
         _token: appointmentsListCsrfToken,
         format: 'list',
+        list_source: appointmentsListSource,
         page: page,
         per_page: appointmentsListPerPage,
         status: $('#filter-status').val() || '',
@@ -613,8 +616,17 @@ function getAppointmentsListPostData(page) {
     };
 }
 
-/** Keep /booking/appointments URL clean — filters are POST-only (no ?query string). */
+/** Keep /booking/appointments URL clean — filters are POST-only. Preserve view=ajay for Ajay Appointments. */
 function syncAppointmentsCleanUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const keepView = params.get('view');
+    if (keepView === 'ajay') {
+        const next = window.location.pathname + '?view=ajay';
+        if (window.location.search !== '?view=ajay') {
+            window.history.replaceState({}, '', next);
+        }
+        return;
+    }
     if (window.location.search === '') {
         return;
     }
