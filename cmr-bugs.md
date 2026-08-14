@@ -740,14 +740,19 @@ Status key (2026-08-07):
 - **Now:** Rows with `trust_voided_at` **or** `trust_reversal_of_entry_id` are excluded from balances/reports → void + reversal no longer double-counts.
 
 ### 14.2 High — EFTPOS surcharge added into trust deposit amount
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::saveofficereport`, `ClientAccountsController::updateOfficeReceipt`, `detail-main.js`, `custom-form-validation.js`
+- **Now:** `deposit_amount` stores principal deposit amount exclusive of card surcharge (surcharge stored separately in `eftpos_surcharge_amount`). JavaScript modal footer calculations and invoice validation no longer add card surcharge into deposit totals or invoice payment amounts.
 
 ### 14.3 High — Allocating a deposit creates fee transfer for full deposit (no invoice cap)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::updateClientFundLedger`
+- **Now:** Fee transfer creation caps the withdrawal amount at the invoice's outstanding unpaid balance (`$outstandingInvoiceBalance = max(0, round($invoiceAmount - ($totalPaidOffice + $totalPaidFeeTransfer), 2))`), prevents transferring to already paid invoices, correctly calculates new running balances, and passes the true transfer amount to authority records and logs.
 
 ### 14.4 High — Hard-delete of office/journal receipts does not recalculate invoice status
-- **Status:** Partial
-- **Notes:** Some delete paths now call `recalculateInvoiceStatusAndBalance` — confirm all office-receipt deletes covered.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::delete_receipt`, `ClientAccountsController::recalculateInvoiceStatusAndBalance`, `officereceiptlist.blade.php`, `journalreceiptlist.blade.php`, `InvoiceReceiptRecalculationOnDeleteTest`
+- **Now:** Added `recalculateInvoiceStatusAndBalance($clientId, $invoiceNo)` to `ClientAccountsController` to recalculate total payments (office receipts + active fee transfers), outstanding balance, and status (Unpaid/Partial/Paid) for both `account_client_receipts` and `account_all_invoice_receipts`. Wired into `delete_receipt` whenever an office/journal receipt with an `invoice_no` is hard-deleted. Added Super Admin delete buttons and JavaScript handlers on `officereceiptlist` and `journalreceiptlist`. Voided invoices retain their voided status (`invoice_status = 3`).
 
 ### 14.5 High — Void invoice stores wrong `withdraw_amount_before_void`
 - **Status:** Open\*

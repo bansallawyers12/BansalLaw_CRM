@@ -450,6 +450,12 @@
                                 <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
                             </select>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
+                            @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
+                                <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
+                                    <i class="fa-solid fa-trash"></i>
+                                    Delete Receipt
+                                </button>
+                            @endif
                             <button type="button" class="btn btn-primary Validate_Receipt">
                                 <i class="fa-solid fa-circle-check"></i>
                                 Validate Receipt
@@ -893,6 +899,48 @@ jQuery(document).ready(function($){
         }
     });
 
+
+    // Delete receipt by super admin
+    $(document).delegate('.listing-container .Delete_Receipt', 'click', function(){
+        if (clickedReceiptIds.length === 0) {
+            alert('Please select a receipt to delete.');
+            return;
+        }
+        if (clickedReceiptIds.length > 1) {
+            alert('Please select only one receipt to delete.');
+            return;
+        }
+        var mergeStr = "Are you sure you want to permanently delete this office receipt? This action cannot be undone and will recalculate any associated invoice status.";
+        if (confirm(mergeStr)) {
+            $.ajax({
+                type: 'post',
+                url: "{{URL::to('/')}}/delete_receipt",
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                data: { receiptId: clickedReceiptIds[0], receipt_type: 2 },
+                dataType: 'json',
+                success: function(response) {
+                    var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                    if (obj.status) {
+                        clickedReceiptIds = [];
+                        $('.listing-container .custom-error-msg').text(obj.message);
+                        $('.listing-container .custom-error-msg').show();
+                        $('.listing-container .custom-error-msg').addClass('alert alert-success');
+                        window.location.reload();
+                    } else {
+                        $('.listing-container .custom-error-msg').text(obj.message);
+                        $('.listing-container .custom-error-msg').show();
+                        $('.listing-container .custom-error-msg').addClass('alert alert-danger');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while deleting the receipt.';
+                    $('.listing-container .custom-error-msg').text(errorMsg);
+                    $('.listing-container .custom-error-msg').show();
+                    $('.listing-container .custom-error-msg').addClass('alert alert-danger');
+                }
+            });
+        }
+    });
 
     $('.listing-container .cb-element').change(function () {
         if ($('.listing-container .cb-element:checked').length == $('.listing-container .cb-element').length){

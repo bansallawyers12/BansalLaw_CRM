@@ -3106,17 +3106,7 @@ success: function(response) {
 
                 var depositAmount = parseFloat(depositVal) || 0; // fallback to 0 if NaN
 
-                if ($row.find('.ledger-eftpos-surcharge-block').is(':visible')) {
-
-                    var sur = parseFloat($row.find('.ledger-eftpos-surcharge-input').val()) || 0;
-
-                    total_deposit_amount_all_rows += depositAmount + sur;
-
-                } else {
-
-                    total_deposit_amount_all_rows += depositAmount;
-
-                }
+                total_deposit_amount_all_rows += depositAmount;
 
 
 
@@ -3448,17 +3438,7 @@ success: function(response) {
 
                 var depositAmount = parseFloat(depositVal) || 0; // fallback to 0 if NaN
 
-                if ($row.find('.office-eftpos-surcharge-block').is(':visible')) {
-
-                    var surO = parseFloat($row.find('.office-eftpos-surcharge-input').val()) || 0;
-
-                    total_deposit_amount_all_rows += depositAmount + surO;
-
-                } else {
-
-                    total_deposit_amount_all_rows += depositAmount;
-
-                }
+                total_deposit_amount_all_rows += depositAmount;
 
             });
 

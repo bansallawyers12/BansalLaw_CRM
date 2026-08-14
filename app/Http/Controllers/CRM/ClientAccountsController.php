@@ -126,6 +126,122 @@ class ClientAccountsController extends Controller
         }
     }
 
+    /**
+     * Recalculate payment status and outstanding balance for a client invoice (e.g. after receipt delete/update).
+     */
+    public function recalculateInvoiceStatusAndBalance(int $clientId, string $invoiceNo): void
+    {
+        if (trim($invoiceNo) === '') {
+            return;
+        }
+
+        $invoice = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($invoiceNo) {
+                $q->where('invoice_no', $invoiceNo)
+                  ->orWhere('trans_no', $invoiceNo);
+            })
+            ->first();
+
+        if (! $invoice) {
+            Log::warning('Invoice not found for status recalculation', [
+                'client_id' => $clientId,
+                'invoice_no' => $invoiceNo,
+            ]);
+
+            return;
+        }
+
+        // Voided invoices retain their void status (3)
+        if ((int) ($invoice->void_invoice ?? 0) === 1 || (int) ($invoice->invoice_status ?? 0) === 3) {
+            return;
+        }
+
+        $canonicalInvoiceNo = $invoice->invoice_no ?? $invoiceNo;
+
+        // Sum valid final office receipts (receipt_type = 2)
+        $totalPaidOffice = (float) DB::table('account_client_receipts')
+            ->where('receipt_type', 2)
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($canonicalInvoiceNo) {
+                $q->where('invoice_no', $canonicalInvoiceNo)
+                  ->orWhere('trans_no', $canonicalInvoiceNo);
+            })
+            ->where('save_type', 'final')
+            ->sum('deposit_amount');
+
+        // Sum active fee transfers (receipt_type = 1, client_fund_ledger_type = 'Fee Transfer')
+        $feeTransferQuery = DB::table('account_client_receipts')
+            ->where('receipt_type', 1)
+            ->where('client_fund_ledger_type', 'Fee Transfer')
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($canonicalInvoiceNo) {
+                $q->where('invoice_no', $canonicalInvoiceNo)
+                  ->orWhere('trans_no', $canonicalInvoiceNo);
+            })
+            ->where(function ($q) {
+                $q->whereNull('void_fee_transfer')
+                  ->orWhere('void_fee_transfer', 0);
+            });
+
+        if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+            $feeTransferQuery->whereNull('trust_voided_at');
+        }
+
+        $totalPaidFeeTransfer = (float) $feeTransferQuery->sum('withdraw_amount');
+
+        $totalPaid = round($totalPaidOffice + $totalPaidFeeTransfer, 2);
+        $invoiceAmount = round((float) $invoice->withdraw_amount, 2);
+        $newBalance = round(max(0.0, $invoiceAmount - $totalPaid), 2);
+
+        // Determine new status: 0 = Unpaid, 1 = Paid, 2 = Partial
+        $newStatus = 0;
+        if ($invoiceAmount > 0 && $newBalance <= 0) {
+            $newStatus = 1; // Paid
+        } elseif ($totalPaid > 0) {
+            $newStatus = 2; // Partial
+        } else {
+            $newStatus = 0; // Unpaid
+        }
+
+        // Update account_client_receipts (invoice row)
+        DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($canonicalInvoiceNo) {
+                $q->where('invoice_no', $canonicalInvoiceNo)
+                  ->orWhere('trans_no', $canonicalInvoiceNo);
+            })
+            ->update([
+                'invoice_status' => $newStatus,
+                'partial_paid_amount' => $totalPaid,
+                'balance_amount' => $newBalance,
+                'updated_at' => now(),
+            ]);
+
+        // Update account_all_invoice_receipts (invoice line items)
+        AccountAllInvoiceReceipt::where('receipt_type', 3)
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($canonicalInvoiceNo) {
+                $q->where('invoice_no', $canonicalInvoiceNo)
+                  ->orWhere('trans_no', $canonicalInvoiceNo);
+            })
+            ->update([
+                'invoice_status' => $newStatus,
+                'updated_at' => now(),
+            ]);
+
+        Log::info('Invoice status and balance recalculated', [
+            'invoice_no' => $canonicalInvoiceNo,
+            'client_id' => $clientId,
+            'total_paid' => $totalPaid,
+            'invoice_amount' => $invoiceAmount,
+            'new_balance' => $newBalance,
+            'new_status' => $newStatus,
+        ]);
+    }
+
     /** Optional payer / banking fields per line (trust compliance). */
     protected function trustDepositMetadataAt(array $requestData, int $i): array
     {
@@ -1846,7 +1962,7 @@ class ClientAccountsController extends Controller
           if ($pmOffice === 'EFTPOS' && ! empty($requestData['eftpos_surcharge_amount']) && is_array($requestData['eftpos_surcharge_amount'])) {
               $surchargeOffice = round(max(0, floatval($requestData['eftpos_surcharge_amount'][$i] ?? 0)), 2);
           }
-          $totalDepositOffice = round($principalOffice + $surchargeOffice, 2);
+          $totalDepositOffice = round($principalOffice, 2);
 
           try {
               $insertedId = DB::table('account_client_receipts')->insertGetId([
@@ -2229,15 +2345,14 @@ class ClientAccountsController extends Controller
           $principal = floatval($request->input('deposit_amount'));
           $pm = trim((string) ($request->input('payment_method', $originalReceipt->payment_method ?? '')));
           $surcharge = ($pm === 'EFTPOS') ? max(0, floatval($request->input('eftpos_surcharge_amount', 0))) : 0.0;
-          $updateData['deposit_amount'] = round($principal + $surcharge, 2);
+          $updateData['deposit_amount'] = round($principal, 2);
           $updateData['eftpos_surcharge_amount'] = $surcharge > 0 ? round($surcharge, 2) : null;
       } elseif ($request->has('payment_method') && $originalReceipt) {
           $pm = trim((string) $request->input('payment_method'));
-          $total = floatval($originalReceipt->deposit_amount);
+          $principal = floatval($originalReceipt->deposit_amount);
           $oldSur = floatval($originalReceipt->eftpos_surcharge_amount ?? 0);
-          $principal = max(0, round($total - $oldSur, 2));
           $surcharge = ($pm === 'EFTPOS') ? $oldSur : 0.0;
-          $updateData['deposit_amount'] = round($principal + $surcharge, 2);
+          $updateData['deposit_amount'] = round($principal, 2);
           $updateData['eftpos_surcharge_amount'] = $surcharge > 0 ? round($surcharge, 2) : null;
       }
       if ($request->has('invoice_no')) {
@@ -2644,15 +2759,19 @@ class ClientAccountsController extends Controller
               // Get the old invoice and update its status
               $oldInvoice = DB::table('account_client_receipts')
                   ->where('receipt_type', 3)
-                  ->where('trans_no', $oldInvoiceNo)
                   ->where('client_id', $clientId)
+                  ->where(function($q) use ($oldInvoiceNo) {
+                      $q->where('invoice_no', $oldInvoiceNo)
+                        ->orWhere('trans_no', $oldInvoiceNo);
+                  })
                   ->first();
               
               if ($oldInvoice) {
+                  $oldCanonicalInvoiceNo = $oldInvoice->invoice_no ?? $oldInvoiceNo;
                   // Recalculate old invoice status
                   $totalPaidOfficeOld = DB::table('account_client_receipts')
                       ->where('receipt_type', 2)
-                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('invoice_no', $oldCanonicalInvoiceNo)
                       ->where('client_id', $clientId)
                       ->where('save_type', 'final')
                       ->sum('deposit_amount');
@@ -2660,13 +2779,16 @@ class ClientAccountsController extends Controller
                   $totalPaidFeeTransferOld = DB::table('account_client_receipts')
                       ->where('receipt_type', 1)
                       ->where('client_fund_ledger_type', 'Fee Transfer')
-                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('invoice_no', $oldCanonicalInvoiceNo)
                       ->where('client_id', $clientId)
                       ->where(function($q) {
                           $q->whereNull('void_fee_transfer')
                             ->orWhere('void_fee_transfer', 0);
-                      })
-                      ->sum('withdraw_amount');
+                      });
+                  if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                      $totalPaidFeeTransferOld->whereNull('trust_voided_at');
+                  }
+                  $totalPaidFeeTransferOld = $totalPaidFeeTransferOld->sum('withdraw_amount');
                   
                   $totalPaidOld = $totalPaidOfficeOld + $totalPaidFeeTransferOld;
                   $invoiceAmountOld = floatval($oldInvoice->withdraw_amount);
@@ -2681,17 +2803,31 @@ class ClientAccountsController extends Controller
                   
                   DB::table('account_client_receipts')
                       ->where('receipt_type', 3)
-                      ->where('trans_no', $oldInvoiceNo)
                       ->where('client_id', $clientId)
+                      ->where(function($q) use ($oldCanonicalInvoiceNo) {
+                          $q->where('invoice_no', $oldCanonicalInvoiceNo)
+                            ->orWhere('trans_no', $oldCanonicalInvoiceNo);
+                      })
                       ->update([
                           'invoice_status' => $newStatusOld,
                           'partial_paid_amount' => $totalPaidOld,
                           'balance_amount' => max(0, $newBalanceOld),
                           'updated_at' => now(),
                       ]);
+
+                  AccountAllInvoiceReceipt::where('receipt_type', 3)
+                      ->where('client_id', $clientId)
+                      ->where(function($q) use ($oldCanonicalInvoiceNo) {
+                          $q->where('invoice_no', $oldCanonicalInvoiceNo)
+                            ->orWhere('trans_no', $oldCanonicalInvoiceNo);
+                      })
+                      ->update([
+                          'invoice_status' => $newStatusOld,
+                          'updated_at' => now(),
+                      ]);
                   
                   Log::info('Old invoice status updated after re-allocation', [
-                      'old_invoice_no' => $oldInvoiceNo,
+                      'old_invoice_no' => $oldCanonicalInvoiceNo,
                       'new_status' => $newStatusOld,
                       'new_balance' => $newBalanceOld
                   ]);
@@ -2716,10 +2852,58 @@ class ClientAccountsController extends Controller
               ->first();
           
           if (!$existingFeeTransfer) {
-              // Create a Fee Transfer entry (withdrawal from client funds to pay the invoice)
-              $depositAmount = floatval($depositEntry->deposit_amount);
+              // 1. Get the target invoice
+              $invoice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('client_id', $clientId)
+                  ->where(function($q) use ($invoiceNo) {
+                      $q->where('invoice_no', $invoiceNo)
+                        ->orWhere('trans_no', $invoiceNo);
+                  })
+                  ->first();
               
-              // Calculate current balance for this client/matter
+              if (!$invoice) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Invoice ' . $invoiceNo . ' not found for this client.',
+                  ], 404);
+              }
+
+              $canonicalInvoiceNo = $invoice->invoice_no ?? $invoiceNo;
+
+              // 2. Calculate current payments made on this invoice
+              $totalPaidOffice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 2)
+                  ->where('invoice_no', $canonicalInvoiceNo)
+                  ->where('client_id', $clientId)
+                  ->where('save_type', 'final')
+                  ->sum('deposit_amount');
+              
+              $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                  ->where('receipt_type', 1)
+                  ->where('client_fund_ledger_type', 'Fee Transfer')
+                  ->where('invoice_no', $canonicalInvoiceNo)
+                  ->where('client_id', $clientId)
+                  ->where(function($q) {
+                      $q->whereNull('void_fee_transfer')
+                        ->orWhere('void_fee_transfer', 0);
+                  });
+              if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                  $totalPaidFeeTransfer->whereNull('trust_voided_at');
+              }
+              $totalPaidFeeTransfer = (float) $totalPaidFeeTransfer->sum('withdraw_amount');
+              
+              $invoiceAmount = floatval($invoice->withdraw_amount);
+              $outstandingInvoiceBalance = max(0.0, round($invoiceAmount - ($totalPaidOffice + $totalPaidFeeTransfer), 2));
+
+              if ($outstandingInvoiceBalance <= 0) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Invoice ' . $canonicalInvoiceNo . ' is already fully paid.',
+                  ], 400);
+              }
+
+              // 3. Calculate current balance for this client/matter
               $ledger_entries = DB::table('account_client_receipts')
                   ->where('client_id', $clientId)
                   ->where('client_matter_id', $depositEntry->client_matter_id)
@@ -2735,11 +2919,28 @@ class ClientAccountsController extends Controller
                   $running_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
               }
               
-              // Check if there are sufficient funds
-              if ($depositAmount > $running_balance) {
+              if ($running_balance <= 0) {
                   return response()->json([
                       'status' => false,
                       'message' => 'Insufficient funds in client account. Available: $' . number_format($running_balance, 2),
+                  ], 400);
+              }
+
+              // 4. Cap transfer amount at deposit amount, invoice outstanding balance, and available trust balance
+              $depositAmount = floatval($depositEntry->deposit_amount);
+              $transferAmount = round(min($depositAmount, $outstandingInvoiceBalance), 2);
+
+              if ($transferAmount > $running_balance) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Insufficient funds in client account for transfer. Required: $' . number_format($transferAmount, 2) . ', Available: $' . number_format($running_balance, 2),
+                  ], 400);
+              }
+
+              if ($transferAmount <= 0) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Transfer amount calculated is zero.',
                   ], 400);
               }
 
@@ -2748,7 +2949,7 @@ class ClientAccountsController extends Controller
                   $authorityPayload = TrustWithdrawalAuthorityService::parseAuthorityFromRequest($request->all());
                   TrustWithdrawalAuthorityService::validateAuthorityPayload($authorityPayload);
                   TrustWithdrawalAuthorityService::assertInvoiceEligibleForWithdrawal(
-                      (string) $invoiceNo,
+                      (string) $canonicalInvoiceNo,
                       (int) $clientId,
                       (string) $depositEntry->trans_date,
                       Auth::user(),
@@ -2760,30 +2961,21 @@ class ClientAccountsController extends Controller
               $trans_no = TrustReceiptSequenceService::nextTransNo((string) $depositEntry->trans_date);
 
               // Calculate new running balance after withdrawal
-              $new_balance = $running_balance - $depositAmount;
+              $new_balance = $running_balance - $transferAmount;
 
-              // Insert Fee Transfer entry
-              $existingInv = DB::table('account_client_receipts')
-                  ->where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->first();
-
-              $invCap = $existingInv ? floatval($existingInv->balance_amount ?? $existingInv->withdraw_amount) : floatval($depositAmount);
-              $transferAmount = round(min(floatval($depositAmount), max(0, $invCap)), 2);
-
+              // Insert Fee Transfer entry capped at invoice balance
               $feeTransferRowId = DB::table('account_client_receipts')->insertGetId([
-                  'user_id' => Auth::user()->id,
+                  'user_id' => Auth::user()->id ?? Auth::guard('admin')->id() ?? 0,
                   'client_id' => $clientId,
                   'client_matter_id' => $depositEntry->client_matter_id,
                   'receipt_id' => $depositEntry->receipt_id,
                   'receipt_type' => 1, // Client fund ledger
                   'trans_date' => $depositEntry->trans_date,
-                  'entry_date' => $depositEntry->entry_date,
-                  'invoice_no' => !empty($invoiceNo) ? $invoiceNo : null,
+                  'entry_date' => $depositEntry->entry_date ?? $depositEntry->trans_date,
+                  'invoice_no' => $canonicalInvoiceNo,
                   'trans_no' => $trans_no,
                   'client_fund_ledger_type' => 'Fee Transfer',
-                  'description' => 'Fee transfer to invoice ' . $invoiceNo,
+                  'description' => 'Fee transfer to invoice ' . $canonicalInvoiceNo,
                   'deposit_amount' => 0,
                   'withdraw_amount' => $transferAmount,
                   'balance_amount' => $new_balance,
@@ -2800,10 +2992,10 @@ class ClientAccountsController extends Controller
                   TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
                       (int) $feeTransferRowId,
                       (int) $clientId,
-                      (string) $invoiceNo,
-                      (float) $depositAmount,
+                      (string) $canonicalInvoiceNo,
+                      (float) $transferAmount,
                       $authorityPayload,
-                      (int) Auth::id()
+                      (int) (Auth::id() ?? Auth::guard('admin')->id())
                   );
               }
 
@@ -2811,47 +3003,15 @@ class ClientAccountsController extends Controller
 
               Log::info('Fee Transfer created', [
                   'trans_no' => $trans_no,
-                  'amount' => $depositAmount,
-                  'invoice_no' => $invoiceNo,
+                  'amount' => $transferAmount,
+                  'invoice_no' => $canonicalInvoiceNo,
               ]);
-          }
-          
-          // Get the invoice
-          $invoice = DB::table('account_client_receipts')
-              ->where('receipt_type', 3)
-              ->where('invoice_no', $invoiceNo)
-              ->where('client_id', $clientId)
-              ->first();
-          
-          if ($invoice) {
-              // Calculate total payments for this invoice (from office receipts, ledger deposits, and fee transfers)
-              $totalPaidOffice = DB::table('account_client_receipts')
-                  ->where('receipt_type', 2)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->where('save_type', 'final')
-                  ->sum('deposit_amount');
-              
-              // Sum fee transfers for this invoice
-              $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                  ->where('receipt_type', 1)
-                  ->where('client_fund_ledger_type', 'Fee Transfer')
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->where(function($q) {
-                      $q->whereNull('void_fee_transfer')
-                        ->orWhere('void_fee_transfer', 0);
-                  });
-              if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
-                  $totalPaidFeeTransfer->whereNull('trust_voided_at');
-              }
-              $totalPaidFeeTransfer = $totalPaidFeeTransfer->sum('withdraw_amount');
-              
+
+              // 5. Update invoice status and balance with new fee transfer amount
+              $totalPaidFeeTransfer += $transferAmount;
               $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
-              
-              $invoiceAmount = floatval($invoice->withdraw_amount);
-              $newBalance = $invoiceAmount - $totalPaid;
-              
+              $newBalance = max(0.0, round($invoiceAmount - $totalPaid, 2));
+
               // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
               if ($newBalance <= 0) {
                   $newStatus = 1; // Paid
@@ -2860,30 +3020,34 @@ class ClientAccountsController extends Controller
               } else {
                   $newStatus = 0; // Unpaid
               }
-              
-              // Update invoice status and balance
+
               DB::table('account_client_receipts')
                   ->where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
                   ->where('client_id', $clientId)
+                  ->where(function($q) use ($canonicalInvoiceNo) {
+                      $q->where('invoice_no', $canonicalInvoiceNo)
+                        ->orWhere('trans_no', $canonicalInvoiceNo);
+                  })
                   ->update([
                       'invoice_status' => $newStatus,
                       'partial_paid_amount' => $totalPaid,
-                      'balance_amount' => max(0, $newBalance),
+                      'balance_amount' => $newBalance,
                       'updated_at' => now(),
                   ]);
-              
-              // Also update in account_all_invoice_receipts if it exists
+
               AccountAllInvoiceReceipt::where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
                   ->where('client_id', $clientId)
+                  ->where(function($q) use ($canonicalInvoiceNo) {
+                      $q->where('invoice_no', $canonicalInvoiceNo)
+                        ->orWhere('trans_no', $canonicalInvoiceNo);
+                  })
                   ->update([
                       'invoice_status' => $newStatus,
                       'updated_at' => now(),
                   ]);
-              
+
               Log::info('Invoice status updated after ledger allocation', [
-                  'invoice_no' => $invoiceNo,
+                  'invoice_no' => $canonicalInvoiceNo,
                   'total_paid' => $totalPaid,
                   'new_balance' => $newBalance,
                   'new_status' => $newStatus
