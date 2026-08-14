@@ -932,7 +932,7 @@ class BookingAppointmentsController extends Controller
             })
             ->addColumn('appointment_info', function ($appointment) {
                 return '<strong>' . $appointment->appointment_datetime->format('d/m/Y') . '</strong><br>' .
-                    '<small>' . ($appointment->timeslot_full ?? $appointment->appointment_datetime->format('h:i A')) . '</small>';
+                    '<small>' . e($appointment->appointment_datetime->format('h:i A')) . '</small>';
             })
             ->addColumn('consultant_info', function ($appointment) {
                 return $appointment->consultant
