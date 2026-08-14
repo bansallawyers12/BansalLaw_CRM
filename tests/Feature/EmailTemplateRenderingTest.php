@@ -285,5 +285,19 @@ class EmailTemplateRenderingTest extends TestCase
             $this->assertStringContainsString(config('app.brand.website_label'), $html);
         }
     }
+
+    #[Test]
+    public function compose_email_uses_full_width_layout_without_marketing_chrome()
+    {
+        $html = View::make('emails.common', [
+            'content' => '<p>Dear Ajay Bansal</p><p>Court correspondence body.</p>',
+        ])->render();
+
+        $this->assertStringContainsString('Dear Ajay Bansal', $html);
+        $this->assertStringContainsString('width:100%', $html);
+        $this->assertStringNotContainsString('width:602px', $html);
+        $this->assertStringNotContainsString('#ee4c50', $html);
+        $this->assertStringNotContainsString('Consumer guide', $html);
+    }
 }
 

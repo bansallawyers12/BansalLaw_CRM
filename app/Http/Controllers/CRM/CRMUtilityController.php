@@ -1743,7 +1743,7 @@ public function getChapters(Request $request)
                 }
 
                 $this->emailService->sendEmail(
-                    'emails.template',
+                    'emails.common',
                     ['content' => $message],
                     $client->email,
                     $subject,
