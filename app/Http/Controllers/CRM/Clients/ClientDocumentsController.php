@@ -14,7 +14,9 @@ use App\Models\Admin;
 use App\Models\Staff;
 use App\Models\ActivitiesLog;
 use App\Models\Document;
+use App\Models\EmailLog;
 use App\Models\ClientMatter;
+use App\Services\EmailSync\IncomingEmailSyncService;
 // use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
@@ -2487,13 +2489,50 @@ class ClientDocumentsController extends Controller
     }
 
     /**
+     * Client-linked docs use allocation rules. Unassigned synced-email PDFs are stored
+     * with client_id 0/null, so allow preview when the staff can already see that email.
+     */
+    protected function staffCanAccessDocument(Document $document): bool
+    {
+        $clientId = (int) ($document->client_id ?? 0);
+        if ($clientId > 0) {
+            return StaffClientVisibility::canAccessClientOrLead($clientId);
+        }
+
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
+            return false;
+        }
+
+        $emailLog = EmailLog::query()
+            ->where(function ($q) use ($document) {
+                $q->where('pdf_doc_id', $document->id)
+                    ->orWhere('uploaded_doc_id', $document->id);
+            })
+            ->first();
+
+        if (! $emailLog) {
+            return false;
+        }
+
+        if (! empty($emailLog->client_id) && (int) $emailLog->client_id > 0) {
+            return StaffClientVisibility::canAccessClientOrLead((int) $emailLog->client_id);
+        }
+
+        $visible = EmailLog::query()->where('id', $emailLog->id);
+        IncomingEmailSyncService::applySyncedInboxVisibilityFilter($visible, $staff);
+
+        return $visible->exists();
+    }
+
+    /**
      * Preview document in browser. Use ?embed=1 for in-page iframe/img preview (streams via app).
      * Without embed, S3 files redirect to a short-lived presigned URL (works in a new tab).
      */
     public function preview_document(Request $request, int $id)
     {
         $document = Document::findOrFail($id);
-        if (! StaffClientVisibility::canAccessClientOrLead((int) $document->client_id)) {
+        if (! $this->staffCanAccessDocument($document)) {
             abort(403);
         }
 
@@ -3202,7 +3241,7 @@ class ClientDocumentsController extends Controller
                 if (! $document) {
                     return abort(404, 'Document not found');
                 }
-                if (! StaffClientVisibility::canAccessClientOrLead((int) $document->client_id)) {
+                if (! $this->staffCanAccessDocument($document)) {
                     return abort(403);
                 }
                 $s3Key = $this->resolveS3KeyForDocument($document);
