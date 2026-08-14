@@ -46,6 +46,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Per-mailbox inbox sync pause/start grant (native Super Admin only)
+    |--------------------------------------------------------------------------
+    |
+    | Only role 1 may toggle {@see Staff::can_pause_mailbox_inbox_sync}. That
+    | flag lets staff pause or resume automatic IMAP sync for any mailbox on
+    | the Admin Console Email page.
+    |
+    */
+    'pause_mailbox_inbox_sync_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_PAUSE_MAILBOX_INBOX_SYNC_GRANT_ROLE_IDS', '1'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff roles that may close/discontinue client matters
     |--------------------------------------------------------------------------
     |

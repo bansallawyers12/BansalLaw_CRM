@@ -145,6 +145,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant full mailbox list permission.', 422);
             }
 
+            $canGrantPauseMailboxInboxSync = Staff::canGrantPauseMailboxInboxSyncPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantPauseMailboxInboxSync && $request->has('can_pause_mailbox_inbox_sync')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant mailbox inbox sync pause permission.', 422);
+            }
+
             $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -255,6 +262,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantViewAllSyncedInboxMailPermission($actor instanceof Staff ? $actor : null) && $request->has('can_view_all_synced_inbox_mail')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant full mailbox list permission.', 422);
+            }
+
+            if (! Staff::canGrantPauseMailboxInboxSyncPermission($actor instanceof Staff ? $actor : null) && $request->has('can_pause_mailbox_inbox_sync')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant mailbox inbox sync pause permission.', 422);
             }
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
@@ -557,6 +568,13 @@ class StaffController extends Controller
         );
         if ($canGrantViewAllSyncedInbox && Schema::hasColumn('staff', 'can_view_all_synced_inbox_mail')) {
             $obj->can_view_all_synced_inbox_mail = $request->boolean('can_view_all_synced_inbox_mail');
+        }
+
+        $canGrantPauseMailboxInboxSync = Staff::canGrantPauseMailboxInboxSyncPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantPauseMailboxInboxSync && Schema::hasColumn('staff', 'can_pause_mailbox_inbox_sync')) {
+            $obj->can_pause_mailbox_inbox_sync = $request->boolean('can_pause_mailbox_inbox_sync');
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(

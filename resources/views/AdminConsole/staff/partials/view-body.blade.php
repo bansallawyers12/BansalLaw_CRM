@@ -55,6 +55,14 @@
                         <span class="badge bg-secondary">Recipient-only mailbox view</span>
                     @endif
                 </dd>
+                <dt>Pause mailbox sync</dt>
+                <dd>
+                    @if($fetchedData->canPauseMailboxInboxSync())
+                        <span class="badge bg-success">Can pause and start sync for any mailbox</span>
+                    @else
+                        <span class="badge bg-secondary">Cannot pause mailbox sync</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>

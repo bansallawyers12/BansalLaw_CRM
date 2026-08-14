@@ -19,6 +19,9 @@
     $canGrantViewAllSyncedInbox = \App\Models\Staff::canGrantViewAllSyncedInboxMailPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantPauseMailboxInboxSync = \App\Models\Staff::canGrantPauseMailboxInboxSyncPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -236,6 +239,18 @@
                         <span>Can view and sync all mailboxes</span>
                     </label>
                     <small class="text-muted d-block mt-1">Gives this staff member the same Unassigned Mail access as Super Admin: all assigned and unassigned mail, mailbox and sender filters, mailbox/range selection, and the Sync now button.</small>
+                </div>
+                @endif
+
+                @if($canGrantPauseMailboxInboxSync && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_pause_mailbox_inbox_sync'))
+                <div class="form-group">
+                    <input type="hidden" name="can_pause_mailbox_inbox_sync" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_pause_mailbox_inbox_sync" value="1"
+                            @checked(old('can_pause_mailbox_inbox_sync', $isEdit ? ($fetchedData->can_pause_mailbox_inbox_sync ?? false) : false))>
+                        <span>Can pause and start inbox sync for any mailbox</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Lets this staff member pause or resume automatic IMAP sync for any account on Admin Console → Email (Inbox Sync column).</small>
                 </div>
                 @endif
 
