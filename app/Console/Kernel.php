@@ -61,6 +61,7 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\SyncInboxEmails',
         '\App\Console\Commands\PurgeUnassignedSyncedEmails',
+        '\App\Console\Commands\PruneEmailOpsLogs',
 
         // Font Awesome FA6 migration (one-time DB icon class updates)
         '\App\Console\Commands\MigrateFontAwesomeDbIcons',
@@ -128,6 +129,10 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
+        $schedule->command('logs:prune-email-ops')
+            ->dailyAt('03:15')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(10);
 
         // Automatic inbox fetch every N minutes (default 5). Super Admin master
         // switch can turn this off immediately (checked at every schedule:run).
@@ -139,10 +144,14 @@ class Kernel extends ConsoleKernel
                 $schedule->command('emails:sync-inbox')
                     ->cron('*/' . $minutes . ' * * * *')
                     ->withoutOverlapping(10)
-                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync.log'));
+                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync-' . now()->format('Y-m-d') . '.log'));
             } else {
                 foreach ($mailboxes as $address) {
-                    $logFile = storage_path('logs/inbox-sync/email-inbox-sync-' . $this->mailboxLogSlug($address) . '.log');
+                    $logFile = storage_path(
+                        'logs/inbox-sync/email-inbox-sync-'
+                        . $this->mailboxLogSlug($address)
+                        . '-' . now()->format('Y-m-d') . '.log'
+                    );
 
                     $schedule->command('emails:sync-inbox', [$address])
                         ->cron('*/' . $minutes . ' * * * *')

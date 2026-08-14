@@ -19,6 +19,12 @@ return [
     'default' => env('LOG_CHANNEL', 'stack'),
 
     /*
+    | Keep only the last N days of inbox-sync, inbox-sync-run, and
+    | email-upload-errors log files. Older dated files are deleted.
+    */
+    'email_ops_retention_days' => (int) env('EMAIL_OPS_LOG_RETENTION_DAYS', 7),
+
+    /*
     |--------------------------------------------------------------------------
     | Log Channels
     |--------------------------------------------------------------------------
@@ -96,7 +102,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/email-upload-errors.log'),
             'level' => 'error',
-            'days' => 30,
+            'days' => (int) env('EMAIL_OPS_LOG_RETENTION_DAYS', 7),
             'permission' => 0644,
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
@@ -105,7 +111,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/inbox-sync/inbox-sync.log'),
             'level' => 'debug',
-            'days' => 90,
+            'days' => (int) env('EMAIL_OPS_LOG_RETENTION_DAYS', 7),
             'permission' => 0644,
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
@@ -114,7 +120,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/inbox-sync-runs/inbox-sync-run.log'),
             'level' => 'info',
-            'days' => 90,
+            'days' => (int) env('EMAIL_OPS_LOG_RETENTION_DAYS', 7),
             'permission' => 0644,
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],

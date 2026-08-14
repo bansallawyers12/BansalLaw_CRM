@@ -3,6 +3,7 @@
 namespace App\Services\EmailSync;
 
 use App\Http\Controllers\CRM\EmailUploadController;
+use App\Logging\EmailOpsLogPruner;
 use App\Logging\InboxSyncLogger;
 use App\Models\Admin;
 use App\Models\Email;
@@ -360,6 +361,8 @@ class IncomingEmailSyncService
         if ($timeout > 0) {
             @ini_set('max_execution_time', (string) $timeout);
         }
+
+        EmailOpsLogPruner::prune();
     }
 
     protected static function memoryLimitToBytes(string $limit): int
