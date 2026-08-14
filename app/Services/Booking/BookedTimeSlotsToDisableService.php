@@ -21,7 +21,9 @@ class BookedTimeSlotsToDisableService
     {
         $query = BookingAppointment::query()
             ->select(['id', 'appointment_datetime', 'timeslot_full'])
-            ->whereNotIn('status', ['pending', 'cancelled', 'no_show'])
+            // Hold all active CRM bookings (incl. pending) so Legal CRM bookings disable website slots.
+            // Cancelled / no-show remain bookable again on the lawyers site.
+            ->whereNotIn('status', ['cancelled', 'no_show'])
             ->whereDate('appointment_datetime', $date->format('Y-m-d'));
 
         if ($inpersonAddress !== null) {

@@ -23,6 +23,12 @@ return [
         'kunal' => (int) env('BOOKING_CALENDAR_KUNAL_CONSULTANT_ID', 1),
     ],
 
+    /*
+    | Default calendar for website → CRM sync when immigration-style routing does not match.
+    | Legal CRM calendars are ajay / kunal only.
+    */
+    'default_website_calendar_type' => env('BOOKING_CALENDAR_DEFAULT_WEBSITE_TYPE', 'ajay'),
+
     /**
      * When true, the calendar JSON feed includes appointments in FullCalendar’s visible [start, end) window
      * even if they are before “today” (e.g. earlier days in the current month). When false (default),

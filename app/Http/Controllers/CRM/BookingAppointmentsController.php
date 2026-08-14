@@ -516,13 +516,27 @@ class BookingAppointmentsController extends Controller
 
     /**
      * Display appointment list (table rows load from CRM DB via POST /booking/api/appointments format=list).
+     * view=ajay → "Ajay Appointments" lists booking_appointments (website-synced + CRM-created) for Ajay.
      */
     public function index()
     {
         $consultants = AppointmentConsultant::active()->get();
 
+        $isAjayAppointmentsView = strtolower((string) request('view', '')) === 'ajay';
+        // Always CRM DB for this page — website live API kept only if list_source=website is posted explicitly.
+        $bookingsListSource = $isAjayAppointmentsView ? 'ajay' : 'crm';
+        $bookingsPageTitle = $isAjayAppointmentsView ? 'Ajay Appointments' : 'Bookings';
+        $bookingsPageSubtitle = $isAjayAppointmentsView
+            ? '(From booking_appointments — website sync + Legal CRM)'
+            : '(Leads & clients, appointments, and consultants from CRM)';
+
+        $ajayConsultantId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.ajay', 2);
+
         $statsBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
+        if ($isAjayAppointmentsView && $ajayConsultantId > 0) {
+            $statsBase->where('consultant_id', $ajayConsultantId);
+        }
 
         $stats = [
             'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
@@ -534,7 +548,16 @@ class BookingAppointmentsController extends Controller
 
         $bookingListStatusForSelect = $this->calendarExternalFeed->crmBookingsListStatusFilterResolvedSlug(request('status'));
 
-        return view('crm.booking.appointments.index', compact('consultants', 'stats', 'bookingListStatusForSelect'));
+        return view('crm.booking.appointments.index', compact(
+            'consultants',
+            'stats',
+            'bookingListStatusForSelect',
+            'bookingsListSource',
+            'bookingsPageTitle',
+            'bookingsPageSubtitle',
+            'ajayConsultantId',
+            'isAjayAppointmentsView'
+        ));
     }
 
     /**
@@ -838,6 +861,24 @@ class BookingAppointmentsController extends Controller
     public function getAppointments(Request $request)
     {
         if ($request->get('format') === 'list') {
+            $listSource = strtolower((string) $request->input('list_source', 'crm'));
+
+            // Explicit live website proxy (legacy / optional) — not used by Ajay Appointments nav.
+            if ($listSource === 'website') {
+                return $this->websiteBookingsListFromPublicApi($request);
+            }
+
+            // Ajay Appointments: booking_appointments only (website-synced + Legal CRM).
+            if ($listSource === 'ajay') {
+                $ajayId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.ajay', 2);
+                // Default to Ajay only when consultant_id is omitted (e.g. non-JS). Empty string = All Consultants.
+                if ($ajayId > 0 && ! $request->exists('consultant_id')) {
+                    $request->merge(['consultant_id' => $ajayId]);
+                }
+
+                return $this->crmBookingsListFromDatabase($request);
+            }
+
             return $this->crmBookingsListFromDatabase($request);
         }
 

@@ -185,7 +185,7 @@ class AppointmentSyncService
         $consultant = $this->consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
         // Map status
-        $status = $this->mapStatus($appointmentData['status'] ?? 'pending');
+        $status = $this->mapStatus((string) ($appointmentData['status'] ?? 'pending'));
 
         // Create appointment record
         $appointment = BookingAppointment::create([
@@ -264,7 +264,8 @@ class AppointmentSyncService
     {
         return match($location) {
             'adelaide' => 1,
-            'melbourne' => 2
+            'melbourne' => 2,
+            default => null,
         };
     }
 
@@ -299,6 +300,13 @@ class AppointmentSyncService
      */
     protected function mapNoeId(array $appointmentData): ?int
     {
+        if (isset($appointmentData['noe_id']) && is_numeric($appointmentData['noe_id'])) {
+            $direct = (int) $appointmentData['noe_id'];
+            if ($direct > 0) {
+                return $direct;
+            }
+        }
+
         $serviceType = $appointmentData['service_type'] ?? null;
 
         return match($serviceType) {
@@ -309,7 +317,8 @@ class AppointmentSyncService
             'education-visa' => 5,
             'complex-matters' => 6,
             'visa-cancellation' => 7,
-            'international-migration' => 8
+            'international-migration' => 8,
+            default => null,
         };
     }
 
@@ -341,13 +350,28 @@ class AppointmentSyncService
      */
     protected function mapStatus(string $bansalStatus): string
     {
-        return match($bansalStatus) {
+        $normalized = strtolower(trim($bansalStatus));
+
+        // Website numeric statuses (lawyers) → CRM slugs
+        if (ctype_digit($normalized)) {
+            return match ((int) $normalized) {
+                1, 5 => 'confirmed',
+                2 => 'completed',
+                3, 7 => 'cancelled',
+                6, 8 => 'no_show',
+                10 => 'paid',
+                default => 'pending',
+            };
+        }
+
+        return match($normalized) {
             'pending' => 'pending',
             'paid' => 'paid',
-            'confirmed' => 'confirmed',
+            'confirmed', 'approved' => 'confirmed',
             'completed' => 'completed',
-            'cancelled' => 'cancelled',
-            'no_show' => 'no_show'
+            'cancelled', 'canceled', 'rejected' => 'cancelled',
+            'no_show', 'noshow', 'missed' => 'no_show',
+            default => 'pending',
         };
     }
 
