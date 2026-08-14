@@ -4348,8 +4348,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function normalizePreviewText(text, maxLen) {
         if (!text) return '';
+        let html = String(text)
+            .replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/[.#]?[\w-]+\s*\{[^}]*\}/g, ' ');
         const textarea = document.createElement('textarea');
-        textarea.innerHTML = String(text).replace(/<[^>]+>/g, ' ');
+        textarea.innerHTML = html;
         const decoded = textarea.value.replace(/\s+/g, ' ').trim();
         return decoded.substring(0, maxLen || 80);
     }
