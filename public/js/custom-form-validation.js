@@ -1387,7 +1387,7 @@ function customValidate(formName, savetype = '')
                             let principal = parseFloat(receivedAmounts[i] ? receivedAmounts[i].value : 0) || 0;
                             let pm = paymentMethodSelects[i] ? paymentMethodSelects[i].value : '';
                             let sur = (pm === 'EFTPOS' && surchargeInputs[i]) ? (parseFloat(surchargeInputs[i].value) || 0) : 0;
-                            let receivedAmount = principal + sur;
+                            let receivedAmount = principal;
 
                             if (invoiceNo) { // Only process if invoiceNo is not empty
                                 if (!invoiceTotals[invoiceNo]) {
