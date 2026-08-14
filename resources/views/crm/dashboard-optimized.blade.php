@@ -422,7 +422,7 @@
 @push('styles')
 @once
 @vite(['resources/css/fullcalendar-v6.css'])
-<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ @filemtime(public_path('css/dashboard.css')) ?: time() }}">
 <link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}">
 <style>
 .dashboard-theme-icon-primary {
@@ -1351,7 +1351,7 @@ body > .ts-dropdown {
     }
 </script>
 <script src="{{ asset('js/dashboard-optimized.js') }}"></script>
-<script src="{{ asset('js/dashboard-calendar.js') }}"></script>
+<script src="{{ asset('js/dashboard-calendar.js') }}?v={{ @filemtime(public_path('js/dashboard-calendar.js')) ?: time() }}"></script>
 <script>
 $(function () {
     // Initialize Add New Task popover - content from template (avoids unescaped & in data-content attribute)
