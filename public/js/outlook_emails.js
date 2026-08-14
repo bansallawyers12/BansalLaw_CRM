@@ -3529,12 +3529,54 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(function(r) { return r.trim(); })
             .filter(function(r) {
                 if (!r) return false;
+                if (/undisclosed[- ]recipients/i.test(r)) return false;
                 if (r.includes('<extract_msg.') || r.includes('object at 0x')) return false;
                 if (r.includes('Recipient') && r.includes('0x')) return false;
-                return !r.startsWith('<') && !r.includes('0x');
+                return true;
+            })
+            .map(function(r) {
+                const angle = r.match(/<([^>]+)>/);
+                if (angle && angle[1]) {
+                    return angle[1].trim();
+                }
+                return r.replace(/^<|>$/g, '').trim();
+            })
+            .filter(function(r) {
+                return r !== '';
             });
 
         return validRecipients.length > 0 ? validRecipients.join(', ') : '';
+    }
+
+    function resolveToDisplay(email) {
+        const cleanedTo = cleanRecipients(email && email.to_mail);
+        if (cleanedTo) {
+            return cleanedTo;
+        }
+        const mailbox = String((email && email.mailbox_email) || '').trim();
+        if (mailbox) {
+            return mailbox;
+        }
+        return 'Undisclosed recipients';
+    }
+
+    const READ_BODY_SANDBOX = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+
+    function emailHtmlHasVisibleText(html) {
+        if (!html) return false;
+        const text = String(html)
+            .replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return text.length > 0;
+    }
+
+    function extractRenderableEmailHtml(html) {
+        if (!html) return '';
+        const raw = String(html);
+        const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        return bodyMatch ? bodyMatch[1] : raw;
     }
 
     function formatRecipientLine(label, value) {
@@ -3820,8 +3862,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const readToEl = document.getElementById('readTo');
         const readCcEl = document.getElementById('readCc');
         const readBccEl = document.getElementById('readBcc');
-        const cleanedTo = cleanRecipients(email.to_mail) || 'Unknown';
-        const toLine = formatRecipientLine('To', email.to_mail);
+        const cleanedTo = resolveToDisplay(email);
+        const toLine = cleanedTo ? ('To: ' + cleanedTo) : '';
         const ccLine = formatRecipientLine('Cc', email.cc);
         const bccLine = formatRecipientLine('Bcc', email.bcc);
 
@@ -3945,9 +3987,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const iframe = document.getElementById('readBody');
         let contentStr = (email.message || email.html_content || email.text_content || '').trim();
+        contentStr = extractRenderableEmailHtml(contentStr);
+        const hasVisibleBody = emailHtmlHasVisibleText(contentStr);
 
         let pdfToPreview = null;
-        if (!contentStr) {
+        if (!hasVisibleBody) {
             if (email.pdf_preview_url || email.pdf_file_url) {
                 pdfToPreview = email.pdf_preview_url || email.pdf_file_url;
             } else if (email.attachments && email.attachments.length > 0) {
@@ -3962,17 +4006,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (pdfToPreview) {
+            // PDF.js / Chrome viewer needs scripts; the HTML sandbox blocks them and
+            // leaves a blank reading pane when the stored body is empty.
             iframe.onload = function () {
                 resetReadBodyIframeSizing(iframe);
             };
             iframe.removeAttribute('srcdoc');
+            iframe.removeAttribute('sandbox');
             iframe.src = pdfToPreview;
             resetReadBodyIframeSizing(iframe);
         } else {
             iframe.onload = null;
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
-            let bodyHtml = contentStr;
+            iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
+            let bodyHtml = hasVisibleBody ? contentStr : '';
             if (bodyHtml && bodyHtml.includes('<')) {
                 bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
             } else if (bodyHtml) {
