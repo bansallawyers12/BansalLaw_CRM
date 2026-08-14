@@ -56,7 +56,7 @@ class StaffPersonalCalendarFeedService
         $staffId = (int) $staff->id;
 
         $events = $this->eventsForStaffRequest($staff, new Request([
-            'start' => $today->copy()->subDays(7)->toIso8601String(),
+            'start' => $today->toIso8601String(),
             'end' => $weekEnd->copy()->addDay()->toIso8601String(),
         ]));
 
@@ -124,7 +124,8 @@ class StaffPersonalCalendarFeedService
 
         return $query->orderBy('starts_at')->get()
             ->map(fn (StaffCalendarEvent $e) => $this->wrapStaffEvent(
-                $this->staffCalendarFeed->payloadFromStaffEvent($e)
+                $this->staffCalendarFeed->payloadFromStaffEvent($e),
+                $e->client
             ))
             ->values()
             ->all();
@@ -151,7 +152,8 @@ class StaffPersonalCalendarFeedService
 
         return $query->orderBy('hearing_date')->get()
             ->map(fn (ClientCourtHearing $h) => $this->wrapStaffEvent(
-                $this->staffCalendarFeed->payloadFromCourtHearing($h)
+                $this->staffCalendarFeed->payloadFromCourtHearing($h),
+                $h->client
             ))
             ->values()
             ->all();
@@ -193,6 +195,7 @@ class StaffPersonalCalendarFeedService
                         ? base64_encode(convert_uuencode((string) $note->client_id))
                         : null,
                     'client_name' => $clientName,
+                    'client_email' => $this->clientEmail($note->client),
                     'notes' => $note->description,
                     'status' => 'action',
                     'status_label' => 'My Action',
@@ -243,6 +246,7 @@ class StaffPersonalCalendarFeedService
                         ? base64_encode(convert_uuencode((string) $matter->client_id))
                         : null,
                     'client_name' => $clientName,
+                    'client_email' => $this->clientEmail($matter->client),
                     'client_matter_id' => $matter->id,
                     'matter_no' => $matter->client_unique_matter_no,
                     'status' => 'deadline',
@@ -257,8 +261,12 @@ class StaffPersonalCalendarFeedService
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    protected function wrapStaffEvent(array $payload): array
+    protected function wrapStaffEvent(array $payload, ?Admin $client = null): array
     {
+        if ($client) {
+            $payload['client_email'] = $this->clientEmail($client);
+        }
+
         return $payload;
     }
 
@@ -293,21 +301,58 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
+     * Dashboard calendar only shows today and future items.
+     */
+    public function upcomingStart(?string $timezone = null): Carbon
+    {
+        return Carbon::today($timezone ?: config('app.timezone'))->startOfDay();
+    }
+
+    /**
+     * Clamp a FullCalendar range so past dates are never included.
+     *
+     * @return array{0: Carbon, 1: Carbon|null}
+     */
+    public function clampRangeToUpcoming(?string $start, ?string $end, ?string $timezone = null): array
+    {
+        $tz = $timezone ?: config('app.timezone');
+        $floor = $this->upcomingStart($tz);
+        $rangeEnd = null;
+
+        try {
+            $rangeStart = $start ? Carbon::parse($start, $tz) : $floor->copy();
+        } catch (Exception) {
+            $rangeStart = $floor->copy();
+        }
+
+        if ($rangeStart->lt($floor)) {
+            $rangeStart = $floor->copy();
+        }
+
+        if ($end) {
+            try {
+                $rangeEnd = Carbon::parse($end, $tz);
+            } catch (Exception) {
+                $rangeEnd = null;
+            }
+        }
+
+        return [$rangeStart, $rangeEnd];
+    }
+
+    /**
      * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
      */
     protected function applyDatetimeWindow(Builder $query, string $column, Request $request): void
     {
-        if ($request->filled('start') && $request->filled('end')) {
-            try {
-                $rangeStart = Carbon::parse($request->get('start'), config('app.timezone'));
-                $rangeEnd = Carbon::parse($request->get('end'), config('app.timezone'));
-                $query->where($column, '>=', $rangeStart)
-                    ->where($column, '<', $rangeEnd);
+        [$rangeStart, $rangeEnd] = $this->clampRangeToUpcoming(
+            $request->get('start'),
+            $request->get('end')
+        );
 
-                return;
-            } catch (Exception) {
-                // fall through
-            }
+        $query->where($column, '>=', $rangeStart);
+        if ($rangeEnd) {
+            $query->where($column, '<', $rangeEnd);
         }
     }
 
@@ -316,15 +361,14 @@ class StaffPersonalCalendarFeedService
      */
     protected function applyHearingDateWindow(Builder $query, Request $request): void
     {
-        if ($request->filled('start') && $request->filled('end')) {
-            try {
-                $rangeStart = Carbon::parse($request->get('start'), config('app.timezone'))->startOfDay();
-                $rangeEnd = Carbon::parse($request->get('end'), config('app.timezone'))->startOfDay();
-                $query->whereDate('hearing_date', '>=', $rangeStart->toDateString())
-                    ->whereDate('hearing_date', '<', $rangeEnd->toDateString());
-            } catch (Exception) {
-                // no filter
-            }
+        [$rangeStart, $rangeEnd] = $this->clampRangeToUpcoming(
+            $request->get('start'),
+            $request->get('end')
+        );
+
+        $query->whereDate('hearing_date', '>=', $rangeStart->toDateString());
+        if ($rangeEnd) {
+            $query->whereDate('hearing_date', '<', $rangeEnd->toDateString());
         }
     }
 
@@ -333,15 +377,14 @@ class StaffPersonalCalendarFeedService
      */
     protected function applyDateColumnWindow(Builder $query, string $column, Request $request): void
     {
-        if ($request->filled('start') && $request->filled('end')) {
-            try {
-                $rangeStart = Carbon::parse($request->get('start'), config('app.timezone'))->startOfDay();
-                $rangeEnd = Carbon::parse($request->get('end'), config('app.timezone'))->startOfDay();
-                $query->whereDate($column, '>=', $rangeStart->toDateString())
-                    ->whereDate($column, '<', $rangeEnd->toDateString());
-            } catch (Exception) {
-                // no filter
-            }
+        [$rangeStart, $rangeEnd] = $this->clampRangeToUpcoming(
+            $request->get('start'),
+            $request->get('end')
+        );
+
+        $query->whereDate($column, '>=', $rangeStart->toDateString());
+        if ($rangeEnd) {
+            $query->whereDate($column, '<', $rangeEnd->toDateString());
         }
     }
 
@@ -354,6 +397,17 @@ class StaffPersonalCalendarFeedService
         $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
 
         return $name !== '' ? $name : ($client->client_id ?? 'Client #' . $client->id);
+    }
+
+    protected function clientEmail(?Admin $client): ?string
+    {
+        if (! $client) {
+            return null;
+        }
+
+        $email = trim((string) ($client->email ?? ''));
+
+        return $email !== '' ? $email : null;
     }
 
     /**
@@ -372,13 +426,14 @@ class StaffPersonalCalendarFeedService
         }
 
         $color = match ($kind) {
-            'action' => '#c0392b',
-            'matter_deadline' => '#9b1c2e',
-            'court_hearing' => '#5c3d8f',
+            'action', 'matter_deadline' => StaffCalendarFeedService::colorForEventType('deadline'),
+            'court_hearing' => StaffCalendarFeedService::colorForEventType('court'),
             default => StaffCalendarFeedService::colorForEventType($type),
         };
 
-        $textColor = ($type === 'reminder' && $kind === 'staff_event') ? '#1A2C40' : '#fff';
+        $textColor = StaffCalendarFeedService::textColorForEventType(
+            in_array($kind, ['action', 'matter_deadline'], true) ? 'deadline' : $type
+        );
 
         return [
             'id' => (string) ($row['id'] ?? uniqid('evt-', true)),

@@ -3,23 +3,23 @@
     'timezone' => config('app.timezone'),
 ])
 
-<section class="dashboard-calendar-section" id="myCalendarSection" aria-label="My calendar">
+<section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
     <div class="dashboard-calendar-card">
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
                 <h2>
                     <i class="fa-solid fa-calendar-days"></i>
-                    My Calendar
+                    Calendar
                 </h2>
-                <p class="dashboard-calendar-subtitle">Your actions, hearings, deadlines &amp; events</p>
+                <p class="dashboard-calendar-subtitle">Today and upcoming only. Hover an event for the full title and time.</p>
             </div>
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-stats">
-                    <div class="dashboard-cal-stat dashboard-cal-stat--today" title="Events today">
+                    <div class="dashboard-cal-stat dashboard-cal-stat--today" title="Upcoming items today">
                         <span class="dashboard-cal-stat-value" id="calStatToday">{{ $stats['today'] ?? 0 }}</span>
                         <span class="dashboard-cal-stat-label">Today</span>
                     </div>
-                    <div class="dashboard-cal-stat dashboard-cal-stat--week" title="Events this week">
+                    <div class="dashboard-cal-stat dashboard-cal-stat--week" title="Upcoming items this week">
                         <span class="dashboard-cal-stat-value" id="calStatWeek">{{ $stats['this_week'] ?? 0 }}</span>
                         <span class="dashboard-cal-stat-label">This week</span>
                     </div>
@@ -28,17 +28,19 @@
                         <span class="dashboard-cal-stat-label">Overdue</span>
                     </div>
                 </div>
-                <button type="button" class="action-btn action-btn-outline action-btn-sm" id="btnAddPersonalEvent" title="Add personal event">
+                <button type="button" class="action-btn action-btn-outline action-btn-sm" id="btnAddPersonalEvent" title="Add a personal event">
                     <i class="fa-solid fa-plus"></i> Add Event
                 </button>
             </div>
         </div>
 
-        <div class="dashboard-calendar-legend">
-            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--action"></span> My Actions</span>
+        <div class="dashboard-calendar-legend" aria-label="Event colours">
+            <span class="dashboard-cal-legend-group-label">Important Events</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--court"></span> Court / Hearing</span>
-            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--deadline"></span> Deadlines</span>
-            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--meeting"></span> Meetings &amp; Events</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--meeting"></span> Meeting</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--deadline"></span> Deadline</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--reminder"></span> Reminder</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--other"></span> Other</span>
         </div>
 
         <div class="dashboard-calendar-wrapper">
@@ -76,7 +78,7 @@
                 <div class="row g-2 mb-3">
                     <div class="col-md-6">
                         <label for="personalEventDate" class="form-label">Date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="personalEventDate">
+                        <input type="date" class="form-control" id="personalEventDate" min="{{ now()->toDateString() }}">
                     </div>
                     <div class="col-md-3">
                         <label for="personalEventStartTime" class="form-label">Start</label>
