@@ -9,6 +9,11 @@
     const BOOKING_EVENTS_API = window.dashboardRoutes?.calendarEvents || '/dashboard/calendar-events';
     const STORE_EVENT_API = window.dashboardRoutes?.storeCalendarEvent || '/booking/api/calendar-events';
 
+    function calendarElTz() {
+        var el = document.getElementById(CALENDAR_EL_ID);
+        return (el && el.getAttribute('data-timezone')) || 'Australia/Melbourne';
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
@@ -45,6 +50,92 @@
         return String(value);
     }
 
+    function todayDateStr(tz) {
+        try {
+            return new Date().toLocaleDateString('en-CA', { timeZone: tz || 'Australia/Melbourne' });
+        } catch (e) {
+            return new Date().toISOString().slice(0, 10);
+        }
+    }
+
+    function isPastDateStr(dateStr, tz) {
+        if (!dateStr) return false;
+        return String(dateStr).slice(0, 10) < todayDateStr(tz);
+    }
+
+    function formatEventTime(iso, tz, allDay) {
+        if (allDay) return 'All day';
+        if (!iso) return '';
+        var date = new Date(iso);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleString('en-AU', {
+            timeZone: tz || 'Australia/Melbourne',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
+    }
+
+    function buildEventTooltipText(event, tz) {
+        var props = event.extendedProps || {};
+        var lines = [event.title || 'Event'];
+        var email = (props.client_email || '').trim();
+        if (email) {
+            lines.push('<' + email + '>');
+        }
+        var location = (props.location || props.court_name || '').trim();
+        if (location && event.title.indexOf(location) === -1) {
+            lines.push(location);
+        }
+        var time = formatEventTime(
+            props.appointment_datetime || event.startStr,
+            tz,
+            event.allDay || props.is_all_day
+        );
+        if (time) {
+            lines.push(time);
+        }
+        return lines.join('\n');
+    }
+
+    function getCalendarTooltip() {
+        var tip = document.getElementById('dashboardCalTooltip');
+        if (tip) return tip;
+        tip = document.createElement('div');
+        tip.id = 'dashboardCalTooltip';
+        tip.className = 'dashboard-cal-tooltip';
+        tip.setAttribute('role', 'tooltip');
+        document.body.appendChild(tip);
+        return tip;
+    }
+
+    function showEventTooltip(el, text) {
+        var tip = getCalendarTooltip();
+        tip.textContent = text;
+        tip.classList.add('is-visible');
+
+        var rect = el.getBoundingClientRect();
+        var tipRect = tip.getBoundingClientRect();
+        var left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+        var top = rect.top - tipRect.height - 10;
+        left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+        if (top < 8) {
+            top = rect.bottom + 10;
+            tip.classList.add('is-below');
+        } else {
+            tip.classList.remove('is-below');
+        }
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+    }
+
+    function hideEventTooltip() {
+        var tip = document.getElementById('dashboardCalTooltip');
+        if (tip) {
+            tip.classList.remove('is-visible');
+        }
+    }
+
     function showEventDetail(props) {
         var titleEl = document.getElementById('personalEventDetailTitle');
         var bodyEl = document.getElementById('personalEventDetailBody');
@@ -53,9 +144,11 @@
 
         titleEl.textContent = props.title || 'Event Details';
 
-        var rows = [
+            var rows = [
             ['Type', props.status_label || props.event_type],
             ['Client', props.client_name],
+            ['Email', props.client_email],
+            ['When', formatEventTime(props.appointment_datetime || props.starts_at, calendarElTz(), props.is_all_day)],
             ['Location', props.location],
             ['Notes', props.notes],
         ];
@@ -107,9 +200,12 @@
         if (!addBtn || !saveBtn || !modalEl) return;
 
         addBtn.addEventListener('click', function () {
+            var today = todayDateStr(calendarElTz());
+            var dateInput = document.getElementById('personalEventDate');
             document.getElementById('personalEventTitle').value = '';
             document.getElementById('personalEventType').value = 'meeting';
-            document.getElementById('personalEventDate').value = new Date().toISOString().slice(0, 10);
+            dateInput.value = today;
+            dateInput.min = today;
             document.getElementById('personalEventStartTime').value = '09:00';
             document.getElementById('personalEventEndTime').value = '10:00';
             document.getElementById('personalEventAllDay').checked = false;
@@ -142,6 +238,12 @@
 
             if (!title || !date) {
                 errorEl.textContent = 'Title and date are required.';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+
+            if (isPastDateStr(date, calendarElTz())) {
+                errorEl.textContent = 'Please choose today or a future date.';
                 errorEl.classList.remove('d-none');
                 return;
             }
@@ -218,21 +320,42 @@
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,listWeek',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+                },
+                buttonText: {
+                    today: 'today',
+                    month: 'month',
+                    week: 'week',
+                    day: 'day',
+                    list: 'list',
                 },
                 height: 'auto',
-                contentHeight: 420,
+                contentHeight: 620,
                 timeZone: tz,
                 firstDay: 1,
                 nowIndicator: true,
                 navLinks: true,
-                dayMaxEvents: 3,
-                moreLinkClick: 'popover',
                 eventDisplay: 'block',
+                displayEventTime: true,
+                displayEventEnd: false,
+                dayMaxEvents: true,
+                moreLinkClick: 'popover',
                 eventTimeFormat: {
                     hour: 'numeric',
                     minute: '2-digit',
                     meridiem: 'short',
+                },
+                validRange: function (nowDate) {
+                    var start = new Date(nowDate.valueOf());
+                    start.setDate(1);
+                    start.setHours(0, 0, 0, 0);
+                    return { start: start };
+                },
+                dayCellClassNames: function (arg) {
+                    if (arg.isPast) {
+                        return ['dashboard-cal-day-past'];
+                    }
+                    return [];
                 },
                 events: async function (fetchInfo, successCallback, failureCallback) {
                     try {
@@ -260,23 +383,43 @@
                         failureCallback(err);
                     }
                 },
+                eventDidMount: function (info) {
+                    var text = buildEventTooltipText(info.event, tz);
+                    info.el.removeAttribute('title');
+                    info.el.setAttribute('aria-label', text.replace(/\n/g, ', '));
+                },
+                eventMouseEnter: function (info) {
+                    showEventTooltip(info.el, buildEventTooltipText(info.event, tz));
+                },
+                eventMouseLeave: function () {
+                    hideEventTooltip();
+                },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
+                    hideEventTooltip();
                     var props = info.event.extendedProps || {};
                     showEventDetail(Object.assign({ title: info.event.title }, props));
                 },
                 dateClick: function (info) {
+                    if (isPastDateStr(info.dateStr, tz)) {
+                        return;
+                    }
                     var addBtn = document.getElementById('btnAddPersonalEvent');
                     if (addBtn) {
                         addBtn.click();
                         document.getElementById('personalEventDate').value = info.dateStr;
                     }
                 },
+                datesSet: function () {
+                    hideEventTooltip();
+                },
             });
 
             calendar.render();
             initPersonalEventModal(calendar);
             window.staffDashboardCalendar = calendar;
+            document.addEventListener('scroll', hideEventTooltip, true);
+            window.addEventListener('resize', hideEventTooltip);
         });
     }
 

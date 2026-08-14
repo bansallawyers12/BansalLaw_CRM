@@ -174,12 +174,22 @@
 .dashboard-calendar-legend {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 14px;
     padding: 12px 24px;
     background: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     font-size: 0.8rem;
     color: var(--text-muted-color);
+}
+
+.dashboard-cal-legend-group-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted-color);
+    margin-right: 4px;
 }
 
 .dashboard-cal-legend-item {
@@ -191,14 +201,16 @@
 .dashboard-cal-dot {
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: 2px;
     flex-shrink: 0;
 }
 
-.dashboard-cal-dot--action { background: #c0392b; }
 .dashboard-cal-dot--court { background: #5c3d8f; }
-.dashboard-cal-dot--deadline { background: #9b1c2e; }
 .dashboard-cal-dot--meeting { background: #0d6efd; }
+.dashboard-cal-dot--deadline { background: #c0392b; }
+.dashboard-cal-dot--reminder { background: #d97706; }
+.dashboard-cal-dot--other { background: #111; }
+.dashboard-cal-dot--action { background: #c0392b; }
 
 .dashboard-calendar-wrapper {
     padding: 16px 20px 24px;
@@ -241,6 +253,96 @@
 .dashboard-calendar-container .fc-daygrid-day-number {
     color: var(--text-color);
     font-weight: 500;
+}
+
+.dashboard-calendar-container .fc-event {
+    cursor: pointer;
+    font-size: 0.85em;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border-width: 0;
+}
+
+.dashboard-calendar-container .fc-event.event-court,
+.dashboard-calendar-container .fc-event.event-kind-court_hearing {
+    background-color: #5c3d8f !important;
+    border-color: #5c3d8f !important;
+    color: #fff !important;
+}
+
+.dashboard-calendar-container .fc-event.event-meeting {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+}
+
+.dashboard-calendar-container .fc-event.event-deadline,
+.dashboard-calendar-container .fc-event.event-kind-action,
+.dashboard-calendar-container .fc-event.event-kind-matter_deadline {
+    background-color: #c0392b !important;
+    border-color: #c0392b !important;
+    color: #fff !important;
+}
+
+.dashboard-calendar-container .fc-event.event-reminder {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #1a2c40 !important;
+}
+
+.dashboard-calendar-container .fc-event.event-other {
+    background-color: #111 !important;
+    border-color: #111 !important;
+    color: #fff !important;
+}
+
+.dashboard-calendar-container .dashboard-cal-day-past {
+    background: rgba(0, 0, 0, 0.04);
+    opacity: 0.55;
+}
+
+.dashboard-calendar-container .dashboard-cal-day-past .fc-daygrid-day-number {
+    color: var(--text-muted-color);
+}
+
+.dashboard-cal-tooltip {
+    position: fixed;
+    z-index: 1080;
+    display: none;
+    max-width: 340px;
+    padding: 8px 12px;
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.45;
+    border-radius: 4px;
+    white-space: pre-line;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.dashboard-cal-tooltip.is-visible {
+    display: block;
+}
+
+.dashboard-cal-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    margin-left: -6px;
+    border: 6px solid transparent;
+    border-top-color: #111;
+    border-bottom-width: 0;
+}
+
+.dashboard-cal-tooltip.is-below::after {
+    top: -6px;
+    bottom: auto;
+    border-top-color: transparent;
+    border-bottom-color: #111;
+    border-bottom-width: 6px;
+    border-top-width: 0;
 }
 
 .dashboard-event-detail-list {
