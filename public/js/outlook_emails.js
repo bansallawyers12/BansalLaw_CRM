@@ -3550,14 +3550,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function resolveToDisplay(email) {
         const cleanedTo = cleanRecipients(email && email.to_mail);
-        if (cleanedTo) {
-            return cleanedTo;
+        if (!cleanedTo) {
+            return '';
         }
-        const mailbox = String((email && email.mailbox_email) || '').trim();
-        if (mailbox) {
-            return mailbox;
+        const mailbox = String((email && email.mailbox_email) || '').trim().toLowerCase();
+        const parts = cleanedTo.split(',').map(function (part) {
+            return part.trim().toLowerCase();
+        }).filter(Boolean);
+        // IMAP often stores the synced mailbox as To when the real To was empty (BCC).
+        if (mailbox && parts.length === 1 && parts[0] === mailbox) {
+            return '';
         }
-        return 'Undisclosed recipients';
+        return cleanedTo;
     }
 
     const READ_BODY_SANDBOX = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
@@ -3870,11 +3874,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const ccLine = formatRecipientLine('Cc', email.cc);
         const bccLine = formatRecipientLine('Bcc', email.bcc);
 
-        if (isGmailUiMode()) {
+        if (!cleanedTo) {
+            readToEl.textContent = '';
+            readToEl.innerHTML = '';
+            readToEl.removeAttribute('title');
+            readToEl.hidden = true;
+        } else if (isGmailUiMode()) {
+            readToEl.hidden = false;
             // Show actual To addresses (with caret for tooltip of full header lines).
             readToEl.innerHTML = '<span class="gmail-to-me">to ' + escapeHtml(cleanedTo)
                 + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></span>';
-            const tooltipParts = [toLine || ('To: ' + cleanedTo)];
+            const tooltipParts = [toLine];
             if (ccLine) {
                 tooltipParts.push(ccLine);
             }
@@ -3883,7 +3893,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             readToEl.title = tooltipParts.join('\n');
         } else {
-            readToEl.textContent = toLine || 'To: Unknown';
+            readToEl.hidden = false;
+            readToEl.textContent = toLine;
             readToEl.removeAttribute('title');
         }
 
