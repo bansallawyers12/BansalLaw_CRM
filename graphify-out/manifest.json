@@ -445,8 +445,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/DashboardController.php": {
-    "mtime": 1786700271.7191243,
-    "ast_hash": "c3f19bff0d148c19798a1b4617957e5c",
+    "mtime": 1786702679.6274285,
+    "ast_hash": "2c63b9c9dc90714530f085e40c23b12d",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/DocToPdfController.php": {
@@ -738,11 +738,6 @@
     "mtime": 1780561465.9530995,
     "ast_hash": "a1824545290d6e239f753f67ba7bb195",
     "semantic_hash": "a1824545290d6e239f753f67ba7bb195"
-  },
-  "app/Mail/VisaExpireReminderMail.php": {
-    "mtime": 1769758151.093173,
-    "ast_hash": "c00384da2bf8a36077977d7b2cc3c85a",
-    "semantic_hash": "c00384da2bf8a36077977d7b2cc3c85a"
   },
   "app/Models/AccountAllInvoiceReceipt.php": {
     "mtime": 1771315078.2662644,
@@ -1320,8 +1315,8 @@
     "semantic_hash": "a027dd57735c90e76445275f90b1359b"
   },
   "app/Services/DashboardService.php": {
-    "mtime": 1786700271.7422192,
-    "ast_hash": "2c27d33a79eebed70f150c0f06e89cbe",
+    "mtime": 1786702684.8257935,
+    "ast_hash": "bffec6f69d6b5a02a12c5e4500af9fe8",
     "semantic_hash": ""
   },
   "app/Services/DocxToPdfService.php": {
@@ -3819,11 +3814,6 @@
     "ast_hash": "896da225dd3f5bcb35cf3d2f35c78674",
     "semantic_hash": "896da225dd3f5bcb35cf3d2f35c78674"
   },
-  "public/js/crm/clients/modules/visa-expiry.js": {
-    "mtime": 1772006680.3506851,
-    "ast_hash": "937c498579dc9f5755a1967c31088985",
-    "semantic_hash": "937c498579dc9f5755a1967c31088985"
-  },
   "public/js/crm/clients/other-party-picker.js": {
     "mtime": 1785233627.8590047,
     "ast_hash": "74b6d5a425adc16e7ca5c61d9cc4cc29",
@@ -5750,9 +5740,9 @@
     "semantic_hash": "3dfc58a5f681a041313a9e658b02bf67"
   },
   "resources/views/Elements/CRM/footer_client_detail.blade.php": {
-    "mtime": 1769758152.0247557,
-    "ast_hash": "8183c0c8f49d6d428f505fcafb8fe7f7",
-    "semantic_hash": "8183c0c8f49d6d428f505fcafb8fe7f7"
+    "mtime": 1786702688.382235,
+    "ast_hash": "2a7fad3468d5f2193f263529d0d56a80",
+    "semantic_hash": ""
   },
   "resources/views/Elements/CRM/header_client_detail.blade.php": {
     "mtime": 1786700272.9646227,
@@ -6799,11 +6789,6 @@
     "ast_hash": "3cddf84633c024d90adc01d2f19fee7b",
     "semantic_hash": "3cddf84633c024d90adc01d2f19fee7b"
   },
-  "resources/views/emails/visaexpirereminder.blade.php": {
-    "mtime": 1786702494.0660727,
-    "ast_hash": "be2f1a09c9a700811bbe8d1bb23c9f74",
-    "semantic_hash": ""
-  },
   "resources/views/exception.blade.php": {
     "mtime": 1785212441.030614,
     "ast_hash": "01a56f45c3d5964dfb3c491d262e6638",
@@ -6930,8 +6915,8 @@
     "semantic_hash": "03a2d51117a61e05d95d7670a300642e"
   },
   "routes/web.php": {
-    "mtime": 1786700272.995106,
-    "ast_hash": "9f9c2d294564b1624c96f6e3eccf265d",
+    "mtime": 1786702686.5877168,
+    "ast_hash": "1459c3679462d5a001fdc2ef4779dd0a",
     "semantic_hash": ""
   },
   "scripts/analyze-unused-blades.php": {
@@ -7185,9 +7170,9 @@
     "semantic_hash": "4d3e9a0dcc50c24e75e58fe0d8ec9813"
   },
   "tests/Unit/SecurityBugFixes11Test.php": {
-    "mtime": 1785570266.08464,
-    "ast_hash": "ede1a5891646a8ab22a3bbf557261310",
-    "semantic_hash": "ede1a5891646a8ab22a3bbf557261310"
+    "mtime": 1786702687.8185308,
+    "ast_hash": "c1d049712844288caf8e2339e693422f",
+    "semantic_hash": ""
   },
   "tests/Unit/SecurityBugFixes12Test.php": {
     "mtime": 1785570266.08464,
@@ -7285,8 +7270,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Area8SecurityTest.php": {
-    "mtime": 1786700272.9985116,
-    "ast_hash": "67a7d473056ae3156591042a26fe39d2",
+    "mtime": 1786702698.6558013,
+    "ast_hash": "ddc2ec2a9a96fa2d5772ab7b62053598",
     "semantic_hash": ""
   },
   "tests/Feature/ChecklistStageScopeTest.php": {

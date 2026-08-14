@@ -973,41 +973,6 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function unauthorized_staff_cannot_fetch_visa_expiry_message_idor(): void
-    {
-        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
-            ['id' => 14],
-            ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
-        );
-
-        $unassignedStaff = new Staff();
-        $unassignedStaff->email = 'staff990@bansallawyers.com.au';
-        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $unassignedStaff->role = 14;
-        $unassignedStaff->status = 1;
-        $unassignedStaff->save();
-
-        $client = new \App\Models\Admin();
-        $client->email = 'client990@bansallawyers.com.au';
-        $client->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $client->type = 'client';
-        $client->status = 1;
-        $client->user_id = 9999;
-        $client->save();
-
-        $visa = new \App\Models\ClientVisaCountry();
-        $visa->client_id = $client->id;
-        $visa->visa_expiry_date = now()->subDays(10)->format('Y-m-d');
-        $visa->save();
-
-        $this->actingAs($unassignedStaff, 'admin');
-
-        // Unassigned staff attempts to fetch visa expiry message for client 990
-        $response = $this->getJson('/dashboard/fetch-visa-expiry-messages?client_id=' . $client->id);
-        $response->assertStatus(403);
-    }
-
-    #[Test]
     public function note_delete_and_pin_require_post_method(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(

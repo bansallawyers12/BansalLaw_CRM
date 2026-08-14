@@ -26,16 +26,4 @@ class SecurityBugFixes11Test extends TestCase
         $result = $service->updateClientMatterStage(999999, 1, $staff);
         $this->assertFalse($result['success']);
     }
-
-    /** @test */
-    public function test_11_5_visa_expiry_message_unauthorized_staff_returns_empty()
-    {
-        $staff = new Staff();
-        $staff->id = 9999;
-        $staff->role = 14;
-
-        $service = new DashboardService();
-        $result = $service->getVisaExpiryMessage(999999, $staff);
-        $this->assertEquals('', $result);
-    }
 }

@@ -6,7 +6,6 @@ use App\Models\Note;
 use App\Models\Staff;
 use App\Models\Notification;
 use App\Models\CheckinLog;
-use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
 use App\Models\WorkflowStage;
 use Illuminate\Support\Facades\Auth;
@@ -735,40 +734,6 @@ class DashboardService
         }
 
         return ['success' => true, 'message' => 'Action completed successfully'];
-    }
-
-    /**
-     * Get visa expiry message
-     */
-    public function getVisaExpiryMessage($clientId, $user = null): string
-    {
-        $user = $user ?? Auth::user();
-        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
-            if (!StaffClientVisibility::canAccessClientOrLead((int) $clientId, $user)) {
-                return '';
-            }
-        }
-
-        $visaInfo = ClientVisaCountry::where('client_id', $clientId)
-            ->latest('id')
-            ->first();
-
-        if (!$visaInfo || !$visaInfo->visa_expiry_date) {
-            return '';
-        }
-
-        $visaExpiredAt = Carbon::parse($visaInfo->visa_expiry_date);
-        $today = Carbon::now();
-        $sevenDaysFromNow = Carbon::now()->addDays(7);
-
-        if ($visaExpiredAt->lt($today)) {
-            return 'Your visa is expired';
-        } elseif ($visaExpiredAt->gte($today) && $visaExpiredAt->lte($sevenDaysFromNow)) {
-            $daysRemaining = $visaExpiredAt->diffInDays($today);
-            return "Your visa is expiring in next $daysRemaining day" . ($daysRemaining == 1 ? '' : 's');
-        }
-
-        return '';
     }
 
     /**

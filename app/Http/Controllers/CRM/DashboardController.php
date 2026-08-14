@@ -227,27 +227,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get visa expiry messages
-     */
-    public function fetchVisaExpiryMessages(Request $request)
-    {
-        $this->validate($request, [
-            'client_id' => 'required|integer'
-        ]);
-
-        $user = Auth::guard('admin')->user() ?: Auth::user();
-        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
-            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $request->client_id, $user)) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
-        }
-
-        $message = $this->dashboardService->getVisaExpiryMessage($request->client_id, $user);
-        
-        return response()->json(['message' => $message]);
-    }
-
-    /**
      * Check checkin status
      */
     public function checkCheckinStatus(Request $request)

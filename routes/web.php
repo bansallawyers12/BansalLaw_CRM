@@ -102,7 +102,6 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::post('/dashboard/update-stage', [DashboardController::class, 'updateStage'])->name('dashboard.update-stage');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
     Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed');
-    Route::get('/dashboard/fetch-visa-expiry-messages', [DashboardController::class, 'fetchVisaExpiryMessages'])->name('dashboard.fetch-visa-expiry-messages');
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
