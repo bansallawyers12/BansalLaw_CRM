@@ -536,15 +536,19 @@
         </div>
         <div class="compose-field">
             <label for="composeTo">To</label>
-            <input type="text" id="composeTo" autocomplete="off">
+            <input type="text" id="composeTo" autocomplete="off" placeholder="Add recipients">
+            <div class="compose-field-extras">
+                <button type="button" class="compose-extra-toggle" id="composeShowCc">Cc</button>
+                <button type="button" class="compose-extra-toggle" id="composeShowBcc">Bcc</button>
+            </div>
         </div>
-        <div class="compose-field">
+        <div class="compose-field compose-field--optional" id="composeCcField" hidden>
             <label for="composeCc">Cc</label>
-            <input type="text" id="composeCc" autocomplete="off" placeholder="Optional — separate multiple with commas">
+            <input type="text" id="composeCc" autocomplete="off" placeholder="Optional — separate with commas">
         </div>
-        <div class="compose-field">
+        <div class="compose-field compose-field--optional" id="composeBccField" hidden>
             <label for="composeBcc">Bcc</label>
-            <input type="text" id="composeBcc" autocomplete="off" placeholder="Optional — separate multiple with commas">
+            <input type="text" id="composeBcc" autocomplete="off" placeholder="Optional — separate with commas">
         </div>
         <div class="compose-field">
             <label for="composeSubject">Subject</label>
@@ -566,11 +570,11 @@
             <div id="composeReplyInput" class="compose-reply-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Type your message..."></div>
             <div id="composeQuoteWrap" class="compose-quote-wrap" hidden>
                 <button type="button" class="compose-quote-toggle" id="composeQuoteToggle" aria-expanded="true">
-                    <span class="compose-quote-toggle-dots" aria-hidden="true">•••</span>
-                    <span class="compose-quote-toggle-label" id="composeQuoteToggleLabel">Hide quoted message</span>
+                    <i class="fa-solid fa-chevron-down compose-quote-chevron" aria-hidden="true"></i>
+                    <span class="compose-quote-toggle-label" id="composeQuoteToggleLabel">Original email</span>
                 </button>
                 <div id="composeQuotePanel" class="compose-quote-panel">
-                    <iframe id="composeQuoteFrame" class="compose-quote-frame" title="Quoted message" tabindex="-1"></iframe>
+                    <iframe id="composeQuoteFrame" class="compose-quote-frame" title="Original email" tabindex="-1"></iframe>
                 </div>
             </div>
             <div id="composeSignatureWrap" class="compose-signature-wrap" hidden>

@@ -1210,14 +1210,14 @@ body, html {
     cursor: not-allowed;
 }
 
-/* Modal styles for Reply/Forward — Gmail/Outlook-style compose (no WYSIWYG library) */
+/* Modal styles for Reply/Forward — tall reading-pane style compose */
 .compose-modal {
     display: none;
     position: fixed;
     bottom: 0;
-    right: 24px;
-    width: min(720px, calc(100vw - 48px));
-    height: min(620px, calc(100vh - 48px));
+    right: 16px;
+    width: min(920px, calc(100vw - 32px));
+    height: min(92vh, calc(100vh - 16px));
     background: #fff;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
@@ -1281,21 +1281,24 @@ body, html {
 }
 
 .compose-body {
-    padding: 12px 18px 0;
+    padding: 4px 0 0;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    overflow: hidden;
+    gap: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     min-height: 0;
+    scroll-behavior: smooth;
 }
 
 .compose-field {
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--outlook-border);
-    padding-bottom: 8px;
+    padding: 8px 18px;
     flex-shrink: 0;
+    background: #fff;
 }
 
 .compose-field label {
@@ -1321,26 +1324,52 @@ body, html {
     cursor: default;
 }
 
+.compose-field-extras {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.compose-extra-toggle {
+    border: none;
+    background: transparent;
+    color: #0078d4;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.compose-extra-toggle:hover {
+    background: #eef6ff;
+}
+
 .compose-message-stack {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    margin-top: 4px;
-    border: 1px solid var(--outlook-border);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fafafa;
+    min-height: 420px;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    background: #fff;
 }
 
 .compose-format-bar {
     display: flex;
     align-items: center;
     gap: 2px;
-    padding: 6px 8px;
+    padding: 8px 12px;
     background: #fff;
     border-bottom: 1px solid var(--outlook-border);
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 3;
 }
 
 .compose-format-btn {
@@ -1373,17 +1402,16 @@ body, html {
 }
 
 .compose-reply-input {
-    min-height: 88px;
-    max-height: 160px;
-    overflow-y: auto;
-    padding: 12px 14px;
+    min-height: 220px;
+    overflow: visible;
+    padding: 16px 20px 20px;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.6;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #242424;
     background: #fff;
     outline: none;
-    flex-shrink: 0;
+    flex: 0 0 auto;
     word-wrap: break-word;
 }
 
@@ -1394,13 +1422,13 @@ body, html {
 }
 
 .compose-quote-wrap {
-    border-top: 1px solid var(--outlook-border);
-    background: #f5f5f5;
-    flex: 1;
+    border-top: 1px solid #f1f5f9;
+    background: #ffffff;
+    flex: 0 0 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .compose-quote-wrap.is-collapsed .compose-quote-panel {
@@ -1411,22 +1439,34 @@ body, html {
     flex: 0 0 auto;
 }
 
+.compose-quote-wrap.is-collapsed .compose-quote-chevron {
+    transform: rotate(-90deg);
+}
+
 .compose-quote-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
-    padding: 8px 14px;
+    padding: 10px 20px;
     border: none;
     background: transparent;
     cursor: pointer;
-    font-size: 12px;
-    color: #605e5c;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
     text-align: left;
 }
 
 .compose-quote-toggle:hover {
-    background: #ebebeb;
+    background: #f8fafc;
+}
+
+.compose-quote-chevron {
+    color: #0078d4;
+    font-size: 12px;
+    width: 14px;
+    transition: transform 0.15s ease;
 }
 
 .compose-quote-toggle-dots {
@@ -1438,36 +1478,37 @@ body, html {
 }
 
 .compose-quote-panel {
-    flex: 1;
-    min-height: 120px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0 12px 12px 12px;
-    -webkit-overflow-scrolling: touch;
+    flex: 0 0 auto;
+    min-height: 280px;
+    overflow: visible;
+    padding: 0 8px 16px 20px;
 }
 
 .compose-quote-frame,
 .compose-signature-frame {
     width: 100%;
     border: none;
-    border-left: 3px solid #c8c8c8;
+    border-left: 3px solid #cbd5e1;
     border-radius: 0 4px 4px 0;
     background: #fff;
     display: block;
-    min-height: 48px;
 }
 
 .compose-quote-frame {
     overflow: hidden;
+    min-height: 280px;
+}
+
+.compose-signature-frame {
+    min-height: 48px;
 }
 
 .compose-signature-wrap {
     border-top: 1px dashed var(--outlook-border);
-    padding: 10px 12px 12px;
+    padding: 10px 20px 16px;
     background: #fff;
     flex-shrink: 0;
-    overflow-y: auto;
-    max-height: 280px;
+    overflow: visible;
 }
 
 .compose-footer {
@@ -2860,6 +2901,27 @@ body.sidebar-mini .outlook-ui-modal__btn.is-loading:disabled {
 
     .reading-body {
         min-height: 280px;
+    }
+
+    .compose-modal {
+        right: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        border-radius: 0;
+    }
+
+    .compose-header {
+        border-radius: 0;
+    }
+
+    .compose-reply-input {
+        min-height: 160px;
+    }
+
+    .compose-quote-panel,
+    .compose-quote-frame {
+        min-height: 220px;
     }
 
 }
