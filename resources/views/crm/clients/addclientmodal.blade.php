@@ -60,7 +60,7 @@
 <!-- Financial Modals (Edit Ledger Entry, Cost Assignments) removed - now in modals/financial.blade.php -->
 <!-- Change Matter Assignee Modal removed - now in modals/client-management.blade.php -->
 
-<!-- Document folder modals (personal + matter + nomination) — see modals/documents.blade.php -->
+<!-- Document folder modals (personal + matter) — see modals/documents.blade.php -->
 
 <!-- Activity Modals (edit_datetime_modal, notPickedCallModal, convertActivityToNoteModal) removed - now in modals/activities.blade.php -->
 

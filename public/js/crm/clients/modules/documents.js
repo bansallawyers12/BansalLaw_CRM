@@ -81,43 +81,6 @@
             });
         });
 
-        // ---- Update Nomination Document Folder ----
-        $(document).on('click', '.update-nomination-cat-title', function() {
-            var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the folder:');
-            newTitle = (newTitle || '').trim();
-            if (!newTitle) {
-                return;
-            }
-            var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.updateNominationCategory)
-                ? window.ClientDetailConfig.urls.updateNominationCategory
-                : '';
-            if (!url) {
-                alert('Nomination folder update URL is not configured.');
-                return;
-            }
-            $.ajax({
-                url: url,
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    id: id,
-                    title: newTitle
-                },
-                success: function(response) {
-                    if (response.status) {
-                        alert(response.message);
-                        location.reload();
-                    } else {
-                        alert(response.message || 'Unable to update folder.');
-                    }
-                },
-                error: function(xhr) {
-                    alert(folderUpdateErrorMessage(xhr));
-                }
-            });
-        });
-
         // ---- Delete Personal Document Folder ----
         $(document).on('click', '.delete-personal-cat-title', function(e) {
             e.preventDefault();

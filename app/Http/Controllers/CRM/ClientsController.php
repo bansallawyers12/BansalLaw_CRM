@@ -1321,12 +1321,12 @@ class ClientsController extends Controller
             // only has two segments, e.g. /clients/detail/{client}/{tab}), move it to $tab
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
-                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
+                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments',
                 'emails', 'client_portal', 'legalforms',
                 // Shorter tab slugs / legacy bookmarks
                 'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
-                'formgenerations', 'formgenerationsl',
+                'formgenerations', 'formgenerationsl', 'nominationdocuments',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
                 'visadocuments', // legacy alias → matterdocuments
             ];
@@ -2781,7 +2781,6 @@ class ClientsController extends Controller
                     'companies' => ['admin_id'],
                     'email_verifications' => ['client_id'],
                     'phone_verifications' => ['client_id'],
-                    'nomination_document_types' => ['client_id'],
                     'personal_document_types' => ['client_id'],
                     'visa_document_types' => ['client_id'],
                     'sms_logs' => ['client_id'],

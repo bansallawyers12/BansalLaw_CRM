@@ -39,7 +39,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 
 | Module | Description |
 |--------|-------------|
-| **Document Management** | Personal, matter, and nomination document checklists; upload, rename, move, bulk upload |
+| **Document Management** | Personal and matter document checklists; upload, rename, move, bulk upload |
 | **E-Signatures** | Template-based signing workflow; staff sends link → client signs via token (no login) |
 | **DOCX → PDF** | Local and Python microservice conversion (`python_services/`) |
 | **Email Integration** | Compose/send mail, inbox/sent import (Python service), labels, attachments, smart import |

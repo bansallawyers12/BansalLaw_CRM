@@ -56,7 +56,7 @@ use App\Http\Controllers\Controller;
     <!-- Client Navigation Sidebar -->
     <aside class="client-navigation-sidebar" id="client-sidebar">
         @php
-            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails'];
+            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails', 'nominationdocuments'];
 
             $cdnIsCompany = ! empty($fetchedData->is_company);
             if ($cdnIsCompany) {
@@ -392,9 +392,9 @@ use App\Http\Controllers\Controller;
 
             // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
             $validTabNames = [
-                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
+                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents',
                 'emails', 'client_portal', 'legalforms',
-                'formgenerations', 'formgenerationsl',
+                'formgenerations', 'formgenerationsl', 'nominationdocuments',
                 'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
                 'visadocuments',
             ];
@@ -1526,7 +1526,6 @@ $(document).ready(function() {
             assigneeAction: '{{ route("assignee.action") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
-            updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',

@@ -7,10 +7,10 @@
     /** Keep in sync with ClientsController::detail() / detail.blade.php $validTabNames */
     var CLIENT_DETAIL_TAB_SLUGS = [
         'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm',
-        'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
+        'personaldocuments', 'matterdocuments', 'documents',
         'emails', 'client_portal', 'legalforms', 'formgenerations', 'formgenerationsl',
         'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'visadocuments',
-        'emailhandling'
+        'nominationdocuments', 'emailhandling'
     ];
 
     function isClientDetailTabSlug(segment) {

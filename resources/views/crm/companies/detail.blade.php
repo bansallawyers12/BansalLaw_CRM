@@ -257,10 +257,10 @@ use App\Http\Controllers\Controller;
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
             // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
+            $validTabNames = ['companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments',
                               'emails', 
                               // Legacy removed tab slugs
-                              'formgenerations', 'formgenerationsl',
+                              'formgenerations', 'formgenerationsl', 'nominationdocuments',
                               'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
@@ -285,10 +285,6 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fa-solid fa-folder-open"></i>
                     <span>Company Documents</span>
-                </button>
-                <button class="client-nav-button" data-tab="nominationdocuments">
-                    <i class="fa-solid fa-file-contract"></i>
-                    <span>Nomination Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="account">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
@@ -367,7 +363,6 @@ use App\Http\Controllers\Controller;
                 ->count();
             ?>
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
-                @include('crm.companies.tabs.nomination_documents')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.workflow')
@@ -1268,7 +1263,6 @@ $(document).ready(function() {
             getNotes: '{{ URL::to("/get-notes") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
-            updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',

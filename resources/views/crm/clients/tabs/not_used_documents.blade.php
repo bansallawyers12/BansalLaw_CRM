@@ -15,8 +15,7 @@
                             ->where('type', 'client')
                             ->where(function ($query) {
                                 $query->orWhere('doc_type', 'personal')
-                                    ->orWhereIn('doc_type', ['matter', 'visa'])
-                                    ->orWhere('doc_type', 'nomination');
+                                    ->orWhereIn('doc_type', ['matter', 'visa']);
                             })
                             ->orderByDesc('updated_at')
                             ->get();
@@ -27,15 +26,12 @@
                         : collect();
 
                     $notUsedPersonalCount = $notUsedDocs->where('doc_type', 'personal')->count();
-                    $notUsedMatterCount = $notUsedDocs->whereIn('doc_type', ['matter', 'visa', 'nomination'])->count();
+                    $notUsedMatterCount = $notUsedDocs->whereIn('doc_type', ['matter', 'visa'])->count();
                     $notUsedTotalCount = $notUsedDocs->count();
 
                     $notUsedDocTypeLabel = function ($docType) {
                         if ($docType === 'personal') {
                             return 'Personal';
-                        }
-                        if ($docType === 'nomination') {
-                            return 'Nomination';
                         }
                         return 'Matter';
                     };
@@ -121,7 +117,7 @@
                                                         $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
                                                         $uploadMeta = 'Uploaded by: ' . ($admin->first_name ?? 'NA') . ' on ' . date('d/m/Y H:i', strtotime($fetch->created_at));
                                                         $typeLabel = $notUsedDocTypeLabel($fetch->doc_type);
-                                                        $typeClass = $fetch->doc_type === 'personal' ? 'personal' : ($fetch->doc_type === 'nomination' ? 'nomination' : 'matter');
+                                                        $typeClass = $fetch->doc_type === 'personal' ? 'personal' : 'matter';
                                                         $folderLabel = $fetch->doc_type === 'personal'
                                                             ? ($folderTitles[$fetch->folder_name] ?? 'Personal folder')
                                                             : '—';
@@ -475,11 +471,6 @@
                 #notuseddocuments-tab .not-used-type-matter {
                     background: rgba(30, 122, 82, 0.12);
                     color: var(--success, #1e7a52);
-                }
-
-                #notuseddocuments-tab .not-used-type-nomination {
-                    background: rgba(200, 153, 42, 0.15);
-                    color: #7a5800;
                 }
 
                 #notuseddocuments-tab .not-used-folder-label {

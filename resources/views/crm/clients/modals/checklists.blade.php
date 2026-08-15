@@ -118,64 +118,6 @@
 	</div>
 </div>
 
-<!-- Add Nomination Checklist Modal -->
-<div class="modal fade create_nomination_docs custom_modal" id="opennominationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="taskModalLabel">Add Nomination Checklist</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-                @if (! $__documentChecklistsOk)
-                    <div class="alert alert-warning">Document checklist options require the <code>document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
-                @endif
-				<form method="post" action="{{ URL::to('/documents/add-nomination-checklist') }}" name="nom_upload_checklist_form" id="nom_upload_checklist_form" autocomplete="off"  enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
-                    <input type="hidden" name="type" value="client">
-                    <input type="hidden" name="doctype" value="nomination">
-                    <input type="hidden" name="client_matter_id" id="hidden_nomination_client_matter_id" value="">
-                    <input type="hidden" name="folder_name" id="nomination_folder_name" value="">
-
-					<div class="row">
-                        <div class="col-6 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="nomination_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control crm-ts-plain" name="nomination_checklist[]" id="nomination_checklist" multiple placeholder="Type or select checklist name...">
-									<?php
-									$nomChkList = $__documentChecklistsOk
-                                        ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 3)->get()
-                                        : collect();
-									foreach($nomChkList as $nomlist){
-									?>
-										<option value="{{$nomlist->name}}">{{$nomlist->name}}</option>
-									<?php
-									}
-									?>
-								</select>
-								<small class="text-muted d-block mt-1">Type a checklist name, then click Create (or press Enter to add multiple names).</small>
-								<span class="custom-error nomination_checklist_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-                    </div>
-
-                    <div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('nom_upload_checklist_form')" type="button" class="btn btn-primary" style="margin: 0px !important;">Create</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
-
 {{-- create_checklist modal REMOVED - workflow checklist unused --}}
 
 <!-- Inline Signature Placement Modal (Checklist Agreements) -->

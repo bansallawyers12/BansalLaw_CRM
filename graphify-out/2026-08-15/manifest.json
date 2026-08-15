@@ -7105,8 +7105,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Area8SecurityTest.php": {
-    "mtime": 1786772323.1523108,
-    "ast_hash": "a6018e73acd9c271200dbb405a868959",
+    "mtime": 1786774711.0280678,
+    "ast_hash": "439f283c94bfc853a42315a27470da93",
     "semantic_hash": ""
   },
   "tests/Feature/ClientMatterGraphVisibilityTest.php": {
@@ -7205,8 +7205,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786774653.0068016,
-    "ast_hash": "b59d8814ca6ca1848ddced7e005c7635",
+    "mtime": 1786774748.5665407,
+    "ast_hash": "6021c8db169f212f4c117595448a0ce0",
     "semantic_hash": ""
   },
   "app/Models/model_list.txt": {
@@ -7657,6 +7657,11 @@
   "database/migrations/2026_08_15_171000_drop_device_tokens_table.php": {
     "mtime": 1786772326.844864,
     "ast_hash": "7dc8c936585ad4b13df564f5c7c01e45",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_171100_drop_refresh_tokens_table.php": {
+    "mtime": 1786774711.420055,
+    "ast_hash": "c10dca352f9b33a6bbf07e0944acdc60",
     "semantic_hash": ""
   }
 }

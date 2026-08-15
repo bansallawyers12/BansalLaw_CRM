@@ -2008,30 +2008,6 @@ success: function(response) {
 
                 }
 
-                else if( activeTab == 'nominationdocuments') {
-
-                    if(selectedMatter != "" ) {
-
-                        $('#nominationdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
-
-                            if ($(this).data('matterid') == selectedMatter) {
-
-                                $(this).show();
-
-                            } else {
-
-                                $(this).hide();
-
-                            }
-
-                        });
-
-                    }  else {
-
-                        $(this).hide();
-
-                    }
-
                 }
 
 
@@ -5480,7 +5456,7 @@ success: function(response) {
                         // Remove document from current tab (Personal or matter documents)
                         if(res.doc_type == 'personal') {
                             $('.documnetlist_'+res.doc_category+' #id_'+res.doc_id).remove();
-                        } else if( res.doc_type == 'matter' || res.doc_type == 'visa' || res.doc_type == 'nomination') {
+                        } else if( res.doc_type == 'matter' || res.doc_type == 'visa') {
                             $('.migdocumnetlist1 #id_'+res.doc_id).remove();
                         }
 
@@ -5615,13 +5591,11 @@ success: function(response) {
 
         function notUsedTypeLabel(docType) {
             if (docType === 'personal') return 'Personal';
-            if (docType === 'nomination') return 'Nomination';
             return 'Matter';
         }
 
         function notUsedTypeClass(docType) {
             if (docType === 'personal') return 'personal';
-            if (docType === 'nomination') return 'nomination';
             return 'matter';
         }
 
@@ -5785,7 +5759,7 @@ success: function(response) {
                         var folderLabel = res.doc_category_title ? (' (' + res.doc_category_title + ')') : '';
                         var docTypeLabel = res.doc_type === 'personal'
                             ? 'Personal Documents' + folderLabel
-                            : (res.doc_type === 'nomination' ? 'Nomination Documents' : 'Matter Documents');
+                            : 'Matter Documents';
                         if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                             iziToast.success({ message: 'Document reverted to ' + docTypeLabel, position: 'topRight' });
                         } else {
@@ -6874,7 +6848,7 @@ success: function(response) {
         // This must be on document level, but we let drop zones handle their own events
         $(document).on('dragover', function(e) {
             // Allow drop zones to handle their own dragover events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
                 e.preventDefault();
                 return;
             }
@@ -6884,7 +6858,7 @@ success: function(response) {
 
         $(document).on('drop', function(e) {
             // Allow drop zones to handle their own drop events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
                 return; // Let the drop zone handler take over
             }
             // For other areas, prevent default to prevent browser from opening file
@@ -6988,39 +6962,6 @@ success: function(response) {
         });
         
         $(document).delegate('.visa-doc-drag-zone', 'click', function(e) {
-            e.preventDefault();
-            var fileid = $(this).data('fileid');
-            var fileInput = $('#mig_upload_form_' + fileid).find('.migdocupload');
-            fileInput.click();
-        });
-
-        $(document).delegate('.nomination-doc-drag-zone', 'dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).addClass('drag_over');
-            return false;
-        });
-
-        $(document).delegate('.nomination-doc-drag-zone', 'dragleave', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
-            return false;
-        });
-
-        $(document).delegate('.nomination-doc-drag-zone', 'drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
-
-            var files = e.originalEvent.dataTransfer.files;
-            if (files && files.length > 0) {
-                handleVisaDocDragDrop($(this), files[0]);
-            }
-            return false;
-        });
-
-        $(document).delegate('.nomination-doc-drag-zone', 'click', function(e) {
             e.preventDefault();
             var fileid = $(this).data('fileid');
             var fileInput = $('#mig_upload_form_' + fileid).find('.migdocupload');
@@ -7770,13 +7711,9 @@ success: function(response) {
         function performMatterDocUpload(file, fileid, visa_doc_cat, form, dragZone) {
             var laneDocType = (form.find('input[name="doctype"]').val() || 'matter').toLowerCase();
             if (laneDocType === 'visa') { laneDocType = 'matter'; }
-            var uploadUrl = laneDocType === 'nomination'
-                ? site_url + '/documents/upload-nomination-document'
-                : site_url + '/documents/upload-matter-document';
-            var previewPane = laneDocType === 'nomination'
-                ? 'preview-container-nomdocumnetlist'
-                : 'preview-container-matter-' + visa_doc_cat;
-            var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
+            var uploadUrl = site_url + '/documents/upload-matter-document';
+            var previewPane = 'preview-container-matter-' + visa_doc_cat;
+            var contextMenuFn = 'showVisaFileContextMenu';
             var isVideoUpload = isMatterDocVideoFile(file);
 
             var formData = new FormData(form[0]);
@@ -8002,24 +7939,6 @@ success: function(response) {
 
         });
 
-        $(document).delegate('.add-nomination-doc-category', 'click', function (e) {
-
-            e.preventDefault();
-
-            let selectedMatterFM;
-
-            if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-                selectedMatterFM = $('.general_matter_checkbox_client_detail').val();
-            } else {
-                selectedMatterFM = $('#sel_matter_id_client_detail').val();
-            }
-
-            $('#nominationclientmatterid').val(selectedMatterFM);
-
-            $('.addnominationdoccatmodel').modal('show');
-
-        });
-
 
 
 
@@ -8037,34 +7956,6 @@ success: function(response) {
             var $modal = $('#openmigrationdocsmodal');
             $modal.one('shown.bs.modal', function () {
                 initTS('#visa_checklist', {
-                    plugins: ['remove_button'],
-                    allowEmptyOption: false,
-                    closeAfterSelect: false,
-                    dropdownParent: this,
-                    create: true,
-                    createOnBlur: true,
-                    addPrecedence: true,
-                    persist: true,
-                    placeholder: 'Type or select checklist name...'
-                });
-            });
-            $modal.modal('show');
-
-        });
-
-        $(document).delegate('.add_nomination_doc', 'click', function (e) {
-
-            e.preventDefault();
-
-            var hidden_client_matter_id = $('#sel_matter_id_client_detail').val();
-
-            $('#hidden_nomination_client_matter_id').val(hidden_client_matter_id);
-
-            $("#nomination_folder_name").val($(this).attr('data-categoryid'));
-
-            var $modal = $('#opennominationdocsmodal');
-            $modal.one('shown.bs.modal', function () {
-                initTS('#nomination_checklist', {
                     plugins: ['remove_button'],
                     allowEmptyOption: false,
                     closeAfterSelect: false,

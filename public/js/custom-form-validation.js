@@ -598,42 +598,6 @@ function customValidate(formName, savetype = '')
 							}
 						});
 					}
-					else if(formName == 'nom_upload_checklist_form'){
-						var client_id = $('#nom_upload_checklist_form input[name="clientid"]').val();
-                        var folder_name = $('#nom_upload_checklist_form input[name="folder_name"]').val();
-						var myform = document.getElementById('nom_upload_checklist_form');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
-								$('#opennominationdocsmodal').modal('hide');
-								if(obj.status){
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									var $pane = $('#nominationdocuments-tab .migdocumnetlist_'+folder_name);
-									if ($pane.length) {
-										$pane.html(obj.data);
-									} else {
-										$('.migdocumnetlist_'+folder_name).html(obj.data);
-									}
-									$('.nomgriddata').html(obj.griddata);
-									if (typeof initNominationDocDragDrop === 'function') {
-										setTimeout(function() {
-											initNominationDocDragDrop();
-										}, 100);
-									}
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-								}
-								getallactivities(client_id);
-							}
-						});
-					}
 					else if(formName == 'edu_upload_form'){
 						var client_id = $('#edu_upload_form input[name="clientid"]').val();
 						var myform = document.getElementById('edu_upload_form');
@@ -910,35 +874,6 @@ function customValidate(formName, savetype = '')
                                 if(obj.status){
                                     $('#addvisadoccatmodel').modal('hide');
 									localStorage.setItem('activeTab', 'documentalls');
-                                    location.reload();
-                                    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-                                }else{
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-                                }
-                            },
-                            error: function(xhr){
-                                $('.popuploader').hide();
-                                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to add folder. Please try again.';
-                                $('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
-                            }
-                        });
-                    }
-
-                    else if(formName == 'add_nom_doc_cat_form'){
-                        var myform = document.getElementById('add_nom_doc_cat_form');
-                        var fd = new FormData(myform);
-                        $.ajax({
-                            type:'post',
-                            url:$("form[name="+formName+"]").attr('action'),
-                            processData: false,
-                            contentType: false,
-                            dataType: 'json',
-                            data: fd,
-                            success: function(obj){
-                                $('.popuploader').hide();
-                                if(obj.status){
-                                    $('#addnominationdoccatmodel').modal('hide');
-									localStorage.setItem('activeTab', 'nominationdocuments');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{
