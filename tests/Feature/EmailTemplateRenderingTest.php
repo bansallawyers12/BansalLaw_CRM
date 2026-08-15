@@ -66,7 +66,7 @@ class EmailTemplateRenderingTest extends TestCase
     {
         $data = [
             'signerName' => 'John Client',
-            'documentTitle' => 'Cost Agreement',
+            'documentTitle' => 'Costs Disclosure',
             'signingUrl' => 'https://example.com/sign/789/token',
             'message' => 'Please review and sign this agreement.',
             'documentType' => 'agreement',
@@ -77,7 +77,7 @@ class EmailTemplateRenderingTest extends TestCase
 
         // Assert key content is present
         $this->assertStringContainsString('John Client', $html);
-        $this->assertStringContainsString('Cost Agreement', $html);
+        $this->assertStringContainsString('Costs Disclosure', $html);
         $this->assertStringContainsString('https://example.com/sign/789/token', $html);
         $this->assertStringContainsString('Please review and sign this agreement.', $html);
         

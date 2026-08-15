@@ -253,6 +253,7 @@ class ActivitiesLog extends Authenticatable
 		$lower = strtolower($subject);
 
 		return strpos($lower, 'signed document') !== false
-			|| strpos($lower, 'signed cost agreement') !== false;
+			|| strpos($lower, 'signed cost agreement') !== false
+			|| strpos($lower, 'signed costs disclosure') !== false;
 	}
 }

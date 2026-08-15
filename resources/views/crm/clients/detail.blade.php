@@ -954,19 +954,6 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div id="confirmCostAgreementModal" tabindex="-1" role="dialog" aria-labelledby="confirmCostAgreementModalLabel" aria-hidden="false" class="modal fade" >
-	<div class="modal-dialog">
-		<div class="modal-content popUp">
-			<div class="modal-body text-center">
-				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title text-center message col-v-5">Do you want to delete this Cost Agreement?</h4>
-				<button data-id="" type="submit" style="margin-top: 40px;" class="button btn btn-danger acceptCostAgreementDelete">Yes, Delete</button>
-				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
-			</div>
-		</div>
-	</div>
-</div>
-
 {{-- confirmpublishdocModal REMOVED - workflow checklist unused --}}
 
 <div class="modal fade custom_modal" id="matter_ownership" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
@@ -1510,7 +1497,6 @@ $(document).ready(function() {
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
             followupStore: '{{ URL::to("/clients/action/store") }}',
             // publishDoc, deleteClientPortalDoc REMOVED - workflow checklist unused
-            deleteCostagreement: '{{ URL::to("/deletecostagreement") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',
             pinNote: '{{ URL::to("/pinnote") }}',
             pinActivityLog: '{{ URL::to("/pinactivitylog") }}',

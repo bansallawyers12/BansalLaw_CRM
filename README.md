@@ -43,7 +43,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 | **E-Signatures** | Template-based signing workflow; staff sends link → client signs via token (no login) |
 | **DOCX → PDF** | Local and Python microservice conversion (`python_services/`) |
 | **Email Integration** | Compose/send mail, inbox/sent import (Python service), labels, attachments, smart import |
-| **Legal Forms** | Short costs disclosure, cost agreements, authority to act (DOCX generation) |
+| **Legal Forms** | Short costs disclosure, long costs disclosure, authority to act (DOCX generation) |
 
 ### Financial & Trust
 
@@ -108,7 +108,7 @@ Create/convert client
   → Upload personal documents & checklists
   → Create matter(s) with workflow template
   → Assign case manager & legal practitioner
-  → Generate cost agreement / legal forms
+  → Generate costs disclosure / legal forms
   → Enable client portal access
 ```
 

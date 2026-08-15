@@ -14,12 +14,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookedTimeSlotsToDisableService;
 use App\Services\Payment\StripePaymentService;
 use App\Support\BansalDatetimeBackendHelper;
+use App\Support\BookingCatalogue;
 
 class PublicBookingController extends BaseController
 {
@@ -36,26 +38,7 @@ class PublicBookingController extends BaseController
     {
         try {
             $result = [
-                'location' => [
-                    [
-                        'id' => 1,
-                        'name' => 'Adelaide Office',
-                        'address' => 'Unit 5, 55 Gawler Pl',
-                        'city' => 'Adelaide',
-                        'state' => 'SA',
-                        'postcode' => '5000',
-                        'full_address' => 'Unit 5, 55 Gawler Pl Adelaide SA 5000'
-                    ],
-                    [
-                        'id' => 2,
-                        'name' => 'Melbourne Office',
-                        'address' => 'Level 8/278 Collins St',
-                        'city' => 'Melbourne',
-                        'state' => 'VIC',
-                        'postcode' => '3000',
-                        'full_address' => 'Level 8/278 Collins St Melbourne VIC 3000'
-                    ]
-                ],
+                'location' => BookingCatalogue::publicLocations(),
                 'meeting_type' => [
                     [
                         'id' => 1,
@@ -66,14 +49,14 @@ class PublicBookingController extends BaseController
                     [
                         'id' => 2,
                         'name' => 'In Person',
-                        'description' => 'Visit our office',
+                        'description' => 'Visit our Melbourne office',
                         'icon' => 'building'
                     ],
                     [
                         'id' => 3,
                         'name' => 'Video Call',
                         'description' => 'Online consultation',
-                        'note' => 'Available for paid appointments only',
+                        'note' => 'Available for paid (30 and 60 minute) appointments',
                         'icon' => 'video'
                     ]
                 ],
@@ -100,102 +83,8 @@ class PublicBookingController extends BaseController
                         'country_flag' => '🇮🇳'
                     ]
                 ],
-                'select_your_service' => [
-                    [
-                        'id' => 1,
-                        'name' => 'Permanent Residency Appointment'
-                    ],
-                    [
-                        'id' => 2,
-                        'name' => 'Temporary Residency Appointment'
-                    ],
-                    [
-                        'id' => 3,
-                        'name' => 'JRP/Skill Assessment'
-                    ],
-                    [
-                        'id' => 4,
-                        'name' => 'Tourist Visa'
-                    ],
-                    [
-                        'id' => 5,
-                        'name' => 'Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)'
-                    ],
-                    [
-                        'id' => 6,
-                        'name' => 'Complex matters: ART, Protection visa, Federal Case'
-                    ],
-                    [
-                        'id' => 7,
-                        'name' => 'Visa Cancellation/ NOICC/ Visa refusals'
-                    ],
-                    [
-                        'id' => 8,
-                        'name' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA'
-                    ]
-                ],
-                'service_type' => [
-                    [
-                        'id' => 1,
-                        'name' => 'Free Consultation',
-                        'price' => 0,
-                        'price_display' => 'FREE',
-                        'duration' => 15,
-                        'duration_unit' => 'minutes',
-                        'time_slots' => [
-                            'start_time' => '10:45',
-                            'end_time' => '16:00',
-                            'time_format' => 'AM/PM'
-                        ],
-                        'availability' => [
-                            'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                            'time_slots' => '15-minute time slots'
-                        ],
-                        'description' => 'Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.',
-                        'includes_video_call' => false,
-                        'available_for_overseas' => false
-                    ],
-                    [
-                        'id' => 2,
-                        'name' => 'Comprehensive Migration Advice',
-                        'price' => 150,
-                        'price_display' => '$150',
-                        'duration' => 30,
-                        'duration_unit' => 'minutes',
-                        'time_slots' => [
-                            'start_time' => '09:00',
-                            'end_time' => '17:00',
-                            'time_format' => 'AM/PM'
-                        ],
-                        'availability' => [
-                            'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                            'time_slots' => '30-minute time slots'
-                        ],
-                        'description' => 'In-depth professional consultation: Comprehensive case analysis, detailed migration strategy, complex visa applications, ART appeals, visa cancellations, protection visas, and personalized action plans. Suitable for overseas applicants and complex cases.',
-                        'includes_video_call' => true,
-                        'available_for_overseas' => true
-                    ],
-                    [
-                        'id' => 3,
-                        'name' => 'Overseas Applicant Enquiry',
-                        'price' => 150,
-                        'price_display' => '$150',
-                        'duration' => 30,
-                        'duration_unit' => 'minutes',
-                        'time_slots' => [
-                            'start_time' => '09:00',
-                            'end_time' => '17:00',
-                            'time_format' => 'AM/PM'
-                        ],
-                        'availability' => [
-                            'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                            'time_slots' => '30-minute time slots'
-                        ],
-                        'description' => 'Specialized consultation for overseas applicants: For applicants currently outside Australia or inquiring on behalf of someone overseas. Includes detailed assessment and personalized migration strategy.',
-                        'includes_video_call' => true,
-                        'available_for_overseas' => true
-                    ]
-                ],
+                'select_your_service' => BookingCatalogue::publicSelectYourService(),
+                'service_type' => BookingCatalogue::publicServiceTypeList(),
                 'consultants' => AppointmentConsultant::query()
                     ->where('is_active', true)
                     ->orderBy('name')
@@ -363,18 +252,11 @@ class PublicBookingController extends BaseController
             default => ucfirst($appointment->status ?? 'Pending')
         };
 
-        // Map enquiry type to display format
-        $enquiryTypeDisplay = match($appointment->enquiry_type) {
-            'pr' => 'Permanent Residency',
-            'tr' => 'Temporary Residency',
-            'tourist' => 'Tourist Visa',
-            'education' => 'Education/Student Visa',
-            'pr_complex' => 'PR/Complex',
-            'jrp' => 'JRP/Skill Assessment',
-            'visa_cancellation' => 'Visa Cancellation/NOICC/Refusals',
-            'india_uk_canada_europe' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
-            default => ucfirst($appointment->enquiry_type ?? 'General')
-        };
+        $enquiryTypeDisplay = BookingCatalogue::enquiryTypeDisplay(
+            $appointment->enquiry_type,
+            $appointment->noe_id !== null ? (int) $appointment->noe_id : null,
+            $appointment->noe_scheme ?? null
+        );
 
         // Format meeting type
         $meetingTypeDisplay = match($appointment->meeting_type) {
@@ -401,7 +283,7 @@ class PublicBookingController extends BaseController
             'appointment_date' => $appointment->appointment_datetime ? $appointment->appointment_datetime->format('Y-m-d') : null,
             'appointment_time' => $appointment->appointment_datetime ? $appointment->appointment_datetime->format('H:i:s') : null,
             'appointment_datetime' => $appointment->appointment_datetime ? $appointment->appointment_datetime->toIso8601String() : null,
-            'duration_minutes' => $appointment->duration_minutes ?? 15,
+            'duration_minutes' => $appointment->duration_minutes ?? 10,
             'status' => $appointment->status,
             'status_display' => $statusDisplay,
             'is_paid' => $appointment->is_paid ?? false,
@@ -446,11 +328,12 @@ class PublicBookingController extends BaseController
             
             // Validate required fields
             $validator = Validator::make($requestData, [
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'noe_id' => ['required', 'integer', Rule::in(BookingCatalogue::crmNoeIds())],
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
+                'enquiry_details' => 'nullable|string',
                 'appointment_details' => 'required|integer|in:1,2,3', // 1=phone, 2=in_person, 3=video_call
                 'preferred_language' => 'required|integer|in:1,2,3', // 1=English, 2=Hindi, 3=Punjabi
                 'inperson_address' => 'required|in:1,2',
@@ -458,6 +341,11 @@ class PublicBookingController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            $enquiryDetails = trim((string) ($requestData['enquiry_details'] ?? $requestData['description'] ?? ''));
+            if ($enquiryDetails === '') {
+                return $this->sendError('Validation failed: Details of enquiry are required.', [], 422);
             }
 
             // Get client information - logged in user_id is the client_id
@@ -477,33 +365,21 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Client email is required. Please update client information first.', [], 422);
             }
             
-            // Map service_id from form to actual service_id
-            // Form: 1=Free Consultation, 2=Comprehensive Migration Advice, 3=Overseas Applicant Enquiry
-            // DB: 1=Paid, 2=Free, 3=Paid Overseas
-            $serviceIdMap = [
-                1 => 2, // Free Consultation -> Free
-                2 => 1, // Comprehensive Migration Advice -> Paid
-                3 => 3, // Overseas Applicant Enquiry -> Paid Overseas
-            ];
-            $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
+            // Form: 1=Free 10min, 2=Standard $150/30, 3=Extended $220/60
+            // DB: 1=Paid 30, 2=Free, 3=Extended 60
+            $product = BookingCatalogue::productByFormId((int) $requestData['service_id']);
+            if (!$product) {
+                return $this->sendError('Invalid service_id.', [], 422);
+            }
+            $serviceId = (int) $product['db_service_id'];
+            $durationMinutes = (int) $product['duration_minutes'];
+            $amount = (float) $product['price'];
 
-            // Map NOE ID to service_type/enquiry_type
-            // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
-            $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
-                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
-                3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
-                4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
-                5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
-                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
-                7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
-                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
-            ];
-            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
+            $serviceTypeMapping = BookingCatalogue::serviceTypeMappingForNoe((int) $requestData['noe_id'], 'crm');
 
-            // Map location
-            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
-            $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
+            // Melbourne only (Adelaide retired from Lawyers booking)
+            $location = BookingCatalogue::locationFromInpersonAddress($requestData['inperson_address']);
+            $inpersonAddress = BookingCatalogue::inpersonAddressMelbourne();
 
             // Map meeting type (appointment_details: 1=phone, 2=in_person, 3=video_call)
             $appointmentDetailsToMeetingType = [
@@ -575,9 +451,8 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Appointment date and time must be in the future', [], 422);
             }
 
-            // Calculate duration based on service
-            // Service 1 (Free Consultation) = 15 min, Service 2/3 (Paid) = 30 min
-            $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
+            // Calculate duration / amount from Lawyers service products (10 / 30 / 60)
+            // (already set from BookingCatalogue product above)
 
             // Check for duplicate appointments - prevent booking the same time slot
             // An appointment is considered duplicate if:
@@ -598,8 +473,8 @@ class PublicBookingController extends BaseController
                 'noe_id' => $requestData['noe_id'],
                 'service_id' => $serviceId,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
-                'noe_scheme' => 'immigration',
+                'inperson_address' => $inpersonAddress,
+                'noe_scheme' => 'crm',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
@@ -609,17 +484,11 @@ class PublicBookingController extends BaseController
                     'noe_id' => $requestData['noe_id'],
                     'service_id' => $serviceId,
                     'location' => $location,
-                    'inperson_address' => $requestData['inperson_address']
+                    'inperson_address' => $inpersonAddress
                 ]);
             }
 
-            // Map service_id to specific_service for Bansal API
-            $specificServiceMap = [
-                1 => 'paid-consultation',  // Paid Migration Advice
-                2 => 'consultation',        // Free Consultation
-                3 => 'overseas-enquiry',    // Overseas Applicant Enquiry
-            ];
-            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+            $specificService = $product['specific_service'];
 
             // Prepare appointment data for Bansal API
             // Format appointment date and time separately as API expects
@@ -647,10 +516,10 @@ class PublicBookingController extends BaseController
                 'specific_service' => $specificService,
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
                 'service_type' => $serviceTypeMapping['service_type'],
-                'enquiry_details' => $requestData['description'],
+                'enquiry_details' => $enquiryDetails,
                 'is_paid' => false,
-                'amount' => ($serviceId == 2) ? 0 : 150,
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
             ];
 
@@ -708,15 +577,16 @@ class PublicBookingController extends BaseController
                 'timeslot_full' => $requestData['appoint_time'], // Store as provided
                 'duration_minutes' => $durationMinutes,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
+                'inperson_address' => $inpersonAddress,
                 'meeting_type' => $meetingType,
                 'preferred_language' => $preferredLanguage,
                 
                 'service_id' => $serviceId,
                 'noe_id' => $requestData['noe_id'],
+                'noe_scheme' => 'crm',
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'],
                 'service_type' => $serviceTypeMapping['service_type'],
-                'enquiry_details' => $requestData['description'],
+                'enquiry_details' => $enquiryDetails,
                 
                 // Determine status based on service type and payment status
                 // Case 1: Free appointment (serviceId == 2) -> status = 'confirmed'
@@ -726,8 +596,8 @@ class PublicBookingController extends BaseController
                     : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
                 'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
                 'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
-                'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 
                 // Boolean fields with default values
@@ -793,11 +663,12 @@ class PublicBookingController extends BaseController
 
             // Validate required fields (same as addAppointment + full_name, email, phone)
             $validator = Validator::make($requestData, [
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'noe_id' => ['required', 'integer', Rule::in(BookingCatalogue::crmNoeIds())],
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string',
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
+                'enquiry_details' => 'nullable|string',
                 'appointment_details' => 'required|integer|in:1,2,3',
                 'preferred_language' => 'required|integer|in:1,2,3',
                 'inperson_address' => 'required|in:1,2',
@@ -808,6 +679,11 @@ class PublicBookingController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            $enquiryDetails = trim((string) ($requestData['enquiry_details'] ?? $requestData['description'] ?? ''));
+            if ($enquiryDetails === '') {
+                return $this->sendError('Validation failed: Details of enquiry are required.', [], 422);
             }
 
             $email = strtolower(trim($requestData['email']));
@@ -830,30 +706,18 @@ class PublicBookingController extends BaseController
             $clientEmail = $client->email ?? '';
             $clientUniqueId = $client->client_id ?? null;
 
-            // Map service_id from form to actual service_id
-            $serviceIdMap = [
-                1 => 2, // Free Consultation -> Free
-                2 => 1, // Comprehensive Migration Advice -> Paid
-                3 => 3, // Overseas Applicant Enquiry -> Paid Overseas
-            ];
-            $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
+            $product = BookingCatalogue::productByFormId((int) $requestData['service_id']);
+            if (!$product) {
+                return $this->sendError('Invalid service_id.', [], 422);
+            }
+            $serviceId = (int) $product['db_service_id'];
+            $durationMinutes = (int) $product['duration_minutes'];
+            $amount = (float) $product['price'];
 
-            // Map NOE ID to service_type/enquiry_type
-            $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],
-                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
-                3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
-                4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
-                5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
-                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
-                7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
-                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
-            ];
-            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex'];
+            $serviceTypeMapping = BookingCatalogue::serviceTypeMappingForNoe((int) $requestData['noe_id'], 'crm');
 
-            // Map location
-            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
-            $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
+            $location = BookingCatalogue::locationFromInpersonAddress($requestData['inperson_address']);
+            $inpersonAddress = BookingCatalogue::inpersonAddressMelbourne();
 
             // Map meeting type
             $appointmentDetailsToMeetingType = [1 => 'phone', 2 => 'in_person', 3 => 'video'];
@@ -905,8 +769,6 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Appointment date and time must be in the future', [], 422);
             }
 
-            $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
-
             // Check for duplicate appointments
             $existingAppointment = BookingAppointment::where('client_id', $client->id)
                 ->where('appointment_datetime', $appointmentDateTime)
@@ -923,8 +785,8 @@ class PublicBookingController extends BaseController
                 'noe_id' => $requestData['noe_id'],
                 'service_id' => $serviceId,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
-                'noe_scheme' => 'immigration',
+                'inperson_address' => $inpersonAddress,
+                'noe_scheme' => 'crm',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
@@ -936,9 +798,7 @@ class PublicBookingController extends BaseController
                 ]);
             }
 
-            // Bansal API
-            $specificServiceMap = [1 => 'paid-consultation', 2 => 'consultation', 3 => 'overseas-enquiry'];
-            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+            $specificService = $product['specific_service'];
 
             $appointmentDateForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d');
             $appointmentTimeForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('H:i');
@@ -959,10 +819,10 @@ class PublicBookingController extends BaseController
                 'specific_service' => $specificService,
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'],
                 'service_type' => $serviceTypeMapping['service_type'],
-                'enquiry_details' => $requestData['description'],
+                'enquiry_details' => $enquiryDetails,
                 'is_paid' => ($serviceId == 2) ? false : true,
-                'amount' => ($serviceId == 2) ? 0 : 150,
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
             ];
 
@@ -1036,21 +896,22 @@ class PublicBookingController extends BaseController
                 'timeslot_full' => $requestData['appoint_time'],
                 'duration_minutes' => $durationMinutes,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
+                'inperson_address' => $inpersonAddress,
                 'meeting_type' => $meetingType,
                 'preferred_language' => $preferredLanguage,
                 'service_id' => $serviceId,
                 'noe_id' => $requestData['noe_id'],
+                'noe_scheme' => 'crm',
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'],
                 'service_type' => $serviceTypeMapping['service_type'],
-                'enquiry_details' => $requestData['description'],
+                'enquiry_details' => $enquiryDetails,
                 'status' => ($serviceId == 2)
                     ? 'confirmed'
                     : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
                 'confirmed_at' => ($serviceId == 2) ? now() : null,
                 'is_paid' => ($serviceId == 2) ? false : true,
-                'amount' => ($serviceId == 2) ? 0 : 150,
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 'confirmation_email_sent' => false,
                 'reminder_sms_sent' => false,
@@ -1301,7 +1162,7 @@ class PublicBookingController extends BaseController
         return [
             'success' => $data['success'] ?? true,
             'disabledatesarray' => $data['disabledatesarray'] ?? [],
-            'duration' => $data['duration'] ?? 15,
+            'duration' => $data['duration'] ?? 10,
             'start_time' => $data['start_time'] ?? '10:45',
             'end_time' => $data['end_time'] ?? '16:00',
             'weeks' => $data['weeks'] ?? [],
@@ -1338,33 +1199,14 @@ class PublicBookingController extends BaseController
                 'slot_overwrite' => $slot_overwrite
             ]);
             
-            // Map id to specific_service
-            $specific_service_map = [
-                1 => 'consultation',
-                2 => 'paid-consultation',
-                3 => 'overseas-enquiry'
-            ];
-            $specific_service = $specific_service_map[$id] ?? 'consultation';
+            // Map id to specific_service (1=free 10min, 2=paid 30, 3=extended 60)
+            $specific_service = BookingCatalogue::specificServiceForRequestKey($id);
             
-            // Map enquiry_item to service_type
-            $service_type_map = [
-                1 => 'permanent-residency',
-                2 => 'temporary-residency',
-                3 => 'jrp-skill-assessment',
-                4 => 'tourist-visa',
-                5 => 'education-visa',
-                6 => 'complex-matters',
-                7 => 'visa-cancellation',
-                8 => 'international-migration'
-            ];
-            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            // Map enquiry_item to practice-area enquiry_type (CRM NOE 1–7)
+            $service_type = BookingCatalogue::slotServiceTypeForNoeId($enquiry_item);
             
-            // Map inperson_address to location
-            $location_map = [
-                1 => 'adelaide',
-                2 => 'melbourne'
-            ];
-            $location = $location_map[$inperson_address] ?? 'adelaide';
+            // Melbourne only
+            $location = BookingCatalogue::locationFromInpersonAddress($inperson_address);
             
             // Prepare request data for external API
             $requestData = [
@@ -1521,33 +1363,14 @@ class PublicBookingController extends BaseController
                 'slot_overwrite' => $slot_overwrite
             ]);
             
-            // Map service_id to specific_service
-            $specific_service_map = [
-                1 => 'consultation',
-                2 => 'paid-consultation',
-                3 => 'overseas-enquiry'
-            ];
-            $specific_service = $specific_service_map[$service_id] ?? 'consultation';
+            // Map service_id to specific_service (1=free 10min, 2=paid 30, 3=extended 60)
+            $specific_service = BookingCatalogue::specificServiceForRequestKey($service_id);
             
-            // Map enquiry_item to service_type
-            $service_type_map = [
-                1 => 'permanent-residency',
-                2 => 'temporary-residency',
-                3 => 'jrp-skill-assessment',
-                4 => 'tourist-visa',
-                5 => 'education-visa',
-                6 => 'complex-matters',
-                7 => 'visa-cancellation',
-                8 => 'international-migration'
-            ];
-            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            // Map enquiry_item to practice-area enquiry_type (CRM NOE 1–7)
+            $service_type = BookingCatalogue::slotServiceTypeForNoeId($enquiry_item);
             
-            // Map inperson_address to location
-            $location_map = [
-                1 => 'adelaide',
-                2 => 'melbourne'
-            ];
-            $location = $location_map[$inperson_address] ?? 'adelaide';
+            // Melbourne only
+            $location = BookingCatalogue::locationFromInpersonAddress($inperson_address);
             
             try {
                 // Use BansalApiClient to call the website API (same as getdisableddatetime)
@@ -2105,7 +1928,7 @@ class PublicBookingController extends BaseController
                 'appointment_date' => $appointmentDate,
                 'appointment_time' => $appointmentTime,
                 'appointment_datetime' => $appointmentDate . ' ' . $appointmentTime . ':00',
-                'duration_minutes' => $appointment->duration_minutes ?? 15,
+                'duration_minutes' => $appointment->duration_minutes ?? 10,
                 'location' => $appointment->location ?? 'melbourne',
                 'meeting_type' => $meetingTypeForApi,
                 'preferred_language' => $preferredLanguage,
@@ -2156,21 +1979,19 @@ class PublicBookingController extends BaseController
      */
     private function determineSpecificService(BookingAppointment $appointment): string
     {
-        // If enquiry_type exists, try to map it
+        $product = BookingCatalogue::productByDbServiceId((int) ($appointment->service_id ?? 0));
+        if ($product) {
+            return (string) $product['specific_service'];
+        }
+
+        // Legacy immigration fallback
         if ($appointment->enquiry_type) {
             $enquiryType = strtolower($appointment->enquiry_type);
-            
-            // Map common enquiry types to specific_service
             if (strpos($enquiryType, 'overseas') !== false || $enquiryType === 'international') {
                 return 'overseas-enquiry';
-            } elseif ($appointment->is_paid) {
-                return 'paid-consultation';
-            } else {
-                return 'consultation';
             }
         }
-        
-        // Default fallback based on is_paid
+
         return $appointment->is_paid ? 'paid-consultation' : 'consultation';
     }
 

@@ -159,7 +159,7 @@
             <div class="document-info">
                 <h3>Agreement Details</h3>
                 <p><strong>Document:</strong> {{ $documentTitle }}</p>
-                <p><strong>Type:</strong> Cost Agreement</p>
+                <p><strong>Type:</strong> Costs Disclosure</p>
                 @if($dueDate)
                     <p><strong>Due Date:</strong> {{ $dueDate }}</p>
                 @endif

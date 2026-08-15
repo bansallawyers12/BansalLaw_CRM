@@ -885,7 +885,7 @@
 
                 var fromtime11 = parseTimeLatest(fromtime);
 
-                var interval11 = 15;
+                var interval11 = 10;
 
                 var timeString11 = fromtime11 + interval11;
 

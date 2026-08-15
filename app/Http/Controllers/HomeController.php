@@ -29,6 +29,7 @@ use Helper;
 use Stripe;
 
 use App\Support\BansalDatetimeBackendHelper;
+use App\Support\BookingCatalogue;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookedTimeSlotsToDisableService;
 
@@ -117,35 +118,14 @@ class HomeController extends Controller
             'slot_overwrite' => $slot_overwrite
         ]);
         
-        // Map id to specific_service (numeric legacy + client modal slugs)
-        $specific_service_map = [
-            1 => 'consultation',
-            2 => 'paid-consultation',
-            3 => 'overseas-enquiry',
-            'promo_free' => 'consultation',
-            'paid' => 'paid-consultation',
-        ];
-        $specific_service = $specific_service_map[$id] ?? 'consultation';
+        // Map id to specific_service (numeric form ids + CRM modal slugs)
+        $specific_service = BookingCatalogue::specificServiceForRequestKey($id);
         
-        // Map enquiry_item to service_type
-        $service_type_map = [
-            1 => 'permanent-residency',
-            2 => 'temporary-residency',
-            3 => 'jrp-skill-assessment',
-            4 => 'tourist-visa',
-            5 => 'education-visa',
-            6 => 'complex-matters',
-            7 => 'visa-cancellation',
-            8 => 'international-migration'
-        ];
-        $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+        // Map enquiry_item to practice-area enquiry_type (CRM NOE 1–7)
+        $service_type = BookingCatalogue::slotServiceTypeForNoeId($enquiry_item);
         
-        // Map inperson_address to location
-        $location_map = [
-            1 => 'adelaide',
-            2 => 'melbourne'
-        ];
-        $location = $location_map[$inperson_address] ?? 'adelaide';
+        // Melbourne only (Adelaide retired from Lawyers booking)
+        $location = BookingCatalogue::locationFromInpersonAddress($inperson_address);
         
         // Prepare request data for external API
         $requestData = [
@@ -319,32 +299,11 @@ class HomeController extends Controller
             ]);
         }
 
-        $specific_service_map = [
-            1 => 'consultation',
-            2 => 'paid-consultation',
-            3 => 'overseas-enquiry',
-            'promo_free' => 'consultation',
-            'paid' => 'paid-consultation',
-        ];
-        $specific_service = $specific_service_map[$service_id] ?? 'consultation';
+        $specific_service = BookingCatalogue::specificServiceForRequestKey($service_id);
 
-        $service_type_map = [
-            1 => 'permanent-residency',
-            2 => 'temporary-residency',
-            3 => 'jrp-skill-assessment',
-            4 => 'tourist-visa',
-            5 => 'education-visa',
-            6 => 'complex-matters',
-            7 => 'visa-cancellation',
-            8 => 'international-migration',
-        ];
-        $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+        $service_type = BookingCatalogue::slotServiceTypeForNoeId($enquiry_item);
 
-        $location_map = [
-            1 => 'adelaide',
-            2 => 'melbourne',
-        ];
-        $location = $location_map[$inperson_address] ?? 'adelaide';
+        $location = BookingCatalogue::locationFromInpersonAddress($inperson_address);
 
         $bookedSlots = app(BookedTimeSlotsToDisableService::class);
         $dateForCrm = BookedTimeSlotsToDisableService::parseDateInput((string) $sel_date);

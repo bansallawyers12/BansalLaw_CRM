@@ -37,6 +37,7 @@ class BookingAppointment extends Model
         'preferred_language',
         'service_id',
         'noe_id',
+        'noe_scheme',
         'enquiry_type',
         'service_type',
         'enquiry_details',

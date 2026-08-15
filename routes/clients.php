@@ -156,7 +156,6 @@ Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clien
 Route::post('/unarchive/{id}', [ClientsController::class, 'unarchive'])->name('clients.unarchive');
 Route::get('/change-client-status', [ClientsController::class, 'updateclientstatus'])->name('clients.updateclientstatus');
 Route::get('/get-activities', [ClientsController::class, 'activities'])->name('clients.activities');
-Route::post('/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');
 Route::post('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
 Route::post('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
@@ -306,7 +305,7 @@ Route::post('/clients/getCostAssignmentLegalPractitionerDetailLead', [ClientsCon
 
 Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
 
-// Legal Forms (Short Costs Disclosure, Long Cost Disclosure, Authority to Act)
+// Legal Forms (Short Costs Disclosure, Long Costs Disclosure, Authority to Act)
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
 Route::post('/legal-forms/upload', [\App\Http\Controllers\CRM\LegalFormsController::class, 'uploadForm'])->name('legal-forms.upload');
 Route::post('/legal-forms/generate-scope-ai', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAI'])->name('legal-forms.generate-scope-ai');

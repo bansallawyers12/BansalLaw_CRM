@@ -5573,70 +5573,6 @@ class ClientsController extends Controller
         echo json_encode($response);
     }
 
-    public function deletecostagreement(Request $request)
-    {
-        $cost_agreement_id = $request->input('cost_agreement_id');
-        
-        if (!$cost_agreement_id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Cost agreement ID is required'
-            ]);
-        }
-
-        $costAssignment = \App\Models\CostAssignmentForm::find($cost_agreement_id);
-        
-        if (!$costAssignment) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Cost agreement not found'
-            ]);
-        }
-
-        $clientId = (int) ($costAssignment->client_id ?? 0);
-        if ($clientId <= 0 && ! empty($costAssignment->client_matter_id)) {
-            $clientId = (int) \App\Models\ClientMatter::where('id', $costAssignment->client_matter_id)->value('client_id');
-        }
-
-        if ($clientId <= 0) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthorized: Unable to resolve client record for cost agreement'
-            ], 403);
-        }
-
-        $this->ensureCrmRecordAccess($clientId);
-
-        $client_id = $costAssignment->client_id;
-        $matter = \App\Models\ClientMatter::find($costAssignment->client_matter_id);
-        $matterName = $matter ? $matter->title : 'N/A';
-
-        // Delete the cost assignment
-        $deleted = $costAssignment->delete();
-
-        if ($deleted) {
-            // Log activity
-            $activity = new \App\Models\ActivitiesLog;
-            $activity->client_id = $client_id;
-            $activity->created_by = Auth::user()->id;
-            $activity->subject = 'deleted cost assignment form';
-            $activity->description = '<p>Cost assignment form has been deleted for matter: <strong>' . $matterName . '</strong></p>';
-            $activity->task_status = 0;
-            $activity->pin = 0;
-            $activity->save();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Cost agreement deleted successfully'
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to delete cost agreement'
-            ]);
-        }
-    }
-
     //Check star client
     public function checkStarClient(Request $request)
     {
@@ -7425,7 +7361,7 @@ class ClientsController extends Controller
             $validator = Validator::make($requestData, [
                 'client_id' => 'required|exists:admins,id',
                 'noe_id' => ['required', 'integer', Rule::in($crmNoeIds)],
-                'service_id' => 'required|string|in:promo_free,paid',
+                'service_id' => 'required|string|in:promo_free,paid,paid_extended',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
@@ -7461,21 +7397,26 @@ class ClientsController extends Controller
                 ], 422);
             }
             
-            // Form slugs: promo_free -> DB 2 (free), paid -> DB 1 (paid consultation)
-            $serviceIdMap = [
-                'promo_free' => 2,
-                'paid' => 1,
-            ];
-            $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
+            // Form slugs: promo_free -> DB 2 (free 10), paid -> DB 1 ($150/30), paid_extended -> DB 3 ($220/60)
+            $product = \App\Support\BookingCatalogue::productBySlug((string) $requestData['service_id']);
+            if (!$product) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid service_id.',
+                ], 422);
+            }
+            $serviceId = (int) $product['db_service_id'];
+            $durationMinutes = (int) $product['duration_minutes'];
+            $amount = (float) $product['price'];
 
             $noeRow = collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', (int) $requestData['noe_id']);
             $serviceTypeMapping = $noeRow
                 ? ['service_type' => $noeRow['service_type'], 'enquiry_type' => $noeRow['enquiry_type']]
                 : ['service_type' => 'Other', 'enquiry_type' => 'general'];
 
-            // Map location
-            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
-            $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
+            // Melbourne only
+            $location = \App\Support\BookingCatalogue::locationFromInpersonAddress($requestData['inperson_address']);
+            $inpersonAddress = \App\Support\BookingCatalogue::inpersonAddressMelbourne();
 
             // Map meeting type
             $meetingTypeMap = [
@@ -7538,15 +7479,14 @@ class ClientsController extends Controller
                 }
             }
 
-            // promo_free = 15 min, paid = 30 min
-            $durationMinutes = ($requestData['service_id'] === 'promo_free') ? 15 : 30;
+            // Duration / amount already set from BookingCatalogue product (10 / 30 / 60)
 
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
             $appointmentDataForConsultant = [
                 'noe_id' => $requestData['noe_id'],
                 'service_id' => $serviceId,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
+                'inperson_address' => $inpersonAddress,
                 'noe_scheme' => 'crm',
             ];
 
@@ -7572,18 +7512,12 @@ class ClientsController extends Controller
                         'noe_id' => $requestData['noe_id'],
                         'service_id' => $serviceId,
                         'location' => $location,
-                        'inperson_address' => $requestData['inperson_address'],
+                        'inperson_address' => $inpersonAddress,
                     ]);
                 }
             }
 
-            // Map internal service_id to Bansal specific_service (1=paid, 2=free)
-            $specificServiceMap = [
-                1 => 'paid-consultation',
-                2 => 'consultation',
-                3 => 'overseas-enquiry',
-            ];
-            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+            $specificService = $product['specific_service'];
 
             // Prepare appointment data for Bansal API
             // Format appointment date and time separately as API expects
@@ -7613,8 +7547,8 @@ class ClientsController extends Controller
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
-                'amount' => ($serviceId == 2) ? 0 : 150,
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
             ];
 
@@ -7700,12 +7634,13 @@ class ClientsController extends Controller
                 'timeslot_full' => $requestData['appoint_time'], // Store as provided
                 'duration_minutes' => $durationMinutes,
                 'location' => $location,
-                'inperson_address' => $requestData['inperson_address'],
+                'inperson_address' => $inpersonAddress,
                 'meeting_type' => $meetingType,
                 'preferred_language' => $requestData['preferred_language'],
                 
                 'service_id' => $serviceId,
                 'noe_id' => $requestData['noe_id'],
+                'noe_scheme' => 'crm',
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'],
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
@@ -7718,8 +7653,8 @@ class ClientsController extends Controller
                     : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
                 'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
                 'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
-                'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
-                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'amount' => $amount,
+                'final_amount' => $amount,
                 'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 
                 // Boolean fields with default values

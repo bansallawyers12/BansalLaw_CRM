@@ -42,8 +42,8 @@
                                 <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
                                     <span class="lf-menu-icon lf-menu-icon--purple"><i class="fa-solid fa-file-contract"></i></span>
                                     <span class="lf-menu-text">
-                                        <strong>Long Cost Disclosure</strong>
-                                        <small>Detailed cost agreement</small>
+                                        <strong>Long Costs Disclosure</strong>
+                                        <small>Detailed costs disclosure</small>
                                     </span>
                                 </a></li>
                                 <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
@@ -101,7 +101,7 @@
                             </button>
                             <button type="button" class="legal-form-type-card" data-form-type="cost_agreement" onclick="selectLegalFormUploadType('cost_agreement')">
                                 <span class="legal-form-type-card__icon legal-form-type-card__icon--purple"><i class="fa-solid fa-file-contract"></i></span>
-                                <span class="legal-form-type-card__label">Long Cost Disclosure</span>
+                                <span class="legal-form-type-card__label">Long Costs Disclosure</span>
                             </button>
                             <button type="button" class="legal-form-type-card" data-form-type="authority_to_act" onclick="selectLegalFormUploadType('authority_to_act')">
                                 <span class="legal-form-type-card__icon legal-form-type-card__icon--green"><i class="fa-solid fa-stamp"></i></span>
@@ -267,7 +267,7 @@
                         </div>
                     </div>
 
-                    {{-- Person Responsible (Cost Agreement & Short Costs) --}}
+                    {{-- Person Responsible (Long Costs Disclosure & Short Costs) --}}
                     <div id="lf_person_responsible_section" class="row mb-3" style="display:none;">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Person Responsible</label>
@@ -304,7 +304,7 @@
                         </div>
                     </div>
 
-                    {{-- Cost Fields (Short Costs & Cost Agreement) --}}
+                    {{-- Cost Fields (Short Costs & Long Costs Disclosure) --}}
                     <div id="lf_costs_section" style="display:none;">
                         <div class="card mb-3">
                             <div class="card-header" style="background: #f0f4f8;">
@@ -367,7 +367,7 @@
                             </div>
                         </div>
 
-                        {{-- Cost Agreement extra fields --}}
+                        {{-- Long Costs Disclosure extra fields --}}
                         <div id="lf_cost_agreement_extra" style="display:none;">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Cost Estimate Breakdown</label>
@@ -804,7 +804,7 @@
             costsSection.style.display = 'block';
             personSection.style.display = 'flex';
         } else if (formType === 'cost_agreement') {
-            modalTitle.textContent = 'Create Long Cost Disclosure';
+            modalTitle.textContent = 'Create Long Costs Disclosure';
             costsSection.style.display = 'block';
             personSection.style.display = 'flex';
             feeTypeSection.style.display = 'block';

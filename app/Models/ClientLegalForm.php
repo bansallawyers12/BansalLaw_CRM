@@ -65,7 +65,7 @@ class ClientLegalForm extends Model
 
     public const FORM_TYPES = [
         'short_costs_disclosure' => 'Short Costs Disclosure',
-        'cost_agreement' => 'Long Cost Disclosure',
+        'cost_agreement' => 'Long Costs Disclosure',
         'authority_to_act' => 'Authority to Act',
     ];
 

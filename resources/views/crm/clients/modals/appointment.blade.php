@@ -56,30 +56,44 @@
 							<div class="form-group">
 								<label for="service_id" class="font-weight-bold text-dark mb-3">Services <span class="text-danger">*</span></label>
 								<div class="row">
-									<div class="col-md-6 mb-3 service-promo-free">
+									<div class="col-md-4 mb-3 service-promo-free">
 										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="promo_free">
 											<div class="d-flex align-items-center">
 												<input type="radio" class="services_item mt-1" name="radioGroup" value="promo_free" id="service_promo_free">
 												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
 													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Promo — free consultation</h6>
-														<small style="color: #6c757d; font-size: 13px;">15 minutes</small>
+														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Free consultation</h6>
+														<small style="color: #6c757d; font-size: 13px;">10 minutes</small>
 													</div>
 													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
 												</div>
 											</div>
 										</div>
 									</div>
-									<div class="col-md-6 mb-3">
+									<div class="col-md-4 mb-3">
 										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid">
 											<div class="d-flex align-items-center">
 												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid" id="service_paid">
 												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
 													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Paid consultation</h6>
+														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Standard consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
 													</div>
 													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-4 mb-3">
+										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid_extended">
+											<div class="d-flex align-items-center">
+												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid_extended" id="service_paid_extended">
+												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Extended consultation</h6>
+														<small style="color: #6c757d; font-size: 13px;">1 hour</small>
+													</div>
+													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$220</span>
 												</div>
 											</div>
 										</div>
@@ -732,13 +746,13 @@ function toggleVideoCallOption(serviceId) {
 	const appointmentDetailsSelect = document.querySelector('.appointment_item');
 	
 	if (videoCallOption && appointmentDetailsSelect) {
-		// promo_free = free slot — hide Video Call; paid = show Video Call
+		// promo_free = free slot — hide Video Call; paid / paid_extended = show Video Call
 		if (serviceId === 'promo_free') {
 			videoCallOption.style.display = 'none';
 			if (appointmentDetailsSelect.value === 'video_call') {
 				appointmentDetailsSelect.value = '';
 			}
-		} else if (serviceId === 'paid') {
+		} else if (serviceId === 'paid' || serviceId === 'paid_extended') {
 			videoCallOption.style.display = 'block';
 		}
 	}

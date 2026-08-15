@@ -119,7 +119,7 @@
                                 @if($checklist_forms->isEmpty())
                                     <div class="alert alert-info" id="checklists-empty-state">
                                         <i class="fa-solid fa-circle-info me-2"></i>
-                                        No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign Legal Practitioner and team, complete cost assignment, and create cost agreement.
+                                        No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign Legal Practitioner and team, complete cost assignment, and create costs disclosure.
                                     </div>
                                     <div id="checklists-list" style="display: none;"></div>
                                 @else
@@ -269,7 +269,7 @@
                                                             <!-- Document Signed - Download Section -->
                                                             <div class="signature-section mt-3 p-3 rounded border border-success" style="background-color: rgba(40, 167, 69, 0.1);">
                                                                 <h6 class="font-weight-bold mb-2 text-success"><i class="fa-solid fa-circle-check me-2"></i>Document Signed</h6>
-                                                                <p class="mb-2 small text-muted">The client has signed the cost agreement. Download the signed copy below.</p>
+                                                                <p class="mb-2 small text-muted">The client has signed the costs disclosure. Download the signed copy below.</p>
                                                                 <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm">
                                                                     <i class="fa-solid fa-download me-1"></i>Download Signed Document
                                                                 </a>

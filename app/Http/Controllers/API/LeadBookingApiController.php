@@ -290,22 +290,20 @@ class LeadBookingApiController extends BaseController
             'timeslot_full' => ['nullable', 'string', 'max:50'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:480'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:480'],
-            'location' => ['required', Rule::in(['melbourne', 'adelaide'])],
-            'inperson_address' => ['nullable', 'integer', 'in:1,2'],
+            'location' => ['required', Rule::in(['melbourne'])],
+            'inperson_address' => ['nullable', 'integer', 'in:2'],
             'meeting_type' => ['nullable', Rule::in(['in_person', 'phone', 'video'])],
             'preferred_language' => ['nullable', 'string', 'max:50'],
             'service_id' => ['nullable', 'integer', 'in:1,2,3'],
             'noe_id' => [
                 'nullable',
                 'integer',
-                Rule::in(array_values(array_unique(array_merge(
-                    array_column(config('booking_nature_of_enquiry.crm'), 'id'),
-                    [8]
-                )))),
+                Rule::in(\App\Support\BookingCatalogue::crmNoeIds()),
             ],
+            'noe_scheme' => ['nullable', Rule::in(['crm', 'immigration'])],
             'enquiry_type' => ['nullable', 'string', 'max:100'],
             'service_type' => ['nullable', 'string', 'max:100'],
-            'enquiry_details' => ['nullable', 'string'],
+            'enquiry_details' => ['required', 'string'],
             'status' => [
                 'nullable',
                 function (string $attribute, mixed $value, \Closure $fail): void {
@@ -373,7 +371,7 @@ class LeadBookingApiController extends BaseController
 
         $durationMinutes = $validated['duration_minutes']
             ?? $validated['duration']
-            ?? 15;
+            ?? 10;
 
         $payload = array_merge($validated, [
             'bansal_appointment_id' => $bansalId,
@@ -385,6 +383,9 @@ class LeadBookingApiController extends BaseController
             'sync_status' => $validated['sync_status'] ?? 'new',
             'confirmation_email_sent' => false,
             'reminder_sms_sent' => false,
+            'noe_scheme' => $validated['noe_scheme'] ?? 'crm',
+            'location' => 'melbourne',
+            'inperson_address' => $validated['inperson_address'] ?? 2,
         ]);
 
         if ($websiteStatusCode !== null) {
@@ -512,28 +513,16 @@ class LeadBookingApiController extends BaseController
 
     private function serviceTypeLabelForNoeId(int $noeId): ?string
     {
-        $row = collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', $noeId);
-        if ($row) {
-            return $row['service_type'];
-        }
-        if ($noeId === 8) {
-            return 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
-        }
+        $row = \App\Support\BookingCatalogue::noeRow($noeId);
 
-        return null;
+        return $row['service_type'] ?? null;
     }
 
     private function enquiryTypeCodeForNoeId(int $noeId): ?string
     {
-        $row = collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', $noeId);
-        if ($row) {
-            return $row['enquiry_type'];
-        }
-        if ($noeId === 8) {
-            return 'international';
-        }
+        $row = \App\Support\BookingCatalogue::noeRow($noeId);
 
-        return null;
+        return $row['enquiry_type'] ?? null;
     }
 
     private function resolveCountryCode(string $phone, ?string $requestCountryCode): ?string

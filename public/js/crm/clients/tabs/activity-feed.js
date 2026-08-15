@@ -264,6 +264,7 @@
                 'updated.*checklist',
                 'signed document',
                 'signed cost agreement',
+                'signed costs disclosure',
                 'document.*attached',
                 'document.*detached'
             ];
@@ -311,6 +312,7 @@
                 'withdrawal',
                 'balance',
                 'cost agreement',
+                'costs disclosure',
                 'account'
             ];
             $rows.each(function() {

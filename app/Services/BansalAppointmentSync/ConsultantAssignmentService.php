@@ -50,8 +50,8 @@ class ConsultantAssignmentService
     }
 
     /**
-     * Determine calendar type based on appointment data
-     * Logic copied from resources/views/Admin/appointments/calender.blade.php
+     * Determine calendar type based on appointment data.
+     * Lawyers CRM calendars are ajay/kunal only; legacy immigration types remap to default.
      */
     protected function determineCalendarType(array $appointment): ?string
     {
@@ -72,34 +72,30 @@ class ConsultantAssignmentService
         $inpersonAddress = $appointment['inperson_address'] ?? null;
         $noeId = (int) ($appointment['noe_id'] ?? 0);
         $serviceId = $appointment['service_id'] ?? null;
-        $scheme = $appointment['noe_scheme'] ?? 'immigration';
+        $scheme = $appointment['noe_scheme'] ?? 'crm';
 
         $resolved = null;
 
-        if ($location === 'adelaide' || $inpersonAddress == 1) {
-            $resolved = 'adelaide';
-        } elseif ($location === 'melbourne' || $inpersonAddress == 2 || empty($inpersonAddress)) {
-            $validService = in_array($serviceId, [1, 2, 3], true);
+        // Adelaide is retired from Lawyers booking — use default CRM calendar.
+        if ($location === 'adelaide' || (int) $inpersonAddress === 1) {
+            return $default;
+        }
 
-            if ($scheme === 'crm') {
-                if ($noeId === 11 && $validService) {
-                    $resolved = 'education';
-                } elseif ($noeId === 12 && $validService) {
-                    $resolved = 'tourist';
-                } else {
-                    $resolved = 'paid';
-                }
-            } elseif ($noeId == 5 && $validService) {
-                $resolved = 'education';
-            } elseif (in_array($noeId, [2, 3], true) && $serviceId == 2) {
-                $resolved = 'jrp';
-            } elseif ($noeId == 4 && $validService) {
-                $resolved = 'tourist';
-            } elseif (($serviceId == 1 || $serviceId == 3) && in_array($noeId, [1, 2, 3, 6, 7, 8], true)) {
-                $resolved = 'paid';
-            } elseif ($serviceId == 2 && in_array($noeId, [1, 6, 7], true)) {
-                $resolved = 'paid';
-            }
+        $validService = in_array((int) $serviceId, [1, 2, 3], true);
+
+        if ($scheme === 'crm') {
+            // Practice-area NOEs 1–7: assign to default ajay/kunal calendar (via remap below).
+            $resolved = $validService ? 'paid' : $default;
+        } elseif ($noeId == 5 && $validService) {
+            $resolved = 'education';
+        } elseif (in_array($noeId, [2, 3], true) && (int) $serviceId === 2) {
+            $resolved = 'jrp';
+        } elseif ($noeId == 4 && $validService) {
+            $resolved = 'tourist';
+        } elseif (in_array((int) $serviceId, [1, 3], true) && in_array($noeId, [1, 2, 3, 6, 7, 8], true)) {
+            $resolved = 'paid';
+        } elseif ((int) $serviceId === 2 && in_array($noeId, [1, 6, 7], true)) {
+            $resolved = 'paid';
         }
 
         // Legal CRM only has ajay/kunal calendars — remap legacy immigration types.
@@ -128,4 +124,3 @@ class ConsultantAssignmentService
         return AppointmentConsultant::where('is_active', true)->get();
     }
 }
-

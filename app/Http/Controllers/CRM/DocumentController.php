@@ -1240,7 +1240,7 @@ class DocumentController extends Controller
                     ActivitiesLog::create([
                         'client_id' => $clientDatabaseId,
                         'created_by' => auth('admin')->id(),
-                        'subject' => 'placed signature fields and sent cost agreement for signature',
+                        'subject' => 'placed signature fields and sent costs disclosure for signature',
                         'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->file_name ?? 'Agreement') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($signer->email) . '</li></ul>',
                         'activity_type' => 'signature',
                         'task_status' => 0,
@@ -2334,7 +2334,7 @@ class DocumentController extends Controller
                         }
                         $clientMatterReference = $docSignerClientId.'-'.$clientMatterInfo->client_unique_matter_no;
                         $signedDocName = $document->getFilenameWithExtensionForDisplay();
-                        $subject = $docSignerFullName.' signed cost agreement for matter ref no - '.$clientMatterReference.' at document '.$signedDocName;
+                        $subject = $docSignerFullName.' signed costs disclosure for matter ref no - '.$clientMatterReference.' at document '.$signedDocName;
                         $objs = new ActivitiesLog;
                         $objs->client_id = $document->client_id;
                         $objs->created_by = $clientMatterInfo->sel_person_responsible;

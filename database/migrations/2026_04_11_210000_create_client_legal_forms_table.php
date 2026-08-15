@@ -43,7 +43,7 @@ return new class extends Migration
             $table->decimal('gst_amount', 10, 2)->default(0);
             $table->decimal('estimated_total', 10, 2)->default(0);
 
-            // Cost Agreement specific
+            // Cost Agreement specific fields retained for long costs disclosure form_type
             $table->string('fee_type')->nullable(); // 'fixed', 'hourly'
             $table->decimal('fixed_fee_amount', 10, 2)->default(0);
             $table->text('cost_estimate_breakdown')->nullable();

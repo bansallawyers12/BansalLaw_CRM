@@ -774,7 +774,7 @@ class PublicDocumentController extends Controller
                     try {
                         ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed', 'updated_at' => now()]);
 
-                        // Agreement-specific activity log (Cost Agreement)
+                        // Agreement-specific activity log (Costs Disclosure)
                         if ($document->doc_type === 'agreement') {
                             $clientMatterInfo = ClientMatter::select('client_unique_matter_no', 'sel_person_responsible')
                                 ->where('id', $document->client_matter_id)->first();
@@ -785,7 +785,7 @@ class PublicDocumentController extends Controller
                                 $docSignerClientId = $docSignerInfo?->client_id ?? 'NA';
                                 $clientMatterReference = $docSignerClientId . '-' . ($clientMatterInfo->client_unique_matter_no ?? '');
                                 $signedDocName = $document->getFilenameWithExtensionForDisplay();
-                                $subject = $docSignerFullName . ' signed cost agreement for matter ref no - ' . $clientMatterReference . ' at document ' . $signedDocName;
+                                $subject = $docSignerFullName . ' signed costs disclosure for matter ref no - ' . $clientMatterReference . ' at document ' . $signedDocName;
                                 ActivitiesLog::create([
                                     'client_id' => $document->client_id,
                                     'created_by' => $clientMatterInfo->sel_person_responsible,
