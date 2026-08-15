@@ -6537,8 +6537,6 @@ success: function(response) {
                             str = str.replace(/\$\{Block3feesincltax\}/g, b3);
                             str = str.replace(/\{TotalDisbursements\}/g, macroVals.TotalDisbursements || '');
                             str = str.replace(/\$\{TotalDisbursements\}/g, macroVals.TotalDisbursements || '');
-                            str = str.replace(/\{TotalDoHASurcharges\}/g, macroVals.TotalDisbursements || macroVals.TotalDoHASurcharges || '');
-                            str = str.replace(/\$\{TotalDoHASurcharges\}/g, macroVals.TotalDisbursements || macroVals.TotalDoHASurcharges || '');
                             str = str.replace(/\{TotalEstimatedOthCosts\}/g, macroVals.TotalEstimatedOthCosts || '');
                             str = str.replace(/\$\{TotalEstimatedOthCosts\}/g, macroVals.TotalEstimatedOthCosts || '');
                             str = str.replace(/\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');

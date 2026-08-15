@@ -133,12 +133,8 @@ class NotificationService
                 return false;
             }
 
-            // Get office phone number based on location
-            $officePhone = match($appointment->location) {
-                'adelaide' => '08 8317 1340',
-                'melbourne' => '03 9602 1330',
-                default => '1300 859 368' // Fallback to original number
-            };
+            // Lawyers booking is Melbourne-only
+            $officePhone = '03 9602 1330';
 
             $meetingType = strtolower(trim($appointment->meeting_type ?? ''));
             $templateAlias = match ($meetingType) {
@@ -150,7 +146,7 @@ class NotificationService
 
             $variables = [
                 'timeslot_full' => (string) $appointment->timeslot_full,
-                'location' => (string) $appointment->location,
+                'location' => 'Melbourne',
                 'office_phone' => $officePhone,
             ];
 

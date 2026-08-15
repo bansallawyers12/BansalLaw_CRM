@@ -44,7 +44,7 @@ In active use; keep unless you are intentionally deprecating the feature.
 | **total_points** | EOI points. (**nati_language**, **py_field**, **regional_points** removed.) |
 | **dob_verified_***, **phone_verified_***, **visa_expiry_verified_*** | Verification audit. |
 | **dob_verify_document** | DOB verification. |
-| **marn_number**, **legal_practitioner_number**, **business_address**, **business_phone**, **business_email**, **tax_number** | Solicitor / Form956 / export. (**business_fax** is marked for deletion.) |
+| **legal_practitioner_number**, **business_address**, **business_phone**, **business_email**, **tax_number** | Solicitor / Form956 / export. (**marn_number** dropped from `staff`; remains only on `agent_details` for receipts.) (**business_fax** is marked for deletion.) |
 | **ABN_number**, **business_mobile** | Company and agent. |
 | **company_name**, **smtp_*** (if ever used from admins), **service_token**, **token_generated_at** | Company and API. |
 | **email_verified_at** | Client portal. |
@@ -147,7 +147,7 @@ Remove or refactor the listed code before dropping the column.
 | **company_name**, **company_website**, **primary_email** | Company info. |
 | **gst_no**, **gstin**, **gst_date**, **is_business_gst** | GST. |
 | **ABN_number**, **company_fax** | ABN and fax. |
-| **marn_number**, **legal_practitioner_number**, **exempt_person_reason** | Solicitor / legal. |
+| **legal_practitioner_number**, **exempt_person_reason** | Solicitor / legal. (**marn_number** is not on staff; AgentDetails only.) |
 | **business_address**, **business_phone**, **business_mobile**, **business_email**, **tax_number** | Business contact and tax. (**business_fax** marked for deletion.) |
 | **is_solicitor** | Solicitor flag. |
 | **is_company** | Company lead/client flag; company details in `companies` table. |
@@ -295,7 +295,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **experience_job_title** | Empty | **Unused on admins.** Only used as `meta_key` in clientportal_details_audit; **admins** column never read/written. | 🗑️ **Marked for deletion** |
 | **experience_country** | Empty | **Unused on admins.** Same as experience_job_title – audit meta_key only. | 🗑️ **Marked for deletion** |
 | **specialist_education_date** | Empty | **In use.** `ClientPersonalDetailsController` read/write; client edit form (blade + edit-client.js). Column empty = no data saved yet. | ❌ No (keep) |
-| **legal_practitioner_number** | Empty | **In use.** AdminConsole user view; `Form956Controller` (agent LPN); ClientsController (export list); AgentDetails model. | ❌ No (keep) |
+| **legal_practitioner_number** | Empty | **In use on staff.** AdminConsole staff form/view; ClientsController (cost agreement / export); Form956Controller (agent LPN); AgentDetails model. | ❌ No (keep) |
 | **business_fax** | Empty | AdminConsole user view; ClientsController (export); AgentDetails model. Remove refs before dropping. | 🗑️ **Marked for deletion** |
 | **company_fax** | Low fill | **Marked for deletion.** CRMUtilityController; AdminConsole view. | 🗑️ **Marked for deletion** |
 | **exempt_person_reason** | Low fill | **Marked for deletion.** Form956Controller, export, AgentDetails. | 🗑️ **Marked for deletion** |
@@ -322,7 +322,8 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **ABN_number** | ❌ Keep | LeadController, Company, ClientController (adminconsole). |
 | **business_mobile** | ❌ Keep | ClientController (adminconsole), Form956Controller, ClientsController, AgentDetails. |
 | **is_star_client** | 🗑️ **Marked for deletion** | Remove ClientsController merge refs before dropping. |
-| **marn_number, business_address, business_phone, business_email, tax_number** | ❌ Keep | StaffController (staff), Form956Controller, ClientsController, AgentDetails. |
+| **business_address, business_phone, business_email, tax_number** | ❌ Keep | StaffController (staff), Form956Controller, ClientsController, AgentDetails. |
+| **marn_number** | 🗑️ Dropped from **staff** (`2026_08_15_151000_drop_staff_marn_number`); keep on **agent_details** until receipts/UI drop it | AgentDetails / historical Form956 agent export only. |
 
 **Quick reference:** See **Column removal guide** at the top for the four categories: **Critical**, **Recommended to keep**, **Safe to delete**, **Marked for deletion**.
 

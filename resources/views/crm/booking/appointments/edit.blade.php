@@ -95,10 +95,8 @@
                             <div class="form-group col-md-4">
                                 <label class="font-weight-bold">Location</label>
                                 <p class="mb-0">
-                                    @if($appointment->location === 'melbourne')
+                                    @if(in_array($appointment->location, ['melbourne', 'adelaide'], true))
                                         Melbourne Office
-                                    @elseif($appointment->location === 'adelaide')
-                                        Adelaide Office
                                     @else
                                         {{ ucfirst($appointment->location ?? 'N/A') }}
                                     @endif

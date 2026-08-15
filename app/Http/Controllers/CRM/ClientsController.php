@@ -4968,7 +4968,7 @@ class ClientsController extends Controller
             $blockFee2Fmt = number_format((float) $Block_2_Ex_Tax, 2, '.', '');
             $blockFee3Fmt = number_format((float) $Block_3_Ex_Tax, 2, '.', '');
 
-            // Replace placeholders (legacy MARN / Agent* / DoHA* keys omitted — blanked below if still in template)
+            // Replace placeholders (legacy Agent* / DoHA* keys removed from agreement_template.docx)
             $replacements = [
                 'ClientID' => $client->client_id,
                 'ApplicantGivenNames' => $client->first_name,
@@ -7768,11 +7768,13 @@ class ClientsController extends Controller
         // Get location display name
         $locationDisplay = '';
         if ($appointment->location) {
-            $locationDisplay = ucfirst($appointment->location);
-            if ($appointment->location === 'adelaide' && $appointment->service_id == 2) {
-                $locationDisplay = 'Adelaide Free PR';
-            } elseif ($appointment->location === 'melbourne' && $appointment->service_id == 2) {
-                $locationDisplay = 'Melbourne Free PR';
+            $locationDisplay = match ($appointment->location) {
+                'melbourne' => 'Melbourne',
+                'adelaide' => 'Melbourne', // retired office; show Melbourne for Lawyers CRM
+                default => ucfirst((string) $appointment->location),
+            };
+            if ((int) $appointment->service_id === 2) {
+                $locationDisplay .= ' — Free Consultation';
             }
         }
 

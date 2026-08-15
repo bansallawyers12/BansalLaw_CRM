@@ -47,7 +47,7 @@ class AppointmentCancellation extends Mailable
                 'clientName' => $this->details['client_name'] ?? 'Valued Client',
                 'appointmentDate' => $this->details['appointment_datetime']?->format('l, d F Y') ?? 'N/A',
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
-                'location' => ucfirst($this->details['location'] ?? 'melbourne'),
+                'location' => 'Melbourne',
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
                 'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
                 'consultant' => $this->details['consultant'] ?? 'Our Team',
@@ -72,11 +72,8 @@ class AppointmentCancellation extends Mailable
      */
     protected function getLocationAddress(string $location): string
     {
-        return match ($location) {
-            'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
-            'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
-            default => config('app.name') . ' office'
-        };
+        // Lawyers booking is Melbourne-only; historical adelaide rows still get Melbourne office details.
+        return 'Level 8/278 Collins St, Melbourne VIC 3000';
     }
 
     /**
@@ -84,10 +81,6 @@ class AppointmentCancellation extends Mailable
      */
     protected function getLocationPhone(string $location): string
     {
-        return match ($location) {
-            'adelaide' => '08 8317 1340',
-            'melbourne' => '+61 3 9602 1330',
-            default => '1300 859 368'
-        };
+        return '+61 3 9602 1330';
     }
 }

@@ -340,8 +340,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/AdminConsole/StaffController.php": {
-    "mtime": 1786766129.2560115,
-    "ast_hash": "b9cc5c1035fde268565b0b98afa5cfa5",
+    "mtime": 1786766781.5221107,
+    "ast_hash": "492c928da9a5e2f7bd6f4bdbf150d30b",
     "semantic_hash": ""
   },
   "app/Http/Controllers/AdminConsole/TeamController.php": {
@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
-    "mtime": 1786766199.4260035,
-    "ast_hash": "9d28e9d47d4d111265b7af9afe8e5f72",
+    "mtime": 1786766807.5700932,
+    "ast_hash": "e4c83855dac03f0333d07a76791de101",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Clients/ClientDocumentsController.php": {
@@ -690,13 +690,13 @@
     "semantic_hash": "7e59a63bd060ba803541724d75b8ca84"
   },
   "app/Mail/AppointmentCancellation.php": {
-    "mtime": 1786766099.4492586,
-    "ast_hash": "7292c944d9463526d43e4686ac8c60cc",
+    "mtime": 1786766743.082471,
+    "ast_hash": "67ebcbc7b7a19de5426caf07da0e1735",
     "semantic_hash": ""
   },
   "app/Mail/AppointmentDetailedConfirmation.php": {
-    "mtime": 1786766098.3095534,
-    "ast_hash": "0291d75f60775c21f02a3b9d8d0e2a40",
+    "mtime": 1786766743.3160775,
+    "ast_hash": "da0d669d98f4a4ba360b824370ff1c0a",
     "semantic_hash": ""
   },
   "app/Mail/AppointmentMail.php": {
@@ -775,8 +775,8 @@
     "semantic_hash": "60cb536f1b794f724789e54dd0f493be"
   },
   "app/Models/BookingAppointment.php": {
-    "mtime": 1786765350.499005,
-    "ast_hash": "7a2dc7297371c787114292e716214deb",
+    "mtime": 1786766773.558011,
+    "ast_hash": "75f41e03865615961dcc7020e31f1f3d",
     "semantic_hash": ""
   },
   "app/Models/Branch.php": {
@@ -1220,13 +1220,13 @@
     "semantic_hash": ""
   },
   "app/Services/BansalAppointmentSync/NotificationService.php": {
-    "mtime": 1783751336.8178217,
-    "ast_hash": "aafd27a0d9b029011ec3e5c898eff6ed",
-    "semantic_hash": "aafd27a0d9b029011ec3e5c898eff6ed"
+    "mtime": 1786766744.9698308,
+    "ast_hash": "4e5e62acf1e0ecdf412a5647e5a62dad",
+    "semantic_hash": ""
   },
   "app/Services/Booking/BookedTimeSlotsToDisableService.php": {
-    "mtime": 1786700271.7392168,
-    "ast_hash": "53e12d34b0a611e0b9b9d10bc4dfc2f5",
+    "mtime": 1786766772.8393981,
+    "ast_hash": "8047d5b19e302f9994aeeb3d9b3309c6",
     "semantic_hash": ""
   },
   "app/Services/Booking/BookingCalendarExternalFeed.php": {
@@ -3610,9 +3610,9 @@
     "semantic_hash": "fec9a9a93bb42b29134ffca5dc30c0b6"
   },
   "database/seeders/SampleBookingAppointmentsSeeder.php": {
-    "mtime": 1782118308.9363077,
-    "ast_hash": "bcb586dd6a00e9ddb51a517326a873ec",
-    "semantic_hash": "bcb586dd6a00e9ddb51a517326a873ec"
+    "mtime": 1786766735.4872634,
+    "ast_hash": "fb8fc50dcf728d1a7262362ab777a454",
+    "semantic_hash": ""
   },
   "database/seeders/SuperAdminBootstrapSeeder.php": {
     "mtime": 1775709212.630406,
@@ -3745,8 +3745,8 @@
     "semantic_hash": "661682dcccfa293b26cd6b1ca58896f0"
   },
   "public/js/crm/clients/detail-main.js": {
-    "mtime": 1786766220.1359313,
-    "ast_hash": "61cebbbe3e7bf2d83f6eea7e0618f0e5",
+    "mtime": 1786766779.7004635,
+    "ast_hash": "2703223c9baad47f3824fe3e00c2f12a",
     "semantic_hash": ""
   },
   "public/js/crm/clients/detail.js": {
@@ -6020,8 +6020,8 @@
     "semantic_hash": ""
   },
   "resources/views/crm/booking/appointments/edit.blade.php": {
-    "mtime": 1786766102.8011622,
-    "ast_hash": "144a7007d31d40f690b961caaf87257e",
+    "mtime": 1786766773.8868666,
+    "ast_hash": "a79c66cc58bb9262d08f61377a03f239",
     "semantic_hash": ""
   },
   "resources/views/crm/booking/appointments/index.blade.php": {
@@ -6400,8 +6400,8 @@
     "semantic_hash": "235fe427dd4f0aee817baf2863358c3a"
   },
   "resources/views/crm/documents/index.blade.php": {
-    "mtime": 1786766212.106694,
-    "ast_hash": "b36bb08b03aa56a8f710ba5b387213b2",
+    "mtime": 1786766786.8941643,
+    "ast_hash": "44f28b5a9e6b6f58cb4ee80f560b54a4",
     "semantic_hash": ""
   },
   "resources/views/crm/documents/sign.blade.php": {
@@ -6675,8 +6675,8 @@
     "semantic_hash": "e895ba3ead63fae18eb04657bd0c0307"
   },
   "resources/views/documents/index.blade.php": {
-    "mtime": 1786766216.4905112,
-    "ast_hash": "f9554f11c70b18b36736d7cb6e50f6a5",
+    "mtime": 1786766786.5381944,
+    "ast_hash": "678bb1a2b7907cf3dbd6d17d51803603",
     "semantic_hash": ""
   },
   "resources/views/documents/sign.blade.php": {
@@ -7400,8 +7400,8 @@
     "semantic_hash": ""
   },
   "docs/ADMINS_TABLE_COLUMNS.md": {
-    "mtime": 1776743447.9056168,
-    "ast_hash": "01e3343f249b81ddacbcaea609ca76dd",
+    "mtime": 1786766806.4657817,
+    "ast_hash": "53b58c27c76fa6bd468acde4c8b4ae6b",
     "semantic_hash": ""
   },
   "docs/APPLICATION_TO_MATTER_MIGRATION_PLAN.md": {
@@ -7764,14 +7764,29 @@
     "ast_hash": "3d9c68e1b6a3413bb2eab97f6037a5ff",
     "semantic_hash": ""
   },
-  "database/migrations/2026_08_15_150000_update_appointment_consultant_firm_emails.php": {
-    "mtime": 1786766121.3310337,
+  "database/migrations/2026_08_15_151000_drop_staff_marn_number.php": {
+    "mtime": 1786766478.3494518,
+    "ast_hash": "eb63193dd918ffc545262d79b4d83a2e",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_152000_update_appointment_consultant_firm_emails.php": {
+    "mtime": 1786766442.4133563,
     "ast_hash": "cfcf3508f75f7081ca6841442132cba4",
     "semantic_hash": ""
   },
-  "database/migrations/2026_08_15_151000_drop_staff_marn_number.php": {
-    "mtime": 1786766222.0209694,
-    "ast_hash": "eb63193dd918ffc545262d79b4d83a2e",
+  "docs/APPOINTMENT_CALENDAR_PLAN.md": {
+    "mtime": 1786766786.8387735,
+    "ast_hash": "1907225015ee4b656972253b770609ae",
+    "semantic_hash": ""
+  },
+  "tests/Feature/MaraLeftoverCleanupTest.php": {
+    "mtime": 1786766863.0556238,
+    "ast_hash": "f806f1692a56823ec94d7759acf58d31",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/agreement_template_f9cf928c.md": {
+    "mtime": 1786766881.1209753,
+    "ast_hash": "5f025d3021f2e86cfef747915351602d",
     "semantic_hash": ""
   }
 }

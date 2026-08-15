@@ -277,8 +277,11 @@ class LeadBookingApiController extends BaseController
         if ($request->filled('location')) {
             $request->merge(['location' => strtolower(trim((string) $request->input('location')))]);
         }
-        if (! $request->filled('location')) {
+        if (! $request->filled('location') || $request->input('location') === 'adelaide') {
             $request->merge(['location' => 'melbourne']);
+        }
+        if ((int) $request->input('inperson_address') === 1) {
+            $request->merge(['inperson_address' => 2]);
         }
 
         $validated = $request->validate([
@@ -378,6 +381,15 @@ class LeadBookingApiController extends BaseController
         $clientTimezone = $validated['client_timezone']
             ?? $validated['timezone']
             ?? 'Australia/Melbourne';
+
+        // Website form ids 1/2/3 (free/standard/extended) are not the same as DB service_id
+        // (2/1/3). PublicBooking already maps; this is the live website create path.
+        if (isset($validated['service_id'])) {
+            $product = \App\Support\BookingCatalogue::productByFormId((int) $validated['service_id']);
+            if ($product) {
+                $validated['service_id'] = (int) $product['db_service_id'];
+            }
+        }
 
         $durationMinutes = $validated['duration_minutes']
             ?? $validated['duration']

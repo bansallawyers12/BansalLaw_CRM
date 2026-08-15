@@ -256,7 +256,7 @@ class BookingAppointment extends Model
         return Attribute::make(
             get: fn () => match($this->location) {
                 'melbourne' => 'Melbourne Office',
-                'adelaide' => 'Adelaide Office',
+                'adelaide' => 'Melbourne Office', // retired; Lawyers CRM shows Melbourne
                 default => ucfirst($this->location)
             }
         );
@@ -314,11 +314,8 @@ class BookingAppointment extends Model
      */
     public function getFullAddressAttribute(): string
     {
-        return match($this->location) {
-            'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
-            'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
-            default => 'Office Address'
-        };
+        // Lawyers booking is Melbourne-only; historical adelaide rows use Melbourne office address.
+        return 'Level 8/278 Collins St, Melbourne VIC 3000';
     }
     
     /**

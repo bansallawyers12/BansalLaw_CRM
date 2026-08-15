@@ -37,7 +37,7 @@
         return pad(hour, 2) + ':' + pad(m, 2);
     }
 
-    /** 1=Adelaide, 2=Melbourne — supports radio UI or single hidden field (CRM modal). */
+    /** 2=Melbourne (CRM modal hidden field; legacy radio value 1 is ignored). */
     function inpersonAddressDataVal() {
         var $checked = $("input[name='inperson_address']:radio:checked");
         if ($checked.length) {

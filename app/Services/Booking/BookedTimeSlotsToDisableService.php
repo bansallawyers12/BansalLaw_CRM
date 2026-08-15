@@ -27,8 +27,8 @@ class BookedTimeSlotsToDisableService
             ->whereDate('appointment_datetime', $date->format('Y-m-d'));
 
         if ($inpersonAddress !== null) {
-            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
-            $query->where('location', $locationMap[$inpersonAddress] ?? 'adelaide');
+            // Legacy API: 1=adelaide, 2=melbourne. Lawyers booking is Melbourne-only.
+            $query->where('location', 'melbourne');
         }
 
         $rows = $query->orderBy('appointment_datetime')->get();

@@ -675,6 +675,6 @@ class StaffController extends Controller
 
     private function requestIndicatesSolicitor(array $requestData): bool
     {
-        return isset($requestData['is_solicitor']) || isset($requestData['is_migration_agent']);
+        return isset($requestData['is_solicitor']);
     }
 }

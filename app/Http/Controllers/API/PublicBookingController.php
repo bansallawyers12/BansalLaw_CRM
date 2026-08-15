@@ -1426,7 +1426,7 @@ class PublicBookingController extends BaseController
      *
      * Excludes pending, cancelled, and no_show. Times are formatted as g:i A in app timezone.
      * Range text in timeslot_full is reduced to the first time only (start of range).
-     * Optional inperson_address (1=Adelaide, 2=Melbourne) limits by booking_appointments.location.
+     * Optional inperson_address is accepted for compatibility (1 or 2); Lawyers booking is Melbourne-only.
      * Does not filter by noe_id (nature of enquiry).
      */
     public function getBookedTimeSlotsToDisable(Request $request)
