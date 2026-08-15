@@ -1253,7 +1253,6 @@ $(document).ready(function() {
             changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
             getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',
-            getPartner: '{{ URL::to("/getpartner") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
             deleteChecklist: '{{ route("clients.documents.deleteChecklist") }}',

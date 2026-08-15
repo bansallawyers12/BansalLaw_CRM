@@ -7,6 +7,12 @@
  * Absolute URL for app routes (fixes subdirectory installs e.g. /BansalLaw_CRM/public).
  * Set window.editClientConfig.rootUrl from Blade via rtrim(url('/'), '/').
  */
+function crmEditForm() {
+    return document.getElementById('editCompanyForm')
+        || document.getElementById('editClientForm')
+        || document.getElementById('editLeadForm');
+}
+
 function crmClientUrl(path) {
     var root = (typeof window.editClientConfig !== 'undefined' && window.editClientConfig.rootUrl)
         ? String(window.editClientConfig.rootUrl).replace(/\/$/, '')
@@ -278,8 +284,11 @@ function initializeTabs() {
 
 // Define validateForm function IMMEDIATELY to prevent "not defined" errors
 window.validateForm = function() {
-    const form = document.getElementById('editClientForm');
+    const form = crmEditForm();
     const errors = [];
+    if (!form) {
+        return true;
+    }
     
     // Check all required fields
     const requiredFields = form.querySelectorAll('[required]');
@@ -967,7 +976,7 @@ window.cancelEdit = function(sectionType) {
  * Generic function to save section data via AJAX
  */
 window.saveSectionData = function(sectionName, formData, successCallback) {
-    const form = document.getElementById('editCompanyForm') || document.getElementById('editClientForm') || document.getElementById('editLeadForm');
+    const form = crmEditForm();
     if (!form) {
         showNotification('Form not found. Please refresh the page and try again.', 'error');
         return;
@@ -1363,7 +1372,7 @@ window.removePhoneNumber = function(id, index) {
             hiddenInput.type = 'hidden';
             hiddenInput.name = 'delete_contact_ids[]';
             hiddenInput.value = id;
-            document.getElementById('editClientForm').appendChild(hiddenInput);
+            crmEditForm()?.appendChild(hiddenInput);
         }
         
         // Remove from DOM
@@ -1389,7 +1398,7 @@ window.removeEmailAddress = function(id, index) {
             hiddenInput.type = 'hidden';
             hiddenInput.name = 'delete_email_ids[]';
             hiddenInput.value = id;
-            document.getElementById('editClientForm').appendChild(hiddenInput);
+            crmEditForm()?.appendChild(hiddenInput);
         }
         
         // Remove from DOM
@@ -1580,7 +1589,9 @@ function updateAddressSummary($entries) {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    initializeAdditionalInfo();
+    if (typeof initializeAdditionalInfo === 'function') {
+        initializeAdditionalInfo();
+    }
 });
 
 
@@ -1782,7 +1793,7 @@ $(document).ready(function() {
         });
 
         // Validate on form submission
-        const editClientForm = document.getElementById('editClientForm');
+        const editClientForm = crmEditForm();
         if (editClientForm) {
             editClientForm.addEventListener('submit', function(e) {
                 validatePersonalPhoneNumbers();
@@ -2257,12 +2268,15 @@ $(document).ready(function() {
         });
 
         // Validate on form submission
-        document.getElementById('editClientForm').addEventListener('submit', function(e) {
-            if (!validatePersonalEmailTypes()) {
-                e.preventDefault();
-                alert('Only one email address can be of type Personal. Please correct the entries.');
-            }
-        });
+        const editForm = crmEditForm();
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                if (!validatePersonalEmailTypes()) {
+                    e.preventDefault();
+                    alert('Only one email address can be of type Personal. Please correct the entries.');
+                }
+            });
+        }
 
         // Initial validation on page load
         validatePersonalEmailTypes();
@@ -2284,7 +2298,7 @@ $(document).ready(function() {
                         hiddenInput.type = 'hidden';
                         hiddenInput.name = 'delete_qualification_ids[]';
                         hiddenInput.value = qualificationId;
-                        document.getElementById('editClientForm').appendChild(hiddenInput);
+                        crmEditForm()?.appendChild(hiddenInput);
                     }
                     section.remove();
                 }
@@ -2308,7 +2322,7 @@ $(document).ready(function() {
                         hiddenInput.type = 'hidden';
                         hiddenInput.name = 'delete_experience_ids[]';
                         hiddenInput.value = experienceId;
-                        document.getElementById('editClientForm').appendChild(hiddenInput);
+                        crmEditForm()?.appendChild(hiddenInput);
                     }
                     section.remove();
                 }
@@ -2332,7 +2346,7 @@ $(document).ready(function() {
                         hiddenInput.type = 'hidden';
                         hiddenInput.name = 'delete_occupation_ids[]';
                         hiddenInput.value = occupationId;
-                        document.getElementById('editClientForm').appendChild(hiddenInput);
+                        crmEditForm()?.appendChild(hiddenInput);
                     }
                     section.remove();
                 }
@@ -2356,7 +2370,7 @@ $(document).ready(function() {
                         hiddenInput.type = 'hidden';
                         hiddenInput.name = 'delete_test_score_ids[]';
                         hiddenInput.value = testScoreId;
-                        document.getElementById('editClientForm').appendChild(hiddenInput);
+                        crmEditForm()?.appendChild(hiddenInput);
                     }
                     section.remove();
                 }
@@ -2789,7 +2803,7 @@ function initializeEmailSectionPolling() {
 document.addEventListener('DOMContentLoaded', function() {
     // Handle change events for native date inputs
     document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('dates')) {
+        if (e.target.classList.contains('dates') && typeof handleExpiryDateCalculation === 'function') {
             handleExpiryDateCalculation(e.target);
         }
     });
@@ -2797,31 +2811,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== INITIALIZATION FUNCTIONS =====
 
-// Initialize test score validation on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize test score validation for existing fields
-    const existingTestSelectors = document.querySelectorAll('.test-type-selector');
-    existingTestSelectors.forEach((selector, index) => {
-        if (selector.value) {
-            updateTestScoreValidation(selector, index);
-        }
-    });
-    
-    initializeRelatedFilesTomSelect();
+    if (typeof updateTestScoreValidation === 'function') {
+        const existingTestSelectors = document.querySelectorAll('.test-type-selector');
+        existingTestSelectors.forEach((selector, index) => {
+            if (selector.value) {
+                updateTestScoreValidation(selector, index);
+            }
+        });
+    }
 
-    setTimeout(function () {
-        var el = document.getElementById('relatedFiles');
-        if (el && !el.tomselect) {
-            initializeRelatedFilesTomSelect();
-        }
-    }, 1000);
-
-    setTimeout(function () {
-        var el = document.getElementById('relatedFiles');
-        if (el && !el.tomselect) {
-            initializeRelatedFilesTomSelect();
-        }
-    }, 3000);
+    if (typeof initializeRelatedFilesTomSelect === 'function') {
+        initializeRelatedFilesTomSelect();
+    }
 });
 
 

@@ -136,7 +136,6 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/settings/taxes/returnsetting', [CRMUtilityController::class, 'returnsetting'])->name('returnsetting');
     Route::post('/settings/taxes/savereturnsetting', [CRMUtilityController::class, 'returnsetting'])->name('savereturnsetting');
     Route::get('/getassigneeajax', [CRMUtilityController::class, 'getassigneeajax']);
-    Route::get('/getpartnerajax', [CRMUtilityController::class, 'getpartnerajax']);
     Route::get('/checkclientexist', [CRMUtilityController::class, 'checkclientexist']);
 
     /* Legacy broadcast notification links stored as /broadcasts/{uuid} */

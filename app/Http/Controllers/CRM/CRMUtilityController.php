@@ -1836,12 +1836,6 @@ public function getChapters(Request $request)
         }
 	}
 
-		public function getpartnerajax(Request $request){
-	    // Partner functionality removed - no partners available
-	    $agents = array();
-		echo json_encode($agents);
-	}
-
 	public function getassigneeajax(Request $request){
 	    \Log::info('📋 getassigneeajax called', [
 	        'search' => $request->likevalue,

@@ -1056,7 +1056,6 @@ class ClientsController extends Controller
             }
             $client->gender = $validated['gender'] ?? null;
             $client->marital_status = $validated['marital_status'] ?? null;
-            $client->country_passport = $validated['visa_country'][0] ?? null;
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
             $client->email = $modifiedEmail;
@@ -1420,9 +1419,6 @@ class ClientsController extends Controller
                     'company.contactPerson',
                     'company.tradingNames',
                     'company.directors.directorClient',
-                    'company.nominations.nominatedClient',
-                    'company.sponsorships',
-                    'companyNominationsAsNominee.company',
                 ])->find($id); //dd($fetchedData);
 
                 if ($fetchedData && $fetchedData->is_company && strtolower((string) $activeTab) === 'companydetails') {
@@ -1444,18 +1440,6 @@ class ClientsController extends Controller
                 $officePhone = $currentAdmin->phone ?? '';
                 $officeCountryCode = '+61';
                 $notPickedCallSmsDefault = $this->notPickedCallSmsDefaultForClient($fetchedData);
-
-                // Employer nominations: only list companies this staff may open (cross-access / allocation).
-                $visibleNomineeNominations = $fetchedData->companyNominationsAsNominee
-                    ->filter(function ($n) {
-                        $companyAdminId = $n->company?->admin_id;
-                        if ($companyAdminId === null) {
-                            return true;
-                        }
-
-                        return StaffClientVisibility::canAccessClientOrLead((int) $companyAdminId, Auth::user());
-                    })
-                    ->values();
 
                 $assignableStaff = collect();
                 $leadStageLabels = [];
@@ -1545,7 +1529,7 @@ class ClientsController extends Controller
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
                     'encodeId', 'id1', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
-                    'visibleNomineeNominations', 'notPickedCallSmsDefault',
+                    'notPickedCallSmsDefault',
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
@@ -2776,7 +2760,6 @@ class ClientsController extends Controller
                     'account_client_receipts' => ['client_id'],
                     'account_all_invoice_receipts' => ['client_id'],
                     'trust_withdrawal_authorities' => ['client_id'],
-                    'client_spouse_details' => ['client_id', 'related_client_id'],
                     'client_emails' => ['client_id', 'admin_id'],
                     'client_contacts' => ['client_id', 'admin_id'],
                     'client_addresses' => ['client_id', 'admin_id'],
@@ -2796,7 +2779,6 @@ class ClientsController extends Controller
                     'checkin_logs' => ['client_id'],
                     'front_desk_check_ins' => ['client_id', 'admin_id'],
                     'company_directors' => ['director_client_id'],
-                    'company_nominations' => ['nominated_client_id'],
                     'companies' => ['admin_id'],
                     'email_verifications' => ['client_id'],
                     'phone_verifications' => ['client_id'],

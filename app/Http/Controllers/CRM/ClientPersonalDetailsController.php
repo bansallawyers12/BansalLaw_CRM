@@ -32,7 +32,6 @@ use App\Models\Company;
 use App\Services\ConflictCheckService;
 use App\Services\ConflictCheckStalenessService;
 use App\Models\CompanyDirector;
-use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
 use App\Models\Lead;
 use App\Models\Staff;
@@ -894,22 +893,8 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveContactPersonSection($request, $client);
                 case 'trust':
                     return $this->saveTrustSection($request, $client);
-                case 'sponsorship':
-                    return $this->saveSponsorshipSection($request, $client);
                 case 'directors':
                     return $this->saveDirectorsSection($request, $client);
-                case 'financial':
-                    return $this->saveFinancialSection($request, $client);
-                case 'workforce':
-                    return $this->saveWorkforceSection($request, $client);
-                case 'operations':
-                    return $this->saveOperationsSection($request, $client);
-                case 'lmt':
-                    return $this->saveLmtSection($request, $client);
-                case 'training':
-                    return $this->saveTrainingSection($request, $client);
-                case 'nominations':
-                    return $this->saveNominationsSection($request, $client);
                 case 'leadPipeline':
                     return $this->saveLeadPipelineSection($request, $client);
                 case 'conflictParties':
@@ -1066,110 +1051,6 @@ class ClientPersonalDetailsController extends Controller
         return response()->json(['success' => true, 'message' => 'Trust details updated successfully']);
     }
 
-    private function saveSponsorshipSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $request->validate([
-            'sponsorship_types' => 'nullable|array',
-            'sponsorship_types.*' => 'nullable|string|max:50',
-            'sponsorship_statuses' => 'nullable|array',
-            'sponsorship_statuses.*' => 'nullable|string|max:50',
-            'sponsorship_start_dates' => 'nullable|array',
-            'sponsorship_start_dates.*' => 'nullable|date',
-            'sponsorship_end_dates' => 'nullable|array',
-            'sponsorship_end_dates.*' => 'nullable|date',
-            'sponsorship_trns' => 'nullable|array',
-            'sponsorship_trns.*' => 'nullable|string|max:50',
-            'sponsorship_regional' => 'nullable|array',
-            'sponsorship_adverse' => 'nullable|array',
-            'sponsorship_previous_notes' => 'nullable|array',
-            'sponsorship_previous_notes.*' => 'nullable|string',
-        ]);
-
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-
-        // Use array_values() to re-key all arrays to 0-based sequential indices.
-        // Text [] fields are already sequential; checkbox arrays use named keys like
-        // sponsorship_regional[0], sponsorship_regional[2] (sparse when unchecked rows
-        // exist), so re-keying normalises them before the loop index lookup below.
-        $types = array_values($request->input('sponsorship_types', []));
-        $statuses = array_values($request->input('sponsorship_statuses', []));
-        $startDates = array_values($request->input('sponsorship_start_dates', []));
-        $endDates = array_values($request->input('sponsorship_end_dates', []));
-        $trns = array_values($request->input('sponsorship_trns', []));
-        $notes = array_values($request->input('sponsorship_previous_notes', []));
-        // Checkboxes: convert the named-key map {0:'1', 2:'1'} into a set of indices
-        // for fast membership testing without relying on sequential key access.
-        $regionalChecked = array_keys($request->input('sponsorship_regional', []));
-        $adverseChecked  = array_keys($request->input('sponsorship_adverse', []));
-
-        $company->sponsorships()->delete();
-
-        $count = max(
-            count($types),
-            count($statuses),
-            count($startDates),
-            count($endDates),
-            count($trns),
-            count($notes),
-            1
-        );
-
-        $sort = 0;
-        for ($i = 0; $i < $count; $i++) {
-            $type = trim((string) ($types[$i] ?? ''));
-            $status = trim((string) ($statuses[$i] ?? ''));
-            $trn = trim((string) ($trns[$i] ?? ''));
-            $start = ! empty($startDates[$i]) ? $startDates[$i] : null;
-            $end = ! empty($endDates[$i]) ? $endDates[$i] : null;
-            $note = trim((string) ($notes[$i] ?? ''));
-            $regional = in_array($i, $regionalChecked);
-            $adverse  = in_array($i, $adverseChecked);
-
-            if ($type === '' && $status === '' && $trn === '' && ! $start && ! $end && $note === '' && ! $regional && ! $adverse) {
-                continue;
-            }
-
-            $company->sponsorships()->create([
-                'sponsorship_type' => $type !== '' ? $type : null,
-                'sponsorship_status' => $status !== '' ? $status : null,
-                'sponsorship_start_date' => $start,
-                'sponsorship_end_date' => $end,
-                'trn' => $trn !== '' ? $trn : null,
-                'regional_sponsorship' => $regional,
-                'adverse_information' => $adverse,
-                'previous_sponsorship_notes' => $note !== '' ? $note : null,
-                'sort_order' => $sort++,
-            ]);
-        }
-
-        $first = $company->sponsorships()->orderBy('sort_order')->orderBy('id')->first();
-        if ($first) {
-            $company->sponsorship_type = $first->sponsorship_type;
-            $company->sponsorship_status = $first->sponsorship_status;
-            $company->sponsorship_start_date = $first->sponsorship_start_date;
-            $company->sponsorship_end_date = $first->sponsorship_end_date;
-            $company->trn = $first->trn;
-            $company->regional_sponsorship = $first->regional_sponsorship;
-            $company->adverse_information = $first->adverse_information;
-            $company->previous_sponsorship_notes = $first->previous_sponsorship_notes;
-        } else {
-            $company->sponsorship_type = null;
-            $company->sponsorship_status = null;
-            $company->sponsorship_start_date = null;
-            $company->sponsorship_end_date = null;
-            $company->trn = null;
-            $company->regional_sponsorship = false;
-            $company->adverse_information = false;
-            $company->previous_sponsorship_notes = null;
-        }
-        $company->save();
-
-        return response()->json(['success' => true, 'message' => 'Sponsorship updated successfully']);
-    }
-
     private function saveDirectorsSection($request, $client)
     {
         if (!$client->is_company) {
@@ -1296,154 +1177,6 @@ class ClientPersonalDetailsController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Directors updated successfully']);
-    }
-
-    private function saveFinancialSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $validated = $request->validate([
-            'annual_turnover' => 'nullable|numeric|min:0',
-            'wages_expenditure' => 'nullable|numeric|min:0',
-        ]);
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->annual_turnover = $validated['annual_turnover'] ?? null;
-        $company->wages_expenditure = $validated['wages_expenditure'] ?? null;
-        $company->save();
-        return response()->json(['success' => true, 'message' => 'Financial details updated successfully']);
-    }
-
-    private function saveWorkforceSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $validated = $request->validate([
-            'workforce_australian_citizens'      => 'nullable|integer|min:0',
-            'workforce_permanent_residents'      => 'nullable|integer|min:0',
-            'workforce_temp_visa_holders'        => 'nullable|integer|min:0',
-            'workforce_total'                    => 'nullable|integer|min:0',
-            'workforce_foreign_494'              => 'nullable|integer|min:0',
-            'workforce_foreign_other_temp_activity' => 'nullable|integer|min:0',
-            'workforce_foreign_overseas_students'=> 'nullable|integer|min:0',
-            'workforce_foreign_working_holiday'  => 'nullable|integer|min:0',
-            'workforce_foreign_other'            => 'nullable|integer|min:0',
-        ]);
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->workforce_australian_citizens       = $validated['workforce_australian_citizens'] ?? null;
-        $company->workforce_permanent_residents       = $validated['workforce_permanent_residents'] ?? null;
-        $company->workforce_temp_visa_holders         = $validated['workforce_temp_visa_holders'] ?? null;
-        $company->workforce_total                     = $validated['workforce_total'] ?? null;
-        $company->workforce_foreign_494               = $validated['workforce_foreign_494'] ?? null;
-        $company->workforce_foreign_other_temp_activity = $validated['workforce_foreign_other_temp_activity'] ?? null;
-        $company->workforce_foreign_overseas_students = $validated['workforce_foreign_overseas_students'] ?? null;
-        $company->workforce_foreign_working_holiday   = $validated['workforce_foreign_working_holiday'] ?? null;
-        $company->workforce_foreign_other             = $validated['workforce_foreign_other'] ?? null;
-        $company->save();
-        return response()->json(['success' => true, 'message' => 'Workforce updated successfully']);
-    }
-
-    private function saveOperationsSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $validated = $request->validate([
-            'business_operating_since' => 'nullable|date',
-            'main_business_activity' => 'nullable|string|max:255',
-        ]);
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->business_operating_since = $validated['business_operating_since'] ?? null;
-        $company->main_business_activity = $validated['main_business_activity'] ?? null;
-        $company->save();
-        return response()->json(['success' => true, 'message' => 'Operations updated successfully']);
-    }
-
-    private function saveLmtSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $validated = $request->validate([
-            'lmt_start_date' => 'nullable|date',
-            'lmt_end_date' => 'nullable|date',
-            'lmt_notes' => 'nullable|string',
-        ]);
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->lmt_required = $request->has('lmt_required');
-        $company->lmt_start_date = $validated['lmt_start_date'] ?? null;
-        $company->lmt_end_date = $validated['lmt_end_date'] ?? null;
-        $company->lmt_notes = $validated['lmt_notes'] ?? null;
-        $company->save();
-        return response()->json(['success' => true, 'message' => 'LMT details updated successfully']);
-    }
-
-    private function saveTrainingSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $validated = $request->validate([
-            'training_position_title' => 'nullable|string|max:255',
-            'trainer_name' => 'nullable|string|max:255',
-        ]);
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->training_position_title = $validated['training_position_title'] ?? null;
-        $company->trainer_name = $validated['trainer_name'] ?? null;
-        $company->save();
-        return response()->json(['success' => true, 'message' => 'Training details updated successfully']);
-    }
-
-    private function saveNominationsSection($request, $client)
-    {
-        if (!$client->is_company) {
-            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
-        }
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $positionTitles = $request->input('nomination_position_titles', []);
-        $anzscoCodes = $request->input('nomination_anzsco_codes', []);
-        $descriptions = $request->input('nomination_descriptions', []);
-        $salaries = $request->input('nomination_salaries', []);
-        $durations = $request->input('nomination_durations', []);
-        $nominatedClientIds = $request->input('nomination_nominated_client_ids', []);
-        $personNames = $request->input('nomination_person_names', []);
-        $trns = $request->input('nomination_trns', []);
-        $statuses = $request->input('nomination_statuses', []);
-        $dates = $request->input('nomination_dates', []);
-        $expiries = $request->input('nomination_expiries', []);
-        $company->nominations()->delete();
-        $count = max(count($positionTitles), count($personNames), count($nominatedClientIds), 1);
-        for ($i = 0; $i < $count; $i++) {
-            $positionTitle = trim($positionTitles[$i] ?? '');
-            $clientId = $nominatedClientIds[$i] ?? null;
-            $personName = trim($personNames[$i] ?? '');
-            if ($clientId && $personName) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Nomination " . ($i + 1) . ": Provide either a searchable client/lead OR a name (not in system), not both.",
-                    'errors' => ['nomination_nominated' => ['Cannot have both nominated client and nominated person name.']]
-                ], 422);
-            }
-            if (!$clientId && !$personName && !$positionTitle) {
-                continue;
-            }
-            $company->nominations()->create([
-                'position_title' => $positionTitle ?: null,
-                'anzsco_code' => $anzscoCodes[$i] ?? null,
-                'position_description' => $descriptions[$i] ?? null,
-                'salary' => $salaries[$i] ?? null,
-                'duration' => $durations[$i] ?? null,
-                'nominated_client_id' => $clientId ?: null,
-                'nominated_person_name' => $personName ?: null,
-                'trn' => $trns[$i] ?? null,
-                'status' => $statuses[$i] ?? null,
-                'nomination_date' => !empty($dates[$i]) ? $dates[$i] : null,
-                'expiry_date' => !empty($expiries[$i]) ? $expiries[$i] : null,
-                'sort_order' => $i,
-            ]);
-        }
-        return response()->json(['success' => true, 'message' => 'Nominations updated successfully']);
     }
 
     /**
@@ -2147,8 +1880,14 @@ class ClientPersonalDetailsController extends Controller
             $previousLeadStatus = ($client->type === 'lead') ? $client->lead_status : null;
 
             if ($client->type === 'lead') {
+                $pipelineStages = LeadFollowUpNoteService::pipelineStatuses();
+                $currentStage = (string) ($client->lead_status ?? '');
+                if ($currentStage !== '' && ! in_array($currentStage, $pipelineStages, true)) {
+                    $pipelineStages[] = $currentStage;
+                }
+
                 $request->validate([
-                    'lead_status' => 'sometimes|in:new,follow_up,not_qualified,hostile',
+                    'lead_status' => ['sometimes', Rule::in($pipelineStages)],
                     'followup_date' => 'nullable|date',
                     'assigned_staff_id' => 'nullable|exists:staff,id',
                 ]);

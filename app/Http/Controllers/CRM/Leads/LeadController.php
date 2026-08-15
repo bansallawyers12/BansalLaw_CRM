@@ -1704,14 +1704,6 @@ class LeadController extends Controller
             }
         }
 
-        $visa_expiry_date = null;
-        if (!empty($requestData['visa_expiry_date'])) {
-            $visa_expiry_dates = explode('/', $requestData['visa_expiry_date']);
-            if (count($visa_expiry_dates) === 3) {
-                $visa_expiry_date = $visa_expiry_dates[2] . '-' . $visa_expiry_dates[1] . '-' . $visa_expiry_dates[0];
-            }
-        }
-
         // Use database transaction for data integrity
         DB::beginTransaction();
         
@@ -1725,14 +1717,13 @@ class LeadController extends Controller
             $lead->dob = $dob;
             $lead->age = $requestData['age'] ?? null;
             $lead->marital_status = $requestData['marital_status'] ?? null;
-            $lead->passport_number = $requestData['passport_no'] ?? null;
-            $lead->visa_type = $requestData['visa_type'] ?? null;
-            $lead->visaExpiry = $visa_expiry_date;
-            $tagCsv = trim((string) ($requestData['tags_label'] ?? ''));
-            $normal = $tagCsv !== ''
-                ? array_filter(array_map('trim', explode(',', $tagCsv)))
-                : [];
-            $lead->tagname = \App\Support\ClientTagStorage::encode($normal, []);
+            if (array_key_exists('tags_label', $requestData)) {
+                $tagCsv = trim((string) ($requestData['tags_label'] ?? ''));
+                $normal = $tagCsv !== ''
+                    ? array_filter(array_map('trim', explode(',', $tagCsv)))
+                    : [];
+                $lead->tagname = \App\Support\ClientTagStorage::encode($normal, []);
+            }
             
             // Extract LAST phone from array (following ClientPersonalDetailsController pattern)
             $lastPhone = null;
@@ -1779,7 +1770,9 @@ class LeadController extends Controller
                 $lead->email_type = $lastEmailType;
             }
             $lead->email = $lastEmail;
-            $lead->source = $requestData['lead_source'] ?? null;
+            if (array_key_exists('lead_source', $requestData)) {
+                $lead->source = $requestData['lead_source'];
+            }
 
             if (array_key_exists('lead_status', $requestData)) {
                 $ls = (string) $requestData['lead_status'];
@@ -1818,15 +1811,6 @@ class LeadController extends Controller
                     $lead->agent_id = $assignId;
                 }
             }
-
-            // Additional fields with null coalescing
-            $lead->country_passport = $requestData['country_passport'] ?? null;
-            $lead->address = $requestData['address'] ?? null;
-            $lead->city = $requestData['city'] ?? null;
-            $lead->state = $requestData['state'] ?? null;
-            $lead->zip = $requestData['zip'] ?? null;
-            $lead->country = $requestData['country'] ?? null;
-            $lead->total_points = $requestData['total_points'] ?? null;
 
             if (Schema::hasColumn('admins', 'is_other_party')) {
                 $lead->is_other_party = $request->boolean('is_other_party') ? 1 : 0;

@@ -208,14 +208,6 @@ class Admin extends Authenticatable
     // CLIENT RELATIONSHIPS
     // ============================================================
 
-    /**
-     * Get the partner/spouse details for this client
-     */
-    public function partner()
-    {
-        return $this->hasOne(\App\Models\ClientSpouseDetail::class, 'client_id');
-    }
-
     public function conflictParties(): HasMany
     {
         return $this->hasMany(\App\Models\ClientConflictParty::class, 'client_id')
@@ -254,15 +246,6 @@ class Admin extends Authenticatable
     public function companiesAsContactPerson()
     {
         return $this->hasMany(Company::class, 'contact_person_id', 'id');
-    }
-
-    /**
-     * Employer nominations listing this client/lead as the nominated person.
-     */
-    public function companyNominationsAsNominee(): HasMany
-    {
-        return $this->hasMany(\App\Models\CompanyNomination::class, 'nominated_client_id', 'id')
-            ->orderBy('sort_order');
     }
 
     /**

@@ -34,7 +34,7 @@ class ClientEditService
      */
     public function getClientEditData(int $clientId): array
     {
-        // Get client data with partner relationship eager loaded
+        // Get client data with company relationships eager loaded
         $clientData = $this->getClientData($clientId);
 
         // Always load matter dropdowns when we have an admin row (same screen as clients.edit).
@@ -195,12 +195,11 @@ class ClientEditService
     }
 
     /**
-     * Get client basic data with partner and company relationships eager loaded
-     * This prevents N+1 query when accessing $fetchedData->partner or $fetchedData->company in blade
+     * Get client basic data with company relationships eager loaded.
      */
     protected function getClientData(int $clientId)
     {
-        return Admin::with(['partner', 'company.contactPerson', 'company.tradingNames', 'company.directors.directorClient', 'company.nominations.nominatedClient', 'company.sponsorships'])->find($clientId);
+        return Admin::with(['company.contactPerson', 'company.tradingNames', 'company.directors.directorClient'])->find($clientId);
     }
 
     /**

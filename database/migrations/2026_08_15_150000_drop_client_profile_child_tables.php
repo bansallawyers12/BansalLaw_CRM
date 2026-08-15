@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Drop unused client profile child tables and related admins columns.
- * Keeps client_spouse_details, client_addresses, client_contacts, client_emails.
+ * Keeps client_addresses, client_contacts, client_emails.
  */
 return new class extends Migration
 {
@@ -22,6 +22,7 @@ return new class extends Migration
             'client_testscore',
             'client_characters',
             'client_relationships',
+            'client_spouse_details',
         ];
 
         foreach ($tables as $table) {
