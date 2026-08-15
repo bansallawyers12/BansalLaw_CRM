@@ -939,7 +939,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<!-- confirmEducationModal removed - education system deprecated (replaced by ClientQualification) -->
+<!-- confirmEducationModal removed - education system deprecated -->
 
 <div id="confirmcompleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
@@ -1588,7 +1588,6 @@ $(document).ready(function() {
         rootUrl: @json(rtrim(url('/'), '/')),
         visaTypesRoute: @json(route('getVisaTypes')),
         countriesRoute: @json(route('getCountries')),
-        searchPartnerRoute: @json(route('clients.searchPartner')),
         csrfToken: @json(csrf_token()),
     });
     window.currentClientId = @json((string) ($fetchedData->id ?? ''));

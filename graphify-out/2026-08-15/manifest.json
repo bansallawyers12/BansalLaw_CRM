@@ -415,13 +415,13 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientPersonalDetailsController.php": {
-    "mtime": 1786767986.3906791,
-    "ast_hash": "8a920491fbba7b4357829e7745e1226b",
+    "mtime": 1786769669.216225,
+    "ast_hash": "3c811e8bf4eb43a8991e7eef346f05d0",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
-    "mtime": 1786767796.2615347,
-    "ast_hash": "eaf058f81dd342494dd482aa8525c2c5",
+    "mtime": 1786769832.8800821,
+    "ast_hash": "f4e375f7268d3a89f4a8c8be0279c877",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Clients/ClientDocumentsController.php": {
@@ -495,8 +495,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Leads/LeadController.php": {
-    "mtime": 1786700271.723133,
-    "ast_hash": "87d5c94a14957e3bde03a1f5a31aee8f",
+    "mtime": 1786769589.2817562,
+    "ast_hash": "4bdb5330be507fcdc99f0adfe219639d",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Leads/LeadConversionController.php": {
@@ -750,8 +750,8 @@
     "semantic_hash": ""
   },
   "app/Models/Admin.php": {
-    "mtime": 1786767991.8555741,
-    "ast_hash": "f95cd972e61e2169a184bcb693682b5f",
+    "mtime": 1786768656.32898,
+    "ast_hash": "81ab6610bb730b1a8d38e1f707abfe67",
     "semantic_hash": ""
   },
   "app/Models/AgentDetails.php": {
@@ -805,9 +805,9 @@
     "semantic_hash": "449cb52b39eb82042575f0541be8cd01"
   },
   "app/Models/ClientCharacter.php": {
-    "mtime": 1769758151.1057434,
-    "ast_hash": "f9cb23ed25eb36f3895cae3dd8a8022a",
-    "semantic_hash": "f9cb23ed25eb36f3895cae3dd8a8022a"
+    "mtime": 1786768681.4701834,
+    "ast_hash": "169bc2082bb3b892ea6626e6567f1853",
+    "semantic_hash": ""
   },
   "app/Models/ClientConflictCheck.php": {
     "mtime": 1785570273.3982787,
@@ -835,9 +835,9 @@
     "semantic_hash": "02197b5e3cdb92f35ad4bc08709ad141"
   },
   "app/Models/ClientExperience.php": {
-    "mtime": 1769758151.108765,
-    "ast_hash": "c84978cef18687eb4055774880f2eb7b",
-    "semantic_hash": "c84978cef18687eb4055774880f2eb7b"
+    "mtime": 1786768682.5905986,
+    "ast_hash": "d2a913912cd1ddfcab46511820611c54",
+    "semantic_hash": ""
   },
   "app/Models/ClientLegalForm.php": {
     "mtime": 1786765327.3931308,
@@ -880,9 +880,9 @@
     "semantic_hash": "0bd240e64dcea7339ca4a9a1fe4c8fcf"
   },
   "app/Models/ClientSpouseDetail.php": {
-    "mtime": 1772182536.4281957,
-    "ast_hash": "afeddfafd147754ecced295b8195b5ef",
-    "semantic_hash": "afeddfafd147754ecced295b8195b5ef"
+    "mtime": 1786768682.5905986,
+    "ast_hash": "fb68c50819e4c29633e523ea6fc2a69d",
+    "semantic_hash": ""
   },
   "app/Models/ClientTestScore.php": {
     "mtime": 1786767983.2269964,
@@ -1245,19 +1245,19 @@
     "semantic_hash": "e822658a8ecb66f7d4a8754d475fbec2"
   },
   "app/Services/ClientEditService.php": {
-    "mtime": 1780564728.5487318,
-    "ast_hash": "e15bf2968a803e7183f14a4c38931498",
-    "semantic_hash": "e15bf2968a803e7183f14a4c38931498"
+    "mtime": 1786769481.7144792,
+    "ast_hash": "1ba02571a3b6014f9783c98b2cf6149e",
+    "semantic_hash": ""
   },
   "app/Services/ClientExportService.php": {
-    "mtime": 1775186503.5900526,
-    "ast_hash": "7ddc3e1b85d0559457638332ed593ead",
-    "semantic_hash": "7ddc3e1b85d0559457638332ed593ead"
+    "mtime": 1786769821.1860058,
+    "ast_hash": "60cea82f8631edaeee58ee089c67c4c2",
+    "semantic_hash": ""
   },
   "app/Services/ClientImportService.php": {
-    "mtime": 1785212440.89352,
-    "ast_hash": "149ae589421e8f2e91e49206f22b67cd",
-    "semantic_hash": "149ae589421e8f2e91e49206f22b67cd"
+    "mtime": 1786769943.5686042,
+    "ast_hash": "bf94308169dfcbe9701c197e791b6894",
+    "semantic_hash": ""
   },
   "app/Services/ClientMatterTaskSyncService.php": {
     "mtime": 1786700271.741216,
@@ -3705,8 +3705,8 @@
     "semantic_hash": "e07089caa809d36d140ddfdb580f4bad"
   },
   "public/js/clients/edit-client.js": {
-    "mtime": 1786768199.7742236,
-    "ast_hash": "25f0af8f3735efa47847398e2ee037e4",
+    "mtime": 1786769993.3020163,
+    "ast_hash": "a44ad0de75078a07808ab5098fde84cd",
     "semantic_hash": ""
   },
   "public/js/components/dropdown-multi-select.js": {
@@ -5779,50 +5779,10 @@
     "ast_hash": "12253bdebf27ad8490625d14bdc30551",
     "semantic_hash": "12253bdebf27ad8490625d14bdc30551"
   },
-  "resources/views/components/client-edit/family-member-field.blade.php": {
-    "mtime": 1783751336.0546217,
-    "ast_hash": "0e2cd61a9fce3b7334f9eee20247f5dc",
-    "semantic_hash": "0e2cd61a9fce3b7334f9eee20247f5dc"
-  },
-  "resources/views/components/client-edit/occupation-field.blade.php": {
-    "mtime": 1783751336.0574553,
-    "ast_hash": "b2595aefd23013fdb131b1212e0f44af",
-    "semantic_hash": "b2595aefd23013fdb131b1212e0f44af"
-  },
-  "resources/views/components/client-edit/passport-field.blade.php": {
-    "mtime": 1783751336.0574553,
-    "ast_hash": "c338a4effc1fbe8771b1b657cb42184a",
-    "semantic_hash": "c338a4effc1fbe8771b1b657cb42184a"
-  },
   "resources/views/components/client-edit/phone-number-field.blade.php": {
     "mtime": 1783751336.0574553,
     "ast_hash": "2de94bb22c72aecf812d9e260a38df64",
     "semantic_hash": "2de94bb22c72aecf812d9e260a38df64"
-  },
-  "resources/views/components/client-edit/qualification-field.blade.php": {
-    "mtime": 1783751336.0574553,
-    "ast_hash": "98d7544f59b87b529a8d488c99acddf5",
-    "semantic_hash": "98d7544f59b87b529a8d488c99acddf5"
-  },
-  "resources/views/components/client-edit/test-score-field.blade.php": {
-    "mtime": 1783751336.0574553,
-    "ast_hash": "508d1a996a7e6afbdf4da952b5f023c3",
-    "semantic_hash": "508d1a996a7e6afbdf4da952b5f023c3"
-  },
-  "resources/views/components/client-edit/travel-field.blade.php": {
-    "mtime": 1783751336.061638,
-    "ast_hash": "adf2a2de2e55e5cc1730285c7d33c63b",
-    "semantic_hash": "adf2a2de2e55e5cc1730285c7d33c63b"
-  },
-  "resources/views/components/client-edit/visa-field.blade.php": {
-    "mtime": 1783751336.061638,
-    "ast_hash": "0a2614fa5623f9b512875d92b4039f07",
-    "semantic_hash": "0a2614fa5623f9b512875d92b4039f07"
-  },
-  "resources/views/components/client-edit/work-experience-field.blade.php": {
-    "mtime": 1783751336.061638,
-    "ast_hash": "e68262db78f210492fa5725a7e9bb51d",
-    "semantic_hash": "e68262db78f210492fa5725a7e9bb51d"
   },
   "resources/views/components/crm/modal-close.blade.php": {
     "mtime": 1785212440.978075,
@@ -6070,19 +6030,19 @@
     "semantic_hash": "815b073cb699b929297e2e22cfc69ca8"
   },
   "resources/views/crm/clients/detail.blade.php": {
-    "mtime": 1786765363.3758583,
-    "ast_hash": "4665647073aab7c255689cc3314dd2f4",
+    "mtime": 1786769973.6932402,
+    "ast_hash": "f224294482f095ba7e62b4588567c754",
     "semantic_hash": ""
   },
   "resources/views/crm/clients/edit.blade.php": {
-    "mtime": 1786768199.5657234,
-    "ast_hash": "8babbe6fb3892fd04b480874dfc29e0c",
+    "mtime": 1786769448.977535,
+    "ast_hash": "fb4a43f174d1eedbfc49a378d1f51265",
     "semantic_hash": ""
   },
   "resources/views/crm/clients/editclientmodal.blade.php": {
-    "mtime": 1783751336.1117735,
-    "ast_hash": "a62d82ee82dbb154cd4b581704b1a908",
-    "semantic_hash": "a62d82ee82dbb154cd4b581704b1a908"
+    "mtime": 1786769993.5954142,
+    "ast_hash": "4b023a6304a0f55c969a76397294052c",
+    "semantic_hash": ""
   },
   "resources/views/crm/clients/index.blade.php": {
     "mtime": 1785212440.9930859,
@@ -6335,9 +6295,9 @@
     "semantic_hash": "46bc95409fe9081fe1c6795e5b163bdb"
   },
   "resources/views/crm/clients/tabs/personal_details.blade.php": {
-    "mtime": 1786762818.2406237,
-    "ast_hash": "adc7d9847c45228ebb8c2d10a2159097",
-    "semantic_hash": "adc7d9847c45228ebb8c2d10a2159097"
+    "mtime": 1786769984.0155666,
+    "ast_hash": "b16012015f231d18324ce504f74ad988",
+    "semantic_hash": ""
   },
   "resources/views/crm/clients/tabs/personal_documents.blade.php": {
     "mtime": 1786700272.9826791,
@@ -6430,8 +6390,8 @@
     "semantic_hash": "f5b4e759e8e050da8d081036aacb7b9f"
   },
   "resources/views/crm/leads/edit.blade.php": {
-    "mtime": 1786768199.6200953,
-    "ast_hash": "212926087fad5d449b4efb3f18daddf1",
+    "mtime": 1786769394.535485,
+    "ast_hash": "d858d96c10587e464c953384dfd23a7a",
     "semantic_hash": ""
   },
   "resources/views/crm/leads/history.blade.php": {
@@ -6830,8 +6790,8 @@
     "semantic_hash": "0bd25172313a32f2b25ef4059e0d065c"
   },
   "routes/clients.php": {
-    "mtime": 1786765367.4244106,
-    "ast_hash": "37e29faea068a4752b5fc736d590457f",
+    "mtime": 1786769756.8915017,
+    "ast_hash": "438b6f26f935c3bc2ac714e325e86a38",
     "semantic_hash": ""
   },
   "routes/console.php": {
@@ -7267,11 +7227,6 @@
   "tests/Feature/InvoiceReceiptRecalculationOnDeleteTest.php": {
     "mtime": 1786700273.002517,
     "ast_hash": "b27afa233dc3eab25599e619de7b80a9",
-    "semantic_hash": ""
-  },
-  "tests/Feature/LegacyTestScoreUpdateTest.php": {
-    "mtime": 1786700273.003515,
-    "ast_hash": "d588cac5bf421c5ca18a2ed1c4a0f622",
     "semantic_hash": ""
   },
   "tests/Feature/ManualEmailUploadMatterValidationTest.php": {
@@ -7757,6 +7712,11 @@
   "database/migrations/2026_08_15_142500_drop_proficiency_columns_from_client_testscore.php": {
     "mtime": 1786767997.7374475,
     "ast_hash": "ed410c27c9fb480a509d7dbdf5b031e4",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_143500_drop_unused_client_profile_columns.php": {
+    "mtime": 1786768701.3123226,
+    "ast_hash": "370ac52277ce6ee9b05606fec438b1d1",
     "semantic_hash": ""
   }
 }

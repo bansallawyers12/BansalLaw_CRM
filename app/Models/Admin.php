@@ -51,10 +51,7 @@ class Admin extends Authenticatable
         'is_other_party',
         // API/Service Tokens
         'service_token', 'token_generated_at',
-        // Study / additional qualification flags (admins table)
-        'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
-        'visa_expiry_verified_at', 'visa_expiry_verified_by',
         'dob_verified_date', 'dob_verified_by',
         // Archive / soft-delete (Lead::softDelete sets timestamp; null = active)
         'is_archived', 'archived_by', 'archived_on',
@@ -205,14 +202,6 @@ class Admin extends Authenticatable
     public function phoneVerifications(): HasMany
     {
         return $this->hasMany(\App\Models\Admin::class, 'phone_verified_by');
-    }
-
-    /**
-     * Get visa expiry verifications done by this staff member
-     */
-    public function visaExpiryVerifications(): HasMany
-    {
-        return $this->hasMany(\App\Models\Admin::class, 'visa_expiry_verified_by');
     }
 
     // ============================================================

@@ -357,7 +357,7 @@ class ImportLoginDataFromMySQL extends Command
      */
     protected function sanitizeDates($data)
     {
-        $dateFields = ['naati_date', 'py_date', 'visa_expiry_verified_at', 'token_generated_at', 'created_at', 'updated_at'];
+        $dateFields = ['token_generated_at', 'created_at', 'updated_at'];
         
         foreach ($dateFields as $field) {
             if (isset($data[$field])) {

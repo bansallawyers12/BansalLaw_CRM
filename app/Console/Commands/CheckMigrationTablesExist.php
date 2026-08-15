@@ -21,7 +21,6 @@ class CheckMigrationTablesExist extends Command
         'jobs',
         'job_batches',
         'failed_jobs',
-        'client_passport_informations',
         'appointment_consultants',
         'booking_appointments',
         'appointment_sync_logs',

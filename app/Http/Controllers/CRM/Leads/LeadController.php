@@ -15,9 +15,6 @@ use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
-use App\Models\ClientVisaCountry;
-use App\Models\ClientPassportInformation;
-use App\Models\Matter;
 use Carbon\Carbon;
 use App\Traits\ClientHelpers;
 use App\Services\ClientReferenceService;
@@ -26,12 +23,6 @@ use App\Services\LeadFollowUpNoteService;
 use App\Services\LeadSpreadsheetImportService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
-use App\Models\ClientQualification;
-use App\Models\ClientExperience;
-use App\Models\ClientTestScore;
-use App\Models\ClientOccupation;
-use App\Models\ClientCharacter;
-use App\Models\ClientRelationship;
 
 class LeadController extends Controller
 {
@@ -215,9 +206,6 @@ class LeadController extends Controller
             'last_name' => $lastName,
             'phone' => $phone,
             'email' => $adminEmail,
-            'australian_study' => 0,
-            'specialist_education' => 0,
-            'regional_study' => 0,
             'created_at' => now(),
             'updated_at' => now(),
         ];
@@ -521,9 +509,6 @@ class LeadController extends Controller
             'last_name' => $validated['last_name'],
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? ('other_party_' . time() . '@lead.internal'),
-            'australian_study' => 0,
-            'specialist_education' => 0,
-            'regional_study' => 0,
             'created_at' => now(),
             'updated_at' => now(),
         ];
@@ -1265,11 +1250,6 @@ class LeadController extends Controller
                     'is_archived' => 0, // Not archived
                     'is_deleted' => null, // Not deleted
 
-                    // Study flags (required NOT NULL columns, default 0 for new leads)
-                    'australian_study' => 0, // Australian study requirement (NOT NULL, default 0)
-                    'specialist_education' => 0, // Specialist education qualification (NOT NULL, default 0)
-                    'regional_study' => 0, // Regional study qualification (NOT NULL, default 0)
-                    
                     // Company flag
                     'is_company' => $isCompany ? 1 : 0,
                     
@@ -1529,50 +1509,14 @@ class LeadController extends Controller
         // Get countries for dropdown
         $countries = \App\Models\Country::orderBy('name', 'asc')->get();
         
-        // Load contact data (required by edit form)
+        // Load contact / address data (required by trimmed edit form)
         $clientContacts = ClientContact::where('client_id', $id)->get() ?? collect();
         $emails = ClientEmail::where('client_id', $id)->get() ?? collect();
-        
-        // Load other related data for the edit form
-        $visaCountries = \App\Models\ClientVisaCountry::where('client_id', $id)
-            ->with('matter:id,title,nick_name')
-            ->get() ?? collect();
-        $clientPassports = \App\Models\ClientPassportInformation::where('client_id', $id)->get() ?? collect();
-        $currentAddress = \App\Models\ClientAddress::where('client_id', $id)
+        $currentAddress = ClientAddress::where('client_id', $id)
             ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
             ->first();
         $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
-        $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
-            ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
-            ->get() ?? collect();
 
-        $qualifications = Schema::hasTable('client_qualifications')
-            ? ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS LAST')->get()
-            : collect();
-        $experiences = Schema::hasTable('client_experiences')
-            ? ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date DESC NULLS LAST')->get()
-            : collect();
-        $testScores = Schema::hasTable('client_testscore')
-            ? ClientTestScore::where('client_id', $id)->get()
-            : collect();
-
-        $clientOccupations = Schema::hasTable('client_occupations')
-            ? ClientOccupation::where('client_id', $id)->get()
-            : collect();
-        $clientCharacters = Schema::hasTable('client_characters')
-            ? ClientCharacter::where('client_id', $id)->get()
-            : collect();
-        $clientPartners = Schema::hasTable('client_relationships')
-            ? ClientRelationship::where('client_id', $id)
-                ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])
-                ->get()
-            : collect();
-
-        $visaTypes = \App\Models\Matter::where('title', 'not like', '%skill assessment%')
-            ->where('status', 1)
-            ->orderBy('title', 'ASC')
-            ->get();
-        
         $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
         $leadStageLabels = [
             'new' => 'New Enquiry',
@@ -1599,11 +1543,8 @@ class LeadController extends Controller
             ->first();
 
         return view('crm.leads.edit', compact(
-            'fetchedData', 'countries', 'clientContacts', 'emails',
-            'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes',
+            'fetchedData', 'countries', 'clientContacts', 'emails', 'clientAddresses',
             'assignableStaff', 'leadStageLabels',
-            'qualifications', 'experiences', 'testScores',
-            'clientOccupations', 'clientCharacters', 'clientPartners',
             'conflictParties', 'latestConflictCheck'
         ));
     }
@@ -1754,12 +1695,6 @@ class LeadController extends Controller
             return redirect()->back()->with('error', 'Lead not found.');
         }
 
-        // Process related files with type validation
-        $related_files = '';
-        if (isset($requestData['related_files']) && is_array($requestData['related_files'])) {
-            $related_files = implode(',', $requestData['related_files']);
-        }
-
         // Process dates with validation
         $dob = null;
         if (!empty($requestData['dob'])) {
@@ -1845,7 +1780,6 @@ class LeadController extends Controller
             }
             $lead->email = $lastEmail;
             $lead->source = $requestData['lead_source'] ?? null;
-            $lead->related_files = rtrim($related_files, ',');
 
             if (array_key_exists('lead_status', $requestData)) {
                 $ls = (string) $requestData['lead_status'];

@@ -1030,9 +1030,6 @@ class PublicBookingController extends BaseController
             $admin->source = 'Public Appointment';
             $admin->password = Hash::make('LEAD_PLACEHOLDER');
             $admin->status = '1';
-            $admin->australian_study = 0;
-            $admin->specialist_education = 0;
-            $admin->regional_study = 0;
             $admin->is_archived = 0;
             $admin->created_at = now();
             $admin->updated_at = now();

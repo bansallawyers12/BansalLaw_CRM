@@ -336,9 +336,6 @@ class FrontDeskCheckInController extends Controller
                 'lead_status'          => 'new',
                 'is_archived'          => 0,
                 'is_deleted'           => null,
-                'australian_study'     => 0,
-                'specialist_education' => 0,
-                'regional_study'       => 0,
                 'is_company'           => 0,
             ];
 

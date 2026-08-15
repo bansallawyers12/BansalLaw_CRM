@@ -5,16 +5,7 @@ namespace App\Services;
 use App\Models\Admin;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
-use App\Models\ClientVisaCountry;
 use App\Models\ClientAddress;
-use App\Models\ClientQualification;
-use App\Models\ClientExperience;
-use App\Models\ClientOccupation;
-use App\Models\ClientTestScore;
-use App\Models\ClientPassportInformation;
-use App\Models\ClientTravelInformation;
-use App\Models\ClientCharacter;
-use App\Models\ClientRelationship;
 use App\Models\ClientMatter;
 use App\Models\ClientCourtHearing;
 use App\Models\Matter;
@@ -57,16 +48,7 @@ class ClientEditService
             'fetchedData' => $clientData,
             'clientContacts' => $this->getClientContacts($clientId),
             'emails' => $this->getClientEmails($clientId),
-            'visaCountries' => $this->getVisaCountries($clientId),
             'clientAddresses' => $this->getClientAddresses($clientId),
-            'qualifications' => $this->getQualifications($clientId),
-            'experiences' => $this->getExperiences($clientId),
-            'clientOccupations' => $this->getOccupations($clientId),
-            'testScores' => $this->getTestScores($clientId),
-            'clientPassports' => $this->getPassports($clientId),
-            'clientTravels' => $this->getTravels($clientId),
-            'clientCharacters' => $this->getCharacters($clientId),
-            'clientPartners' => $this->getRelationships($clientId),
             'clientMatters' => $this->getClientMatters($clientId),
             'courtHearings' => $this->getCourtHearings($clientId),
 
@@ -279,18 +261,6 @@ class ClientEditService
     }
 
     /**
-     * Get visa countries with eager loaded matter relationship
-     * Prevents N+1 query when accessing visa->matter in blade
-     */
-    protected function getVisaCountries(int $clientId)
-    {
-        return ClientVisaCountry::where('client_id', $clientId)
-            ->with(['matter:id,title,nick_name'])  // Eager load to prevent N+1
-            ->orderBy('visa_expiry_date', 'desc')
-            ->get() ?? [];
-    }
-
-    /**
      * Get client addresses
      */
     protected function getClientAddresses(int $clientId)
@@ -300,76 +270,6 @@ class ClientEditService
             ->first();
 
         return $currentAddress ? collect([$currentAddress]) : collect();
-    }
-
-    /**
-     * Get educational qualifications
-     */
-    protected function getQualifications(int $clientId)
-    {
-        return ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date DESC NULLS LAST')->get() ?? [];
-    }
-
-    /**
-     * Get work experiences
-     */
-    protected function getExperiences(int $clientId)
-    {
-        return ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date DESC NULLS LAST')->get() ?? [];
-    }
-
-    /**
-     * Get occupations
-     */
-    protected function getOccupations(int $clientId)
-    {
-        return ClientOccupation::where('client_id', $clientId)->get() ?? [];
-    }
-
-    /**
-     * Get test scores
-     */
-    protected function getTestScores(int $clientId)
-    {
-        return ClientTestScore::where('client_id', $clientId)->get() ?? [];
-    }
-
-    /**
-     * Get passport information
-     */
-    protected function getPassports(int $clientId)
-    {
-        return ClientPassportInformation::where('client_id', $clientId)->get() ?? [];
-    }
-
-    /**
-     * Get travel information ordered by arrival date (oldest first)
-     * NULL dates are placed at the end
-     */
-    protected function getTravels(int $clientId)
-    {
-        return ClientTravelInformation::where('client_id', $clientId)
-            ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
-            ->get() ?? [];
-    }
-
-    /**
-     * Get character information
-     */
-    protected function getCharacters(int $clientId)
-    {
-        return ClientCharacter::where('client_id', $clientId)->get() ?? [];
-    }
-
-    /**
-     * Get family relationships with eager loaded related client
-     * Prevents N+1 query when accessing partner->relatedClient in blade
-     */
-    protected function getRelationships(int $clientId)
-    {
-        return ClientRelationship::where('client_id', $clientId)
-            ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])  // Eager load to prevent N+1
-            ->get() ?? [];
     }
 
     /**
@@ -427,7 +327,7 @@ class ClientEditService
 
     /**
      * Get countries for dropdown
-     * Loaded once and passed to view to prevent N+1 query in passport loop
+     * Kept for edit-page dropdowns (e.g. matter-related country fields).
      */
     protected function getCountries()
     {
@@ -436,4 +336,3 @@ class ClientEditService
             ->get();
     }
 }
-

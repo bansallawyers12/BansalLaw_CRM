@@ -229,9 +229,6 @@ class CompanyDirectorEmailService
                 'phone' => null,
                 'email' => $adminEmail,
                 'email_type' => $isShared ? self::SHARED_EMAIL_TYPE : 'Personal',
-                'australian_study' => 0,
-                'specialist_education' => 0,
-                'regional_study' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

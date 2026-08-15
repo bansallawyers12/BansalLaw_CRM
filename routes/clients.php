@@ -46,7 +46,6 @@ Route::post('/clients/import', [ClientsController::class, 'import'])->name('clie
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
 Route::post('/clients/conflict-check/run', [ClientPersonalDetailsController::class, 'runConflictCheck'])->name('clients.conflictCheck.run');
 Route::get('/clients/conflict-check/{checkId}', [ClientPersonalDetailsController::class, 'getConflictCheckDetail'])->name('clients.conflictCheck.detail')->whereNumber('checkId');
-Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
     Route::post('/send-otp', [PhoneVerificationController::class, 'sendOTP'])->name('sendOTP');
@@ -283,9 +282,6 @@ Route::post('/clients/fetchClientContactNo', [ClientPersonalDetailsController::c
 
 Route::get('/get-visa-types', [ClientPersonalDetailsController::class, 'getVisaTypes'])->name('getVisaTypes');
 Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountries'])->name('getCountries');
-
-/*---------- Client Relationships ----------*/
-Route::post('/clients/search-partner', [ClientPersonalDetailsController::class, 'searchPartner'])->name('clients.searchPartner');
 
 /*---------- Client Agreements & Forms ----------*/
 Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');

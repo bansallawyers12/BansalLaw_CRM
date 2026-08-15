@@ -129,9 +129,6 @@ class LeadBookingApiController extends BaseController
                 $admin->type = 'lead';
                 $admin->password = Hash::make('LEAD_PLACEHOLDER');
                 $admin->status = '1';
-                $admin->australian_study = 0;
-                $admin->specialist_education = 0;
-                $admin->regional_study = 0;
                 $admin->is_archived = 0;
 
                 if (Schema::hasColumn('admins', 'source') && isset($validated['source'])) {

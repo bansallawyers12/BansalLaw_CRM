@@ -22,7 +22,6 @@ use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
 use Carbon\Carbon;
-use App\Models\ClientVisaCountry;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
 use App\Support\WorkflowStageFreeze;

@@ -47,12 +47,6 @@ use DateTimeZone;
 use App\Models\ClientAddress; // Import the ClientAddress model
 use App\Models\ClientContact; // Import the ClientAddress model
 use App\Models\ClientEmail; // Import the ClientAddress model
-use App\Models\ClientQualification; // Import the ClientAddress model
-use App\Models\ClientExperience; // Import the ClientAddress model
-use App\Models\ClientTestScore; // Import the ClientAddress model
-use App\Models\ClientVisaCountry; // Import the ClientAddress model
-use App\Models\ClientOccupation; // Import the ClientAddress model
-use App\Models\ClientSpouseDetail; // Import the ClientAddress model
 use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
@@ -62,10 +56,6 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
 use GuzzleHttp\Client;
 
-use App\Models\ClientPassportInformation;
-use App\Models\ClientTravelInformation;
-use App\Models\ClientCharacter;
-use App\Models\ClientRelationship;
 use App\Models\EmailTemplate;
 use App\Models\SmsTemplate;
 
@@ -844,39 +834,6 @@ class ClientsController extends Controller
                 'phone.*' => 'nullable|string|max:20',
                 'email_type_hidden.*' => 'nullable|in:Personal,Work,Business,Secondary,Additional,Sister,Brother,Father,Mother,Uncle,Auntie',
                 'email.*' => 'nullable|email|max:255',
-                'visa_country.*' => 'nullable|string|max:255',
-                'passports.*.passport_number' => 'nullable|string|max:50',
-                'passports.*.issue_date' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The document issue date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'passports.*.expiry_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'visas.*.visa_type' => 'nullable|exists:matters,id',
-                'visas.*.expiry_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'visas.*.grant_date' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The visa grant date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'visas.*.description' => 'nullable|string|max:255',
-                'visa_expiry_verified' => 'nullable|in:1',
                 'is_current_address' => 'nullable|in:1',
                 'address.*' => 'nullable|string|max:1000',
                 'zip.*' => 'nullable|string|max:20',
@@ -907,151 +864,7 @@ class ClientsController extends Controller
                         } catch (\Exception $e) {}
                     }
                 ],
-                'travel_country_visited.*' => 'nullable|string|max:255',
-                'travel_arrival_date.*' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The travel arrival date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'travel_departure_date.*' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The travel departure date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'travel_purpose.*' => 'nullable|string|max:500',
-                'level_hidden.*' => 'nullable|string|max:255',
-                'name.*' => 'nullable|string|max:255',
-                'country_hidden.*' => 'nullable|string|max:255',
-                'start_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'finish_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'relevant_qualification_hidden.*' => 'nullable|in:1',
-                'job_title.*' => 'nullable|string|max:255',
-                'job_code.*' => 'nullable|string|max:50',
-                'job_country_hidden.*' => 'nullable|string|max:255',
-                'job_start_date.*' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The employment start date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'job_finish_date.*' => [
-                    'nullable',
-                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                    function ($attribute, $value, $fail) {
-                        if (empty($value)) return;
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
-                            if ($date->isFuture()) {
-                                $fail('The employment finish date cannot be a future date.');
-                            }
-                        } catch (\Exception $e) {}
-                    }
-                ],
-                'relevant_experience_hidden.*' => 'nullable|in:1',
-                'nomi_occupation.*' => 'nullable|string|max:500',
-                'occupation_code.*' => 'nullable|string|max:500',
-                'list.*' => 'nullable|string|max:500',
-                'visa_subclass.*' => 'nullable|string|max:500',
-                'dates.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'expiry_dates.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'relevant_occupation_hidden.*' => 'nullable|in:1',
-                'test_type_hidden.*' => 'nullable|in:IELTS,IELTS_A,PTE,TOEFL,CAE,OET,CELPIP,MET,LANGUAGECERT',
-                'listening.*' => 'nullable|string|max:10',
-                'reading.*' => 'nullable|string|max:10',
-                'writing.*' => 'nullable|string|max:10',
-                'speaking.*' => 'nullable|string|max:10',
-                'overall_score.*' => 'nullable|string|max:10',
-                'test_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'relevant_test_hidden.*' => 'nullable|in:1',
-                'naati_test' => 'nullable|in:1',
-                'naati_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'py_test' => 'nullable|in:1',
-                'py_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'spouse_has_english_score' => 'nullable|in:Yes,No',
-                'spouse_has_skill_assessment' => 'nullable|in:Yes,No',
-                'spouse_test_type' => 'nullable|in:IELTS,IELTS_A,PTE,TOEFL,CAE,OET,CELPIP,MET,LANGUAGECERT',
-                'spouse_listening_score' => 'nullable|string|max:10',
-                'spouse_reading_score' => 'nullable|string|max:10',
-                'spouse_writing_score' => 'nullable|string|max:10',
-                'spouse_speaking_score' => 'nullable|string|max:10',
-                'spouse_overall_score' => 'nullable|string|max:10',
-                'spouse_test_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'spouse_skill_assessment_status' => 'nullable|string|max:255',
-                'spouse_nomi_occupation' => 'nullable|string|max:255',
-                'spouse_assessment_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'criminal_charges.*.details' => 'nullable|string|max:1000',
-                'criminal_charges.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'military_service.*.details' => 'nullable|string|max:1000',
-                'military_service.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'intelligence_work.*.details' => 'nullable|string|max:1000',
-                'intelligence_work.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'visa_refusals.*.details' => 'nullable|string|max:1000',
-                'visa_refusals.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'deportations.*.details' => 'nullable|string|max:1000',
-                'deportations.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'citizenship_refusals.*.details' => 'nullable|string|max:1000',
-                'citizenship_refusals.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'health_declarations.*.details' => 'nullable|string|max:1000',
-                'health_declarations.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
                 'source' => 'nullable|in:SubAgent,Others',
-                'partner_details.*' => 'nullable|string|max:255',
-                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Defacto',
-                'partner_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
-                'partner_email.*' => 'nullable|email|max:255',
-                'partner_first_name.*' => 'nullable|string|max:255',
-                'partner_last_name.*' => 'nullable|string|max:255',
-                'partner_phone.*' => 'nullable|string|max:20',
-                'children_details.*' => 'nullable|string|max:255',
-                'children_relationship_type.*' => 'nullable|in:Son,Daughter,Step Son,Step Daughter',
-                'children_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
-                'children_email.*' => 'nullable|email|max:255',
-                'children_first_name.*' => 'nullable|string|max:255',
-                'children_last_name.*' => 'nullable|string|max:255',
-                'children_phone.*' => 'nullable|string|max:20',
-                'parent_details.*' => 'nullable|string|max:255',
-                'parent_relationship_type.*' => 'nullable|in:Father,Mother,Step Father,Step Mother,Mother-in-law,Father-in-law',
-                'parent_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
-                'parent_email.*' => 'nullable|email|max:255',
-                'parent_first_name.*' => 'nullable|string|max:255',
-                'parent_last_name.*' => 'nullable|string|max:255',
-                'parent_phone.*' => 'nullable|string|max:20',
-                'siblings_details.*' => 'nullable|string|max:255',
-                'siblings_relationship_type.*' => 'nullable|in:Brother,Sister,Step Brother,Step Sister',
-                'siblings_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
-                'siblings_email.*' => 'nullable|email|max:255',
-                'siblings_first_name.*' => 'nullable|string|max:255',
-                'siblings_last_name.*' => 'nullable|string|max:255',
-                'siblings_phone.*' => 'nullable|string|max:20',
-                'others_details.*' => 'nullable|string|max:255',
-                'others_relationship_type.*' => 'nullable|in:Cousin,Friend,Uncle,Aunt,Grandchild,Granddaughter,Grandparent,Niece,Nephew,Grandfather,Son-in-law,Daughter-in-law,Brother-in-law,Sister-in-law',
-                'others_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
-                'others_email.*' => 'nullable|email|max:255',
-                'others_first_name.*' => 'nullable|string|max:255',
-                'others_last_name.*' => 'nullable|string|max:255',
-                'others_phone.*' => 'nullable|string|max:20',
                 'type' => 'required|in:lead,client',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1262,10 +1075,6 @@ class ClientsController extends Controller
                 $client->phone_verified_by = null;
             }
 
-            $client->naati_test = isset($validated['naati_test']) ? 1 : 0;
-            $client->naati_date = $validated['naati_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['naati_date']))) : null;
-            $client->py_test = isset($validated['py_test']) ? 1 : 0;
-            $client->py_date = $validated['py_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['py_date']))) : null;
             $client->source = $validated['source'] ?? null;
             $client->type = $validated['type'];
             // Staff id for lead list visibility (restrictLeadListQuery) and assignment; same for clients
@@ -1275,20 +1084,6 @@ class ClientsController extends Controller
 
             $client->created_at = now();
             $client->updated_at = now();
-
-            // Visa Expiry Verification
-            if (isset($validated['visa_expiry_verified']) && $validated['visa_expiry_verified'] === '1') {
-                if (isset($validated['visa_country'][0]) && $validated['visa_country'][0] === 'Australia') {
-                    $client->visa_expiry_verified_at = null;
-                    $client->visa_expiry_verified_by = null;
-                } else {
-                    $client->visa_expiry_verified_at = $currentDateTime;
-                    $client->visa_expiry_verified_by = $currentUserId;
-                }
-            } else {
-                $client->visa_expiry_verified_at = null;
-                $client->visa_expiry_verified_by = null;
-            }
 
             $client->save();
 
@@ -1334,50 +1129,6 @@ class ClientsController extends Controller
                             'email_type' => $email_type,
                             'email' => $emailToSave,
                             'is_verified' => false,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save passports
-            if (!empty($validated['passports'])) {
-                foreach ($validated['passports'] as $index => $passport) {
-                    if (!empty($passport['passport_number'])) {
-                        ClientPassportInformation::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'passport' => $passport['passport_number'],
-                            'passport_issue_date' => !empty($passport['issue_date'])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $passport['issue_date'])))
-                                : null,
-                            'passport_expiry_date' => !empty($passport['expiry_date'])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $passport['expiry_date'])))
-                                : null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save visa details
-            if (!empty($validated['visas']) && isset($validated['visa_country'][0]) && $validated['visa_country'][0] !== 'Australia') {
-                foreach ($validated['visas'] as $index => $visa) {
-                    if (!empty($visa['visa_type'])) {
-                        ClientVisaCountry::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'visa_type' => $visa['visa_type'],
-                            'visa_expiry_date' => !empty($visa['expiry_date'])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $visa['expiry_date'])))
-                                : null,
-                            'visa_grant_date' => !empty($visa['grant_date'])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $visa['grant_date'])))
-                                : null,
-                            'visa_description' => $visa['description'] ?? null,
-                            'visa_expiry_verified_at' => isset($validated['visa_expiry_verified']) ? now() : null,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -1444,414 +1195,6 @@ class ClientsController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
-                        }
-                    }
-                }
-            }
-
-            // Save travel history
-            if (!empty($validated['travel_country_visited'])) {
-                foreach ($validated['travel_country_visited'] as $index => $country) {
-                    if (!empty($country)) {
-                        ClientTravelInformation::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'travel_country_visited' => $country,
-                            'travel_arrival_date' => !empty($validated['travel_arrival_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['travel_arrival_date'][$index])))
-                                : null,
-                            'travel_departure_date' => !empty($validated['travel_departure_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['travel_departure_date'][$index])))
-                                : null,
-                            'travel_purpose' => $validated['travel_purpose'][$index] ?? null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-                
-                // Log activity for travel history creation
-                $newTravels = ClientTravelInformation::where('client_id', $client->id)->get();
-                $travelDisplay = [];
-                foreach ($newTravels as $travel) {
-                    $display = [];
-                    if ($travel->travel_country_visited) {
-                        $display[] = 'Country: ' . $travel->travel_country_visited;
-                    }
-                    if ($travel->travel_arrival_date) {
-                        $display[] = 'Arrival: ' . date('d/m/Y', strtotime($travel->travel_arrival_date));
-                    }
-                    if ($travel->travel_departure_date) {
-                        $display[] = 'Departure: ' . date('d/m/Y', strtotime($travel->travel_departure_date));
-                    }
-                    if ($travel->travel_purpose) {
-                        $display[] = 'Purpose: ' . $travel->travel_purpose;
-                    }
-                    $travelDisplay[] = !empty($display) ? implode(', ', $display) : 'Travel record';
-                }
-                $travelDisplayStr = !empty($travelDisplay) ? implode(' | ', $travelDisplay) : '(empty)';
-                
-                $this->logClientActivityWithChanges(
-                    $client->id,
-                    'added travel information',
-                    ['Travel Information' => [
-                        'old' => '(empty)',
-                        'new' => $travelDisplayStr
-                    ]],
-                    'activity'
-                );
-            }
-
-            // Save qualifications
-            if (!empty($validated['level_hidden'])) {
-                foreach ($validated['level_hidden'] as $index => $level) {
-                    if (!empty($level)) {
-                        ClientQualification::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'level' => $level,
-                            'name' => $validated['name'][$index] ?? null,
-                            'qual_college_name' => $requestData['qual_college_name'][$index] ?? null,
-                            'qual_campus' => $requestData['qual_campus'][$index] ?? null,
-                            'country' => $validated['country_hidden'][$index] ?? null,
-                            'qual_state' => $requestData['qual_state'][$index] ?? null,
-                            'start_date' => !empty($validated['start_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['start_date'][$index])))
-                                : null,
-                            'finish_date' => !empty($validated['finish_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['finish_date'][$index])))
-                                : null,
-                            'relevant_qualification' => isset($validated['relevant_qualification_hidden'][$index]) ? 1 : 0,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save work experiences
-            if (!empty($validated['job_title'])) {
-                foreach ($validated['job_title'] as $index => $job_title) {
-                    if (!empty($job_title)) {
-                        ClientExperience::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'job_title' => $job_title,
-                            'job_code' => $validated['job_code'][$index] ?? null,
-                            'job_country' => $validated['job_country_hidden'][$index] ?? null,
-                            'job_start_date' => !empty($validated['job_start_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['job_start_date'][$index])))
-                                : null,
-                            'job_finish_date' => !empty($validated['job_finish_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['job_finish_date'][$index])))
-                                : null,
-                            'relevant_experience' => isset($validated['relevant_experience_hidden'][$index]) ? 1 : 0,
-                            'job_emp_name' => $requestData['job_emp_name'][$index] ?? null,
-                            'job_state' => $requestData['job_state'][$index] ?? null,
-                            'job_type' => $requestData['job_type'][$index] ?? null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save occupations
-            if (!empty($validated['nomi_occupation'])) {
-                foreach ($validated['nomi_occupation'] as $index => $nomi_occupation) {
-                    if (!empty($nomi_occupation)) {
-                        ClientOccupation::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'nomi_occupation' => $nomi_occupation,
-                            'occupation_code' => $validated['occupation_code'][$index] ?? null,
-                            'list' => $validated['list'][$index] ?? null,
-                            //'visa_subclass' => $validated['visa_subclass'][$index] ?? null,
-                            'occ_reference_no' => $requestData['occ_reference_no'][$index] ?? null,
-                            'dates' => !empty($validated['dates'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['dates'][$index])))
-                                : null,
-                            'expiry_dates' => !empty($validated['expiry_dates'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['expiry_dates'][$index])))
-                                : null,
-                            //'relevant_occupation' => isset($validated['relevant_occupation_hidden'][$index]) ? 1 : 0,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save test scores
-            if (!empty($validated['test_type_hidden'])) {
-                foreach ($validated['test_type_hidden'] as $index => $test_type) {
-                    if (!empty($test_type)) {
-                        ClientTestScore::create([
-                            'client_id' => $client->id,
-                            'admin_id' => Auth::user()->id,
-                            'test_type' => $test_type,
-                            'listening' => $validated['listening'][$index] ?? null,
-                            'reading' => $validated['reading'][$index] ?? null,
-                            'writing' => $validated['writing'][$index] ?? null,
-                            'speaking' => $validated['speaking'][$index] ?? null,
-                            'overall_score' => $validated['overall_score'][$index] ?? null,
-                            'test_date' => !empty($validated['test_date'][$index])
-                                ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['test_date'][$index])))
-                                : null,
-                            'relevant_test' => isset($validated['relevant_test_hidden'][$index]) ? 1 : 0,
-                            'test_reference_no' => $requestData['test_reference_no'][$index] ?? null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-            // Save spouse details
-            if (isset($validated['marital_status']) && $validated['marital_status'] === 'Married') {
-                ClientSpouseDetail::create([
-                    'client_id' => $client->id,
-                    'admin_id' => Auth::user()->id,
-                    'spouse_has_english_score' => $validated['spouse_has_english_score'] ?? 'No',
-                    'spouse_has_skill_assessment' => $validated['spouse_has_skill_assessment'] ?? 'No',
-                    'spouse_test_type' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_test_type'] ?? null) : null,
-                    'spouse_listening_score' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_listening_score'] ?? null) : null,
-                    'spouse_reading_score' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_reading_score'] ?? null) : null,
-                    'spouse_writing_score' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_writing_score'] ?? null) : null,
-                    'spouse_speaking_score' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_speaking_score'] ?? null) : null,
-                    'spouse_overall_score' => $validated['spouse_has_english_score'] === 'Yes' ? ($validated['spouse_overall_score'] ?? null) : null,
-                    'spouse_test_date' => $validated['spouse_has_english_score'] === 'Yes' && !empty($validated['spouse_test_date'])
-                        ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['spouse_test_date'])))
-                        : null,
-                    'spouse_skill_assessment_status' => $validated['spouse_has_skill_assessment'] === 'Yes' ? ($validated['spouse_skill_assessment_status'] ?? null) : null,
-                    'spouse_nomi_occupation' => $validated['spouse_has_skill_assessment'] === 'Yes' ? ($validated['spouse_nomi_occupation'] ?? null) : null,
-                    'spouse_assessment_date' => $validated['spouse_has_skill_assessment'] === 'Yes' && !empty($validated['spouse_assessment_date'])
-                        ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['spouse_assessment_date'])))
-                        : null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            // Save character and history details
-            $characterSections = [
-                'criminal_charges' => 1,
-                'military_service' => 2,
-                'intelligence_work' => 3,
-                'visa_refusals' => 4,
-                'deportations' => 5,
-                'citizenship_refusals' => 6,
-                'health_declarations' => 7,
-            ];
-
-            foreach ($characterSections as $field => $typeOfCharacter) {
-                if (!empty($validated[$field])) {
-                    foreach ($validated[$field] as $index => $record) {
-                        if (!empty($record['details'])) {
-                            ClientCharacter::create([
-                                'client_id' => $client->id,
-                                'admin_id' => Auth::user()->id,
-                                'type_of_character' => $typeOfCharacter,
-                                'character_detail' => $record['details'],
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Update Partner Handling to include all family member types
-            $familyTypes = [
-                'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto'],
-                'children' => ['Son', 'Daughter', 'Step Son', 'Step Daughter'],
-                'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law', 'Father-in-law'],
-                'siblings' => ['Brother', 'Sister', 'Step Brother', 'Step Sister'],
-                'others' => ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather', 'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law'],
-            ];
-
-            // Function to get reciprocal relationship based on gender
-            $getReciprocalRelationship = function($relationshipType, $currentGender, $relatedGender, $clientGender = '') {
-                switch ($relationshipType) {
-                    // Partner relationships
-                    case 'Husband':
-                        return 'Wife';
-                    case 'Wife':
-                        return 'Husband';
-                    case 'Ex-Wife':
-                        return 'Ex-Husband';
-                    case 'Defacto':
-                        return 'Defacto';
-                    
-                    // Parent-Child relationships
-                    case 'Son':
-                        return $relatedGender === 'Female' ? 'Mother' : 'Father';
-                    case 'Daughter':
-                        return $relatedGender === 'Female' ? 'Mother' : 'Father';
-                    case 'Step Son':
-                        return $relatedGender === 'Female' ? 'Step Mother' : 'Step Father';
-                    case 'Step Daughter':
-                        return $relatedGender === 'Female' ? 'Step Mother' : 'Step Father';
-                    case 'Father':
-                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
-                    case 'Mother':
-                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
-                    case 'Step Father':
-                        return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
-                    case 'Step Mother':
-                        return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
-                    case 'Mother-in-law':
-                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
-                    case 'Father-in-law':
-                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
-                    
-                    // Sibling relationships
-                    case 'Brother':
-                        return $relatedGender === 'Female' ? 'Sister' : 'Brother';
-                    case 'Sister':
-                        return $relatedGender === 'Female' ? 'Sister' : 'Brother';
-                    case 'Step Brother':
-                        return $relatedGender === 'Female' ? 'Step Sister' : 'Step Brother';
-                    case 'Step Sister':
-                        return $relatedGender === 'Female' ? 'Step Sister' : 'Step Brother';
-                    
-                    // Other relationships
-                    case 'Cousin':
-                        return 'Cousin';
-                    case 'Friend':
-                        return 'Friend';
-                    case 'Uncle':
-                        return $relatedGender === 'Female' ? 'Niece' : 'Nephew';
-                    case 'Aunt':
-                        return $relatedGender === 'Female' ? 'Niece' : 'Nephew';
-                    case 'Grandchild':
-                        return $relatedGender === 'Female' ? 'Grandmother' : 'Grandfather';
-                    case 'Granddaughter':
-                        return $relatedGender === 'Female' ? 'Grandmother' : 'Grandfather';
-                    case 'Grandparent':
-                        return $relatedGender === 'Female' ? 'Granddaughter' : 'Grandson';
-                    case 'Grandfather':
-                        return $relatedGender === 'Female' ? 'Granddaughter' : 'Grandson';
-                    case 'Grandmother':
-                        return $relatedGender === 'Female' ? 'Granddaughter' : 'Grandson';
-                    case 'Niece':
-                        return $relatedGender === 'Female' ? 'Aunt' : 'Uncle';
-                    case 'Nephew':
-                        return $relatedGender === 'Female' ? 'Aunt' : 'Uncle';
-                    // In-law reciprocals (based on client's gender when adding an "other")
-                    case 'Son-in-law':
-                        return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
-                    case 'Daughter-in-law':
-                        return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
-                    case 'Brother-in-law':
-                        return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
-                    case 'Sister-in-law':
-                        return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
-                    
-                    default:
-                        return $relationshipType; // Fallback to same relationship type
-                }
-            };
-
-            // Clear existing relationships for the client
-            foreach ($familyTypes as $type => $relationships) {
-                if (!empty($requestData["{$type}_details"]) || !empty($requestData["{$type}_relationship_type"])) {
-                    $detailsArray = $requestData["{$type}_details"] ?? [];
-                    $relationshipTypeArray = $requestData["{$type}_relationship_type"] ?? [];
-                    $partnerIdArray = $requestData["{$type}_id"] ?? [];
-                    $emailArray = $requestData["{$type}_email"] ?? [];
-                    $firstNameArray = $requestData["{$type}_first_name"] ?? [];
-                    $lastNameArray = $requestData["{$type}_last_name"] ?? [];
-                    $phoneArray = $requestData["{$type}_phone"] ?? [];
-                    $companyArray = $requestData["{$type}_company_type"] ?? [];
-                    $genderArray = $requestData["{$type}_gender"] ?? [];
-                    //$dobArray = $requestData["{$type}_dob"] ?? [];
-
-                    $dobArray = [];
-                    if (!empty($requestData["{$type}_dob"]) && is_array($requestData["{$type}_dob"])) {
-                        foreach ($requestData["{$type}_dob"] as $dobIndex => $dobValue) {
-                            if (!empty($dobValue)) {
-                                try {
-                                    $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $dobValue);
-                                    $dobArray[$dobIndex] = $dobDate->format('Y-m-d'); // Convert to Y-m-d for storage
-                                } catch (\Exception $e) {
-                                    return redirect()->back()->withErrors(['dob' => 'Invalid Date of Birth format: ' . $dobValue . '. Must be in dd/mm/yyyy format.'])->withInput();
-                                }
-                            }
-                        }
-                    }
-
-                    foreach ($detailsArray as $key => $details) {
-                        $relationshipType = $relationshipTypeArray[$key] ?? null;
-                        $partnerId = $partnerIdArray[$key] ?? null;
-                        $email = $emailArray[$key] ?? null;
-                        $firstName = $firstNameArray[$key] ?? null;
-                        $lastName = $lastNameArray[$key] ?? null;
-                        $phone = $phoneArray[$key] ?? null;
-                        $companyType = $companyArray[$key] ?? null;
-                        $gender = $genderArray[$key] ?? null;
-                        $dob = $dobArray[$key] ?? null;
-
-                        // Skip if neither details nor relationship type is provided
-                        if (empty($details) && empty($relationshipType)) {
-                            continue;
-                        }
-
-                        // Ensure relationship type is provided
-                        if (empty($relationshipType)) {
-                            throw new \Exception("Relationship type is required for {$type} entry at index {$key}.");
-                        }
-                        //dd($partnerId);
-                        // Determine if we need to save extra fields (when related_client_id is not set)
-                        $relatedClientId = $partnerId && is_numeric($partnerId) ? $partnerId : null;
-                        $saveExtraFields = !$relatedClientId;
-
-                        // Prepare data for the primary relationship
-                        $partnerData = [
-                            'admin_id' => Auth::user()->id,
-                            'client_id' => $client->id,
-                            'related_client_id' => $relatedClientId ? $relatedClientId : null,
-                            'details' => $saveExtraFields ? $details : ($relatedClientId ? $details : null),
-                            'relationship_type' => $relationshipType,
-                            'company_type' => $companyType,
-                            'email' => $saveExtraFields ? $email : null,
-                            'first_name' => $saveExtraFields ? $firstName : null,
-                            'last_name' => $saveExtraFields ? $lastName : null,
-                            'phone' => $saveExtraFields ? $phone : null,
-                            'gender' => $gender, // Always save gender as it's now a main field
-                            'dob' => $saveExtraFields ? $dob : null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-
-                        // Save the primary relationship
-                        $newPartner = ClientRelationship::create($partnerData);
-
-                        // Create reciprocal relationship if related_client_id is set
-                        if ($relatedClientId) {
-                            $relatedClient = Admin::find($relatedClientId);
-                            if ($relatedClient) {
-                                // Get the reciprocal relationship type (for "others" in-laws, uses client's gender)
-                                $reciprocalRelationshipType = $getReciprocalRelationship($relationshipType, $gender, $relatedClient->gender ?? 'Male', $type === 'others' ? ($client->gender ?? '') : '');
-                                
-                                ClientRelationship::create([
-                                    'admin_id' => Auth::user()->id,
-                                    'client_id' => $relatedClientId,
-                                    'related_client_id' => $client->id,
-                                    //'details' => $details,
-                                    'details' => "{$client->first_name} {$client->last_name} ({$client->email}, {$client->phone}, {$client->client_id})",
-                                    'relationship_type' => $reciprocalRelationshipType,
-                                    'company_type' => $companyType,
-                                    'email' => null,
-                                    'first_name' => null,
-                                    'last_name' => null,
-                                    'phone' => null,
-                                    'gender' =>  $client->gender ? $client->gender : null, // Save gender for reciprocal relationship too
-                                    'dob' => null,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
-                            }
                         }
                     }
                 }
@@ -1958,144 +1301,6 @@ class ClientsController extends Controller
             }
         } else {
             return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
-        }
-    }
-
-    /**
-     * Handle legacy test scores form submission (old format with band_score fields)
-     * Converts legacy format to new ClientTestScore structure
-     */
-    public function editTestScores(Request $request)
-    {
-        try {
-            $requestData = $request->all();
-            $clientId = $requestData['client_id'] ?? null;
-            
-            if (!$clientId) {
-                return redirect()->back()->withErrors(['error' => 'Client ID is required'])->withInput();
-            }
-
-            // Verify client exists
-            $client = Admin::find($clientId);
-            if (!$client || !in_array($client->type ?? '', ['client', 'lead'])) {
-                return redirect()->back()->withErrors(['error' => 'Client not found'])->withInput();
-            }
-
-            $actor = Auth::guard('admin')->user() ?: Auth::user();
-            if (!$actor || !\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
-                return redirect()->back()->withErrors(['error' => config('constants.unauthorized')])->withInput();
-            }
-
-            // Delete existing TOEFL, IELTS, and PTE test scores for this client (only the ones handled by this legacy form)
-            ClientTestScore::where('client_id', $clientId)
-                ->whereIn('test_type', ['TOEFL', 'IELTS', 'PTE'])
-                ->delete();
-
-            // Process TOEFL scores
-            if (!empty($requestData['band_score_1_1']) || !empty($requestData['band_score_2_1']) || 
-                !empty($requestData['band_score_3_1']) || !empty($requestData['band_score_4_1']) || 
-                !empty($requestData['score_1'])) {
-                
-                $testDate = $requestData['band_score_5_1'] ?? null;
-                $formattedDate = null;
-                if (!empty($testDate)) {
-                    try {
-                        $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $testDate);
-                        $formattedDate = $dateObj->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        // Invalid date format, skip
-                    }
-                }
-
-                if (!empty($requestData['band_score_1_1']) || !empty($requestData['band_score_2_1']) || 
-                    !empty($requestData['band_score_3_1']) || !empty($requestData['band_score_4_1']) || 
-                    !empty($requestData['score_1'])) {
-                    ClientTestScore::create([
-                        'admin_id' => $actor->id,
-                        'client_id' => $clientId,
-                        'test_type' => 'TOEFL',
-                        'listening' => $requestData['band_score_1_1'] ?? null,
-                        'reading' => $requestData['band_score_2_1'] ?? null,
-                        'writing' => $requestData['band_score_3_1'] ?? null,
-                        'speaking' => $requestData['band_score_4_1'] ?? null,
-                        'overall_score' => $requestData['score_1'] ?? null,
-                        'test_date' => $formattedDate,
-                        'relevant_test' => 1
-                    ]);
-                }
-            }
-
-            // Process IELTS scores
-            if (!empty($requestData['band_score_5_2']) || !empty($requestData['band_score_6_2']) || 
-                !empty($requestData['band_score_7_2']) || !empty($requestData['band_score_8_2']) || 
-                !empty($requestData['score_2'])) {
-                
-                $testDate = $requestData['band_score_6_1'] ?? null;
-                $formattedDate = null;
-                if (!empty($testDate)) {
-                    try {
-                        $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $testDate);
-                        $formattedDate = $dateObj->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        // Invalid date format, skip
-                    }
-                }
-
-                if (!empty($requestData['band_score_5_2']) || !empty($requestData['band_score_6_2']) || 
-                    !empty($requestData['band_score_7_2']) || !empty($requestData['band_score_8_2']) || 
-                    !empty($requestData['score_2'])) {
-                    ClientTestScore::create([
-                        'admin_id' => $actor->id,
-                        'client_id' => $clientId,
-                        'test_type' => 'IELTS',
-                        'listening' => $requestData['band_score_5_2'] ?? null,
-                        'reading' => $requestData['band_score_6_2'] ?? null,
-                        'writing' => $requestData['band_score_7_2'] ?? null,
-                        'speaking' => $requestData['band_score_8_2'] ?? null,
-                        'overall_score' => $requestData['score_2'] ?? null,
-                        'test_date' => $formattedDate,
-                        'relevant_test' => 1
-                    ]);
-                }
-            }
-
-            // Process PTE scores
-            if (!empty($requestData['band_score_9_3']) || !empty($requestData['band_score_10_3']) || 
-                !empty($requestData['band_score_11_3']) || !empty($requestData['band_score_12_3']) || 
-                !empty($requestData['score_3'])) {
-                
-                $testDate = $requestData['band_score_7_1'] ?? null;
-                $formattedDate = null;
-                if (!empty($testDate)) {
-                    try {
-                        $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $testDate);
-                        $formattedDate = $dateObj->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        // Invalid date format, skip
-                    }
-                }
-
-                if (!empty($requestData['band_score_9_3']) || !empty($requestData['band_score_10_3']) || 
-                    !empty($requestData['band_score_11_3']) || !empty($requestData['band_score_12_3']) || 
-                    !empty($requestData['score_3'])) {
-                    ClientTestScore::create([
-                        'admin_id' => $actor->id,
-                        'client_id' => $clientId,
-                        'test_type' => 'PTE',
-                        'listening' => $requestData['band_score_9_3'] ?? null,
-                        'reading' => $requestData['band_score_10_3'] ?? null,
-                        'writing' => $requestData['band_score_11_3'] ?? null,
-                        'speaking' => $requestData['band_score_12_3'] ?? null,
-                        'overall_score' => $requestData['score_3'] ?? null,
-                        'test_date' => $formattedDate,
-                        'relevant_test' => 1
-                    ]);
-                }
-            }
-
-            return redirect()->back()->with('success', 'Test scores updated successfully');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Error updating test scores: ' . $e->getMessage()])->withInput();
         }
     }
 
@@ -2231,22 +1436,7 @@ class ClientsController extends Controller
                 $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
                 $clientContacts = ClientContact::where('client_id', $id)->get();
                 $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS LAST')->get() ?? [];
-                $experiences = ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date DESC NULLS LAST')->get() ?? [];
-                $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
-                $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
-                $clientOccupations = ClientOccupation::where('client_id', $id)->get();
 
-                // Fetch client family details with optimized query
-                // Eager load related client to prevent N+1 queries in the view
-                $clientFamilyDetails = ClientRelationship::where('client_id', $id)
-                    ->with(['relatedClient:id,first_name,last_name,client_id'])
-                    ->get() ?? [];
-                
-                //dd($clientFamilyDetails);
-                
-                // applications table removed — matter workflow is tracked via client_matters
-                
                 // Get current admin user data for SMS templates
                 $currentAdmin = Auth::user();
                 $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
@@ -2352,9 +1542,8 @@ class ClientsController extends Controller
 
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
-                    'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
-                    'experiences', 'testScores', 'visaCountries', 'clientOccupations',
-                    'encodeId', 'id1','clientFamilyDetails', 'activeTab',
+                    'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
+                    'encodeId', 'id1', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
@@ -3558,10 +2747,8 @@ class ClientsController extends Controller
                     $fieldsToBackfill = [
                         'first_name', 'last_name', 'email', 'phone', 'country_code', 'country',
                         'state', 'city', 'address', 'zip', 'marital_status', 'refer_by', 'dob',
-                        'age', 'gender', 'dob_verified_date', 'dob_verified_by', 'australian_study',
-                        'australian_study_date', 'specialist_education', 'specialist_education_date',
-                        'regional_study', 'regional_study_date', 'naati_test', 'py_test',
-                        'naati_date', 'py_date', 'email_type', 'contact_type', 'tagname'
+                        'age', 'gender', 'dob_verified_date', 'dob_verified_by',
+                        'email_type', 'contact_type', 'tagname'
                     ];
 
                     $updates = [];
@@ -3589,19 +2776,10 @@ class ClientsController extends Controller
                     'account_client_receipts' => ['client_id'],
                     'account_all_invoice_receipts' => ['client_id'],
                     'trust_withdrawal_authorities' => ['client_id'],
-                    'client_relationships' => ['client_id', 'admin_id', 'related_client_id'],
                     'client_spouse_details' => ['client_id', 'related_client_id'],
-                    'client_qualifications' => ['client_id', 'admin_id'],
                     'client_emails' => ['client_id', 'admin_id'],
                     'client_contacts' => ['client_id', 'admin_id'],
                     'client_addresses' => ['client_id', 'admin_id'],
-                    'client_characters' => ['client_id', 'admin_id'],
-                    'client_experiences' => ['client_id', 'admin_id'],
-                    'client_occupations' => ['client_id', 'admin_id'],
-                    'client_passport_informations' => ['client_id', 'admin_id'],
-                    'client_testscore' => ['client_id', 'admin_id'],
-                    'client_travel_informations' => ['client_id', 'admin_id'],
-                    'client_visa_countries' => ['client_id', 'admin_id'],
                     'client_conflict_checks' => ['client_id'],
                     'client_conflict_parties' => ['client_id'],
                     'client_court_hearings' => ['client_id'],

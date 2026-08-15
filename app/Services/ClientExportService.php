@@ -6,15 +6,9 @@ use App\Models\Admin;
 use App\Models\ClientAddress;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
-use App\Models\ClientPassportInformation;
-use App\Models\ClientTravelInformation;
-use App\Models\ClientCharacter;
-use App\Models\ClientVisaCountry;
-use App\Models\ClientTestScore;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Carbon\Carbon;
 
 class ClientExportService
 {
@@ -43,11 +37,6 @@ class ClientExportService
                 'addresses' => $this->getClientAddresses($clientId),
                 'contacts' => $this->getClientContacts($clientId),
                 'emails' => $this->getClientEmails($clientId),
-                'passport' => $this->getClientPassport($clientId),
-                'travel' => $this->getClientTravel($clientId),
-                'visa_countries' => $this->getClientVisaCountries($clientId),
-                'character' => $this->getClientCharacter($clientId),
-                'test_scores' => $this->getClientTestScores($clientId),
                 'activities' => $this->getClientActivities($clientId),
             ];
 
@@ -67,9 +56,8 @@ class ClientExportService
      */
     private function getClientBasicData($client, $clientId)
     {
-        $passport = ClientPassportInformation::where('client_id', $clientId)->first();
-        $passportNumber = $passport ? ($passport->passport ?? null) : null;
-        if ($passportNumber === null && Schema::hasColumn('admins', 'passport_number')) {
+        $passportNumber = null;
+        if (Schema::hasColumn('admins', 'passport_number')) {
             $passportNumber = $client->passport_number ?? null;
         }
 
@@ -95,14 +83,18 @@ class ClientExportService
             'country' => $client->country,
             'zip' => $client->zip,
 
-            // Passport (unified: passport_number in client for bansalcrm2)
+            // Passport fields on client record (no child passport collection)
             'country_passport' => $client->country_passport ?? null,
             'passport_number' => $passportNumber,
 
-            // Visa (from client for bansalcrm2 compatibility; visa_countries has full detail)
-            'visa_type' => null,
-            'visa_opt' => null,
-            'visaExpiry' => null,
+            // Visa summary fields on client record (no visa_countries collection)
+            'visa_type' => Schema::hasColumn('admins', 'visa_type') ? ($client->visa_type ?? null) : null,
+            'visa_opt' => Schema::hasColumn('admins', 'visa_opt') ? ($client->visa_opt ?? null) : null,
+            'visaExpiry' => Schema::hasColumn('admins', 'visaExpiry')
+                ? ($client->visaExpiry instanceof \DateTimeInterface
+                    ? $client->visaExpiry->format('Y-m-d')
+                    : ($client->visaExpiry ?? null))
+                : null,
 
             // Email and Contact Type
             'email_type' => $client->email_type ?? null,
@@ -115,34 +107,12 @@ class ClientExportService
             'agent_id' => $client->agent_id ?? null,
         ];
 
-        // Visa summary from last visa (bansalcrm2 stores visa name in admins; Bansal Law CRM uses Matter ID)
-        $lastVisa = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id', 'desc')->first();
-        if ($lastVisa) {
-            $matter = $lastVisa->matter;
-            $data['visa_type'] = $matter ? ($matter->nick_name ?? $matter->title) : (string) $lastVisa->visa_type;
-            $data['visa_opt'] = $lastVisa->visa_description ?? null;
-            $expiry = $lastVisa->visa_expiry_date;
-            if ($expiry instanceof \DateTimeInterface) {
-                $data['visaExpiry'] = $expiry->format('Y-m-d');
-            } elseif (is_string($expiry) && $expiry !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) {
-                $data['visaExpiry'] = $expiry;
-            } elseif ($expiry) {
-                try {
-                    $data['visaExpiry'] = Carbon::parse($expiry)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $data['visaExpiry'] = null;
-                }
-            }
-        }
-
         // Schema-checked fields (bansalcrm2 may have; Bansal Law CRM may have dropped)
         $optionalFields = [
             'att_email', 'att_phone', 'att_country_code',
-            'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas',
-            'relevant_work_exp_aus', 'relevant_work_exp_over',
             'naati_py', 'total_points', 'office_id', 'verified', 'show_dashboard_per',
             'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
-            'tagname', 'related_files',
+            'tagname',
         ];
         foreach ($optionalFields as $field) {
             if (Schema::hasColumn('admins', $field)) {
@@ -152,19 +122,6 @@ class ClientExportService
             }
         }
 
-        // Bansal Law CRM-specific (bansalcrm2 import ignores)
-        if (Schema::hasColumn('admins', 'naati_test')) {
-            $data['naati_test'] = $client->naati_test ?? null;
-        }
-        if (Schema::hasColumn('admins', 'naati_date')) {
-            $data['naati_date'] = $client->naati_date ? ($client->naati_date instanceof \DateTimeInterface ? $client->naati_date->format('Y-m-d') : $client->naati_date) : null;
-        }
-        if (Schema::hasColumn('admins', 'py_test')) {
-            $data['py_test'] = $client->py_test ?? null;
-        }
-        if (Schema::hasColumn('admins', 'py_date')) {
-            $data['py_date'] = $client->py_date ? ($client->py_date instanceof \DateTimeInterface ? $client->py_date->format('Y-m-d') : $client->py_date) : null;
-        }
         // Verification metadata (Bansal Law CRM)
         if (Schema::hasColumn('admins', 'dob_verified_date')) {
             $data['dob_verified_date'] = $client->dob_verified_date ? ($client->dob_verified_date instanceof \DateTimeInterface ? $client->dob_verified_date->toIso8601String() : $client->dob_verified_date) : null;
@@ -174,9 +131,6 @@ class ClientExportService
         }
         if (Schema::hasColumn('admins', 'phone_verified_date')) {
             $data['phone_verified_date'] = $client->phone_verified_date ? ($client->phone_verified_date instanceof \DateTimeInterface ? $client->phone_verified_date->toIso8601String() : $client->phone_verified_date) : null;
-        }
-        if (Schema::hasColumn('admins', 'visa_expiry_verified_at')) {
-            $data['visa_expiry_verified_at'] = $client->visa_expiry_verified_at ? ($client->visa_expiry_verified_at instanceof \DateTimeInterface ? $client->visa_expiry_verified_at->toIso8601String() : $client->visa_expiry_verified_at) : null;
         }
 
         return $data;
@@ -240,138 +194,6 @@ class ClientExportService
                     'email' => $email->email,
                     'is_verified' => $email->is_verified,
                     'verified_at' => $email->verified_at,
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Get client passport information
-     */
-    private function getClientPassport($clientId)
-    {
-        $passport = ClientPassportInformation::where('client_id', $clientId)->first();
-        
-        if (!$passport) {
-            return null;
-        }
-
-        return [
-            'passport_number' => $passport->passport, // Field is 'passport' in DB but represents passport_number
-            'passport_country' => $passport->passport_country,
-            'passport_issue_date' => $passport->passport_issue_date,
-            'passport_expiry_date' => $passport->passport_expiry_date,
-        ];
-    }
-
-    /**
-     * Get client travel information
-     */
-    private function getClientTravel($clientId)
-    {
-        return ClientTravelInformation::where('client_id', $clientId)
-            ->get()
-            ->map(function ($travel) {
-                return [
-                    'travel_country_visited' => $travel->travel_country_visited,
-                    'travel_arrival_date' => $travel->travel_arrival_date,
-                    'travel_departure_date' => $travel->travel_departure_date,
-                    'travel_purpose' => $travel->travel_purpose,
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Get client visa countries.
-     * Exports visa_type (Matter ID), plus portable visa_type_matter_title and visa_type_matter_nick_name
-     * so import can resolve correct Matter in target system (e.g. bansalcrm2) when IDs differ.
-     * visa_expiry_date is normalised to Y-m-d for consistent import.
-     */
-    private function getClientVisaCountries($clientId)
-    {
-        return ClientVisaCountry::with('matter')
-            ->where('client_id', $clientId)
-            ->orderBy('id')
-            ->get()
-            ->map(function ($visa) {
-                $matter = $visa->matter;
-                $expiry = $visa->visa_expiry_date;
-                if ($expiry instanceof \DateTimeInterface) {
-                    $expiry = $expiry->format('Y-m-d');
-                } elseif (is_string($expiry) && $expiry !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) {
-                    try {
-                        $expiry = Carbon::parse($expiry)->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        $expiry = $visa->visa_expiry_date;
-                    }
-                }
-                $grant = $visa->visa_grant_date;
-                if ($grant instanceof \DateTimeInterface) {
-                    $grant = $grant->format('Y-m-d');
-                } elseif (is_string($grant) && $grant !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $grant)) {
-                    try {
-                        $grant = Carbon::parse($grant)->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        $grant = $visa->visa_grant_date;
-                    }
-                }
-                return [
-                    'visa_type' => $visa->visa_type,
-                    'visa_type_matter_title' => $matter ? $matter->title : null,
-                    'visa_type_matter_nick_name' => $matter ? $matter->nick_name : null,
-                    'visa_description' => $visa->visa_description,
-                    'visa_expiry_date' => $expiry ?: null,
-                    'visa_grant_date' => $grant ?: null,
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Get client character information
-     */
-    private function getClientCharacter($clientId)
-    {
-        return ClientCharacter::where('client_id', $clientId)
-            ->get()
-            ->map(function ($character) {
-                return [
-                    'type_of_character' => $character->type_of_character,
-                    'character_detail' => $character->character_detail,
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Get client test scores (unified format for Bansal Law CRM and bansalcrm2)
-     * Both use test_type, listening, reading, writing, speaking, overall_score, test_date
-     */
-    private function getClientTestScores($clientId)
-    {
-        return ClientTestScore::where('client_id', $clientId)
-            ->orderBy('updated_at', 'desc')
-            ->get()
-            ->map(function ($test) {
-                $testDate = $test->test_date;
-                if ($testDate instanceof \DateTimeInterface) {
-                    $testDate = $testDate->format('Y-m-d');
-                } elseif (is_string($testDate) && $testDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $testDate)) {
-                    try {
-                        $testDate = Carbon::parse($testDate)->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        $testDate = $test->test_date;
-                    }
-                }
-                return [
-                    'test_type' => $test->test_type ?? null,
-                    'listening' => $test->listening ?? null,
-                    'reading' => $test->reading ?? null,
-                    'writing' => $test->writing ?? null,
-                    'speaking' => $test->speaking ?? null,
-                    'overall_score' => $test->overall_score ?? null,
-                    'test_date' => $testDate ?: null,
                 ];
             })
             ->toArray();

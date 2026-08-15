@@ -128,11 +128,6 @@ class ClientMatchingService
             $client->password = Hash::make('LEAD_PLACEHOLDER'); // Placeholder password (NOT NULL constraint, will be overwritten if client portal activated)
             $client->status = '1'; // Default status: 1 (Active)
 
-            // EOI Qualification fields (required NOT NULL columns, default 0 for new leads)
-            $client->australian_study = 0; // Australian study requirement (NOT NULL, default 0)
-            $client->specialist_education = 0; // Specialist education qualification (NOT NULL, default 0)
-            $client->regional_study = 0; // Regional study qualification (NOT NULL, default 0)
-            
             // Archive status (required NOT NULL column)
             $client->is_archived = 0; // Not archived
             
