@@ -6035,8 +6035,8 @@
     "semantic_hash": "0878d790dd3e4b008d2683803cd12fbc"
   },
   "resources/views/crm/clients/modals/receipts.blade.php": {
-    "mtime": 1786782778.7644217,
-    "ast_hash": "0cf7ed1758f081cc83b161bb96d7c0f6",
+    "mtime": 1786783024.9633186,
+    "ast_hash": "459bdbab30e828b29cbb92b48b5f921b",
     "semantic_hash": ""
   },
   "resources/views/crm/clients/officereceiptlist.blade.php": {
@@ -7190,8 +7190,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786777776.2548277,
-    "ast_hash": "3af4a5805a37bfad47876f7cd457069c",
+    "mtime": 1786783155.3343823,
+    "ast_hash": "96f61baf02e2a114d4b9ee797b381c13",
     "semantic_hash": ""
   },
   "app/Models/model_list.txt": {
@@ -7385,8 +7385,8 @@
     "semantic_hash": ""
   },
   "python_services/requirements.txt": {
-    "mtime": 1783492422.7698512,
-    "ast_hash": "a706596bb3e8036c58abf6474387750f",
+    "mtime": 1786783192.4477649,
+    "ast_hash": "9c1fb4f473c275ae6b994c6fc8d9ce30",
     "semantic_hash": ""
   },
   "public/legal_forms/4/Sample_Invoice.pdf": {

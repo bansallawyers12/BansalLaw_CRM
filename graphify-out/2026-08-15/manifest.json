@@ -7663,5 +7663,10 @@
     "mtime": 1786782789.527785,
     "ast_hash": "83f2db143bc6623ee8f22615fbed53f3",
     "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_185000_drop_client_spouse_details_table.php": {
+    "mtime": 1786782865.9335666,
+    "ast_hash": "0405c5ddde12dc4c591b00837f8cc5ba",
+    "semantic_hash": ""
   }
 }

@@ -59,7 +59,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 
 | Module | Description |
 |--------|-------------|
-| **Booking / Appointments** | FullCalendar-based scheduling, consultant calendars, reminders, status updates, sync dashboard |
+| **Booking / Appointments** | FullCalendar-based scheduling (Melbourne office), consultant calendars, reminders, status updates, sync dashboard; service/location mapping via `BookingCatalogue` |
 | **SMS** | Twilio and Cellcast providers; templates, bulk send, webhooks (Admin Console) |
 | **Phone/Email Verification** | OTP and token-based verification on client contact records |
 
@@ -96,7 +96,7 @@ Inquiry (web form / phone / walk-in)
   → Follow-up notes & assignee actions
   → Send quotation (optional)
   → Convert to client (single or bulk)
-  → Client profile created with portal credentials
+  → Client profile created
 ```
 
 ### 2. Client Onboarding
@@ -109,7 +109,6 @@ Create/convert client
   → Create matter(s) with workflow template
   → Assign case manager & legal practitioner
   → Generate costs disclosure / legal forms
-  → Enable client portal access
 ```
 
 ### 3. Matter Lifecycle
@@ -125,6 +124,8 @@ Create matter on client profile
   → Close matter when complete
 ```
 
+Staff matter AJAX lives under `/crm/matter/*` (not a public client portal). Document signing can auto-advance the matter to the next stage, except when the next stage is **Decision Received** (requires an outcome/note).
+
 ### 4. Document & E-Signature
 
 ```
@@ -134,6 +135,7 @@ Staff prepares document (upload or template)
   → Client opens /sign/{id}/{token} (no login)
   → Client signs (Signature Pad)
   → Signed PDF stored; staff notified
+  → Matter may auto-advance (see Matter Lifecycle)
   → Download / audit trail in signature dashboard
 ```
 
@@ -152,9 +154,10 @@ Generate invoice on client/matter
 
 ```
 Client requests slot (public API or staff CRM)
+  → BookingCatalogue resolves service type, duration, and Melbourne location
   → Calendar checks disabled dates/slots
   → Appointment created with consultant & meeting type
-  → Reminders sent (email/SMS)
+  → Reminders sent (email/SMS) with Melbourne office details
   → Front-desk check-in on arrival
   → Status: scheduled → completed / cancelled
 ```
@@ -251,7 +254,7 @@ Versions below match the current `composer.lock` / `package.json` (Jul 2026). Re
 
 ## Routes
 
-The application defines **666 routes** across 12 route files (verified via `php artisan route:list`).
+The application defines **649 routes** across 12 route files (verified via `php artisan route:list`).
 
 > **Important:** Not every route file inherits `auth:admin` from `web.php`. Middleware depends on how each file is registered — see [Route registration](#route-registration) below.
 
@@ -897,11 +900,20 @@ SESSION_DRIVER=file
 # Python services (default port 5002)
 PYTHON_SERVICE_URL=http://localhost:5002
 PYTHON_CONVERTER_URL=http://localhost:5002
+MAIL_PYTHON_EXECUTABLE=
+MAIL_AUTO_DETECT_PYTHON=true
+
+# Firm mailbox domains (inbox matching / auto-assignment; comma-separated)
+APP_FIRM_EMAIL_DOMAINS=@bansallawyers.com.au,@bansaleducation.com.au
+APP_PUBLIC_EMAIL=admin@bansallawyers.com.au
+APP_INVOICE_EMAIL=admin@bansallawyers.com.au
+APP_PUBLIC_WEBSITE_URL=https://www.bansallawyers.com.au
 
 # Optional login CAPTCHA
 RECAPTCHA_SITE_KEY=
 RECAPTCHA_SITE_SECRET=
 ```
+
 
 ### CRM Cross-Access
 
@@ -968,7 +980,7 @@ app/
 │   └── Auth/             # AdminLoginController
 ├── Models/               # Staff, Lead, ClientMatter, Document, etc.
 ├── Services/             # Stripe, SMS, signatures, CrmAccess, dashboard
-└── Support/              # StaffClientVisibility
+└── Support/              # StaffClientVisibility, BookingCatalogue, workflow helpers
 
 routes/
 ├── web.php               # Main CRM routes
@@ -999,15 +1011,25 @@ config/                   # auth, crm_access, mail_routing, services
 
 | Model | Purpose |
 |-------|---------|
-| `Staff` | CRM users (authentication) |
+| `Staff` | CRM users (authentication); solicitor/agent lookups use `staff`, not legacy `agent_details` |
 | `Admin` | Client records (`admins` table; legacy naming) |
 | `Lead` | Pre-client inquiries |
 | `ClientMatter` | Matter/case on a client |
 | `Document` | Uploaded and signed documents |
-| `BookingAppointment` | Scheduled appointments |
+| `BookingAppointment` | Scheduled appointments (Melbourne location via `BookingCatalogue`) |
 | `ClientAccessGrant` | Cross-access audit trail |
 | `StaffLoginLog` | Staff login audit entries |
 | `AccountAllInvoiceReceipt` | Invoices and receipts |
+
+### Recent cleanup (Aug 2026)
+
+Legacy surfaces removed or redirected as part of ongoing schema/API simplification:
+
+- Matter hub AJAX under `/crm/matter/*` (former `/client-portal/*` staff paths)
+- Nomination document types/checklists; Sanctum staff login / device tokens / FCM push
+- `AgentDetails`, `client_spouse_details`, and payment-forms verification tables
+- Client personal-detail side tables (points, qualifications, experiences, travel) and sponsorship/nomination handlers
+- Workflow no longer freezes or gates stages on “Verification:*” names; signing can auto-advance except into **Decision Received**
 
 ---
 

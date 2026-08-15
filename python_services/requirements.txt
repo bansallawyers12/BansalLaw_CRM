@@ -1,41 +1,41 @@
 # Unified Python Services for Migration Manager
 # All dependencies for PDF, Email, and Document processing
+# Floors checked against PyPI on 2026-08-15
 
 # Web Framework
-fastapi>=0.120.0
-uvicorn[standard]>=0.20.0
-pydantic>=2.10.0
+fastapi>=0.141.1
+uvicorn[standard]>=0.52.3
+pydantic>=2.13.4
 
 # PDF Processing
-PyPDF2>=3.0.0
-pdf2image>=1.16.0
-Pillow>=11.0.0
-reportlab>=4.4.0
-PyMuPDF>=1.26.0  # fitz - for advanced PDF operations
+PyPDF2>=3.0.1
+pdf2image>=1.17.0
+Pillow>=12.3.0
+reportlab>=5.0.0
+PyMuPDF>=1.28.2  # fitz - for advanced PDF operations
 
 # Email Processing
-extract-msg>=0.40.0
-beautifulsoup4>=4.13.0
-lxml>=4.9.0
+extract-msg>=0.56.1
+beautifulsoup4>=4.15.0
+lxml>=6.1.1
 html5lib>=1.1
-tzlocal>=5.0
-tzdata>=2024.1
+tzlocal>=5.4.4
+tzdata>=2026.3
 weasyprint==52.5  # Pinned: production EL8 has Pango 1.42.x; WeasyPrint 53+ requires Pango >= 1.44
 
 # Document Conversion
-python-docx>=1.0.0
-openpyxl>=3.1.0
+python-docx>=1.2.0
+openpyxl>=3.1.5
 docx2pdf>=0.1.8  # Fallback DOCX converter
 
 # Utilities
-python-multipart>=0.0.20
-aiofiles>=23.0.0
-python-dateutil>=2.8.0
+python-multipart>=0.0.32
+aiofiles>=25.1.0
+python-dateutil>=2.9.0
 
 # Security & Validation
-bleach>=6.2.0
-validators>=0.20.0
+bleach>=6.4.0
+validators>=0.35.0
 
 # Logging & Monitoring
-loguru>=0.7.0
-
+loguru>=0.7.3
