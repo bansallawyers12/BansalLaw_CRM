@@ -20,7 +20,7 @@
                 <div class="btn-group ms-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fa-solid fa-calendar-days"></i> Ajay Calendar
+                        <i class="fa-solid fa-calendar-days"></i> Ajay
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
                        class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
@@ -332,8 +332,8 @@
     </div>
 </div>
 
-<!-- Cancellation Confirmation Modal -->
-<div class="modal fade booking-calendar-modal" id="cancellationConfirmModal" tabindex="-1" role="dialog" data-backdrop="static">
+<!-- Cancellation Confirmation Modal (shown after Appointment Details closes — Bootstrap 5 does not stack modals) -->
+<div class="modal fade booking-calendar-modal" id="cancellationConfirmModal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -828,24 +828,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             <section class="appt-detail-section appt-detail-section--actions h-100">
                                 <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>
                                 <div class="appt-action-buttons">
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed')">
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed', this)">
                                         <i class="fa-solid fa-check"></i> Confirmed
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed')">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed', this)">
                                         <i class="fa-solid fa-circle-check"></i> Complete
                                     </button>
                                     ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid')">
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid', this)">
                                         <i class="fa-solid fa-dollar-sign"></i> Payment done
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending')">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending', this)">
                                         <i class="fa-solid fa-clock"></i> Payment pending
                                     </button>
                                     ` : ''}
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled')">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled', this)">
                                         <i class="fa-solid fa-xmark"></i> Cancelled
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show')">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show', this)">
                                         <i class="fa-solid fa-user-times"></i> No show
                                     </button>
                                 </div>
@@ -2163,7 +2163,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('courtHearingCancelEditBtn').addEventListener('click', function () {
         cancelCourtHearingEditMode();
     });
+    // Pending cancellation data (used when showing cancellation modal)
+    let pendingCancellationData = null;
+
     document.getElementById('eventModal').addEventListener('hidden.bs.modal', function () {
+        if (pendingCancellationData) {
+            return;
+        }
         _activeCourtHearingState = null;
         setEventModalCourtHearingFooter('hidden');
         setEventModalHeader({
@@ -2181,17 +2187,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Global functions for modal actions
-    // Pending cancellation data (used when showing cancellation modal)
-    let pendingCancellationData = null;
+    function showBootstrapModal(el) {
+        if (!el) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        } else {
+            $(el).modal('show');
+        }
+    }
 
-    window.updateAppointmentStatus = function(appointmentId, newStatus) {
-        // For cancellation, show custom modal with reason and email checkbox
+    function hideBootstrapModal(el) {
+        if (!el) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const instance = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
+            instance.hide();
+        } else {
+            $(el).modal('hide');
+        }
+    }
+
+    window.updateAppointmentStatus = function(appointmentId, newStatus, triggerBtn) {
+        const buttonEl = triggerBtn || (typeof event !== 'undefined' ? event.target : null);
+        // For cancellation, close details first then show reason modal (Bootstrap 5 cannot stack modals)
         if (newStatus === 'cancelled') {
-            pendingCancellationData = { appointmentId, button: event.target };
+            pendingCancellationData = { appointmentId, button: buttonEl };
             document.getElementById('cancelReasonInput').value = '';
             document.getElementById('cancelReasonError').classList.add('d-none');
             document.getElementById('sendCancellationEmailCheck').checked = true;
-            $('#cancellationConfirmModal').modal('show');
+
+            const eventModalEl = document.getElementById('eventModal');
+            const cancelModalEl = document.getElementById('cancellationConfirmModal');
+            const openCancelModal = function() {
+                setTimeout(function() {
+                    showBootstrapModal(cancelModalEl);
+                }, 50);
+            };
+
+            if (eventModalEl && eventModalEl.classList.contains('show')) {
+                $(eventModalEl).one('hidden.bs.modal', openCancelModal);
+                hideBootstrapModal(eventModalEl);
+            } else {
+                openCancelModal();
+            }
             return;
         }
 
@@ -2199,12 +2236,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        performStatusUpdate(appointmentId, newStatus, null, false, event.target);
+        performStatusUpdate(appointmentId, newStatus, null, false, buttonEl);
     };
 
     // Handler for Confirm Cancellation button in modal (attach when script runs - DOM is ready)
     (function attachCancelConfirmHandler() {
         const confirmBtn = document.getElementById('confirmCancelBtn');
+        const cancelModalEl = document.getElementById('cancellationConfirmModal');
         if (confirmBtn) {
             confirmBtn.addEventListener('click', function() {
                 if (!pendingCancellationData) return;
@@ -2215,9 +2253,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 document.getElementById('cancelReasonError').classList.add('d-none');
                 const sendEmail = document.getElementById('sendCancellationEmailCheck').checked;
-                $('#cancellationConfirmModal').modal('hide');
-                performStatusUpdate(pendingCancellationData.appointmentId, 'cancelled', reason, sendEmail, pendingCancellationData.button);
+                const payload = pendingCancellationData;
                 pendingCancellationData = null;
+                hideBootstrapModal(cancelModalEl);
+                performStatusUpdate(payload.appointmentId, 'cancelled', reason, sendEmail, payload.button);
+            });
+        }
+        if (cancelModalEl) {
+            cancelModalEl.addEventListener('hidden.bs.modal', function() {
+                if (!pendingCancellationData) return;
+                pendingCancellationData = null;
+                showBootstrapModal(document.getElementById('eventModal'));
             });
         }
     })();
@@ -2265,16 +2311,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             if (data.success === true || data.status === true) {
-                // Update the status badge in the modal
                 var statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
                     statusBadge.textContent = newStatus.toUpperCase();
                     statusBadge.className = 'appt-status-pill appt-status-pill--' +
                         String(newStatus).toLowerCase().replace(/[^a-z0-9]+/g, '_');
                 }
-                $('#eventModal').modal('hide');
+                hideBootstrapModal(document.getElementById('eventModal'));
                 calendar.refetchEvents();
-                showAlert('success', 'Status updated successfully!');
+                var okMsg = data.message || 'Status updated successfully!';
+                showAlert(data.sync_error ? 'warning' : 'success', okMsg);
             } else {
                 showAlert('danger', 'Failed to update status: ' + (data.message || 'Unknown error'));
             }
@@ -2452,10 +2498,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Show loading state
-        const button = event.target;
-        const originalButtonHtml = button.innerHTML;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
-        button.disabled = true;
+        const button = (typeof event !== 'undefined' && event && event.target)
+            ? event.target.closest('button')
+            : null;
+        const originalButtonHtml = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+            button.disabled = true;
+        }
         dateInput.disabled = true;
         timeInput.disabled = true;
         
@@ -2479,11 +2529,14 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw { status: response.status, data: errorData };
-                }).catch(() => {
-                    throw { status: response.status, message: 'Server error occurred' };
-                });
+                return response.json().then(
+                    function(errorData) {
+                        throw { status: response.status, data: errorData };
+                    },
+                    function() {
+                        throw { status: response.status, message: 'Server error occurred' };
+                    }
+                );
             }
             
             const contentType = response.headers.get('content-type');
@@ -2501,7 +2554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateInput.setAttribute('data-original-time', newTime);
                 
                 // Close the modal and refresh calendar
-                $('#eventModal').modal('hide');
+                hideBootstrapModal(document.getElementById('eventModal'));
                 calendar.refetchEvents();
                 
                 // Show success message
@@ -2545,8 +2598,10 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             // Restore button and input states
-            button.innerHTML = originalButtonHtml;
-            button.disabled = false;
+            if (button) {
+                button.innerHTML = originalButtonHtml;
+                button.disabled = false;
+            }
             dateInput.disabled = false;
             timeInput.disabled = false;
         });
@@ -2684,7 +2739,18 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     function showAlert(type, message) {
-        // Create alert element
+        const iziType = type === 'danger' ? 'error' : type;
+        if (typeof iziToast !== 'undefined' && typeof iziToast[iziType] === 'function') {
+            const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Notice' };
+            iziToast[iziType]({
+                title: titles[iziType] || 'Notice',
+                message: message,
+                position: 'topRight',
+                timeout: iziType === 'error' ? 8000 : 5000
+            });
+            return;
+        }
+
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
@@ -2693,13 +2759,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>&times;</span>
             </button>
         `;
-        
-        // Insert at the top of the page
+
         const container = document.querySelector('.section-body');
         if (container) {
             container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
             setTimeout(() => {
                 if (alertDiv.parentNode) {
                     alertDiv.remove();
@@ -3022,6 +3085,10 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /* Modals — same title treatment as page header (theme.md Top Bar) */
+#cancellationConfirmModal.modal {
+    z-index: 1065;
+}
+
 .booking-calendar-modal .modal-content {
     border: 1px solid var(--border);
     border-radius: 12px;

@@ -533,8 +533,10 @@ function cancelAppointment() {
         },
         success: function(response) {
             if (response.success) {
-                alert('Appointment cancelled successfully!');
+                alert(response.message || 'Appointment cancelled successfully!');
                 window.location.reload();
+            } else {
+                alert(response.message || 'Failed to cancel appointment');
             }
         },
         error: function() {

@@ -37,7 +37,7 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                        <i class="fa-solid fa-calendar-days me-2"></i> Ajay Calendar
+                        <i class="fa-solid fa-calendar-days me-2"></i> Ajay
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
                         <i class="fa-solid fa-calendar-days me-2"></i> Michael

@@ -151,9 +151,19 @@ class AppointmentSyncService
                 $existingAppointment->is_paid = (bool)$newIsPaid;
                 $updated = true;
             }
-            if ($newStatus && $existingAppointment->status !== $newStatus) {
-                $existingAppointment->status = $newStatus;
-                $updated = true;
+            if ($newStatus !== null && $newStatus !== '') {
+                $mappedStatus = $this->mapStatus((string) $newStatus);
+                $terminal = ['cancelled', 'completed', 'no_show'];
+                $wouldReopen = in_array($existingAppointment->status, $terminal, true)
+                    && ! in_array($mappedStatus, $terminal, true);
+
+                if (! $wouldReopen && $existingAppointment->status !== $mappedStatus) {
+                    $existingAppointment->status = $mappedStatus;
+                    $updated = true;
+                    if ($mappedStatus === 'cancelled' && empty($existingAppointment->cancelled_at)) {
+                        $existingAppointment->cancelled_at = now();
+                    }
+                }
             }
             if ($updated) {
                 $existingAppointment->save();
@@ -515,10 +525,19 @@ class AppointmentSyncService
         }
 
         try {
+            $context = [];
+            if ($appointment->appointment_datetime) {
+                $context['appointment_date'] = $appointment->appointment_datetime->format('Y-m-d');
+                $context['appointment_time'] = $appointment->appointment_datetime->format('H:i');
+                $context['meeting_type'] = $appointment->meeting_type ?? 'in_person';
+                $context['preferred_language'] = $appointment->preferred_language ?? 'English';
+            }
+
             $response = $this->apiClient->updateAppointmentStatus(
-                $appointment->bansal_appointment_id,
+                (int) $appointment->bansal_appointment_id,
                 $type,
-                $reason
+                $reason,
+                $context
             );
 
             Log::info('Bansal appointment status updated', [

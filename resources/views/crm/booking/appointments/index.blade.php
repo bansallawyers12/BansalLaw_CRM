@@ -596,6 +596,15 @@ function escapeHtml(text) {
     return d.innerHTML;
 }
 
+/** Start time only (e.g. "11:00 AM"), not a start–end range. */
+function appointmentStartTimeLabel(timeslotFull) {
+    const raw = String(timeslotFull || '').trim();
+    if (!raw) {
+        return '';
+    }
+    return raw.split(/\s*[-–—]\s*/)[0].trim();
+}
+
 /** List API: all filters (including status) in POST body. */
 function appointmentsListRequestUrl() {
     return appointmentsListApiUrl;
@@ -650,9 +659,7 @@ function buildAppointmentRowHtml(row) {
         clientCell += '<strong>' + name + '</strong><br><small>' + email + '</small><br><small>' + phone + '</small>';
     }
 
-    const timeLine = row.timeslot_full
-        ? escapeHtml(row.timeslot_full)
-        : escapeHtml(row.appointment_time_label || '');
+    const timeLine = escapeHtml(row.appointment_time_label || appointmentStartTimeLabel(row.timeslot_full) || '');
     const locRaw = row.location ? String(row.location) : '';
     const locLabel = locRaw
         ? escapeHtml(locRaw.charAt(0).toUpperCase() + locRaw.slice(1))
