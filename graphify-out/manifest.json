@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
-    "mtime": 1786703759.7999392,
-    "ast_hash": "82ad5ee0dd5e43be78855f0a0ad1d8e8",
+    "mtime": 1786703946.0105047,
+    "ast_hash": "78ed1035615574b8b069da35e14c3d90",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Clients/ClientDocumentsController.php": {
@@ -3830,8 +3830,8 @@
     "semantic_hash": ""
   },
   "public/js/crm/clients/tabs/activity-feed.js": {
-    "mtime": 1786703671.4051845,
-    "ast_hash": "1a2b0cdcb6ac8baf8b8217f49ed8ba12",
+    "mtime": 1786703965.4669323,
+    "ast_hash": "9d885791c38fdd2a83dabe4065b93c09",
     "semantic_hash": ""
   },
   "public/js/crm/clients/utils/dom-helpers.js": {
@@ -7745,8 +7745,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/ActivityFeedPaginationTest.php": {
-    "mtime": 1786703759.60733,
-    "ast_hash": "bf915ae7e580e9c695ee3dcca3d4db8b",
+    "mtime": 1786703975.136213,
+    "ast_hash": "2c38f5c22ce49c3b85abd643af86cb1a",
     "semantic_hash": ""
   }
 }

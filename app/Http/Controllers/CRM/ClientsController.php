@@ -3370,7 +3370,9 @@ class ClientsController extends Controller
 			$data = [];
 			foreach ($activities as $activit) {
 				$admin = $activit->creator;
-				$fullName = $admin ? $admin->activityFeedDisplayName() : 'Unknown';
+				$fullName = ($admin && method_exists($admin, 'activityFeedDisplayName'))
+					? $admin->activityFeedDisplayName()
+					: 'Unknown';
 				$subjectWithoutStaffPrefix = ActivitiesLog::displaySubjectWithoutStaffPrefix(
 					$activit->activity_type ?? null,
 					$activit->subject ?? null

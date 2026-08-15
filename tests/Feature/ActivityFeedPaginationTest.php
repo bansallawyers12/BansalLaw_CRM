@@ -163,6 +163,23 @@ class ActivityFeedPaginationTest extends TestCase
     }
 
     #[Test]
+    public function activity_filter_includes_sms_and_action_subjects(): void
+    {
+        $staff = $this->actingSuperAdmin();
+        $client = $this->makeClient();
+        $this->log($client->id, $staff->id, 'sent SMS', 'sms');
+        $this->log($client->id, $staff->id, 'Set action for Jane Smith', 'note');
+        $this->log($client->id, $staff->id, 'added Call Notes', 'note');
+
+        $response = $this->getJson('/get-activities?id='.$client->id.'&type=activity');
+        $response->assertOk();
+        $subjects = collect($response->json('data'))->pluck('subject')->all();
+        $this->assertContains('sent SMS', $subjects);
+        $this->assertContains('Set action for Jane Smith', $subjects);
+        $this->assertNotContains('added Call Notes', $subjects);
+    }
+
+    #[Test]
     public function omitted_activity_type_defaults_to_activity_not_note(): void
     {
         $staff = $this->actingSuperAdmin();

@@ -62,13 +62,18 @@
 
     var FEED_LOAD_SENTINEL_HTML = '<li class="feed-item feed-load-sentinel" aria-hidden="true"></li>';
 
+    var FEED_ERROR_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">' +
+        '<p class="mb-0 small">Could not load timeline. Use Refresh to try again.</p></li>';
+
     var feedState = {
         page: 0,
         hasMore: false,
         loading: false,
-        fillPasses: 0
+        fillPasses: 0,
+        requestSeq: 0
     };
     var sentinelObserver = null;
+    var activeXhr = null;
 
     /**
      * Initialize Activity Feed functionality
@@ -80,6 +85,7 @@
         setupRefreshButton();
         setupFilterBarToggle();
         ensureTimelineFiltersVisible();
+        bindFeedScroll();
         loadActivities({ reset: true });
     }
 
@@ -139,10 +145,7 @@
             setFilterBarCollapsed(true);
             updateFilterToggleUi(true);
             if (animate) {
-                $bar.stop(true, true).slideUp(200, function() {
-                    afterFilterBarLayoutChange();
-                    loadActivities({ reset: true });
-                });
+                $bar.stop(true, true).slideUp(200, afterFilterBarLayoutChange);
             } else {
                 $bar.hide();
                 afterFilterBarLayoutChange();
@@ -555,6 +558,24 @@
             || ($('#activity-feed-date-to').val() || '').trim());
     }
 
+    function feedScroller() {
+        return document.querySelector('#activity-feed .feed-list')
+            || document.querySelector('#activity-feed');
+    }
+
+    function bindFeedScroll() {
+        var scroller = feedScroller();
+        if (!scroller || scroller.getAttribute('data-feed-scroll-bound') === '1') {
+            return;
+        }
+        scroller.setAttribute('data-feed-scroll-bound', '1');
+        $(scroller).on('scroll.activityFeed', function() {
+            if (scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 120) {
+                loadActivities({ append: true });
+            }
+        });
+    }
+
     function disconnectSentinel() {
         if (sentinelObserver) {
             sentinelObserver.disconnect();
@@ -565,14 +586,15 @@
     function observeSentinel() {
         disconnectSentinel();
         var el = document.querySelector('#activity-feed .feed-load-sentinel');
-        if (!el || typeof IntersectionObserver === 'undefined') {
+        var root = feedScroller();
+        if (!el || !root || typeof IntersectionObserver === 'undefined') {
             return;
         }
         sentinelObserver = new IntersectionObserver(function(entries) {
             if (entries.some(function(e) { return e.isIntersecting; })) {
                 loadActivities({ append: true });
             }
-        }, { root: null, rootMargin: '120px', threshold: 0 });
+        }, { root: root, rootMargin: '120px', threshold: 0 });
         sentinelObserver.observe(el);
     }
 
@@ -580,21 +602,9 @@
         if (!feedState.hasMore || feedState.loading || feedState.fillPasses >= 8) {
             return;
         }
-        var root = document.querySelector('#activity-feed');
+        var scroller = feedScroller();
         var list = document.querySelector('#activity-feed .feed-list');
-        if (!root || !list) return;
-        var scroller = root;
-        if (root.scrollHeight <= root.clientHeight + 8) {
-            var parent = root.parentElement;
-            while (parent && parent !== document.body) {
-                var style = window.getComputedStyle(parent);
-                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && parent.scrollHeight > parent.clientHeight + 8) {
-                    scroller = parent;
-                    break;
-                }
-                parent = parent.parentElement;
-            }
-        }
+        if (!scroller || !list) return;
         if (scroller.scrollHeight <= scroller.clientHeight + 40) {
             feedState.fillPasses += 1;
             loadActivities({ append: true });
@@ -625,28 +635,42 @@
         if (!clientId) {
             return;
         }
-        if (feedState.loading) {
-            return;
-        }
-        if (append && !feedState.hasMore) {
-            return;
-        }
-
-        var page = append ? (feedState.page + 1) : 1;
-        feedState.loading = true;
-        if (!append) {
+        if (append) {
+            if (feedState.loading || !feedState.hasMore) {
+                return;
+            }
+        } else {
+            feedState.requestSeq += 1;
+            feedState.hasMore = false;
             feedState.fillPasses = 0;
             disconnectSentinel();
+            if (activeXhr && typeof activeXhr.abort === 'function') {
+                activeXhr.abort();
+            }
         }
 
-        $.ajax({
+        var requestSeq = feedState.requestSeq;
+        var page = append ? (feedState.page + 1) : 1;
+        feedState.loading = true;
+
+        activeXhr = $.ajax({
             url: url,
             type: 'GET',
             dataType: 'json',
             data: feedRequestParams(page, clientId),
             success: function(response) {
+                if (requestSeq !== feedState.requestSeq) {
+                    return;
+                }
                 feedState.loading = false;
-                if (!response || !response.status || response.data === undefined || response.data === null) {
+                activeXhr = null;
+                if (!response || !response.status) {
+                    if (!append) {
+                        $list.html(FEED_ERROR_HTML);
+                    }
+                    return;
+                }
+                if (response.data === undefined || response.data === null) {
                     if (!append) {
                         $list.html(FEED_EMPTY_HTML);
                     }
@@ -655,30 +679,35 @@
                 var data = response.data || [];
                 feedState.page = response.page || page;
                 feedState.hasMore = !!response.has_more;
-                var html = window.buildActivityFeedListHtml(data, {
-                    has_more: feedState.hasMore,
-                    filtered: filtersAreActive()
-                });
                 if (append) {
                     $list.find('.feed-load-sentinel').remove();
                     if (data.length) {
-                        var itemsHtml = window.buildActivityFeedListHtml(data, {
+                        $list.append(window.buildActivityFeedListHtml(data, {
                             has_more: feedState.hasMore,
                             filtered: false
-                        });
-                        $list.append(itemsHtml);
+                        }));
                     } else if (feedState.hasMore) {
                         $list.append(FEED_LOAD_SENTINEL_HTML);
                     }
                 } else {
-                    $list.html(html);
+                    $list.html(window.buildActivityFeedListHtml(data, {
+                        has_more: feedState.hasMore,
+                        filtered: filtersAreActive()
+                    }));
                 }
                 afterFeedRender();
             },
-            error: function() {
+            error: function(xhr, status) {
+                if (requestSeq !== feedState.requestSeq) {
+                    return;
+                }
                 feedState.loading = false;
+                activeXhr = null;
+                if (status === 'abort') {
+                    return;
+                }
                 if (!append) {
-                    $list.html(FEED_EMPTY_HTML);
+                    $list.html(FEED_ERROR_HTML);
                 }
             }
         });
