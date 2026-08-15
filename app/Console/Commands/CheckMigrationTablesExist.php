@@ -24,7 +24,6 @@ class CheckMigrationTablesExist extends Command
         'appointment_consultants',
         'booking_appointments',
         'appointment_sync_logs',
-        'refresh_tokens',
         'phone_verifications',
         'email_verifications',
         'sms_logs',

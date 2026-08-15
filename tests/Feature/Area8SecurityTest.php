@@ -397,42 +397,6 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function staff_api_login_cleans_up_sanctum_token_on_refresh_token_failure(): void
-    {
-        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
-            ['id' => 12],
-            ['name' => 'Manager', 'created_at' => now(), 'updated_at' => now()]
-        );
-
-        $staff = new Staff();
-        $staff->id = 912;
-        $staff->email = 'staff912@bansallawyers.com.au';
-        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $staff->role = 12;
-        $staff->status = 1;
-        $staff->save();
-
-        $initialTokenCount = \Illuminate\Support\Facades\DB::table('personal_access_tokens')
-            ->where('tokenable_id', 912)
-            ->count();
-
-        // 1. Attempt login where staff.id 912 triggers refresh_tokens foreign key failure (not present in admins)
-        $response = $this->postJson('/api/admin-login', [
-            'email' => 'staff912@bansallawyers.com.au',
-            'password' => 'password123',
-        ]);
-
-        $response->assertStatus(500);
-
-        // 2. Verify no orphan Sanctum token was left in personal_access_tokens table
-        $finalTokenCount = \Illuminate\Support\Facades\DB::table('personal_access_tokens')
-            ->where('tokenable_id', 912)
-            ->count();
-
-        $this->assertEquals($initialTokenCount, $finalTokenCount);
-    }
-
-    #[Test]
     public function login_response_does_not_enumerate_valid_emails_and_uses_constant_time_verification(): void
     {
         \Illuminate\Support\Facades\Http::fake([

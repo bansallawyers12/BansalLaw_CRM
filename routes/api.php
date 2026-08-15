@@ -4,23 +4,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ServiceAccountController;
-use App\Http\Controllers\API\StaffApiAuthController;
 use App\Http\Controllers\API\PublicListingController;
 use App\Http\Controllers\API\PublicBookingController;
 use App\Http\Controllers\API\LeadBookingApiController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes (client mobile app removed; staff auth + public booking retained)
+| API Routes (public booking + service-account tokens; client/staff mobile auth removed)
 |--------------------------------------------------------------------------
 */
 
-Route::post('/admin-login', [StaffApiAuthController::class, 'adminLogin'])->middleware('throttle:5,1');
-
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [StaffApiAuthController::class, 'logout']);
-    Route::post('/logout-all', [StaffApiAuthController::class, 'logoutAll']);
-
     Route::post('/payments/create-payment-intent', function (Request $request) {
         $validated = $request->validate([
             'amount' => ['required', 'integer', 'min:50'],

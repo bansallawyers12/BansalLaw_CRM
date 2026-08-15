@@ -35,8 +35,8 @@
     "semantic_hash": "1fa1bd97b4253bc5da33604586df9f26"
   },
   "app/Console/Commands/CheckMigrationTablesExist.php": {
-    "mtime": 1786772323.3681507,
-    "ast_hash": "a20fb2637b75e5aa4a1e6aada91fd5c4",
+    "mtime": 1786774707.9961743,
+    "ast_hash": "74396de3cd03405a03f075a2b1c1e57a",
     "semantic_hash": ""
   },
   "app/Console/Commands/CleanUtf8Data.php": {
@@ -249,11 +249,6 @@
     "ast_hash": "c7d77c61344d5afecea57bf0bf334c91",
     "semantic_hash": ""
   },
-  "app/Http/Controllers/API/StaffApiAuthController.php": {
-    "mtime": 1786774409.7109861,
-    "ast_hash": "fd14b671e02160db9dbecb0db1976502",
-    "semantic_hash": ""
-  },
   "app/Http/Controllers/AdminConsole/ActivitySearchController.php": {
     "mtime": 1776743447.7211356,
     "ast_hash": "f006eacaa1e859f2e21b531960b84fc6",
@@ -405,8 +400,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientMatterHubController.php": {
-    "mtime": 1786774399.308423,
-    "ast_hash": "828d73070858d593cf37845541256d14",
+    "mtime": 1786774645.948153,
+    "ast_hash": "6bd5a9b48f0edeed16d52cae82d3d0d6",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientMatterWorkflowController.php": {
@@ -6705,8 +6700,8 @@
     "semantic_hash": ""
   },
   "routes/api.php": {
-    "mtime": 1786700272.992679,
-    "ast_hash": "cc28eb8f3656b1d9285d09252538d25d",
+    "mtime": 1786774698.797134,
+    "ast_hash": "f8986e9842bee743e1dde24c2aa750cf",
     "semantic_hash": ""
   },
   "routes/booking_admin.php": {
@@ -6755,8 +6750,8 @@
     "semantic_hash": "03a2d51117a61e05d95d7670a300642e"
   },
   "routes/web.php": {
-    "mtime": 1786771903.3339188,
-    "ast_hash": "41d8ff9a0a08a62e71ce457b66c7b1d9",
+    "mtime": 1786774702.2691495,
+    "ast_hash": "c8fb2a57a33bca978f547bcda9a281e6",
     "semantic_hash": ""
   },
   "scripts/analyze-unused-blades.php": {
@@ -7110,8 +7105,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Area8SecurityTest.php": {
-    "mtime": 1786772323.1523108,
-    "ast_hash": "a6018e73acd9c271200dbb405a868959",
+    "mtime": 1786774711.0280678,
+    "ast_hash": "439f283c94bfc853a42315a27470da93",
     "semantic_hash": ""
   },
   "tests/Feature/ClientMatterGraphVisibilityTest.php": {
@@ -7210,8 +7205,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786774422.1917696,
-    "ast_hash": "5ab91d24c6c1082be944e0036850fe81",
+    "mtime": 1786774748.5665407,
+    "ast_hash": "6021c8db169f212f4c117595448a0ce0",
     "semantic_hash": ""
   },
   "app/Models/model_list.txt": {
@@ -7662,6 +7657,11 @@
   "database/migrations/2026_08_15_171000_drop_device_tokens_table.php": {
     "mtime": 1786772326.844864,
     "ast_hash": "7dc8c936585ad4b13df564f5c7c01e45",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_171100_drop_refresh_tokens_table.php": {
+    "mtime": 1786774711.420055,
+    "ast_hash": "c10dca352f9b33a6bbf07e0944acdc60",
     "semantic_hash": ""
   }
 }

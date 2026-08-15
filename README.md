@@ -291,7 +291,7 @@ Within `routes/web.php`:
 | `routes/booking_admin.php` | `/booking/*` | Appointment calendar, CRUD, sync, export |
 | `routes/office_visits.php` | `/office-visits/*`, `/checkin` | Walk-in queue management |
 | `routes/documents.php` | `/sign/*`, `/signatures/*`, `/documents/*` | E-signature workflow, public signing, admin document CRUD |
-| `routes/api.php` | `/api/*` | Public booking API, Sanctum staff auth, Stripe PaymentIntents |
+| `routes/api.php` | `/api/*` | Public booking API, service-account tokens, Stripe PaymentIntents |
 | `routes/sms.php` | `/webhooks/sms/*` | Twilio / Cellcast inbound webhooks (public) |
 | `routes/health.php` | `/up` | Health check (zero middleware) |
 
@@ -304,7 +304,7 @@ Within `routes/web.php`:
 | `auth:admin` | CRM staff session (`Staff` model via `admin` guard) |
 | `adminconsole` | Admin Console only (roles in `config('crm.admin_console_role_ids')`, default 1, 12, 17) |
 | `api` | `/api/*` routes in `routes/api.php` |
-| `auth:sanctum` | `/api/logout`, `/api/logout-all` |
+| `auth:sanctum` | `/api/payments/create-payment-intent` |
 | `auth` | `/clear-cache` (default guard: `admin`) |
 | `can:trigger-manual-sync` | `POST /booking/sync/manual` |
 
@@ -430,9 +430,9 @@ Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/cl
 | Method | URI | Name |
 |--------|-----|------|
 | POST | `/crm/matter/load-matter-upsert` | — |
-| GET | `/updatestage` | — |
-| GET | `/completestage` | — |
-| GET | `/updatebackstage` | — |
+| POST | `/updatestage` | — |
+| POST | `/completestage` | — |
+| POST | `/updatebackstage` | — |
 | POST | `/clients/matter/update-next-stage` | `clients.matter.update-next-stage` |
 | POST | `/clients/matter/update-previous-stage` | `clients.matter.update-previous-stage` |
 | POST | `/clients/matter/update-deadline` | `clients.matter.update-deadline` |
@@ -443,6 +443,9 @@ Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/cl
 | GET | `/crm/matter/logs` | — |
 | GET | `/crm/matter/notes` | — |
 | POST | `/crm/matter/ownership` | — |
+| POST | `/crm/matter/discontinue` | — |
+| POST | `/crm/matter/revert` | — |
+| POST | `/crm/matter/sendmail` | — |
 | GET | `/upload-checklists` | `upload_checklists.index` |
 
 #### Legal forms
@@ -660,24 +663,6 @@ php artisan route:list --name=crm.access
 
 Base URL: `{APP_URL}/api`
 
-### Staff Authentication (Sanctum)
-
-| Method | URI | Auth | Description |
-|--------|-----|------|-------------|
-| POST | `/api/admin-login` | None | Staff login; returns Sanctum token (roles 1, 12, 13, 16) |
-| POST | `/api/logout` | `auth:sanctum` | Revoke current token |
-| POST | `/api/logout-all` | `auth:sanctum` | Revoke all tokens for user |
-
-**Login request body:**
-```json
-{
-  "email": "staff@example.com",
-  "password": "secret",
-  "device_name": "mobile-app",
-  "device_token": "optional-fcm-token"
-}
-```
-
 ### Public Booking API (no auth)
 
 | Method | URI | Description |
@@ -697,7 +682,7 @@ Base URL: `{APP_URL}/api`
 
 | Method | URI | Auth | Description |
 |--------|-----|------|-------------|
-| POST | `/api/payments/create-payment-intent` | None | Create Stripe PaymentIntent |
+| POST | `/api/payments/create-payment-intent` | `auth:sanctum` | Create Stripe PaymentIntent |
 
 ### Service Account
 
@@ -749,14 +734,6 @@ Default guard: `admin`
 - **Optional:** Google reCAPTCHA when `services.recaptcha.key` is configured
 - **Middleware:** `guest:admin` on login; all CRM routes wrapped in `auth:admin`
 
-### Staff API Login (Sanctum)
-
-- **URL:** `POST /api/admin-login`
-- **Controller:** `App\Http\Controllers\API\StaffApiAuthController`
-- **Allowed roles:** 1, 12, 13, 16 (active staff only)
-- **Returns:** Sanctum bearer token + optional refresh token
-- **Protected routes:** `auth:sanctum` middleware
-
 ### Admin Console Access
 
 - **Middleware:** `EnsureAdminConsoleAccess`
@@ -772,9 +749,9 @@ Staff roles (stored on `staff.role`) control feature access. Key role IDs refere
 |---------|--------------|
 | 1 | Super Admin |
 | 12 | Admin |
-| 13 | Staff (API login allowed) |
+| 13 | Staff |
 | 14 | Calling Team (quick access only) |
-| 16 | Staff (API login allowed) |
+| 16 | Staff |
 | 17 | Admin (cross-access exempt) |
 
 Admin Console, matter configuration, and staff management require roles in `CRM_ADMIN_CONSOLE_ROLE_IDS` (default 1, 12, 17).
@@ -803,7 +780,7 @@ Configuration: `config/crm_access.php` and `.env` variables (see [Configuration]
 | **Email verification** | `/verify-email/{token}` — one-time email confirmation |
 | **Public documents** | `/documents/{id}` — access controlled by document settings |
 
-API tokens for staff mobile/integrations use **Laravel Sanctum** (`POST /api/admin-login`). There is no Passport OAuth server in this codebase.
+Integration API tokens use **Laravel Sanctum** via `POST /api/service-account/generate-token`. There is no Passport OAuth server in this codebase.
 
 ---
 
@@ -987,7 +964,7 @@ app/
 ├── Http/Controllers/
 │   ├── CRM/              # Clients, leads, booking, documents, dashboard
 │   ├── AdminConsole/     # System configuration
-│   ├── API/              # Public booking + Sanctum auth
+│   ├── API/              # Public booking + service-account tokens
 │   └── Auth/             # AdminLoginController
 ├── Models/               # Staff, Lead, ClientMatter, Document, etc.
 ├── Services/             # Stripe, SMS, signatures, CrmAccess, dashboard

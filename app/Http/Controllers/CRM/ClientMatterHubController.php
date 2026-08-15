@@ -318,8 +318,7 @@ class ClientMatterHubController extends Controller
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
-				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
-				{
+				// Activity feed: logged for all CRM workflow stage changes.
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 					if ($isAdvancingToDecisionReceived) {
 						$decisionOutcome = $request->input('decision_outcome');
@@ -347,7 +346,6 @@ class ClientMatterHubController extends Controller
 					$activityLog->pin = 0;
 					$activityLog->source = 'crm';
 					$activityLog->save();
-				}
 
 				// Notify client of stage change (for List Notifications API)
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $nextStage->name . ' for matter ' . $matterNo;
@@ -484,8 +482,7 @@ class ClientMatterHubController extends Controller
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
-				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
-				{
+				// Activity feed: logged for all CRM workflow stage changes.
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
 
 					$activityLog = new ActivitiesLog;
@@ -499,7 +496,6 @@ class ClientMatterHubController extends Controller
 					$activityLog->pin = 0;
 					$activityLog->source = 'crm';
 					$activityLog->save();
-				}
 
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $prevStage->name . ' for matter ' . $matterNo;
 				DB::table('notifications')->insert([
@@ -627,8 +623,7 @@ class ClientMatterHubController extends Controller
 
 			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID:' . $matterId;
 
-			// Activity feed: workflow change from CRM (legacy hook always allows logging).
-			{
+			// Activity feed: workflow change from CRM.
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
 				$activityLog->created_by = Auth::user()->id;
@@ -640,7 +635,6 @@ class ClientMatterHubController extends Controller
 				$activityLog->pin = 0;
 				$activityLog->source = 'crm';
 				$activityLog->save();
-			}
 
 			return response()->json([
 				'status' => true,
@@ -740,8 +734,7 @@ class ClientMatterHubController extends Controller
 					$description .= '<br>Notes: ' . e($notes);
 				}
 
-				// Activity feed: matter discontinued from CRM (legacy hook always allows logging).
-				{
+				// Activity feed: matter discontinued from CRM.
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
 					$activityLog->created_by = Auth::user()->id;
@@ -753,7 +746,6 @@ class ClientMatterHubController extends Controller
 					$activityLog->pin = 0;
 					$activityLog->source = 'crm';
 					$activityLog->save();
-				}
 
 				// Notify client when discontinue is from matter-related tabs (workflow, application)
 				$currentTab = $request->input('current_tab', 'personaldetails');
@@ -954,20 +946,18 @@ class ClientMatterHubController extends Controller
 				}
 				// applications table removed
 
-				// Activity feed: matter reopened from CRM (legacy hook always allows logging).
-				{
-					$activityLog = new ActivitiesLog;
-					$activityLog->client_id = $clientMatter->client_id;
-					$activityLog->created_by = Auth::user()->id;
-					$activityLog->subject = 'Matter Reopened';
-					$activityLog->description = 'Matter was reopened and set back to active.';
-					$activityLog->activity_type = 'stage';
-					$activityLog->use_for = 'matter';
-					$activityLog->task_status = 0;
-					$activityLog->pin = 0;
-					$activityLog->source = 'crm';
-					$activityLog->save();
-				}
+				// Activity feed: matter reopened from CRM.
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Matter Reopened';
+				$activityLog->description = 'Matter was reopened and set back to active.';
+				$activityLog->activity_type = 'stage';
+				$activityLog->use_for = 'matter';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'crm';
+				$activityLog->save();
 
 				// Notify client when reopen is from matter-related tabs or matter list
 				$currentTab = $request->input('current_tab', '');
@@ -1065,19 +1055,17 @@ class ClientMatterHubController extends Controller
 			$clientId = $clientMatter->client_id;
 			$clientMatter->delete();
 
-			// Activity feed: permanent matter delete from CRM (legacy hook always allows logging).
-			{
-				$activityLog = new ActivitiesLog;
-				$activityLog->client_id = $clientId;
-				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = 'Matter Deleted';
-				$activityLog->description = 'Matter #' . $matterId . ' was permanently deleted from closed matters.';
-				$activityLog->activity_type = 'stage';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->source = 'crm';
-				$activityLog->save();
-			}
+			// Activity feed: permanent matter delete from CRM.
+			$activityLog = new ActivitiesLog;
+			$activityLog->client_id = $clientId;
+			$activityLog->created_by = Auth::user()->id;
+			$activityLog->subject = 'Matter Deleted';
+			$activityLog->description = 'Matter #' . $matterId . ' was permanently deleted from closed matters.';
+			$activityLog->activity_type = 'stage';
+			$activityLog->task_status = 0;
+			$activityLog->pin = 0;
+			$activityLog->source = 'crm';
+			$activityLog->save();
 
 			return response()->json([
 				'status' => true,
