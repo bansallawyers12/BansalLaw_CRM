@@ -133,8 +133,8 @@
             <strong>Please bring:</strong>
             <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #1a1a1a;">
                 <li>Valid photo identification (Passport, Driver's License)</li>
-                <li>All relevant documents related to your visa inquiry</li>
-                <li>Any previous correspondence from immigration authorities</li>
+                <li>All relevant documents related to your matter</li>
+                <li>Any previous correspondence relevant to your enquiry</li>
             </ul>
         </div>
 
@@ -147,7 +147,7 @@
             </p>
         </div>
 
-        <p style="margin-top: 30px;">We look forward to assisting you with your immigration needs.</p>
+        <p style="margin-top: 30px;">We look forward to assisting you with your legal needs.</p>
 
         <p>Best regards,<br>
         <strong>{{ config('app.name') }} Team</strong></p>

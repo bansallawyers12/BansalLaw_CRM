@@ -4825,118 +4825,25 @@ class ClientsController extends Controller
                 Log::info('Created templates directory: ' . $templatesDir);
             }
             
-            // Determine template filename based on matter type (nick_name)
-            $templateFileName = 'agreement_template.docx'; // Default template
-            $matterNickName = null;
-            
-            // Get matter info to determine which template to use
-            if (isset($request->client_matter_id) && $request->client_matter_id != '') {
-                $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
-                if ($client_matter_info && $client_matter_info->sel_matter_id) {
-                    $matter_info_temp = DB::table('matters')->select('nick_name')->where('id', $client_matter_info->sel_matter_id)->first();
-                    if ($matter_info_temp && !empty($matter_info_temp->nick_name)) {
-                        $matterNickName = strtolower(trim($matter_info_temp->nick_name));
-                        
-                        // Map matter nick_name to template filename
-                        // Only ART, skillassessment, and JRP have specific templates
-                        // Everything else uses the default template
-                        $templateMapping = [
-                            'art' => 'agreement_template-ART.docx',
-                            'skillassessment' => 'agreement_template-skillassment.docx',
-                            'skillassment' => 'agreement_template-skillassment.docx', // Handle variant spelling
-                            'jrp' => 'agreement_template-JRP.docx',
-                        ];
-                        
-                        if (isset($templateMapping[$matterNickName])) {
-                            $templateFileName = $templateMapping[$matterNickName];
-                        }
-                        // For all other matter types (including GN), use default template
-                    }
-                }
-            }
-            
+            // Always use the standard agreement template (matter-specific MARA templates retired).
+            $templateFileName = 'agreement_template.docx';
             $templatePath = storage_path('app/templates/' . $templateFileName);
 
             if (!file_exists($templatePath)) {
                 Log::error('Agreement template file not found at: ' . $templatePath);
-                // Try fallback to default template if specific template doesn't exist
-                $defaultTemplatePath = storage_path('app/templates/agreement_template.docx');
-                if (file_exists($defaultTemplatePath)) {
-                    $templatePath = $defaultTemplatePath;
-                    $templateFileName = 'agreement_template.docx';
-                    Log::info('Using default template as fallback. Matter type: ' . ($matterNickName ?? 'unknown'));
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'Template file not found.',
-                        'message' => 'The agreement template file (' . $templateFileName . ') is missing. Please ensure the template file is placed at: storage/app/templates/' . $templateFileName,
-                        'template_path' => $templatePath,
-                        'help' => 'Contact your system administrator to upload the agreement template file.'
-                    ], 404);
-                }
-            } else {
-                Log::info('Using template: ' . $templateFileName . ' for matter type: ' . ($matterNickName ?? 'default'));
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Template file not found.',
+                    'message' => 'The agreement template file (' . $templateFileName . ') is missing. Please ensure the template file is placed at: storage/app/templates/' . $templateFileName,
+                    'template_path' => $templatePath,
+                    'help' => 'Contact your system administrator to upload the agreement template file.'
+                ], 404);
             }
 
-            // Option 2: Patch template so "Amount incl Surcharge" total cell uses TotalDoHAChargesInclSurcharge
-            // (replaces last occurrence of ${TotalDoHASurcharges} in word/document.xml to fix the total display)
+            Log::info('Using template: ' . $templateFileName);
+
             $pathToLoad = $templatePath;
-            $patchedTempPath = null; // used for cleanup after saveAs; set only when patch is applied
-            try {
-                $tempDir = storage_path('app/temp');
-                if (!is_dir($tempDir)) {
-                    @mkdir($tempDir, 0755, true);
-                }
-                $patchedTempPath = $tempDir . '/agreement_patch_' . getmypid() . '_' . time() . '.docx';
-                if (@copy($templatePath, $patchedTempPath)) {
-                    $zip = new \ZipArchive();
-                    if ($zip->open($patchedTempPath) === true) {
-                        $xml = $zip->getFromName('word/document.xml');
-                        if ($xml !== false) {
-                            $patched = false;
-                            // Try full placeholder first (PhpWord format)
-                            $oldPlaceholder = '${TotalDoHASurcharges}';
-                            $newPlaceholder = '${TotalDoHAChargesInclSurcharge}';
-                            $lastPos = strrpos($xml, $oldPlaceholder);
-                            if ($lastPos !== false) {
-                                $xml = substr_replace($xml, $newPlaceholder, $lastPos, strlen($oldPlaceholder));
-                                $patched = true;
-                            } else {
-                                // Word may split placeholder across XML runs; try name only (last occurrence)
-                                $oldName = 'TotalDoHASurcharges';
-                                $newName = 'TotalDoHAChargesInclSurcharge';
-                                $lastPos = strrpos($xml, $oldName);
-                                if ($lastPos !== false) {
-                                    $xml = substr_replace($xml, $newName, $lastPos, strlen($oldName));
-                                    $patched = true;
-                                }
-                            }
-                            if ($patched) {
-                                $zip->deleteName('word/document.xml');
-                                $zip->addFromString('word/document.xml', $xml);
-                                $zip->close();
-                                $pathToLoad = $patchedTempPath;
-                                Log::info('Patched template: Amount incl Surcharge total cell now uses TotalDoHAChargesInclSurcharge');
-                            } else {
-                                $zip->close();
-                            }
-                        } else {
-                            $zip->close();
-                        }
-                    }
-                    if ($pathToLoad === $templatePath && file_exists($patchedTempPath)) {
-                        @unlink($patchedTempPath);
-                        $patchedTempPath = null;
-                    }
-                }
-            } catch (\Throwable $patchEx) {
-                Log::warning('Template patch skipped: ' . $patchEx->getMessage());
-                $pathToLoad = $templatePath;
-                if ($patchedTempPath && file_exists($patchedTempPath)) {
-                    @unlink($patchedTempPath);
-                    $patchedTempPath = null;
-                }
-            }
+            $patchedTempPath = null;
 
             $templateProcessor = new TemplateProcessor($pathToLoad);
 
@@ -4989,41 +4896,14 @@ class ClientsController extends Controller
 
             $Blocktotalfeesincltax = 0;
 
-            $DoHAMainApplicantChargePersonCount = 0;
-            $DoHAMainApplicantCharge = 0;
-            $DoHAMainApplicantSurcharge = 0;
-
-            $DoHAAdditionalApplicantCharge18PlusPersonCount = 0;
-            $DoHAAdditionalApplicantCharge18Plus = 0;
-            $DoHAAdditional18PlusSurcharge = 0;
-
-            $DoHAAdditionalApplicantChargeUnder18PersonCount = 0;
-            $DoHAAdditionalApplicantChargeUnder18 = 0;
-            $DoHAAdditionalUnder18Surcharge = 0;
-
-            $DoHASecondInstalmentMainPersonCount = 0;
-            $DoHASecondInstalmentMain = 0;
-            $DoHASecondInstalmentMainSurcharge = 0;
-
-            $DoHASubsequentApplicantCharge18PlusPersonCount = 0;
-            $DoHASubsequentApplicantCharge18Plus = 0;
-            $DoHASubsequentApplicantCharge18PlusSurcharge = 0;
-
-            $DoHASubsequentApplicantChargeUnder18PersonCount = 0;
-            $DoHASubsequentTempAppCharge = 0;
-            $DoHASubsequentTempAppSurcharge = 0;
-
-            $DoHANonInternetChargePersonCount = 0;
-            $DoHANonInternetCharge = 0;
-            $DoHANonInternetSurcharge = 0;
-
-            $TotalDoHACharges = 0;
-            $TotalDoHASurcharges = 0;
-            $TotalDoHAChargesInclSurcharge = '0.00';
+            $TotalDisbursements = 0;
+            $TotalDisbursementsFormatted = '0.00';
             $TotalEstimatedOtherCosts = 0;
             $GrandTotalFeesAndCosts = 0;
             $BlocktotalfeesincltaxFormated = '0.00';
             $GrandTotalFeesAndCostsFormated = '0.00';
+            $matter_info = null;
+            $matter_info_arr = null;
 
             if( isset($request->client_matter_id) && $request->client_matter_id != '' )
             {  //dd($request->client_matter_id);
@@ -5039,7 +4919,7 @@ class ClientsController extends Controller
                     if( $client_matter_info ){ //dd($client_matter_info);
                         $matter_info_arr = DB::table('matters')->select('title','nick_name','Block_1_Description','Block_2_Description','Block_3_Description')->where('id', $client_matter_info->sel_matter_id )->first();
                     }
-                    if( $matter_info_arr ) {
+                    if( $matter_info && $matter_info_arr ) {
                         $matter_info->title = $matter_info_arr->title ?? '';
                         $matter_info->nick_name = $matter_info_arr->nick_name ?? '';
                         $matter_info->Block_1_Description = $matter_info_arr->Block_1_Description ?? '';
@@ -5063,10 +4943,6 @@ class ClientsController extends Controller
                     $visa_subclass = $matter_info->title ?? '';
                     $visa_stream = $matter_info->nick_name ?? '';
 
-                    //$professional_fee = $matter_info->our_fee;
-                    //$gst_fee = 0;
-                    //$visa_application_charge = $matter_info->main_applicant_fee;
-
                     $Block_1_Description = $matter_info->Block_1_Description ?? '';
                     $Block_1_Ex_Tax = $matter_info->Block_1_Ex_Tax ?? 0;
 
@@ -5078,40 +4954,9 @@ class ClientsController extends Controller
 
                     $Blocktotalfeesincltax = floatval($Block_1_Ex_Tax) + floatval($Block_2_Ex_Tax) + floatval($Block_3_Ex_Tax);
                     $BlocktotalfeesincltaxFormated = number_format($Blocktotalfeesincltax, 2, '.', '');
-                    //dd($BlocktotalfeesincltaxFormated);
-
-                    $DoHAMainApplicantChargePersonCount = '';
-                    $DoHAMainApplicantCharge = 0;
-                    $DoHAMainApplicantSurcharge = 0;
-
-                    $DoHAAdditionalApplicantCharge18PlusPersonCount = '';
-                    $DoHAAdditionalApplicantCharge18Plus = 0;
-                    $DoHAAdditional18PlusSurcharge = 0;
-
-                    $DoHAAdditionalApplicantChargeUnder18PersonCount = '';
-                    $DoHAAdditionalApplicantChargeUnder18 = 0;
-                    $DoHAAdditionalUnder18Surcharge = 0;
-
-                    $DoHASecondInstalmentMainPersonCount = '';
-                    $DoHASecondInstalmentMain = 0;
-                    $DoHASecondInstalmentMainSurcharge = 0;
-
-                    $DoHASubsequentApplicantCharge18PlusPersonCount = '';
-                    $DoHASubsequentApplicantCharge18Plus = 0;
-                    $DoHASubsequentApplicantCharge18PlusSurcharge = 0;
-
-                    $DoHASubsequentApplicantChargeUnder18PersonCount = '';
-                    $DoHASubsequentTempAppCharge = 0;
-                    $DoHASubsequentTempAppSurcharge = 0;
-
-                    $DoHANonInternetChargePersonCount = '';
-                    $DoHANonInternetCharge = 0;
-                    $DoHANonInternetSurcharge = 0;
 
                     $TotalDisbursements = floatval($matter_info->TotalDisbursements ?? 0);
-                    $TotalDoHACharges = $TotalDisbursements;
-                    $TotalDoHASurcharges = 0;
-                    $TotalDoHAChargesInclSurcharge = number_format($TotalDisbursements, 2, '.', '');
+                    $TotalDisbursementsFormatted = number_format($TotalDisbursements, 2, '.', '');
 
                     $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
                     $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + $TotalDisbursements + floatval($TotalEstimatedOtherCosts);
@@ -5123,7 +4968,7 @@ class ClientsController extends Controller
             $blockFee2Fmt = number_format((float) $Block_2_Ex_Tax, 2, '.', '');
             $blockFee3Fmt = number_format((float) $Block_3_Ex_Tax, 2, '.', '');
 
-            // Replace placeholders
+            // Replace placeholders (legacy MARN / Agent* / DoHA* keys omitted — blanked below if still in template)
             $replacements = [
                 'ClientID' => $client->client_id,
                 'ApplicantGivenNames' => $client->first_name,
@@ -5131,9 +4976,6 @@ class ClientsController extends Controller
                 'ApplicantDOB' => $dobFormated,
                 'ApplicantResidentialAddressStreet1and2' => $client_address,
                 'ApplicantResidentialAddressPostcode' => $client_zip,
-                //'ApplicantResidentialAddressSuburbAndTown' => '',
-                //'ApplicantResidentialAddressState' => '',
-                //'ApplicantResidentialAddressCountry' => '',
                 'Contact_ContactEmail' => $client->email,
                 'Contact_ContactMobile' => $client->phone ?? '',
                 'ApplicantHomePhone_Number' => $client->phone ?? '',
@@ -5143,16 +4985,11 @@ class ClientsController extends Controller
 
                 'Block1IncTax' => number_format($professional_fee, 2),
                 'Block1IncGST' => number_format($professional_fee, 2),
-                'TotalAgentFeeGST' => number_format($gst_fee ?? 0, 2),
-                'TotalAgentFeeIncTax' => number_format($professional_fee + ($gst_fee ?? 0), 2),
-                'TotalAgentFeeIncGST' => number_format($professional_fee + ($gst_fee ?? 0), 2),
-                'BaseApplicationCharge' => number_format($visa_application_charge, 2),
-                'DOHABaseApplicationChargeIncCCSurcharge' => number_format($visa_application_charge, 2),
 
-                'AgentName' => $responsiblePerson->first_name,
-                'AgentSurName' => $responsiblePerson->last_name,
-                'AgentTitle' => $responsiblePerson->company_name,
-                'MARN' => $responsiblePerson->marn_number,
+                'SolicitorName' => $responsiblePerson->first_name,
+                'SolicitorSurname' => $responsiblePerson->last_name,
+                'SolicitorTitle' => $responsiblePerson->company_name,
+                'LegalPractitionerNumber' => $responsiblePerson->legal_practitioner_number,
 
                 'visa_apply'=>$visa_subclass,
 
@@ -5168,58 +5005,36 @@ class ClientsController extends Controller
                 'Blocktotalfeesincltax'=>$BlocktotalfeesincltaxFormated,
                 'Blocktotalfeesinclgst'=>$BlocktotalfeesincltaxFormated,
 
-                'DoHAMainApplicantChargePersonCount'=>$DoHAMainApplicantChargePersonCount,
-                'DoHAMainApplicantCharge'=>$DoHAMainApplicantCharge,
-                'DoHAMainApplicantSurcharge'=>$DoHAMainApplicantSurcharge,
-
-                'DoHAAdditionalApplicantCharge18PlusPersonCount'=>$DoHAAdditionalApplicantCharge18PlusPersonCount,
-                'DoHAAdditionalApplicantCharge18Plus'=>$DoHAAdditionalApplicantCharge18Plus,
-                'DoHAAdditional18PlusSurcharge'=>$DoHAAdditional18PlusSurcharge,
-
-                'DoHAAdditionalApplicantChargeUnder18PersonCount'=>$DoHAAdditionalApplicantChargeUnder18PersonCount,
-                'DoHAAdditionalApplicantChargeUnder18'=>$DoHAAdditionalApplicantChargeUnder18,
-                'DoHAAdditionalUnder18Surcharge'=>$DoHAAdditionalUnder18Surcharge,
-
-                'DoHASecondInstalmentMainPersonCount'=>$DoHASecondInstalmentMainPersonCount,
-                'DoHASecondInstalmentMain'=>$DoHASecondInstalmentMain,
-                'DoHASecondInstalmentMainSurcharge'=>$DoHASecondInstalmentMainSurcharge,
-
-                'DoHASubsequentApplicantCharge18PlusPersonCount'=>$DoHASubsequentApplicantCharge18PlusPersonCount,
-                'DoHASubsequentApplicantCharge18Plus'=>$DoHASubsequentApplicantCharge18Plus,
-                'DoHASubsequentApplicantCharge18PlusSurcharge'=>$DoHASubsequentApplicantCharge18PlusSurcharge,
-
-                'DoHASubsequentApplicantChargeUnder18PersonCount'=>$DoHASubsequentApplicantChargeUnder18PersonCount,
-                'DoHASubsequentTempAppCharge'=>$DoHASubsequentTempAppCharge,
-                'DoHASubsequentTempAppSurcharge'=>$DoHASubsequentTempAppSurcharge,
-
-                'DoHANonInternetChargePersonCount'=>$DoHANonInternetChargePersonCount,
-                'DoHANonInternetCharge'=>$DoHANonInternetCharge,
-                'DoHANonInternetSurcharge'=>$DoHANonInternetSurcharge,
-
-                'TotalDoHACharges'=>$TotalDoHACharges,
-                'TotalDoHASurcharges'=>$TotalDoHASurcharges,
-                'TotalDoHAChargesInclSurcharge'=>$TotalDoHAChargesInclSurcharge,
-
-                'TotalEstimatedOthCosts'=>$TotalEstimatedOtherCosts,
+                'TotalDisbursements' => $TotalDisbursementsFormatted,
+                'TotalEstimatedOthCosts' => number_format((float) $TotalEstimatedOtherCosts, 2, '.', ''),
                 'GrandTotalFeesAndCosts'=>$GrandTotalFeesAndCostsFormated
             ];
 
-            // Log each replacement
-            foreach ($replacements as $key => $value) {
-                // FIX: Handle NULL values properly - convert to empty string
-                $safeValue = $value ?? '';
-                Log::info("Setting {$key} to: {$safeValue}");
-                $templateProcessor->setValue($key, $safeValue);
+            // PhpWord setValue() throws if the key is not in the document.
+            $templateVarSet = [];
+            try {
+                $templateVarSet = array_flip($templateProcessor->getVariables());
+            } catch (\Exception $e) {
+                Log::warning('Could not list template variables: ' . $e->getMessage());
             }
 
-            // FIX: Set ALL remaining template variables to empty string to prevent corruption
-            // This prevents unreplaced ${VariableName} placeholders from remaining in the document
-            // which causes Microsoft Word to show "cannot open file" error
+            foreach ($replacements as $key => $value) {
+                if ($templateVarSet !== [] && ! isset($templateVarSet[$key])) {
+                    continue;
+                }
+                $safeValue = $value ?? '';
+                Log::info("Setting {$key} to: {$safeValue}");
+                try {
+                    $templateProcessor->setValue($key, $safeValue);
+                } catch (\Exception $e) {
+                    Log::warning("Skipped template key {$key}: " . $e->getMessage());
+                }
+            }
+
             try {
                 $allTemplateVars = $templateProcessor->getVariables();
                 $fixedVarsCount = 0;
                 foreach ($allTemplateVars as $templateVar) {
-                    // Only set if not already in replacements array
                     if (!isset($replacements[$templateVar])) {
                         $templateProcessor->setValue($templateVar, '');
                         $fixedVarsCount++;
@@ -5227,7 +5042,6 @@ class ClientsController extends Controller
                 }
                 Log::info("Fixed {$fixedVarsCount} unreplaced template variables to prevent document corruption");
             } catch (\Exception $e) {
-                // Log error but don't fail - continue with document generation
                 Log::warning('Could not fix unreplaced variables: ' . $e->getMessage());
             }
 
@@ -5401,7 +5215,6 @@ class ClientsController extends Controller
                 'last_name',
                 'company_name',
                 'is_solicitor',
-                'marn_number',
                 'legal_practitioner_number',
                 'business_address',
                 'business_phone',
@@ -5462,7 +5275,6 @@ class ClientsController extends Controller
                 'last_name',
                 'company_name',
                 'is_solicitor',
-                'marn_number',
                 'legal_practitioner_number',
                 'business_address',
                 'business_phone',
@@ -7481,6 +7293,18 @@ class ClientsController extends Controller
 
             // Duration / amount already set from BookingCatalogue product (10 / 30 / 60)
 
+            $existingAppointment = BookingAppointment::where('client_id', $client->id)
+                ->where('appointment_datetime', $appointmentDateTime)
+                ->whereNotIn('status', ['cancelled', 'rescheduled'])
+                ->first();
+
+            if ($existingAppointment) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You already have an appointment booked at this date and time. Please choose a different time slot.',
+                ], 422);
+            }
+
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
             $appointmentDataForConsultant = [
                 'noe_id' => $requestData['noe_id'],
@@ -7897,13 +7721,13 @@ class ClientsController extends Controller
         
         if ($serviceId == 2) {
             $subject = 'scheduled a free appointment';
-            $serviceTitle = 'Promo — free consultation';
+            $serviceTitle = 'Free Consultation';
         } elseif ($serviceId == 1) {
             $subject = 'scheduled a paid appointment';
-            $serviceTitle = 'Paid consultation';
+            $serviceTitle = 'Standard Consultation';
         } elseif ($serviceId == 3) {
             $subject = 'scheduled a paid appointment';
-            $serviceTitle = 'Overseas Applicant Enquiry';
+            $serviceTitle = 'Extended Consultation';
         }
 
         $enquiryTitle = $this->getNatureOfEnquiryLabelFromConfig($noeId);

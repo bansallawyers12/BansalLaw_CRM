@@ -166,7 +166,7 @@
             grant_super_admin_access: '_access',
             trust_rule42_supervisor: '_access',
             is_solicitor: '_solicitor',
-            marn_number: '_solicitor',
+            legal_practitioner_number: '_solicitor',
             company_name: '_solicitor',
             email_signature: '_signature'
         };

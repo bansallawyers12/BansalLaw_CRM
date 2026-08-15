@@ -1132,7 +1132,7 @@ public function getChapters(Request $request)
 			'Block2feesinclgst' => '',
 			'Block3feesincltax' => '',
 			'Block3feesinclgst' => '',
-			'TotalDoHASurcharges' => '',
+			'TotalDisbursements' => '',
 			'TotalEstimatedOthCosts' => '',
 			'GrandTotalFeesAndCosts' => '',
 			'PDF_url_for_sign' => '',
@@ -1179,7 +1179,7 @@ public function getChapters(Request $request)
 		$values['Block2feesinclgst'] = $b2;
 		$values['Block3feesincltax'] = $b3;
 		$values['Block3feesinclgst'] = $b3;
-		$values['TotalDoHASurcharges'] = number_format($totalDisbursements, 2, '.', '');
+		$values['TotalDisbursements'] = number_format($totalDisbursements, 2, '.', '');
 		$values['TotalEstimatedOthCosts'] = number_format($totalOther, 2, '.', '');
 		$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
 	}

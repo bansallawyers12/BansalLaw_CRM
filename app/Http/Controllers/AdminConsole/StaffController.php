@@ -506,7 +506,7 @@ class StaffController extends Controller
         $obj->is_solicitor = $isSolicitor ? 1 : 0;
 
         if ($isSolicitor) {
-            $obj->marn_number = @$requestData['marn_number'];
+            $obj->legal_practitioner_number = @$requestData['legal_practitioner_number'];
             $obj->company_name = @$requestData['company_name'];
             $obj->business_address = @$requestData['business_address'];
             $obj->business_phone = @$requestData['business_phone'];
@@ -514,7 +514,7 @@ class StaffController extends Controller
             $obj->business_email = @$requestData['business_email'];
             $obj->tax_number = @$requestData['tax_number'];
         } elseif (!$isCreate) {
-            $obj->marn_number = null;
+            $obj->legal_practitioner_number = null;
             $obj->company_name = null;
             $obj->business_address = null;
             $obj->business_phone = null;

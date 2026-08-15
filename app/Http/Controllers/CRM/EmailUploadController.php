@@ -1772,11 +1772,13 @@ class EmailUploadController extends Controller
     {
         try {
             // Company domains that indicate emails WE sent
-            $companyDomains = [
-                '@bansalimmigration.com.au',
+            $companyDomains = config('app.brand.firm_email_domains', [
+                '@bansallawyers.com.au',
                 '@bansaleducation.com.au',
-                '@bansallawyers.com.au'
-            ];
+            ]);
+            if (! is_array($companyDomains)) {
+                $companyDomains = [];
+            }
             
             // Check if email is from our company domains
             $isFromCompany = false;

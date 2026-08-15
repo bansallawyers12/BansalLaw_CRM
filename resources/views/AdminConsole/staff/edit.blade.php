@@ -322,8 +322,8 @@
 									<div class="row">
 										<div class="col-md-6">
 											<div class="form-group">
-												<label for="marn_number">MARN Number</label>
-												<input type="text" name="marn_number" id="marn_number" value="{{ old('marn_number', @$fetchedData->marn_number) }}" class="form-control" placeholder="Enter MARN Number">
+												<label for="legal_practitioner_number">Practising certificate / legal practitioner number</label>
+												<input type="text" name="legal_practitioner_number" id="legal_practitioner_number" value="{{ old('legal_practitioner_number', @$fetchedData->legal_practitioner_number) }}" class="form-control" placeholder="Enter practising certificate number">
 											</div>
 										</div>
 									</div>

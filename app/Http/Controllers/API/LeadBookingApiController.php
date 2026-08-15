@@ -271,6 +271,16 @@ class LeadBookingApiController extends BaseController
      */
     public function storeBookingAppointment(Request $request)
     {
+        if ($request->filled('description') && ! $request->filled('enquiry_details')) {
+            $request->merge(['enquiry_details' => $request->input('description')]);
+        }
+        if ($request->filled('location')) {
+            $request->merge(['location' => strtolower(trim((string) $request->input('location')))]);
+        }
+        if (! $request->filled('location')) {
+            $request->merge(['location' => 'melbourne']);
+        }
+
         $validated = $request->validate([
             'bansal_appointment_id' => [
                 'nullable',
@@ -290,7 +300,7 @@ class LeadBookingApiController extends BaseController
             'timeslot_full' => ['nullable', 'string', 'max:50'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:480'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:480'],
-            'location' => ['required', Rule::in(['melbourne'])],
+            'location' => ['nullable', Rule::in(['melbourne'])],
             'inperson_address' => ['nullable', 'integer', 'in:2'],
             'meeting_type' => ['nullable', Rule::in(['in_person', 'phone', 'video'])],
             'preferred_language' => ['nullable', 'string', 'max:50'],
@@ -371,7 +381,16 @@ class LeadBookingApiController extends BaseController
 
         $durationMinutes = $validated['duration_minutes']
             ?? $validated['duration']
-            ?? 10;
+            ?? null;
+        if ($durationMinutes === null) {
+            $durationMinutes = \App\Support\BookingCatalogue::durationMinutesForDbServiceId(
+                isset($validated['service_id']) ? (int) $validated['service_id'] : null
+            );
+        }
+
+        if (! array_key_exists('amount', $validated) && isset($validated['service_id'])) {
+            $validated['amount'] = \App\Support\BookingCatalogue::amountForDbServiceId((int) $validated['service_id']);
+        }
 
         $payload = array_merge($validated, [
             'bansal_appointment_id' => $bansalId,

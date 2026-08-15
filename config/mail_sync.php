@@ -66,8 +66,8 @@ return [
     |
     */
 
-    // Python executable path (auto-detected based on OS)
-    'python_executable' => env('MAIL_PYTHON_EXECUTABLE', '/home/migratio/public_html/bansal_immigration/python_outlook_web/venv/bin/python'),
+    // Python executable path (set MAIL_PYTHON_EXECUTABLE in .env; null = auto-detect when enabled)
+    'python_executable' => env('MAIL_PYTHON_EXECUTABLE', null),
 
     // Python script directory (change folder name here for different projects)
     'python_script_dir' => base_path('python_outlook_web'),

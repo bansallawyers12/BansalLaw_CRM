@@ -10,121 +10,81 @@ use App\Models\BookingAppointment;
 class AppointmentConsultantSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed Lawyers CRM calendars only (ajay / kunal).
      */
     public function run(): void
     {
-        // Map old IDs to new IDs before deletion
-        // This will help us update appointments that reference old consultant IDs
-        $idMapping = [
-            6 => 1,  // Arun Kumar (paid) - old ID 6 -> new ID 1
-            7 => 2,  // Shubham/Yadwinder (jrp) - old ID 7 -> new ID 2
-            8 => 3,  // Education Team - old ID 8 -> new ID 3
-            9 => 4,  // Tourist Visa Team - old ID 9 -> new ID 4
-            10 => 5, // Adelaide Office - old ID 10 -> new ID 5
-            11 => 6, // Ajay Calendar - old ID 11 -> new ID 6
-            12 => 7, // Michael (kunal calendar) - old ID 12 -> new ID 7 (if exists)
-        ];
-        
-        // Update appointments to use temporary IDs (1000+) to avoid conflicts
-        foreach ($idMapping as $oldId => $newId) {
-            BookingAppointment::where('consultant_id', $oldId)
-                ->update(['consultant_id' => 1000 + $newId]);
-        }
-        
-        // Delete all existing consultants
-        DB::table('appointment_consultants')->truncate();
-        
-        // Reset the auto-increment sequence for PostgreSQL
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER SEQUENCE appointment_consultants_id_seq RESTART WITH 1");
-        } else {
-            // For MySQL, reset auto increment
-            DB::statement("ALTER TABLE appointment_consultants AUTO_INCREMENT = 1");
-        }
-        
-        $consultants = [
+        $desired = [
             [
-                'name' => 'Arun Kumar (Pr_complex matters)',
-                'email' => 'arun@bansallawyers.com.au',
-                'calendar_type' => 'paid',
-                'location' => 'melbourne',
-                'specializations' => json_encode([1, 6, 7, 8]),
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Shubham/Yadwinder (JRP)',
-                'email' => 'shubham@bansallawyers.com.au',
-                'calendar_type' => 'jrp',
-                'location' => 'melbourne',
-                'specializations' => json_encode([2, 3]),
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Education Team',
-                'email' => 'education@bansallawyers.com.au',
-                'calendar_type' => 'education',
-                'location' => 'melbourne',
-                'specializations' => json_encode([5]),
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Tourist Visa Team',
-                'email' => 'tourist@bansallawyers.com.au',
-                'calendar_type' => 'tourist',
-                'location' => 'melbourne',
-                'specializations' => json_encode([4]),
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Adelaide Office',
-                'email' => 'adelaide@bansallawyers.com.au',
-                'calendar_type' => 'adelaide',
-                'location' => 'adelaide',
-                'specializations' => json_encode([1, 2, 3, 4, 5, 6, 7, 8]),
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Ajay',
-                'email' => 'ajay@bansalmigration.com',
-                'calendar_type' => 'ajay',
-                'location' => 'melbourne',
-                'specializations' => json_encode([]), // Transfer-only calendar, no specializations needed
-                'is_active' => true,
-            ],
-            [
+                'id' => 1,
                 'name' => 'Michael',
                 'email' => 'kunal@bansallawyers.com.au',
                 'calendar_type' => 'kunal',
                 'location' => 'melbourne',
-                'specializations' => json_encode([]),
+                'specializations' => [],
+                'is_active' => true,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Ajay',
+                'email' => 'ajay@bansallawyers.com.au',
+                'calendar_type' => 'ajay',
+                'location' => 'melbourne',
+                'specializations' => [],
                 'is_active' => true,
             ],
         ];
 
-        // Insert consultants in order so they get IDs 1-7
-        foreach ($consultants as $index => $consultant) {
-            AppointmentConsultant::create([
-                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7
-                'name' => $consultant['name'],
-                'email' => $consultant['email'],
-                'calendar_type' => $consultant['calendar_type'],
-                'location' => $consultant['location'],
-                'specializations' => json_decode($consultant['specializations'], true),
-                'is_active' => $consultant['is_active'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $defaultId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.ajay', 2);
+
+        // Remap bookings off any leftover immigration consultants before delete.
+        $legacyIds = AppointmentConsultant::query()
+            ->whereNotIn('calendar_type', ['ajay', 'kunal'])
+            ->pluck('id');
+
+        if ($legacyIds->isNotEmpty()) {
+            BookingAppointment::whereIn('consultant_id', $legacyIds)
+                ->update(['consultant_id' => $defaultId]);
+            AppointmentConsultant::whereIn('id', $legacyIds)->delete();
         }
 
-        // Update appointments back to correct new IDs
-        foreach ($idMapping as $oldId => $newId) {
-            BookingAppointment::where('consultant_id', 1000 + $newId)
-                ->update(['consultant_id' => $newId]);
+        foreach ($desired as $row) {
+            AppointmentConsultant::updateOrCreate(
+                ['calendar_type' => $row['calendar_type']],
+                [
+                    'name' => $row['name'],
+                    'email' => $row['email'],
+                    'location' => $row['location'],
+                    'specializations' => $row['specializations'],
+                    'is_active' => $row['is_active'],
+                ]
+            );
         }
-        
-        $this->command->info('✓ Created 7 appointment consultants with IDs 1-7 (including Ajay Calendar and Michael)');
-        $this->command->info('✓ Updated all appointments to reference new consultant IDs');
+
+        // Align IDs with booking_calendar config defaults when safe.
+        foreach ($desired as $row) {
+            $existing = AppointmentConsultant::where('calendar_type', $row['calendar_type'])->first();
+            if (! $existing || (int) $existing->id === (int) $row['id']) {
+                continue;
+            }
+
+            $targetTaken = AppointmentConsultant::where('id', $row['id'])->exists();
+            if ($targetTaken) {
+                continue;
+            }
+
+            BookingAppointment::where('consultant_id', $existing->id)
+                ->update(['consultant_id' => $row['id']]);
+
+            DB::table('appointment_consultants')
+                ->where('id', $existing->id)
+                ->update(['id' => $row['id']]);
+        }
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('appointment_consultants', 'id'), (SELECT COALESCE(MAX(id), 1) FROM appointment_consultants))");
+        }
+
+        $this->command?->info('✓ Appointment consultants limited to ajay / kunal (Michael + Ajay)');
     }
 }
-

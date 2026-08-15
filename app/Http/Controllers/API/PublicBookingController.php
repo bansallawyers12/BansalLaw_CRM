@@ -87,6 +87,7 @@ class PublicBookingController extends BaseController
                 'service_type' => BookingCatalogue::publicServiceTypeList(),
                 'consultants' => AppointmentConsultant::query()
                     ->where('is_active', true)
+                    ->whereIn('calendar_type', ['ajay', 'kunal'])
                     ->orderBy('name')
                     ->get(['id', 'name', 'email', 'calendar_type', 'location'])
                     ->map(static function (AppointmentConsultant $c) {
@@ -1162,7 +1163,7 @@ class PublicBookingController extends BaseController
         return [
             'success' => $data['success'] ?? true,
             'disabledatesarray' => $data['disabledatesarray'] ?? [],
-            'duration' => $data['duration'] ?? 10,
+            'duration' => $data['duration'] ?? 30,
             'start_time' => $data['start_time'] ?? '10:45',
             'end_time' => $data['end_time'] ?? '16:00',
             'weeks' => $data['weeks'] ?? [],
@@ -1192,6 +1193,9 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Missing required parameters: id, enquiry_item, and inperson_address are required', [], 422);
             }
             
+            $slotProduct = BookingCatalogue::productFromRequestServiceKey($id);
+            $slotDuration = (int) ($slotProduct['duration_minutes'] ?? 30);
+
             Log::info('getDisabledDateFromCalendar called', [
                 'id' => $id,
                 'enquiry_item' => $enquiry_item,
@@ -1227,7 +1231,7 @@ class PublicBookingController extends BaseController
                         Log::warning('getDisabledDateFromCalendar: token missing, using default calendar (fallback)');
 
                         return $this->sendResponse(
-                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload($slotDuration)),
                             'Disabled dates retrieved successfully (fallback)'
                         );
                     }
@@ -1253,7 +1257,7 @@ class PublicBookingController extends BaseController
                         Log::warning('getDisabledDateFromCalendar: API HTTP error, using default calendar (fallback)');
 
                         return $this->sendResponse(
-                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload($slotDuration)),
                             'Disabled dates retrieved successfully (fallback)'
                         );
                     }
@@ -1292,7 +1296,7 @@ class PublicBookingController extends BaseController
                     Log::warning('getDisabledDateFromCalendar: RequestException, using default calendar (fallback)');
 
                     return $this->sendResponse(
-                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload($slotDuration)),
                         'Disabled dates retrieved successfully (fallback)'
                     );
                 }
@@ -1309,7 +1313,7 @@ class PublicBookingController extends BaseController
                     Log::warning('getDisabledDateFromCalendar: exception, using default calendar (fallback)');
 
                     return $this->sendResponse(
-                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload($slotDuration)),
                         'Disabled dates retrieved successfully (fallback)'
                     );
                 }

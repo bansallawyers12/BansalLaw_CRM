@@ -111,6 +111,9 @@ class HomeController extends Controller
         $inperson_address = $request->inperson_address; // 1=>Adelaide, 2=>melbourne
         $slot_overwrite = $request->slot_overwrite ?? 0; // 0 or 1
         
+        $slotProduct = BookingCatalogue::productFromRequestServiceKey($id);
+        $slotDuration = (int) ($slotProduct['duration_minutes'] ?? 30);
+
         Log::info('getdatetimebackend called', [
             'id' => $id,
             'enquiry_item' => $enquiry_item,
@@ -143,7 +146,7 @@ class HomeController extends Controller
             if (empty($apiToken)) {
                 Log::warning('Bansal API token not configured for getdatetimebackend');
                 if (BansalDatetimeBackendHelper::fallbackEnabled()) {
-                    return response()->json(BansalDatetimeBackendHelper::defaultPayload());
+                    return response()->json(BansalDatetimeBackendHelper::defaultPayload($slotDuration));
                 }
 
                 return response()->json([
@@ -168,7 +171,7 @@ class HomeController extends Controller
                 if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                     Log::warning('getdatetimebackend: using default hours (API HTTP error)');
 
-                    return response()->json(BansalDatetimeBackendHelper::defaultPayload());
+                    return response()->json(BansalDatetimeBackendHelper::defaultPayload($slotDuration));
                 }
 
                 return response()->json([
@@ -237,7 +240,7 @@ class HomeController extends Controller
             if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                 Log::warning('getdatetimebackend: using default hours (RequestException)');
 
-                return response()->json(BansalDatetimeBackendHelper::defaultPayload());
+                return response()->json(BansalDatetimeBackendHelper::defaultPayload($slotDuration));
             }
 
             return response()->json([
@@ -255,7 +258,7 @@ class HomeController extends Controller
             if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                 Log::warning('getdatetimebackend: using default hours (exception)');
 
-                return response()->json(BansalDatetimeBackendHelper::defaultPayload());
+                return response()->json(BansalDatetimeBackendHelper::defaultPayload($slotDuration));
             }
 
             return response()->json([

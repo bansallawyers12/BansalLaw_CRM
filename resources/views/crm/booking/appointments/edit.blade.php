@@ -120,11 +120,11 @@
                                     @php
                                         $serviceTypeDisplay = 'N/A';
                                         if ($appointment->service_id == 2) {
-                                            $serviceTypeDisplay = 'Free Service';
+                                            $serviceTypeDisplay = 'Free Consultation';
                                         } elseif ($appointment->service_id == 1) {
-                                            $serviceTypeDisplay = 'Paid Service Migration advice';
+                                            $serviceTypeDisplay = 'Standard Consultation';
                                         } elseif ($appointment->service_id == 3) {
-                                            $serviceTypeDisplay = 'Overseas applicant enquiry';
+                                            $serviceTypeDisplay = 'Extended Consultation';
                                         }
                                     @endphp
                                     {{ $serviceTypeDisplay }}

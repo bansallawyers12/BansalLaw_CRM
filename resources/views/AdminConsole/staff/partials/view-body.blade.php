@@ -104,7 +104,7 @@
         <div class="staff-view-section">
             <h5 class="staff-view-section__title">Legal practitioner details</h5>
             <dl class="staff-view-dl row">
-                <div class="col-md-6"><dt>MARN</dt><dd>{{ $fetchedData->marn_number ?: 'N/A' }}</dd></div>
+                <div class="col-md-6"><dt>Practising certificate / legal practitioner number</dt><dd>{{ $fetchedData->legal_practitioner_number ?: 'N/A' }}</dd></div>
                 <div class="col-md-6"><dt>Business name</dt><dd>{{ $fetchedData->company_name ?: 'N/A' }}</dd></div>
                 <div class="col-md-6"><dt>Tax number</dt><dd>{{ $fetchedData->tax_number ?: 'N/A' }}</dd></div>
                 <div class="col-12"><dt>Business address</dt><dd>{{ $fetchedData->business_address ?: 'N/A' }}</dd></div>

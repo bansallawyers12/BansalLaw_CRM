@@ -139,7 +139,7 @@
             </p>
         </div>
 
-        <p style="margin-top: 30px;">We hope to assist you with your immigration needs in the future.</p>
+        <p style="margin-top: 30px;">We hope to assist you with your legal needs in the future.</p>
 
         <p>Best regards,<br>
         <strong>{{ config('app.name') }} Team</strong></p>

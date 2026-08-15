@@ -10,12 +10,6 @@ class EmailMatchingService
 {
     private const HIGH_CONFIDENCE = 80;
 
-    private const COMPANY_DOMAINS = [
-        '@bansalimmigration.com.au',
-        '@bansaleducation.com.au',
-        '@bansallawyers.com.au',
-    ];
-
     /**
      * Build ranked client/matter suggestions from parsed email data.
      *
@@ -141,7 +135,7 @@ class EmailMatchingService
     public function detectMailType(array $parsedData): string
     {
         $sender = strtolower((string) ($parsedData['sender_email'] ?? ''));
-        foreach (self::COMPANY_DOMAINS as $domain) {
+        foreach ($this->companyDomains() as $domain) {
             if (str_contains($sender, $domain)) {
                 return 'sent';
             }
@@ -431,13 +425,23 @@ class EmailMatchingService
 
     private function isCompanyEmail(string $email): bool
     {
-        foreach (self::COMPANY_DOMAINS as $domain) {
+        foreach ($this->companyDomains() as $domain) {
             if (str_contains($email, $domain)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function companyDomains(): array
+    {
+        $domains = config('app.brand.firm_email_domains', []);
+
+        return is_array($domains) ? array_values(array_filter($domains)) : [];
     }
 
     /**

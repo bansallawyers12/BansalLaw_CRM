@@ -319,8 +319,8 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_marn_number">MARN number</label>
-                            <input type="text" name="marn_number" id="{{ $fieldPrefix }}_marn_number" value="{{ old('marn_number', $isEdit ? $fetchedData->marn_number : '') }}" class="form-control">
+                            <label for="{{ $fieldPrefix }}_legal_practitioner_number">Practising certificate / legal practitioner number</label>
+                            <input type="text" name="legal_practitioner_number" id="{{ $fieldPrefix }}_legal_practitioner_number" value="{{ old('legal_practitioner_number', $isEdit ? $fetchedData->legal_practitioner_number : '') }}" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-6">

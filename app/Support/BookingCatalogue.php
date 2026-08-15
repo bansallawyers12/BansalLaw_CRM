@@ -65,8 +65,8 @@ final class BookingCatalogue
                 'duration' => $duration,
                 'duration_unit' => 'minutes',
                 'time_slots' => [
-                    'start_time' => $formId === 1 ? '10:45' : '09:00',
-                    'end_time' => $formId === 1 ? '16:00' : '17:00',
+                    'start_time' => (int) $formId === 1 ? '10:45' : '09:00',
+                    'end_time' => (int) $formId === 1 ? '16:00' : '17:00',
                     'time_format' => 'AM/PM',
                 ],
                 'availability' => [
@@ -263,6 +263,52 @@ final class BookingCatalogue
             'international', 'india_uk_canada_europe' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
             default => $enquiryType ? ucfirst(str_replace('_', ' ', $enquiryType)) : 'General',
         };
+    }
+
+    /**
+     * Infer scheme when the payload omits noe_scheme.
+     * Visa enquiry/service types stay immigration so ids 1–8 are not read as practice areas.
+     */
+    public static function inferNoeScheme(array $appointmentData): string
+    {
+        $explicit = strtolower(trim((string) ($appointmentData['noe_scheme'] ?? '')));
+        if (in_array($explicit, ['crm', 'immigration'], true)) {
+            return $explicit;
+        }
+
+        $enquiry = strtolower((string) ($appointmentData['enquiry_type'] ?? ''));
+        $service = strtolower((string) ($appointmentData['service_type'] ?? ''));
+        $immigrationTokens = [
+            'pr', 'pr_complex', 'tr', 'jrp', 'tourist', 'education', 'complex', 'cancellation',
+            'visa_cancellation', 'international', 'permanent-residency', 'temporary-residency',
+            'jrp-skill-assessment', 'tourist-visa', 'education-visa', 'complex-matters',
+            'visa-cancellation', 'international-migration',
+        ];
+        if (in_array($enquiry, $immigrationTokens, true) || in_array($service, $immigrationTokens, true)) {
+            return 'immigration';
+        }
+
+        return 'crm';
+    }
+
+    /**
+     * Duration for a DB service_id (1=30, 2=10, 3=60), falling back to 10.
+     */
+    public static function durationMinutesForDbServiceId(?int $dbServiceId): int
+    {
+        $product = $dbServiceId ? self::productByDbServiceId($dbServiceId) : null;
+
+        return (int) ($product['duration_minutes'] ?? 10);
+    }
+
+    /**
+     * Price for a DB service_id.
+     */
+    public static function amountForDbServiceId(?int $dbServiceId): float
+    {
+        $product = $dbServiceId ? self::productByDbServiceId($dbServiceId) : null;
+
+        return (float) ($product['price'] ?? 0);
     }
 
     public static function isPaidDbServiceId(?int $dbServiceId): bool

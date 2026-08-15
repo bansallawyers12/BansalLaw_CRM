@@ -206,7 +206,7 @@
                             }
                         }
                         if ($matter_info) {
-                            $mattertotalpayablefeeL = floatval($matter_info->TotalBLOCKFEE) + floatval($matter_info->TotalDoHASurcharges) + floatval($matter_info->additional_fee_1);
+                            $mattertotalpayablefeeL = floatval($matter_info->TotalBLOCKFEE) + floatval($matter_info->TotalDisbursements ?? $matter_info->TotalDoHASurcharges ?? 0) + floatval($matter_info->additional_fee_1);
                             $mattertotalpayablefee = number_format($mattertotalpayablefeeL, 2, '.', '');
                         } else {
                             $mattertotalpayablefee = '0.00';
@@ -246,7 +246,7 @@
                                     $pdfurlforsign = url("/sign/{$selectedDocument->id}/{$token}");
                                     ?>
                                     <input type="hidden" name="pdf_sign_token" value="{{$token}}">
-                                    <select class="form-control crm-ts-plain selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
+                                    <select class="form-control crm-ts-plain selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDisbursements ?? $matter_info->TotalDoHASurcharges ?? 0}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
                                         <option value="">Select</option>
                                         @if($client_matter_info_arr && isset($client_matter_info_arr->sel_matter_id))
                                             @foreach( \App\Models\EmailTemplate::forMatter($client_matter_info_arr->sel_matter_id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->orderBy('id', 'asc')->get() as $list)
@@ -446,6 +446,7 @@
                     .replace('${Blocktotalfeesincltax}', Total_professional_fees)
                     .replace('{Blocktotalfeesinclgst}', Total_professional_fees)
                     .replace('${Blocktotalfeesinclgst}', Total_professional_fees)
+                    .replace('{TotalDisbursements}', Total_surcharge_fees)
                     .replace('{TotalDoHASurcharges}', Total_surcharge_fees)
                     .replace('{TotalEstimatedOthCosts}', Total_department_fees)
                     .replace('{GrandTotalFeesAndCosts}', Total_payable_fees)

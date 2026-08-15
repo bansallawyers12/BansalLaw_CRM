@@ -157,7 +157,7 @@
         <!-- Footer -->
         <div class="footer">
             <p><strong>Need Help?</strong></p>
-            <p>Contact us at: {{ config('mail.from.address', 'support@bansalmigration.com') }}</p>
+            <p>Contact us at: {{ config('mail.from.address', config('app.brand.public_email')) }}</p>
             <p style="margin-top: 15px; font-size: 12px;">
                 © {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
             </p>

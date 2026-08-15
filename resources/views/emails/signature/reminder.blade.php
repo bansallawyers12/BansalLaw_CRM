@@ -220,7 +220,7 @@
 
             <p class="message">
                 We understand that you may have a busy schedule, but your timely response is crucial 
-                for the progress of your immigration matter.
+                for the progress of your matter.
             </p>
 
             <p class="message" style="margin-top: 30px;">

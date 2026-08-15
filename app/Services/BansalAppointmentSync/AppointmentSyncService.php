@@ -184,11 +184,13 @@ class AppointmentSyncService
         $inpersonAddress = $location ? $this->mapInpersonAddress($location) : null;
         
         // Prepare appointment data with calculated values for consultant assignment
+        $scheme = \App\Support\BookingCatalogue::inferNoeScheme($appointmentData);
         $appointmentDataForConsultant = array_merge($appointmentData, [
             'service_id' => $serviceId,
             'noe_id' => $noeId,
-            'inperson_address' => $inpersonAddress,
-            'noe_scheme' => $appointmentData['noe_scheme'] ?? 'crm',
+            'inperson_address' => $inpersonAddress === 1 ? 2 : $inpersonAddress,
+            'location' => ($appointmentData['location'] ?? null) === 'adelaide' ? 'melbourne' : ($appointmentData['location'] ?? 'melbourne'),
+            'noe_scheme' => $scheme,
         ]);
 
         // Assign consultant (now has access to service_id and noe_id)
@@ -212,7 +214,8 @@ class AppointmentSyncService
             
             'appointment_datetime' => Carbon::parse($appointmentData['appointment_datetime']),
             'timeslot_full' => $appointmentData['appointment_time'] ?? null,
-            'duration_minutes' => $appointmentData['duration_minutes'] ?? 10,
+            'duration_minutes' => $appointmentData['duration_minutes']
+                ?? \App\Support\BookingCatalogue::durationMinutesForDbServiceId($serviceId),
             'location' => ($appointmentData['location'] ?? null) === 'adelaide'
                 ? 'melbourne'
                 : ($appointmentData['location'] ?? 'melbourne'),
@@ -222,7 +225,7 @@ class AppointmentSyncService
             
             'service_id' => $serviceId,
             'noe_id' => $noeId,
-            'noe_scheme' => $appointmentData['noe_scheme'] ?? 'crm',
+            'noe_scheme' => $scheme,
             'enquiry_type' => $appointmentData['enquiry_type'] ?? null,
             'service_type' => $appointmentData['service_type'] ?? null,
             'enquiry_details' => $appointmentData['enquiry_details'] ?? null,
@@ -295,12 +298,12 @@ class AppointmentSyncService
         if ($specific === 'extended-consultation' || $duration === 60 || abs($amount - 220.0) < 0.01) {
             return 3;
         }
-        if ($specific === 'paid-consultation' || ($isPaid && $specific !== 'consultation')) {
+        if ($specific === 'overseas-enquiry') {
+            // Retired Lawyers product; treat historical overseas as standard paid 30 min.
             return 1;
         }
-        if ($specific === 'overseas-enquiry') {
-            // Legacy immigration product — keep as DB service_id 3 for historical sync
-            return 3;
+        if ($specific === 'paid-consultation' || ($isPaid && $specific !== 'consultation')) {
+            return 1;
         }
         if ($isPaid) {
             return 1;
@@ -322,6 +325,13 @@ class AppointmentSyncService
         }
 
         $serviceType = $appointmentData['service_type'] ?? null;
+        $enquiryType = $appointmentData['enquiry_type'] ?? null;
+
+        foreach (\App\Support\BookingCatalogue::crmNatureOfEnquiry() as $row) {
+            if ($serviceType === ($row['service_type'] ?? null) || $enquiryType === ($row['enquiry_type'] ?? null)) {
+                return (int) $row['id'];
+            }
+        }
 
         return match($serviceType) {
             'permanent-residency' => 1,
@@ -584,31 +594,17 @@ class AppointmentSyncService
             $serviceTitle = 'Free Consultation';
         } elseif ($serviceId == 1) {
             $subject = 'scheduled a paid appointment';
-            $serviceTitle = 'Comprehensive Migration Advice';
+            $serviceTitle = 'Standard Consultation';
         } elseif ($serviceId == 3) {
             $subject = 'scheduled a paid appointment';
-            $serviceTitle = 'Overseas Applicant Enquiry';
+            $serviceTitle = 'Extended Consultation';
         }
 
-        // Determine enquiry title based on noe_id
-        $enquiryTitle = 'Appointment';
-        if ($noeId == 1) {
-            $enquiryTitle = 'Permanent Residency Appointment';
-        } elseif ($noeId == 2) {
-            $enquiryTitle = 'Temporary Residency Appointment';
-        } elseif ($noeId == 3) {
-            $enquiryTitle = 'JRP/Skill Assessment';
-        } elseif ($noeId == 4) {
-            $enquiryTitle = 'Tourist Visa';
-        } elseif ($noeId == 5) {
-            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
-        } elseif ($noeId == 6) {
-            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
-        } elseif ($noeId == 7) {
-            $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
-        } elseif ($noeId == 8) {
-            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
-        }
+        $enquiryTitle = \App\Support\BookingCatalogue::enquiryTypeDisplay(
+            $appointment->enquiry_type,
+            $noeId,
+            $appointment->noe_scheme ?? 'crm'
+        );
 
         // Format meeting type
         $appointmentDetails = '';

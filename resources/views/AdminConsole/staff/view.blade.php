@@ -152,11 +152,7 @@
 								<div class="col-md-6">
 									<h6 class="text-muted mt-3">Registration Details</h6>
 									<div class="form-group">
-										<label for="marn_number"><strong>MARN Number</strong></label>
-										<p class="form-control-plaintext">{{ $fetchedData->marn_number ?? 'N/A' }}</p>
-									</div>
-									<div class="form-group">
-										<label for="legal_practitioner_number"><strong>Legal Practitioner Number</strong></label>
+										<label for="legal_practitioner_number"><strong>Practising certificate / legal practitioner number</strong></label>
 										<p class="form-control-plaintext">{{ $fetchedData->legal_practitioner_number ?? 'N/A' }}</p>
 									</div>
 								</div>

@@ -70,14 +70,21 @@ final class BansalDatetimeBackendHelper
     /**
      * @return array<string, mixed>
      */
-    public static function defaultPayload(): array
+    /**
+     * @param  int  $duration  Slot length in minutes (10 / 30 / 60)
+     * @return array<string, mixed>
+     */
+    public static function defaultPayload(int $duration = 30): array
     {
+        $duration = in_array($duration, [10, 30, 60], true) ? $duration : 30;
+        $isFree = $duration === 10;
+
         return [
             'success' => true,
-            'duration' => 30,
+            'duration' => $duration,
             'weeks' => [0, 6],
-            'start_time' => '09:00',
-            'end_time' => '17:00',
+            'start_time' => $isFree ? '10:45' : '09:00',
+            'end_time' => $isFree ? '16:00' : '17:00',
             'timeslot_labels' => self::labels(),
             'disabledtimeslotes' => [],
             'disabledatesarray' => [],

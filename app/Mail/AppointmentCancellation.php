@@ -51,7 +51,7 @@ class AppointmentCancellation extends Mailable
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
                 'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
                 'consultant' => $this->details['consultant'] ?? 'Our Team',
-                'serviceType' => $this->details['service_type'] ?? 'Immigration Consultation',
+                'serviceType' => $this->details['service_type'] ?? 'Legal Consultation',
                 'cancellationReason' => $this->details['cancellation_reason'] ?? null,
             ],
         );

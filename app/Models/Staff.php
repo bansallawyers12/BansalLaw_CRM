@@ -48,7 +48,6 @@ class Staff extends Authenticatable
         'show_dashboard_per',
         'time_zone',
         'is_solicitor',
-        'marn_number',
         'legal_practitioner_number',
         'company_name',
         'company_website',

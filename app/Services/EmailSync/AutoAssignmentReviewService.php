@@ -9,10 +9,7 @@ use App\Models\Staff;
 
 class AutoAssignmentReviewService
 {
-    private const FIRM_DOMAINS = [
-        '@bansalimmigration.com.au',
-        '@bansaleducation.com.au',
-        '@bansallawyers.com.au',
+    private const INTERNAL_DOMAINS = [
         '@lead.internal',
     ];
 
@@ -241,13 +238,28 @@ class AutoAssignmentReviewService
 
     private function isFirmAddress(string $email): bool
     {
-        foreach (self::FIRM_DOMAINS as $domain) {
-            if (str_ends_with(strtolower($email), $domain)) {
+        $email = strtolower($email);
+        foreach ($this->firmDomains() as $domain) {
+            if (str_ends_with($email, $domain)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function firmDomains(): array
+    {
+        $configured = config('app.brand.firm_email_domains', []);
+        $configured = is_array($configured) ? $configured : [];
+
+        return array_values(array_unique(array_filter(array_merge(
+            self::INTERNAL_DOMAINS,
+            $configured
+        ))));
     }
 
     /**

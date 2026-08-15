@@ -80,28 +80,15 @@ class AppointmentConsultant extends Model
     }
 
     /**
-     * Scope: Adelaide consultants
-     */
-    public function scopeAdelaide($query)
-    {
-        return $query->where('location', 'adelaide');
-    }
-
-    /**
      * Get calendar type display name
      */
     protected function calendarTypeDisplay(): Attribute
     {
         return Attribute::make(
-            get: fn () => match($this->calendar_type) {
-                'paid' => 'Pr_complex matters',
-                'jrp' => 'JRP/Skill Assessment',
-                'education' => 'Education/Student Visa',
-                'tourist' => 'Tourist Visa',
-                'adelaide' => 'Adelaide Office',
+            get: fn () => match ($this->calendar_type) {
                 'ajay' => 'Ajay',
                 'kunal' => 'Michael',
-                default => ucfirst($this->calendar_type)
+                default => ucfirst((string) $this->calendar_type),
             }
         );
     }
@@ -112,10 +99,9 @@ class AppointmentConsultant extends Model
     protected function locationDisplay(): Attribute
     {
         return Attribute::make(
-            get: fn () => match($this->location) {
+            get: fn () => match ($this->location) {
                 'melbourne' => 'Melbourne',
-                'adelaide' => 'Adelaide',
-                default => ucfirst($this->location)
+                default => ucfirst((string) $this->location),
             }
         );
     }
@@ -125,7 +111,7 @@ class AppointmentConsultant extends Model
      */
     public function handlesNoeId(int $noeId): bool
     {
-        return in_array($noeId, $this->specializations ?? []);
+        return in_array($noeId, $this->specializations ?? [], true);
     }
 
     /**
@@ -151,25 +137,18 @@ class AppointmentConsultant extends Model
     }
 
     /**
-     * Get specialization names
+     * Get specialization names (practice-area NOEs 1–7).
      */
     public function getSpecializationNames(): array
     {
-        $noeNames = [
-            1 => 'TR (Temporary Residency)',
-            2 => 'JRP',
-            3 => 'Skill Assessment',
-            4 => 'Tourist Visa',
-            5 => 'Education/Student',
-            6 => 'PR Complex',
-            7 => 'Other Services',
-            8 => 'Other Services',
-        ];
+        $labels = [];
+        foreach (config('booking_nature_of_enquiry.crm', []) as $row) {
+            $labels[(int) $row['id']] = (string) $row['label'];
+        }
 
         return array_map(
-            fn($noeId) => $noeNames[$noeId] ?? "Service $noeId",
+            fn ($noeId) => $labels[(int) $noeId] ?? ('Service ' . $noeId),
             $this->specializations ?? []
         );
     }
 }
-
