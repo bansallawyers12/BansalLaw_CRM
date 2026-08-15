@@ -463,6 +463,9 @@ class LeadBookingApiController extends BaseController
         if (! Schema::hasColumn('booking_appointments', 'website_status_code')) {
             unset($payload['website_status_code']);
         }
+        if (! Schema::hasColumn('booking_appointments', 'noe_scheme')) {
+            unset($payload['noe_scheme']);
+        }
 
         // Not a database column (Bansal slot API flag only); never send to INSERT.
         unset($payload['slot_overwrite_hidden']);

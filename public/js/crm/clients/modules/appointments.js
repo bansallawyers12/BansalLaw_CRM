@@ -569,7 +569,7 @@
 
             //console.log($('#service_id').val());
 
-            if( $('#service_id').val() === 'paid' ){
+            if( $('#service_id').val() === 'paid' || $('#service_id').val() === 'paid_extended' ){
 
                 $('.submitappointment_paid').show();
 
@@ -589,7 +589,7 @@
 
                 var v = 'appointment_details';
 
-                if( id === 'paid' ){
+                if( id === 'paid' || id === 'paid_extended' ){
 
                     // Show the "Zoom / Google Meeting" option
 
@@ -847,7 +847,7 @@
 
 
 
-                if(  $("input[name='radioGroup']:checked").val() === 'paid' ){
+                if(  $("input[name='radioGroup']:checked").val() === 'paid' || $("input[name='radioGroup']:checked").val() === 'paid_extended' ){
 
                     $('.submitappointment_paid').show();
 

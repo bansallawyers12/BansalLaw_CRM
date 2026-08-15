@@ -312,7 +312,6 @@
                 'withdrawal',
                 'balance',
                 'cost agreement',
-                'costs disclosure',
                 'account'
             ];
             $rows.each(function() {

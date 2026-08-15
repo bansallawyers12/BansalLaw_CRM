@@ -1825,26 +1825,19 @@ class BookingAppointmentsController extends Controller
      */
     protected function determineSpecificService(BookingAppointment $appointment): string
     {
-        // If enquiry_type exists, try to map it
+        $product = \App\Support\BookingCatalogue::productByDbServiceId((int) ($appointment->service_id ?? 0));
+        if ($product) {
+            return (string) $product['specific_service'];
+        }
+
         if ($appointment->enquiry_type) {
             $enquiryType = strtolower($appointment->enquiry_type);
-
-            // Map common enquiry types to specific_service
             if (strpos($enquiryType, 'overseas') !== false || $enquiryType === 'international') {
                 return 'overseas-enquiry';
-            } elseif ($appointment->is_paid) {
-                return 'paid-consultation';
-            } else {
-                return 'consultation';
             }
         }
 
-        // Fallback based on is_paid
-        if ($appointment->is_paid) {
-            return 'paid-consultation';
-        }
-
-        return 'consultation';
+        return $appointment->is_paid ? 'paid-consultation' : 'consultation';
     }
 
     protected function handleUpdateError(Request $request, string $message, int $status = 422, $context = null)

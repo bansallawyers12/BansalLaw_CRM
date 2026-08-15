@@ -188,7 +188,7 @@ class AppointmentSyncService
             'service_id' => $serviceId,
             'noe_id' => $noeId,
             'inperson_address' => $inpersonAddress,
-            'noe_scheme' => 'immigration',
+            'noe_scheme' => $appointmentData['noe_scheme'] ?? 'crm',
         ]);
 
         // Assign consultant (now has access to service_id and noe_id)
@@ -212,14 +212,17 @@ class AppointmentSyncService
             
             'appointment_datetime' => Carbon::parse($appointmentData['appointment_datetime']),
             'timeslot_full' => $appointmentData['appointment_time'] ?? null,
-            'duration_minutes' => $appointmentData['duration_minutes'] ?? 15,
-            'location' => $appointmentData['location'],
-            'inperson_address' => $inpersonAddress,
+            'duration_minutes' => $appointmentData['duration_minutes'] ?? 10,
+            'location' => ($appointmentData['location'] ?? null) === 'adelaide'
+                ? 'melbourne'
+                : ($appointmentData['location'] ?? 'melbourne'),
+            'inperson_address' => $inpersonAddress === 1 ? 2 : $inpersonAddress,
             'meeting_type' => $this->mapMeetingType($appointmentData['meeting_type'] ?? null),
             'preferred_language' => $appointmentData['preferred_language'] ?? 'English',
             
             'service_id' => $serviceId,
             'noe_id' => $noeId,
+            'noe_scheme' => $appointmentData['noe_scheme'] ?? 'crm',
             'enquiry_type' => $appointmentData['enquiry_type'] ?? null,
             'service_type' => $appointmentData['service_type'] ?? null,
             'enquiry_details' => $appointmentData['enquiry_details'] ?? null,
@@ -284,22 +287,23 @@ class AppointmentSyncService
      */
     protected function mapServiceId(array $appointmentData): ?int
     {
-        // Check if paid
-        if (!empty($appointmentData['is_paid']) && $appointmentData['is_paid'] === true) {
+        $specific = (string) ($appointmentData['specific_service'] ?? '');
+        $duration = (int) ($appointmentData['duration_minutes'] ?? 0);
+        $amount = (float) ($appointmentData['final_amount'] ?? $appointmentData['amount'] ?? 0);
+        $isPaid = ! empty($appointmentData['is_paid']) || $amount > 0;
 
-            if (!empty($appointmentData['specific_service']) && $appointmentData['specific_service'] === 'overseas-enquiry') {
-                return 3; // Paid Overseas
-            } elseif (!empty($appointmentData['specific_service']) && $appointmentData['specific_service'] === 'paid-consultation') {
-                return 1; // Paid Migration advice
-            } 
+        if ($specific === 'extended-consultation' || $duration === 60 || abs($amount - 220.0) < 0.01) {
+            return 3;
         }
-        
-        if (!empty($appointmentData['final_amount']) && $appointmentData['final_amount'] > 0) {
-            if (!empty($appointmentData['specific_service']) && $appointmentData['specific_service'] === 'overseas-enquiry') {
-                return 3; // Paid Overseas
-            } elseif (!empty($appointmentData['specific_service']) && $appointmentData['specific_service'] === 'paid-consultation') {
-                return 1; // Paid Migration advice
-            } 
+        if ($specific === 'paid-consultation' || ($isPaid && $specific !== 'consultation')) {
+            return 1;
+        }
+        if ($specific === 'overseas-enquiry') {
+            // Legacy immigration product — keep as DB service_id 3 for historical sync
+            return 3;
+        }
+        if ($isPaid) {
+            return 1;
         }
 
         return 2; // Free

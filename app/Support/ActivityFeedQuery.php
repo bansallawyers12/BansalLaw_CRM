@@ -22,9 +22,9 @@ class ActivityFeedQuery
 
     public const RECEIPT_DOCUMENT_PATTERN = '(receipt document|journal receipt document|client receipt document|office receipt document)';
 
-    public const DOCUMENT_SUBJECT_PATTERN = '(document|checklist|uploaded|signed document|placed signature fields)';
+    public const DOCUMENT_SUBJECT_PATTERN = '(document|checklist|uploaded|signed document|signed cost agreement|signed costs disclosure|placed signature fields)';
 
-    public const ACCOUNTING_SUBJECT_PATTERN = '(invoice|receipt|payment|ledger|account|fee transfer|allocation|allocated|deposit|withdrawal|balance|cost agreement|costs disclosure)';
+    public const ACCOUNTING_SUBJECT_PATTERN = '(invoice|receipt|payment|ledger|account|fee transfer|allocation|allocated|deposit|withdrawal|balance|cost agreement)';
 
     public static function apply(Builder $query, Request $request): Builder
     {

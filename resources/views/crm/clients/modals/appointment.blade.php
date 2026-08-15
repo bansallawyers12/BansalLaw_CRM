@@ -262,7 +262,7 @@
                                                             }
                                                         }
 
-                                                        generateTimeDropdown(15); // 15-minute interval
+                                                        generateTimeDropdown(10); // 10-minute interval (free consult)
                                                         ?>
                                                     </div>
 
