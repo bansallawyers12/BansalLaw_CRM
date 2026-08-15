@@ -1956,7 +1956,6 @@ class ClientDocumentsController extends Controller
                 $document->doc_type   = 'personal';
                 $document->folder_name = $targetId;
                 $document->client_matter_id = null; // Clear matter association
-                $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;
                 
@@ -1985,7 +1984,6 @@ class ClientDocumentsController extends Controller
                 // Preserve document's matter when target category is global (client_matter_id null)
                 // so the document stays visible in the matter-filtered visa documents view
                 $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
-                $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;
             } elseif ($targetType === 'nomination') {
@@ -2009,7 +2007,6 @@ class ClientDocumentsController extends Controller
                 $document->doc_type = 'nomination';
                 $document->folder_name = $targetId;
                 $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
-                $document->cp_list_id = null;
 
                 $targetName = $category->title;
             }

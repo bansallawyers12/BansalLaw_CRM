@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\ClientMatterTaskSyncService;
-use App\Services\FCMService;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
 use Illuminate\Support\Facades\URL;

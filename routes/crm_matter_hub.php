@@ -23,7 +23,4 @@ Route::get('/client-portal/updateexpectwin', [ClientMatterHubController::class, 
 
 Route::post('/client-portal/ownership', [ClientMatterHubController::class, 'application_ownership']);
 
-Route::get('/crm/document-checklists-options', [ClientMatterHubController::class, 'getDocumentChecklistsOptions']);
-Route::post('/add-checklists', [ClientMatterHubController::class, 'addChecklist'])->name('crm.matter.addChecklist');
-Route::get('/client-portal/download-document', [ClientMatterHubController::class, 'downloadDocument']);
 Route::get('/client-portal/document-categories-for-move', [ClientMatterHubController::class, 'getDocumentCategoriesForMove']);

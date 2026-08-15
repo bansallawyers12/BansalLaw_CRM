@@ -14,7 +14,6 @@ use App\Http\Controllers\CRM\EmailUploadController;
 use App\Http\Controllers\CRM\SmartEmailImportController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
-use App\Http\Controllers\CRM\ClientMatterHubController;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\ComposeSendersController;
 use App\Http\Controllers\CRM\AccessGrantController;
@@ -339,11 +338,6 @@ Route::post('/clients/getAllUser', [ClientsController::class, 'getAllStaff'])->n
 Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);
 Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook']);
 Route::get('/get-appointments', [ClientsController::class, 'getAppointments']);
-
-/*---------- CRM matter checklist documents (workflow checklist type) ----------*/
-Route::get('/api/crm/matter-checklist-documents', [ClientMatterHubController::class, 'getChecklistDocuments'])->name('clients.getChecklistDocuments');
-Route::post('/api/crm/matter-checklist-delete-document', [ClientMatterHubController::class, 'deleteChecklistDocument'])->name('clients.deleteChecklistDocument');
-Route::post('/api/crm/matter-checklist-update-document-status', [ClientMatterHubController::class, 'updateChecklistDocumentStatus'])->name('clients.updateChecklistDocumentStatus');
 
 /*---------- Client Validation & Utilities ----------*/
 Route::post('/check-email', [ClientsController::class, 'checkEmail'])->name('check.email');

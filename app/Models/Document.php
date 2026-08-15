@@ -32,11 +32,8 @@ class Document extends Model
         'folder_name',
         'mail_type',
         'client_matter_id',
-        'cp_list_id',
         'office_id',
         'checklist',
-        'cp_rejection_reason',
-        'cp_doc_status',
         'not_used_doc',
         'status',
         'signature_doc_link',
@@ -180,14 +177,6 @@ class Document extends Model
                   $mq->where('office_id', $officeId);
               });
         });
-    }
-
-    /**
-     * Scope for workflow checklist documents (from client portal application checklists)
-     */
-    public function scopeWorkflowChecklist($query)
-    {
-        return $query->whereNotNull('cp_list_id');
     }
 
     // Accessors

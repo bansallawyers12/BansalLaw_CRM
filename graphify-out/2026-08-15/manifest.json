@@ -415,8 +415,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientPersonalDetailsController.php": {
-    "mtime": 1786771252.4247894,
-    "ast_hash": "739d08846e983416656e6bc57c8c663b",
+    "mtime": 1786771585.92584,
+    "ast_hash": "d69df9f4e95fb71067105a116cfc03f9",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "app/Models/Company.php": {
-    "mtime": 1786771208.4082525,
-    "ast_hash": "34880ee3d4732629e51a0451d8caaac1",
+    "mtime": 1786771546.0719945,
+    "ast_hash": "17f640c598f4536b5f57ca2be202af0b",
     "semantic_hash": ""
   },
   "app/Models/CompanyDirector.php": {
@@ -6260,8 +6260,8 @@
     "semantic_hash": "39492a79b1c72478e74594ff7674c148"
   },
   "resources/views/crm/companies/tabs/company_details.blade.php": {
-    "mtime": 1786771269.4770365,
-    "ast_hash": "556bfda8bee557c5e12fe11a75c2abdc",
+    "mtime": 1786771591.3152795,
+    "ast_hash": "afae7a425eef65758b364737d426d293",
     "semantic_hash": ""
   },
   "resources/views/crm/companies/tabs/nomination_documents.blade.php": {
@@ -7667,6 +7667,11 @@
   "database/migrations/2026_08_15_160000_drop_company_sponsorships_and_nominations_tables.php": {
     "mtime": 1786771210.2169468,
     "ast_hash": "ca9e7260443db594eba83697d6fa19ef",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_161000_drop_unused_employer_columns_from_companies.php": {
+    "mtime": 1786771592.0232315,
+    "ast_hash": "8b2a073022edef0d389fde32fac2a51c",
     "semantic_hash": ""
   }
 }
