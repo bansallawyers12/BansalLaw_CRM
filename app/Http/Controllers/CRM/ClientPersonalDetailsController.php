@@ -26,7 +26,6 @@ use App\Models\ClientTestScore;
 use App\Models\ClientVisaCountry;
 use App\Models\ClientOccupation;
 use App\Models\ClientSpouseDetail;
-use App\Models\ClientPoint;
 use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
@@ -55,7 +54,7 @@ use App\Traits\LogsClientActivity;
  * ClientPersonalDetailsController
  * 
  * Handles personal information, family details, qualifications, occupations,
- * test scores, and points calculation for clients.
+ * and test scores for clients.
  * 
  * Maps to: resources/views/Admin/clients/tabs/personal_details.blade.php
  */
@@ -6009,8 +6008,6 @@ class ClientPersonalDetailsController extends Controller
                                     'writing' => $writing,
                                     'speaking' => $speaking,
                                     'overall_score' => $overallScore,
-                                    'proficiency_level' => null,
-                                    'proficiency_points' => null,
                                     'test_date' => $formattedTestDate,
                                     'test_reference_no' => $testReferenceNo,
                                     'relevant_test' => $relevantTest
@@ -6028,8 +6025,6 @@ class ClientPersonalDetailsController extends Controller
                                 'writing' => $writing,
                                 'speaking' => $speaking,
                                 'overall_score' => $overallScore,
-                                'proficiency_level' => null,
-                                'proficiency_points' => null,
                                 'test_date' => $formattedTestDate,
                                 'test_reference_no' => $testReferenceNo,
                                 'relevant_test' => $relevantTest

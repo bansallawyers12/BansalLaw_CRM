@@ -1118,8 +1118,6 @@
                                                  data-speaking="{{ $testScore->speaking }}" 
                                                  data-overall="{{ $testScore->overall_score }}" 
                                                  data-test-date="{{ $testScore->test_date ? date('d/m/Y', strtotime($testScore->test_date)) : '' }}"
-                                                 data-proficiency-level="{{ $testScore->proficiency_level ?? '' }}"
-                                                 data-proficiency-points="{{ $testScore->proficiency_points ?? '' }}"
                                                  style="display: none;">
                                             </div>
                                         </div>

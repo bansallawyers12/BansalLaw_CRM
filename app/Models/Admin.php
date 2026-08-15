@@ -229,7 +229,6 @@ class Admin extends Authenticatable
 
     /**
      * Get the test scores (IELTS, PTE, TOEFL, etc.) for this client
-     * Used for English proficiency points calculation
      */
     public function testScores(): HasMany
     {
@@ -238,7 +237,6 @@ class Admin extends Authenticatable
 
     /**
      * Get the occupations/skills assessments for this client
-     * Used for occupation and work experience points calculation
      */
     public function occupations(): HasMany
     {
@@ -247,7 +245,6 @@ class Admin extends Authenticatable
 
     /**
      * Get the qualifications for this client
-     * Used for education points calculation
      */
     public function qualifications(): HasMany
     {
@@ -256,7 +253,6 @@ class Admin extends Authenticatable
 
     /**
      * Get the work experiences for this client
-     * Used for employment points calculation
      */
     public function experiences(): HasMany
     {

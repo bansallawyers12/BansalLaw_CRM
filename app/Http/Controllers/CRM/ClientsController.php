@@ -56,7 +56,6 @@ use App\Models\ClientSpouseDetail; // Import the ClientAddress model
 use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
-use App\Models\ClientPoint;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 
@@ -2242,9 +2241,6 @@ class ClientsController extends Controller
                 $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
                 $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();
                 $clientOccupations = ClientOccupation::where('client_id', $id)->get();
-                $ClientPoints = \Illuminate\Support\Facades\Schema::hasTable('client_points')
-                    ? ClientPoint::where('client_id', $id)->get()
-                    : collect();
 
                 // Fetch client family details with optimized query
                 // Eager load related client to prevent N+1 queries in the view
@@ -2362,7 +2358,7 @@ class ClientsController extends Controller
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
-                    'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
+                    'experiences', 'testScores', 'visaCountries', 'clientOccupations', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',

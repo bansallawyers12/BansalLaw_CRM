@@ -16,8 +16,6 @@ class ClientTestScore extends Model
         'writing',       // Score for Writing
         'speaking',      // Score for Speaking
         'overall_score', // Overall Score of the test
-        'proficiency_level', // Calculated English proficiency level (e.g., Competent English, Proficient English, Superior English)
-        'proficiency_points', // Points awarded for this proficiency level (0, 10, or 20)
         'test_date',     // The date when the test was taken
         'relevant_test',
         'test_reference_no'

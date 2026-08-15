@@ -19,7 +19,6 @@ ClientExperience.php
 ClientMatter.php
 ClientOccupation.php
 ClientPassportInformation.php
-ClientPoint.php
 ClientQualification.php
 ClientRelationship.php
 clientServiceTaken.php

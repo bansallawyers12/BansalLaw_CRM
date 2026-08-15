@@ -334,7 +334,7 @@ Within `routes/web.php`:
 |--------|-----|------|
 | GET | `/sign/{id}/{token}` | `public.documents.sign` |
 | POST | `/documents/{document}/sign` | `public.documents.submitSignatures` |
-| GET | `/documents/{id?}` | `public.documents.index` |
+| GET | `/documents/{id?}` | `public.documents.index` (stub: redirects home; use email signing link) |
 | GET | `/documents/{id}/page/{page}` | `public.documents.page` |
 | GET | `/documents/{id}/download-signed` | `public.documents.download.signed` |
 | GET | `/documents/{id}/download-signed-and-thankyou` | `public.documents.download_and_thankyou` |
@@ -349,24 +349,6 @@ Within `routes/web.php`:
 | POST | `/webhooks/sms/twilio/incoming` | `webhooks.sms.twilio.incoming` |
 | POST | `/webhooks/sms/cellcast/status` | `webhooks.sms.cellcast.status` |
 | POST | `/webhooks/sms/cellcast/incoming` | `webhooks.sms.cellcast.incoming` |
-
-#### Unauthenticated web routes (`documents.php`, `web` middleware only)
-
-These routes have **no `auth:admin`** guard. They rely on CSRF for POST requests or are intended for dev/testing:
-
-| Method | URI | Name |
-|--------|-----|------|
-| GET | `/signatures` | `signatures.index` |
-| GET | `/signatures/create` | `signatures.create` |
-| POST | `/signatures` | `signatures.store` |
-| GET | `/signatures/{id}` | `signatures.show` |
-| POST | `/signatures/{id}/send` | `signatures.send` |
-| GET | `/signatures/api/client-matters/{clientId}` | `signatures.client-matters` |
-| GET | `/doc-to-pdf` | `doc-to-pdf.form` |
-| POST | `/doc-to-pdf/convert` | `doc-to-pdf.convert` |
-| GET | `/test-signature` | `test.signature` |
-
-> Admin document CRUD (`/documents/create`, `/documents/{id}/edit`, etc.) **does** require `auth:admin` via an explicit middleware group inside `documents.php`.
 
 ---
 
@@ -618,10 +600,11 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | Scope | Middleware | Key routes |
 |-------|------------|------------|
 | Public signing | `web` only | `/sign/{id}/{token}`, `POST /documents/{document}/sign` |
-| Signature dashboard (file top) | `web` only | `/signatures`, `/signatures/create`, `/signatures/{id}` |
+| Signature dashboard | `auth:admin` | `/signatures`, `/signatures/create`, `/signatures/{id}` |
 | Admin document CRUD | `auth:admin` | `/documents/create`, `POST /documents`, `/documents/{id}/edit`, `PATCH /documents/{id}` |
 | Admin signing ops | `auth:admin` | `POST /documents/{document}/send-signing-link`, `GET /documents/{document}/sign` |
 | Admin signed PDF | `auth:admin` | `/documents/{id}/preview-signed`, `/documents/{id}/download-signed` |
+| Doc→PDF utilities | `auth:admin` | `/doc-to-pdf`, `/doc-to-pdf/convert` |
 
 ---
 

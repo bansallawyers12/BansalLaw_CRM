@@ -706,9 +706,6 @@ function calculateExistingTestScoreLevels() {
             return;
         }
         
-        const storedLevel = box.getAttribute('data-proficiency-level');
-        const storedPoints = box.getAttribute('data-proficiency-points');
-        
         const testType = box.getAttribute('data-test-type');
         const listening = box.getAttribute('data-listening');
         const reading = box.getAttribute('data-reading');
@@ -720,12 +717,7 @@ function calculateExistingTestScoreLevels() {
         const hasAllScores = testType && listening && reading && writing && speaking && overall;
         
         if (!hasAllScores) {
-            showIncompleteData(displayElement, storedLevel, storedPoints);
-            return;
-        }
-        
-        if (storedLevel && storedPoints !== null && storedPoints !== '') {
-            showStoredProficiency(displayElement, storedLevel, storedPoints);
+            showIncompleteData(displayElement);
             return;
         }
         
@@ -750,55 +742,13 @@ function calculateExistingTestScoreLevels() {
 }
 
 /**
- * Display stored proficiency level/points pulled from backend
- */
-function showStoredProficiency(displayElement, level, points) {
-    const numericPoints = parseInt(points, 10);
-    const color = getColorForLevel(level);
-    
-    displayElement.innerHTML = `
-        <i class="fa-solid fa-language"></i> ${level}
-        ${numericPoints > 0 ? ` <span style="font-size: 0.8em; opacity: 0.8;">(+${numericPoints} points)</span>` : ''}
-    `;
-    displayElement.style.backgroundColor = `${color}15`;
-    displayElement.style.color = color;
-    displayElement.style.border = `2px solid ${color}`;
-}
-
-/**
  * Display incomplete data warning
  */
-function showIncompleteData(displayElement, storedLevel = null, storedPoints = null) {
-    const hasStored = storedLevel && storedPoints !== null && storedPoints !== '';
-    const numericPoints = hasStored ? parseInt(storedPoints, 10) : 0;
-    const storedInfo = hasStored
-        ? `<div style="margin-top: 4px; font-size: 0.85em; color: #495057;">
-                Stored level: ${storedLevel}
-                ${numericPoints > 0 ? `(+${numericPoints} points)` : '(0 points)'}
-           </div>`
-        : '';
-    
+function showIncompleteData(displayElement) {
     displayElement.innerHTML = `
         <div><i class="fa-solid fa-triangle-exclamation"></i> Incomplete Data</div>
-        ${storedInfo}
     `;
     displayElement.style.backgroundColor = '#f8d7da';
     displayElement.style.color = '#721c24';
     displayElement.style.border = '1px solid #f5c6cb';
-}
-
-/**
- * Map English levels to consistent colors (matches backend usage)
- */
-function getColorForLevel(level) {
-    const map = {
-        'Superior English': '#28a745',
-        'Proficient English': '#007bff',
-        'Competent English': '#17a2b8',
-        'Vocational English': '#ffc107',
-        'Functional English': '#fd7e14',
-        'Below Functional English': '#dc3545'
-    };
-    
-    return map[level] || '#6c757d';
 }

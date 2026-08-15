@@ -24,8 +24,6 @@ That partial loads `public/css/fontawesome.min.css` (copied from `node_modules` 
 - `resources/views/layouts/crm_client_detail_dashboard.blade.php`
 - `resources/views/layouts/crm-login.blade.php`
 - `resources/views/exception.blade.php`
-- `resources/views/documents/index.blade.php`
-- `resources/views/crm/documents/index.blade.php`
 
 **Static HTML:** `public/colour5.html` links `/css/fontawesome.min.css` directly (same local file).
 

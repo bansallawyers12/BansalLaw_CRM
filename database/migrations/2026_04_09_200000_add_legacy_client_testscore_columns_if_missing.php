@@ -41,12 +41,6 @@ return new class extends Migration
             if (! Schema::hasColumn('client_testscore', 'overall_score')) {
                 $table->string('overall_score', 32)->nullable();
             }
-            if (! Schema::hasColumn('client_testscore', 'proficiency_level')) {
-                $table->string('proficiency_level', 191)->nullable();
-            }
-            if (! Schema::hasColumn('client_testscore', 'proficiency_points')) {
-                $table->integer('proficiency_points')->nullable();
-            }
             if (! Schema::hasColumn('client_testscore', 'test_date')) {
                 $table->date('test_date')->nullable()->index();
             }
@@ -76,7 +70,7 @@ return new class extends Migration
 
         $cols = array_values(array_filter([
             'client_id', 'admin_id', 'test_type', 'listening', 'reading', 'writing', 'speaking',
-            'proficiency_level', 'proficiency_points', 'test_date', 'relevant_test', 'test_reference_no',
+            'test_date', 'relevant_test', 'test_reference_no',
         ], fn ($c) => Schema::hasColumn('client_testscore', $c)));
 
         // Do not drop overall_score here: may have existed on stub before this migration.

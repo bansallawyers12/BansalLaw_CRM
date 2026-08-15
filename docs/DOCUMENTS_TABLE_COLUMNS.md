@@ -113,7 +113,7 @@ This document describes every column in the `documents` table, how it is used in
   - `SignatureService` – email template selection for `agreement`
   - `SignatureDashboardController`, `ESignatureController` – validation and display
   - `SignatureAnalyticsService` – grouping by `document_type`
-  - `esignature/index.blade.php`, `signatures/show.blade.php`, `audit_report.blade.php`
+  - `esignature/index.blade.php`, `signatures/show.blade.php`
 - **Status:** ✅ **Actively used**
 
 ---
@@ -133,7 +133,7 @@ This document describes every column in the `documents` table, how it is used in
   - `SignatureDashboardController` – overdue filter, validation
   - `SignatureAnalyticsService` – overdue analytics
   - `Document::getIsOverdueAttribute()`
-  - `ESignatureController`, `audit_report.blade.php`, `DocumentFactory`
+  - `ESignatureController`, `DocumentFactory`
 - **Status:** ✅ **Actively used**
 
 ---
@@ -143,7 +143,7 @@ This document describes every column in the `documents` table, how it is used in
 - **Usage:** Priority level for signature documents
 - **Used in:**
   - `SignatureDashboardController` – validation
-  - `ESignatureController`, `audit_report.blade.php`
+  - `ESignatureController`
   - Sortable in `Document` model
   - `DocumentFactory`
 - **Status:** ✅ **Actively used**

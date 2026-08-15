@@ -39,45 +39,12 @@ use App\Http\Controllers\CRM\DocToPdfController;
 // Admin routes group begins
 Route::middleware('auth:admin')->group(function () {
 
-/*---------- Admin Utilities ----------*/
-Route::get('/test-signature', function () {
-    return view('test-signature');
-})->name('test.signature');
-
 // DOC/DOCX to PDF Converter Routes
 Route::get('/doc-to-pdf', [DocToPdfController::class, 'showForm'])->name('doc-to-pdf.form');
 Route::post('/doc-to-pdf/convert', [DocToPdfController::class, 'convertLocal'])->name('doc-to-pdf.convert');
 Route::get('/doc-to-pdf/test', [DocToPdfController::class, 'testLocalConversion'])->name('doc-to-pdf.test');
 Route::get('/doc-to-pdf/test-python', [DocToPdfController::class, 'testPythonConversion'])->name('doc-to-pdf.test-python');
 Route::get('/doc-to-pdf/debug', [DocToPdfController::class, 'debugConfig'])->name('doc-to-pdf.debug');
-
-/*---------- Signature Dashboard Routes (Legacy top group) ----------*/
-Route::prefix('signatures')->group(function () {
-    Route::get('/create', [SignatureDashboardController::class, 'create'])->name('signatures.create');
-    Route::post('/', [SignatureDashboardController::class, 'store'])->name('signatures.store');
-    Route::post('/suggest-association', [SignatureDashboardController::class, 'suggestAssociation'])->name('signatures.suggest-association');
-    Route::post('/preview-email', [SignatureDashboardController::class, 'previewEmail'])->name('signatures.preview-email');
-    
-    // Bulk actions (Phase 6)
-    Route::post('/bulk-archive', [SignatureDashboardController::class, 'bulkArchive'])->name('signatures.bulk-archive');
-    Route::post('/bulk-void', [SignatureDashboardController::class, 'bulkVoid'])->name('signatures.bulk-void');
-    Route::post('/bulk-resend', [SignatureDashboardController::class, 'bulkResend'])->name('signatures.bulk-resend');
-    
-    Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
-    Route::get('/{id}/certificate', [SignatureDashboardController::class, 'downloadCertificate'])->name('signatures.certificate');
-    Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
-    Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
-    Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');
-    Route::get('/{id}/copy-link', [SignatureDashboardController::class, 'copyLink'])->name('signatures.copy-link');
-    
-    // Association management (Phase 3)
-    Route::post('/{id}/associate', [SignatureDashboardController::class, 'associate'])->name('signatures.associate');
-    Route::get('/api/client-matters/{clientId}', [SignatureDashboardController::class, 'getClientMatters'])->name('signatures.client-matters');
-    Route::post('/{id}/detach', [SignatureDashboardController::class, 'detach'])->name('signatures.detach');
-});
-
-/*---------- Client Matters API ----------*/
-Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getClientMatters'])->name('clients.matters');
 
 // Debug route for PDF page generation (protected by auth:admin)
 Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
@@ -262,15 +229,6 @@ Route::get('/documents/{id}/download-signed-and-thankyou', [AdminDocumentControl
 // Route::get('/documents/thankyou/{id?}', [AdminDocumentController::class, 'thankyou'])
 //     ->name('documents.thankyou');
 
-// Redirect old document index to Signature Dashboard (moved to end to avoid conflicts)
-Route::get('/documents/{id?}', function($id = null) {
-    if ($id) {
-        return redirect()->route('signatures.show', $id);
-    }
-    return redirect()->route('signatures.index');
-})->name('documents.index')
-    ->where('id', '[0-9]+');
-
 /*---------- Signature Dashboard Routes ----------*/
 Route::prefix('signatures')->group(function () {
     Route::get('/', [SignatureDashboardController::class, 'index'])->name('signatures.index');
@@ -278,20 +236,20 @@ Route::prefix('signatures')->group(function () {
     Route::post('/', [SignatureDashboardController::class, 'store'])->name('signatures.store');
     Route::post('/suggest-association', [SignatureDashboardController::class, 'suggestAssociation'])->name('signatures.suggest-association');
     Route::post('/preview-email', [SignatureDashboardController::class, 'previewEmail'])->name('signatures.preview-email');
-    
-    // Bulk actions (Phase 6)
+
+    // Bulk actions
     Route::post('/bulk-archive', [SignatureDashboardController::class, 'bulkArchive'])->name('signatures.bulk-archive');
     Route::post('/bulk-void', [SignatureDashboardController::class, 'bulkVoid'])->name('signatures.bulk-void');
     Route::post('/bulk-resend', [SignatureDashboardController::class, 'bulkResend'])->name('signatures.bulk-resend');
-    
+
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
     Route::get('/{id}/certificate', [SignatureDashboardController::class, 'downloadCertificate'])->name('signatures.certificate');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
     Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
     Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');
     Route::get('/{id}/copy-link', [SignatureDashboardController::class, 'copyLink'])->name('signatures.copy-link');
-    
-    // Association management (Phase 3)
+
+    // Association management
     Route::post('/{id}/associate', [SignatureDashboardController::class, 'associate'])->name('signatures.associate');
     Route::get('/api/client-matters/{clientId}', [SignatureDashboardController::class, 'getClientMatters'])->name('signatures.client-matters');
     Route::post('/{id}/detach', [SignatureDashboardController::class, 'detach'])->name('signatures.detach');
