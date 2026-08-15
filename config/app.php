@@ -61,7 +61,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Public firm contact (emails, PDFs, client portal)
+    | Public firm contact (emails, PDFs)
     |--------------------------------------------------------------------------
     |
     | Override in .env when the firm domain or inboxes change.

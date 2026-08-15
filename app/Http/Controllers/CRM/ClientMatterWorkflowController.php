@@ -26,11 +26,6 @@ class ClientMatterWorkflowController extends Controller
         return $this->hub()->loadMatterUpsert($request);
     }
 
-    public function getClientPortalDetail(Request $request)
-    {
-        return $this->hub()->getClientPortalDetail($request);
-    }
-
     /**
      * GET handlers for legacy stage mutation URLs: no state change.
      * Mutations are POST-only (CSRF) via updatestage / completestage / updatebackstage

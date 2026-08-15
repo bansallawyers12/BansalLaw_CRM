@@ -1,5 +1,5 @@
 {{-- ========================================
-    MATTER-RELATED MODALS (Client Portal / Workflow)
+    MATTER-RELATED MODALS (Workflow)
     This file contains matter modals for the client detail page
     ======================================== --}}
 
@@ -17,7 +17,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/client-portal/discontinue')}}" name="discontinue_matter" id="discontinue_matter" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/crm/matter/discontinue')}}" name="discontinue_matter" id="discontinue_matter" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="diapp_id" value="">
 					<div class="row">
@@ -303,7 +303,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/client-portal/revert')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/crm/matter/revert')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="revapp_id" value="">
 					<div class="row">

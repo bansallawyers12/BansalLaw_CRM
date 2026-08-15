@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 /**
- * Staff-only API authentication (Sanctum). Formerly part of ClientPortalController.
+ * Staff-only API authentication (Sanctum).
  */
 class StaffApiAuthController extends Controller
 {

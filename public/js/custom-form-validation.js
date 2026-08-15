@@ -443,7 +443,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 									$('#create_matternote').modal('hide');
 									$.ajax({
-										url: site_url+'/client-portal/logs',
+										url: site_url+'/crm/matter/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2083,7 +2083,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 
 									$.ajax({
-										url: site_url+'/client-portal/logs',
+										url: site_url+'/crm/matter/logs',
 										type:'GET',
 										data:{id: appliid},
 										success: function(responses){
@@ -2321,7 +2321,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/client-portal/logs',
+										url: site_url+'/crm/matter/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2367,7 +2367,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/client-portal/logs',
+										url: site_url+'/crm/matter/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){

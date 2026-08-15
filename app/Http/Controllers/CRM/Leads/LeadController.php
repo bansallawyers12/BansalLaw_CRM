@@ -1240,7 +1240,7 @@ class LeadController extends Controller
                 // Create new lead using DB query builder - only fields from simplified form
                 $adminData = [
                     // System fields (assignee applied via applyLeadAssigneeToAdminRow)
-                    'password' => Hash::make('LEAD_PLACEHOLDER'), // Placeholder password for leads (NOT NULL constraint, will be overwritten if client portal activated)
+                    'password' => Hash::make('LEAD_PLACEHOLDER'), // Placeholder password for leads (NOT NULL constraint)
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
                     'status' => LeadFollowUpNoteService::adminsStatusForLeadStatus($pipelineStatus),

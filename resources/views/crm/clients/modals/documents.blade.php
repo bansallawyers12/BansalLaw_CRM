@@ -1,4 +1,4 @@
-{{-- openfileuploadmodal REMOVED - workflow checklist upload flow dead (no workflow UI with upload triggers; Client Portal refactored) --}}
+{{-- openfileuploadmodal removed with unused workflow checklist upload flow --}}
 
 <!-- Add Personal Document Folder Modal -->
 <div class="modal fade addpersonaldoccatmodel custom_modal" id="addpersonaldoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addPersDocCatModalLabel" aria-hidden="true">

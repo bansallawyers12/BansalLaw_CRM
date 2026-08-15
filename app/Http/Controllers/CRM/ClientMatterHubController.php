@@ -54,30 +54,6 @@ class ClientMatterHubController extends Controller
 		]);
 	}
 
-	/**
-	 * Legacy AJAX endpoint that previously returned the Matter / client-portal tab HTML.
-	 * The tab was removed from the CRM UI; respond with a short notice and link to Workflow.
-	 */
-	public function getClientPortalDetail(Request $request){
-		$matterId = $request->id ?? $request->client_matter_id;
-		$clientMatter = ClientMatter::query()->find($matterId);
-		if (!$clientMatter) {
-			return response('<div class="p-3 text-danger">Matter not found.</div>', 404)
-				->header('Content-Type', 'text/html; charset=UTF-8');
-		}
-		$encodeId = base64_encode(convert_uuencode((string) $clientMatter->client_id));
-		$path = '/clients/detail/'.$encodeId;
-		if (! empty($clientMatter->client_unique_matter_no)) {
-			$path .= '/'.rawurlencode((string) $clientMatter->client_unique_matter_no);
-		}
-		$path .= '/workflow';
-		$workflowUrl = url($path);
-		$html = '<div class="p-3"><p class="mb-2 text-muted">This view is no longer used. Open the <strong>Workflow</strong> tab for this matter.</p>'
-			.'<a class="btn btn-sm btn-primary" href="'.e($workflowUrl).'">Go to Workflow</a></div>';
-
-		return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
-	}
-
 	public function completestage(Request $request){
 		$matterId = $request->id ?? $request->client_matter_id;
 		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
@@ -343,7 +319,7 @@ class ClientMatterHubController extends Controller
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
 				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
-				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				{
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 					if ($isAdvancingToDecisionReceived) {
 						$decisionOutcome = $request->input('decision_outcome');
@@ -509,7 +485,7 @@ class ClientMatterHubController extends Controller
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
 				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
-				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				{
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
 
 					$activityLog = new ActivitiesLog;
@@ -570,20 +546,16 @@ class ClientMatterHubController extends Controller
 	}
 
 	/**
-	 * Client detail tabs where matter discontinue/reopen should notify the client (DB notifications + FCM).
-	 * Includes legacy URL slug `client_portal` and the current Workflow tab (`workflow`).
+	 * Client detail tabs where matter discontinue/reopen should notify the client (in-app notifications).
+	 * Current Workflow tab and legacy application tab.
 	 */
 	private function shouldNotifyClientForMatterLifecycle(?string $currentTab): bool
 	{
 		$t = strtolower(trim((string) $currentTab));
 
-		return in_array($t, ['application', 'client_portal', 'workflow'], true);
+		return in_array($t, ['application', 'workflow'], true);
 	}
 
-	private function shouldOmitActivitiesLogForClientPortalWebContext(Request $request): bool
-	{
-		return false;
-	}
 
 	private function createMatterActionNotes(ClientMatter $clientMatter, string $description): void
 	{
@@ -656,7 +628,7 @@ class ClientMatterHubController extends Controller
 			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID:' . $matterId;
 
 			// Activity feed: workflow change from CRM (legacy hook always allows logging).
-			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+			{
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
 				$activityLog->created_by = Auth::user()->id;
@@ -769,7 +741,7 @@ class ClientMatterHubController extends Controller
 				}
 
 				// Activity feed: matter discontinued from CRM (legacy hook always allows logging).
-				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				{
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
 					$activityLog->created_by = Auth::user()->id;
@@ -783,7 +755,7 @@ class ClientMatterHubController extends Controller
 					$activityLog->save();
 				}
 
-				// Notify client when discontinue is from matter-related tabs (workflow, application, legacy client_portal slug)
+				// Notify client when discontinue is from matter-related tabs (workflow, application)
 				$currentTab = $request->input('current_tab', 'personaldetails');
 				if ($this->shouldNotifyClientForMatterLifecycle($currentTab)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
@@ -983,7 +955,7 @@ class ClientMatterHubController extends Controller
 				// applications table removed
 
 				// Activity feed: matter reopened from CRM (legacy hook always allows logging).
-				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				{
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
 					$activityLog->created_by = Auth::user()->id;
@@ -1094,7 +1066,7 @@ class ClientMatterHubController extends Controller
 			$clientMatter->delete();
 
 			// Activity feed: permanent matter delete from CRM (legacy hook always allows logging).
-			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+			{
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientId;
 				$activityLog->created_by = Auth::user()->id;
@@ -1338,7 +1310,7 @@ class ClientMatterHubController extends Controller
 
 	}
 
-	public function clientPortalSendmail(Request $request){
+	public function sendMatterMail(Request $request){
 		$requestData = $request->all();
 		$user_id = @Auth::user()->id;
 		$subject = $requestData['subject'];

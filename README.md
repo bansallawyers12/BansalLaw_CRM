@@ -286,8 +286,8 @@ Within `routes/web.php`:
 | `routes/web.php` | `/` | Login, dashboard, leads, assignee, trust accounting, broadcasts, front-desk check-in, audit logs |
 | `routes/clients.php` | `/clients`, `/crm/access`, `/legal-forms`, `/documents/*` (client uploads) | Client CRUD, invoices, receipts, email, cross-access, legal forms |
 | `routes/adminconsole.php` | `/adminconsole` | Matter types, workflows, staff, roles, offices, SMS admin, templates |
-| `routes/matter_workflow.php` | `/client-portal/*`, `/clients/matter/*`, `/updatestage` | Matter stage progression (staff AJAX — not a public portal) |
-| `routes/crm_matter_hub.php` | `/client-portal/*` | Matter logs, notes, ownership, document-move helpers |
+| `routes/matter_workflow.php` | `/crm/matter/*`, `/clients/matter/*`, `/updatestage` | Matter stage progression (staff AJAX) |
+| `routes/crm_matter_hub.php` | `/crm/matter/*` | Matter logs, notes, ownership, document-move helpers |
 | `routes/booking_admin.php` | `/booking/*` | Appointment calendar, CRUD, sync, export |
 | `routes/office_visits.php` | `/office-visits/*`, `/checkin` | Walk-in queue management |
 | `routes/documents.php` | `/sign/*`, `/signatures/*`, `/documents/*` | E-signature workflow, public signing, admin document CRUD |
@@ -427,12 +427,9 @@ Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/cl
 
 #### Matter workflow
 
-> **Naming note:** `/client-portal/*` paths are **staff-only AJAX endpoints** loaded inside `auth:admin`. They are not a public client-facing portal.
-
 | Method | URI | Name |
 |--------|-----|------|
-| GET | `/client-portal/detail` | — |
-| POST | `/client-portal/load-matter-upsert` | — |
+| POST | `/crm/matter/load-matter-upsert` | — |
 | GET | `/updatestage` | — |
 | GET | `/completestage` | — |
 | GET | `/updatebackstage` | — |
@@ -443,9 +440,9 @@ Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/cl
 | POST | `/clients/matter/discontinue` | `clients.matter.discontinue` |
 | POST | `/clients/matter/reopen` | `clients.matter.reopen` |
 | POST | `/clients/matter/delete` | `clients.matter.delete` |
-| GET | `/client-portal/logs` | — |
-| GET | `/client-portal/notes` | — |
-| POST | `/client-portal/ownership` | — |
+| GET | `/crm/matter/logs` | — |
+| GET | `/crm/matter/notes` | — |
+| POST | `/crm/matter/ownership` | — |
 | GET | `/upload-checklists` | `upload_checklists.index` |
 
 #### Legal forms

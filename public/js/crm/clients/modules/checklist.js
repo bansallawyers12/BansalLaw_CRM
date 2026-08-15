@@ -7,7 +7,7 @@
     'use strict';
     if (!$) return;
 
-    // uploadFormData, file_explorer, .openfileupload, .opendocnote, #ddArea handlers REMOVED - workflow checklist upload flow dead
+    // Legacy workflow checklist upload handlers removed
 
     $(document).ready(function() {
         // ---- Application checklist: open modal ----

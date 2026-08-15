@@ -954,8 +954,6 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-{{-- confirmpublishdocModal REMOVED - workflow checklist unused --}}
-
 <div class="modal fade custom_modal" id="matter_ownership" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -966,7 +964,7 @@ use App\Http\Controllers\Controller;
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{url('/client-portal/ownership')}}" name="xmatter_ownership" id="xmatter_ownership" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{url('/crm/matter/ownership')}}" name="xmatter_ownership" id="xmatter_ownership" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="mapp_id" id="mapp_id" value="">
 					<div class="row">
@@ -1496,7 +1494,6 @@ $(document).ready(function() {
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
             followupStore: '{{ URL::to("/clients/action/store") }}',
-            // publishDoc, deleteClientPortalDoc REMOVED - workflow checklist unused
             deleteAction: '{{ URL::to("/delete_action") }}',
             pinNote: '{{ URL::to("/pinnote") }}',
             pinActivityLog: '{{ URL::to("/pinactivitylog") }}',

@@ -405,8 +405,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientMatterHubController.php": {
-    "mtime": 1786772311.6418629,
-    "ast_hash": "b4be5deb029d477cfab8ab538688f3ff",
+    "mtime": 1786772560.6874518,
+    "ast_hash": "4d967edd772b83919a577baf913e2264",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientMatterWorkflowController.php": {
@@ -7210,8 +7210,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786771902.9079962,
-    "ast_hash": "413a96808906fb63eb2d6bba6324c947",
+    "mtime": 1786772578.973094,
+    "ast_hash": "8cae7c63f18d3c2643de3f87380791ed",
     "semantic_hash": ""
   },
   "app/Models/model_list.txt": {

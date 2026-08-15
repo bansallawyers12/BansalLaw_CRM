@@ -7,8 +7,7 @@ use App\Http\Controllers\CRM\ClientMatterWorkflowController;
 | Matter workflow (stages, deadlines, discontinue/reopen/delete).
 */
 
-Route::get('/client-portal/detail', [ClientMatterWorkflowController::class, 'getClientPortalDetail']);
-Route::post('/client-portal/load-matter-upsert', [ClientMatterWorkflowController::class, 'loadMatterUpsert']);
+Route::post('/crm/matter/load-matter-upsert', [ClientMatterWorkflowController::class, 'loadMatterUpsert']);
 
 // Legacy stage mutation URLs: POST only (CSRF). GET is rejected without mutating state.
 Route::get('/updatestage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);

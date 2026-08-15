@@ -447,17 +447,6 @@ class BroadcastNotificationService
 
         return $sender->email ?? 'System';
     }
-
-    /**
-     * @return \Illuminate\Support\Collection<int,never>
-     * @deprecated No longer used - clients are excluded from broadcasts. This method always returns an empty collection.
-     */
-    protected function portalUsers(): Collection
-    {
-        // This method is deprecated - clients (User model) should not receive broadcasts
-        // Only staff (type != 'client'/'lead') should receive broadcasts
-        return collect();
-    }
 }
 
 

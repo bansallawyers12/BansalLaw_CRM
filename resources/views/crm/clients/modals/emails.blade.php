@@ -62,7 +62,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" name="appkicationsendmail" id="appkicationsendmail" action="{{URL::to('/client-portal/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" name="appkicationsendmail" id="appkicationsendmail" action="{{URL::to('/crm/matter/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" id="type" name="type" value="application">

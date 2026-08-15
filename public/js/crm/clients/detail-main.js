@@ -5870,11 +5870,6 @@ success: function(response) {
             var deleteUrl;
             if(delhref == 'deletenote'){
                 deleteUrl = window.ClientDetailConfig.urls.deleteNote;
-            } else if(delhref == 'deleteclientportaldocs'){
-                // Workflow checklist unused - route removed; no-op
-                $('.popuploader').hide();
-                $('#confirmModal').modal('hide');
-                return;
             } else {
                 deleteUrl = window.ClientDetailConfig.urls.admin + '/documents/delete';
             }
@@ -5939,9 +5934,6 @@ success: function(response) {
                             });
                             */
                             console.warn('deleteappointment route has been removed - appointment system deprecated');
-
-                        } else if(delhref == 'deleteclientportaldocs'){
-                            // REMOVED - workflow checklist unused
                         } else if(delhref == 'deletenote'){
 
                             getallnotes();

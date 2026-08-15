@@ -4,23 +4,23 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\ClientMatterHubController;
 
 /*
-| CRM matter utilities: logs, notes, mail, ownership, documents (non-workflow surface).
+| CRM matter utilities: logs, notes, mail, ownership, documents.
 */
 
-Route::get('/client-portal/logs', [ClientMatterHubController::class, 'getMatterLogs']);
-Route::get('/client-portal/list', [ClientMatterHubController::class, 'getapplications']);
+Route::get('/crm/matter/logs', [ClientMatterHubController::class, 'getMatterLogs']);
+Route::get('/crm/matter/list', [ClientMatterHubController::class, 'getapplications']);
 
-Route::post('/client-portal/discontinue', [ClientMatterHubController::class, 'discontinueMatter']);
-Route::post('/client-portal/revert', [ClientMatterHubController::class, 'revertMatter']);
+Route::post('/crm/matter/discontinue', [ClientMatterHubController::class, 'discontinueMatter']);
+Route::post('/crm/matter/revert', [ClientMatterHubController::class, 'revertMatter']);
 
 Route::post('/create-app-note', [ClientMatterHubController::class, 'addNote']);
-Route::get('/client-portal/notes', [ClientMatterHubController::class, 'getMatterNotes']);
-Route::post('/client-portal/sendmail', [ClientMatterHubController::class, 'clientPortalSendmail']);
+Route::get('/crm/matter/notes', [ClientMatterHubController::class, 'getMatterNotes']);
+Route::post('/crm/matter/sendmail', [ClientMatterHubController::class, 'sendMatterMail']);
 
-Route::get('/client-portal/updateintake', [ClientMatterHubController::class, 'updateintake']);
-Route::get('/client-portal/updatedates', [ClientMatterHubController::class, 'updatedates']);
-Route::get('/client-portal/updateexpectwin', [ClientMatterHubController::class, 'updateexpectwin']);
+Route::get('/crm/matter/updateintake', [ClientMatterHubController::class, 'updateintake']);
+Route::get('/crm/matter/updatedates', [ClientMatterHubController::class, 'updatedates']);
+Route::get('/crm/matter/updateexpectwin', [ClientMatterHubController::class, 'updateexpectwin']);
 
-Route::post('/client-portal/ownership', [ClientMatterHubController::class, 'application_ownership']);
+Route::post('/crm/matter/ownership', [ClientMatterHubController::class, 'application_ownership']);
 
-Route::get('/client-portal/document-categories-for-move', [ClientMatterHubController::class, 'getDocumentCategoriesForMove']);
+Route::get('/crm/matter/document-categories-for-move', [ClientMatterHubController::class, 'getDocumentCategoriesForMove']);
