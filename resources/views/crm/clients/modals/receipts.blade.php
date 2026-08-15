@@ -4,10 +4,7 @@
     Total: 6 large modals for comprehensive financial management
     ======================================== --}}
 @php
-    $__agentDetailsTableOk = \Illuminate\Support\Facades\Schema::hasTable('agent_details');
-    $__receiptModalAgents = $__agentDetailsTableOk
-        ? \App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->orderBy('id')->get()
-        : collect();
+    $__receiptModalSolicitors = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
     $__trustWithdrawalAuthorityTypes = collect();
     if (\Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types')) {
         $__trustWithdrawalAuthorityTypes = \Illuminate\Support\Facades\DB::table('trust_withdrawal_authority_types')
@@ -834,11 +831,11 @@
 
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
-                                <label for="agent_id">Agent <span class="span_req">*</span></label>
+                                <label for="sel_client_agent_id">Solicitor <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_client_agent_id">
-                                    <option value="">Select Agent</option>
-                                    @foreach($__receiptModalAgents as $aplist)
-                                        <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
+                                    <option value="">Select solicitor</option>
+                                    @foreach($__receiptModalSolicitors as $aplist)
+                                        <option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -965,11 +962,11 @@
 
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
-                                <label for="agent_id">Agent <span class="span_req">*</span></label>
+                                <label for="sel_invoice_agent_id">Solicitor <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
-                                    <option value="">Select Agent</option>
-                                    @foreach($__receiptModalAgents as $aplist)
-                                        <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
+                                    <option value="">Select solicitor</option>
+                                    @foreach($__receiptModalSolicitors as $aplist)
+                                        <option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -1102,11 +1099,11 @@
 
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
-                                <label for="agent_id">Agent <span class="span_req">*</span></label>
+                                <label for="sel_office_agent_id">Solicitor <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_office_agent_id">
-                                    <option value="">Select Agent</option>
-                                    @foreach($__receiptModalAgents as $aplist)
-                                        <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
+                                    <option value="">Select solicitor</option>
+                                    @foreach($__receiptModalSolicitors as $aplist)
+                                        <option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -1254,11 +1251,11 @@
 
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
-                                <label for="agent_id">Agent <span class="span_req">*</span></label>
+                                <label for="sel_journal_agent_id">Solicitor <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_journal_agent_id">
-                                    <option value="">Select Agent</option>
-                                    @foreach($__receiptModalAgents as $aplist)
-                                        <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
+                                    <option value="">Select solicitor</option>
+                                    @foreach($__receiptModalSolicitors as $aplist)
+                                        <option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
                                     @endforeach
                                 </select>
                             </div>

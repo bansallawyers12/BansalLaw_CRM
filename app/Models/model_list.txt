@@ -3,7 +3,6 @@ AccountClientReceipt.php
 ActivitiesLog.php
 Admin.php
 AdminMeta.php
-AgentDetails.php
 Attachment.php
 Branch.php
 CheckinHistory.php

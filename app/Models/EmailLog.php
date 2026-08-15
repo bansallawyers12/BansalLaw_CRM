@@ -338,7 +338,7 @@ class EmailLog extends Authenticatable
         foreach ($parts as $idStr) {
             $idInt = (int) $idStr;
             if ($isAgent) {
-                $agent = AgentDetails::find($idInt);
+                $agent = Staff::find($idInt);
                 $em = $agent ? ($agent->email ?: $agent->business_email) : null;
                 if ($em) {
                     $emails[] = $em;

@@ -40,15 +40,9 @@
             : DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 
         $workflowCurrentStageName = null;
-        $workflowIsVerificationStage = false;
-        $workflowCanVerifyAndProceed = false;
         if ($workflowSelectedMatter && $workflowCurrentStageId && $workflowAllStages->count() > 0) {
             $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
             $workflowCurrentStageName = $currentStageRow ? $currentStageRow->name : null;
-            $verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
-            $workflowIsVerificationStage = $workflowCurrentStageName && in_array(strtolower(trim($workflowCurrentStageName)), $verificationStageNames);
-            $currentUserRole = (int) (Auth::guard('admin')->user()->role ?? 0);
-            $workflowCanVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Legal Practitioner (16)
         }
         ?>
 
@@ -91,10 +85,6 @@
                 $workflowIsLastStage = $workflowNextStage === null;
                 $workflowNextBtnDisabled = $workflowIsLastStage;
                 $workflowNextBtnTitle = 'Proceed to Next Stage';
-                if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
-                    $workflowNextBtnDisabled = true;
-                    $workflowNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
-                }
                 $workflowNextBtnLabel = $workflowNextStageName ? ('Proceed to ' . $workflowNextStageName) : 'Proceed to Next Stage';
 
                 if (!empty($isClosedMatterView)) {
@@ -317,28 +307,24 @@
             nextBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
                 var nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
-                var isVerificationStage = this.getAttribute('data-is-verification-stage') === '1';
-                var canVerifyAndProceed = this.getAttribute('data-can-verify-and-proceed') === '1';
                 if (!matterId) { alert('Error: Matter ID not found'); return; }
-
-                // If at Verification stage (Payment, Service Agreement, Forms), Legal Practitioner must tick and add optional note
-                if (isVerificationStage && canVerifyAndProceed) {
-                    document.getElementById('verification-payment-forms-matter-id').value = matterId;
-                    document.getElementById('verification-confirm-checkbox').checked = false;
-                    document.getElementById('verification-note').value = '';
-                    var errEl = document.querySelector('.verification-confirm-error strong');
-                    if (errEl) errEl.textContent = '';
-                    $('#verification-payment-forms-modal').modal('show');
-                    return;
-                }
 
                 // If next stage is "Decision Received", show outcome modal first
                 if (nextStageName && nextStageName.toLowerCase() === 'decision received') {
-                    document.getElementById('decision-received-matter-id').value = matterId;
-                    document.getElementById('decision-outcome').value = '';
-                    document.getElementById('decision-note').value = '';
-                    document.querySelector('.decision-outcome-error strong').textContent = '';
-                    document.querySelector('.decision-note-error strong').textContent = '';
+                    var matterIdEl = document.getElementById('decision-received-matter-id');
+                    var outcomeEl = document.getElementById('decision-outcome');
+                    var noteEl = document.getElementById('decision-note');
+                    var outcomeErrEl = document.querySelector('.decision-outcome-error strong');
+                    var noteErrEl = document.querySelector('.decision-note-error strong');
+                    if (!matterIdEl || !outcomeEl || !noteEl) {
+                        alert('Decision Received form is not available on this page.');
+                        return;
+                    }
+                    matterIdEl.value = matterId;
+                    outcomeEl.value = '';
+                    noteEl.value = '';
+                    if (outcomeErrEl) outcomeErrEl.textContent = '';
+                    if (noteErrEl) noteErrEl.textContent = '';
                     $('#decision-received-modal').modal('show');
                     return;
                 }
@@ -349,8 +335,8 @@
             });
         }
 
-        // Shared: Proceed to next stage (optional: decision_outcome/decision_note for Decision Received; verification_confirm/verification_note for Verification stage)
-        function doProceedToNextStage(matterId, decisionOutcome, decisionNote, btnEl, verificationConfirm, verificationNote) {
+        // Shared: Proceed to next stage (optional: decision_outcome/decision_note for Decision Received)
+        function doProceedToNextStage(matterId, decisionOutcome, decisionNote, btnEl) {
             var btn = btnEl || document.getElementById('workflow-tab-proceed-to-next-stage');
             var orig = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; }
@@ -358,8 +344,6 @@
             var payload = { matter_id: matterId };
             if (decisionOutcome) payload.decision_outcome = decisionOutcome;
             if (decisionNote) payload.decision_note = decisionNote;
-            if (verificationConfirm !== undefined) payload.verification_confirm = verificationConfirm;
-            if (verificationNote !== undefined) payload.verification_note = verificationNote;
 
             fetch('{{ route("clients.matter.update-next-stage") }}', {
                 method: 'POST',
@@ -383,9 +367,32 @@
             });
         }
 
-        // Verification: Payment, Service Agreement, Forms modal — submit handlers live in this tab / shared CRM scripts.
+        var decisionSubmit = document.getElementById('decision-received-submit');
+        if (decisionSubmit) {
+            decisionSubmit.addEventListener('click', function() {
+                var matterId = document.getElementById('decision-received-matter-id')?.value;
+                var outcome = (document.getElementById('decision-outcome')?.value || '').trim();
+                var note = (document.getElementById('decision-note')?.value || '').trim();
+                var outcomeErr = document.querySelector('.decision-outcome-error strong');
+                var noteErr = document.querySelector('.decision-note-error strong');
+                if (outcomeErr) outcomeErr.textContent = '';
+                if (noteErr) noteErr.textContent = '';
 
-        // Decision Received modal: submit handled by delegated handlers on the client detail page.
+                var valid = true;
+                if (!outcome) {
+                    if (outcomeErr) outcomeErr.textContent = 'Please select an outcome.';
+                    valid = false;
+                }
+                if (!note) {
+                    if (noteErr) noteErr.textContent = 'Please enter a note.';
+                    valid = false;
+                }
+                if (!valid || !matterId) return;
+
+                $('#decision-received-modal').modal('hide');
+                doProceedToNextStage(matterId, outcome, note, this);
+            });
+        }
 
         // Workflow tab: Back to Previous Stage
         var prevBtn = document.getElementById('workflow-tab-back-to-previous-stage');

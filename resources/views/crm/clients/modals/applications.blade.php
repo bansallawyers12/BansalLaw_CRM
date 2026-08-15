@@ -56,50 +56,6 @@
 	</div>
 </div>
 
-{{-- 2a-1. Verification: Payment, Service Agreement, Forms - Legal Practitioner must tick before proceeding --}}
-<div class="modal fade custom_modal" id="verification-payment-forms-modal" tabindex="-1" role="dialog" aria-labelledby="verificationPaymentFormsModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="verificationPaymentFormsModalLabel">Verification: Payment, Service Agreement, Forms</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<p class="mb-3" style="color: #374151;">As a Legal Practitioner, please confirm that you have verified the Payment, Service Agreement, and Forms before proceeding.</p>
-				<form id="verification-payment-forms-form" name="verification-payment-forms-form" autocomplete="off">
-					@csrf
-					<input type="hidden" name="matter_id" id="verification-payment-forms-matter-id" value="">
-					<div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<div class="form-check">
-									<input type="checkbox" class="form-check-input" id="verification-confirm-checkbox" name="verification_confirm" required>
-									<label class="form-check-label" for="verification-confirm-checkbox">I have verified Payment, Service Agreement, and Forms for this matter <span class="span_req">*</span></label>
-								</div>
-								<span class="custom-error verification-confirm-error" role="alert"><strong></strong></span>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label for="verification-note">Optional note</label>
-								<textarea class="form-control" id="verification-note" name="verification_note" rows="2" placeholder="Add any optional notes..."></textarea>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button type="button" class="btn btn-primary" id="verification-payment-forms-submit">
-								<i class="fa-solid fa-check"></i> Verify and Proceed to Next Stage
-							</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
-
 {{-- 2a. Decision Received Modal (Granted/Refused/Withdrawn + note) --}}
 <div class="modal fade custom_modal" id="decision-received-modal" tabindex="-1" role="dialog" aria-labelledby="decisionReceivedModalLabel" aria-hidden="true">
 	<div class="modal-dialog">

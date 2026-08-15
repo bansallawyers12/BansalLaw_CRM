@@ -1247,7 +1247,7 @@ public function getChapters(Request $request)
 			}
 
 			if ($type === 'agent') {
-				$row = \App\Models\AgentDetails::where('id', $value)->first();
+				$row = \App\Models\Staff::where('id', $value)->first();
 				$address = $row ? ($row->email ?: $row->business_email) : null;
 			} else {
 				$row = \App\Models\Admin::where('id', $value)->first();
@@ -1387,7 +1387,7 @@ public function getChapters(Request $request)
 				continue;
 			}
 			if (($requestData['type'] ?? '') === 'agent') {
-				$r = \App\Models\AgentDetails::where('id', $recipientId)->first();
+				$r = \App\Models\Staff::where('id', $recipientId)->first();
 				if ($r) {
 					$em = $r->email ?: $r->business_email;
 					if ($em) {
@@ -1570,7 +1570,7 @@ public function getChapters(Request $request)
 				$client->email = $l;
 			} else {
 				if(@$requestData['type'] == 'agent'){
-					$client = \App\Models\AgentDetails::Where('id', $l)->first();
+					$client = \App\Models\Staff::Where('id', $l)->first();
 				}else{
 					$client = \App\Models\Admin::Where('id', $l)->first();
 				}

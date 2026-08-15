@@ -9,7 +9,8 @@ return new class extends Migration
     /**
      * Run the migrations.
      * Drops the agents table - external agents feature was never fully implemented.
-     * Super Agent / Sub Agent functionality uses agent_details table instead.
+     * Super Agent / Sub Agent functionality was intended to use agent_details;
+     * that table has since been removed in favour of staff solicitors.
      */
     public function up(): void
     {

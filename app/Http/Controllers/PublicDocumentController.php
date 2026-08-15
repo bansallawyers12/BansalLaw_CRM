@@ -803,39 +803,27 @@ class PublicDocumentController extends Controller
                         if ($clientMatter && $clientMatter->workflow_stage_id) {
                             $currentStage = WorkflowStage::find($clientMatter->workflow_stage_id);
                             if ($currentStage) {
-                                $currentStageName = strtolower(trim($currentStage->name ?? ''));
-                                $verificationStages = ['payment verified', 'verification: payment, service agreement, forms'];
-                                $isAtVerificationStage = in_array($currentStageName, $verificationStages);
+                                $currentOrder = $currentStage->sort_order ?? $currentStage->id;
+                                $stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder]);
+                                $workflowId = $clientMatter->workflow_id ?? $currentStage->workflow_id;
+                                if ($workflowId) {
+                                    $stageQuery->where('workflow_id', $workflowId);
+                                }
+                                $nextStage = $stageQuery->orderByRaw('COALESCE(sort_order, id) ASC')->first();
 
-                                // Do NOT auto-advance from Verification stage - Legal Practitioner must verify manually
-                                if ($isAtVerificationStage) {
-                                    Log::info('Skipping workflow advancement - at Verification stage (requires Legal Practitioner)', [
+                                // Only auto-advance if next stage is NOT "Decision Received" (requires outcome/note)
+                                if ($nextStage && strtolower(trim($nextStage->name ?? '')) !== 'decision received') {
+                                    $clientMatter->workflow_stage_id = $nextStage->id;
+                                    $clientMatter->save();
+
+                                    // applications table removed - workflow tracked via client_matters
+
+                                    Log::info('Workflow advanced on document sign', [
                                         'document_id' => $document->id,
-                                        'current_stage' => $currentStage->name,
+                                        'client_matter_id' => $document->client_matter_id,
+                                        'from_stage' => $currentStage->name,
+                                        'to_stage' => $nextStage->name,
                                     ]);
-                                } else {
-                                    $currentOrder = $currentStage->sort_order ?? $currentStage->id;
-                                    $stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder]);
-                                    $workflowId = $clientMatter->workflow_id ?? $currentStage->workflow_id;
-                                    if ($workflowId) {
-                                        $stageQuery->where('workflow_id', $workflowId);
-                                    }
-                                    $nextStage = $stageQuery->orderByRaw('COALESCE(sort_order, id) ASC')->first();
-
-                                    // Only auto-advance if next stage is NOT "Decision Received" (requires outcome/note)
-                                    if ($nextStage && strtolower(trim($nextStage->name ?? '')) !== 'decision received') {
-                                        $clientMatter->workflow_stage_id = $nextStage->id;
-                                        $clientMatter->save();
-
-                                        // applications table removed - workflow tracked via client_matters
-
-                                        Log::info('Workflow advanced on document sign', [
-                                            'document_id' => $document->id,
-                                            'client_matter_id' => $document->client_matter_id,
-                                            'from_stage' => $currentStage->name,
-                                            'to_stage' => $nextStage->name,
-                                        ]);
-                                    }
                                 }
                             }
                         }
