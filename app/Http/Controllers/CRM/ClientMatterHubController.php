@@ -5,21 +5,14 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
-use App\Models\Admin;
 use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
-use App\Models\EmailLog;
 use App\Models\WorkflowStage;
 use App\Services\MatterActionNoteService;
-use App\Services\FCMService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\Staff;
 
@@ -790,7 +783,7 @@ class ClientMatterHubController extends Controller
 					$activityLog->save();
 				}
 
-				// Notify client and send push when discontinue is from matter-related tabs (workflow, application, legacy client_portal slug)
+				// Notify client when discontinue is from matter-related tabs (workflow, application, legacy client_portal slug)
 				$currentTab = $request->input('current_tab', 'personaldetails');
 				if ($this->shouldNotifyClientForMatterLifecycle($currentTab)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
@@ -810,26 +803,6 @@ class ClientMatterHubController extends Controller
 						'receiver_status' => 0,
 						'seen' => 0
 					]);
-
-					try {
-						$fcmService = new FCMService();
-						$notificationTitle = $isComplete ? 'Matter Completed' : 'Matter Discontinued';
-						$notificationBody = $isComplete
-							? 'Your matter ' . $matterNo . ' has been completed.'
-							: 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . $reason;
-						$notificationData = [
-							'type' => $isComplete ? 'matter_completed' : 'matter_discontinued',
-							'client_matter_id' => (string) $matterId,
-							'message' => $notificationMessage,
-						];
-						$fcmService->sendToUser($clientMatter->client_id, $notificationTitle, $notificationBody, $notificationData);
-					} catch (\Exception $e) {
-						Log::warning('Failed to send push notification for matter discontinued', [
-							'client_id' => $clientMatter->client_id,
-							'matter_id' => $matterId,
-							'error' => $e->getMessage()
-						]);
-					}
 				}
 
 				// Build redirect URL: go to another active matter, or revert to lead view (no matter)
@@ -1024,7 +997,7 @@ class ClientMatterHubController extends Controller
 					$activityLog->save();
 				}
 
-				// Notify client and send push when reopen is from matter-related tabs or matter list
+				// Notify client when reopen is from matter-related tabs or matter list
 				$currentTab = $request->input('current_tab', '');
 				$source = $request->input('source', '');
 				$shouldNotify = false;
@@ -1052,24 +1025,6 @@ class ClientMatterHubController extends Controller
 						'receiver_status' => 0,
 						'seen' => 0
 					]);
-
-					try {
-						$fcmService = new FCMService();
-						$notificationTitle = 'Matter Reopened';
-						$notificationBody = $notificationMessage;
-						$notificationData = [
-							'type' => 'matter_reopened',
-							'client_matter_id' => (string) $matterId,
-							'message' => $notificationMessage,
-						];
-						$fcmService->sendToUser($clientMatter->client_id, $notificationTitle, $notificationBody, $notificationData);
-					} catch (\Exception $e) {
-						Log::warning('Failed to send push notification for matter reopened', [
-							'client_id' => $clientMatter->client_id,
-							'matter_id' => $matterId,
-							'error' => $e->getMessage()
-						]);
-					}
 				}
 
 				return response()->json([

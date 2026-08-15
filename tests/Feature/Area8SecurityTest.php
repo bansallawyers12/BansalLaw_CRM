@@ -397,55 +397,6 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function device_token_reassignment_removes_token_from_previous_user(): void
-    {
-        $user1 = new \App\Models\Admin();
-        $user1->id = 910;
-        $user1->email = 'user910@bansallawyers.com.au';
-        $user1->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $user1->role = 7;
-        $user1->status = 1;
-        $user1->save();
-
-        $user2 = new \App\Models\Admin();
-        $user2->id = 911;
-        $user2->email = 'user911@bansallawyers.com.au';
-        $user2->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $user2->role = 7;
-        $user2->status = 1;
-        $user2->save();
-
-        $sharedToken = 'fcm_shared_device_token_99999';
-        $controller = new \App\Http\Controllers\API\StaffApiAuthController();
-        $reflection = new \ReflectionClass($controller);
-        $method = $reflection->getMethod('handleDeviceToken');
-        $method->setAccessible(true);
-
-        // 1. User 1 registers shared device token
-        $method->invoke($controller, 910, $sharedToken, 'iPhone 15');
-
-        $this->assertDatabaseHas('device_tokens', [
-            'user_id' => 910,
-            'device_token' => $sharedToken,
-            'is_active' => true,
-        ]);
-
-        // 2. User 2 registers on the same physical device (shared token reassigned)
-        $method->invoke($controller, 911, $sharedToken, 'iPhone 15');
-
-        // Verify token is cleanly reassigned to User 2 and removed for User 1
-        $this->assertDatabaseHas('device_tokens', [
-            'user_id' => 911,
-            'device_token' => $sharedToken,
-            'is_active' => true,
-        ]);
-        $this->assertDatabaseMissing('device_tokens', [
-            'user_id' => 910,
-            'device_token' => $sharedToken,
-        ]);
-    }
-
-    #[Test]
     public function staff_api_login_cleans_up_sanctum_token_on_refresh_token_failure(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(

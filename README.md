@@ -287,7 +287,7 @@ Within `routes/web.php`:
 | `routes/clients.php` | `/clients`, `/crm/access`, `/legal-forms`, `/documents/*` (client uploads) | Client CRUD, invoices, receipts, email, cross-access, legal forms |
 | `routes/adminconsole.php` | `/adminconsole` | Matter types, workflows, staff, roles, offices, SMS admin, templates |
 | `routes/matter_workflow.php` | `/client-portal/*`, `/clients/matter/*`, `/updatestage` | Matter stage progression (staff AJAX — not a public portal) |
-| `routes/crm_matter_hub.php` | `/client-portal/*`, `/crm/*`, `/add-checklists` | Matter logs, notes, ownership, checklist helpers |
+| `routes/crm_matter_hub.php` | `/client-portal/*` | Matter logs, notes, ownership, document-move helpers |
 | `routes/booking_admin.php` | `/booking/*` | Appointment calendar, CRUD, sync, export |
 | `routes/office_visits.php` | `/office-visits/*`, `/checkin` | Walk-in queue management |
 | `routes/documents.php` | `/sign/*`, `/signatures/*`, `/documents/*` | E-signature workflow, public signing, admin document CRUD |
@@ -446,7 +446,6 @@ Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/cl
 | GET | `/client-portal/logs` | — |
 | GET | `/client-portal/notes` | — |
 | POST | `/client-portal/ownership` | — |
-| POST | `/add-checklists` | `crm.matter.addChecklist` |
 | GET | `/upload-checklists` | `upload_checklists.index` |
 
 #### Legal forms
@@ -584,9 +583,6 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 
 | Method | URI | Name |
 |--------|-----|------|
-| GET | `/api/crm/matter-checklist-documents` | `clients.getChecklistDocuments` |
-| POST | `/api/crm/matter-checklist-delete-document` | `clients.deleteChecklistDocument` |
-| POST | `/api/crm/matter-checklist-update-document-status` | `clients.updateChecklistDocumentStatus` |
 | GET | `/api/search-contact-person` | `api.search.contact.person` |
 | GET | `/api/staff-login-analytics/daily` | `api.staff-login-analytics.daily` |
 | GET | `/api/staff-login-analytics/weekly` | `api.staff-login-analytics.weekly` |
@@ -718,9 +714,6 @@ These URLs start with `/api/` but are registered in `routes/clients.php` and `ro
 
 | Method | URI | Name |
 |--------|-----|------|
-| GET | `/api/crm/matter-checklist-documents` | `clients.getChecklistDocuments` |
-| POST | `/api/crm/matter-checklist-delete-document` | `clients.deleteChecklistDocument` |
-| POST | `/api/crm/matter-checklist-update-document-status` | `clients.updateChecklistDocumentStatus` |
 | GET | `/api/search-contact-person` | `api.search.contact.person` |
 | GET | `/api/staff-login-analytics/daily` | `api.staff-login-analytics.daily` |
 | GET | `/api/staff-login-analytics/weekly` | `api.staff-login-analytics.weekly` |

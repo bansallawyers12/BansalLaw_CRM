@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeviceToken;
 use App\Models\Staff;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,7 +28,6 @@ class StaffApiAuthController extends Controller
             'email' => 'required|email|max:255',
             'password' => 'required|string',
             'device_name' => 'nullable|string|max:255',
-            'device_token' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -69,13 +67,9 @@ class StaffApiAuthController extends Controller
                 'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
             ];
 
-            return DB::transaction(function () use ($staff, $deviceName, $request, $refreshTokenValue, $insertData, &$tokenObj) {
+            return DB::transaction(function () use ($staff, $deviceName, $refreshTokenValue, $insertData, &$tokenObj) {
                 $tokenObj = $staff->createToken($deviceName);
                 $token = $tokenObj->plainTextToken;
-
-                if ($request->device_token) {
-                    $this->handleDeviceToken($staff->id, $request->device_token, $deviceName);
-                }
 
                 DB::table('refresh_tokens')->insertGetId($insertData);
 
@@ -175,8 +169,6 @@ class StaffApiAuthController extends Controller
                 ->where('user_id', $user->id)
                 ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
-            DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
-
             $log = new \App\Models\StaffLoginLog();
             $log->level = 'info';
             $log->user_id = $user->id;
@@ -238,29 +230,5 @@ class StaffApiAuthController extends Controller
             'sql_state' => $e->errorInfo[0] ?? null,
             'driver_code' => $e->errorInfo[1] ?? null,
         ];
-    }
-
-    private function handleDeviceToken($userId, $deviceToken, $deviceName = null)
-    {
-        try {
-            // Delete any existing device token record associated with a different user
-            DeviceToken::where('device_token', $deviceToken)
-                ->where('user_id', '!=', $userId)
-                ->delete();
-
-            // Create or update the device token record for the current user
-            DeviceToken::updateOrCreate(
-                ['user_id' => $userId, 'device_token' => $deviceToken],
-                [
-                    'device_name' => $deviceName,
-                    'is_active' => true,
-                    'last_used_at' => now(),
-                ]
-            );
-        } catch (\Exception $e) {
-            Log::error('Failed to handle device token: '.$e->getMessage(), [
-                'user_id' => $userId,
-            ]);
-        }
     }
 }

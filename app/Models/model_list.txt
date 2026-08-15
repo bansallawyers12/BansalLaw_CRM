@@ -17,7 +17,6 @@ ClientMatter.php
 Contact.php
 CostAssignmentForm.php
 Country.php
-DeviceToken.php
 Document.php
 DocumentChecklist.php
 Email.php

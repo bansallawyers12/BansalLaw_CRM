@@ -220,25 +220,4 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Firebase Cloud Messaging (FCM) Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configuration for Firebase Cloud Messaging push notifications (HTTP v1 API)
-    | 
-    | To set up:
-    | 1. Go to Firebase Console > Project Settings > Cloud Messaging
-    | 2. Click "Manage Service Accounts"
-    | 3. Create or select a service account
-    | 4. Generate a new private key (JSON file)
-    | 5. Save the JSON file to storage/app/firebase-service-account.json
-    | 6. Set FCM_SERVICE_ACCOUNT_PATH in .env (relative to storage/app/)
-    |
-    */
-
-    'fcm' => [
-        'service_account_path' => env('FCM_SERVICE_ACCOUNT_PATH', 'firebase-service-account.json'),
-    ],
-
 ];
