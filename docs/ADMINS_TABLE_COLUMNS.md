@@ -49,7 +49,7 @@ In active use; keep unless you are intentionally deprecating the feature.
 | **company_name**, **smtp_*** (if ever used from admins), **service_token**, **token_generated_at** | Company and API. |
 | **email_verified_at** | Client portal. |
 | **not_picked_call** | Client detail flag. |
-| **time_zone**, **position**, **team**, **permission** | **Staff-only. KEEP – staff system is ACTIVE.** Used in AdminConsole StaffController, views, and ActiveUserService (team filter). Among 96 staff users: position 97.9% adoption, team 91.7%, permission 89.6%, time_zone 1% (optional). These appear "nearly empty" in table stats because 99% of rows are clients/leads who never use them. See **Staff Management Columns** below. |
+| **position**, **team**, **permission** | **Staff-only. KEEP – staff system is ACTIVE.** Used in AdminConsole StaffController, views, and ActiveUserService (team filter). Among 96 staff users: position 97.9% adoption, team 91.7%, permission 89.6%. These appear "nearly empty" in table stats because 99% of rows are clients/leads who never use them. See **Staff Management Columns** below. (`time_zone` dropped Phase 5.) |
 
 ### Safe to delete
 
@@ -90,7 +90,7 @@ Remove or refactor the listed code before dropping the column.
 | **is_star_client** | ClientsController merge. |
 | **business_fax** | AdminConsole user view (Business Fax); ClientsController (export); AgentDetails model. |
 
-*Note: **time_zone**, **position**, **team**, **permission** were previously listed here but have been moved to **Recommended to keep** – staff system is ACTIVE (see Staff Management Columns below).*
+*Note: **position**, **team**, **permission** were previously listed here but have been moved to **Recommended to keep** – staff system is ACTIVE (see Staff Management Columns below). **time_zone** was dropped in Phase 5.*
 
 ---
 
@@ -190,7 +190,7 @@ Remove or refactor the listed code before dropping the column.
 | **agent_id** | Assigned agent; used in assignedClients(). |
 | **tags** | Tags (text). |
 | **office_id** | Branch/office; used in Admin->office(). |
-| **time_zone**, **position** | Staff-only (AdminConsole). KEEP – staff system is ACTIVE. |
+| **position** | Staff-only (AdminConsole). KEEP – staff system is ACTIVE. (`time_zone` dropped Phase 5.) |
 | **related_files** | Comma-separated related client IDs; used in merge, personal details, views. |
 
 ---
@@ -338,7 +338,6 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **position** | 94/96 = 97.9% | Job title. AdminConsole create/edit forms, user view. |
 | **team** | 88/96 = 91.7% | Department. AdminConsole forms, ActiveUserService team filter. |
 | **permission** | 86/96 = 89.6% | Granular access (Notes, Documents, etc.). AdminConsole forms. |
-| **time_zone** | 1/96 = 1.0% | Optional. `StaffController::savezone()` only; not in main create/edit forms. Consider for removal if feature is deprecated. |
 
 **Why these appear "nearly empty":** 99% of the table (9,345 rows) is clients/leads who never use staff-only fields. Among the 96 staff users (1% of table), adoption is 90–98%. Wrong denominator: 94/9,441 = 1% (misleading). Right denominator: 94/96 = 97.9% (actual usage).
 
@@ -355,7 +354,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | 2 | Alternative contact (att_*) | 3 | Medium | ✅ **Applied** |
 | 3 | Legacy BansalCRM lead | 13 | Medium–high | ✅ **Applied** |
 | 4 | Other legacy (decrypt_password, primary_email, etc.) | 7 | Medium | ✅ **Applied** |
-| 5 | time_zone (optional) | 1 | Low | Pending |
+| 5 | time_zone (optional) | 1 | Low | ✅ **Applied** |
 
 ### Phase 0: Immediate safe deletions (zero code refactor) ✅ APPLIED
 
@@ -438,16 +437,14 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 
 ---
 
-### Phase 5: time_zone (optional)
+### Phase 5: time_zone (optional) ✅ APPLIED
 
-**Risk:** Low. Only 1 staff has data; separate update method.
+**Risk:** Low. Only 1 staff had data; CRM uses `config('app.timezone')` (`Australia/Melbourne`) only.
 
-**Steps:**
-1. Confirm time_zone feature is not needed
-2. Remove route `POST /staff/savezone` (routes/adminconsole.php), `StaffController::savezone()`, and any view that calls it (staff timezone feature)
-3. Remove from `Admin::$fillable`
-4. Create migration to drop `time_zone`
-5. Test; deploy
+**Steps (completed):**
+1. Removed route `POST /adminconsole/staff/savezone`, `StaffController::savezone()`, and staff `time_zone` readers
+2. Removed from `Staff::$fillable`
+3. Migration `2026_08_15_191000_drop_unused_columns` dropped `staff.time_zone` (and unused visa-sheet checklist columns on `client_matters`)
 
 ---
 

@@ -90,8 +90,6 @@ class EmailLog extends Authenticatable
         'subject',
         'message',
         'type',
-        'reciept_id',
-        'attachments',
         'mail_type',
         'mail_body_type',
         'send_status',
@@ -99,31 +97,22 @@ class EmailLog extends Authenticatable
         'sent_at',
         'failed_at',
         'retry_count',
-        'resend_of_id',
         'client_id',
         'client_matter_id',
         'conversion_type',
-        'mail_body_type',
         'fetch_mail_sent_time',
         'uploaded_doc_id',
         'pdf_doc_id',
         'mail_is_read',
-        // Python analysis fields
         'python_analysis',
-        'python_rendering',
         'sentiment',
         'language',
-        'enhanced_html',
-        'rendered_html',
         'text_preview',
         'security_issues',
         'thread_info',
         'processed_at',
-        // Additional metadata
         'message_id',
-        'thread_id',
         'received_date',
-        'last_accessed_at',
         'file_hash',
         'created_at',
         'updated_at'
@@ -133,7 +122,6 @@ class EmailLog extends Authenticatable
 
     protected $casts = [
         'python_analysis' => 'array',
-        'python_rendering' => 'array',
         'security_issues' => 'array',
         'thread_info' => 'array',
         'processed_at' => 'datetime',
@@ -141,7 +129,6 @@ class EmailLog extends Authenticatable
         'sent_at' => 'datetime',
         'failed_at' => 'datetime',
         'received_date' => 'datetime',
-        'last_accessed_at' => 'datetime',
         'mail_is_read' => 'boolean',
     ];
 

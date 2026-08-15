@@ -166,7 +166,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/edit/{id}', [StaffController::class, 'edit'])->name('edit');
         Route::put('/{id}', [StaffController::class, 'update'])->name('update');
         Route::get('/view/{id}', [StaffController::class, 'view'])->name('view');
-        Route::post('/savezone', [StaffController::class, 'savezone']);
     });
 
     // System routes - System management

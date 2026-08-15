@@ -4,7 +4,7 @@
     @php
         $staffUser = auth('admin')->user();
         $staffFirstName = ($staffUser && ! empty($staffUser->first_name)) ? $staffUser->first_name : 'there';
-        $dashboardTz = ($staffUser && ! empty($staffUser->time_zone)) ? $staffUser->time_zone : config('app.timezone');
+        $dashboardTz = config('app.timezone');
         $dashboardNow = now()->timezone($dashboardTz);
         $hour = (int) $dashboardNow->format('G');
         $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');

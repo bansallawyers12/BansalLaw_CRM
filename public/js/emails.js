@@ -1752,7 +1752,7 @@
 
         // --- Gmail-like email body (from database, rendered as HTML) ---
         let emailBodyHtml = '';
-        const rawBody = email.enhanced_html || email.rendered_html || email.message || email.text_preview || '';
+        const rawBody = email.message || email.text_preview || '';
 
         if (rawBody && rawBody.trim() !== '') {
             emailBodyHtml = '<div class="gmail-body-frame-wrap"><iframe class="gmail-body-frame" id="gmailBodyFrame_' + email.id + '" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe></div>';

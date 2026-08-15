@@ -618,55 +618,6 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function staff_timezone_savezone_authorization_checks(): void
-    {
-        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
-            ['id' => 12],
-            ['name' => 'Admin Role', 'created_at' => now(), 'updated_at' => now(), 'module_access' => json_encode([])]
-        );
-        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
-            ['id' => 2],
-            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now(), 'module_access' => json_encode([])]
-        );
-
-        $staffSelf = new Staff();
-        $staffSelf->first_name = 'Staff';
-        $staffSelf->last_name = 'Self';
-        $staffSelf->email = 'staff940@bansallawyers.com.au';
-        $staffSelf->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $staffSelf->role = 12; // Admin role with Admin Console access
-        $staffSelf->status = 1;
-        $staffSelf->save();
-
-        $otherStaff = new Staff();
-        $otherStaff->first_name = 'Other';
-        $otherStaff->last_name = 'Staff';
-        $otherStaff->email = 'other941@bansallawyers.com.au';
-        $otherStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $otherStaff->role = 2;
-        $otherStaff->status = 1;
-        $otherStaff->save();
-
-        $this->actingAs($staffSelf, 'admin');
-
-        // 1. Staff can update their OWN timezone via /adminconsole/staff/savezone
-        $responseSelf = $this->post('/adminconsole/staff/savezone', [
-            'user_id' => $staffSelf->id,
-            'timezone' => 'Australia/Melbourne',
-        ]);
-        $responseSelf->assertStatus(302);
-        $this->assertEquals('Australia/Melbourne', $staffSelf->fresh()->time_zone);
-
-        // 2. Staff WITHOUT user_management or Super Admin privilege CANNOT update another staff member's timezone
-        $responseOther = $this->postJson('/adminconsole/staff/savezone', [
-            'user_id' => $otherStaff->id,
-            'timezone' => 'Australia/Sydney',
-        ]);
-        $this->assertTrue(in_array($responseOther->getStatusCode(), [403, 302], true));
-        $this->assertNotEquals('Australia/Sydney', $otherStaff->fresh()->time_zone);
-    }
-
-    #[Test]
     public function unauthorized_staff_cannot_update_matter_stage_idor(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(

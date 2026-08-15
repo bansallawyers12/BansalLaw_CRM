@@ -247,9 +247,6 @@ class UnassignedEmailAssignmentService
     }
 
     /**
-     * `email_logs` has an `attachments` column, so `$emailLog->attachments` returns that
-     * column (null) instead of the relation. Always read attachments via the relation query.
-     *
      * @return Collection<int, EmailLogAttachment>
      */
     protected function attachmentsFor(EmailLog $emailLog): Collection

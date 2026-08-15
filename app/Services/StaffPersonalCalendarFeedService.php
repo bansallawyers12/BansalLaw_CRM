@@ -27,7 +27,7 @@ class StaffPersonalCalendarFeedService
      */
     public function eventsForStaffRequest(Staff $staff, Request $request): array
     {
-        $tz = $staff->time_zone ?: config('app.timezone');
+        $tz = config('app.timezone');
         $staffId = (int) $staff->id;
 
         $events = array_merge(
@@ -50,7 +50,7 @@ class StaffPersonalCalendarFeedService
      */
     public function statsForStaff(Staff $staff): array
     {
-        $tz = $staff->time_zone ?: config('app.timezone');
+        $tz = config('app.timezone');
         $today = Carbon::today($tz);
         $weekEnd = $today->copy()->endOfWeek();
         $staffId = (int) $staff->id;

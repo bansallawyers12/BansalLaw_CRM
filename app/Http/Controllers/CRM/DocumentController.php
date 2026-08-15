@@ -1593,20 +1593,6 @@ class DocumentController extends Controller
                         $obj5->client_id	=  $document->client_id;
                         $obj5->client_matter_id	=  $document->client_matter_id;
 
-                        $attachments = array();
-                        if(isset($request->checklistfile)){
-                            if(!empty($request->checklistfile)){
-                                $checklistfiles = $request->checklistfile;
-                                $attachments = array();
-                                foreach($checklistfiles as $checklistfile){
-                                    $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
-                                    if($filechecklist){
-                                        $attachments[] = array('file_name' => $filechecklist->name,'file_url' => $filechecklist->file);
-                                    }
-                                }
-                                $obj5->attachments = json_encode($attachments);
-                            }
-                        }
                         // Validate required fields before saving
                         if (empty($obj5->from_mail) || empty($obj5->to_mail)) {
                             Log::error('EmailLog validation failed - missing required fields', [

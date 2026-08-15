@@ -1338,7 +1338,6 @@ public function getChapters(Request $request)
 		$requestData['email_from'] = $fromAddress;
 
 		$user_id = @Auth::user()->id;
-		$reciept_id = null;
 		$array = array();
 
 		$resendLogId = (int) ($requestData['resend_email_log_id'] ?? 0);
@@ -1425,7 +1424,6 @@ public function getChapters(Request $request)
 			$obj->bcc = null;
 		}
         $obj->template_id 	=  $requestData['template'] ?? null;
-		$obj->reciept_id 	=  $reciept_id;
 		$obj->subject		=  $requestData['subject'];
 		if(isset($requestData['type'])){
 		    $obj->type 			=  @$requestData['type'];
@@ -1472,47 +1470,7 @@ public function getChapters(Request $request)
             return redirect()->back()->with('error', $message)->withInput();
         }
 
-		$attachments = array();
-		if(isset($requestData['checklistfile'])){
-            if(!empty($requestData['checklistfile'])){
-                $checklistfiles = $requestData['checklistfile'];
-                $attachments = array();
-                foreach($checklistfiles as $checklistfile){
-                    $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
-                    if($filechecklist){
-                        $attachments[] = array('file_name' => $filechecklist->name,'file_url' => $filechecklist->file);
-                    }
-                }
-                //$obj->attachments = json_encode($attachments);
-            }
-        }
-
-        $attachments2 = array();
-        if(isset($requestData['checklistfile_document'])){
-            if(!empty($requestData['checklistfile_document'])){
-                $checklistfiles_documents = $requestData['checklistfile_document'];
-                $attachments2 = array();
-                foreach($checklistfiles_documents as $checklistfile1){
-                    $filechecklist_doc =  \App\Models\Document::where('id', $checklistfile1)->first();
-                    if($filechecklist_doc){
-                        if( $filechecklist_doc->doc_type == "education" || $filechecklist_doc->doc_type == "migration" ){
-                            $attachments2[] = array('file_name' => $filechecklist_doc->name,'file_url' => $filechecklist_doc->file);
-                        }
-                        else if( $filechecklist_doc->doc_type == "documents")  {
-                            $attachments2[] = array('file_name' => $filechecklist_doc->file_name,'file_url' => $filechecklist_doc->myfile);
-                        }
-                    }
-                }
-                //$obj->attachments = json_encode($attachments);
-            }
-        }
-
-        $attachments = array_merge($attachments, $attachments2);
-        if(!empty($attachments) && count($attachments) >0){
-            $obj->attachments = json_encode($attachments);
-        }
-
-        $saved	=	$obj->save();
+		$saved	=	$obj->save();
         $activityClientId = $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
         if ($activityClientId === null && ! empty($emailToList) && ($requestData['type'] ?? '') !== 'agent') {
             $activityClientId = (int) reset($emailToList);

@@ -346,50 +346,6 @@ class StaffController extends Controller
         return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $staff->id]);
     }
 
-    public function savezone(Request $request)
-    {
-        if ($request->isMethod('post')) {
-            $requestData = $request->all();
-            $actor = Auth::guard('admin')->user() ?: Auth::user();
-            if (!($actor instanceof Staff)) {
-                return $this->respondUnauthorized($request);
-            }
-
-            $targetUserId = (int) ($requestData['user_id'] ?? $request->input('user_id') ?? 0);
-            if ($targetUserId === 0) {
-                $targetUserId = (int) $actor->id;
-            }
-
-            $isSelf = ($targetUserId === (int) $actor->id);
-            $isSuperAdmin = app(CrmAccessService::class)->hasPermanentSuperAdminCapability($actor);
-            $hasUserManagementModule = $this->checkAuthorizationAction('user_management', 'savezone', $actor->role) === null;
-
-            if (!$isSelf && !$isSuperAdmin && !$hasUserManagementModule) {
-                return $this->respondUnauthorized($request);
-            }
-
-            $obj = Staff::find($targetUserId);
-
-            if (!$obj) {
-                return redirect()->back()->with('error', 'Staff not found.');
-            }
-
-            $timeZoneValue = $requestData['timezone'] ?? $requestData['time_zone'] ?? null;
-            $obj->time_zone = $timeZoneValue;
-            $obj->save();
-
-            if ($request->ajax() || $request->wantsJson() || $request->isJson() || str_contains($request->header('Accept', ''), 'application/json') || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Staff timezone updated successfully.',
-                    'timezone' => $obj->time_zone,
-                ]);
-            }
-
-            return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $targetUserId])->with('success', 'Staff edited successfully.');
-        }
-    }
-
     protected function redirectToStaffIndex(Request $request, string $tab)
     {
         return redirect()->route('adminconsole.staff.index', array_filter([

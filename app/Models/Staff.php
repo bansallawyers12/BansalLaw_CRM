@@ -46,7 +46,6 @@ class Staff extends Authenticatable
         'permission',
         'office_id',
         'show_dashboard_per',
-        'time_zone',
         'is_solicitor',
         'legal_practitioner_number',
         'company_name',

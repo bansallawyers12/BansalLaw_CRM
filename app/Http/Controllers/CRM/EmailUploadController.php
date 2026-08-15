@@ -801,7 +801,6 @@ class EmailUploadController extends Controller
             
             // NEW: Add metadata
             $mailReport->message_id = $parsedData['message_id'] ?? null;
-            $mailReport->thread_id = $parsedData['thread_id'] ?? null;
             
             if (!empty($parsedData['received_date'])) {
                 $mailReport->received_date = $this->parseEmailDateTimeForStorage($parsedData['received_date']);
