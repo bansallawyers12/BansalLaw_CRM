@@ -225,8 +225,8 @@
     "semantic_hash": "68b8040b2fb18c05054955b04ae078cd"
   },
   "app/Http/Controllers/API/LeadBookingApiController.php": {
-    "mtime": 1786700271.6980996,
-    "ast_hash": "4b20113a120db662278c45169613cdbc",
+    "mtime": 1786765541.8834436,
+    "ast_hash": "248b794d9c05905acd885f88e40ed65e",
     "semantic_hash": ""
   },
   "app/Http/Controllers/API/OthersController.php": {
@@ -235,8 +235,8 @@
     "semantic_hash": "abffafc545d6a22a911fe00d34184487"
   },
   "app/Http/Controllers/API/PublicBookingController.php": {
-    "mtime": 1786765427.326555,
-    "ast_hash": "0fa519b6c6d06da8c551bddd7c13bdd0",
+    "mtime": 1786765452.8246682,
+    "ast_hash": "ad8ba1fcf7f8dd7ea483245bf0bd0fb3",
     "semantic_hash": ""
   },
   "app/Http/Controllers/API/PublicListingController.php": {
@@ -385,8 +385,8 @@
     "semantic_hash": "7c62f421861296fe6151a419018eb096"
   },
   "app/Http/Controllers/CRM/BookingAppointmentsController.php": {
-    "mtime": 1786756083.09994,
-    "ast_hash": "e00caae381f825867719fb73887b503f",
+    "mtime": 1786765594.877951,
+    "ast_hash": "1fc86a7d9bbead2aa6064c1ec7d41818",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/BroadcastNotificationAjaxController.php": {
@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
-    "mtime": 1786765368.4464748,
-    "ast_hash": "905498f5fdc26363004100b3d9c6d20d",
+    "mtime": 1786765515.7955847,
+    "ast_hash": "26b0e32e76c3545f73bdaa36bf12bc8a",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Clients/ClientDocumentsController.php": {
@@ -570,9 +570,9 @@
     "semantic_hash": "ec29b0ae4d056dd7ecab3d23417a27c5"
   },
   "app/Http/Controllers/HomeController.php": {
-    "mtime": 1778909965.3797083,
-    "ast_hash": "7c1ace911d47911fdc1a7d6d65eadaea",
-    "semantic_hash": "7c1ace911d47911fdc1a7d6d65eadaea"
+    "mtime": 1786765632.9909165,
+    "ast_hash": "b1a7538f23d3d231b9d989338e4a46f6",
+    "semantic_hash": ""
   },
   "app/Http/Controllers/PublicDocumentController.php": {
     "mtime": 1786765338.0953996,
@@ -1200,8 +1200,8 @@
     "semantic_hash": "4b51b92b05dca99c0580c3ec5641268d"
   },
   "app/Services/BansalAppointmentSync/AppointmentSyncService.php": {
-    "mtime": 1786756083.10094,
-    "ast_hash": "c0d1f51d7fe57bc122506dd50e09e434",
+    "mtime": 1786765547.0207138,
+    "ast_hash": "39799dd86410bd03f577f23ec3512e9a",
     "semantic_hash": ""
   },
   "app/Services/BansalAppointmentSync/BansalApiClient.php": {
@@ -3765,9 +3765,9 @@
     "semantic_hash": "79384a93bef06cd4637db99f48384887"
   },
   "public/js/crm/clients/modules/appointments.js": {
-    "mtime": 1780392853.217009,
-    "ast_hash": "07cf3a8bcdef673c98c76779f42083e8",
-    "semantic_hash": "07cf3a8bcdef673c98c76779f42083e8"
+    "mtime": 1786765551.9170048,
+    "ast_hash": "7776641ea9c2a48527367dee16f21701",
+    "semantic_hash": ""
   },
   "public/js/crm/clients/modules/checklist.js": {
     "mtime": 1783751335.726703,
@@ -3825,8 +3825,8 @@
     "semantic_hash": ""
   },
   "public/js/crm/clients/tabs/activity-feed.js": {
-    "mtime": 1786765341.229568,
-    "ast_hash": "aa59230bf1174391ba4628f7a4cbd51d",
+    "mtime": 1786765547.0197115,
+    "ast_hash": "37aa17cbef6fab2acf1aa5a6d9c94b3d",
     "semantic_hash": ""
   },
   "public/js/crm/clients/utils/dom-helpers.js": {
@@ -6125,9 +6125,9 @@
     "semantic_hash": ""
   },
   "resources/views/crm/clients/modals/appointment.blade.php": {
-    "mtime": 1785212440.9970853,
-    "ast_hash": "8842935074e8641d19be98042bd28b1d",
-    "semantic_hash": "8842935074e8641d19be98042bd28b1d"
+    "mtime": 1786765566.6147149,
+    "ast_hash": "0a7aa382de4ffbd2a4eb52a8785c216c",
+    "semantic_hash": ""
   },
   "resources/views/crm/clients/modals/change-matter-assignee-modal.blade.php": {
     "mtime": 1785212440.9970853,
@@ -7730,8 +7730,8 @@
     "semantic_hash": ""
   },
   "app/Support/ActivityFeedQuery.php": {
-    "mtime": 1786765338.7015839,
-    "ast_hash": "ec79bf77ff3671321fe246264c6cd7a9",
+    "mtime": 1786765545.6155777,
+    "ast_hash": "4feb543718a3612d61e448e5a16ee9ae",
     "semantic_hash": ""
   },
   "database/migrations/2026_08_14_203000_activities_logs_feed_index_and_type_default.php": {

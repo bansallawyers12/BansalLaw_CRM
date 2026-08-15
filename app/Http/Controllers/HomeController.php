@@ -307,7 +307,7 @@ class HomeController extends Controller
 
         $bookedSlots = app(BookedTimeSlotsToDisableService::class);
         $dateForCrm = BookedTimeSlotsToDisableService::parseDateInput((string) $sel_date);
-        $inpersonInt = in_array((int) $inperson_address, [1, 2], true) ? (int) $inperson_address : null;
+        $inpersonInt = BookingCatalogue::inpersonAddressMelbourne();
         $crmSlotLabels = $dateForCrm
             ? $bookedSlots->getTimeSlotLabelsForDate($dateForCrm, $inpersonInt)
             : [];
