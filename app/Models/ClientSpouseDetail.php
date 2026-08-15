@@ -31,10 +31,5 @@ class ClientSpouseDetail extends Model
         'spouse_skill_assessment_status',
         'spouse_nomi_occupation',
         'spouse_assessment_date',
-        
-        // Points calculation fields
-        'is_citizen',
-        'has_pr',
-        'dob'
     ];
 }

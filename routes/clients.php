@@ -280,17 +280,12 @@ Route::post('/clients/search-address-full', [ClientPersonalDetailsController::cl
 Route::post('/clients/get-place-details', [ClientPersonalDetailsController::class, 'getPlaceDetails'])->name('clients.getPlaceDetails');
 
 Route::post('/clients/fetchClientContactNo', [ClientPersonalDetailsController::class, 'fetchClientContactNo']);
-Route::post('/clients/clientdetailsinfo/{id}', [ClientPersonalDetailsController::class, 'clientdetailsinfo'])->name('clients.clientdetailsinfo');
-Route::post('/clients/clientdetailsinfo', [ClientPersonalDetailsController::class, 'clientdetailsinfo'])->name('clients.clientdetailsinfo.update');
 
 Route::get('/get-visa-types', [ClientPersonalDetailsController::class, 'getVisaTypes'])->name('getVisaTypes');
 Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountries'])->name('getCountries');
-Route::post('/updateOccupation', [ClientPersonalDetailsController::class, 'updateOccupation'])->name('clients.updateOccupation');
-Route::post('/leads/updateOccupation', [ClientPersonalDetailsController::class, 'updateOccupation'])->name('leads.updateOccupation');
 
 /*---------- Client Relationships ----------*/
 Route::post('/clients/search-partner', [ClientPersonalDetailsController::class, 'searchPartner'])->name('clients.searchPartner');
-Route::post('/clients/save-relationship', [ClientPersonalDetailsController::class, 'saveRelationship'])->name('clients.saveRelationship');
 
 /*---------- Client Agreements & Forms ----------*/
 Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');

@@ -415,8 +415,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientPersonalDetailsController.php": {
-    "mtime": 1786767797.9095333,
-    "ast_hash": "e6ceedeffe3289d5b3fd425726d8fdd4",
+    "mtime": 1786767986.3906791,
+    "ast_hash": "8a920491fbba7b4357829e7745e1226b",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
@@ -750,9 +750,9 @@
     "semantic_hash": ""
   },
   "app/Models/Admin.php": {
-    "mtime": 1783751336.814717,
-    "ast_hash": "03980aad85532701c6dd59d2605decf4",
-    "semantic_hash": "03980aad85532701c6dd59d2605decf4"
+    "mtime": 1786767991.8555741,
+    "ast_hash": "f95cd972e61e2169a184bcb693682b5f",
+    "semantic_hash": ""
   },
   "app/Models/AgentDetails.php": {
     "mtime": 1776743447.7851093,
@@ -885,9 +885,9 @@
     "semantic_hash": "afeddfafd147754ecced295b8195b5ef"
   },
   "app/Models/ClientTestScore.php": {
-    "mtime": 1769758151.1159072,
-    "ast_hash": "d7f3c0b3ce7165a516f1f5b07c4dd88f",
-    "semantic_hash": "d7f3c0b3ce7165a516f1f5b07c4dd88f"
+    "mtime": 1786767983.2269964,
+    "ast_hash": "b7ed4fd470c64ba3d3c02b017253aa6f",
+    "semantic_hash": ""
   },
   "app/Models/ClientTravelInformation.php": {
     "mtime": 1769758151.116915,
@@ -3055,8 +3055,8 @@
     "semantic_hash": "d2b29a244c394407b6d82b7dda466635"
   },
   "database/migrations/2026_04_09_200000_add_legacy_client_testscore_columns_if_missing.php": {
-    "mtime": 1786700271.7648964,
-    "ast_hash": "e3e1a64e9c3c20eeecf6d908f1d23ed8",
+    "mtime": 1786767996.4102983,
+    "ast_hash": "2002fc4eb708af4a44e2bd076d5ea895",
     "semantic_hash": ""
   },
   "database/migrations/2026_04_09_210000_add_legacy_client_qualifications_columns_if_missing.php": {
@@ -3705,14 +3705,9 @@
     "semantic_hash": "e07089caa809d36d140ddfdb580f4bad"
   },
   "public/js/clients/edit-client.js": {
-    "mtime": 1783751335.7188525,
-    "ast_hash": "05e3159eca810b05359933d262c765da",
-    "semantic_hash": "05e3159eca810b05359933d262c765da"
-  },
-  "public/js/clients/english-proficiency.js": {
-    "mtime": 1783751335.7188525,
-    "ast_hash": "d5ed0f3d2d3cbb2f47e0dacd2dc41d27",
-    "semantic_hash": "d5ed0f3d2d3cbb2f47e0dacd2dc41d27"
+    "mtime": 1786768199.7742236,
+    "ast_hash": "25f0af8f3735efa47847398e2ee037e4",
+    "semantic_hash": ""
   },
   "public/js/components/dropdown-multi-select.js": {
     "mtime": 1776743447.9519842,
@@ -6080,9 +6075,9 @@
     "semantic_hash": ""
   },
   "resources/views/crm/clients/edit.blade.php": {
-    "mtime": 1785212440.9920914,
-    "ast_hash": "a1ae1acf69a7a0a0bdccd344f435ef59",
-    "semantic_hash": "a1ae1acf69a7a0a0bdccd344f435ef59"
+    "mtime": 1786768199.5657234,
+    "ast_hash": "8babbe6fb3892fd04b480874dfc29e0c",
+    "semantic_hash": ""
   },
   "resources/views/crm/clients/editclientmodal.blade.php": {
     "mtime": 1783751336.1117735,
@@ -6435,9 +6430,9 @@
     "semantic_hash": "f5b4e759e8e050da8d081036aacb7b9f"
   },
   "resources/views/crm/leads/edit.blade.php": {
-    "mtime": 1783751336.8645413,
-    "ast_hash": "98ffde4684d1544a1f858594da560c39",
-    "semantic_hash": "98ffde4684d1544a1f858594da560c39"
+    "mtime": 1786768199.6200953,
+    "ast_hash": "212926087fad5d449b4efb3f18daddf1",
+    "semantic_hash": ""
   },
   "resources/views/crm/leads/history.blade.php": {
     "mtime": 1783751336.8645413,
@@ -7757,6 +7752,11 @@
   "database/migrations/2026_08_15_142200_drop_client_points_table.php": {
     "mtime": 1786767803.6507695,
     "ast_hash": "99c7389fd8a3b9b478812dcc12f991e9",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_15_142500_drop_proficiency_columns_from_client_testscore.php": {
+    "mtime": 1786767997.7374475,
+    "ast_hash": "ed410c27c9fb480a509d7dbdf5b031e4",
     "semantic_hash": ""
   }
 }

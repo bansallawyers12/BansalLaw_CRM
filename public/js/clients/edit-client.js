@@ -1265,31 +1265,6 @@ function initializeDatepickers() {
 }
 
 /**
- * Toggle Spouse Details Section based on Marital Status
- */
-function toggleSpouseDetailsSection() {
-    const maritalStatusEl = document.getElementById('maritalStatus');
-    if (!maritalStatusEl) return;
-    const maritalStatus = maritalStatusEl.value;
-    const spouseDetailsSection = document.getElementById('spouseDetailsSection');
-
-    // Check if the spouseDetailsSection element exists before trying to access its style
-    if (spouseDetailsSection) {
-        // Handle both "Defacto" and "De Facto" for consistency
-        if (maritalStatus === 'Married' || maritalStatus === 'Defacto' || maritalStatus === 'De Facto') {
-            spouseDetailsSection.style.display = 'block';
-        } else {
-            spouseDetailsSection.style.display = 'none';
-        }
-    }
-
-    // Reinitialize datepickers when showing spouse details
-    if (maritalStatus === 'Married' || maritalStatus === 'Defacto' || maritalStatus === 'De Facto') {
-        initializeDatepickers();
-    }
-}
-
-/**
  * Add Qualification
  */
 async function addQualification() {
@@ -3418,7 +3393,6 @@ window.addEmailAddress = addEmailAddress;
 window.validatePersonalEmailTypes = validatePersonalEmailTypes;
 window.addVisaDetail = addVisaDetail;
 window.initializeDatepickers = initializeDatepickers;
-window.toggleSpouseDetailsSection = toggleSpouseDetailsSection;
 window.addCharacterRow = addCharacterRow;
 
 // New scroll and modal functions
@@ -3584,17 +3558,6 @@ $(document).ready(function() {
             $('.autocomplete-items').empty();
         }
     });
-
-    // Run on page load to set initial state
-    toggleSpouseDetailsSection();
-
-    // Run on Marital Status change
-    const maritalStatusElement = document.getElementById('maritalStatus');
-    if (maritalStatusElement) {
-        maritalStatusElement.addEventListener('change', function() {
-            toggleSpouseDetailsSection();
-        });
-    }
 
     // Run on page load
     toggleVisaDetails();
@@ -5273,8 +5236,6 @@ window.reinitializeRelatedFilesTomSelect = function () {
         initializeRelatedFilesTomSelect();
     }, 100);
 };
-
-// English proficiency functions moved to separate file: english-proficiency.js
 
 /**
  * Save Parents Information

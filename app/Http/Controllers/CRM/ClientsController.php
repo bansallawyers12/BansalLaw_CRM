@@ -1549,7 +1549,6 @@ class ClientsController extends Controller
                             'job_emp_name' => $requestData['job_emp_name'][$index] ?? null,
                             'job_state' => $requestData['job_state'][$index] ?? null,
                             'job_type' => $requestData['job_type'][$index] ?? null,
-                            'fte_multiplier' => 1.00,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -1654,9 +1653,6 @@ class ClientsController extends Controller
                                 'admin_id' => Auth::user()->id,
                                 'type_of_character' => $typeOfCharacter,
                                 'character_detail' => $record['details'],
-                                'character_date' => !empty($record['date'])
-                                    ? date('Y-m-d', strtotime(str_replace('/', '-', $record['date'])))
-                                    : null,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
@@ -2239,7 +2235,6 @@ class ClientsController extends Controller
                 $experiences = ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date DESC NULLS LAST')->get() ?? [];
                 $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
                 $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
-                $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();
                 $clientOccupations = ClientOccupation::where('client_id', $id)->get();
 
                 // Fetch client family details with optimized query
@@ -2358,7 +2353,7 @@ class ClientsController extends Controller
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
-                    'experiences', 'testScores', 'visaCountries', 'clientOccupations', 'clientSpouseDetail',
+                    'experiences', 'testScores', 'visaCountries', 'clientOccupations',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',

@@ -12,7 +12,6 @@ class ClientCharacter extends Model
         'admin_id',
         'type_of_character',
         'character_detail',
-        'character_date'
     ];
 }
 

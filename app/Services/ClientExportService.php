@@ -339,7 +339,6 @@ class ClientExportService
                 return [
                     'type_of_character' => $character->type_of_character,
                     'character_detail' => $character->character_detail,
-                    'character_date' => $character->character_date,
                 ];
             })
             ->toArray();

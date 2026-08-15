@@ -11,7 +11,6 @@ use App\Models\ClientQualification;
 use App\Models\ClientExperience;
 use App\Models\ClientOccupation;
 use App\Models\ClientTestScore;
-use App\Models\ClientSpouseDetail;
 use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
@@ -33,7 +32,6 @@ use App\Support\EnsureDummyMatterStaff;
  * 
  * Used by:
  * - ClientsController@edit
- * - ClientPersonalDetailsController@clientdetailsinfo
  */
 class ClientEditService
 {
@@ -65,7 +63,6 @@ class ClientEditService
             'experiences' => $this->getExperiences($clientId),
             'clientOccupations' => $this->getOccupations($clientId),
             'testScores' => $this->getTestScores($clientId),
-            'ClientSpouseDetail' => $this->getSpouseDetail($clientId), // Keep for backward compatibility
             'clientPassports' => $this->getPassports($clientId),
             'clientTravels' => $this->getTravels($clientId),
             'clientCharacters' => $this->getCharacters($clientId),
@@ -335,14 +332,6 @@ class ClientEditService
     protected function getTestScores(int $clientId)
     {
         return ClientTestScore::where('client_id', $clientId)->get() ?? [];
-    }
-
-    /**
-     * Get spouse details
-     */
-    protected function getSpouseDetail(int $clientId)
-    {
-        return ClientSpouseDetail::where('client_id', $clientId)->first() ?? [];
     }
 
     /**

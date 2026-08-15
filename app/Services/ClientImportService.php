@@ -392,7 +392,6 @@ class ClientImportService
                     $jobStartDate = $this->parseDate($experienceData['job_start_date'] ?? $experienceData['start_date'] ?? null);
                     $jobFinishDate = $this->parseDate($experienceData['job_finish_date'] ?? $experienceData['finish_date'] ?? $experienceData['end_date'] ?? null);
                     $relevantExperience = $this->parseBooleanFlag($experienceData['relevant_experience'] ?? null, 0);
-                    $fteMultiplier = $experienceData['fte_multiplier'] ?? null;
 
                     $hasExperienceData =
                         !empty($jobTitle) ||
@@ -422,7 +421,6 @@ class ClientImportService
                         'job_start_date' => $jobStartDate,
                         'job_finish_date' => $jobFinishDate,
                         'relevant_experience' => $relevantExperience,
-                        'fte_multiplier' => $fteMultiplier,
                     ]);
                 }
             }
@@ -588,7 +586,6 @@ class ClientImportService
                         'admin_id' => Auth::id(),
                         'type_of_character' => $characterData['type_of_character'] ?? null,
                         'character_detail' => $characterData['character_detail'] ?? null,
-                        'character_date' => $this->parseDate($characterData['character_date'] ?? null),
                     ]);
                 }
             }

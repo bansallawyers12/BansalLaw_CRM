@@ -1101,24 +1101,6 @@
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">REFERENCE NO:</span>
                                                     <span class="summary-value" style="color: #212529;">{{ $testScore->test_reference_no ?: 'Not set' }}</span>
                                                 </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PROFICIENCY LEVEL:</span>
-                                                    <span id="proficiency-level-{{ $index }}" class="proficiency-level-display" style="font-weight: 700; font-size: 0.9em; padding: 4px 8px; border-radius: 4px; display: inline-block;">
-                                                        <i class="fa-solid fa-spinner fa-spin"></i> Calculating...
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Hidden data attributes for JavaScript calculation -->
-                                            <div class="english-level-calculation-box" 
-                                                 data-test-type="{{ $testScore->test_type }}" 
-                                                 data-listening="{{ $testScore->listening }}" 
-                                                 data-reading="{{ $testScore->reading }}" 
-                                                 data-writing="{{ $testScore->writing }}" 
-                                                 data-speaking="{{ $testScore->speaking }}" 
-                                                 data-overall="{{ $testScore->overall_score }}" 
-                                                 data-test-date="{{ $testScore->test_date ? date('d/m/Y', strtotime($testScore->test_date)) : '' }}"
-                                                 style="display: none;">
                                             </div>
                                         </div>
                                     @endforeach
@@ -2047,7 +2029,6 @@
             }
         })();
     </script>
-    <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
     <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>
     {{-- Google Maps library removed - using backend proxy for address autocomplete --}}

@@ -227,47 +227,6 @@ class Admin extends Authenticatable
         return $this->hasOne(\App\Models\ClientSpouseDetail::class, 'client_id');
     }
 
-    /**
-     * Get the test scores (IELTS, PTE, TOEFL, etc.) for this client
-     */
-    public function testScores(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientTestScore::class, 'client_id');
-    }
-
-    /**
-     * Get the occupations/skills assessments for this client
-     */
-    public function occupations(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientOccupation::class, 'client_id');
-    }
-
-    /**
-     * Get the qualifications for this client
-     */
-    public function qualifications(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientQualification::class, 'client_id');
-    }
-
-    /**
-     * Get the work experiences for this client
-     */
-    public function experiences(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientExperience::class, 'client_id');
-    }
-
-    /**
-     * Get the relationships (partner, children, parents, etc.) for this client
-     * Used for family member information
-     */
-    public function relationships(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientRelationship::class, 'client_id');
-    }
-
     public function conflictParties(): HasMany
     {
         return $this->hasMany(\App\Models\ClientConflictParty::class, 'client_id')

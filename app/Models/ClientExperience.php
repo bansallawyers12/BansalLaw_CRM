@@ -19,8 +19,6 @@ class ClientExperience extends Model
         'job_emp_name',
         'job_state',
         'job_type',
-        // Points calculation field
-        'fte_multiplier'
     ];
 }
 
