@@ -260,7 +260,7 @@ use App\Http\Controllers\Controller;
             $validTabNames = ['companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments',
                               'emails', 
                               // Legacy removed tab slugs
-                              'formgenerations', 'formgenerationsl', 'nominationdocuments',
+                              'formgenerations', 'formgenerationsl',
                               'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)

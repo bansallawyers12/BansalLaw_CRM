@@ -415,8 +415,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/ClientsController.php": {
-    "mtime": 1786777539.116454,
-    "ast_hash": "a44ce27b9b478c30755d63b2eb738159",
+    "mtime": 1786781321.7681446,
+    "ast_hash": "e4bcd8fa1a7c9c0565cf227f38b5253b",
     "semantic_hash": ""
   },
   "app/Http/Controllers/CRM/Clients/ClientDocumentsController.php": {
@@ -3720,8 +3720,8 @@
     "semantic_hash": "74b6d5a425adc16e7ca5c61d9cc4cc29"
   },
   "public/js/crm/clients/shared.js": {
-    "mtime": 1786777776.5379186,
-    "ast_hash": "380b027166190eb0777371deb5f1562f",
+    "mtime": 1786781326.45528,
+    "ast_hash": "6aa58df0613dc1d790ec39618a885291",
     "semantic_hash": ""
   },
   "public/js/crm/clients/sidebar-tabs.js": {
@@ -5945,8 +5945,8 @@
     "semantic_hash": "815b073cb699b929297e2e22cfc69ca8"
   },
   "resources/views/crm/clients/detail.blade.php": {
-    "mtime": 1786777534.5153809,
-    "ast_hash": "2d495aed0b6e3574c2b3ae58e1cc3c27",
+    "mtime": 1786781323.2558537,
+    "ast_hash": "13336f4d580a007315506345d7a29223",
     "semantic_hash": ""
   },
   "resources/views/crm/clients/edit.blade.php": {
@@ -6225,8 +6225,8 @@
     "semantic_hash": ""
   },
   "resources/views/crm/companies/detail.blade.php": {
-    "mtime": 1786777774.5473425,
-    "ast_hash": "a04debcf842a2cc17dd4171d284770b7",
+    "mtime": 1786781324.333834,
+    "ast_hash": "6bff7123ceeeca91aaf6ab17d4acfa1a",
     "semantic_hash": ""
   },
   "resources/views/crm/companies/partials/company_overview_unified.blade.php": {
@@ -7655,8 +7655,8 @@
     "semantic_hash": ""
   },
   "database/migrations/2026_08_15_170000_drop_nomination_document_types_table.php": {
-    "mtime": 1786777484.9043505,
-    "ast_hash": "8ce5483b8a5d9dc226793d2451b755c0",
+    "mtime": 1786781326.45528,
+    "ast_hash": "742868c7d7feed9379e8260704fd4576",
     "semantic_hash": ""
   }
 }

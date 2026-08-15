@@ -56,7 +56,7 @@ use App\Http\Controllers\Controller;
     <!-- Client Navigation Sidebar -->
     <aside class="client-navigation-sidebar" id="client-sidebar">
         @php
-            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails', 'nominationdocuments'];
+            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails'];
 
             $cdnIsCompany = ! empty($fetchedData->is_company);
             if ($cdnIsCompany) {
@@ -394,7 +394,7 @@ use App\Http\Controllers\Controller;
             $validTabNames = [
                 'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents',
                 'emails', 'client_portal', 'legalforms',
-                'formgenerations', 'formgenerationsl', 'nominationdocuments',
+                'formgenerations', 'formgenerationsl',
                 'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
                 'visadocuments',
             ];

@@ -10,7 +10,7 @@
         'personaldocuments', 'matterdocuments', 'documents',
         'emails', 'client_portal', 'legalforms', 'formgenerations', 'formgenerationsl',
         'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'visadocuments',
-        'nominationdocuments', 'emailhandling'
+        'emailhandling'
     ];
 
     function isClientDetailTabSlug(segment) {

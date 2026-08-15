@@ -1,16 +1,16 @@
 # Graph Report - BansalLaw_CRM  (2026-08-15)
 
 ## Corpus Check
-- 1490 files · ~1,998,253 words
+- 1490 files · ~1,998,255 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 15357 nodes · 28995 edges · 1517 communities (1172 shown, 345 thin omitted)
+- 15357 nodes · 28995 edges · 1513 communities (1168 shown, 345 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 1439 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `27ab7645`
+- Built from commit: `9995d6a8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,18 +19,18 @@
 - public/js/app.js
 - .getContext
 - isFunction
-- buildProps
+- push
 - .slice
 - theme.js
 - warn
-- getIteratee
+- apply
 - .forEach
 - chart.umd.min.js
 - Lead
 - ss
 - ClientConflictCheck
 - tn
-- push
+- .find
 - ce
 - TrustAccountingAdminController.php
 - EmailLog
@@ -40,16 +40,16 @@
 - tinymce.js
 - Illuminate\Database\Eloquent\Relations\HasMany
 - EmailTemplate
-- update
+- baseClone
 - .indexOf
 - ActivityFeedPaginationTest
 - emails.js
 - Matter
-- ActivitiesLog
+- CheckinLog
 - Carbon\Carbon
 - datatables.min.js
 - intlTelInput.js
-- apply
+- .has
 - ClientDocumentsController
 - outlook_emails.js
 - TrustReportQueryService
@@ -72,7 +72,7 @@
 - jquery.min.js
 - BookingAppointmentsController
 - ClientLegalForm
-- UserRole
+- StaffLoginAnalyticsController
 - EmailParserService
 - Illuminate\Database\Eloquent\Factories\Factory
 - email-upload-filename.js
@@ -110,7 +110,7 @@
 - ClientPersonalDetailsController
 - a
 - Optional
-- ua
+- Implementation Plan (Apply Recommendations)
 - edit-client.js
 - matter-tasks.js
 - CrmAccessServiceQuickOnlyTest
@@ -118,9 +118,9 @@
 - AppointmentSyncLog
 - BookingAppointment
 - Zs
-- Illuminate\Support\Carbon
+- Illuminate\Support\Collection
 - smart-email-import.js
-- Illuminate\Notifications\Notifiable
+- MatterDocumentTypeController
 - AppointmentSyncService
 - es
 - model.js
@@ -132,13 +132,13 @@
 - Illuminate\Http\JsonResponse
 - Dropdown
 - logger.py
-- s
+- 10. Notification Tracking
 - keywords
 - Optional
 - Optional
 - Optional
 - AdminConsoleRoutesTest
-- Illuminate\Support\Collection
+- BroadcastNotificationService
 - scripts
 - Optional
 - Optional
@@ -187,7 +187,7 @@
 - l
 - Shortcuts
 - EditorManager
-- domManip
+- keywords
 - Python Services - Quick Reference
 - staff.js
 - ScrollSpy
@@ -254,7 +254,7 @@
 - AdminLoginController
 - ot
 - TrustWithdrawalAuthorityService
-- Illuminate\Database\Seeder
+- 4.2.6 - 2015-09-28
 - k
 - CellcastProvider
 - Admins Table – Column Reference
@@ -282,7 +282,7 @@
 - addclientmodal.blade.php
 - address-autocomplete.js
 - Backdrop
-- ClientsController.php
+- ActivitiesLog
 - Zi
 - ImportLoginDataFromMySQL
 - URI
@@ -302,7 +302,7 @@
 - EditorCommands
 - EditorCommands
 - FileDurationClass
-- AppServiceProvider.php
+- Exception
 - SignatureTemplateService
 - safeParseJsonResponse
 - appointments.js
@@ -496,7 +496,7 @@
 - emails_outlook.blade.php
 - officevisits/index.blade.php
 - views/documents/download_and_thankyou.blade.php
-- ImportReferenceMasterData
+- 4.4.2 - 2016-08-25
 - error.blade.php
 - views/documents/sign.blade.php
 - AdminConsole.features.documentchecklist.partials.row
@@ -623,17 +623,17 @@
 - 4.5.3 - 2017-02-01
 - Button
 - EmptyUniqueGroupIdMassCompleteTest
-- extra
-- 4.7.11 - 2018-04-11
+- 5.0.8 - 2019-06-18
+- 4.1.10 - 2015-05-05
 - crm.clients.tabs.activity_feed
-- 4.9.1 - 2018-12-04
+- 4.1.5 - 2014-09-09
 - 6.8.1 - 2023-11-29
-- 4.2.1 - 2015-06-29
+- 4.2.8 - 2015-11-13
 - Bansal Law CRM
 - 4.4 Migration File Templates
 - 4. Client Information
 - Area 9 — SMS, API, Infrastructure
-- 4.2.3 - 2015-07-30
+- 4.3.10 - 2016-04-12
 - buildNotUsedDocumentRowHtml
 - CRM Bugs Audit
 - Area 13 — Matters / Documents / Email / Assignee (supplement)
@@ -650,11 +650,11 @@
 - AWS SES Email Integration — Bansal Law CRM
 - Conflict Check — Phase 1: Stop False Positives
 - TinyMCE
-- 4.7.5 - 2018-01-22
-- 4.9.11 - 2020-07-13
-- 4.9.9 - 2020-03-25
+- 4.8.3 - 2018-09-13
+- 5.10.3 - 2022-02-09
+- 5.1.5 - 2019-12-19
 - uploadPersonalDocFromZone
-- GetterRefImpl
+- 5.3.2 - 2020-06-10
 - Area 2 — Leads
 - Product decision: cross-client other-party hits (same `opposing_lead_id`)
 - Conflict Check — Phase 4A: Party Upsert (Preserve Data on Re-save)
@@ -667,7 +667,7 @@
 - Conflict Check — Phase 4B: Staleness Enforcement
 - Unified Python Services for Migration Manager
 - AppointmentConsultant
-- 5.0.9 - 2019-06-26
+- 5.4.2 - 2020-08-17
 - Area 12 — Clients / Leads (supplement)
 - Area 7 — Dashboard, Assignee, Office Visits, Broadcasts, Booking
 - 6.7.1 - 2023-10-19
@@ -685,19 +685,19 @@
 - Linux Production Deployment Guide
 - Troubleshooting
 - 🚀 Installation
-- 5.2.1 - 2020-03-25
+- 5.8.1 - 2021-05-20
 - Installation
 - Core Functions
 - 4.9.5 - 2019-07-02
-- 5.9.2 - 2021-09-08
-- 7.9.1 - 2025-05-29
-- 8.1.1 - 2025-09-17
-- 4.9.10 - 2020-04-23
+- 6.7.2 - 2023-10-25
+- 7.1.1 - 2024-05-22
+- 7.1.2 - 2024-06-05
+- 8.2.1 - 2025-11-06
+- 8.3.2 - 2026-01-14
 - 8.0.1 - 2025-07-28
 - Conflict Check — Phase 3: Search Coverage (False Negatives)
 - 5.1.4 - 2019-12-11
 - 5.2.2 - 2020-04-23
-- 5.6.1 - 2020-11-25
 - Phase 2: JS/CSS Identifiers (Assign Staff Modal)
 - 5.10.0 - 2021-10-11
 - 5.8.0 - 2021-05-06
@@ -781,9 +781,7 @@
 - 4.1.6 - 2014-10-08
 - 4.1.7 - 2014-11-27
 - 4.1.8 - 2015-03-05
-- 7.0.1 - 2024-04-10
 - 4.2.5 - 2015-08-31
-- 4.3.11 - 2016-04-25
 - 4.3.13 - 2016-06-08
 - 4.3.3 - 2016-01-14
 - 4.3.6 - 2016-03-01
@@ -800,7 +798,6 @@
 - 4.8.2 - 2018-08-09
 - 4.8.5 - 2018-10-30
 - 4.9.0 - 2018-11-27
-- 7.4.1 - 2024-10-10
 - 5.0.0-preview-3 - 2018-10-18
 - 5.0.13 - 2019-08-06
 - 5.0.16 - 2019-09-24
@@ -819,7 +816,6 @@
 - 4.7.8 - 2018-02-26
 - 4.7.9 - 2018-02-27
 - 4.8.1 - 2018-07-26
-- 8.2.2 - 2025-11-17
 - 4.9.4 - 2019-03-20
 - 4.9.8 - 2020-01-28
 - 5.10.1 - 2021-11-03
@@ -855,7 +851,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (1517 total, 345 thin omitted)
+## Communities (1513 total, 345 thin omitted)
 
 ### Community 0 - "tinymce.d.ts"
 Cohesion: 0.00
@@ -863,47 +859,47 @@ Nodes (483): AddOnConstructor, AddOnManager, AddOnManagerNamespace, AfterProgres
 
 ### Community 1 - "public/js/app.js"
 Cohesion: 0.01
-Nodes (158): RFC-3986, advancePositionWithClone(), advancePositionWithMutation(), ary(), asciiSlice(), asciiWords(), assertType(), assocIndexOf() (+150 more)
+Nodes (172): RFC-3986, addCombinator(), advancePositionWithClone(), advancePositionWithMutation(), ary(), asciiSlice(), asciiWords(), assertType() (+164 more)
 
 ### Community 2 - ".getContext"
 Cohesion: 0.11
 Nodes (13): ao(), Bi(), Ci(), co(), cs, da(), Do(), Fi() (+5 more)
 
 ### Community 3 - "isFunction"
-Cohesion: 0.06
-Nodes (55): assignMergeValue(), AxiosURLSearchParams(), baseCompile(), baseGetTag(), baseIsArguments(), baseIsArrayBuffer(), baseIsDate(), baseIsMap() (+47 more)
+Cohesion: 0.05
+Nodes (62): assignMergeValue(), AxiosURLSearchParams(), baseGetTag(), baseIsArguments(), baseIsArrayBuffer(), baseIsDate(), baseIsMap(), baseIsRegExp() (+54 more)
 
-### Community 4 - "buildProps"
-Cohesion: 0.04
-Nodes (102): addNode(), addToPrefiltersOrTransports(), ajaxHandleResponses(), backTrack(), baseParse(), buildDirectiveArgs(), buildDynamicSlot(), buildProps() (+94 more)
+### Community 4 - "push"
+Cohesion: 0.03
+Nodes (144): addNode(), addToPrefiltersOrTransports(), ajaxHandleResponses(), backTrack(), baseCompile(), baseKeysIn(), baseParse(), buildDirectiveArgs() (+136 more)
 
 ### Community 5 - ".slice"
 Cohesion: 0.03
-Nodes (142): arrayIncludes(), arrayReduce(), arraySample(), arraySampleSize(), asciiToArray(), autoPrefix(), base64clean(), base64Slice() (+134 more)
+Nodes (130): arrayReduce(), arraySampleSize(), asciiToArray(), assert(), autoPrefix(), base64clean(), base64Slice(), baseClamp() (+122 more)
 
 ### Community 6 - "theme.js"
 Cohesion: 0.01
 Nodes (137): TODO: Think about the types for this, or find a better way for this, TODO: ^ rename the parts/ api to composites, it will break mobile alloy now if…, NOTE: This will stop at first handler., TODO: TINY-8812 - This ideally should be done in a way such that a menu can…, NOTE: Many of these events rely on identifying the current item by information, TODO: TINY-9011 Introduce proper handling of fakeFocus in TieredMenu, TODO: Make an internal sink also be able to be used with relative layouts, TODO: Make this potentially a single menu also (+129 more)
 
 ### Community 7 - "warn"
-Cohesion: 0.02
-Nodes (82): addSub(), BaseReactiveHandler, batch(), checkIdentityKeys(), cleanupDeps(), cleanupEffect(), ComputedRefImpl, concat() (+74 more)
+Cohesion: 0.03
+Nodes (63): arrayIncludes(), arraySample(), baseIndexOf(), baseIsNaN(), baseRandom(), BaseReactiveHandler, baseSample(), baseSampleSize() (+55 more)
 
-### Community 8 - "getIteratee"
+### Community 8 - "apply"
 Cohesion: 0.02
-Nodes (158): arrayAggregator(), arrayEach(), arrayEachRight(), arrayFilter(), arrayLikeKeys(), arrayMap(), arrayPush(), arrayReduceRight() (+150 more)
+Nodes (146): addGetHookIf(), after(), apply(), arrayAggregator(), arrayEach(), arrayEachRight(), arrayFilter(), arrayMap() (+138 more)
 
 ### Community 9 - ".forEach"
 Cohesion: 0.02
-Nodes (158): applyOptions(), applyStyles(), assertOptions(), Axios, baseCreateRenderer(), bind(), buildAccessors(), buildURL() (+150 more)
+Nodes (173): applyOptions(), applyStyles(), assertOptions(), Axios, baseCreateRenderer(), bind(), buildAccessors(), buildURL() (+165 more)
 
 ### Community 10 - "chart.umd.min.js"
 Cohesion: 0.03
-Nodes (49): aa(), afterDatasetsUpdate(), at(), beforeUpdate(), Bn(), buildTicks(), _calculateBarIndexPixels(), _calculateBarValuePixels() (+41 more)
+Nodes (68): aa(), Ae(), afterDatasetsUpdate(), at(), beforeUpdate(), Bn(), buildTicks(), ca (+60 more)
 
 ### Community 11 - "Lead"
 Cohesion: 0.04
-Nodes (9): ValidationException, LeadController, Carbon, LeadConversionController, ClientContact, Lead, ClientMatchingService, LeadMatterAssignedConversion (+1 more)
+Nodes (10): ValidationException, LeadController, Carbon, LeadConversionController, PhoneVerificationController, ClientContact, Lead, ClientMatchingService (+2 more)
 
 ### Community 12 - "ss"
 Cohesion: 0.08
@@ -915,11 +911,11 @@ Nodes (5): ClientConflictCheck, ConflictCheckStalenessService, Carbon, ConflictC
 
 ### Community 14 - "tn"
 Cohesion: 0.04
-Nodes (13): d(), Di(), generateLabels(), ke(), kn(), labelColor(), labelPointStyle(), onClick() (+5 more)
+Nodes (21): beforeDatasetDraw(), beforeDatasetsDraw(), beforeDraw(), d(), Di(), es(), generateLabels(), Ie() (+13 more)
 
-### Community 15 - "push"
-Cohesion: 0.04
-Nodes (78): addCombinator(), assert(), baseKeysIn(), children(), clockwise(), compile(), condense(), createButtonPseudo() (+70 more)
+### Community 15 - ".find"
+Cohesion: 0.08
+Nodes (26): addHandler(), bootstrapDelegationHandler(), bootstrapHandler(), clockwise(), findHandler(), focusableChildren(), getElementEvents(), getSideOffsets() (+18 more)
 
 ### Community 16 - "ce"
 Cohesion: 0.05
@@ -931,35 +927,35 @@ Nodes (5): TrustBankStatementLine, TrustClientFieldObserver, TrustMatterFieldObs
 
 ### Community 18 - "EmailLog"
 Cohesion: 0.03
-Nodes (18): Handler, EmailLabelController, EmailLabelController, EmailLabel, EmailLog, UnassignedEmailAssignmentService, hasClientListModuleAccess(), hasModuleAccess() (+10 more)
+Nodes (13): BackfillEmailPdfPreviews, Handler, EmailLabelController, EmailLabelController, EmailLabel, EmailLog, EmailPdfBackfillService, UnassignedEmailAssignmentService (+5 more)
 
 ### Community 19 - "Changelog"
 Cohesion: 0.01
-Nodes (134): 4.1.10 - 2015-05-05, 4.1.1 - 2014-07-08, 4.1.5 - 2014-09-09, 4.1.9 - 2015-03-10, 4.2.2 - 2015-07-22, 4.2.6 - 2015-09-28, 4.2.7 - 2015-10-27, 4.2.8 - 2015-11-13 (+126 more)
+Nodes (133): 4.1.1 - 2014-07-08, 4.1.9 - 2015-03-10, 4.2.1 - 2015-06-29, 4.2.2 - 2015-07-22, 4.2.3 - 2015-07-30, 4.2.7 - 2015-10-27, 4.3.11 - 2016-04-25, 4.3.12 - 2016-05-10 (+125 more)
 
 ### Community 21 - "StaffClientVisibility"
-Cohesion: 0.05
-Nodes (8): MatterChannel, UserChannel, JsonResponse, DocumentPolicy, StaffClientVisibility, Illuminate\Auth\Access\HandlesAuthorization, Illuminate\Contracts\Auth\Authenticatable, StaffClientVisibilityAllocationTest
+Cohesion: 0.04
+Nodes (12): MatterChannel, UserChannel, ensureCrmRecordAccessStrict(), JsonResponse, DocumentPolicy, DashboardService, StaffClientVisibility, Illuminate\Auth\Access\HandlesAuthorization (+4 more)
 
 ### Community 22 - "tinymce.js"
 Cohesion: 0.03
 Nodes (81): RFC-4122, RFC-6454, addToSet(), _arrayLikeToArray(), _arrayWithHoles(), cleanArray(), clone(), ComponentLoadError (+73 more)
 
 ### Community 23 - "Illuminate\Database\Eloquent\Relations\HasMany"
-Cohesion: 0.08
-Nodes (3): BranchesController, Branch, Illuminate\Database\Eloquent\Relations\HasMany
+Cohesion: 0.07
+Nodes (6): BranchesController, ActiveStaffController, Branch, ActiveStaffService, Carbon, Illuminate\Database\Eloquent\Relations\HasMany
 
 ### Community 24 - "EmailTemplate"
 Cohesion: 0.08
 Nodes (5): CrmEmailTemplateController, MatterEmailTemplateController, MatterOtherEmailTemplateController, EmailTemplate, EmailTemplateValidationTest
 
-### Community 25 - "update"
-Cohesion: 0.05
-Nodes (55): areValidElements(), baseGet(), baseHas(), baseHasIn(), baseInvoke(), baseIsEqual(), baseIsMatch(), baseIteratee() (+47 more)
+### Community 25 - "baseClone"
+Cohesion: 0.04
+Nodes (75): arrayLikeKeys(), arrayShuffle(), assignValue(), baseAssign(), baseAssignIn(), baseClone(), baseConforms(), baseConformsTo() (+67 more)
 
 ### Community 26 - ".indexOf"
 Cohesion: 0.04
-Nodes (81): addEventListener(), applyStyle(), applyStyleOnLoad(), arrayIndexOf(), arrow(), attachToScrollParents(), baseExtremum(), baseGt() (+73 more)
+Nodes (74): applyStyle(), applyStyleOnLoad(), areValidElements(), arrayIndexOf(), arrow(), baseExtremum(), baseGt(), baseLt() (+66 more)
 
 ### Community 28 - "emails.js"
 Cohesion: 0.07
@@ -969,13 +965,9 @@ Nodes (73): applyLabel(), buildEmailUploadFormData(), canPreviewAttachment(), cl
 Cohesion: 0.06
 Nodes (6): MatterController, Exception, Matter, ClientEditService, up(), MatterClientSubjectTest
 
-### Community 30 - "ActivitiesLog"
-Cohesion: 0.05
-Nodes (6): ActivitySearchController, Closure, OfficeVisitController, ActivitiesLog, Carbon, CheckinLog
-
 ### Community 31 - "Carbon\Carbon"
-Cohesion: 0.03
-Nodes (27): OthersController, LeadAnalyticsController, Carbon, ClientCourtHearing, Carbon, StaffCalendarEvent, Carbon, StaffCalendarFeedService (+19 more)
+Cohesion: 0.04
+Nodes (23): LeadAnalyticsController, Carbon, ClientCourtHearing, Carbon, StaffCalendarEvent, Carbon, StaffCalendarFeedService, CourtHearingReminderService (+15 more)
 
 ### Community 32 - "datatables.min.js"
 Cohesion: 0.08
@@ -985,9 +977,9 @@ Nodes (59): A(), ae(), at(), B(), be(), bt(), ce(), d() (+51 more)
 Cohesion: 0.08
 Nodes (57): #a(), #at(), #b(), bindAllInitialCountrySelectorListeners(), buildMarkup(), #C(), closeCountrySelector(), constructor() (+49 more)
 
-### Community 34 - "apply"
-Cohesion: 0.09
-Nodes (32): addGetHookIf(), addHandler(), after(), apply(), baseDelay(), baseFindIndex(), before(), bootstrapDelegationHandler() (+24 more)
+### Community 34 - ".has"
+Cohesion: 0.06
+Nodes (30): AxiosHeaders, beforeUpdate(), callModelHook(), created(), createRecord(), get(), getCheckboxValue(), getNative() (+22 more)
 
 ### Community 36 - "outlook_emails.js"
 Cohesion: 0.06
@@ -1011,11 +1003,11 @@ Nodes (5): ps, qt, U, vs, Ht()
 
 ### Community 41 - "Admin"
 Cohesion: 0.02
-Nodes (24): BackfillEmailPdfPreviews, ProcessServiceAccountTokens, ResetSampleAppointments, SendSignatureReminders, Collection, SignatureDashboardController, PublicDocumentController, Admin (+16 more)
+Nodes (23): ProcessServiceAccountTokens, ResetSampleAppointments, SendSignatureReminders, Collection, SignatureDashboardController, PublicDocumentController, Admin, Document (+15 more)
 
 ### Community 43 - "n"
 Cohesion: 0.06
-Nodes (10): Be(), g(), gn(), n(), ne(), numeric(), pi(), rn() (+2 more)
+Nodes (9): Be(), g(), gn(), n(), ne(), numeric(), pi(), rn() (+1 more)
 
 ### Community 45 - "BookingCalendarExternalFeed"
 Cohesion: 0.07
@@ -1054,12 +1046,8 @@ Cohesion: 0.09
 Nodes (37): B, Ae(), B(), Be(), c(), $e(), ee(), F() (+29 more)
 
 ### Community 56 - "ClientLegalForm"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (3): LegalFormsController, UploadedFile, ClientLegalForm
-
-### Community 57 - "UserRole"
-Cohesion: 0.15
-Nodes (4): ClientController, Exception, UserroleController, UserRole
 
 ### Community 58 - "EmailParserService"
 Cohesion: 0.09
@@ -1091,7 +1079,7 @@ Nodes (5): getElementFromSelector(), getMultipleElementsFromSelector(), getSelec
 
 ### Community 65 - "Illuminate\Http\Request"
 Cohesion: 0.02
-Nodes (11): SmsSendController, SmsWebhookController, ClientMatterWorkflowController, ClientNotesController, ClientsController, CRMUtilityController, DashboardController, ExceptionController (+3 more)
+Nodes (13): SmsSendController, SmsWebhookController, PublicListingController, ClientMatterWorkflowController, ClientNotesController, ClientsController, CRMUtilityController, DashboardController (+5 more)
 
 ### Community 66 - "ZohoImapFetcher"
 Cohesion: 0.19
@@ -1115,7 +1103,7 @@ Nodes (6): ConflictCheckPhase0Fixtures, self, ConflictCheckPhase3Fixtures, self,
 
 ### Community 73 - "a"
 Cohesion: 0.06
-Nodes (42): a(), ai(), average(), dataset(), determineDataLimits(), draw(), e(), ei() (+34 more)
+Nodes (44): a(), ai(), average(), dataset(), determineDataLimits(), draw(), e(), ei() (+36 more)
 
 ### Community 74 - "detail-main.js"
 Cohesion: 0.09
@@ -1146,8 +1134,8 @@ Cohesion: 0.08
 Nodes (22): CLOSE_ACCOUNT(), close_authorized_web_screen(), close_deleteaccount(), close_linked_accounts_screen(), closeview_all_autho_web(), closeview_all_linked_acc(), IDP_container_slideup(), load_AuthWebsitesdetails() (+14 more)
 
 ### Community 84 - "Illuminate\Console\Command"
-Cohesion: 0.05
-Nodes (18): ArchiveOldDrafts, CacheAccessGrantGlobalCounts, CheckMigrationTablesExist, CleanupActivityDescriptions, CompareDatabaseTables, CompleteTaskRemoval, CronJob, ExpireCrmAccessGrants (+10 more)
+Cohesion: 0.04
+Nodes (19): ArchiveOldDrafts, CacheAccessGrantGlobalCounts, CheckMigrationTablesExist, CleanupActivityDescriptions, CompareDatabaseTables, CompleteTaskRemoval, CronJob, ExpireCrmAccessGrants (+11 more)
 
 ### Community 85 - "InboxSyncLogger"
 Cohesion: 0.10
@@ -1177,9 +1165,9 @@ Nodes (10): a, c(), g(), i(), l(), n(), o(), r() (+2 more)
 Cohesion: 0.06
 Nodes (10): Optional, NOTE: For certain properties, this returns the "used value" which is subtly…, TODO: Avoid all this wrapping and unwrapping, TODO: Avoid all the wrapping and unwrapping, TODO: Consider removing this check, but left atm for safety, NOTE: isIe just looks too weird, TODO: Fix capitalisation, IMPORTANT: Must be in a thunk, otherwise rollup thinks calling this immediately (+2 more)
 
-### Community 95 - "ua"
-Cohesion: 0.10
-Nodes (18): beforeDatasetDraw(), beforeDatasetsDraw(), beforeDraw(), ca, ea(), ga(), ha(), ia() (+10 more)
+### Community 95 - "Implementation Plan (Apply Recommendations)"
+Cohesion: 0.22
+Nodes (9): Implementation Plan (Apply Recommendations), Phase 0: Immediate safe deletions (zero code refactor) ✅ APPLIED, Phase 1: GST and business fax (remove code first) ✅ APPLIED, Phase 2: Alternative contact fields (att_email, att_phone, att_country_code) ✅ APPLIED, Phase 3: Legacy BansalCRM lead columns ✅ APPLIED, Phase 4: Other legacy fields ✅ APPLIED, Phase 5: time_zone (optional), Pre-flight checklist (before any phase) (+1 more)
 
 ### Community 96 - "edit-client.js"
 Cohesion: 0.07
@@ -1190,7 +1178,7 @@ Cohesion: 0.12
 Nodes (41): actionPageUrl(), buildRowHtml(), cfg(), clearDueDateInput(), clearFieldInvalid(), clientId(), creatorName(), csrf() (+33 more)
 
 ### Community 99 - "LegalFormDocxService"
-Cohesion: 0.21
+Cohesion: 0.23
 Nodes (4): LegalFormDocxService, DOMDocument, DOMElement, PhpOffice\PhpWord\TemplateProcessor
 
 ### Community 100 - "AppointmentSyncLog"
@@ -1201,17 +1189,17 @@ Nodes (6): AppointmentSyncLog, EmailSignatureHtml, Illuminate\Database\Eloquent\
 Cohesion: 0.07
 Nodes (3): PublicBookingController, BookingAppointment, CheckInAppointmentService
 
-### Community 103 - "Illuminate\Support\Carbon"
-Cohesion: 0.16
-Nodes (9): Carbon, StaffLoginAnalyticsController, StaffLoginLog, Carbon, StaffLoginAnalyticsService, cutoff(), Carbon, up() (+1 more)
+### Community 103 - "Illuminate\Support\Collection"
+Cohesion: 0.29
+Nodes (8): StaffLoginLog, Carbon, StaffLoginAnalyticsService, cutoff(), Carbon, up(), Illuminate\Support\Carbon, Illuminate\Support\Collection
 
 ### Community 104 - "smart-email-import.js"
 Cohesion: 0.17
 Nodes (29): analyzeFiles(), applySuggestion(), bindReviewEvents(), bindUploadPanel(), buildSuggestionPickerHtml(), confidenceClass(), confidenceLabel(), confirmImports() (+21 more)
 
-### Community 105 - "Illuminate\Notifications\Notifiable"
+### Community 105 - "MatterDocumentTypeController"
 Cohesion: 0.06
-Nodes (14): DocumentChecklistController, Exception, MatterDocumentTypeController, Exception, PersonalDocumentTypeController, Exception, UploadChecklistController, DocumentChecklist (+6 more)
+Nodes (13): DocumentChecklistController, Exception, MatterDocumentTypeController, Exception, PersonalDocumentTypeController, Exception, UploadChecklistController, DocumentChecklist (+5 more)
 
 ### Community 106 - "AppointmentSyncService"
 Cohesion: 0.16
@@ -1241,9 +1229,9 @@ Nodes (3): AccessGrantController, BroadcastNotificationAjaxController, Illuminat
 Cohesion: 0.12
 Nodes (19): datetime, Configuration for Migration Manager Python Services This module contains all…, DOCX to PDF Converter Service Handles conversion of DOC/DOCX files to PDF using…, Email Analyzer Service Provides AI-powered email content analysis including: -…, Email Parser Service Handles parsing of Outlook email files (.msg via…, Email Renderer Service Provides enhanced HTML email rendering capabilities…, Service modules for Python services., PDF Processing Service Handles PDF operations including: - Converting PDF pages… (+11 more)
 
-### Community 117 - "s"
-Cohesion: 0.11
-Nodes (11): bo, et(), getRange(), H(), _i(), ji(), label(), ns() (+3 more)
+### Community 117 - "10. Notification Tracking"
+Cohesion: 0.40
+Nodes (5): 10. Notification Tracking, `confirmation_email_sent_at` (datetime, nullable), `confirmation_email_sent` (boolean, default false), `reminder_sms_sent_at` (datetime, nullable), `reminder_sms_sent` (boolean, default false)
 
 ### Community 118 - "keywords"
 Cohesion: 0.07
@@ -1260,10 +1248,6 @@ Nodes (5): Optional, NOTE: you currently need anchors in the content for this fi
 ### Community 121 - "Optional"
 Cohesion: 0.08
 Nodes (5): add(), createEditor(), get(), init(), Optional
-
-### Community 123 - "Illuminate\Support\Collection"
-Cohesion: 0.18
-Nodes (3): Notification, BroadcastNotificationService, Illuminate\Support\Collection
 
 ### Community 124 - "scripts"
 Cohesion: 0.07
@@ -1319,7 +1303,7 @@ Nodes (3): Optional, TODO: Fix table styles #TINY-2909, TODO: Add other premium 
 
 ### Community 143 - "TestCase"
 Cohesion: 0.03
-Nodes (23): CrmAccessDeniedException, CreatesApplication, GuzzleHttp\Client, Illuminate\Foundation\Testing\RefreshDatabase, Illuminate\Foundation\Testing\TestCase, RuntimeException, Area7SecurityTest, ClientMergeTest (+15 more)
+Nodes (19): CreatesApplication, Illuminate\Foundation\Testing\RefreshDatabase, Illuminate\Foundation\Testing\TestCase, Area7SecurityTest, ClientMatterGraphVisibilityTest, ClientMergeTest, ClientReferenceRaceConditionTest, ClientUpdateRouteTest (+11 more)
 
 ### Community 144 - ".write"
 Cohesion: 0.10
@@ -1353,9 +1337,9 @@ Nodes (7): bindPendingEventDelegates(), Tools, EventDispatcher, hasEventListener
 Cohesion: 0.08
 Nodes (4): EditorManager, EditorObservable, Observable, TinyMCE
 
-### Community 172 - "domManip"
-Cohesion: 0.16
-Nodes (16): baseSortedIndex(), buildFragment(), buildParams(), disableScript(), DOMEval(), domManip(), eq(), getAll() (+8 more)
+### Community 172 - "keywords"
+Cohesion: 0.67
+Nodes (3): keywords, framework, laravel
 
 ### Community 173 - "Python Services - Quick Reference"
 Cohesion: 0.04
@@ -1382,8 +1366,8 @@ Cohesion: 0.23
 Nodes (6): Hk(), nk(), Pk(), sk(), Vk(), zk()
 
 ### Community 185 - "un"
-Cohesion: 0.11
-Nodes (15): un, addBox(), b(), cn(), configure(), dn(), fe(), hn() (+7 more)
+Cohesion: 0.07
+Nodes (17): un, addBox(), b(), bo, cn(), configure(), dn(), fe() (+9 more)
 
 ### Community 186 - "clients-listing-spa.js"
 Cohesion: 0.26
@@ -1399,11 +1383,11 @@ Nodes (23): canPreviewEmailAttachment(), collectEmailAttachmentItems(), emailHtm
 
 ### Community 189 - "Booking Appointments Table – Column Reference"
 Cohesion: 0.05
-Nodes (42): 10. Notification Tracking, 11. Sync Metadata, 12. Column Type Quick Reference, 1. Primary Key & Timestamps, 2. External Reference (Bansal), 3. Relationships, 6. Service Details, 7. Status & Lifecycle (+34 more)
+Nodes (37): 11. Sync Metadata, 12. Column Type Quick Reference, 1. Primary Key & Timestamps, 2. External Reference (Bansal), 3. Relationships, 6. Service Details, 7. Status & Lifecycle, 9. CRM-Specific Fields (+29 more)
 
 ### Community 190 - "ho"
-Cohesion: 0.06
-Nodes (16): Ae(), beforeLayout(), buildLookupTable(), _generate(), getDecimalForValue(), _getTimestampsForTable(), getValueForPixel(), Go() (+8 more)
+Cohesion: 0.09
+Nodes (13): beforeLayout(), buildLookupTable(), _generate(), getDecimalForValue(), _getTimestampsForTable(), getValueForPixel(), Go(), ho() (+5 more)
 
 ### Community 194 - "matter.js"
 Cohesion: 0.26
@@ -1533,17 +1517,17 @@ Nodes (16): BaseFormat, Block, BlockFormat, BlockStyleFormat, CommonFormat, Comm
 Cohesion: 0.21
 Nodes (3): ot, G(), J()
 
-### Community 240 - "Illuminate\Database\Seeder"
-Cohesion: 0.31
-Nodes (4): AppointmentConsultantSeeder, DatabaseSeeder, SuperAdminBootstrapSeeder, Illuminate\Database\Seeder
+### Community 240 - "4.2.6 - 2015-09-28"
+Cohesion: 0.67
+Nodes (3): 4.2.6 - 2015-09-28, Added, Fixed
 
 ### Community 241 - "k"
 Cohesion: 0.32
 Nodes (10): d(), E(), f(), g(), k(), l(), m(), n() (+2 more)
 
 ### Community 243 - "Admins Table – Column Reference"
-Cohesion: 0.07
-Nodes (29): Admins Table – Column Reference, Archive & Audit, Client/Lead – Personal & CRM, Client Portal, Column removal guide, Columns That Appear Unused, Company / Business (Staff & solicitors), Contact & Address (+21 more)
+Cohesion: 0.10
+Nodes (20): Admins Table – Column Reference, Archive & Audit, Client/Lead – Personal & CRM, Client Portal, Column removal guide, Columns That Appear Unused, Company / Business (Staff & solicitors), Contact & Address (+12 more)
 
 ### Community 244 - "crm_client_detail.blade.php"
 Cohesion: 0.14
@@ -1551,7 +1535,7 @@ Nodes (13): partials.email-from-compose-script, components.bootstrap5-assets, co
 
 ### Community 246 - "Controller"
 Cohesion: 0.03
-Nodes (21): ESignatureController, TeamController, BaseController, PublicListingController, ServiceAccountController, ensureCrmRecordAccess(), ensureCrmRecordAccessForOptionalClientId(), ensureCrmRecordAccessFromRequest() (+13 more)
+Nodes (16): ActivitySearchController, Closure, ClientController, ESignatureController, Exception, UserroleController, BaseController, ServiceAccountController (+8 more)
 
 ### Community 248 - "test_service.py"
 Cohesion: 0.21
@@ -1571,7 +1555,7 @@ Nodes (3): EmailCalendarLink, EmailCalendarMergeService, Carbon
 
 ### Community 252 - "composer.json"
 Cohesion: 0.15
-Nodes (12): autoload-dev, psr-4, description, keywords, license, minimum-stability, name, prefer-stable (+4 more)
+Nodes (12): autoload-dev, psr-4, description, extra, laravel, dont-discover, license, minimum-stability (+4 more)
 
 ### Community 253 - "Closure"
 Cohesion: 0.16
@@ -1595,7 +1579,7 @@ Nodes (5): ClientImportService, ClientReferenceService, LeadFollowUpNoteService,
 
 ### Community 262 - "ClientMatter"
 Cohesion: 0.03
-Nodes (10): WorkflowController, ClientMatterHubController, ClientMatter, self, Workflow, WorkflowStage, DashboardService, MatterActionNoteService (+2 more)
+Nodes (9): WorkflowController, ClientMatterHubController, ClientMatter, self, Workflow, WorkflowStage, MatterActionNoteService, WorkflowStageFreeze (+1 more)
 
 ### Community 263 - "4. Form Sections and Field Mapping"
 Cohesion: 0.09
@@ -1609,9 +1593,9 @@ Nodes (11): crm.clients.modals.activities, crm.clients.modals.applications, crm.
 Cohesion: 0.32
 Nodes (11): bindAddressSearch(), bindAddressSelection(), bindClickOutside(), bindRegionalCodeCalculation(), fetchPlaceDetails(), getAutocompleteConfig(), initAddressAutocomplete(), initDatePickers() (+3 more)
 
-### Community 269 - "ClientsController.php"
-Cohesion: 0.04
-Nodes (9): EmailVerificationController, ClientAddress, ClientEmail, ClientExportService, CompanyDirectorEmailService, MatterStreamHelper, getMatterReference(), Illuminate\Database\QueryException (+1 more)
+### Community 269 - "ActivitiesLog"
+Cohesion: 0.03
+Nodes (19): ensureCrmRecordAccess(), ensureCrmRecordAccessForOptionalClientId(), ensureCrmRecordAccessFromRequest(), EmailVerificationController, ActivitiesLog, Carbon, ClientAddress, ClientEmail (+11 more)
 
 ### Community 276 - "verify-bootstrap5.cjs"
 Cohesion: 0.17
@@ -1630,16 +1614,16 @@ Cohesion: 0.24
 Nodes (4): MarkMigrationsAsRunCommand, MigrateSecondDatabase, Illuminate\Database\Console\Migrations\BaseCommand, Illuminate\Database\Migrations\Migrator
 
 ### Community 280 - "wa"
-Cohesion: 0.07
-Nodes (26): afterDraw(), afterEvent(), afterUpdate(), Ba(), eo(), es(), f(), ki() (+18 more)
+Cohesion: 0.06
+Nodes (28): afterDraw(), afterEvent(), afterUpdate(), Ba(), eo(), f(), H(), j() (+20 more)
 
 ### Community 285 - "send-to-client.js"
 Cohesion: 0.35
 Nodes (10): attachSendToClientHandlers(), handleRefreshHubdocStatus(), handleSendClientFundReceiptToClient(), handleSendInvoiceToClient(), handleSendOfficeReceiptToClient(), handleSendToHubdoc(), sendClientFundReceiptToClientAjax(), sendInvoiceToClientAjax() (+2 more)
 
-### Community 289 - "AppServiceProvider.php"
-Cohesion: 0.18
-Nodes (4): SortableHelper, AppointmentSyncServiceProvider, AppServiceProvider, Illuminate\Support\ServiceProvider
+### Community 289 - "Exception"
+Cohesion: 0.06
+Nodes (12): SortableHelper, OthersController, AppointmentSyncServiceProvider, AppServiceProvider, AppointmentConsultantSeeder, DatabaseSeeder, SuperAdminBootstrapSeeder, Exception (+4 more)
 
 ### Community 291 - "safeParseJsonResponse"
 Cohesion: 0.27
@@ -1958,8 +1942,8 @@ Cohesion: 0.33
 Nodes (6): 5. Relationships & References, `client_id` (integer, nullable), `client_matter_id` (varchar, nullable), `form956_id` (bigint, nullable), `office_id` (integer, nullable), `user_id` (integer, nullable)
 
 ### Community 402 - ".get"
-Cohesion: 0.04
-Nodes (60): addTransitionClass(), adoptValue(), ajaxConvert(), Animation(), applyTranslation(), AxiosHeaders, baseAt(), callHook() (+52 more)
+Cohesion: 0.03
+Nodes (83): addEventListener(), addSub(), addTransitionClass(), adoptValue(), ajaxConvert(), Animation(), applyTranslation(), arraySome() (+75 more)
 
 ### Community 403 - "dropdown-multi-select.js"
 Cohesion: 0.83
@@ -2049,6 +2033,10 @@ Nodes (3): InlineBasePattern, InlineCmdPattern, InlineFormatPattern
 Cohesion: 0.33
 Nodes (6): 4.1 Pre-Migration Verification, 4.2 Tables: Staff References (`user_id` → `staff_id`), 4.3 Tables: Client References (`user_id` → `client_id`), 4.5 Foreign Key Handling, 4.6 Model Updates (Apply with Phase 5), Phase 4: Database Column Renames (Migrations)
 
+### Community 804 - "4.4.2 - 2016-08-25"
+Cohesion: 0.67
+Nodes (3): 4.4.2 - 2016-08-25, Added, Fixed
+
 ### Community 815 - "Acceptance"
 Cohesion: 0.12
 Nodes (15): Acceptance, Acceptance, Billing and payment, Costs limited by legislation, Disputes concerning costs and failure to pay, Document ownership, retention, and destruction, Electronic communication, Interest charges (+7 more)
@@ -2065,17 +2053,9 @@ Nodes (6): ClientAccountsController, Closure, Response, AccountAllInvoiceReceipt
 Cohesion: 0.67
 Nodes (3): 4.5.3 - 2017-02-01, Added, Fixed
 
-### Community 1165 - "extra"
+### Community 1165 - "5.0.8 - 2019-06-18"
 Cohesion: 0.67
-Nodes (3): extra, laravel, dont-discover
-
-### Community 1168 - "4.7.11 - 2018-04-11"
-Cohesion: 0.67
-Nodes (3): 4.7.11 - 2018-04-11, Added, Fixed
-
-### Community 1242 - "4.9.1 - 2018-12-04"
-Cohesion: 0.67
-Nodes (3): 4.9.1 - 2018-12-04, Added, Fixed
+Nodes (3): 5.0.8 - 2019-06-18, Added, Fixed
 
 ### Community 1252 - "6.8.1 - 2023-11-29"
 Cohesion: 0.67
@@ -2718,8 +2698,8 @@ Cohesion: 0.67
 Nodes (3): 🏗️ Architecture, Directory Structure, Why Unified Service?
 
 ### Community 1512 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.03
-Nodes (23): FrontDeskCheckInController, RedirectResponse, View, AgentDetails, CheckinHistory, CompanyDirector, CompanyTradingName, CostAssignmentForm (+15 more)
+Cohesion: 0.02
+Nodes (28): TeamController, FrontDeskCheckInController, RedirectResponse, View, AgentDetails, CheckinHistory, CompanyDirector, CompanyTradingName (+20 more)
 
 ### Community 1522 - "5.0.3 - 2019-03-19"
 Cohesion: 0.67
@@ -2735,7 +2715,7 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Attribute` connect `AppointmentSyncLog` to `tinymce.d.ts`?**
   _High betweenness centrality (0.199) - this node is a cross-community bridge._
-- **Why does `index()` connect `getIteratee` to `apply`, `isFunction`, `outlook_emails.js`, `createDOMPurify`, `smart-email-import.js`, `a`, `chart.umd.min.js`, `domManip`, `resolve`, `tinymce.js`, `.indexOf`, `ua`?**
+- **Why does `index()` connect `apply` to `isFunction`, `outlook_emails.js`, `createDOMPurify`, `smart-email-import.js`, `a`, `chart.umd.min.js`, `resolve`, `tn`, `tinymce.js`?**
   _High betweenness centrality (0.108) - this node is a cross-community bridge._
 - **Why does `Tools` connect `Shortcuts` to `tinymce.d.ts`, `Optional`, `ScriptLoader`?**
   _High betweenness centrality (0.104) - this node is a cross-community bridge._

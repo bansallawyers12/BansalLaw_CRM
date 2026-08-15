@@ -1326,7 +1326,7 @@ class ClientsController extends Controller
                 // Shorter tab slugs / legacy bookmarks
                 'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
-                'formgenerations', 'formgenerationsl', 'nominationdocuments',
+                'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
                 'visadocuments', // legacy alias → matterdocuments
             ];
