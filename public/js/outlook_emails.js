@@ -5234,7 +5234,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     payload.client_matter_id = parseInt(selectedMatter, 10);
                 }
 
-                const response = await fetch(endpoint, {
+                const assignController = typeof AbortController === 'function'
+                    ? new AbortController()
+                    : null;
+                const assignTimeoutMs = 25000;
+                const assignTimeoutId = assignController
+                    ? setTimeout(function () {
+                        assignController.abort();
+                    }, assignTimeoutMs)
+                    : null;
+                const fetchOptions = {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -5242,8 +5251,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-CSRF-TOKEN': getCsrfToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify(payload)
-                });
+                };
+                if (assignController) {
+                    fetchOptions.signal = assignController.signal;
+                }
+                let response;
+                try {
+                    response = await fetch(endpoint, fetchOptions);
+                } finally {
+                    if (assignTimeoutId) {
+                        clearTimeout(assignTimeoutId);
+                    }
+                }
                 const data = await response.json().catch(function () {
                     return {};
                 });
@@ -5273,7 +5294,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 crmToast(data.message || 'Could not update email.', 'error');
             } catch (error) {
-                crmToast('Could not update email: ' + (error.message || 'Unknown error'), 'error');
+                const aborted = error && (error.name === 'AbortError' || /aborted/i.test(String(error.message || '')));
+                crmToast(
+                    aborted
+                        ? 'Assign timed out. If the email still appears here, try again; otherwise refresh the list.'
+                        : ('Could not update email: ' + (error.message || 'Unknown error')),
+                    'error'
+                );
             } finally {
                 isAssignSubmitting = false;
                 setAssignModalBusy(false);

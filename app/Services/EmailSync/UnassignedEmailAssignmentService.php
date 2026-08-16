@@ -78,18 +78,8 @@ class UnassignedEmailAssignmentService
         $sourcePrefix = $this->resolveSourcePrefix($emailLog);
 
         try {
-            if ($emailLog->uploaded_doc_id) {
-                $this->relocateDocument((int) $emailLog->uploaded_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
-            }
-
-            if ($emailLog->pdf_doc_id) {
-                $this->relocateDocument((int) $emailLog->pdf_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
-            }
-
-            foreach ($this->attachmentsFor($emailLog) as $attachment) {
-                $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
-            }
-
+            // Persist assignment before S3 moves so a hung HeadObject/copy cannot
+            // leave the modal on "Assigning..." with the email still unassigned.
             $emailLog->client_id = $clientId;
             $emailLog->client_matter_id = $clientMatterId;
             $emailLog->type = in_array($client->type, ['client', 'lead'], true) ? $client->type : 'client';
@@ -100,17 +90,45 @@ class UnassignedEmailAssignmentService
             $matter->updated_at = now();
             $matter->save();
 
-            if ($client->type === 'client') {
-                $matterRef = $matter->client_unique_matter_no ?: '';
-                $subjectLine = $emailLog->subject ?: 'Email';
-                $activitySubject = $matterRef !== ''
-                    ? "assigned Email: {$subjectLine} - {$matterRef}"
-                    : "assigned Email: {$subjectLine}";
-                if (strlen($activitySubject) > 100) {
-                    $activitySubject = substr($activitySubject, 0, 97) . '...';
+            try {
+                if ($emailLog->uploaded_doc_id) {
+                    $this->relocateDocument((int) $emailLog->uploaded_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
                 }
-                $from = $emailLog->from_mail ?: 'Unknown';
-                $this->logClientActivity($clientId, $activitySubject, "<p>From: {$from}</p>", 'email');
+
+                if ($emailLog->pdf_doc_id) {
+                    $this->relocateDocument((int) $emailLog->pdf_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
+                }
+
+                foreach ($this->attachmentsFor($emailLog) as $attachment) {
+                    $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
+                }
+            } catch (Throwable $storageException) {
+                Log::warning('Assigned email but could not relocate storage objects', [
+                    'email_log_id' => $emailLogId,
+                    'client_id' => $clientId,
+                    'error' => $storageException->getMessage(),
+                ]);
+            }
+
+            if ($client->type === 'client') {
+                try {
+                    $matterRef = $matter->client_unique_matter_no ?: '';
+                    $subjectLine = $emailLog->subject ?: 'Email';
+                    $activitySubject = $matterRef !== ''
+                        ? "assigned Email: {$subjectLine} - {$matterRef}"
+                        : "assigned Email: {$subjectLine}";
+                    if (strlen($activitySubject) > 100) {
+                        $activitySubject = substr($activitySubject, 0, 97) . '...';
+                    }
+                    $from = $emailLog->from_mail ?: 'Unknown';
+                    $this->logClientActivity($clientId, $activitySubject, "<p>From: {$from}</p>", 'email');
+                } catch (Throwable $activityException) {
+                    Log::warning('Email was assigned but client activity logging failed', [
+                        'email_log_id' => $emailLogId,
+                        'client_id' => $clientId,
+                        'error' => $activityException->getMessage(),
+                    ]);
+                }
             }
 
             try {
@@ -178,35 +196,43 @@ class UnassignedEmailAssignmentService
         $docType = (string) ($emailLog->conversion_type ?: 'conversion_email_fetch');
 
         try {
-            if ($emailLog->uploaded_doc_id) {
-                $this->unlinkDocument(
-                    (int) $emailLog->uploaded_doc_id,
-                    $sourcePrefix,
-                    $destPrefix,
-                    $docType,
-                    $mailType
-                );
-            }
-
-            if ($emailLog->pdf_doc_id) {
-                $this->unlinkDocument(
-                    (int) $emailLog->pdf_doc_id,
-                    $sourcePrefix,
-                    $destPrefix,
-                    $docType,
-                    $mailType
-                );
-            }
-
-            foreach ($this->attachmentsFor($emailLog) as $attachment) {
-                $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
-            }
-
             $emailLog->client_id = null;
             $emailLog->client_matter_id = null;
             $emailLog->user_id = $staffUserId ?: (int) Auth::id();
             $emailLog->sync_assignment_status = 'unassigned';
             $emailLog->save();
+
+            try {
+                if ($emailLog->uploaded_doc_id) {
+                    $this->unlinkDocument(
+                        (int) $emailLog->uploaded_doc_id,
+                        $sourcePrefix,
+                        $destPrefix,
+                        $docType,
+                        $mailType
+                    );
+                }
+
+                if ($emailLog->pdf_doc_id) {
+                    $this->unlinkDocument(
+                        (int) $emailLog->pdf_doc_id,
+                        $sourcePrefix,
+                        $destPrefix,
+                        $docType,
+                        $mailType
+                    );
+                }
+
+                foreach ($this->attachmentsFor($emailLog) as $attachment) {
+                    $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
+                }
+            } catch (Throwable $storageException) {
+                Log::warning('Unlinked email but could not relocate storage objects', [
+                    'email_log_id' => $emailLogId,
+                    'client_id' => $oldClientId,
+                    'error' => $storageException->getMessage(),
+                ]);
+            }
 
             if ($oldClient && $oldClient->type === 'client') {
                 try {
@@ -337,14 +363,13 @@ class UnassignedEmailAssignmentService
         $sourcePath = "{$sourcePrefix}/{$docType}/{$mailType}/{$filename}";
         $destPath = "{$destPrefix}/{$docType}/{$mailType}/{$filename}";
 
-        $this->moveS3Object($sourcePath, $destPath);
+        $moved = $this->moveS3Object($sourcePath, $destPath);
 
-        $disk = Storage::disk('s3');
         $document->client_id = $clientId;
         $document->client_matter_id = $clientMatterId;
         $document->user_id = $staffUserId;
-        if ($disk->exists($destPath)) {
-            $document->myfile = $disk->url($destPath);
+        if ($moved) {
+            $document->myfile = $this->storagePublicUrl($destPath);
         }
         $document->save();
     }
@@ -365,13 +390,12 @@ class UnassignedEmailAssignmentService
         $sourcePath = "{$sourcePrefix}/{$docType}/{$mailType}/{$filename}";
         $destPath = "{$destPrefix}/{$docType}/{$mailType}/{$filename}";
 
-        $this->moveS3Object($sourcePath, $destPath);
+        $moved = $this->moveS3Object($sourcePath, $destPath);
 
-        $disk = Storage::disk('s3');
         $document->client_id = null;
         $document->client_matter_id = null;
-        if ($disk->exists($destPath)) {
-            $document->myfile = $disk->url($destPath);
+        if ($moved) {
+            $document->myfile = $this->storagePublicUrl($destPath);
         }
         $document->save();
     }
@@ -388,34 +412,61 @@ class UnassignedEmailAssignmentService
         }
 
         $destKey = $destPrefix . substr($s3Key, strlen($sourcePrefix));
-        $this->moveS3Object($s3Key, $destKey);
-
-        $disk = Storage::disk('s3');
-        $attachment->s3_key = $destKey;
-        if ($disk->exists($destKey)) {
-            $attachment->file_path = $disk->url($destKey);
+        if (! $this->moveS3Object($s3Key, $destKey)) {
+            return;
         }
+
+        $attachment->s3_key = $destKey;
+        $attachment->file_path = $this->storagePublicUrl($destKey);
         $attachment->save();
     }
 
-    protected function moveS3Object(string $sourcePath, string $destPath): void
+    protected function storagePublicUrl(string $path): string
+    {
+        try {
+            return Storage::disk('s3')->url($path);
+        } catch (Throwable $e) {
+            return $path;
+        }
+    }
+
+    protected function moveS3Object(string $sourcePath, string $destPath): bool
     {
         if ($sourcePath === $destPath) {
-            return;
+            return true;
         }
 
         $disk = Storage::disk('s3');
-        if (! $disk->exists($sourcePath)) {
-            return;
+
+        try {
+            $disk->move($sourcePath, $destPath);
+
+            return true;
+        } catch (Throwable $e) {
+            try {
+                if ($disk->exists($destPath)) {
+                    try {
+                        $disk->delete($sourcePath);
+                    } catch (Throwable $ignored) {
+                    }
+
+                    return true;
+                }
+            } catch (Throwable $existsException) {
+                Log::warning('Could not verify synced email storage object after move failure', [
+                    'source' => $sourcePath,
+                    'dest' => $destPath,
+                    'error' => $existsException->getMessage(),
+                ]);
+            }
+
+            Log::warning('Could not move synced email storage object', [
+                'source' => $sourcePath,
+                'dest' => $destPath,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
-
-        if ($disk->exists($destPath)) {
-            $disk->delete($sourcePath);
-
-            return;
-        }
-
-        $disk->copy($sourcePath, $destPath);
-        $disk->delete($sourcePath);
     }
 }

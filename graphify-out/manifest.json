@@ -5975,7 +5975,7 @@
     "semantic_hash": ""
   },
   "resources/views/crm/clients/modals/activities.blade.php": {
-    "mtime": 1786876330.6836658,
+    "mtime": 1786877786.7528207,
     "ast_hash": "17e08a4b5fedda43e73141758aaf673e",
     "semantic_hash": "17e08a4b5fedda43e73141758aaf673e"
   },
@@ -7375,7 +7375,7 @@
     "semantic_hash": ""
   },
   "python_services/requirements.txt": {
-    "mtime": 1786876350.4694734,
+    "mtime": 1786877786.7528207,
     "ast_hash": "9c1fb4f473c275ae6b994c6fc8d9ce30",
     "semantic_hash": ""
   },

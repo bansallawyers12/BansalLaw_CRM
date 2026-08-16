@@ -10,11 +10,15 @@ $s3AwsDisk = [
     'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-2'),
     'bucket' => $awsBucket,
     'url' => env('AWS_URL'),
+    'http' => [
+        'connect_timeout' => 5,
+        'timeout' => 20,
+    ],
 ];
 
 $caBundle = __DIR__ . '/../resources/certs/cacert.pem';
 if (is_file($caBundle)) {
-    $s3AwsDisk['http'] = ['verify' => $caBundle];
+    $s3AwsDisk['http']['verify'] = $caBundle;
 }
 
 $s3LocalDisk = [
