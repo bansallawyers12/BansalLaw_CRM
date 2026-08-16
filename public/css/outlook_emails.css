@@ -3219,12 +3219,15 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 }
 
 .assign-email-picker .ts-wrapper .ts-control {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap;
     min-height: 48px;
     border: none !important;
     border-radius: 999px !important;
     background: transparent !important;
     box-shadow: none !important;
-    padding: 10px 44px 10px 44px;
+    padding: 0 40px 0 44px;
 }
 
 .assign-email-picker .ts-wrapper.focus .ts-control,
@@ -3238,6 +3241,12 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     color: var(--outlook-text) !important;
     background: transparent !important;
     caret-color: #0078d4;
+    min-width: 0 !important;
+}
+
+.assign-email-picker .ts-wrapper.has-items:not(.input-active) .ts-control > input {
+    width: 0 !important;
+    min-width: 0 !important;
 }
 
 .assign-email-picker .ts-control input::placeholder {
@@ -3253,14 +3262,28 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 }
 
 .assign-email-picker .ts-control .item {
-    background: #e8f4fd !important;
-    color: #0f548c !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent !important;
+    color: var(--outlook-text) !important;
     border: none !important;
-    border-radius: 8px !important;
-    padding: 5px 10px !important;
-    font-size: 13px !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 14px !important;
     font-weight: 600;
-    max-width: calc(100% - 8px);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assign-email-picker .clear-button {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
 }
 
 .assign-email-picker .ts-control input::selection {
