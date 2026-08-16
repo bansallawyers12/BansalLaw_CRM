@@ -2008,11 +2008,6 @@ success: function(response) {
 
                 }
 
-                }
-
-
-
-
             } else {
 
                 setDisabledTS('#sel_matter_id_client_detail', false);
