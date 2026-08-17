@@ -7868,7 +7868,26 @@ class ClientsController extends Controller
             $staff,
             $canSyncInbox
         ) {
-            $email->text_preview = \App\Models\EmailLog::plainTextPreview($email->message, 100);
+            $storedMessage = (string) ($email->message ?? '');
+            $storedPreview = (string) ($email->getAttributes()['text_preview'] ?? $email->text_preview ?? '');
+            $calendarSource = '';
+            if (\App\Models\EmailLog::isCalendarPayload($storedMessage)) {
+                $calendarSource = $storedMessage;
+            } elseif (\App\Models\EmailLog::isCalendarPayload($storedPreview)) {
+                $calendarSource = $storedPreview;
+            }
+
+            $email->is_calendar_invite = $calendarSource !== '';
+            if ($email->is_calendar_invite) {
+                $inviteSummary = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);
+                $email->message = $inviteSummary;
+                $email->text_preview = \App\Models\EmailLog::plainTextPreview($inviteSummary, 100);
+            } else {
+                $email->text_preview = \App\Models\EmailLog::plainTextPreview(
+                    $storedMessage !== '' ? $storedMessage : $storedPreview,
+                    100
+                );
+            }
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
             $email->cc = $email->cc ?? '';
@@ -7912,10 +7931,11 @@ class ClientsController extends Controller
 
             $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
             $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email);
-            $email->pdf_preview_url = $email->pdf_file_url;
             $email->pdf_download_url = ! empty($email->pdf_doc_id)
                 ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
                 : '';
+            // Calendar invites must not auto-open the ICS dump PDF in the reading pane.
+            $email->pdf_preview_url = ! empty($email->is_calendar_invite) ? '' : $email->pdf_file_url;
 
             if ($email->relationLoaded('attachments') && $email->attachments) {
                 $email->setRelation('attachments', $email->attachments->map(function ($attachment) {
@@ -7942,7 +7962,8 @@ class ClientsController extends Controller
             $email->calendar = $calendarSummary;
             $email->has_calendar = $calendarSummary['has_calendar'];
             $email->calendar_event_count = $calendarSummary['count'];
-            $email->has_calendar_invite = $calendarSummary['has_calendar']
+            $email->has_calendar_invite = ! empty($email->is_calendar_invite)
+                || $calendarSummary['has_calendar']
                 || $this->emailHasCalendarAttachment($email);
 
             return $email;

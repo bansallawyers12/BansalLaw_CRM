@@ -78,6 +78,78 @@ class EmailParserService:
         text = re.sub(r'\s+', ' ', text).strip()
         return bool(text)
 
+    def _is_calendar_payload(self, value: Any) -> bool:
+        """True when content is an ICS/calendar dump rather than a readable email body."""
+        if value is None:
+            return False
+        text = str(value).lstrip('\ufeff').strip()
+        if not text:
+            return False
+        upper = text.upper()
+        if upper.startswith('BEGIN:VCALENDAR'):
+            return True
+        # Meeting invites sometimes prepend a short note before the ICS block.
+        return 'BEGIN:VCALENDAR' in upper[:800] and 'BEGIN:VEVENT' in upper
+
+    def _ics_unfold_and_get(self, ics_text: str, field: str) -> str:
+        """Return the first unfolded ICS property value (handles folded lines)."""
+        if not ics_text or not field:
+            return ''
+        unfolded = re.sub(r'\r?\n[ \t]', '', str(ics_text))
+        pattern = rf'(?im)^{re.escape(field)}(?:;[^:]*)?:(.+)$'
+        match = re.search(pattern, unfolded)
+        if not match:
+            return ''
+        value = match.group(1).strip()
+        value = value.replace('\\n', '\n').replace('\\,', ',').replace('\\;', ';').replace('\\\\', '\\')
+        return value.strip()
+
+    def _summarize_calendar_payload(self, value: Any) -> str:
+        """Build a short human-readable summary from ICS text for body/preview/PDF."""
+        if not self._is_calendar_payload(value):
+            return ''
+        text = str(value)
+        summary = self._ics_unfold_and_get(text, 'SUMMARY') or 'Calendar invitation'
+        location = self._ics_unfold_and_get(text, 'LOCATION')
+        description = self._ics_unfold_and_get(text, 'DESCRIPTION')
+        dtstart = self._ics_unfold_and_get(text, 'DTSTART')
+        dtend = self._ics_unfold_and_get(text, 'DTEND')
+
+        lines = [summary, '', 'This message is a calendar invitation.']
+        if dtstart:
+            lines.append(f'When: {dtstart}' + (f' – {dtend}' if dtend else ''))
+        if location:
+            lines.append(f'Where: {location}')
+        if description:
+            # DESCRIPTION may contain HTML; keep a plain preview.
+            desc = re.sub(r'<[^>]+>', ' ', description)
+            desc = html_unescape(desc)
+            desc = re.sub(r'\s+', ' ', desc).strip()
+            if desc:
+                if len(desc) > 600:
+                    desc = desc[:600].rstrip() + '…'
+                lines.extend(['', desc])
+        return '\n'.join(lines).strip()
+
+    def _normalize_body_fields(self, html_content: str, text_content: str) -> Tuple[str, str]:
+        """Drop raw ICS bodies; prefer a readable calendar summary when needed."""
+        html_content = self._safe_get(html_content, '') or ''
+        text_content = self._safe_get(text_content, '') or ''
+
+        if self._is_calendar_payload(html_content):
+            if not self._has_visible_email_text(text_content) or self._is_calendar_payload(text_content):
+                text_content = self._summarize_calendar_payload(html_content)
+            html_content = ''
+
+        if self._is_calendar_payload(text_content):
+            text_content = self._summarize_calendar_payload(text_content)
+
+        # Prefer plain summary over an &nbsp;-only HTML shell.
+        if self._has_visible_email_text(text_content) and not self._has_visible_email_text(html_content):
+            html_content = ''
+
+        return html_content, text_content
+
     def _infer_attachment_extension(self, filename: str, content_type: str) -> str:
         name = str(filename or '').strip()
         ext = os.path.splitext(name)[1].lstrip('.').lower()
@@ -248,6 +320,10 @@ class EmailParserService:
         if content_type in ('text/plain', 'text/html'):
             return False
 
+        # Keep .ics / text/calendar as attachments — never as the reading-pane body.
+        if content_type in ('text/calendar', 'application/ics', 'application/x-ics'):
+            return True
+
         maintype = part.get_content_maintype()
         if maintype in ('application', 'image', 'audio', 'video'):
             return True
@@ -366,6 +442,12 @@ class EmailParserService:
 
                 email_data['html_content'] = self._sanitize_text_content(email_data.get('html_content', ''))
                 email_data['text_content'] = self._sanitize_text_content(email_data.get('text_content', ''))
+                html_norm, text_norm = self._normalize_body_fields(
+                    email_data.get('html_content', ''),
+                    email_data.get('text_content', ''),
+                )
+                email_data['html_content'] = html_norm
+                email_data['text_content'] = text_norm
                 
                 logger.info(f"Successfully parsed email: {email_data['subject']}")
                 
@@ -580,9 +662,11 @@ class EmailParserService:
                     attachment_parts.append(part)
                     continue
 
-                content_type = part.get_content_type()
+                content_type = (part.get_content_type() or '').lower()
                 part_text = self._safe_get(_get_part_text(part), '')
                 if content_type == 'text/html':
+                    if self._is_calendar_payload(part_text):
+                        continue
                     # Prefer the first HTML part with real content (skip &nbsp;-only shells).
                     if self._has_visible_email_text(part_text) and not self._has_visible_email_text(html_content):
                         html_content = part_text
@@ -592,12 +676,17 @@ class EmailParserService:
                     # iPhone/Zoho often send an empty text/plain before the real one.
                     if not self._has_visible_email_text(part_text):
                         continue
+                    # Raw ICS in text/plain must not become the email body.
+                    if self._is_calendar_payload(part_text):
+                        if not self._has_visible_email_text(text_content):
+                            text_content = self._summarize_calendar_payload(part_text)
+                        continue
                     if not self._has_visible_email_text(text_content):
                         text_content = part_text
                     else:
                         text_content = f"{text_content.rstrip()}\n{part_text.lstrip()}"
         else:
-            content_type = msg.get_content_type()
+            content_type = (msg.get_content_type() or '').lower()
             if content_type == 'text/html':
                 html_content = self._safe_get(_get_part_text(msg), '')
             elif self._is_eml_attachment_candidate(msg):
@@ -605,9 +694,7 @@ class EmailParserService:
             else:
                 text_content = self._safe_get(_get_part_text(msg), '')
 
-        # Outlook calendar/compose shells may be HTML with only &nbsp; — prefer plain text.
-        if self._has_visible_email_text(text_content) and not self._has_visible_email_text(html_content):
-            html_content = ''
+        html_content, text_content = self._normalize_body_fields(html_content, text_content)
 
         combined_body = f"{text_content}{html_content}"
         attachments = []

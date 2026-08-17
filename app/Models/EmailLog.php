@@ -40,14 +40,102 @@ class EmailLog extends Authenticatable
     }
 
     /**
+     * True when content is an ICS/calendar dump rather than a readable email body.
+     */
+    public static function isCalendarPayload(?string $content): bool
+    {
+        if ($content === null) {
+            return false;
+        }
+
+        $text = ltrim($content, "\xEF\xBB\xBF");
+        $text = trim($text);
+        if ($text === '') {
+            return false;
+        }
+
+        $upper = strtoupper($text);
+        if (str_starts_with($upper, 'BEGIN:VCALENDAR')) {
+            return true;
+        }
+
+        $head = substr($upper, 0, 800);
+
+        return str_contains($head, 'BEGIN:VCALENDAR') && str_contains($upper, 'BEGIN:VEVENT');
+    }
+
+    public static function icsPropertyValue(string $ics, string $field): string
+    {
+        $unfolded = preg_replace("/\r?\n[ \t]/", '', $ics) ?? $ics;
+        $pattern = '/^' . preg_quote($field, '/') . '(?:;[^:]*)?:(.+)$/im';
+        if (! preg_match($pattern, $unfolded, $matches)) {
+            return '';
+        }
+
+        $value = trim((string) $matches[1]);
+        $value = str_replace(['\\n', '\\,', '\\;', '\\\\'], ["\n", ',', ';', '\\'], $value);
+
+        return trim($value);
+    }
+
+    public static function summarizeCalendarPayload(?string $content): string
+    {
+        if ($content === null || trim($content) === '') {
+            return 'Calendar invitation';
+        }
+
+        if (! self::isCalendarPayload($content)) {
+            return 'Calendar invitation';
+        }
+
+        $summary = self::icsPropertyValue($content, 'SUMMARY') ?: 'Calendar invitation';
+        $location = self::icsPropertyValue($content, 'LOCATION');
+        $description = self::icsPropertyValue($content, 'DESCRIPTION');
+        $dtStart = self::icsPropertyValue($content, 'DTSTART');
+        $dtEnd = self::icsPropertyValue($content, 'DTEND');
+
+        $lines = [$summary, '', 'This message is a calendar invitation.'];
+        if ($dtStart !== '') {
+            $lines[] = 'When: ' . $dtStart . ($dtEnd !== '' ? ' – ' . $dtEnd : '');
+        }
+        if ($location !== '') {
+            $lines[] = 'Where: ' . $location;
+        }
+        if ($description !== '') {
+            $desc = html_entity_decode(strip_tags($description), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $desc = preg_replace('/\s+/u', ' ', $desc) ?? $desc;
+            $desc = trim((string) $desc);
+            if ($desc !== '') {
+                if (mb_strlen($desc) > 600) {
+                    $desc = mb_substr($desc, 0, 600) . '…';
+                }
+                $lines[] = '';
+                $lines[] = $desc;
+            }
+        }
+
+        return trim(implode("\n", $lines));
+    }
+
+    /**
      * Plain-text list snippet from HTML email bodies.
      * Style/script blocks are removed entirely (strip_tags keeps their inner CSS).
+     * Calendar invites return the meeting title instead of raw VCALENDAR text.
      */
     public static function plainTextPreview(?string $html, int $maxLen = 100): string
     {
         $html = (string) $html;
         if ($html === '') {
             return '';
+        }
+
+        if (self::isCalendarPayload($html)) {
+            $summary = self::icsPropertyValue($html, 'SUMMARY') ?: 'Calendar invitation';
+            if ($maxLen > 0 && mb_strlen($summary) > $maxLen) {
+                return mb_substr($summary, 0, $maxLen);
+            }
+
+            return $summary;
         }
 
         $html = preg_replace('#<(script|style|head|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
