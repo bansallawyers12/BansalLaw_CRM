@@ -3624,11 +3624,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function emailHtmlHasVisibleText(html) {
         if (!html) return false;
-        const text = String(html)
+        let text = String(html)
             .replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+            .replace(/<[^>]+>/g, ' ');
+        // Outlook often stores an "empty" body as &nbsp; / &#160; only.
+        text = text
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&#160;/gi, ' ')
+            .replace(/&#x0*a0;/gi, ' ')
+            .replace(/[\u00a0\u200b\u200c\u200d\ufeff]/g, ' ');
+        if (typeof document !== 'undefined') {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            text = textarea.value;
+        }
+        text = text.replace(/\s+/g, ' ').trim();
         return text.length > 0;
     }
 
