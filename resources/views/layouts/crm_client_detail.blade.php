@@ -1704,7 +1704,7 @@
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
-    <script src="{{asset('js/ts-init.js')}}"></script>
+    <script src="{{asset('js/ts-init.js')}}?v={{ @filemtime(public_path('js/ts-init.js')) ?: time() }}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/intl-tel-input-init.js')}}"></script>
     <script>

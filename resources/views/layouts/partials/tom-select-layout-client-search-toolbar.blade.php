@@ -24,7 +24,7 @@
                 initTS('.js-data-example-ajaxccsearch', buildGetAllClientsTomSelectConfig({
                     url: allClientsUrl,
                     dropdownParent: 'body',
-                    placeholder: 'Search',
+                    placeholder: 'Search name, email, phone…',
                     loadThrottle: 300,
                     showAccessBadges: true,
                     onChange: function (value) {

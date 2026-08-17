@@ -755,7 +755,7 @@
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script> {{-- CRM_Flatpickr helper (replaces global-datepicker/daterangepicker) --}}
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
-    <script src="{{asset('js/ts-init.js')}}"></script>
+    <script src="{{asset('js/ts-init.js')}}?v={{ @filemtime(public_path('js/ts-init.js')) ?: time() }}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/intl-tel-input-init.js')}}"></script>
     <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>

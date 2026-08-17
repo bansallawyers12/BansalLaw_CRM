@@ -100,6 +100,9 @@
       if (item.email) {
         parts.push(escape(String(item.email)));
       }
+      if (item.phones) {
+        parts.push(escape(String(item.phones)));
+      }
       var refLabel = item.search_label || item.client_id || '';
       if (refLabel) {
         parts.push(escape(String(refLabel)));
@@ -143,7 +146,7 @@
       labelField: 'name',
       // Server already filters by name, email, phone, client ref, matter ref, etc.
       filter: false,
-      searchField: ['name', 'email', 'client_id', 'matter_ref', 'search_label'],
+      searchField: ['name', 'email', 'phones', 'client_id', 'matter_ref', 'search_label'],
       loadThrottle: loadThrottle,
       shouldLoad: function (query) {
         return String(query || '').length >= minQueryLen;

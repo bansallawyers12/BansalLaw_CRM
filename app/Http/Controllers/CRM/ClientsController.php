@@ -38,6 +38,7 @@ use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\MatterAssigneeDefaults;
 use App\Support\ActivityFeedQuery;
+use App\Support\GlobalSearchPhoneMatcher;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
 
@@ -2196,23 +2197,34 @@ class ClientsController extends Controller
             $squeryLower = strtolower($squery);
             $isUniversalEmail = ($squery === 'demo@gmail.com');
             $isUniversalPhone = ($squery === '4444444444');
+            $phoneDigitVariants = GlobalSearchPhoneMatcher::searchDigitVariants($squery);
             
             $clientsQuery = \App\Models\Admin::query()
                 ->with('company')
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
-                ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone) {
+                ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
                     $join->on('client_contacts.client_id', '=', 'admins.id');
-                    if ($isUniversalPhone) {
-                        // For universal phone (4444444444), also search for timestamped versions
-                        $join->where(function($phoneQuery) use ($squery, $squeryLower) {
+                    $join->where(function ($phoneQuery) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
+                        if ($isUniversalPhone) {
+                            // For universal phone (4444444444), also search for timestamped versions
                             $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
                                       ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
-                        });
-                    } else {
-                        $join->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
-                    }
+                        } else {
+                            $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
+                        }
+
+                        // Digit-normalized match (handles +61 vs local number / country_code split storage)
+                        if ($phoneDigitVariants !== []) {
+                            $phoneQuery->orWhere(function ($digitQuery) use ($phoneDigitVariants) {
+                                GlobalSearchPhoneMatcher::whereContactPhoneDigitsMatch(
+                                    $digitQuery,
+                                    $phoneDigitVariants
+                                );
+                            });
+                        }
+                    });
                 })
                 ->leftJoin('client_emails', function($join) use ($squery, $squeryLower, $isUniversalEmail) {
                     $join->on('client_emails.client_id', '=', 'admins.id');
@@ -2226,7 +2238,7 @@ class ClientsController extends Controller
                         $join->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
                     }
                 })
-                ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone) {
+                ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone, $phoneDigitVariants) {
                     // Handle universal email search in admins.email
                     if ($isUniversalEmail) {
                         $query->where(function($emailSubQuery) use ($squeryLower) {
@@ -2254,6 +2266,23 @@ class ClientsController extends Controller
                         });
                     } else {
                         $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"]);
+                    }
+
+                    if ($phoneDigitVariants !== []) {
+                        $query->orWhere(function ($phoneDigitQuery) use ($phoneDigitVariants) {
+                            GlobalSearchPhoneMatcher::whereDigitsMatch(
+                                $phoneDigitQuery,
+                                'admins.phone',
+                                $phoneDigitVariants
+                            );
+                        });
+                        $query->orWhere(function ($phoneDigitQuery) use ($phoneDigitVariants) {
+                            GlobalSearchPhoneMatcher::whereDigitsMatch(
+                                $phoneDigitQuery,
+                                "CONCAT(COALESCE(admins.country_code, ''), COALESCE(admins.phone, ''))",
+                                $phoneDigitVariants
+                            );
+                        });
                     }
                     
                     $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
@@ -2285,7 +2314,7 @@ class ClientsController extends Controller
                 // Get all phones grouped by client_id
                 $phonesData = DB::table('client_contacts')
                     ->whereIn('client_id', $clientIds)
-                    ->select('client_id', 'phone', 'contact_type')
+                    ->select('client_id', 'phone', 'country_code', 'contact_type')
                     ->orderBy('client_id')
                     ->orderBy('contact_type')
                     ->get()
@@ -2330,7 +2359,16 @@ class ClientsController extends Controller
                     if (isset($phonesData[$client->id])) {
                         $phones = $phonesData[$client->id]
                             ->sortBy('contact_type')
-                            ->pluck('phone')
+                            ->map(function ($row) {
+                                $phone = trim((string) ($row->phone ?? ''));
+                                if ($phone === '') {
+                                    return null;
+                                }
+                                $code = trim((string) ($row->country_code ?? ''));
+
+                                return $code !== '' ? ($code . $phone) : $phone;
+                            })
+                            ->filter()
                             ->unique()
                             ->values()
                             ->toArray();
