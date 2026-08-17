@@ -444,19 +444,75 @@ class EmailParserService:
 
     def _extract_eml_recipient_groups(self, msg: Message) -> Dict[str, List[str]]:
         groups = {
-            'to': self._addresses_from_header(msg.get('To', '')),
-            'cc': self._addresses_from_header(msg.get('Cc', '')),
-            'bcc': self._addresses_from_header(msg.get('Bcc', '')),
+            'to': self._filter_placeholder_recipients(
+                self._addresses_from_header(msg.get('To'))
+            ),
+            'cc': self._filter_placeholder_recipients(
+                self._addresses_from_header(msg.get('Cc'))
+            ),
+            'bcc': self._filter_placeholder_recipients(
+                self._addresses_from_header(msg.get('Bcc'))
+            ),
         }
+
+        # Zoho/IMAP often delivers BCC or list mail with no To header. Use
+        # envelope/delivery headers so CRM to_mail is not left empty.
+        if not groups['to']:
+            for header_name in (
+                'Delivered-To',
+                'X-Original-To',
+                'X-Envelope-To',
+                'Envelope-To',
+                'Apparently-To',
+                'Resent-To',
+            ):
+                values = msg.get_all(header_name) or []
+                recovered: List[str] = []
+                for value in values:
+                    recovered.extend(self._addresses_from_header(value))
+                recovered = self._filter_placeholder_recipients(recovered)
+                if recovered:
+                    groups['to'] = recovered
+                    break
+
         for key in groups:
             groups[key] = self._dedupe_preserve_order(groups[key])
         return groups
 
-    def _addresses_from_header(self, header_value: str) -> List[str]:
-        if not header_value:
+    def _is_placeholder_recipient(self, value: str) -> bool:
+        text = (value or '').strip().lower()
+        if not text:
+            return True
+        return bool(re.search(r'undisclosed[- ]recipients', text))
+
+    def _filter_placeholder_recipients(self, recipients: List[str]) -> List[str]:
+        return [r for r in recipients if not self._is_placeholder_recipient(r)]
+
+    def _addresses_from_header(self, header_value: Any) -> List[str]:
+        if header_value is None:
             return []
-        results: List[str] = []
-        for _name, addr in getaddresses([header_value]):
+
+        # policy.default returns AddressHeader with structured .addresses
+        structured = getattr(header_value, 'addresses', None)
+        if structured is not None:
+            results: List[str] = []
+            for addr in structured:
+                email_addr = (getattr(addr, 'addr_spec', None) or '').strip()
+                if email_addr:
+                    results.append(email_addr)
+                    continue
+                display = (getattr(addr, 'display_name', None) or '').strip()
+                if display:
+                    results.append(display)
+            if results:
+                return results
+
+        header_str = str(header_value).strip()
+        if not header_str:
+            return []
+
+        results = []
+        for _name, addr in getaddresses([header_str]):
             addr = (addr or '').strip()
             if addr:
                 results.append(addr)
@@ -468,7 +524,10 @@ class EmailParserService:
 
     def _extract_eml_headers(self, msg: Message) -> dict:
         headers = {}
-        for key in ('From', 'To', 'Cc', 'Bcc', 'Subject', 'Date', 'Message-ID', 'Reply-To'):
+        for key in (
+            'From', 'To', 'Cc', 'Bcc', 'Subject', 'Date', 'Message-ID', 'Reply-To',
+            'Delivered-To', 'X-Original-To', 'Envelope-To', 'Apparently-To', 'Resent-To',
+        ):
             value = msg.get(key)
             if value:
                 headers[key] = self._safe_get(value, '')

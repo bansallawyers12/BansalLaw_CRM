@@ -1525,7 +1525,7 @@
 
         const subject = email.subject || '(No subject)';
         const from = email.from_mail || 'Unknown sender';
-        const to = cleanRecipients(email.to_mail) || 'Unknown recipient';
+        const to = resolveToDisplay(email) || 'Unknown recipient';
         const cc = cleanRecipients(email.cc);
         const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));
@@ -1677,7 +1677,7 @@
 
         const subject = email.subject || '(No subject)';
         const from = email.from_mail || 'Unknown';
-        const to = cleanRecipients(email.to_mail) || 'Unknown';
+        const to = resolveToDisplay(email) || 'Unknown';
         const cc = cleanRecipients(email.cc);
         const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));
@@ -1945,28 +1945,40 @@
      */
     function cleanRecipients(recipientString) {
         if (!recipientString) return '';
-        
-        // Split by comma or semicolon (Outlook .msg uses semicolons)
-        const recipients = recipientString.split(/[,;]/);
-        
-        // Filter out invalid recipients (Python object strings, malformed addresses)
+
+        const recipients = String(recipientString).split(/[,;]/);
+
         const validRecipients = recipients
             .map(r => r.trim())
             .filter(r => {
-                // Remove entries that look like Python object representations
-                if (r.includes('<extract_msg.') || r.includes('object at 0x')) {
-                    return false;
+                if (!r) return false;
+                if (/undisclosed[- ]recipients/i.test(r)) return false;
+                if (r.includes('<extract_msg.') || r.includes('object at 0x')) return false;
+                if (r.includes('Recipient') && r.includes('0x')) return false;
+                return !r.includes('0x');
+            })
+            .map(r => {
+                const angle = r.match(/<([^>]+)>/);
+                if (angle && angle[1]) {
+                    return angle[1].trim();
                 }
-                // Remove entries that look like raw object references
-                if (r.includes('Recipient') && r.includes('0x')) {
-                    return false;
-                }
-                // Keep only entries that look like valid email addresses or names
-                return r.length > 0 && !r.startsWith('<') && !r.includes('0x');
-            });
-        
-        // Return cleaned recipient list or a placeholder if none are valid
+                return r.replace(/^<|>$/g, '').trim();
+            })
+            .filter(r => r !== '');
+
         return validRecipients.length > 0 ? validRecipients.join(', ') : '';
+    }
+
+    /**
+     * Prefer parsed To; for Zoho IMAP BCC/list mail with empty To, show mailbox.
+     */
+    function resolveToDisplay(email) {
+        const cleanedTo = cleanRecipients(email && email.to_mail);
+        if (cleanedTo) {
+            return cleanedTo;
+        }
+        const mailbox = String((email && email.mailbox_email) || '').trim();
+        return mailbox || '';
     }
 
     /**
@@ -2150,7 +2162,7 @@
      */
     function formatQuotedMessage(email, isForward = false) {
         const from = email.from_mail || 'Unknown';
-        const to = cleanRecipients(email.to_mail) || 'Unknown';
+        const to = resolveToDisplay(email) || 'Unknown';
         const cc = cleanRecipients(email.cc);
         const bcc = cleanRecipients(email.bcc);
         const date = formatDate(getEmailDate(email));

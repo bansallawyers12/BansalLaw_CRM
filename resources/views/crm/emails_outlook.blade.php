@@ -129,7 +129,7 @@
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
-    data-default-folder="{{ $assignmentReviewOnly ? 'review' : 'unassigned' }}"
+    data-default-folder="{{ $assignmentReviewOnly ? 'review' : ($unassignedOnly ? 'unassigned' : 'inbox') }}"
     data-matters-url="{{ route('clients.listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"

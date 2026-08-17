@@ -760,6 +760,13 @@ class EmailUploadController extends Controller
             $mailReport->user_id = $actingUserId;
             $mailReport->from_mail = $parsedData['sender_email'] ?? '';
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
+            // IMAP/Zoho BCC or list deliveries may omit To; keep the receiving mailbox visible.
+            if ($mailReport->to_mail === '' && ! empty($syncMeta['mailbox_email'])) {
+                $mailboxFallback = strtolower(trim((string) $syncMeta['mailbox_email']));
+                if ($mailboxFallback !== '' && filter_var($mailboxFallback, FILTER_VALIDATE_EMAIL)) {
+                    $mailReport->to_mail = $mailboxFallback;
+                }
+            }
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->bcc = $this->formatParsedRecipientList($parsedData, 'bcc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';

@@ -56,8 +56,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const outlookContainer = document.getElementById('outlookContainer');
     const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
     const unassignedOnly = !!(outlookContainer && outlookContainer.getAttribute('data-unassigned-only') === '1');
-    const defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
-    const folderItems = document.querySelectorAll('.folder-item');
+    let defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
+    // Client matter Emails tab only has Inbox/Sent — never start on synced-mail folders.
+    if (!unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
+        defaultFolder = 'inbox';
+    }
+    const folderItems = outlookContainer
+        ? outlookContainer.querySelectorAll('.folder-item')
+        : document.querySelectorAll('.folder-item');
     const emailListContainer = document.getElementById('emailList');
     const readingPane = document.getElementById('readingPane');
     const emptyState = document.getElementById('emptyState');
@@ -1241,7 +1247,8 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', (e) => {
             const target = e.currentTarget;
             const folder = target.dataset.folder || 'inbox';
-            if ((folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
+            // Permission gate applies only on the global synced-mail page, not client Inbox/Sent.
+            if (unassignedOnly && (folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
                 return;
             }
             switchToFolder(folder);
@@ -1253,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (folderSelect) {
         folderSelect.addEventListener('change', (e) => {
             const folder = e.target.value || 'inbox';
-            if ((folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
+            if (unassignedOnly && (folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
                 return;
             }
             switchToFolder(folder);
@@ -1493,6 +1500,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (folder === 'unread') {
             folder = 'inbox';
         }
+        // Client Emails tab has no synced folders — coerce stray values back to inbox.
+        if (!unassignedOnly && (folder === 'unassigned' || folder === 'assigned' || folder === 'review')) {
+            folder = 'inbox';
+        }
         // On the synced-mail page, clicking Unassigned/Assigned leaves Needs Review mode.
         if (unassignedOnly && sortOrder && (folder === 'unassigned' || folder === 'assigned')
             && sortOrder.value === 'review') {
@@ -1506,6 +1517,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const fSelect = document.getElementById('folderSelect');
         if (fSelect && fSelect.value !== folder) {
             fSelect.value = folder;
+        }
+        // Sender lists differ by folder; keep a Sent-only sender from emptying Inbox.
+        if (senderFilter && currentFolder !== folder) {
+            senderFilter.value = '';
         }
         currentFolder = folder;
         currentPage = 1;
@@ -3597,15 +3612,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function resolveToDisplay(email) {
         const cleanedTo = cleanRecipients(email && email.to_mail);
-        const mailbox = String((email && email.mailbox_email) || '').trim().toLowerCase();
-        const parts = cleanedTo.split(',').map(function (part) {
-            return part.trim().toLowerCase();
-        }).filter(Boolean);
-        // IMAP often stores the synced mailbox as To when the real To was empty (BCC).
-        if (!cleanedTo || (mailbox && parts.length === 1 && parts[0] === mailbox)) {
-            return 'Unknown';
+        if (cleanedTo) {
+            return cleanedTo;
         }
-        return cleanedTo;
+        // Zoho/IMAP BCC and some list mail omit To; show the receiving mailbox instead of Unknown.
+        const mailbox = String((email && email.mailbox_email) || '').trim();
+        return mailbox || 'Unknown';
     }
 
     const READ_BODY_SANDBOX = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
