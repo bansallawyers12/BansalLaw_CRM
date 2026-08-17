@@ -299,10 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     window.addEventListener('resize', function () {
-        if (!isGmailUiMode() || !outlookContainer || !outlookContainer.classList.contains('gmail-reading-open')) {
-            return;
-        }
-
         const iframe = document.getElementById('readBody');
         if (iframe) {
             resetReadBodyIframeSizing(iframe);
@@ -1088,6 +1084,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getReadingScrollFillHeight(iframe, contentHeight) {
+        const readingScroll = iframe && iframe.closest ? iframe.closest('.reading-scroll') : document.querySelector('#readingPane .reading-scroll');
+        const minContent = Math.max(Number(contentHeight) || 0, 180);
+        if (!readingScroll) {
+            return minContent;
+        }
+
+        const attachments = readingScroll.querySelector('#attachmentsContainer');
+        const footer = readingScroll.querySelector('#gmailReadingFooter, .gmail-read-footer');
+        const readingBody = iframe && iframe.closest ? iframe.closest('.reading-body') : readingScroll.querySelector('.reading-body');
+        let reserved = 0;
+        if (attachments && !attachments.hidden) {
+            reserved += attachments.offsetHeight;
+        }
+        if (footer && !footer.hidden) {
+            reserved += footer.offsetHeight;
+        }
+
+        const scrollStyle = window.getComputedStyle(readingScroll);
+        reserved += (parseFloat(scrollStyle.paddingTop) || 0) + (parseFloat(scrollStyle.paddingBottom) || 0);
+        if (readingBody) {
+            const bodyStyle = window.getComputedStyle(readingBody);
+            reserved += (parseFloat(bodyStyle.paddingTop) || 0) + (parseFloat(bodyStyle.paddingBottom) || 0);
+        }
+
+        const available = readingScroll.clientHeight - reserved;
+        return Math.max(minContent, available);
+    }
+
     function resetReadBodyIframeSizing(iframe) {
         if (!iframe) {
             return;
@@ -1095,7 +1120,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (iframe.classList.contains('read-body--pdf') && iframe.src && !iframe.src.startsWith('about:blank')) {
-                iframe.style.height = '75vh';
+                const fillH = getReadingScrollFillHeight(iframe, 720);
+                iframe.style.height = Math.max(fillH, Math.round(window.innerHeight * 0.75)) + 'px';
                 iframe.style.minHeight = '720px';
                 iframe.style.maxHeight = 'none';
                 iframe.style.overflow = 'auto';
@@ -1112,12 +1138,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     iframe.style.overflow = 'auto';
                     return;
                 }
-                iframe.style.height = (scrollH + 24) + 'px';
-                iframe.style.minHeight = '180px';
+                const contentH = scrollH + 24;
+                const fillH = getReadingScrollFillHeight(iframe, contentH);
+                iframe.style.height = fillH + 'px';
+                iframe.style.minHeight = contentH + 'px';
                 iframe.style.maxHeight = 'none';
+                iframe.style.overflow = 'hidden';
             }
         } catch(e) {
-            iframe.style.height = '280px';
+            iframe.style.height = getReadingScrollFillHeight(iframe, 280) + 'px';
             iframe.style.minHeight = '180px';
         }
     }
@@ -4193,13 +4222,11 @@ document.addEventListener('DOMContentLoaded', function() {
             listElement.classList.add('active');
         }
 
-        if (isGmailUiMode()) {
-            const readingBody = document.querySelector('#readingPane .reading-body');
-            if (readingBody) {
-                readingBody.scrollTop = 0;
-            } else if (readingPane) {
-                readingPane.scrollTop = 0;
-            }
+        const readingScroll = document.querySelector('#readingPane .reading-scroll');
+        if (readingScroll) {
+            readingScroll.scrollTop = 0;
+        } else if (readingPane) {
+            readingPane.scrollTop = 0;
         }
 
         selectedEmail = email;

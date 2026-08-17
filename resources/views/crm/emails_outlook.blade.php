@@ -507,19 +507,21 @@
                 <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
             </div>
 
-            <div class="reading-body">
-                <iframe id="readBody" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe>
-            </div>
+            <div class="reading-scroll">
+                <div class="reading-body">
+                    <iframe id="readBody" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe>
+                </div>
 
-            <div id="attachmentsContainer" class="email-attachments-container reading-attachments reading-attachments--footer" hidden></div>
+                <div id="attachmentsContainer" class="email-attachments-container reading-attachments reading-attachments--footer" hidden></div>
 
-            <div class="gmail-read-footer" id="gmailReadingFooter" hidden>
-                <button type="button" class="gmail-pill-btn" id="gmailFooterReply">
-                    <i class="fa-solid fa-reply" aria-hidden="true"></i> Reply
-                </button>
-                <button type="button" class="gmail-pill-btn" id="gmailFooterForward">
-                    <i class="fa-solid fa-share" aria-hidden="true"></i> Forward
-                </button>
+                <div class="gmail-read-footer" id="gmailReadingFooter" hidden>
+                    <button type="button" class="gmail-pill-btn" id="gmailFooterReply">
+                        <i class="fa-solid fa-reply" aria-hidden="true"></i> Reply
+                    </button>
+                    <button type="button" class="gmail-pill-btn" id="gmailFooterForward">
+                        <i class="fa-solid fa-share" aria-hidden="true"></i> Forward
+                    </button>
+                </div>
             </div>
         </div>
     </div>
