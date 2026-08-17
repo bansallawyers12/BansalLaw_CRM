@@ -175,8 +175,11 @@ Route::post('/documents/upload-edu-document', [ClientDocumentsController::class,
 Route::get('/documents/personal-video-upload-status/{token}', [ClientDocumentsController::class, 'personalVideoUploadStatus'])->name('clients.documents.personalVideoUploadStatus');
 Route::post('/documents/add-matter-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addMatterDocChecklist');
 Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist']);
-Route::post('/documents/upload-matter-document', [ClientDocumentsController::class, 'uploadvisadocument'])->name('clients.documents.uploadMatterDocument');
-Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument']);
+Route::post('/documents/upload-matter-document', [ClientDocumentsController::class, 'uploadvisadocument'])
+    ->middleware('extend.video.upload')
+    ->name('clients.documents.uploadMatterDocument');
+Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument'])
+    ->middleware('extend.video.upload');
 Route::post('/documents/rename', [ClientDocumentsController::class, 'renamedoc'])->name('clients.documents.renamedoc');
 Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
 // BUGFIX #3: Add move document feature
@@ -199,8 +202,11 @@ Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController:
 Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])
     ->middleware('extend.video.upload')
     ->name('clients.documents.bulkUploadPersonalDocuments');
-Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])->name('clients.documents.bulkUploadMatterDocuments');
-Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadMatterDocuments']);
+Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])
+    ->middleware('extend.video.upload')
+    ->name('clients.documents.bulkUploadMatterDocuments');
+Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])
+    ->middleware('extend.video.upload');
 Route::post('/documents/reload-folder-list', [ClientDocumentsController::class, 'reloadDocumentFolderList'])->name('clients.documents.reloadFolderList');
 
 /*---------- Client Invoices & Receipts ----------*/

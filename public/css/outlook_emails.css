@@ -1100,6 +1100,31 @@ body, html {
     transition: height 0.15s ease;
 }
 
+.reading-body.reading-body--pdf {
+    flex: 1 1 auto;
+    min-height: 720px;
+    padding: 0;
+    overflow: visible;
+    background: #e8eaed;
+}
+
+.reading-body.reading-body--photo {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 12px 24px 8px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.reading-body.reading-body--photo iframe.read-body--photo {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 240px;
+    max-height: 560px;
+    background: #ffffff;
+    overflow: auto;
+}
+
 /* Empty State */
 .empty-state {
     display: flex;
@@ -6038,11 +6063,36 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     overflow: hidden;
 }
 
-.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf {
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--pdf {
+    flex: 1 1 auto;
+    min-height: 720px;
+    overflow: visible;
+    background: #e8eaed;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf,
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--pdf iframe.read-body--pdf {
+    flex: 1 1 auto;
+    min-height: 720px;
+    height: 75vh;
+    max-height: none;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--photo {
     flex: 0 0 auto;
-    min-height: 280px;
-    height: min(520px, 55vh);
-    max-height: 55vh;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--photo,
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--photo iframe.read-body--photo {
+    flex: 0 0 auto;
+    min-height: 240px;
+    max-height: 560px;
+    height: auto;
+    overflow: auto;
+    background: #fff;
 }
 
 .outlook-container.ui-mode-gmail.gmail-reading-open .reading-header {
@@ -6208,6 +6258,13 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     background: #fff;
 }
 
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--pdf {
+    flex: 1 1 auto;
+    min-height: 720px;
+    overflow: visible;
+    background: #e8eaed;
+}
+
 body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe {
     display: block;
     width: 100%;
@@ -6216,11 +6273,28 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     overflow: hidden;
 }
 
-body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf {
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf,
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--pdf iframe.read-body--pdf {
+    flex: 1 1 auto;
+    min-height: 720px;
+    height: 75vh;
+    max-height: none;
+}
+
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--photo {
     flex: 0 0 auto;
-    min-height: 280px;
-    height: min(520px, 55vh);
-    max-height: 55vh;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
+}
+
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--photo,
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body.reading-body--photo iframe.read-body--photo {
+    flex: 0 0 auto;
+    min-height: 240px;
+    max-height: 560px;
+    overflow: auto;
+    background: #fff;
 }
 
 .outlook-container.ui-mode-gmail .reading-header {

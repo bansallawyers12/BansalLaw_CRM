@@ -66,7 +66,7 @@
                                data-doccategory="{{ $fetch->folder_name }}"
                                type="file"
                                name="document_upload"
-                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv"
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*"
                                style="display: none;">
                     </form>
                 </div>

@@ -65,13 +65,19 @@ class EmailParserService:
         return value.replace('\0', '')
 
     def _has_visible_email_text(self, value: Any) -> bool:
-        """True when HTML/text has readable content (not empty or &nbsp;-only)."""
+        """True when HTML/text has readable content (not empty or &nbsp;-only).
+
+        Image-only HTML (a phone screenshot, CID <img>, etc.) counts as visible so we
+        do not discard the body and fall back to a blank Parsed email.pdf.
+        """
         if value is None:
             return False
         text = str(value)
         if not text.strip():
             return False
         text = re.sub(r'<(script|style|head|noscript)\b[^>]*>.*?</\1>', ' ', text, flags=re.I | re.S)
+        if re.search(r'<img\b', text, flags=re.I):
+            return True
         text = re.sub(r'<[^>]+>', ' ', text)
         text = html_unescape(text)
         text = text.replace('\xa0', ' ').replace('\u200b', ' ').replace('\ufeff', ' ')

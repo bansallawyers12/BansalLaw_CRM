@@ -555,6 +555,7 @@ class EmailRendererService:
 
         attachments = email_data.get('attachments') or []
         pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
+        pdf_html = self._embed_loose_image_attachments(pdf_html, attachments)
         weasy_html = self._prepare_html_for_pdf(pdf_html)
 
         weasy_error = None
@@ -565,6 +566,7 @@ class EmailRendererService:
                 stylesheets=[self._get_pdf_layout_stylesheet()]
             )
             if pdf_bytes:
+                pdf_bytes = self._ensure_white_pdf_page_background(pdf_bytes)
                 logger.info(
                     f"PDF generated via WeasyPrint for email: {email_data.get('subject', 'No subject')} "
                     f"({len(pdf_bytes)} bytes)"
@@ -579,6 +581,7 @@ class EmailRendererService:
 
         pdf_bytes, pymupdf_error = self._render_to_pdf_with_pymupdf(pdf_html)
         if pdf_bytes:
+            pdf_bytes = self._ensure_white_pdf_page_background(pdf_bytes)
             logger.info(
                 f"PDF generated via PyMuPDF for email: {email_data.get('subject', 'No subject')} "
                 f"({len(pdf_bytes)} bytes)"
@@ -593,6 +596,7 @@ class EmailRendererService:
         )
         pdf_bytes = self._render_to_pdf_with_xhtml2pdf(pdf_html)
         if pdf_bytes:
+            pdf_bytes = self._ensure_white_pdf_page_background(pdf_bytes)
             logger.info(
                 f"PDF generated via xhtml2pdf fallback for email: {email_data.get('subject', 'No subject')} "
                 f"({len(pdf_bytes)} bytes)"
@@ -1069,6 +1073,69 @@ class EmailRendererService:
                 height: auto !important;
             }
         ''')
+
+    def _html_has_images(self, html_content: str) -> bool:
+        return bool(re.search(r'<img\b', html_content or '', flags=re.I))
+
+    def _embed_loose_image_attachments(self, html_content: str, attachments: List[Dict[str, Any]]) -> str:
+        """When the body has no <img>, inline image attachments so the PDF is not a blank page."""
+        if not html_content or not attachments or self._html_has_images(html_content):
+            return html_content
+
+        parts: List[str] = []
+        for attachment in attachments:
+            if not isinstance(attachment, dict):
+                continue
+            content_type = str(attachment.get('content_type') or '').split(';', 1)[0].strip().lower()
+            filename = str(attachment.get('filename') or '').strip()
+            is_image = content_type.startswith('image/') or bool(re.search(r'\.(png|jpe?g|gif|webp|bmp)$', filename, flags=re.I))
+            if not is_image:
+                continue
+            data_b64 = attachment.get('data')
+            if not data_b64:
+                continue
+            if not content_type.startswith('image/'):
+                content_type = 'image/png'
+            try:
+                raw_size = len(base64.b64decode(data_b64, validate=False))
+            except Exception:
+                continue
+            if raw_size > self.MAX_INLINE_IMAGE_BYTES_FOR_PDF:
+                continue
+            alt = self._escape_html(filename or 'Attached image')
+            parts.append(f'<p><img src="data:{content_type};base64,{data_b64}" alt="{alt}"></p>')
+
+        if not parts:
+            return html_content
+
+        extra = '<div class="email-attached-images">' + ''.join(parts) + '</div>'
+        if '</div>' in html_content and 'email-content' in html_content:
+            # Insert before the last closing content/container tags when possible.
+            idx = html_content.rfind('</div>')
+            return html_content[:idx] + extra + html_content[idx:]
+        if '</body>' in html_content.lower():
+            return re.sub(r'</body>', extra + '</body>', html_content, count=1, flags=re.I)
+        return html_content + extra
+
+    def _ensure_white_pdf_page_background(self, pdf_bytes: Optional[bytes]) -> Optional[bytes]:
+        """Paint a white page behind content so Chrome's PDF viewer is not a black rectangle."""
+        if not pdf_bytes:
+            return pdf_bytes
+        try:
+            import fitz
+        except ImportError:
+            return pdf_bytes
+
+        try:
+            doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+            for page in doc:
+                page.draw_rect(page.rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=False)
+            painted = doc.tobytes()
+            doc.close()
+            return painted or pdf_bytes
+        except Exception as e:
+            logger.warning('Could not paint white PDF background: %s', e)
+            return pdf_bytes
 
     def _replace_cid_with_data_uris(self, html_content: str, attachments: List[Dict[str, Any]]) -> str:
         """Replace cid: image references with inline data URIs for PDF rendering."""

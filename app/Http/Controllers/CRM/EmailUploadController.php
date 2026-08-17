@@ -1826,6 +1826,10 @@ class EmailUploadController extends Controller
         }
 
         $text = preg_replace('#<(script|style|head|noscript)\b[^>]*>.*?</\1>#is', ' ', $content) ?? $content;
+        if (preg_match('/<img\b/i', $text)) {
+            return true;
+        }
+
         $text = preg_replace('#<[^>]+>#', ' ', $text) ?? $text;
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $text = str_replace("\xc2\xa0", ' ', $text);

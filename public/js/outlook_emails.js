@@ -1070,6 +1070,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (iframe) {
             iframe.style.height = '';
             iframe.style.minHeight = '';
+            setReadingBodyMode(iframe, '');
+        }
+    }
+
+    function setReadingBodyMode(iframe, mode) {
+        const readingBody = iframe && iframe.closest ? iframe.closest('.reading-body') : null;
+        const isPdf = mode === 'pdf';
+        const isPhoto = mode === 'photo';
+        if (readingBody) {
+            readingBody.classList.toggle('reading-body--pdf', isPdf);
+            readingBody.classList.toggle('reading-body--photo', isPhoto);
+        }
+        if (iframe) {
+            iframe.classList.toggle('read-body--pdf', isPdf);
+            iframe.classList.toggle('read-body--photo', isPhoto);
         }
     }
 
@@ -1080,15 +1095,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (iframe.classList.contains('read-body--pdf') && iframe.src && !iframe.src.startsWith('about:blank')) {
-                iframe.style.height = 'min(520px, 55vh)';
-                iframe.style.minHeight = '280px';
-                iframe.style.maxHeight = '55vh';
-                iframe.style.overflow = 'hidden';
+                iframe.style.height = '75vh';
+                iframe.style.minHeight = '720px';
+                iframe.style.maxHeight = 'none';
+                iframe.style.overflow = 'auto';
                 return;
             }
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             if (doc && doc.body) {
                 const scrollH = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 180);
+                if (iframe.classList.contains('read-body--photo')) {
+                    const cap = 560;
+                    iframe.style.height = Math.min(scrollH + 16, cap) + 'px';
+                    iframe.style.minHeight = '240px';
+                    iframe.style.maxHeight = cap + 'px';
+                    iframe.style.overflow = 'auto';
+                    return;
+                }
                 iframe.style.height = (scrollH + 24) + 'px';
                 iframe.style.minHeight = '180px';
                 iframe.style.maxHeight = 'none';
@@ -3726,6 +3749,66 @@ document.addEventListener('DOMContentLoaded', function() {
             + '</div>';
     }
 
+    function emailHtmlHasImages(html) {
+        if (!html) return false;
+        const stripped = String(html).replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ');
+        return /<img\b/i.test(stripped);
+    }
+
+    function emailHtmlHasVisibleContent(html) {
+        return emailHtmlHasVisibleText(html) || emailHtmlHasImages(html);
+    }
+
+    function attachmentLooksLikeImage(att) {
+        if (!att) return false;
+        const type = String(att.content_type || att.mime_type || '').toLowerCase();
+        const name = resolveAttachmentDisplayName(att).toLowerCase();
+        return type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/.test(name);
+    }
+
+    function collectReadingPaneImages(email) {
+        const seen = {};
+        const images = [];
+        (email && email.attachments ? email.attachments : []).forEach(function (att) {
+            if (!attachmentLooksLikeImage(att)) {
+                return;
+            }
+            const url = getAttachmentPreviewUrl(att);
+            if (!url || url === '#') {
+                return;
+            }
+            if (seen[url]) {
+                return;
+            }
+            seen[url] = true;
+            images.push({
+                url: url,
+                name: resolveAttachmentDisplayName(att)
+            });
+        });
+        return images;
+    }
+
+    function buildImageAttachmentBodyHtml(email) {
+        const images = collectReadingPaneImages(email);
+        if (!images.length) {
+            return '';
+        }
+        const cards = images.map(function (img) {
+            return '<figure class="email-photo-card">'
+                + '<a href="' + escapeHtml(img.url) + '" target="_blank" rel="noopener" title="Open full size">'
+                + '<img src="' + escapeHtml(img.url) + '" alt="' + escapeHtml(img.name) + '">'
+                + '</a>'
+                + '<figcaption>' + escapeHtml(img.name) + '</figcaption>'
+                + '</figure>';
+        }).join('');
+        const heading = images.length === 1 ? 'Photo' : (images.length + ' photos');
+        return '<div class="email-photo-body">'
+            + '<div class="email-photo-body__label">' + heading + '</div>'
+            + '<div class="email-photo-body__grid">' + cards + '</div>'
+            + '</div>';
+    }
+
     function emailHtmlHasVisibleText(html) {
         if (!html) return false;
         if (isCalendarPayload(html)) return false;
@@ -3751,7 +3834,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!html) return '';
         const raw = String(html);
         const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        if (bodyMatch && emailHtmlHasVisibleText(bodyMatch[1])) {
+        if (bodyMatch && emailHtmlHasVisibleContent(bodyMatch[1])) {
             return bodyMatch[1];
         }
         return raw;
@@ -4264,18 +4347,22 @@ document.addEventListener('DOMContentLoaded', function() {
             contentStr = summarizeCalendarPayload(contentStr);
         }
         contentStr = extractRenderableEmailHtml(contentStr);
-        const hasVisibleBody = emailHtmlHasVisibleText(contentStr);
+        const hasVisibleBody = emailHtmlHasVisibleContent(contentStr);
         const hasCalendarInviteBody = isCalendarInvite || (!!calendarSource && !hasVisibleBody);
+        const imageBodyHtml = (!hasVisibleBody && !hasCalendarInviteBody)
+            ? buildImageAttachmentBodyHtml(email)
+            : '';
 
-        // Never auto-embed Parsed email.pdf for calendar invites — those PDFs dump raw ICS.
+        // Never auto-embed Parsed email.pdf for calendar invites or image-only mail —
+        // those PDFs are often an empty/black Chrome viewer over a header-only page.
         let pdfToPreview = null;
-        if (!hasVisibleBody && !hasCalendarInviteBody) {
+        if (!hasVisibleBody && !hasCalendarInviteBody && !imageBodyHtml) {
             if (email.pdf_preview_url) {
                 pdfToPreview = email.pdf_preview_url;
             } else if (email.attachments && email.attachments.length > 0) {
                 const pdfAtt = email.attachments.find(function(a) {
                     const name = resolveAttachmentDisplayName(a).toLowerCase();
-                    return name.endsWith('.pdf');
+                    return name.endsWith('.pdf') && name !== 'parsed email.pdf';
                 });
                 if (pdfAtt) {
                     pdfToPreview = getAttachmentPreviewUrl(pdfAtt);
@@ -4287,6 +4374,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // PDF.js / Chrome viewer needs scripts; the HTML sandbox blocks them and
             // leaves a blank reading pane when the stored body is empty.
             iframe.classList.add('read-body--pdf');
+            setReadingBodyMode(iframe, 'pdf');
             iframe.onload = function () {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -4294,7 +4382,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (/403\s*\|\s*Forbidden/i.test(text) || /^\s*403\b/.test(text.trim())) {
                         iframe.onload = null;
                         iframe.removeAttribute('src');
-                        iframe.classList.remove('read-body--pdf');
+                        setReadingBodyMode(iframe, '');
                         iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
                         renderHtmlIframe(iframe, '<p>No content available.</p>');
                         resetReadBodyIframeSizing(iframe);
@@ -4307,17 +4395,19 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             iframe.removeAttribute('srcdoc');
             iframe.removeAttribute('sandbox');
-            iframe.src = pdfToPreview;
+            iframe.src = pdfToPreview + (pdfToPreview.indexOf('#') === -1 ? '#view=FitH' : '');
             resetReadBodyIframeSizing(iframe);
         } else {
             iframe.onload = null;
-            iframe.classList.remove('read-body--pdf');
+            setReadingBodyMode(iframe, imageBodyHtml ? 'photo' : '');
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
             iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
             let bodyHtml = hasVisibleBody ? contentStr : '';
             if (hasCalendarInviteBody) {
                 bodyHtml = buildCalendarInviteBodyHtml(calendarSource || contentStr, email);
+            } else if (imageBodyHtml) {
+                bodyHtml = imageBodyHtml;
             } else if (bodyHtml && bodyHtml.includes('<')) {
                 bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
             } else if (bodyHtml) {
@@ -4379,19 +4469,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-            'html,body{margin:0;padding:0;box-sizing:border-box;}' +
-            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow:visible;}' +
-            'img{max-width:100%;height:auto;}' +
+            'html,body{margin:0;padding:0;box-sizing:border-box;max-width:100%;width:100%;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow-x:hidden;}' +
+            'img{max-width:100%!important;height:auto!important;width:auto!important;object-fit:contain;display:block;}' +
             'table{max-width:100%;}' +
             'a{color:#0078d4;}' +
             'blockquote{margin:0;padding-left:12px;border-left:3px solid #edebe9;color:#605e5c;}' +
             'p{margin:0 0 0.75em;}' +
+            '.email-photo-body{max-width:100%;}' +
+            '.email-photo-body__label{font-size:12px;font-weight:600;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin:0 0 10px;}' +
+            '.email-photo-body__grid{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;}' +
+            '.email-photo-card{margin:0;max-width:min(100%,360px);}' +
+            '.email-photo-card a{display:block;line-height:0;}' +
+            '.email-photo-card img{max-width:100%!important;max-height:420px!important;width:auto!important;height:auto!important;object-fit:contain;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;}' +
+            '.email-photo-card figcaption{margin-top:8px;font-size:12px;color:#64748b;word-break:break-all;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
 
         const resize = opts.composeContent
             ? sizeComposeContentIframe
             : (opts.compact ? sizeCompactHtmlIframe : resetReadBodyIframeSizing);
+        try {
+            const imgs = doc.images ? Array.prototype.slice.call(doc.images) : [];
+            imgs.forEach(function (img) {
+                if (img.complete) {
+                    return;
+                }
+                img.addEventListener('load', function () {
+                    resize(iframe);
+                });
+                img.addEventListener('error', function () {
+                    resize(iframe);
+                });
+            });
+        } catch (e) {
+            // Ignore cross-document access issues.
+        }
         setTimeout(function() {
             resize(iframe);
         }, 50);

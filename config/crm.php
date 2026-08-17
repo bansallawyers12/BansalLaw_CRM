@@ -336,7 +336,7 @@ return [
         'execution_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME', 1800)),
         'max_input_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME', 1800)),
         'socket_timeout_seconds' => max(120, (int) env('PERSONAL_VIDEO_UPLOAD_SOCKET_TIMEOUT', 600)),
-        'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 200)),
+        'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 500)),
     ],
 
 ];

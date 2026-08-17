@@ -17,7 +17,11 @@ define('LARAVEL_START', microtime(true));
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 if (
     str_contains($requestUri, '/documents/upload-edu-document')
+    || str_contains($requestUri, '/documents/upload-visa-document')
+    || str_contains($requestUri, '/documents/upload-matter-document')
     || str_contains($requestUri, '/documents/bulk-upload-personal')
+    || str_contains($requestUri, '/documents/bulk-upload-visa')
+    || str_contains($requestUri, '/documents/bulk-upload-matter')
 ) {
     $uploadTimeLimit = max(300, (int) ($_ENV['PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME'] ?? $_SERVER['PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME'] ?? 1800));
     $inputTimeLimit = max(300, (int) ($_ENV['PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME'] ?? $_SERVER['PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME'] ?? 1800));

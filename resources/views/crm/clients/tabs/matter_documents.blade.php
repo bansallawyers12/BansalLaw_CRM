@@ -154,8 +154,8 @@
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), and videos (MP4, WebM, MOV, etc.) — up to 50MB (200MB for videos). You can select multiple files.</p>
-                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv">
+                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to 50MB (500MB for videos). You can select multiple files.</p>
+                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count-visa">0</span></h5>
@@ -249,7 +249,7 @@
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
-                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv" style="display: none;"/>
+                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*" style="display: none;"/>
                                                                     </form>
                                                                 </div>
                                                             <?php endif; ?>
@@ -1269,15 +1269,17 @@
                     // Validate and add files to array (aligned with personal documents)
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
-                    const maxVideoSize = 200 * 1024 * 1024; // 200MB
+                    const maxVideoSize = 500 * 1024 * 1024; // 500MB (MS Teams recordings)
                     const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
-                    const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
-                        const sizeLimit = videoExtensions.includes(ext) ? maxVideoSize : maxSize;
-                        const sizeLabel = videoExtensions.includes(ext) ? '200MB' : '50MB';
+                        const isVideo = (typeof isPersonalDocVideoFile === 'function' && isPersonalDocVideoFile(file))
+                            || videoExtensions.includes(ext)
+                            || String(file.type || '').indexOf('video/') === 0;
+                        const sizeLimit = isVideo ? maxVideoSize : maxSize;
+                        const sizeLabel = isVideo ? '500MB' : '50MB';
 
                         // Check file size
                         if (file.size > sizeLimit) {
@@ -1285,14 +1287,14 @@
                             return;
                         }
                         
-                        // Check file extension
-                        if (!allowedExtensions.includes(ext)) {
+                        // Check file extension / Teams video MIME
+                        if (!isVideo && !allowedExtensions.includes(ext)) {
                             invalidFiles.push(file.name + ' (invalid file type)');
                             return;
                         }
                         
-                        // Check filename characters
-                        if (!validNameRegex.test(file.name)) {
+                        // Stored names are generated; allow Teams meeting titles (colons, apostrophes, etc.)
+                        if (!file.name || /[\/\\]/.test(file.name)) {
                             invalidFiles.push(file.name + ' (invalid characters in name)');
                             return;
                         }
@@ -1309,7 +1311,7 @@
                     }
                     
                     if (bulkUploadVisaFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, or video files (MP4, WebM, MOV, etc.) under the size limit.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, videos, or MS Teams recordings (MP4, WebM, MOV, etc.) under the size limit.');
                         return;
                     }
                     
@@ -1693,10 +1695,13 @@
                     formData.append('type', 'client');
 
                     const fileList = Array.from(files);
-                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
                     const videoFiles = fileList.filter(function(file) {
+                        if (typeof isPersonalDocVideoFile === 'function') {
+                            return isPersonalDocVideoFile(file);
+                        }
                         const ext = (file.name.split('.').pop() || '').toLowerCase();
-                        return videoExtensions.includes(ext);
+                        return ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'].includes(ext)
+                            || String(file.type || '').indexOf('video/') === 0;
                     });
                     const hasVideos = videoFiles.length > 0;
                     

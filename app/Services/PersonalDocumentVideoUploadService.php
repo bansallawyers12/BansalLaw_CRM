@@ -20,6 +20,18 @@ class PersonalDocumentVideoUploadService
 
     public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
 
+    public const VIDEO_MIME_TYPES = [
+        'video/mp4',
+        'video/webm',
+        'video/quicktime',
+        'video/x-m4v',
+        'video/x-msvideo',
+        'video/x-matroska',
+        'video/mpeg',
+        'video/ogg',
+        'application/mp4',
+    ];
+
     private const CACHE_PREFIX = 'personal_video_upload:';
 
     private const CACHE_TTL_MINUTES = 120;
@@ -27,6 +39,66 @@ class PersonalDocumentVideoUploadService
     public static function isVideoExtension(?string $extension): bool
     {
         return in_array(strtolower((string) $extension), self::VIDEO_EXTENSIONS, true);
+    }
+
+    /**
+     * True for MP4/WebM/MOV and Microsoft Teams meeting recordings (video/* MIME).
+     */
+    public static function isVideoFile(UploadedFile $file): bool
+    {
+        if (self::isVideoExtension($file->getClientOriginalExtension())) {
+            return true;
+        }
+
+        foreach ([$file->getClientMimeType(), $file->getMimeType()] as $mime) {
+            $mime = strtolower((string) $mime);
+            if ($mime === '') {
+                continue;
+            }
+            if (str_starts_with($mime, 'video/') || in_array($mime, self::VIDEO_MIME_TYPES, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Stored S3 names are generated; original names are not used as paths.
+     * Allow Teams meeting titles (colons, apostrophes, dashes) and only block traversal.
+     */
+    public static function isSafeOriginalFilename(string $fileName): bool
+    {
+        $fileName = trim($fileName);
+        if ($fileName === '' || str_contains($fileName, "\0")) {
+            return false;
+        }
+
+        return ! preg_match('/[\/\\\\]/', $fileName);
+    }
+
+    public static function resolveVideoExtension(UploadedFile $file): string
+    {
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if (self::isVideoExtension($ext)) {
+            return $ext;
+        }
+
+        $mime = strtolower((string) ($file->getClientMimeType() ?: $file->getMimeType()));
+        if (str_contains($mime, 'webm')) {
+            return 'webm';
+        }
+        if (str_contains($mime, 'quicktime')) {
+            return 'mov';
+        }
+        if (str_contains($mime, 'matroska')) {
+            return 'mkv';
+        }
+        if (str_contains($mime, 'x-msvideo') || str_contains($mime, 'avi')) {
+            return 'avi';
+        }
+
+        return 'mp4';
     }
 
     public function usesDirectUpload(): bool
@@ -52,7 +124,7 @@ class PersonalDocumentVideoUploadService
 
     public static function maxVideoBytes(): int
     {
-        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 200)) * 1024 * 1024;
+        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 500)) * 1024 * 1024;
     }
 
     public function cacheKey(string $token): string
@@ -106,7 +178,7 @@ class PersonalDocumentVideoUploadService
 
     public function storeTempFile(UploadedFile $file, string $token): string
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        $extension = self::resolveVideoExtension($file);
 
         return $file->storeAs('video-uploads', $token . '.' . $extension, 'local');
     }
@@ -162,7 +234,7 @@ class PersonalDocumentVideoUploadService
             $doccategory,
             $file->getClientOriginalName(),
             (int) $file->getSize(),
-            strtolower($file->getClientOriginalExtension())
+            self::resolveVideoExtension($file)
         );
     }
 
@@ -196,7 +268,7 @@ class PersonalDocumentVideoUploadService
             $doccategory,
             $file->getClientOriginalName(),
             (int) $file->getSize(),
-            strtolower($file->getClientOriginalExtension())
+            self::resolveVideoExtension($file)
         );
 
         return [

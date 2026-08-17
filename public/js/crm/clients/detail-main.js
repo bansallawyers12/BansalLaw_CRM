@@ -6705,11 +6705,9 @@ success: function(response) {
 
 
 
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
+            if (!isSafeDocumentFileName(file.name)) {
 
-            if (!validNameRegex.test(file.name)) {
-
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+                alert("File name cannot contain slashes. Please rename the file and try again.");
 
                 $(this).val('');
 
@@ -6968,12 +6966,23 @@ success: function(response) {
         var _videoFolderPromptCallback = null;
         var _videoFolderPromptCancel = null;
 
-        function isPersonalDocVideoFile(file) {
-            if (!file || !file.name) {
+        function isSafeDocumentFileName(name) {
+            if (!name || String(name).indexOf('\0') !== -1) {
                 return false;
             }
-            var ext = (file.name.split('.').pop() || '').toLowerCase();
-            return /^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext);
+            return !/[\/\\]/.test(String(name));
+        }
+
+        function isPersonalDocVideoFile(file) {
+            if (!file) {
+                return false;
+            }
+            var ext = (file.name && file.name.split('.').pop() || '').toLowerCase();
+            if (/^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext)) {
+                return true;
+            }
+            var mime = (file.type || '').toLowerCase();
+            return mime.indexOf('video/') === 0 || mime === 'application/mp4';
         }
 
         function getPersonalDocumentFolders() {
@@ -7557,9 +7566,15 @@ success: function(response) {
         }
 
         function uploadPersonalDocFromZone(dragZone, file) {
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert('File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.');
+            if (!isSafeDocumentFileName(file.name)) {
+                alert('File name cannot contain slashes. Please rename the file and try again.');
+                return false;
+            }
+
+            var isVideoUploadCheck = isPersonalDocVideoFile(file);
+            var maxAllowed = isVideoUploadCheck ? (500 * 1024 * 1024) : (50 * 1024 * 1024);
+            if (file.size > maxAllowed) {
+                alert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? '500MB' : '50MB') + '.');
                 return false;
             }
 
@@ -7607,6 +7622,7 @@ success: function(response) {
         }
 
         window.isPersonalDocVideoFile = isPersonalDocVideoFile;
+        window.isSafeDocumentFileName = isSafeDocumentFileName;
         window.promptPersonalVideoUploadFolder = promptPersonalVideoUploadFolder;
         window.uploadPersonalDocFromZone = uploadPersonalDocFromZone;
         window.activatePersonalDocumentFolder = activatePersonalDocumentFolder;
@@ -7656,22 +7672,21 @@ success: function(response) {
         }
 
         function validateMatterDocFile(file) {
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+            if (!isSafeDocumentFileName(file.name)) {
+                alert("File name cannot contain slashes. Please rename the file and try again.");
                 return false;
             }
             var ext = (file.name.split('.').pop() || '').toLowerCase();
-            var videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
-            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
-            if (!allowedExtensions.includes(ext)) {
-                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), and videos (MP4, WebM, MOV, etc.).');
+            var isVideo = isMatterDocVideoFile(file);
+            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+            if (!isVideo && !allowedExtensions.includes(ext)) {
+                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.).');
                 return false;
             }
             var maxSize = 50 * 1024 * 1024;
-            var maxVideoSize = 200 * 1024 * 1024;
-            var sizeLimit = videoExtensions.includes(ext) ? maxVideoSize : maxSize;
-            var sizeLabel = videoExtensions.includes(ext) ? '200MB' : '50MB';
+            var maxVideoSize = 500 * 1024 * 1024;
+            var sizeLimit = isVideo ? maxVideoSize : maxSize;
+            var sizeLabel = isVideo ? '500MB' : '50MB';
             if (file.size > sizeLimit) {
                 alert('File exceeds the maximum allowed size of ' + sizeLabel + '.');
                 return false;

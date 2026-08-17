@@ -409,8 +409,8 @@ class ClientDocumentsController extends Controller
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
     
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
+                if (!PersonalDocumentVideoUploadService::isSafeOriginalFilename($fileName)) {
+                    $response['message'] = 'File name cannot contain slashes. Please rename the file and try again.';
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -493,10 +493,11 @@ class ClientDocumentsController extends Controller
                     $timestamp = time();
                     $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
-                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoFile($file)) {
+                        $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
                         $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
                         if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
                             $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
                             ob_end_clean();
                             header('Content-Type: application/json');
@@ -817,7 +818,7 @@ class ClientDocumentsController extends Controller
                                                    data-doccategory="<?php echo $fetch->folder_name;?>" 
                                                    type="file" 
                                                    name="document_upload"
-                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*"
                                                    style="display: none;"/>
                                         </form>
                                     </div>
@@ -938,9 +939,8 @@ class ClientDocumentsController extends Controller
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
                 
-                // Allow letters, numbers, underscores, dashes, spaces, dots, dollar signs, parentheses, commas, ampersands, plus signs
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
+                if (!PersonalDocumentVideoUploadService::isSafeOriginalFilename($fileName)) {
+                    $response['message'] = 'File name cannot contain slashes. Please rename the file and try again.';
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -1019,11 +1019,12 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
 
-                    // Large videos: stream via same pipeline as personal documents
-                    if (PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                    // Large videos including MS Teams recordings: stream via same pipeline as personal documents
+                    if (PersonalDocumentVideoUploadService::isVideoFile($file)) {
+                        $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
                         $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
                         if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
                             $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
                             ob_end_clean();
                             header('Content-Type: application/json');
@@ -3748,8 +3749,8 @@ class ClientDocumentsController extends Controller
                     $size = $file->getSize();
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                        $errors[] = "File '{$fileName}': File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.";
+                    if (!PersonalDocumentVideoUploadService::isSafeOriginalFilename($fileName)) {
+                        $errors[] = "File '{$fileName}': File name cannot contain slashes. Please rename the file and try again.";
                         continue;
                     }
                     
@@ -3816,10 +3817,11 @@ class ClientDocumentsController extends Controller
                     
                     $extension = strtolower($file->getClientOriginalExtension());
 
-                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoFile($file)) {
+                        $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
                         $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
                         if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
                             $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
                             continue;
                         }
@@ -4032,8 +4034,8 @@ class ClientDocumentsController extends Controller
                     $size = $file->getSize();
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                        $errors[] = "File '{$fileName}': File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.";
+                    if (!PersonalDocumentVideoUploadService::isSafeOriginalFilename($fileName)) {
+                        $errors[] = "File '{$fileName}': File name cannot contain slashes. Please rename the file and try again.";
                         continue;
                     }
                     
@@ -4125,11 +4127,12 @@ class ClientDocumentsController extends Controller
                     $checklistName = $finalChecklistName;
                     $extension = strtolower($file->getClientOriginalExtension());
 
-                    // Videos (same formats/limits as personal documents)
-                    if (PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                    // Videos including MS Teams recordings (same formats/limits as personal documents)
+                    if (PersonalDocumentVideoUploadService::isVideoFile($file)) {
+                        $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
                         $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
                         if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
                             $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
                             continue;
                         }
