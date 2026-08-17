@@ -129,7 +129,7 @@
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
-    data-default-folder="{{ $assignmentReviewOnly ? 'review' : 'inbox' }}"
+    data-default-folder="{{ $assignmentReviewOnly ? 'review' : 'unassigned' }}"
     data-matters-url="{{ route('clients.listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
@@ -171,10 +171,23 @@
             @endif
             <div class="{{ $unassignedOnly ? 'list-toolbar__folder-row' : '' }}">
                 @if($unassignedOnly)
-                <div class="folder-inbox-title" id="unassignedFolderTitle">
-                    <i class="fa-solid {{ $assignmentReviewOnly ? 'fa-triangle-exclamation' : 'fa-inbox' }}" aria-hidden="true"></i>
-                    <span>{{ $assignmentReviewOnly ? 'Needs Review' : 'Inbox' }}</span>
-                </div>
+                    @if($assignmentReviewOnly)
+                    <div class="folder-inbox-title" id="unassignedFolderTitle">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        <span>Needs Review</span>
+                    </div>
+                    @else
+                    <div class="folder-tabs" role="tablist" aria-label="Synced mail folders">
+                        <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
+                            Unassigned
+                        </button>
+                        <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-user-check" aria-hidden="true"></i>
+                            Assigned
+                        </button>
+                    </div>
+                    @endif
                 <div class="search-box search-box--compact list-toolbar__search">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
@@ -196,14 +209,6 @@
         @if($canShowInboxSync && $unassignedOnly && ! $assignmentReviewOnly)
         <div class="sync-inbox-panel{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
             <div class="sync-inbox-panel__top">
-                <div class="sync-inbox-panel__intro">
-                    <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                    </div>
-                    <div class="sync-inbox-panel__intro-text">
-                        <div class="sync-inbox-panel__title">Fetch from Zoho</div>
-                    </div>
-                </div>
                 <div class="sync-inbox-panel__sync-row">
                     @if($canSelectSyncMailbox)
                     <div class="sync-inbox-panel__field">
@@ -756,7 +761,8 @@
 @endif
 
 @if($canSyncInbox || $canUnlinkSyncedEmail)
-<div class="modal fade assign-email-modal outlook-ui-modal-wrapper" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
+{{-- data-bs-focus=false: Tom Select results render on body; focus-trap would steal clicks from options --}}
+<div class="modal fade assign-email-modal outlook-ui-modal-wrapper" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered assign-email-modal__dialog" role="document">
         <div class="modal-content assign-email-modal__content outlook-ui-modal">
             <div class="modal-header assign-email-modal__header outlook-ui-modal__header">
@@ -766,7 +772,7 @@
                     </div>
                     <div class="assign-email-modal__titles outlook-ui-modal__header-text">
                         <h5 class="modal-title outlook-ui-modal__title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
-                        <p class="assign-email-modal__subtitle outlook-ui-modal__subtitle" id="assignSyncedEmailModalSubtitle">Link this synced email to a client and matter.</p>
+                        <p class="assign-email-modal__subtitle outlook-ui-modal__subtitle" id="assignSyncedEmailModalSubtitle">Pick a client, then a matter.</p>
                     </div>
                 </div>
                 <button type="button" class="assign-email-modal__close outlook-ui-modal__close" data-bs-dismiss="modal" aria-label="Close">
@@ -778,11 +784,7 @@
                 <input type="hidden" id="assignClientMatterId" value="">
 
                 <div class="assign-email-preview" id="assignEmailPreview">
-                    <div class="assign-email-preview__icon" aria-hidden="true">
-                        <i class="fa-solid fa-envelope-open-text"></i>
-                    </div>
                     <div class="assign-email-preview__content">
-                        <div class="assign-email-preview__label">Selected email</div>
                         <div class="assign-email-preview__subject" id="assignEmailPreviewSubject">—</div>
                         <div class="assign-email-preview__meta" id="assignEmailPreviewMeta"></div>
                     </div>
@@ -808,31 +810,18 @@
                     </div>
                 </div>
 
-                <div class="assign-email-steps" id="assignEmailSteps" aria-hidden="true">
-                    <div class="assign-email-step assign-email-step--active" id="assignStepClient">
-                        <span class="assign-email-step__dot">1</span>
-                        <span class="assign-email-step__label">Client</span>
-                    </div>
-                    <div class="assign-email-step__connector" id="assignStepConnector"></div>
-                    <div class="assign-email-step" id="assignStepMatter">
-                        <span class="assign-email-step__dot">2</span>
-                        <span class="assign-email-step__label">Matter</span>
-                    </div>
-                </div>
-
                 <div class="assign-email-fields" id="assignEmailFields">
                     <div class="assign-email-field assign-email-field--client" id="assignClientField">
-                        <label class="assign-email-field__label" for="assignClientId">
+                        <label class="assign-email-field__label" for="assignClientId-ts-control">
                             <span class="assign-email-field__label-text">
-                                <i class="fa-solid fa-user" aria-hidden="true"></i>
-                                Find client
+                                <span class="assign-email-field__step">1</span>
+                                Search client
                             </span>
                         </label>
-                        <div class="assign-email-picker assign-email-picker--client">
+                        <div class="assign-email-picker assign-email-picker--client" id="assignClientPicker">
                             <i class="fa-solid fa-magnifying-glass assign-email-picker__icon" aria-hidden="true"></i>
                             <div class="assign-email-picker__control">
                                 <select id="assignClientId" class="form-control crm-ts-plain assign-email-field__select" autocomplete="off">
-                                    <option value="">Type name, email, or client ref...</option>
                                     @if(!empty($clientData))
                                         <option value="{{ $clientData->id }}" selected>
                                             {{ $clientData->first_name }} {{ $clientData->last_name }} ({{ $clientData->client_id }})
@@ -841,28 +830,45 @@
                                 </select>
                             </div>
                         </div>
-                        <p class="assign-email-field__hint">Search and pick the client this email belongs to.</p>
+                        <div class="assign-selected-client" id="assignSelectedClient" hidden>
+                            <div class="assign-selected-client__main">
+                                <div class="assign-selected-client__icon" aria-hidden="true">
+                                    <i class="fa-solid fa-user-check"></i>
+                                </div>
+                                <div class="assign-selected-client__text">
+                                    <div class="assign-selected-client__name" id="assignSelectedClientName"></div>
+                                    <div class="assign-selected-client__meta" id="assignSelectedClientMeta"></div>
+                                </div>
+                            </div>
+                            <button type="button" class="assign-selected-client__change" id="assignChangeClientBtn">
+                                Change
+                            </button>
+                        </div>
+                        <div class="assign-email-sender-hint" id="assignSenderHint" hidden>
+                            <span class="assign-email-sender-hint__label">From</span>
+                            <button type="button" class="assign-email-sender-hint__btn" id="assignSearchSenderBtn" title="Search using this sender address"></button>
+                        </div>
+                        <p class="assign-email-field__hint" id="assignClientHint">Type a name, email, phone, or client ref — then pick a result.</p>
                     </div>
 
-                    <div class="assign-email-field assign-email-field--matter" id="assignMatterField">
+                    <div class="assign-email-field assign-email-field--matter assign-email-field--disabled" id="assignMatterField">
                         <label class="assign-email-field__label">
                             <span class="assign-email-field__label-text">
-                                <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
-                                Select matter
+                                <span class="assign-email-field__step" id="assignMatterStepBadge">2</span>
+                                Choose matter
                             </span>
                         </label>
                         <div class="assign-matter-picker" id="assignMatterPicker">
                             <div class="assign-matter-picker__placeholder" id="assignMatterPlaceholder">
-                                <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
-                                <span>Choose a client first to see their matters.</span>
+                                <span>Select a client above to load matters.</span>
                             </div>
                             <div class="assign-matter-picker__list" id="assignMatterList" hidden></div>
                             <div class="assign-matter-picker__loading" id="assignMatterLoading" hidden>
                                 <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-                                <span>Loading matters...</span>
+                                <span>Loading matters…</span>
                             </div>
                         </div>
-                        <p class="assign-email-field__hint" id="assignMatterHint"></p>
+                        <p class="assign-email-field__hint" id="assignMatterHint" hidden></p>
                     </div>
                 </div>
 

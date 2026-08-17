@@ -146,6 +146,10 @@
       labelField: 'name',
       // Server already filters by name, email, phone, client ref, matter ref, etc.
       filter: false,
+      // Keep all remote hits visible even when the local sifter would score them 0.
+      score: function () {
+        return function () { return 1; };
+      },
       searchField: ['name', 'email', 'phones', 'client_id', 'matter_ref', 'search_label'],
       loadThrottle: loadThrottle,
       shouldLoad: function (query) {

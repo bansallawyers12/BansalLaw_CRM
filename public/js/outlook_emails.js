@@ -109,9 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailModalIcon = document.getElementById('assignSyncedEmailModalIcon');
     const unlinkEmailDestination = document.getElementById('unlinkEmailDestination');
     const unlinkDestinationButtons = document.querySelectorAll('[data-unlink-destination]');
-    const assignEmailSteps = document.getElementById('assignEmailSteps');
     const assignEmailFields = document.getElementById('assignEmailFields');
     const assignClientSelect = document.getElementById('assignClientId');
+    const assignClientPicker = document.getElementById('assignClientPicker');
     const assignMatterHiddenInput = document.getElementById('assignClientMatterId');
     const assignMatterList = document.getElementById('assignMatterList');
     const assignMatterPlaceholder = document.getElementById('assignMatterPlaceholder');
@@ -123,11 +123,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailPreviewSubject = document.getElementById('assignEmailPreviewSubject');
     const assignEmailPreviewMeta = document.getElementById('assignEmailPreviewMeta');
     const assignMatterHint = document.getElementById('assignMatterHint');
+    const assignClientHint = document.getElementById('assignClientHint');
     const assignMatterField = document.getElementById('assignMatterField');
     const assignClientField = document.getElementById('assignClientField');
-    const assignStepClient = document.getElementById('assignStepClient');
-    const assignStepMatter = document.getElementById('assignStepMatter');
-    const assignStepConnector = document.getElementById('assignStepConnector');
+    const assignSenderHint = document.getElementById('assignSenderHint');
+    const assignSearchSenderBtn = document.getElementById('assignSearchSenderBtn');
+    const assignSelectedClient = document.getElementById('assignSelectedClient');
+    const assignSelectedClientName = document.getElementById('assignSelectedClientName');
+    const assignSelectedClientMeta = document.getElementById('assignSelectedClientMeta');
+    const assignChangeClientBtn = document.getElementById('assignChangeClientBtn');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const unlinkEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-unlink-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
@@ -1312,6 +1316,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (panelIcon) {
             panelIcon.className = 'fa-solid ' + (isReview ? 'fa-triangle-exclamation' : 'fa-inbox');
         }
+
+        // Keep Unassigned / Assigned tab highlight in sync (review uses the sort filter).
+        folderItems.forEach(function (tab) {
+            const folder = tab.dataset.folder || '';
+            if (folder !== 'unassigned' && folder !== 'assigned') {
+                return;
+            }
+            const isActive = !isReview && folder === currentFolder;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
     }
 
     function applyUnassignedListModeFromSort() {
@@ -1326,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Dedicated review page: Newest/Oldest only change sort direction.
             currentFolder = 'review';
         } else if (currentFolder === 'review') {
-            currentFolder = 'inbox';
+            currentFolder = 'unassigned';
         }
 
         updateUnassignedFolderChrome();
@@ -1478,6 +1493,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (folder === 'unread') {
             folder = 'inbox';
         }
+        // On the synced-mail page, clicking Unassigned/Assigned leaves Needs Review mode.
+        if (unassignedOnly && sortOrder && (folder === 'unassigned' || folder === 'assigned')
+            && sortOrder.value === 'review') {
+            sortOrder.value = 'desc';
+        }
         folderItems.forEach(function (f) {
             const isActive = f.dataset.folder === folder;
             f.classList.toggle('active', isActive);
@@ -1491,6 +1511,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage = 1;
         resetReadingPane();
         updateOutboxFiltersVisibility();
+        updateUnassignedFolderChrome();
     }
 
     // Send Mail
@@ -3149,7 +3170,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch from backend
     async function loadEmails() {
         if (unassignedOnly && isSyncedInboxFolder(currentFolder) && !canViewSyncedInbox) {
-            currentFolder = 'inbox';
+            currentFolder = 'unassigned';
             switchToFolder(currentFolder);
         }
 
@@ -3708,7 +3729,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 emptyIcon = 'fa-inbox';
             } else if (currentFolder === 'unassigned') {
                 emptyMsg = 'No unassigned emails';
-                emptyHint = 'All synced mail is linked to clients. Use Sync now to fetch new mail from Zoho.';
+                emptyHint = 'All synced mail is linked to clients. Use Sync now to fetch new mail.';
                 emptyIcon = 'fa-user-clock';
             } else if (currentFolder === 'assigned') {
                 emptyMsg = 'No assigned emails yet';
@@ -4596,10 +4617,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
-        const clientId = assignClientSelect
+        const typingQuery = clientTs && clientTs.control_input
+            ? String(clientTs.control_input.value || '').trim()
+            : '';
+        const clientIdValue = (!typingQuery && assignClientSelect)
             ? extractClientIdFromTomSelectValue(assignClientSelect.value, clientTs)
             : null;
-        const hasClient = !!clientId;
+        const hasClient = !!clientIdValue;
         const hasMatter = assignMatterHiddenInput && assignMatterHiddenInput.value !== '';
         assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
     }
@@ -4638,31 +4662,174 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function clearAssignSelectedClientCard() {
+        if (assignSelectedClient) {
+            assignSelectedClient.hidden = true;
+        }
+        if (assignSelectedClientName) {
+            assignSelectedClientName.textContent = '';
+        }
+        if (assignSelectedClientMeta) {
+            assignSelectedClientMeta.textContent = '';
+        }
+        if (assignClientField) {
+            assignClientField.classList.remove('assign-email-field--client-picked');
+        }
+        if (assignClientPicker) {
+            assignClientPicker.hidden = false;
+        }
+    }
+
+    function showAssignSelectedClientCard(option) {
+        if (!assignSelectedClient || !assignSelectedClientName) {
+            return;
+        }
+        const opt = option || {};
+        const name = String(opt.name || opt.text || '').trim() || 'Selected client';
+        const metaParts = [];
+        if (opt.email) {
+            metaParts.push(String(opt.email).trim());
+        }
+        if (opt.phones) {
+            metaParts.push(String(opt.phones).trim());
+        }
+        const refLabel = opt.search_label || opt.client_id || opt.matter_ref || '';
+        if (refLabel) {
+            metaParts.push(String(refLabel).trim());
+        } else if (opt.status) {
+            metaParts.push(String(opt.status).trim());
+        }
+
+        assignSelectedClientName.textContent = name;
+        if (assignSelectedClientMeta) {
+            assignSelectedClientMeta.textContent = metaParts.filter(Boolean).join(' · ');
+            assignSelectedClientMeta.hidden = metaParts.length === 0;
+        }
+        assignSelectedClient.hidden = false;
+        if (assignClientField) {
+            assignClientField.classList.add('assign-email-field--client-picked');
+        }
+        // Hide the cramped Tom Select value row; the card shows the full name.
+        if (assignClientPicker) {
+            assignClientPicker.hidden = true;
+        }
+        if (assignSenderHint) {
+            assignSenderHint.hidden = true;
+        }
+    }
+
+    function beginAssignClientReselect() {
+        clearAssignSelectedClientCard();
+        clearAssignClientSelectionForSearch();
+        updateAssignSenderHint();
+        const clientTs = assignClientSelect && assignClientSelect.tomselect
+            ? assignClientSelect.tomselect
+            : null;
+        if (clientTs) {
+            setTimeout(function () {
+                clientTs.focus();
+                clientTs.open();
+            }, 20);
+        }
+    }
+
     function updateAssignStepProgress() {
         const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
-        const hasClient = !!extractClientIdFromTomSelectValue(
+        const typingQuery = clientTs && clientTs.control_input
+            ? String(clientTs.control_input.value || '').trim()
+            : '';
+        // While the user is typing a new query, do not treat a stale selection as final.
+        const hasClient = !typingQuery && !!extractClientIdFromTomSelectValue(
             assignClientSelect ? assignClientSelect.value : '',
             clientTs
         );
-        const hasMatter = assignMatterHiddenInput && assignMatterHiddenInput.value !== '';
 
-        if (assignStepClient) {
-            assignStepClient.classList.toggle('assign-email-step--active', !hasClient);
-            assignStepClient.classList.toggle('assign-email-step--done', hasClient);
-        }
-        if (assignStepMatter) {
-            assignStepMatter.classList.toggle('assign-email-step--active', hasClient && !hasMatter);
-            assignStepMatter.classList.toggle('assign-email-step--done', hasMatter);
-        }
-        if (assignStepConnector) {
-            assignStepConnector.classList.toggle('assign-email-step__connector--done', hasClient);
-        }
         if (assignClientField) {
             assignClientField.classList.toggle('assign-email-field--done', hasClient);
+            assignClientField.classList.toggle('assign-email-field--searching', !!typingQuery);
         }
         if (assignMatterField) {
             assignMatterField.classList.toggle('assign-email-field--disabled', !hasClient);
+            assignMatterField.classList.toggle('assign-email-field--ready-step', hasClient);
         }
+        if (assignClientHint) {
+            if (typingQuery) {
+                assignClientHint.textContent = 'Pick a client from the results below.';
+            } else if (hasClient) {
+                assignClientHint.textContent = 'Client selected. Choose a matter below, or tap Change to search again.';
+            } else {
+                assignClientHint.textContent = 'Type a name, email, phone, or client ref — then pick a result.';
+            }
+        }
+
+        if (!hasClient) {
+            clearAssignSelectedClientCard();
+            updateAssignSenderHint();
+        }
+    }
+
+    function clearAssignClientSelectionForSearch() {
+        const clientTs = assignClientSelect && assignClientSelect.tomselect
+            ? assignClientSelect.tomselect
+            : null;
+        if (clientTs && clientTs.items && clientTs.items.length) {
+            clientTs.clear(true);
+        }
+        clearAssignSelectedClientCard();
+        clearAssignMatterSelection();
+        updateAssignConfirmButton();
+        updateAssignStepProgress();
+    }
+
+    function getSelectedEmailSenderAddress() {
+        if (!selectedEmail || !selectedEmail.from_mail) {
+            return '';
+        }
+        const parsed = parseRecipientField(selectedEmail.from_mail);
+        if (parsed.length) {
+            return parsed[0];
+        }
+        const raw = String(selectedEmail.from_mail).trim();
+        return raw.includes('@') ? raw : '';
+    }
+
+    function updateAssignSenderHint() {
+        const sender = getSelectedEmailSenderAddress();
+        if (!assignSenderHint || !assignSearchSenderBtn) {
+            return;
+        }
+        if (!sender) {
+            assignSenderHint.hidden = true;
+            assignSearchSenderBtn.textContent = '';
+            return;
+        }
+        assignSenderHint.hidden = false;
+        assignSearchSenderBtn.textContent = sender;
+    }
+
+    function runAssignClientSearch(query) {
+        if (!assignClientSelect) {
+            return;
+        }
+        const clientTs = assignClientSelect.tomselect;
+        const q = String(query || '').trim();
+        if (!clientTs) {
+            return;
+        }
+        clearAssignClientSelectionForSearch();
+        clientTs.focus();
+        if (!q) {
+            clientTs.open();
+            return;
+        }
+        if (typeof clientTs.setTextboxValue === 'function') {
+            clientTs.setTextboxValue(q);
+        }
+        if (typeof clientTs.load === 'function') {
+            clientTs.load(q);
+        }
+        clientTs.open();
+        updateAssignStepProgress();
     }
 
     function populateAssignEmailPreview() {
@@ -4711,11 +4878,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (assignEmailModalSubtitle) {
             if (!isUnlink) {
-                assignEmailModalSubtitle.textContent = 'Link this synced email to a client and matter.';
+                assignEmailModalSubtitle.textContent = 'Pick a client, then a matter.';
             } else if (canReturnToUnassigned) {
-                assignEmailModalSubtitle.textContent = 'Move this email to Unassigned Mail or reassign it to the correct client.';
+                assignEmailModalSubtitle.textContent = 'Move to Unassigned Mail, or pick another client and matter.';
             } else {
-                assignEmailModalSubtitle.textContent = 'This email was uploaded rather than synced, so it can only be reassigned to another client.';
+                assignEmailModalSubtitle.textContent = 'This uploaded email can only be reassigned to another client.';
             }
         }
         if (assignEmailModalIcon) {
@@ -4726,11 +4893,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (unlinkEmailDestination) {
             unlinkEmailDestination.hidden = !isUnlink;
         }
-        if (assignEmailSteps) {
-            assignEmailSteps.hidden = !selectingClient;
-        }
         if (assignEmailFields) {
             assignEmailFields.hidden = !selectingClient;
+        }
+        if (assignSenderHint && !selectingClient) {
+            assignSenderHint.hidden = true;
         }
 
         unlinkDestinationButtons.forEach(function (button) {
@@ -4779,9 +4946,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         configureAssignmentModal(mode, 'unassigned');
         populateAssignEmailPreview();
+        updateAssignSenderHint();
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
+            bootstrap.Modal.getOrCreateInstance(assignEmailModal, { focus: false }).show();
         } else {
             document.body.classList.add('assign-email-modal-open');
             assignEmailModal.classList.add('show');
@@ -4841,6 +5009,9 @@ document.addEventListener('DOMContentLoaded', function() {
         setAssignMatterPickerView('placeholder');
         setAssignMatterFieldState('idle');
         setAssignMatterHint('', null);
+        if (assignMatterPlaceholder) {
+            assignMatterPlaceholder.innerHTML = '<span>Select a client above to load matters.</span>';
+        }
         updateAssignStepProgress();
     }
 
@@ -4955,7 +5126,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         destroyAssignEmailModalSelects();
 
-        const dropdownParent = 'body';
+        // Keep dropdown inside the control wrapper so it sits under the search box.
+        // Modal overflow is set to visible for this field (see outlook_emails.css).
+        const dropdownParent = null;
         const clientsUrl = baseUrl
             ? baseUrl.replace(/\/$/, '') + '/clients/get-allclients'
             : '';
@@ -4966,10 +5139,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const clientTsConfig = buildGetAllClientsTomSelectConfig({
                     url: clientsUrl,
                     dropdownParent: dropdownParent,
-                    placeholder: 'Type name, email, or client ref...',
+                    placeholder: 'Type name, email, phone, or client ref…',
+                    minQueryLength: 1,
+                    loadThrottle: 200,
                     onChange: function (value) {
                         clearAssignMatterSelection();
                         if (!value) {
+                            clearAssignSelectedClientCard();
                             updateAssignConfirmButton();
                             updateAssignStepProgress();
                             return;
@@ -4977,6 +5153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const option = this.options[value] || {};
                         if (option.locked) {
                             this.clear(true);
+                            clearAssignSelectedClientCard();
                             if (typeof window.openCrmAccessModal === 'function') {
                                 window.openCrmAccessModal(option);
                             }
@@ -4984,25 +5161,144 @@ document.addEventListener('DOMContentLoaded', function() {
                             updateAssignStepProgress();
                             return;
                         }
-                        const clientId = extractClientIdFromTomSelectValue(value, this);
+                        const resolvedClientId = extractClientIdFromTomSelectValue(value, this);
+                        if (!resolvedClientId) {
+                            this.clear(true);
+                            clearAssignSelectedClientCard();
+                            crmToast('Could not read that client. Try searching again.', 'warning');
+                            updateAssignConfirmButton();
+                            updateAssignStepProgress();
+                            return;
+                        }
+                        // Clear any leftover search text so the UI shows the chosen client.
+                        if (typeof this.setTextboxValue === 'function') {
+                            this.setTextboxValue('');
+                        }
+                        showAssignSelectedClientCard(option);
                         const matterRef = extractMatterRefFromTomSelectValue(value);
-                        loadAssignMattersForClient(clientId, matterRef);
+                        loadAssignMattersForClient(resolvedClientId, matterRef);
                         updateAssignConfirmButton();
                         updateAssignStepProgress();
                     }
                 });
-                // Hide the empty placeholder <option> from the dropdown list; it
-                // otherwise renders as a fake selectable row above the results.
                 clientTsConfig.allowEmptyOption = false;
+                clientTsConfig.openOnFocus = true;
+                clientTsConfig.closeAfterSelect = true;
+                clientTsConfig.maxOptions = 50;
+                // Remote results are already filtered by the server — show all of them.
+                clientTsConfig.score = function () {
+                    return function () { return 1; };
+                };
+                if (!clientTsConfig.render) {
+                    clientTsConfig.render = {};
+                }
+                clientTsConfig.render.no_results = function (_data, escape) {
+                    const q = escape(String((_data && _data.input) || '').trim());
+                    return '<div class="no-results assign-email-ts-empty">No clients found'
+                        + (q ? ' for “' + q + '”' : '')
+                        + '. Try another name, email, or ref.</div>';
+                };
+                clientTsConfig.render.loading = function () {
+                    return '<div class="assign-email-ts-loading">Searching…</div>';
+                };
+                // Selected value is shown in the full-name card, not inside the cramped input.
+                clientTsConfig.render.item = function (item, escape) {
+                    return '<div class="assign-email-ts-item">' + escape(item.name || item.text || '') + '</div>';
+                };
+
+                // Clear stale selection when the user starts a new search, and keep the menu open.
+                clientTsConfig.onType = function () {
+                    if (this.items && this.items.length) {
+                        this.clear(true);
+                        clearAssignSelectedClientCard();
+                        clearAssignMatterSelection();
+                        updateAssignConfirmButton();
+                    }
+                    if (assignClientPicker) {
+                        assignClientPicker.hidden = false;
+                    }
+                    updateAssignStepProgress();
+                    this.open();
+                };
+                clientTsConfig.onFocus = function () {
+                    updateAssignStepProgress();
+                    if (!(this.items && this.items.length)) {
+                        this.open();
+                    }
+                };
+                clientTsConfig.onBlur = function () {
+                    updateAssignStepProgress();
+                };
+                clientTsConfig.onDropdownOpen = function () {
+                    const self = this;
+                    // Reposition after layout so results sit under the search box.
+                    requestAnimationFrame(function () {
+                        if (typeof self.positionDropdown === 'function') {
+                            self.positionDropdown();
+                        }
+                    });
+                };
+
+                const remoteLoad = clientTsConfig.load;
+                clientTsConfig.load = function (query, callback) {
+                    const self = this;
+                    if (typeof remoteLoad !== 'function') {
+                        callback([]);
+                        return;
+                    }
+                    remoteLoad.call(self, query, function (items) {
+                        const list = Array.isArray(items) ? items : [];
+                        callback(list);
+                        setTimeout(function () {
+                            try {
+                                if (typeof self.refreshOptions === 'function') {
+                                    self.refreshOptions(true);
+                                } else {
+                                    self.open();
+                                }
+                                if (typeof self.positionDropdown === 'function') {
+                                    self.positionDropdown();
+                                }
+                            } catch (e) { /* ignore */ }
+                            updateAssignStepProgress();
+                        }, 0);
+                    });
+                };
+
                 clientTs = initTS(assignClientSelect, clientTsConfig);
                 if (clientTs && clientTs.wrapper) {
                     clientTs.wrapper.classList.add('assign-email-ts');
                     clientTs.wrapper.style.width = '100%';
                 }
+                if (clientTs && clientTs.dropdown) {
+                    clientTs.dropdown.classList.add('assign-email-ts-dropdown');
+                }
+                // Ensure preselected page client also carries cid for extractClientId…
+                if (clientTs && clientId) {
+                    const existing = clientTs.options[String(clientId)];
+                    if (existing && (existing.cid == null || existing.cid === '')) {
+                        clientTs.updateOption(String(clientId), Object.assign({}, existing, {
+                            cid: parseInt(clientId, 10)
+                        }));
+                    } else if (!existing) {
+                        const label = assignClientSelect.options.length
+                            ? (assignClientSelect.options[0].textContent || '').trim()
+                            : ('Client #' + clientId);
+                        clientTs.addOption({
+                            id: String(clientId),
+                            name: label,
+                            text: label,
+                            cid: parseInt(clientId, 10)
+                        });
+                        clientTs.setValue(String(clientId), true);
+                    }
+                }
             } else {
                 clientTs = initTS(assignClientSelect, {
                     create: false,
-                    dropdownParent: dropdownParent
+                    dropdownParent: dropdownParent,
+                    placeholder: 'Type name, email, phone, or client ref…',
+                    openOnFocus: true
                 });
             }
 
@@ -5012,7 +5308,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const isUnlinkMode = assignmentModalMode === 'unlink';
             const isSelectingClientMode = !isUnlinkMode || unlinkDestinationMode === 'client';
             if (initClientId && isSelectingClientMode) {
+                const rawOption = clientTs && clientTs.options
+                    ? (clientTs.options[initVal] || clientTs.options[String(initClientId)] || null)
+                    : null;
+                const initOption = Object.assign({}, rawOption || {});
+                if (!initOption.name && assignClientSelect && assignClientSelect.options.length) {
+                    initOption.name = (assignClientSelect.options[0].textContent || '').trim();
+                }
+                showAssignSelectedClientCard(initOption);
                 loadAssignMattersForClient(initClientId, extractMatterRefFromTomSelectValue(initVal));
+            } else {
+                clearAssignSelectedClientCard();
             }
         }
 
@@ -5024,7 +5330,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!mattersUrl || !selectedClientId) {
             clearAssignMatterSelection();
             if (assignMatterPlaceholder) {
-                assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i><span>Choose a client first to see their matters.</span>';
+                assignMatterPlaceholder.innerHTML = '<span>Select a client above to load matters.</span>';
             }
             updateAssignConfirmButton();
             return;
@@ -5078,8 +5384,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     setAssignMatterFieldState('ready');
                     setAssignMatterHint(
                         matterCount === 1
-                            ? 'Tap the matter below to confirm.'
-                            : matterCount + ' matters — tap the one this email relates to.',
+                            ? '1 matter found — selected automatically. Change if needed.'
+                            : matterCount + ' matters — tap the one this email belongs to.',
                         'success'
                     );
                     renderAssignMatterPicker(matters, preferredMatterId);
@@ -5101,8 +5407,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (assignClientSelect && typeof buildGetAllClientsTomSelectConfig !== 'function') {
         assignClientSelect.addEventListener('change', function () {
-            loadAssignMattersForClient(assignClientSelect.value);
+            const ts = assignClientSelect.tomselect;
+            const resolved = extractClientIdFromTomSelectValue(assignClientSelect.value, ts);
+            loadAssignMattersForClient(resolved);
             updateAssignConfirmButton();
+            updateAssignStepProgress();
         });
     }
 
@@ -5116,6 +5425,7 @@ document.addEventListener('DOMContentLoaded', function() {
         assignEmailModal.addEventListener('shown.bs.modal', function () {
             document.body.classList.add('assign-email-modal-open');
             initAssignEmailModalSelects();
+            updateAssignSenderHint();
 
             const isUnlink = assignmentModalMode === 'unlink';
             const isSelectingClient = !isUnlink || unlinkDestinationMode === 'client';
@@ -5127,6 +5437,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!activeVal && clientId) {
                     activeVal = String(clientId);
                     if (clientTs) {
+                        if (!clientTs.options[activeVal]) {
+                            clientTs.addOption({
+                                id: activeVal,
+                                name: 'Client #' + activeVal,
+                                text: 'Client #' + activeVal,
+                                cid: parseInt(activeVal, 10)
+                            });
+                        }
                         clientTs.setValue(activeVal, true);
                     } else {
                         assignClientSelect.value = activeVal;
@@ -5138,7 +5456,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const activeMatterRef = extractMatterRefFromTomSelectValue(activeVal);
                     loadAssignMattersForClient(activeClientId, activeMatterRef);
                 } else if (clientTs) {
-                    clientTs.focus();
+                    // Focus search immediately so typing works without an extra click.
+                    setTimeout(function () {
+                        clientTs.focus();
+                        clientTs.open();
+                    }, 30);
                 }
             }
 
@@ -5151,11 +5473,18 @@ document.addEventListener('DOMContentLoaded', function() {
             destroyAssignEmailModalSelects();
             clearAssignMatterSelection();
             if (assignMatterPlaceholder) {
-                assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i><span>Choose a client first to see their matters.</span>';
+                assignMatterPlaceholder.innerHTML = '<span>Select a client above to load matters.</span>';
             }
             if (assignEmailConfirmBtn) {
                 assignEmailConfirmBtn.disabled = true;
             }
+            if (assignSenderHint) {
+                assignSenderHint.hidden = true;
+            }
+            if (assignSelectedClient) {
+                assignSelectedClient.hidden = true;
+            }
+            clearAssignSelectedClientCard();
             configureAssignmentModal('assign', 'unassigned');
         });
     }
@@ -5166,11 +5495,20 @@ document.addEventListener('DOMContentLoaded', function() {
             configureAssignmentModal('unlink', destination);
 
             if (destination === 'client' && assignClientSelect) {
+                updateAssignSenderHint();
                 const clientTs = assignClientSelect.tomselect;
                 let activeVal = assignClientSelect ? assignClientSelect.value : '';
                 if (!activeVal && clientId) {
                     activeVal = String(clientId);
                     if (clientTs) {
+                        if (!clientTs.options[activeVal]) {
+                            clientTs.addOption({
+                                id: activeVal,
+                                name: 'Client #' + activeVal,
+                                text: 'Client #' + activeVal,
+                                cid: parseInt(activeVal, 10)
+                            });
+                        }
                         clientTs.setValue(activeVal, true);
                     } else {
                         assignClientSelect.value = activeVal;
@@ -5184,7 +5522,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearAssignMatterSelection();
                     if (clientTs) {
                         clientTs.clear(true);
-                        clientTs.focus();
+                        setTimeout(function () {
+                            clientTs.focus();
+                            clientTs.open();
+                        }, 30);
                     } else {
                         assignClientSelect.value = '';
                         assignClientSelect.focus();
@@ -5193,6 +5534,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    if (assignSearchSenderBtn) {
+        assignSearchSenderBtn.addEventListener('click', function () {
+            const sender = getSelectedEmailSenderAddress() || assignSearchSenderBtn.textContent.trim();
+            if (!sender) {
+                return;
+            }
+            clearAssignSelectedClientCard();
+            if (assignClientPicker) {
+                assignClientPicker.hidden = false;
+            }
+            runAssignClientSearch(sender);
+        });
+    }
+
+    if (assignChangeClientBtn) {
+        assignChangeClientBtn.addEventListener('click', function () {
+            beginAssignClientReselect();
+        });
+    }
+
+    if (assignClientPicker) {
+        assignClientPicker.addEventListener('click', function (event) {
+            if (event.target.closest('.clear-button')) {
+                return;
+            }
+            const clientTs = assignClientSelect && assignClientSelect.tomselect
+                ? assignClientSelect.tomselect
+                : null;
+            if (!clientTs) {
+                return;
+            }
+            clientTs.focus();
+            // Always allow opening results — clear stale selection first if user is reseaching.
+            if (clientTs.items && clientTs.items.length && clientTs.control_input
+                && String(clientTs.control_input.value || '').trim() !== '') {
+                clearAssignClientSelectionForSearch();
+            }
+            clientTs.open();
+        });
+    }
 
     if (assignEmailConfirmBtn) {
         assignEmailConfirmBtn.addEventListener('click', async function () {
@@ -5213,7 +5595,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             if (needsClientSelection && (!selectedClientId || !selectedMatter)) {
-                crmToast('Please select both client and matter.', 'warning');
+                crmToast('Please select both a client and a matter.', 'warning');
+                if (!selectedClientId && assignClientSelect && assignClientSelect.tomselect) {
+                    assignClientSelect.tomselect.focus();
+                    assignClientSelect.tomselect.open();
+                }
                 return;
             }
 
@@ -5223,6 +5609,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 : 'Assigning...');
             try {
                 const endpoint = isUnlinkFlow ? unlinkEmailUrl : assignEmailUrl;
+                if (!endpoint) {
+                    crmToast('Assign action is not available for your account.', 'error');
+                    return;
+                }
                 const payload = {
                     email_log_id: parseInt(emailLogId, 10)
                 };
