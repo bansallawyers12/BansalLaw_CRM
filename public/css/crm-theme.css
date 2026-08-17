@@ -5302,6 +5302,7 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header {
   border-bottom: 3px solid var(--accent-gold) !important;
   color: #fff !important;
   padding: 18px 24px !important;
+  overflow: hidden;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title,
@@ -5312,17 +5313,36 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header h5 {
   font-size: 18px !important;
 }
 
-body.sidebar-mini #create_appoint.add_appointment .modal-header .close,
-body.sidebar-mini #create_appoint.add_appointment .modal-header .close span {
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close {
   color: #fff !important;
   opacity: 0.92 !important;
   text-shadow: none !important;
-  font-size: 24px !important;
-  font-weight: 300 !important;
+  font-weight: 400 !important;
+  overflow: hidden;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close:not(.crm-modal-close),
+body.sidebar-mini #create_appoint.add_appointment .modal-header .btn-close {
+  display: none !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close i,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close span,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close span {
+  display: none !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close::after,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close::before,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close::after {
+  content: none !important;
+  display: none !important;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .close:hover,
-body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus {
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:hover,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:focus {
   opacity: 1 !important;
   color: #fff !important;
 }
@@ -5531,7 +5551,21 @@ body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-outline-s
 }
 
 body.sidebar-mini #create_appoint.add_appointment .appointment-modal-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
   border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body {
+  padding: 20px 24px 18px;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body .form-group {
+  margin-bottom: 14px;
 }
 
 /* Signature dashboard — “Send New Document” CTA is an <a>; global link styling must not wash out label */

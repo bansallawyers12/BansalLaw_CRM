@@ -592,7 +592,10 @@ use App\Http\Controllers\Controller;
     <div class="modal-dialog modal-lg modal-dialog-scrollable cdn-update-stage-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
+                <div>
+                    <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
+                    <p class="cdn-update-stage-modal-subtitle mb-0">Move this matter through its workflow</p>
+                </div>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

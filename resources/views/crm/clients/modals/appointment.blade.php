@@ -6,9 +6,7 @@
 				<h5 class="modal-title" id="interestModalLabel">
 					<i class="fa-solid fa-calendar-plus me-2"></i>Schedule Appointment
 				</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+				<x-crm.modal-close />
 			</div>
 			<div class="modal-body">
 				@php
@@ -23,14 +21,10 @@
 				    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                     <input type="hidden" name="client_unique_id" value="{{$fetchedData->client_id}}">
 					<div class="row">
-						<div class="col-12 col-md-6 col-lg-6">
-
-						</div>
-
-						<div class="col-12 col-md-12 col-lg-12">
+						<div class="col-12">
 							<div class="form-group row align-items-center">
 								<label for="client_name" class="col-sm-3 col-form-label">Client Reference No<span class="span_req">*</span></label>
-                                <div class="col-sm-6">
+                                <div class="col-sm-9">
                                     <input type="text" name="client_name" value="{{ @$fetchedData->client_id }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Client Reference" readonly>
                                 </div>
                             </div>
@@ -275,12 +269,12 @@
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12 text-right pt-3 appointment-modal-actions-row">
-							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary btn-lg px-4" id="appointform_save">
-								<i class="fa-solid fa-calendar-check me-2"></i>Schedule Appointment
+                        <div class="col-12 appointment-modal-actions-row">
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+								Cancel
 							</button>
-							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ms-2" data-bs-dismiss="modal">
-								<i class="fa-solid fa-xmark me-2"></i>Cancel
+							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary" id="appointform_save">
+								<i class="fa-solid fa-calendar-check me-2"></i>Schedule Appointment
 							</button>
 						</div>
 					</div>

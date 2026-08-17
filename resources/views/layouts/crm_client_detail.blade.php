@@ -1601,7 +1601,7 @@
     </style>
     @stack('styles')
     @yield('styles')
-    <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}?v={{ @filemtime(public_path('css/crm-theme.css')) ?: time() }}">
     <link rel="stylesheet" href="{{ asset('css/crm/modal-ui.css') }}?v={{ @filemtime(public_path('css/crm/modal-ui.css')) ?: time() }}">
 </head>
 <body class="sidebar-mini">

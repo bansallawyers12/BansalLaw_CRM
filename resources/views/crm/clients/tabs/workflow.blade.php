@@ -86,6 +86,16 @@
                 $workflowNextBtnDisabled = $workflowIsLastStage;
                 $workflowNextBtnTitle = 'Proceed to Next Stage';
                 $workflowNextBtnLabel = $workflowNextStageName ? ('Proceed to ' . $workflowNextStageName) : 'Proceed to Next Stage';
+                if ($workflowInModal) {
+                    if ($workflowIsLastStage) {
+                        $workflowNextBtnLabel = 'Last stage';
+                        $workflowNextBtnTitle = 'This matter is already on the last stage';
+                    } elseif ($workflowNextStageName) {
+                        $workflowNextBtnLabel = 'Go to ' . $workflowNextStageName;
+                    } else {
+                        $workflowNextBtnLabel = 'Next stage';
+                    }
+                }
 
                 if (!empty($isClosedMatterView)) {
                     $workflowStatusLabel = 'Closed';
@@ -101,63 +111,76 @@
 
             @if($workflowInModal)
                 <div class="cdn-workflow-modal">
-                    <div class="cdn-workflow-modal__context">
+                    <div class="cdn-workflow-modal__matter-row">
                         <div class="cdn-workflow-modal__matter">
-                            <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
-                            <span>{{ $workflowMatterName }} ({{ $workflowMatterNumber }})</span>
+                            <span class="cdn-workflow-modal__matter-icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></span>
+                            <div class="cdn-workflow-modal__matter-copy">
+                                <div class="cdn-workflow-modal__matter-name">{{ $workflowMatterName }}</div>
+                                <div class="cdn-workflow-modal__matter-ref">{{ $workflowMatterNumber }}</div>
+                            </div>
                         </div>
                         <span class="badge cdn-workflow-modal__status {{ $workflowStatusBadgeClass }}">{{ $workflowStatusLabel }}</span>
                     </div>
 
-                    @include('crm.clients.tabs.partials.workflow-stages-list', [
-                        'containerClass' => 'cdn-workflow-modal__stepper mt-3',
-                        'listClass' => 'workflow-stages-list--horizontal',
-                    ])
-
-                    <div class="cdn-workflow-modal__progress mt-3">
-                        <div class="progress cdn-workflow-modal__progress-bar" role="progressbar" aria-valuenow="{{ $workflowProgressPercentage }}" aria-valuemin="0" aria-valuemax="100">
-                            <div class="progress-bar bg-primary" style="width: {{ $workflowProgressPercentage }}%;"></div>
-                        </div>
-                        <p class="cdn-workflow-modal__progress-label mb-0">
-                            @if($workflowTotalStages <= 1)
-                                Stage 1 of 1
-                            @else
-                                {{ $workflowProgressPercentage }}% complete · Stage {{ $workflowStagePosition }} of {{ $workflowTotalStages }}
+                    <div class="cdn-workflow-modal__stage-card">
+                        <div class="cdn-workflow-modal__stage-kicker">
+                            Current stage
+                            @if($workflowTotalStages > 0)
+                                <span>· {{ max($workflowStagePosition, 1) }} of {{ $workflowTotalStages }}</span>
                             @endif
-                        </p>
+                        </div>
+                        <div class="cdn-workflow-modal__stage-name">{{ $workflowCurrentStageName ?? 'Not set' }}</div>
+                        @if($workflowNextStageName)
+                            <div class="cdn-workflow-modal__next">
+                                Next <strong>{{ $workflowNextStageName }}</strong>
+                            </div>
+                        @else
+                            <div class="cdn-workflow-modal__next cdn-workflow-modal__next--last">This is the last stage</div>
+                        @endif
                     </div>
 
-                    <div class="cdn-workflow-modal__current mt-3">
-                        <span class="text-muted">Current stage</span>
-                        <strong>{{ $workflowCurrentStageName ?? 'N/A' }}</strong>
-                    </div>
+                    @if($workflowTotalStages > 1)
+                        @include('crm.clients.tabs.partials.workflow-stages-list', [
+                            'containerClass' => 'cdn-workflow-modal__stepper',
+                            'listClass' => 'workflow-stages-list--horizontal',
+                        ])
 
-                    <div class="deadline-section cdn-workflow-modal__deadline mt-3">
+                        <div class="cdn-workflow-modal__progress">
+                            <div class="progress cdn-workflow-modal__progress-bar" role="progressbar" aria-valuenow="{{ $workflowProgressPercentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="Workflow progress">
+                                <div class="progress-bar bg-primary" style="width: {{ $workflowProgressPercentage }}%;"></div>
+                            </div>
+                            <p class="cdn-workflow-modal__progress-label mb-0">{{ $workflowProgressPercentage }}% complete</p>
+                        </div>
+                    @endif
+
+                    <div class="deadline-section cdn-workflow-modal__deadline">
                         <div class="form-group mb-0">
                             @if(empty($isClosedMatterView))
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                            <label class="cdn-workflow-modal__deadline-toggle">
+                                <input type="checkbox" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
                                     {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
-                                <label class="form-check-label" for="workflow-set-deadline">Set deadline</label>
-                            </div>
+                                <span>Set deadline</span>
+                            </label>
                             <div class="workflow-deadline-date-wrapper mt-2" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
                                 <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
                                 <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
                                     value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
                                     data-matter-id="{{ $workflowSelectedMatter->id }}">
-                                <small class="form-text text-muted">Select the matter deadline date.</small>
                             </div>
                             @endif
-                            @if($workflowSelectedMatter->deadline)
-                                <div class="mt-2">
-                                    <span class="badge bg-info text-dark"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
-                                </div>
-                            @endif
+                            <div class="cdn-workflow-modal__deadline-chip" @if(!$workflowSelectedMatter->deadline) hidden @endif>
+                                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                                <span class="cdn-workflow-modal__deadline-chip-text">
+                                    @if($workflowSelectedMatter->deadline)
+                                        Deadline {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}
+                                    @endif
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     @include('crm.clients.tabs.partials.workflow-navigation', [
-                        'navigationClass' => 'cdn-workflow-modal__actions mt-4',
+                        'navigationClass' => 'cdn-workflow-modal__actions',
                         'workflowInModal' => true,
                     ])
                 </div>
@@ -254,13 +277,19 @@
         var deadlineDateWrapper = document.querySelector('.workflow-deadline-date-wrapper');
         var deadlineDateInput = document.getElementById('workflow-deadline-date');
         if (setDeadlineCb && deadlineDateWrapper && deadlineDateInput) {
+            setDeadlineCb.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
             setDeadlineCb.addEventListener('change', function() {
                 var checked = this.checked;
                 deadlineDateWrapper.style.display = checked ? 'block' : 'none';
                 if (!checked) {
                     deadlineDateInput.value = '';
                     saveMatterDeadline(this.getAttribute('data-matter-id'), false, null);
-                } else if (deadlineDateInput.value) {
+                    return;
+                }
+                // Checking only reveals the date picker — save when a date is chosen.
+                if (deadlineDateInput.value) {
                     saveMatterDeadline(this.getAttribute('data-matter-id'), true, deadlineDateInput.value);
                 }
             });
@@ -277,6 +306,27 @@
             });
         }
 
+        function formatDeadlineChip(isoDate) {
+            if (!isoDate) return '';
+            var parts = String(isoDate).split('-');
+            if (parts.length !== 3) return isoDate;
+            return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+
+        function updateDeadlineChip(isoDate) {
+            var chip = document.querySelector('.cdn-workflow-modal__deadline-chip');
+            var text = document.querySelector('.cdn-workflow-modal__deadline-chip-text');
+            if (!chip) return;
+            if (isoDate) {
+                if (text) {
+                    text.textContent = 'Deadline ' + formatDeadlineChip(isoDate);
+                }
+                chip.hidden = false;
+            } else {
+                chip.hidden = true;
+            }
+        }
+
         function saveMatterDeadline(matterId, setDeadline, deadline) {
             if (!matterId) return;
             var payload = { matter_id: matterId, set_deadline: setDeadline };
@@ -290,7 +340,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.status) {
-                    window.location.reload();
+                    updateDeadlineChip(data.deadline || deadline || null);
                 } else {
                     alert(data.message || 'Failed to update deadline.');
                 }

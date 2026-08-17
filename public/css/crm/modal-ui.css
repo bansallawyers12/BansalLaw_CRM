@@ -70,10 +70,35 @@
     outline: none;
 }
 
-.modal .modal-header .crm-modal-close i {
-    font-size: 1.15rem;
-    line-height: 1;
-    pointer-events: none;
+/*
+ * One X only: draw the glyph with a CSS mask on ::before.
+ * Do not use a Font Awesome <i> (its ::before) plus a button ::before — that
+ * stacks two marks, with the second overflowing the 38px box to the right.
+ */
+.modal .modal-header .crm-modal-close {
+    overflow: hidden;
+    font-size: 0 !important;
+    text-indent: 0;
+}
+
+.modal .modal-header .crm-modal-close i,
+.modal .modal-header .crm-modal-close span {
+    display: none !important;
+}
+
+.modal .modal-header .crm-modal-close::before {
+    content: "" !important;
+    display: block !important;
+    width: 14px;
+    height: 14px;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.modal .modal-header .crm-modal-close::after {
+    content: none !important;
+    display: none !important;
 }
 
 /* Legacy × buttons → Font Awesome xmark */
