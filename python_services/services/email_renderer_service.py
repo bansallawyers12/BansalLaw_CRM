@@ -76,6 +76,14 @@ class EmailRendererService:
             subject = email_data.get('subject', '')
             sender_name = email_data.get('sender_name', '')
             sender_email = email_data.get('sender_email', '')
+
+            # Never dump raw ICS into the PDF/HTML body — use a readable summary.
+            if self._is_calendar_payload(text_content):
+                text_content = self._summarize_calendar_payload(text_content)
+            if self._is_calendar_payload(html_content):
+                if not (text_content or '').strip():
+                    text_content = self._summarize_calendar_payload(html_content)
+                html_content = ''
             
             # Clean and enhance HTML content
             enhanced_html = self._clean_and_enhance_html(html_content)
@@ -422,6 +430,10 @@ class EmailRendererService:
         """Create a clean text preview of the email content."""
         if not content:
             return ""
+
+        if self._is_calendar_payload(content):
+            summary = self._summarize_calendar_payload(content)
+            return summary[:2000] if summary else "Calendar invitation"
         
         try:
             if BeautifulSoup:
@@ -434,6 +446,10 @@ class EmailRendererService:
             # Clean up whitespace
             text = re.sub(r'\s+', ' ', text)
             text = text.strip()
+
+            if self._is_calendar_payload(text):
+                summary = self._summarize_calendar_payload(text)
+                return (summary or "Calendar invitation")[:2000]
             
             # Limit length — enough for quoting in reply/forward, far smaller than full HTML body
             if len(text) > 2000:
@@ -444,6 +460,53 @@ class EmailRendererService:
         except Exception as e:
             logger.warning(f"Error creating text preview: {str(e)}")
             return content[:2000] if content else ""
+
+    def _is_calendar_payload(self, value: Any) -> bool:
+        if value is None:
+            return False
+        text = str(value).lstrip('\ufeff').strip()
+        if not text:
+            return False
+        upper = text.upper()
+        if upper.startswith('BEGIN:VCALENDAR'):
+            return True
+        return 'BEGIN:VCALENDAR' in upper[:800] and 'BEGIN:VEVENT' in upper
+
+    def _ics_unfold_and_get(self, ics_text: str, field: str) -> str:
+        if not ics_text or not field:
+            return ''
+        unfolded = re.sub(r'\r?\n[ \t]', '', str(ics_text))
+        pattern = rf'(?im)^{re.escape(field)}(?:;[^:]*)?:(.+)$'
+        match = re.search(pattern, unfolded)
+        if not match:
+            return ''
+        value = match.group(1).strip()
+        value = value.replace('\\n', '\n').replace('\\,', ',').replace('\\;', ';').replace('\\\\', '\\')
+        return value.strip()
+
+    def _summarize_calendar_payload(self, value: Any) -> str:
+        if not self._is_calendar_payload(value):
+            return ''
+        text = str(value)
+        summary = self._ics_unfold_and_get(text, 'SUMMARY') or 'Calendar invitation'
+        location = self._ics_unfold_and_get(text, 'LOCATION')
+        description = self._ics_unfold_and_get(text, 'DESCRIPTION')
+        dtstart = self._ics_unfold_and_get(text, 'DTSTART')
+        dtend = self._ics_unfold_and_get(text, 'DTEND')
+
+        lines = [summary, '', 'This message is a calendar invitation.']
+        if dtstart:
+            lines.append(f'When: {dtstart}' + (f' – {dtend}' if dtend else ''))
+        if location:
+            lines.append(f'Where: {location}')
+        if description:
+            desc = re.sub(r'<[^>]+>', ' ', description)
+            desc = re.sub(r'\s+', ' ', desc).strip()
+            if desc:
+                if len(desc) > 600:
+                    desc = desc[:600].rstrip() + '…'
+                lines.extend(['', desc])
+        return '\n'.join(lines).strip()
     
     def _escape_html(self, text: str) -> str:
         """Escape HTML special characters."""
@@ -683,9 +746,13 @@ class EmailRendererService:
         sent_date = str(email_data.get('sent_date') or '').strip()
 
         body_text = str(text_preview or email_data.get('text_content') or '').strip()
+        if self._is_calendar_payload(body_text):
+            body_text = self._summarize_calendar_payload(body_text)
         if not body_text:
             html_content = str(email_data.get('html_content') or '')
-            if html_content and BeautifulSoup:
+            if self._is_calendar_payload(html_content):
+                body_text = self._summarize_calendar_payload(html_content)
+            elif html_content and BeautifulSoup:
                 body_text = BeautifulSoup(html_content, 'html.parser').get_text('\n', strip=True)
             elif html_content:
                 body_text = re.sub(r'<[^>]+>', ' ', html_content)

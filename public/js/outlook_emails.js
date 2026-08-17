@@ -1079,20 +1079,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            if (iframe.src && !iframe.src.startsWith('about:blank')) {
-                iframe.style.height = 'calc(100vh - 180px)';
-                iframe.style.minHeight = '650px';
+            if (iframe.classList.contains('read-body--pdf') && iframe.src && !iframe.src.startsWith('about:blank')) {
+                iframe.style.height = 'min(520px, 55vh)';
+                iframe.style.minHeight = '280px';
+                iframe.style.maxHeight = '55vh';
+                iframe.style.overflow = 'hidden';
                 return;
             }
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             if (doc && doc.body) {
-                const scrollH = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 450);
-                iframe.style.height = (scrollH + 30) + 'px';
-                iframe.style.minHeight = '450px';
+                const scrollH = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 180);
+                iframe.style.height = (scrollH + 24) + 'px';
+                iframe.style.minHeight = '180px';
+                iframe.style.maxHeight = 'none';
             }
         } catch(e) {
-            iframe.style.height = 'calc(100vh - 200px)';
-            iframe.style.minHeight = '500px';
+            iframe.style.height = '280px';
+            iframe.style.minHeight = '180px';
         }
     }
 
@@ -3524,7 +3527,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: 'Parsed email.pdf',
                 size: null,
                 downloadUrl: email.pdf_download_url || email.pdf_file_url,
-                previewUrl: email.pdf_preview_url || email.pdf_file_url,
+                previewUrl: email.is_calendar_invite
+                    ? null
+                    : (email.pdf_preview_url || email.pdf_file_url),
                 icon: 'fa-file-pdf email-attachment-icon--pdf'
             });
         }
@@ -3622,8 +3627,108 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const READ_BODY_SANDBOX = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
 
+    function isCalendarPayload(str) {
+        if (!str) return false;
+        const text = String(str).replace(/^\uFEFF/, '').trim();
+        if (!text) return false;
+        const upper = text.toUpperCase();
+        if (upper.indexOf('BEGIN:VCALENDAR') === 0) {
+            return true;
+        }
+        const head = upper.slice(0, 800);
+        return head.indexOf('BEGIN:VCALENDAR') !== -1 && upper.indexOf('BEGIN:VEVENT') !== -1;
+    }
+
+    function icsPropertyValue(icsText, field) {
+        if (!icsText || !field) return '';
+        const unfolded = String(icsText).replace(/\r?\n[ \t]/g, '');
+        const re = new RegExp('^' + field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:;[^:]*)?:(.+)$', 'im');
+        const match = unfolded.match(re);
+        if (!match) return '';
+        return String(match[1] || '')
+            .replace(/\\n/g, '\n')
+            .replace(/\\,/g, ',')
+            .replace(/\\;/g, ';')
+            .replace(/\\\\/g, '\\')
+            .trim();
+    }
+
+    function summarizeCalendarPayload(str) {
+        if (!isCalendarPayload(str)) {
+            return '';
+        }
+        const summary = icsPropertyValue(str, 'SUMMARY') || 'Calendar invitation';
+        const location = icsPropertyValue(str, 'LOCATION');
+        const description = icsPropertyValue(str, 'DESCRIPTION');
+        const dtStart = icsPropertyValue(str, 'DTSTART');
+        const dtEnd = icsPropertyValue(str, 'DTEND');
+        const lines = [summary, '', 'This message is a calendar invitation.'];
+        if (dtStart) {
+            lines.push('When: ' + dtStart + (dtEnd ? ' – ' + dtEnd : ''));
+        }
+        if (location) {
+            lines.push('Where: ' + location);
+        }
+        if (description) {
+            let desc = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            if (desc) {
+                if (desc.length > 600) {
+                    desc = desc.slice(0, 600).replace(/\s+\S*$/, '') + '…';
+                }
+                lines.push('', desc);
+            }
+        }
+        return lines.join('\n').trim();
+    }
+
+    function buildCalendarInviteBodyHtml(rawCalendar, email) {
+        const events = email && email.calendar && Array.isArray(email.calendar.events)
+            ? email.calendar.events
+            : [];
+        const firstEvent = events.length ? events[0] : null;
+        const source = isCalendarPayload(rawCalendar) ? rawCalendar : '';
+        const summary = (firstEvent && firstEvent.title)
+            || (source && icsPropertyValue(source, 'SUMMARY'))
+            || (email && email.subject)
+            || 'Calendar invitation';
+        const location = (firstEvent && firstEvent.location)
+            || (source ? icsPropertyValue(source, 'LOCATION') : '');
+        const when = (firstEvent && (firstEvent.when || firstEvent.starts_at))
+            || (source ? icsPropertyValue(source, 'DTSTART') : '');
+        const dtEnd = source ? icsPropertyValue(source, 'DTEND') : '';
+        const description = (firstEvent && firstEvent.description)
+            || (source ? icsPropertyValue(source, 'DESCRIPTION') : '');
+
+        let descHtml = '';
+        if (description && !isCalendarPayload(description)) {
+            const plain = String(description).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            if (plain && plain.toUpperCase().indexOf('BEGIN:VCALENDAR') === -1) {
+                descHtml = '<p style="margin:16px 0 0;color:#334155;line-height:1.55;">'
+                    + escapeHtml(plain.length > 900 ? (plain.slice(0, 900) + '…') : plain)
+                    + '</p>';
+            }
+        }
+
+        return ''
+            + '<div style="max-width:560px;margin:8px auto;padding:20px 22px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">'
+            + '  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#0f172a;">'
+            + '    <span style="width:36px;height:36px;border-radius:10px;background:#eff6ff;color:#1d4ed8;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.04em;">CAL</span>'
+            + '    <div>'
+            + '      <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#64748b;">Calendar invitation</div>'
+            + '      <div style="font-size:16px;font-weight:600;margin-top:2px;">' + escapeHtml(summary) + '</div>'
+            + '    </div>'
+            + '  </div>'
+            + (when ? ('<div style="font-size:13px;color:#475569;margin:6px 0;"><strong>When:</strong> '
+                + escapeHtml(when + (dtEnd && !firstEvent ? ' – ' + dtEnd : '')) + '</div>') : '')
+            + (location ? ('<div style="font-size:13px;color:#475569;margin:6px 0;"><strong>Where:</strong> '
+                + escapeHtml(location) + '</div>') : '')
+            + descHtml
+            + '</div>';
+    }
+
     function emailHtmlHasVisibleText(html) {
         if (!html) return false;
+        if (isCalendarPayload(html)) return false;
         let text = String(html)
             .replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
             .replace(/<[^>]+>/g, ' ');
@@ -3659,30 +3764,150 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderGmailReadingAttachments(items) {
-        const chips = items.map(function (item) {
-            const href = item.previewUrl || item.downloadUrl;
-            const sizeLabel = formatFileSize(item.size);
-            const meta = sizeLabel ? ' <span class="gmail-attachment-chip__size">' + escapeHtml(sizeLabel) + '</span>' : '';
+        return renderReadingPaneAttachmentFooter(items);
+    }
 
-            return ''
-                + '<a class="gmail-attachment-chip" href="' + href + '" target="_blank" rel="noopener" title="' + escapeHtml(item.name) + '">'
-                + '  <span class="gmail-attachment-chip__icon"><i class="fa-solid ' + item.icon + '"></i></span>'
-                + '  <span class="gmail-attachment-chip__text">'
-                + '    <span class="gmail-attachment-chip__name">' + escapeHtml(item.name) + '</span>'
-                + meta
-                + '  </span>'
-                + '  <span class="gmail-attachment-chip__action" aria-hidden="true"><i class="fa-solid fa-download"></i></span>'
-                + '</a>';
-        }).join('');
+    function isStoredEmailCopyAttachment(item) {
+        const name = String((item && item.name) || '').toLowerCase();
+        return name === 'original email.msg' || name === 'parsed email.pdf';
+    }
+
+    function renderAttachmentActionButtons(item) {
+        const previewBtn = item.previewUrl
+            ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-att-footer-card__btn" title="Preview">'
+                + '<i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span></a>'
+            : '';
+        const downloadBtn = item.downloadUrl
+            ? '<a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-att-footer-card__btn email-att-footer-card__btn--primary" title="Download">'
+                + '<i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span></a>'
+            : '';
+        return previewBtn + downloadBtn;
+    }
+
+    function renderStoredEmailCopyCard(item) {
+        const primaryHref = item.previewUrl || item.downloadUrl;
+        const previewBtn = item.previewUrl
+            ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-att-copy-chip__btn" title="Preview">'
+                + '<i class="fa-solid fa-eye" aria-hidden="true"></i></a>'
+            : '';
+        const downloadBtn = item.downloadUrl
+            ? '<a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-att-copy-chip__btn email-att-copy-chip__btn--dl" title="Download">'
+                + '<i class="fa-solid fa-download" aria-hidden="true"></i></a>'
+            : '';
 
         return ''
-            + '<div class="gmail-attachments-strip">'
-            + '  <div class="gmail-attachments-strip__label">'
-            + '    <i class="fa-solid fa-paperclip" aria-hidden="true"></i>'
-            + '    <span>' + items.length + ' attachment' + (items.length === 1 ? '' : 's') + '</span>'
-            + '  </div>'
-            + '  <div class="gmail-attachments-strip__list">' + chips + '</div>'
+            + '<div class="email-att-copy-chip">'
+            + '  <a class="email-att-copy-chip__main" href="' + primaryHref + '" target="_blank" rel="noopener" title="' + escapeHtml(item.name) + '">'
+            + '    <i class="fa-solid ' + item.icon + '" aria-hidden="true"></i>'
+            + '    <span>' + escapeHtml(item.name) + '</span>'
+            + '  </a>'
+            + '  <div class="email-att-copy-chip__actions">' + previewBtn + downloadBtn + '</div>'
             + '</div>';
+    }
+
+    function getAttachmentGridTone(item) {
+        const name = String((item && item.name) || '').toLowerCase();
+        const icon = String((item && item.icon) || '').toLowerCase();
+        if (name.endsWith('.pdf') || icon.indexOf('pdf') !== -1) {
+            return 'pdf';
+        }
+        if (/\.(png|jpe?g|gif|webp|bmp)$/.test(name) || icon.indexOf('image') !== -1) {
+            return 'image';
+        }
+        if (/\.(doc|docx)$/.test(name) || icon.indexOf('word') !== -1) {
+            return 'word';
+        }
+        if (/\.(xls|xlsx|csv)$/.test(name) || icon.indexOf('excel') !== -1) {
+            return 'excel';
+        }
+        return 'file';
+    }
+
+    function renderUserAttachmentGridCard(item) {
+        const sizeLabel = formatFileSize(item.size);
+        const primaryHref = item.previewUrl || item.downloadUrl || '#';
+        const tone = getAttachmentGridTone(item);
+        // CSS background can't render PDF pages; only use image previews as thumbnails.
+        const nameLower = String(item.name || '').toLowerCase();
+        const showThumb = !!(item.previewUrl && /\.(png|jpe?g|gif|webp|bmp)$/.test(nameLower));
+        const shortName = String(item.name || 'file');
+        const displayName = shortName.length > 22 ? (shortName.slice(0, 19) + '...') : shortName;
+
+        const previewInner = showThumb
+            ? '<div class="email-att-grid-card__preview email-att-grid-card__preview--thumb" style="background-image:url(\'' + String(item.previewUrl).replace(/'/g, '%27') + '\')"></div>'
+            : '<div class="email-att-grid-card__preview email-att-grid-card__preview--empty">'
+                + '<i class="fa-solid ' + item.icon + '" aria-hidden="true"></i>'
+                + '</div>';
+
+        const hoverActions = []
+            .concat(item.previewUrl
+                ? ['<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-att-grid-card__action" title="Preview" onclick="event.stopPropagation()"><i class="fa-solid fa-eye" aria-hidden="true"></i></a>']
+                : [])
+            .concat(item.downloadUrl
+                ? ['<a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-att-grid-card__action" title="Download" onclick="event.stopPropagation()"><i class="fa-solid fa-download" aria-hidden="true"></i></a>']
+                : [])
+            .join('');
+
+        return ''
+            + '<div class="email-att-grid-card email-att-grid-card--' + tone + '">'
+            + '  <a class="email-att-grid-card__hit" href="' + primaryHref + '" target="_blank" rel="noopener" aria-label="' + escapeHtml(item.name) + '"></a>'
+            + previewInner
+            + '  <div class="email-att-grid-card__hover">'
+            + '    <div class="email-att-grid-card__hover-meta">'
+            + '      <span class="email-att-grid-card__hover-name">' + escapeHtml(item.name) + '</span>'
+            + (sizeLabel ? '      <span class="email-att-grid-card__hover-size">' + escapeHtml(sizeLabel) + '</span>' : '')
+            + '    </div>'
+            + (hoverActions ? '    <div class="email-att-grid-card__hover-actions">' + hoverActions + '</div>' : '')
+            + '  </div>'
+            + '  <div class="email-att-grid-card__bar">'
+            + '    <span class="email-att-grid-card__bar-icon" aria-hidden="true"><i class="fa-solid ' + item.icon + '"></i></span>'
+            + '    <span class="email-att-grid-card__bar-name" title="' + escapeHtml(item.name) + '">' + escapeHtml(displayName) + '</span>'
+            + '    <span class="email-att-grid-card__fold" aria-hidden="true"></span>'
+            + '  </div>'
+            + '</div>';
+    }
+
+    function renderReadingPaneAttachmentFooter(items) {
+        const storedCopies = [];
+        const userFiles = [];
+        items.forEach(function (item) {
+            if (isStoredEmailCopyAttachment(item)) {
+                storedCopies.push(item);
+            } else {
+                userFiles.push(item);
+            }
+        });
+
+        const totalCount = items.length;
+        let html = '<div class="email-att-footer">'
+            + '  <div class="email-att-footer__title">'
+            + '    <i class="fa-solid fa-paperclip" aria-hidden="true"></i>'
+            + '    <span>' + totalCount + ' attachment' + (totalCount === 1 ? '' : 's') + '</span>'
+            + '  </div>';
+
+        if (storedCopies.length) {
+            html += '<div class="email-att-footer__copies">'
+                + storedCopies.map(renderStoredEmailCopyCard).join('')
+                + '</div>';
+        }
+
+        if (storedCopies.length && userFiles.length) {
+            html += '<hr class="email-att-footer__divider" />';
+        }
+
+        if (userFiles.length) {
+            html += '<div class="email-att-grid">'
+                + '<div class="email-att-grid__header">'
+                + '<span>' + userFiles.length + ' file' + (userFiles.length === 1 ? '' : 's') + '</span>'
+                + '</div>'
+                + '<div class="email-att-grid__list">'
+                + userFiles.map(renderUserAttachmentGridCard).join('')
+                + '</div>'
+                + '</div>';
+        }
+
+        html += '</div>';
+        return html;
     }
 
     function renderReadingPaneAttachments(email) {
@@ -3691,38 +3916,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return '';
         }
 
-        if (isGmailUiMode()) {
-            return renderGmailReadingAttachments(items);
-        }
-
-        const rows = items.map(function(item) {
-            const sizeLabel = formatFileSize(item.size);
-            const previewBtn = item.previewUrl
-                ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--preview" title="Preview ' + escapeHtml(item.name) + '"><i class="fa-solid fa-eye"></i> Preview</a>'
-                : '';
-
-            return ''
-                + '<div class="email-attachment-row">'
-                + '  <div class="email-attachment-row__icon"><i class="fa-solid ' + item.icon + '"></i></div>'
-                + '  <div class="email-attachment-row__info">'
-                + '    <div class="email-attachment-row__name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>'
-                + (sizeLabel ? '    <div class="email-attachment-row__meta">' + escapeHtml(sizeLabel) + '</div>' : '')
-                + '  </div>'
-                + '  <div class="email-attachment-row__actions">'
-                + previewBtn
-                + '    <a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--download" title="Download ' + escapeHtml(item.name) + '"><i class="fa-solid fa-download"></i> Download</a>'
-                + '  </div>'
-                + '</div>';
-        }).join('');
-
-        return ''
-            + '<div class="email-attachments-panel">'
-            + '  <div class="email-attachments-panel__header">'
-            + '    <i class="fa-solid fa-paperclip"></i>'
-            + '    <span>Attachments (' + items.length + ')</span>'
-            + '  </div>'
-            + '  <div class="email-attachments-panel__list">' + rows + '</div>'
-            + '</div>';
+        return renderReadingPaneAttachmentFooter(items);
     }
 
     function renderListEmptyState(message, hint, iconClass) {
@@ -4061,13 +4255,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const iframe = document.getElementById('readBody');
         let contentStr = (email.message || email.html_content || email.text_content || '').trim();
+        const isCalendarInvite = !!email.is_calendar_invite;
+        const calendarSource = isCalendarPayload(contentStr)
+            ? contentStr
+            : (isCalendarPayload(email.text_preview) ? String(email.text_preview || '') : '');
+
+        if (isCalendarPayload(contentStr)) {
+            contentStr = summarizeCalendarPayload(contentStr);
+        }
         contentStr = extractRenderableEmailHtml(contentStr);
         const hasVisibleBody = emailHtmlHasVisibleText(contentStr);
+        const hasCalendarInviteBody = isCalendarInvite || (!!calendarSource && !hasVisibleBody);
 
+        // Never auto-embed Parsed email.pdf for calendar invites — those PDFs dump raw ICS.
         let pdfToPreview = null;
-        if (!hasVisibleBody) {
-            if (email.pdf_preview_url || email.pdf_file_url) {
-                pdfToPreview = email.pdf_preview_url || email.pdf_file_url;
+        if (!hasVisibleBody && !hasCalendarInviteBody) {
+            if (email.pdf_preview_url) {
+                pdfToPreview = email.pdf_preview_url;
             } else if (email.attachments && email.attachments.length > 0) {
                 const pdfAtt = email.attachments.find(function(a) {
                     const name = resolveAttachmentDisplayName(a).toLowerCase();
@@ -4082,6 +4286,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pdfToPreview) {
             // PDF.js / Chrome viewer needs scripts; the HTML sandbox blocks them and
             // leaves a blank reading pane when the stored body is empty.
+            iframe.classList.add('read-body--pdf');
             iframe.onload = function () {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -4089,6 +4294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (/403\s*\|\s*Forbidden/i.test(text) || /^\s*403\b/.test(text.trim())) {
                         iframe.onload = null;
                         iframe.removeAttribute('src');
+                        iframe.classList.remove('read-body--pdf');
                         iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
                         renderHtmlIframe(iframe, '<p>No content available.</p>');
                         resetReadBodyIframeSizing(iframe);
@@ -4105,11 +4311,14 @@ document.addEventListener('DOMContentLoaded', function() {
             resetReadBodyIframeSizing(iframe);
         } else {
             iframe.onload = null;
+            iframe.classList.remove('read-body--pdf');
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
             iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
             let bodyHtml = hasVisibleBody ? contentStr : '';
-            if (bodyHtml && bodyHtml.includes('<')) {
+            if (hasCalendarInviteBody) {
+                bodyHtml = buildCalendarInviteBodyHtml(calendarSource || contentStr, email);
+            } else if (bodyHtml && bodyHtml.includes('<')) {
                 bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
             } else if (bodyHtml) {
                 bodyHtml = escapeHtml(bodyHtml).replace(/\n/g, '<br>');
@@ -4605,6 +4814,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function normalizePreviewText(text, maxLen) {
         if (!text) return '';
+        if (isCalendarPayload(text)) {
+            const summary = icsPropertyValue(text, 'SUMMARY') || 'Calendar invitation';
+            return summary.substring(0, maxLen || 80);
+        }
         let html = String(text)
             .replace(/<(script|style|head|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
             .replace(/<[^>]+>/g, ' ')
@@ -4612,6 +4825,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const textarea = document.createElement('textarea');
         textarea.innerHTML = html;
         const decoded = textarea.value.replace(/\s+/g, ' ').trim();
+        if (isCalendarPayload(decoded)) {
+            const summary = icsPropertyValue(decoded, 'SUMMARY') || 'Calendar invitation';
+            return summary.substring(0, maxLen || 80);
+        }
         return decoded.substring(0, maxLen || 80);
     }
 

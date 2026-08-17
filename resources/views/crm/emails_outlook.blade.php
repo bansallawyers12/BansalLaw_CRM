@@ -507,11 +507,11 @@
                 <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
             </div>
 
-            <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>
-
             <div class="reading-body">
                 <iframe id="readBody" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe>
             </div>
+
+            <div id="attachmentsContainer" class="email-attachments-container reading-attachments reading-attachments--footer" hidden></div>
 
             <div class="gmail-read-footer" id="gmailReadingFooter" hidden>
                 <button type="button" class="gmail-pill-btn" id="gmailFooterReply">

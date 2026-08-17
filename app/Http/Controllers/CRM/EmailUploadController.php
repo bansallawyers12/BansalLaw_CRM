@@ -786,7 +786,10 @@ class EmailUploadController extends Controller
             $mailReport->client_matter_id = $document->client_matter_id;
 
             if (!empty($parsedData['text_preview'])) {
-                $mailReport->text_preview = $parsedData['text_preview'];
+                $preview = (string) $parsedData['text_preview'];
+                $mailReport->text_preview = \App\Models\EmailLog::isCalendarPayload($preview)
+                    ? \App\Models\EmailLog::plainTextPreview($preview, 200)
+                    : $preview;
             }
             
             // Sent time: store a real datetime for PostgreSQL — never locale strings like d/m/Y (DateStyle-dependent)
@@ -1776,11 +1779,25 @@ class EmailUploadController extends Controller
     /**
      * Prefer HTML/text that has readable content. Outlook often stores an empty
      * compose shell as HTML containing only &nbsp;, which would blank the reading pane.
+     * Raw ICS/calendar dumps are never stored as the message body.
      */
     protected function preferRenderableEmailBody(?string $html, ?string $text): ?string
     {
         $html = $html ?? '';
         $text = $text ?? '';
+
+        $calendarSource = '';
+        if ($this->isCalendarPayload($html)) {
+            $calendarSource = $html;
+            $html = '';
+        }
+        if ($this->isCalendarPayload($text)) {
+            $calendarSource = $calendarSource !== '' ? $calendarSource : $text;
+            $text = '';
+        }
+        if ($calendarSource !== '' && ! $this->emailBodyHasVisibleText($text) && ! $this->emailBodyHasVisibleText($html)) {
+            $text = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);
+        }
 
         if ($this->emailBodyHasVisibleText($html)) {
             return $html;
@@ -1793,9 +1810,18 @@ class EmailUploadController extends Controller
         return null;
     }
 
+    protected function isCalendarPayload(?string $content): bool
+    {
+        return \App\Models\EmailLog::isCalendarPayload($content);
+    }
+
     protected function emailBodyHasVisibleText(?string $content): bool
     {
         if ($content === null || trim($content) === '') {
+            return false;
+        }
+
+        if ($this->isCalendarPayload($content)) {
             return false;
         }
 

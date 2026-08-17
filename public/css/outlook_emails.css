@@ -935,6 +935,8 @@ body, html {
     overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    padding-bottom: 28px;
+    box-sizing: border-box;
 }
 
 #readingPane.is-visible {
@@ -1068,11 +1070,20 @@ body, html {
     overflow: visible;
 }
 
+.reading-attachments--footer {
+    border-bottom: none;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 14px 24px 32px;
+    margin-top: auto;
+    margin-bottom: 8px;
+}
+
 .reading-body {
-    flex: 1 1 auto;
-    min-height: 450px;
-    padding: 20px 24px 40px;
-    overflow: visible;
+    flex: 0 1 auto;
+    min-height: 0;
+    padding: 20px 24px 16px;
+    overflow: hidden;
     background: #ffffff;
     display: flex;
     flex-direction: column;
@@ -1080,13 +1091,13 @@ body, html {
 
 .reading-body iframe {
     width: 100%;
-    flex: 1 1 auto;
-    min-height: 450px;
+    flex: 0 0 auto;
+    min-height: 180px;
+    max-width: 100%;
     border: none;
     background: #ffffff;
+    overflow: hidden;
     transition: height 0.15s ease;
-}
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* Empty State */
@@ -2707,6 +2718,443 @@ body.sidebar-mini .outlook-ui-modal__btn.is-loading:disabled {
 
 .reading-attachments.email-attachments-container {
     margin-top: 0;
+}
+
+/* Compact footer attachment strip (below email body) */
+.email-att-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.email-att-footer__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.02em;
+}
+
+.email-att-footer__title i {
+    color: #94a3b8;
+}
+
+.email-att-footer__copies {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.email-att-footer__divider {
+    width: 100%;
+    margin: 4px 0 2px;
+    border: 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.email-att-copy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+    padding: 5px 6px 5px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+}
+
+.email-att-copy-chip__main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+    color: #0f172a;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.email-att-copy-chip__main i {
+    flex-shrink: 0;
+    color: #64748b;
+}
+
+.email-att-copy-chip__main span {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.email-att-copy-chip__main:hover {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.email-att-copy-chip__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.email-att-copy-chip__btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    color: #475569;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.email-att-copy-chip__btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.email-att-copy-chip__btn--dl {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.email-att-copy-chip__btn--dl:hover {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* Keep legacy card styles for any older markup */
+.email-att-footer-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+    padding: 6px 6px 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.email-att-footer-card__main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.email-att-footer-card__main:hover {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.email-att-footer-card__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 15px;
+}
+
+.email-att-footer-card__name {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.email-att-footer-card__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.email-att-footer-card__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.email-att-footer-card__btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.email-att-footer-card__btn--primary {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.email-att-footer-card__btn--primary:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+.email-att-footer-list {
+    display: none;
+}
+
+.email-att-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.email-att-grid__header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5f6368;
+}
+
+.email-att-grid__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 12px;
+}
+
+.email-att-grid-card {
+    position: relative;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.email-att-grid-card:hover {
+    border-color: #c6cace;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.18);
+}
+
+.email-att-grid-card__hit {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.email-att-grid-card__preview {
+    position: relative;
+    height: 110px;
+    background: #f1f3f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.email-att-grid-card__preview--thumb {
+    background-color: #e8eaed;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+}
+
+.email-att-grid-card__preview--empty {
+    color: #80868b;
+    font-size: 28px;
+}
+
+.email-att-grid-card__hover {
+    position: absolute;
+    inset: 0 0 36px 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(32, 33, 36, 0.72);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.email-att-grid-card:hover .email-att-grid-card__hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.email-att-grid-card__hover-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.email-att-grid-card__hover-name {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.email-att-grid-card__hover-size {
+    color: #e8eaed;
+    font-size: 11px;
+}
+
+.email-att-grid-card__hover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.email-att-grid-card__action {
+    position: relative;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #3c4043;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.email-att-grid-card__action:hover {
+    background: #fff;
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.email-att-grid-card__bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 28px 0 10px;
+    background: #fff;
+    border-top: 1px solid #e8eaed;
+}
+
+.email-att-grid-card__bar-icon {
+    flex-shrink: 0;
+    width: 16px;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.email-att-grid-card--pdf .email-att-grid-card__bar-icon { color: #d93025; }
+.email-att-grid-card--image .email-att-grid-card__bar-icon { color: #1a73e8; }
+.email-att-grid-card--word .email-att-grid-card__bar-icon { color: #185abd; }
+.email-att-grid-card--excel .email-att-grid-card__bar-icon { color: #0f9d58; }
+
+.email-att-grid-card__bar-name {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: #202124;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.email-att-grid-card__fold {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 14px 14px;
+    border-color: transparent transparent #dadce0 transparent;
+}
+
+.email-att-grid-card--pdf .email-att-grid-card__fold {
+    border-color: transparent transparent #f6aea9 transparent;
+}
+
+.email-att-grid-card--image .email-att-grid-card__fold,
+.email-att-grid-card--word .email-att-grid-card__fold {
+    border-color: transparent transparent #aecbfa transparent;
+}
+
+.email-att-grid-card--excel .email-att-grid-card__fold {
+    border-color: transparent transparent #a8dab5 transparent;
+}
+
+@media (max-width: 720px) {
+    .email-att-footer__copies {
+        flex-wrap: nowrap;
+    }
+
+    .email-att-copy-chip {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .email-att-footer-card {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .email-att-grid__list {
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 10px;
+    }
+}
+
+/* Unassigned reading pane shares the same attachment footer design */
+.outlook-container--unassigned .reading-attachments--footer {
+    flex-shrink: 0;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 12px 20px 36px;
+    margin-bottom: 12px;
+}
+
+.outlook-container--unassigned .email-att-footer__copies {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+
+.outlook-container--unassigned .email-att-grid__list {
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
 }
 
 .email-attachments-panel {
@@ -5389,7 +5837,8 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     min-height: 0;
     height: 100%;
     max-height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: #fff;
 }
 
@@ -5464,9 +5913,16 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     max-height: none;
     overflow: visible;
     margin: 0;
-    padding: 0;
+    padding: 14px 24px 32px;
     border: none;
-    background: transparent;
+    border-top: 1px solid #e8eaed;
+    background: #f8f9fa;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-attachments--footer {
+    background: #f8f9fa;
+    padding-bottom: 36px;
+    margin-bottom: 8px;
 }
 
 .gmail-attachments-strip {
@@ -5564,7 +6020,7 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body {
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     overflow: hidden;
     padding: 0;
@@ -5573,14 +6029,20 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 
 .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe {
     display: block;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     width: 100%;
-    height: 100% !important;
-    min-height: 0 !important;
     border-radius: 0;
     border: none;
     box-shadow: none;
     background: #fff;
+    overflow: hidden;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf {
+    flex: 0 0 auto;
+    min-height: 280px;
+    height: min(520px, 55vh);
+    max-height: 55vh;
 }
 
 .outlook-container.ui-mode-gmail.gmail-reading-open .reading-header {
@@ -5731,7 +6193,8 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     flex: 1 1 auto;
     min-height: 0;
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .gmail-read-footer {
@@ -5739,7 +6202,7 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 }
 
 body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     overflow: hidden;
     background: #fff;
@@ -5748,10 +6211,16 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe {
     display: block;
     width: 100%;
-    height: 100% !important;
-    min-height: 0 !important;
     border: none;
     background: #fff;
+    overflow: hidden;
+}
+
+body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-open .reading-body iframe.read-body--pdf {
+    flex: 0 0 auto;
+    min-height: 280px;
+    height: min(520px, 55vh);
+    max-height: 55vh;
 }
 
 .outlook-container.ui-mode-gmail .reading-header {
