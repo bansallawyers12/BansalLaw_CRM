@@ -11,6 +11,7 @@ import os
 import re
 import base64
 import tempfile
+from html import unescape as html_unescape
 from email import policy
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
@@ -62,6 +63,20 @@ class EmailParserService:
         if not isinstance(value, str):
             return value
         return value.replace('\0', '')
+
+    def _has_visible_email_text(self, value: Any) -> bool:
+        """True when HTML/text has readable content (not empty or &nbsp;-only)."""
+        if value is None:
+            return False
+        text = str(value)
+        if not text.strip():
+            return False
+        text = re.sub(r'<(script|style|head|noscript)\b[^>]*>.*?</\1>', ' ', text, flags=re.I | re.S)
+        text = re.sub(r'<[^>]+>', ' ', text)
+        text = html_unescape(text)
+        text = text.replace('\xa0', ' ').replace('\u200b', ' ').replace('\ufeff', ' ')
+        text = re.sub(r'\s+', ' ', text).strip()
+        return bool(text)
 
     def _infer_attachment_extension(self, filename: str, content_type: str) -> str:
         name = str(filename or '').strip()
@@ -566,10 +581,21 @@ class EmailParserService:
                     continue
 
                 content_type = part.get_content_type()
-                if content_type == 'text/html' and not html_content:
-                    html_content = self._safe_get(_get_part_text(part), '')
-                elif content_type == 'text/plain' and not text_content:
-                    text_content = self._safe_get(_get_part_text(part), '')
+                part_text = self._safe_get(_get_part_text(part), '')
+                if content_type == 'text/html':
+                    # Prefer the first HTML part with real content (skip &nbsp;-only shells).
+                    if self._has_visible_email_text(part_text) and not self._has_visible_email_text(html_content):
+                        html_content = part_text
+                    elif not html_content and part_text:
+                        html_content = part_text
+                elif content_type == 'text/plain':
+                    # iPhone/Zoho often send an empty text/plain before the real one.
+                    if not self._has_visible_email_text(part_text):
+                        continue
+                    if not self._has_visible_email_text(text_content):
+                        text_content = part_text
+                    else:
+                        text_content = f"{text_content.rstrip()}\n{part_text.lstrip()}"
         else:
             content_type = msg.get_content_type()
             if content_type == 'text/html':
@@ -578,6 +604,10 @@ class EmailParserService:
                 attachment_parts.append(msg)
             else:
                 text_content = self._safe_get(_get_part_text(msg), '')
+
+        # Outlook calendar/compose shells may be HTML with only &nbsp; — prefer plain text.
+        if self._has_visible_email_text(text_content) and not self._has_visible_email_text(html_content):
+            html_content = ''
 
         combined_body = f"{text_content}{html_content}"
         attachments = []
