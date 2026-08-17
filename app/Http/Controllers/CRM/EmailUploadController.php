@@ -770,7 +770,12 @@ class EmailUploadController extends Controller
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->bcc = $this->formatParsedRecipientList($parsedData, 'bcc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';
-            $mailReport->message = $this->sanitizeEmailBodyForStorage($parsedData['html_content'] ?? $parsedData['text_content'] ?? null); // Full body stored in database as requested
+            $mailReport->message = $this->sanitizeEmailBodyForStorage(
+                $this->preferRenderableEmailBody(
+                    $parsedData['html_content'] ?? null,
+                    $parsedData['text_content'] ?? null
+                )
+            );
             $mailReport->mail_type = 1;
             $mailReport->type = $request->type; // Set type to 'client' or 'lead' as required by filter
             $mailReport->client_id = $clientId;
@@ -1766,6 +1771,41 @@ class EmailUploadController extends Controller
         }
 
         return str_replace("\0", '', $content);
+    }
+
+    /**
+     * Prefer HTML/text that has readable content. Outlook often stores an empty
+     * compose shell as HTML containing only &nbsp;, which would blank the reading pane.
+     */
+    protected function preferRenderableEmailBody(?string $html, ?string $text): ?string
+    {
+        $html = $html ?? '';
+        $text = $text ?? '';
+
+        if ($this->emailBodyHasVisibleText($html)) {
+            return $html;
+        }
+        if ($this->emailBodyHasVisibleText($text) || trim(strip_tags($text)) !== '') {
+            return $text;
+        }
+
+        // Keep empty rather than storing an &nbsp;-only shell so the UI can fall back to PDF.
+        return null;
+    }
+
+    protected function emailBodyHasVisibleText(?string $content): bool
+    {
+        if ($content === null || trim($content) === '') {
+            return false;
+        }
+
+        $text = preg_replace('#<(script|style|head|noscript)\b[^>]*>.*?</\1>#is', ' ', $content) ?? $content;
+        $text = preg_replace('#<[^>]+>#', ' ', $text) ?? $text;
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace("\xc2\xa0", ' ', $text);
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+
+        return trim($text) !== '';
     }
 
     /**
