@@ -1369,15 +1369,23 @@ $('.send-sms-btn').on('click', function() {
             const data = (typeof response === 'string') ? $.parseJSON(response) : response;
             
             if (data && data.clientContacts && data.clientContacts.length > 0) {
+                var added = 0;
                 data.clientContacts.forEach(function(contact) {
                     // Handle missing fields gracefully
                     const countryCode = contact.country_code || '';
-                    const phone = contact.phone || '';
+                    const phone = String(contact.phone || '').trim();
+                    if (!phone) {
+                        return;
+                    }
                     const contactType = contact.contact_type || 'Phone';
                     const fullPhone = countryCode + phone;
                     const label = contactType + ': ' + fullPhone;
                     phoneSelect.append(`<option value="${fullPhone}">${label}</option>`);
+                    added++;
                 });
+                if (added === 0) {
+                    phoneSelect.append('<option value="">No phone numbers found</option>');
+                }
             } else {
                 phoneSelect.append('<option value="">No phone numbers found</option>');
             }

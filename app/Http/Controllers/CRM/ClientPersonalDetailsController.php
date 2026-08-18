@@ -86,19 +86,38 @@ class ClientPersonalDetailsController extends Controller
       //Fetch all contact list of any client at create note popup
       public function fetchClientContactNo(Request $request){ //dd($request->all());
         $this->ensureCrmRecordAccessFromRequest($request, ['client_id']);
-        if( ClientContact::where('client_id', $request->client_id)->exists()){
-            //Fetch All client contacts
-            $clientContacts = ClientContact::select('phone', 'country_code', 'contact_type')->where('client_id', $request->client_id)->get();
-            //dd($clientContacts);
-            if( !empty($clientContacts) && count($clientContacts)>0 ){
-                $response['status'] 	= 	true;
-                $response['message']	=	'Client contact is successfully fetched.';
-                $response['clientContacts']	=	$clientContacts;
-            } else {
-                $response['status'] 	= 	false;
-                $response['message']	=	'Please try again';
-                $response['clientContacts']	=	array();
+        $clientId = (int) $request->client_id;
+
+        // Same source as the Client Phone field on the profile: usable client_contacts
+        // first, then the profile phone on admins when no contact rows exist.
+        $clientContacts = ClientContact::select('phone', 'country_code', 'contact_type')
+            ->where('client_id', $clientId)
+            ->where(function ($query) {
+                $query->whereNull('contact_type')
+                    ->orWhere('contact_type', '!=', 'Not In Use');
+            })
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->get();
+
+        if ($clientContacts->isEmpty()) {
+            $profile = Admin::select('phone', 'country_code', 'contact_type')
+                ->where('id', $clientId)
+                ->first();
+
+            if ($profile && !empty($profile->phone)) {
+                $clientContacts = collect([(object) [
+                    'phone' => $profile->phone,
+                    'country_code' => $profile->country_code ?: '',
+                    'contact_type' => $profile->contact_type ?: 'Phone',
+                ]]);
             }
+        }
+
+        if ($clientContacts->isNotEmpty()) {
+            $response['status'] 	= 	true;
+            $response['message']	=	'Client contact is successfully fetched.';
+            $response['clientContacts']	=	$clientContacts->values();
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
