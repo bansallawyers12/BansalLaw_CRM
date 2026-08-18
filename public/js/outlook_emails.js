@@ -79,6 +79,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const listTotalCount = document.getElementById('listTotalCount');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const perPageSelect = document.getElementById('perPageSelect');
+    const PER_PAGE_OPTIONS = [10, 20, 50, 100, 200, 500];
+    const PER_PAGE_STORAGE_KEY = 'outlook_emails_per_page';
+
+    function readStoredPerPage() {
+        try {
+            const stored = parseInt(localStorage.getItem(PER_PAGE_STORAGE_KEY), 10);
+            if (PER_PAGE_OPTIONS.indexOf(stored) !== -1) {
+                return stored;
+            }
+        } catch (error) {
+            // Ignore storage failures.
+        }
+        return 20;
+    }
+
+    let perPage = readStoredPerPage();
+    if (perPageSelect) {
+        perPageSelect.value = String(perPage);
+    }
     
     // Compose Modal
     const composeModal = document.getElementById('composeModal');
@@ -266,6 +286,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (gmailReadNext) {
         gmailReadNext.addEventListener('click', function () {
             navigateGmailEmail('next');
+        });
+    }
+
+    const btnToggleListFilters = document.getElementById('btnToggleListFilters');
+    const unassignedListFilters = document.getElementById('unassignedListFilters');
+    if (btnToggleListFilters && unassignedListFilters) {
+        btnToggleListFilters.addEventListener('click', function () {
+            const isOpen = unassignedListFilters.classList.toggle('is-open');
+            btnToggleListFilters.classList.toggle('is-open', isOpen);
+            btnToggleListFilters.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            btnToggleListFilters.title = isOpen ? 'Hide filters' : 'Show filters';
+            if (isOpen && searchInput) {
+                window.setTimeout(function () {
+                    searchInput.focus();
+                }, 220);
+            }
         });
     }
 
@@ -1450,6 +1486,21 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage++;
         loadEmails();
     });
+
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function () {
+            const nextPerPage = parseInt(perPageSelect.value, 10);
+            perPage = PER_PAGE_OPTIONS.indexOf(nextPerPage) !== -1 ? nextPerPage : 20;
+            perPageSelect.value = String(perPage);
+            try {
+                localStorage.setItem(PER_PAGE_STORAGE_KEY, String(perPage));
+            } catch (error) {
+                // Ignore storage failures.
+            }
+            currentPage = 1;
+            loadEmails();
+        });
+    }
 
     if (composeFormatBar && composeReplyInput) {
         composeFormatBar.addEventListener('click', (event) => {
@@ -3255,6 +3306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
             url.searchParams.append('folder', folderToFetch);
             url.searchParams.append('page', currentPage);
+            url.searchParams.append('per_page', perPage);
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);

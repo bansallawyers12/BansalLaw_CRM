@@ -188,10 +188,10 @@
                         </button>
                     </div>
                     @endif
-                <div class="search-box search-box--compact list-toolbar__search">
-                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                    <input type="text" id="searchInput" placeholder="Search emails...">
-                </div>
+                <button type="button" class="list-filter-toggle" id="btnToggleListFilters" aria-expanded="false" aria-controls="unassignedListFilters" title="Show filters">
+                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                    <span class="list-filter-toggle__text">Filters</span>
+                </button>
                 @else
                 <div class="folder-tabs" role="tablist" aria-label="Mail folders">
                     <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
@@ -205,6 +205,15 @@
             </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
+
+        @if($unassignedOnly)
+        <div class="list-filters-drawer" id="unassignedListFilters">
+            <div class="list-filters-drawer__inner">
+                <div class="search-box search-box--compact list-toolbar__search">
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                    <input type="text" id="searchInput" placeholder="Search emails...">
+                </div>
+        @endif
 
         @if($canShowInboxSync && $unassignedOnly && ! $assignmentReviewOnly)
         <div class="sync-inbox-panel{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
@@ -281,6 +290,11 @@
                     <option value="asc">Oldest</option>
                     <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
                 </select>
+            </div>
+        </div>
+        @endif
+
+        @if($unassignedOnly)
             </div>
         </div>
         @endif
@@ -366,6 +380,18 @@
                     <span class="pagination-bar__count" id="pageInfo">No emails found</span>
                 </div>
                 <div class="pagination-controls">
+                    <label class="pagination-per-page">
+                        <span>Show</span>
+                        <select id="perPageSelect" aria-label="Emails per page">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <span>per page</span>
+                    </label>
                     <button type="button" class="pagination-btn" id="prevBtn" disabled aria-label="Previous page">
                         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                         <span>Previous</span>
@@ -387,6 +413,18 @@
                 <span class="pagination-bar__count" id="pageInfo">0 emails</span>
             </div>
             <div class="pagination-controls">
+                <label class="pagination-per-page">
+                    <span>Show</span>
+                    <select id="perPageSelect" aria-label="Emails per page">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
+                    <span>per page</span>
+                </label>
                 <button type="button" class="pagination-btn" id="prevBtn" disabled aria-label="Previous page">
                     <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                     <span>Previous</span>

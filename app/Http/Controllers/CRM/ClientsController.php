@@ -7681,7 +7681,11 @@ class ClientsController extends Controller
         $sendStatusFilter = $request->input('send_status', '');
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
-        $perPage = 15;
+        $allowedPerPage = [10, 20, 50, 100, 200, 500];
+        $perPage = (int) $request->input('per_page', 20);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 20;
+        }
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
         $isGlobalSyncedMailView = empty($clientId) && empty($clientMatterId);
         $isSyncedInboxFolder = $isGlobalSyncedMailView && in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true);

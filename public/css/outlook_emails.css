@@ -1210,6 +1210,38 @@ body, html {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.pagination-per-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pagination-per-page select {
+    height: 32px;
+    min-width: 68px;
+    padding: 0 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pagination-per-page select:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.14);
 }
 
 .pagination-bar--synced .pagination-bar__page {
@@ -1223,6 +1255,7 @@ body, html {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -4204,6 +4237,114 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     min-width: 0;
 }
 
+.list-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-left: auto;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.list-filter-toggle i {
+    font-size: 13px;
+}
+
+.list-filter-toggle:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.list-filter-toggle.is-open,
+.list-filter-toggle[aria-expanded="true"] {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #0369a1;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.list-filters-drawer {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s ease;
+}
+
+.list-filters-drawer.is-open {
+    grid-template-rows: 1fr;
+}
+
+.list-filters-drawer__inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.28s ease;
+}
+
+.list-filters-drawer.is-open .list-filters-drawer__inner {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.list-filters-drawer .list-toolbar__search {
+    display: block;
+    position: relative;
+    width: auto;
+    max-width: none;
+    flex: none;
+    margin: 10px 14px 8px;
+    padding: 0;
+    background: transparent;
+}
+
+.list-filters-drawer .list-toolbar__search .search-box-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #94a3b8;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.list-filters-drawer .list-toolbar__search input {
+    display: block;
+    width: 100%;
+    height: 38px;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.list-filters-drawer .list-toolbar__search input:focus {
+    outline: none;
+    background: #fff;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.14);
+}
+
+.list-filters-drawer .sync-inbox-panel {
+    border-bottom: 1px solid #e2e8f0;
+}
+
 .folder-inbox-title {
     display: inline-flex;
     align-items: center;
@@ -4270,10 +4411,12 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.14);
 }
 
-.outlook-container--unassigned .list-toolbar__search {
-    flex: 0 1 240px;
-    min-width: 140px;
-    margin-left: auto;
+.outlook-container--unassigned .list-filters-drawer .list-toolbar__search {
+    flex: none;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 10px 14px 8px;
 }
 
 .outlook-container--unassigned .list-toolbar__folder-row .folder-tabs {
@@ -5576,13 +5719,17 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 
 @media (max-width: 900px) {
     .outlook-container--unassigned .list-toolbar__folder-row {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
-    .outlook-container--unassigned .list-toolbar__search {
-        flex: 1 1 100%;
+    .list-filter-toggle__text {
+        display: none;
+    }
+
+    .outlook-container--unassigned .list-filters-drawer .list-toolbar__search {
+        flex: none;
         max-width: none;
-        margin-left: 0;
+        margin: 10px 14px 8px;
     }
 
     .sync-inbox-panel__list-tools {
