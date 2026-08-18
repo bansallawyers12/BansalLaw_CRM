@@ -45,9 +45,11 @@
 			<li class="{{(Route::currentRouteName() == 'adminconsole.system.roles.index' || Route::currentRouteName() == 'adminconsole.system.roles.create' || Route::currentRouteName() == 'adminconsole.system.roles.edit' || Route::currentRouteName() == 'adminconsole.system.roles.view') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.roles.index')}}">Roles</a></li>
 			<?php } ?>
 			
+			{{-- Personal / Matter Document Folders are managed on the client details page, so they are hidden from this admin sidebar.
 			<li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.personaldocumenttype.index', 'adminconsole.features.personaldocumenttype.create', 'adminconsole.features.personaldocumenttype.edit', 'adminconsole.features.personaldocumenttype.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.personaldocumenttype.index')}}">Personal Document Folders</a></li>
 
             <li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.matterdocumenttype.index', 'adminconsole.features.matterdocumenttype.create', 'adminconsole.features.matterdocumenttype.edit', 'adminconsole.features.matterdocumenttype.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.matterdocumenttype.index')}}">Matter Document Folders</a></li>
+			--}}
 
 			<li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.documentchecklist.index', 'adminconsole.features.documentchecklist.create', 'adminconsole.features.documentchecklist.edit', 'adminconsole.features.documentchecklist.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
 
