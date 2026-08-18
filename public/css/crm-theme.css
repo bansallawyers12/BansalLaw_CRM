@@ -4328,6 +4328,23 @@ body.sidebar-mini .control-label {
   width: 100% !important;
 }
 
+/* Global search dropdown is attached to body (dropdownParent: body). Keep it above the sticky topbar and clickable. */
+body > .ts-dropdown.crm-global-search-dropdown,
+.ts-dropdown.crm-global-search-dropdown {
+  z-index: 2000 !important;
+  pointer-events: auto !important;
+  min-width: 420px;
+  max-width: min(640px, calc(100vw - 24px));
+}
+
+body > .ts-dropdown.crm-global-search-dropdown .option,
+body > .ts-dropdown.crm-global-search-dropdown [data-selectable],
+.ts-dropdown.crm-global-search-dropdown .option,
+.ts-dropdown.crm-global-search-dropdown [data-selectable] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
 .topbar-center .topbar-search .ts-wrapper.single .ts-control {
   background-color: #fff !important;
   border: 1px solid #dee2e6 !important;

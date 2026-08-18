@@ -80,11 +80,63 @@
   }
 
   /**
+   * Build a client/lead detail URL from a global-search Tom Select value.
+   * Values look like "ENCODED/Matter/FAM_1" or "ENCODED/Client". Encoded ids may
+   * contain "/" or "=", so never split the whole string on "/".
+   *
+   * @param {string} value
+   * @param {object} [item]
+   * @param {string} clientDetailPrefix  e.g. https://host/clients/detail
+   * @param {string} leadsHistoryPrefix  e.g. https://host/leads/history
+   * @returns {string}
+   */
+  function buildCrmGlobalSearchUrl(value, item, clientDetailPrefix, leadsHistoryPrefix) {
+    if (value == null || value === '') {
+      return '';
+    }
+    var str = String(value);
+    item = item || {};
+    var matterMarker = '/Matter/';
+    var clientSuffix = '/Client';
+    var encoded = '';
+    var matterRef = String(item.matter_ref || '').trim();
+    var matterIdx = str.indexOf(matterMarker);
+
+    if (matterIdx >= 0) {
+      encoded = str.slice(0, matterIdx);
+      var fromValue = str.slice(matterIdx + matterMarker.length).trim();
+      if (fromValue) {
+        matterRef = fromValue;
+      }
+      if (encoded && matterRef) {
+        return clientDetailPrefix + '/' + encoded + '/' + matterRef;
+      }
+      if (encoded) {
+        return clientDetailPrefix + '/' + encoded;
+      }
+    }
+
+    if (str.length > clientSuffix.length && str.slice(-clientSuffix.length) === clientSuffix) {
+      encoded = str.slice(0, -clientSuffix.length);
+      if (encoded) {
+        return clientDetailPrefix + '/' + encoded;
+      }
+    }
+
+    encoded = str;
+    var recordType = String(item.record_type || item.status || '').toLowerCase();
+    if (recordType === 'lead') {
+      return leadsHistoryPrefix + '/' + encoded;
+    }
+    return clientDetailPrefix + '/' + encoded;
+  }
+
+  /**
    * Single-select AJAX client picker for GET /clients/get-allclients?q=
    * Items: { id, name, email, status, cid, client_id, matter_ref, search_label, ... }.
    * Important: if popover content is cloned from a hidden template, the same id may exist twice in the DOM;
    * always pass the visible tip element into initTS (e.g. $tip.find('#assign_client_id')), never rely on $('#id') alone.
-   * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number, showAccessBadges?: boolean, onChange?: function }} opts
+   * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number, showAccessBadges?: boolean, dropdownClass?: string, onChange?: function, onItemAdd?: function }} opts
    */
   function buildGetAllClientsTomSelectConfig(opts) {
     opts = opts || {};
@@ -209,8 +261,16 @@
       }
     };
 
+    if (opts.dropdownClass) {
+      cfg.dropdownClass = opts.dropdownClass;
+    }
+
     if (typeof opts.onChange === 'function') {
       cfg.onChange = opts.onChange;
+    }
+
+    if (typeof opts.onItemAdd === 'function') {
+      cfg.onItemAdd = opts.onItemAdd;
     }
 
     return cfg;
@@ -662,6 +722,7 @@
   /** @expose for callers that need duck-typing checks */
   global.getTomSelectInstance = getTS;
   global.buildGetAllClientsTomSelectConfig = buildGetAllClientsTomSelectConfig;
+  global.buildCrmGlobalSearchUrl = buildCrmGlobalSearchUrl;
   global.buildCrmGetRecipientsMultiTomSelectConfig = buildCrmGetRecipientsMultiTomSelectConfig;
   global.initRecipientsMultiTomSelectPreload = initRecipientsMultiTomSelectPreload;
   global.buildContactPersonSearchTomSelectConfig = buildContactPersonSearchTomSelectConfig;

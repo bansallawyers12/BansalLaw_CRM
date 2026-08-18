@@ -50,14 +50,24 @@
     window.crmAccessAutoOpen = @json($crossAccessAutoOpen);
 
     window.buildClientDetailUrlFromSearchId = function (selId) {
-        var s = String(selId).split('/');
-        if (s[1] === 'Matter' && s[2]) {
-            return window.crmClientDetailBase + '/' + s[0] + '/' + s[2];
+        if (typeof window.buildCrmGlobalSearchUrl === 'function') {
+            return window.buildCrmGlobalSearchUrl(
+                selId,
+                null,
+                window.crmClientDetailBase,
+                window.crmAccessLeadUrlPrefix
+            );
         }
-        if (s[1] === 'Client') {
-            return window.crmClientDetailBase + '/' + s[0];
+        var str = String(selId || '');
+        var matterMarker = '/Matter/';
+        var matterIdx = str.indexOf(matterMarker);
+        if (matterIdx >= 0) {
+            return window.crmClientDetailBase + '/' + str.slice(0, matterIdx) + '/' + str.slice(matterIdx + matterMarker.length);
         }
-        return window.crmAccessLeadUrlPrefix + '/' + s[0];
+        if (str.slice(-7) === '/Client') {
+            return window.crmClientDetailBase + '/' + str.slice(0, -7);
+        }
+        return window.crmAccessLeadUrlPrefix + '/' + str;
     };
 
     function csrf() {
