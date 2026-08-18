@@ -16,7 +16,7 @@
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Add Email</h4>
+								<h4>Add New User</h4>
 								<div class="card-header-action">
 									<a href="{{route('adminconsole.features.emails.index')}}" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> Back</a>
 								</div>
@@ -77,8 +77,8 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
 													<div class="form-group">
-														<label for="password">Zoho App Password</label>
-														<input type="password" name="password" value="" class="form-control" autocomplete="new-password" placeholder="Required for Zoho SMTP sending">
+														<label for="password">Zoho App Password <span class="span_req">*</span></label>
+														<input type="password" name="password" value="" class="form-control" data-valid="required" autocomplete="new-password" placeholder="Required for Zoho inbox sync">
 													</div>
 												</div>
 												<div class="col-12 col-md-6 col-lg-6 zoho-smtp-fields">

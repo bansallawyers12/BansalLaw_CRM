@@ -11,6 +11,7 @@ use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
 use App\Services\EmailSync\InboxSyncMasterControl;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\StaffMailboxService;
 
 use Auth;
@@ -42,7 +43,14 @@ class EmailController extends Controller
 			} */
 		//check authorization end
 
-		$accounts = Email::orderBy('email')->get();
+		$accountsQuery = Email::query()->orderBy('email');
+		IncomingEmailSyncService::applyMailboxHasZohoPasswordScope($accountsQuery);
+		$accountsQuery->where(function ($query) {
+			$query->whereNull('mail_provider')
+				->orWhere('mail_provider', '')
+				->orWhere('mail_provider', 'zoho');
+		});
+		$accounts = $accountsQuery->get();
 
 		$staffNames = Staff::where('status', 1)
 			->get()
@@ -113,14 +121,19 @@ class EmailController extends Controller
 		//check authorization end
 		if ($request->isMethod('post'))
 		{
-			$this->validate($request, ['email' => 'required|max:255|unique:emails']);
-
 			$requestData = 	$request->all();
-            $obj		 = 	new Email;
+			$provider = $this->normalizeMailProvider(@$requestData['mail_provider'] ?: 'zoho');
+			$rules = ['email' => 'required|max:255|unique:emails'];
+			if ($provider === 'zoho') {
+				$rules['password'] = 'required|string';
+			}
+			$this->validate($request, $rules);
+
+			$obj		 = 	new Email;
 			$obj->email	 =	@$requestData['email'];
 			$obj->email_signature	=	@$requestData['email_signature'];
 			$obj->display_name	=	@$requestData['display_name'];
-			$obj->mail_provider = $this->normalizeMailProvider(@$requestData['mail_provider'] ?: 'zoho');
+			$obj->mail_provider = $provider;
 			$obj->smtp_host = @$requestData['smtp_host'] ?: 'smtp.zoho.com';
 			$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
 			$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';

@@ -66,8 +66,11 @@
 
 					<div class="card">
 						<div class="card-header">
-							<h4>All Emails</h4>
-							<div class="card-header-action">
+							<h4>Zoho sync users</h4>
+							<div class="card-header-action d-flex align-items-center gap-2">
+								<a href="{{ route('adminconsole.features.emails.create') }}" class="btn btn-primary btn-sm">
+									<i class="fa-solid fa-plus"></i> Add New User
+								</a>
 								<form method="POST" action="{{ route('adminconsole.features.emails.sync-now') }}" class="d-inline">
 									@csrf
 									<button type="submit" class="btn btn-primary btn-sm" @if(empty($inboxSyncMaster['enabled']) && !empty($canControlInboxSyncMaster)) disabled title="Inbox auto-sync is OFF" @elseif(isset($inboxSyncMaster) && empty($inboxSyncMaster['enabled'])) disabled title="Inbox auto-sync is OFF" @endif>
@@ -82,6 +85,7 @@
 								Inbox auto-sync is currently OFF. Use the Super Admin control above to turn it back on.
 							</div>
 							@endif
+							<p class="text-muted small mb-3">Only mailboxes with a Zoho app password are listed. Add a user here to enable inbox sync.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap">
 								<thead>
@@ -93,6 +97,7 @@
 										<th>Status</th>
 										<th>Inbox Sync</th>
 										<th>Last Synced</th>
+										<th>Action</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
@@ -147,13 +152,18 @@
 												<br><small class="text-danger" title="{{ $list->last_sync_error }}">Sync error</small>
 											@endif
 										</td>
+										<td>
+											<a href="{{ route('adminconsole.features.emails.edit', base64_encode(convert_uuencode((string) $list->id))) }}" class="btn btn-outline-primary btn-sm">
+												<i class="fa-regular fa-pen-to-square"></i> Edit
+											</a>
+										</td>
 									</tr>
 								@endforeach
 								</tbody>
 								@else
 								<tbody>
 									<tr>
-										<td class="text-center" colspan="7">
+										<td class="text-center" colspan="8">
 											No Record found
 										</td>
 									</tr>
