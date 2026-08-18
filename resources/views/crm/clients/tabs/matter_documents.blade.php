@@ -534,9 +534,16 @@
                     } else {
                         pdfOption.style.display = 'none';
                     }
-                    // Show "Send for Signature" only for PDF and when not already signed
+                    // For PDFs, either place fields first or send once fields are already placed.
                     if (fileExt === 'pdf' && fileStatus !== 'signed') {
                         sendSigOption.style.display = 'block';
+                        if (fileStatus === 'placed') {
+                            sendSigOption.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send for Signature';
+                        } else if (fileStatus === 'sent') {
+                            sendSigOption.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Revise Signature Fields';
+                        } else {
+                            sendSigOption.innerHTML = '<i class="fa-solid fa-pen-fancy"></i> Place Signature Fields';
+                        }
                     } else {
                         sendSigOption.style.display = 'none';
                     }
@@ -590,7 +597,25 @@
 
                     switch(action) {
                         case 'send-for-signature':
-                            if (typeof $ !== 'undefined') {
+                            if (currentVisaContextData.fileStatus === 'placed') {
+                                if (typeof $ !== 'undefined') {
+                                    $.ajax({
+                                        url: '{{ url("/signatures") }}/' + currentVisaContextFile + '/send',
+                                        method: 'POST',
+                                        data: { _token: '{{ csrf_token() }}' },
+                                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                                    }).done(function(resp) {
+                                        alert((resp && resp.message) || 'Document sent for signature.');
+                                        location.reload();
+                                    }).fail(function(xhr) {
+                                        var message = 'Failed to send for signature.';
+                                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                                            message = xhr.responseJSON.message;
+                                        }
+                                        alert(message);
+                                    });
+                                }
+                            } else if (typeof $ !== 'undefined') {
                                 $(document).trigger('openSignaturePlacementModal', { documentId: currentVisaContextFile });
                             }
                             break;

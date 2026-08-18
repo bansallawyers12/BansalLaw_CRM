@@ -616,6 +616,11 @@ class SignatureDashboardController extends Controller
     public function sendForSignature(Request $request, $id)
     {
         $document = Document::findOrFail($id);
+        if ($document->lead_id) {
+            $this->ensureCrmRecordAccessStrict((int) $document->lead_id);
+        } elseif ($document->client_id) {
+            $this->ensureCrmRecordAccess((int) $document->client_id);
+        }
         
         // Check authorization
         $this->authorize('sendReminder', $document);
@@ -624,13 +629,26 @@ class SignatureDashboardController extends Controller
         $pendingSigners = $document->signers()->where('status', 'pending')->get();
         
         if ($pendingSigners->isEmpty()) {
-            return back()->with('error', 'No pending signers found for this document.');
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No pending signer found. Place signature fields first, then try again.',
+                ], 422);
+            }
+            return back()->with('error', 'No pending signer found. Place signature fields first, then try again.');
         }
         
         // Allow sending for any status except 'signed', 'void', or 'archived'
         $blockedStatuses = ['signed', 'void', 'archived'];
         if (in_array($document->status, $blockedStatuses)) {
-            return back()->with('error', "Document cannot be sent for signature because it is {$document->status}.");
+            $message = "Document cannot be sent for signature because it is {$document->status}.";
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+            return back()->with('error', $message);
         }
         
         $emailsSent = 0;
@@ -713,8 +731,9 @@ class SignatureDashboardController extends Controller
             }
         }
         
-        // Update document status
-        $document->update(['status' => 'sent']);
+        if ($emailsSent > 0) {
+            $document->update(['status' => 'sent']);
+        }
         
         if ($emailsSent > 0 && $document->client_id) {
             $recipients = $pendingSigners->map(fn($s) => $s->name . ' (' . $s->email . ')')->implode(', ');
@@ -734,9 +753,23 @@ class SignatureDashboardController extends Controller
             if (!empty($errors)) {
                 $message .= " However, some emails failed: " . implode(', ', $errors);
             }
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'status' => 'sent',
+                ]);
+            }
             return back()->with('success', $message);
         } else {
-            return back()->with('error', 'Failed to send any emails. Errors: ' . implode(', ', $errors));
+            $message = 'Failed to send any emails. Errors: ' . implode(', ', $errors);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+            return back()->with('error', $message);
         }
     }
 
