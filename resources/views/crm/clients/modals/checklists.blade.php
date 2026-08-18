@@ -176,6 +176,18 @@
 	</div>
 </div>
 
+<style>
+    .sig-field-preview.sig-field-preview-flash {
+        animation: sigFieldPulse 1.1s ease-out 1;
+    }
+
+    @keyframes sigFieldPulse {
+        0% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.85); }
+        70% { box-shadow: 0 0 0 12px rgba(29, 78, 216, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); }
+    }
+</style>
+
 @push('scripts')
 <script>
     (function ($) {
@@ -320,9 +332,10 @@
                 var editBtnClass = (i === sigState.selectedFieldIndex) ? 'btn btn-primary btn-sm sig-edit-field me-1' : 'btn btn-outline-secondary btn-sm sig-edit-field me-1';
                 html += '<div class="' + rowClass + '" data-index="' + i + '">';
                 html += '<span class="small">Signature ' + (i + 1) + ' (Pg ' + f.page_number + ')</span>';
-                html += '<div><button type="button" class="' + editBtnClass + '" data-index="' + i + '">Edit</button>';
+                html += '<div><button type="button" class="' + editBtnClass + '" data-index="' + i + '">Focus</button>';
                 html += '<button type="button" class="btn btn-outline-danger btn-sm sig-delete-field" data-index="' + i + '">Delete</button></div></div>';
             });
+            html += '<small class="text-muted d-block mt-2">Use Focus, then drag the blue box on the preview to reposition it.</small>';
             $('#sig-fields-container').html(html || '<small class="text-muted">No fields. Click on the document or Add Signature Field.</small>');
         }
 
@@ -383,6 +396,19 @@
                     }
                     updateSigForm();
                     updateSigPreview();
+                    var previewContainer = $('#sig-preview-container')[0];
+                    if (previewContainer && typeof previewContainer.scrollIntoView === 'function') {
+                        previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    setTimeout(function () {
+                        var $target = $('#sig-fields-preview .sig-field-preview[data-index="' + i + '"]');
+                        if ($target.length) {
+                            $target.addClass('sig-field-preview-flash');
+                            setTimeout(function () {
+                                $target.removeClass('sig-field-preview-flash');
+                            }, 1200);
+                        }
+                    }, 60);
                 }
             });
 
