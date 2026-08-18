@@ -99,7 +99,7 @@
         </div>
     </div>
     <div class="topbar-center">
-        <form class="topbar-search">
+        <form class="topbar-search" action="#" method="get" onsubmit="return false;">
             <div class="topbar-search__inner">
                 <span class="topbar-search__icon" aria-hidden="true"><i class="fa-solid fa-search"></i></span>
                 <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="320"></select>

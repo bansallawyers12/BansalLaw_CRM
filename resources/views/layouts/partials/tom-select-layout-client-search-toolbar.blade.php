@@ -16,34 +16,48 @@
                 var clientDetailPrefix = @json($crmClientsDetailPrefix);
                 var leadsHistoryPrefix  = @json($crmLeadsHistoryPrefix);
                 var allClientsUrl       = @json($crmGetAllClientsUrl);
+                var navigating = false;
+
+                document.querySelectorAll('form.topbar-search').forEach(function (form) {
+                    form.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                    });
+                });
 
                 if (typeof buildGetAllClientsTomSelectConfig !== 'function') {
                     return;
                 }
 
+                function navigateFromGlobalSearch(value) {
+                    if (!value || navigating) {
+                        return;
+                    }
+                    var item = (this && this.options) ? (this.options[value] || this.options[String(value)]) : null;
+                    if (item && item.locked && typeof window.openCrmAccessModal === 'function') {
+                        if (typeof this.clear === 'function') {
+                            this.clear(true);
+                        }
+                        window.openCrmAccessModal(item);
+                        return;
+                    }
+                    var url = typeof window.buildCrmGlobalSearchUrl === 'function'
+                        ? window.buildCrmGlobalSearchUrl(value, item || {}, clientDetailPrefix, leadsHistoryPrefix)
+                        : '';
+                    if (!url) {
+                        return;
+                    }
+                    navigating = true;
+                    window.location.href = url;
+                }
+
                 initTS('.js-data-example-ajaxccsearch', buildGetAllClientsTomSelectConfig({
                     url: allClientsUrl,
                     dropdownParent: 'body',
+                    dropdownClass: 'ts-dropdown crm-global-search-dropdown',
                     placeholder: 'Search name, email, phone…',
                     loadThrottle: 300,
                     showAccessBadges: true,
-                    onChange: function (value) {
-                        if (!value) { return; }
-                        var item = this.options[value];
-                        if (!item) { return; }
-                        if (item.locked && typeof window.openCrmAccessModal === 'function') {
-                            this.clear(true);
-                            window.openCrmAccessModal(item);
-                            return;
-                        }
-                        var s = String(value).split('/');
-                        if (s[1] === 'Matter' && s[2]) {
-                            window.location = clientDetailPrefix + '/' + s[0] + '/' + s[2];
-                        } else if (s[1] === 'Client') {
-                            window.location = clientDetailPrefix + '/' + s[0];
-                        } else {
-                            window.location = leadsHistoryPrefix + '/' + s[0];
-                        }
-                    }
+                    onItemAdd: navigateFromGlobalSearch,
+                    onChange: navigateFromGlobalSearch
                 }));
             }());
