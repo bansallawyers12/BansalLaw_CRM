@@ -2065,16 +2065,19 @@ class ClientAccountsController extends Controller
                               ->sum('deposit_amount');
 
                           // Sum fee transfers for this invoice
-                          $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                              ->where('receipt_type', 1)
-                              ->where('client_fund_ledger_type', 'Fee Transfer')
-                              ->where('invoice_no', $invoiceNo)
-                              ->where('client_id', $requestData['client_id'])
-                              ->where(function($q) {
-                                  $q->whereNull('void_fee_transfer')
-                                    ->orWhere('void_fee_transfer', 0);
-                              })
-                              ->sum('withdraw_amount');
+                           $totalPaidFeeTransferQuery = DB::table('account_client_receipts')
+                               ->where('receipt_type', 1)
+                               ->where('client_fund_ledger_type', 'Fee Transfer')
+                               ->where('invoice_no', $invoiceNo)
+                               ->where('client_id', $requestData['client_id'])
+                               ->where(function($q) {
+                                   $q->whereNull('void_fee_transfer')
+                                     ->orWhere('void_fee_transfer', 0);
+                               });
+                           if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                               $totalPaidFeeTransferQuery->whereNull('trust_voided_at');
+                           }
+                           $totalPaidFeeTransfer = $totalPaidFeeTransferQuery->sum('withdraw_amount');
 
                           $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
                           $invoiceAmount = floatval($invoice->withdraw_amount);
@@ -2461,7 +2464,7 @@ class ClientAccountsController extends Controller
                       ->sum('deposit_amount');
                   
                   // Calculate total Fee Transfers for this invoice (non-voided only)
-                  $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                  $totalPaidFeeTransferQuery = DB::table('account_client_receipts')
                       ->where('receipt_type', 1)
                       ->where('client_fund_ledger_type', 'Fee Transfer')
                       ->where('invoice_no', $invoiceNo)
@@ -2469,8 +2472,11 @@ class ClientAccountsController extends Controller
                       ->where(function($q) {
                           $q->whereNull('void_fee_transfer')
                             ->orWhere('void_fee_transfer', 0);
-                      })
-                      ->sum('withdraw_amount');
+                      });
+                  if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                      $totalPaidFeeTransferQuery->whereNull('trust_voided_at');
+                  }
+                  $totalPaidFeeTransfer = $totalPaidFeeTransferQuery->sum('withdraw_amount');
                   
                   // Combine both payment types
                   $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
@@ -4562,27 +4568,35 @@ class ClientAccountsController extends Controller
                    ->update(['withdraw_amount_before_void' => $infoVal->withdraw_amount,'withdraw_amount'=>'0.00','balance_amount'=>'0.00','partial_paid_amount'=>'0.00']);
                }
            }
+             // Unallocate office receipts (type 2) and journal receipts (type 4) linked to this voided invoice
+             $unallocateRefs = array_values(array_unique(array_filter([
+                 trim((string) ($invoice_info->invoice_no ?? '')),
+                 trim((string) ($invoice_info->trans_no ?? '')),
+             ])));
 
-            // Unallocate office receipts linked to this voided invoice (14.6)
-            if (!empty($invoice_info->invoice_no)) {
-                DB::table('account_client_receipts')
-                    ->where('client_id', $invoice_info->client_id)
-                    ->where('receipt_type', 2)
-                    ->where('invoice_no', $invoice_info->invoice_no)
-                    ->update([
-                        'invoice_no' => null,
-                        'updated_at' => now(),
-                    ]);
-            }
+             if (!empty($unallocateRefs)) {
+                 DB::table('account_client_receipts')
+                     ->where('client_id', $invoice_info->client_id)
+                     ->whereIn('receipt_type', [2, 4])
+                     ->whereIn('invoice_no', $unallocateRefs)
+                     ->update([
+                         'invoice_no' => null,
+                         'updated_at' => now(),
+                     ]);
+             }
 
            //update account_all_invoice_receipts entries also
            $record_info1 = AccountAllInvoiceReceipt::select('id','withdraw_amount','receipt_id')
-           ->where('receipt_id', $clickedVal)
-           ->get();
+               ->where('receipt_id', $clickedVal)
+               ->get();
            if(!empty($record_info1)){
                foreach($record_info1 as $infoVal1){
-                  AccountAllInvoiceReceipt::where('receipt_id',$infoVal1->receipt_id)
-                   ->update(['withdraw_amount_before_void' => $infoVal1->withdraw_amount,'withdraw_amount'=>'0.00','invoice_status'=>'3']); //void
+                   AccountAllInvoiceReceipt::where('id', $infoVal1->id)
+                       ->update([
+                           'withdraw_amount_before_void' => $infoVal1->withdraw_amount,
+                           'withdraw_amount' => '0.00',
+                           'invoice_status' => '3',
+                       ]); //void
                }
            }
 

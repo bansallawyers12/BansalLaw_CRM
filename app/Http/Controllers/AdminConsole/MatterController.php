@@ -164,6 +164,7 @@ class MatterController extends Controller
     protected function buildListPayload(Request $request): array
     {
         $searchBy = trim((string) $request->query('search_by', $request->query('title', '')));
+        $perPage = $this->resolveListPerPage($request);
         $query = Matter::query();
 
         if ($searchBy !== '') {
@@ -174,18 +175,23 @@ class MatterController extends Controller
         }
 
         $totalData = $query->count();
-        $lists = $query->sortable(['id' => 'desc'])->paginate(20);
-
-        if ($searchBy !== '') {
-            $lists->appends(['search_by' => $searchBy]);
-        }
+        $lists = $query->sortable(['id' => 'desc'])->paginate($perPage)->withQueryString();
 
         return [
             'lists' => $lists,
             'totalData' => $totalData,
             'searchBy' => $searchBy,
+            'perPage' => $perPage,
             'hasStreamColumn' => Schema::hasColumn('matters', 'stream'),
         ];
+    }
+
+    protected function resolveListPerPage(Request $request): int
+    {
+        $allowed = [10, 20, 50, 100];
+        $perPage = (int) $request->query('per_page', config('constants.limit', 20));
+
+        return in_array($perPage, $allowed, true) ? $perPage : (int) config('constants.limit', 20);
     }
 
     protected function findMatterOrFail($id)

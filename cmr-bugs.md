@@ -755,14 +755,19 @@ Status key (2026-08-07):
 - **Now:** Added `recalculateInvoiceStatusAndBalance($clientId, $invoiceNo)` to `ClientAccountsController` to recalculate total payments (office receipts + active fee transfers), outstanding balance, and status (Unpaid/Partial/Paid) for both `account_client_receipts` and `account_all_invoice_receipts`. Wired into `delete_receipt` whenever an office/journal receipt with an `invoice_no` is hard-deleted. Added Super Admin delete buttons and JavaScript handlers on `officereceiptlist` and `journalreceiptlist`. Voided invoices retain their voided status (`invoice_status = 3`).
 
 ### 14.5 High — Void invoice stores wrong `withdraw_amount_before_void`
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::void_invoice`, `InvoiceReceiptRecalculationOnDeleteTest`
+- **Now:** `void_invoice` in `ClientAccountsController` loops through all item records in `AccountAllInvoiceReceipt` and updates each row by its unique primary key `id` rather than updating by `receipt_id` on every iteration. This guarantees each line item preserves its own individual `withdraw_amount_before_void` when multi-item invoices are voided.
 
 ### 14.6 Medium — Invoice void does not reverse/unallocate office receipts
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::void_invoice`, `InvoiceReceiptRecalculationOnDeleteTest`
+- **Now:** `void_invoice` in `ClientAccountsController` unallocates all office receipts (`receipt_type = 2`) and journal receipts (`receipt_type = 4`) linked to the voided invoice by setting `invoice_no = null` for all matching references (`invoice_no` or `trans_no`). This frees the receipts back into the client's unallocated receipt pool while preserving their payment amounts.
 
 ### 14.7 Medium — Office-receipt payment totals ignore `trust_voided_at` on fee transfers
-- **Status:** Partial
-- **Notes:** Fee-transfer sum paths observed filtering `trust_voided_at` in places; confirm all invoice status calculators.
+- **Status:** Fixed
+- **Files:** `ClientAccountsController::recalculateInvoiceStatusAndBalance`, `ClientAccountsController::save_receipt`, `FinancialStatsService`, `InvoiceReceiptRecalculationOnDeleteTest`
+- **Now:** All fee transfer sum calculations across `ClientAccountsController` and `FinancialStatsService` consistently filter out both `void_fee_transfer = 1` and `trust_voided_at IS NOT NULL` when calculating invoice payment totals, balances, and statuses.
 
 ### 14.8 Medium — Period lock uses strict `d/m/Y`; bad dates can bypass lock check
 - **Status:** Open\*

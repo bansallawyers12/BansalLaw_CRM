@@ -761,6 +761,12 @@ class DocumentController extends Controller
                     $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                        if (! Storage::disk('s3')->exists($s3Key) && str_contains((string) $s3Key, '/matter/')) {
+                            $alt = str_replace('/matter/', '/visa/', $s3Key);
+                            if (Storage::disk('s3')->exists($alt)) {
+                                $s3Key = $alt;
+                            }
+                        }
                         if (Storage::disk('s3')->exists($s3Key)) {
                             $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
                             file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
@@ -1288,17 +1294,24 @@ class DocumentController extends Controller
                     if (!$client || empty($client->email)) {
                         throw new \Exception($client ? 'Client email not available' : 'Client not found');
                     }
-                    $signer = $document->signers()->create([
-                        'email' => $client->email,
-                        'name' => trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
-                        'token' => \Illuminate\Support\Str::random(64),
-                        'status' => 'pending',
-                        'reminder_count' => 0,
-                    ]);
+                    $signer = $document->signers()
+                        ->where('email', $client->email)
+                        ->whereIn('status', ['pending'])
+                        ->first();
+                    if (! $signer) {
+                        $signer = $document->signers()->create([
+                            'email' => $client->email,
+                            'name' => trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+                            'token' => \Illuminate\Support\Str::random(64),
+                            'status' => 'pending',
+                            'reminder_count' => 0,
+                        ]);
+                    }
                     $signingUrl = url("/sign/{$document->id}/{$signer->token}");
                     $signatureLinks = [['email' => $signer->email, 'name' => $signer->name, 'url' => $signingUrl]];
+                    $nextStatus = $document->status === 'sent' ? 'sent' : 'placed';
                     $document->update([
-                        'status' => 'placed',
+                        'status' => $nextStatus,
                         'signature_doc_link' => json_encode($signatureLinks),
                     ]);
                     $encodedClientId = base64_encode(convert_uuencode($client->id));
