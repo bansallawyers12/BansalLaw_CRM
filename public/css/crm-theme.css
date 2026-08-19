@@ -1927,6 +1927,16 @@ body.sidebar-mini .adminconsole-matter-list .card-footer {
   border-top: 1px solid var(--border);
 }
 
+body.sidebar-mini .adminconsole-matter-list .mat-list-pagination__per-page select {
+  width: auto;
+  min-width: 72px;
+  display: inline-block;
+}
+
+body.sidebar-mini .adminconsole-matter-list .mat-list-pagination .pagination {
+  margin-bottom: 0;
+}
+
 body.sidebar-mini .adminconsole-matter-list .pagination .page-link {
   color: var(--navy);
   border-color: var(--border);

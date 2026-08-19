@@ -177,6 +177,39 @@
 </div>
 
 <style>
+    #sig-preview-container { position: relative; }
+    #sig-fields-preview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+    }
+    .sig-field-preview {
+        position: absolute;
+        border: 2px dashed #3b82f6;
+        background: rgba(59, 130, 246, 0.15);
+        cursor: move;
+        pointer-events: auto;
+        user-select: none;
+        touch-action: none;
+    }
+    .sig-field-preview:hover { background: rgba(59, 130, 246, 0.25); }
+    .sig-field-preview.dragging { border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
+    .sig-field-preview.sig-field-preview-selected { border-color: #1d4ed8; box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.5); background: rgba(59, 130, 246, 0.25); }
+    .sig-field-row-selected { background-color: rgba(59, 130, 246, 0.08); border-color: #3b82f6; }
+    .sig-field-label {
+        position: absolute;
+        top: -18px;
+        left: 0;
+        background: #3b82f6;
+        color: #fff;
+        padding: 2px 6px;
+        font-size: 10px;
+        border-radius: 3px;
+        white-space: nowrap;
+    }
     .sig-field-preview.sig-field-preview-flash {
         animation: sigFieldPulse 1.1s ease-out 1;
     }
@@ -222,7 +255,16 @@
             sigState.currentPage = 1;
             sigState.selectedFieldIndex = -1;
 
-            $('#signaturePlacementModal').modal('show');
+            var $modal = $('#signaturePlacementModal');
+            if ($modal.length && !$modal.parent().is('body')) {
+                $modal.appendTo('body');
+            }
+            if (typeof $modal.modal === 'function') {
+                $modal.modal('show');
+            } else if (window.bootstrap && $modal[0]) {
+                bootstrap.Modal.getOrCreateInstance($modal[0]).show();
+            }
+
             $('#signature-placement-loading').show();
             $('#signature-placement-content').hide();
             $('#signature-placement-error').hide();
@@ -282,6 +324,10 @@
         // Exposed via document event so other tabs can trigger it.
         $(document).on('openSignaturePlacementModal', function (e, data) {
             if (data && data.documentId) openSignaturePlacementModal(data.documentId);
+        });
+
+        $(document).on('click', '.btn-place-signature-fields', function () {
+            openSignaturePlacementModal($(this).data('document-id'));
         });
 
         function updateSigPageInfo() {

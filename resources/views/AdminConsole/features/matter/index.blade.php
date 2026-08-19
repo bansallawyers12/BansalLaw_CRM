@@ -10,7 +10,8 @@
     data-edit-url-template="{{ route('adminconsole.features.matter.edit', ['id' => '__ID__']) }}"
     data-update-url-template="{{ route('adminconsole.features.matter.update', ['id' => '__ID__']) }}"
     data-view-url-template="{{ route('adminconsole.features.matter.view', ['id' => '__ID__']) }}"
-    data-initial-search="{{ $searchBy ?? '' }}">
+    data-initial-search="{{ $searchBy ?? '' }}"
+    data-initial-per-page="{{ $perPage ?? config('constants.limit', 20) }}">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -67,6 +68,7 @@
                             @include('AdminConsole.features.matter.partials.pagination', [
                                 'lists' => $lists,
                                 'totalData' => $totalData,
+                                'perPage' => $perPage ?? config('constants.limit', 20),
                             ])
                         </div>
                     </div>

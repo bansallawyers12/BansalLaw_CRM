@@ -6,13 +6,46 @@
         return;
     }
 
+    var PER_PAGE_OPTIONS = [10, 20, 50, 100];
+    var PER_PAGE_STORAGE_KEY = 'admin_matter_list_per_page';
+
+    function resolveInitialPerPage() {
+        var params = new URLSearchParams(window.location.search);
+        var fromUrl = parseInt(params.get('per_page') || '', 10);
+        if (PER_PAGE_OPTIONS.indexOf(fromUrl) !== -1) {
+            return fromUrl;
+        }
+        try {
+            var stored = parseInt(localStorage.getItem(PER_PAGE_STORAGE_KEY), 10);
+            if (PER_PAGE_OPTIONS.indexOf(stored) !== -1) {
+                return stored;
+            }
+        } catch (e) {
+            // ignore storage errors
+        }
+        var initial = parseInt($app.data('initial-per-page'), 10);
+        if (PER_PAGE_OPTIONS.indexOf(initial) !== -1) {
+            return initial;
+        }
+        return 20;
+    }
+
     var state = {
         search: String($app.data('initial-search') || ''),
         page: 1,
+        perPage: resolveInitialPerPage(),
         loading: false,
         currentItemId: null,
         editItemId: null
     };
+
+    (function initPageFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var page = parseInt(params.get('page') || '1', 10);
+        if (page > 0) {
+            state.page = page;
+        }
+    })();
 
     var urls = {
         index: $app.data('index-url'),
@@ -85,6 +118,9 @@
         if (state.page > 1) {
             params.set('page', String(state.page));
         }
+        if (state.perPage !== 20) {
+            params.set('per_page', String(state.perPage));
+        }
         var query = params.toString();
         window.history.replaceState({ matSearch: state.search }, '', urls.index + (query ? ('?' + query) : ''));
     }
@@ -105,7 +141,8 @@
             headers: ajaxHeaders(),
             data: {
                 search_by: state.search,
-                page: state.page
+                page: state.page,
+                per_page: state.perPage
             }
         }).done(function (response) {
             if (!response || !response.success) {
@@ -340,6 +377,18 @@
         }
     });
 
+    $(document).on('change', '#mat-per-page-select', function () {
+        var nextPerPage = parseInt($(this).val(), 10);
+        state.perPage = PER_PAGE_OPTIONS.indexOf(nextPerPage) !== -1 ? nextPerPage : 20;
+        try {
+            localStorage.setItem(PER_PAGE_STORAGE_KEY, String(state.perPage));
+        } catch (e) {
+            // ignore storage errors
+        }
+        state.page = 1;
+        loadList(1);
+    });
+
     $(document).on('click', '#mat-list-pagination a', function (event) {
         var href = $(this).attr('href');
         if (!href || state.loading) {
@@ -351,6 +400,10 @@
         if (url.searchParams.get('search_by')) {
             state.search = url.searchParams.get('search_by');
             $searchInput.val(state.search);
+        }
+        var perPage = parseInt(url.searchParams.get('per_page') || '', 10);
+        if (PER_PAGE_OPTIONS.indexOf(perPage) !== -1) {
+            state.perPage = perPage;
         }
         loadList(state.page);
     });
@@ -420,4 +473,15 @@
     });
 
     handleDeepLinkAction();
+
+    (function syncPerPageOnLoad() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('per_page')) {
+            return;
+        }
+        var rendered = parseInt($('#mat-per-page-select').val() || '', 10);
+        if (rendered !== state.perPage) {
+            loadList(state.page);
+        }
+    })();
 })(jQuery);

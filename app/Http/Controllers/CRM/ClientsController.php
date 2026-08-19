@@ -6478,17 +6478,15 @@ class ClientsController extends Controller
                 }
             }
 
-            // Duration / amount already set from BookingCatalogue product (10 / 30 / 60)
-
-            $existingAppointment = BookingAppointment::where('client_id', $client->id)
-                ->where('appointment_datetime', $appointmentDateTime)
-                ->whereNotIn('status', ['cancelled', 'rescheduled'])
+            // Check for duplicate appointments - prevent booking the same time slot across all clients
+            $existingAppointment = BookingAppointment::where('appointment_datetime', $appointmentDateTime)
+                ->whereNotIn('status', ['cancelled', 'rescheduled', 'no_show'])
                 ->first();
 
             if ($existingAppointment) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'You already have an appointment booked at this date and time. Please choose a different time slot.',
+                    'message' => 'The selected time slot already has an appointment booked. Please choose a different time slot.',
                 ], 422);
             }
 
@@ -6557,10 +6555,10 @@ class ClientsController extends Controller
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
-                'is_paid' => ($serviceId == 2) ? false : true,
+                'is_paid' => ($serviceId == 2) ? false : (($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false')),
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : 'pending',
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
             ];
 
             // Call Bansal API to create appointment and get real bansal_appointment_id
@@ -6597,10 +6595,21 @@ class ClientsController extends Controller
                     'trace' => $apiException->getTraceAsString()
                 ]);
                 
-                // If API call fails, we'll still create the appointment locally
-                // but with a temporary ID that indicates it needs to be synced
-                // This ensures existing functionality doesn't break
-                $bansalAppointmentId = null; // Will be set to a placeholder if API fails
+                // Slot availability error - do NOT create appointment locally, return error immediately
+                $errorLower = strtolower($bansalApiError);
+                $isSlotUnavailable = str_contains($errorLower, 'time slot')
+                    || (str_contains($errorLower, 'slot') && str_contains($errorLower, 'not available'))
+                    || (str_contains($errorLower, 'slot') && (str_contains($errorLower, 'already') || str_contains($errorLower, 'booked') || str_contains($errorLower, 'taken')));
+                if ($isSlotUnavailable) {
+                    return response()->json([
+                        'status' => false,
+                        'success' => false,
+                        'message' => 'The selected time slot is not available. Please choose a different time slot.',
+                    ], 422);
+                }
+
+                // If general API call fails (network/timeout), allow local appointment creation with temporary ID
+                $bansalAppointmentId = null;
             }
 
             // If API call failed, use a placeholder ID that indicates manual creation
@@ -6628,6 +6637,7 @@ class ClientsController extends Controller
                 : null;
 
             // Create booking appointment
+            $isPaymentCompleted = ($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false');
             $appointment = BookingAppointment::create([
                 'bansal_appointment_id' => $bansalAppointmentId,
                 'order_hash' => null, // No payment for manually created appointments
@@ -6656,17 +6666,14 @@ class ClientsController extends Controller
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 
-                // Determine status based on service type and payment status
-                // Case 1: Free appointment (serviceId == 2) -> status = 'confirmed'
-                // Case 2: Paid appointment (serviceId != 2) -> status = 'paid' if payment successful, 'pending' if payment failed
                 'status' => ($serviceId == 2) 
                     ? 'confirmed' 
-                    : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
-                'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
-                'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
+                    : ($isPaymentCompleted ? 'paid' : 'pending'),
+                'confirmed_at' => ($serviceId == 2) ? now() : ($isPaymentCompleted ? now() : null),
+                'is_paid' => ($serviceId == 2) ? false : $isPaymentCompleted,
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? ($isPaymentCompleted ? 'completed' : 'pending')),
                 
                 // Boolean fields with default values
                 'confirmation_email_sent' => false,

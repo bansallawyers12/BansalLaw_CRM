@@ -443,12 +443,40 @@ class StripePaymentService
             }
 
             $metaAppId = $paymentIntent->metadata->appointment_id ?? $paymentIntent->metadata->bansal_appointment_id ?? null;
-            if (!empty($metaAppId) && (string) $metaAppId !== (string) $appointment->id && (string) $metaAppId !== (string) $appointment->bansal_appointment_id) {
-                return [
-                    'success' => false,
-                    'data' => [],
-                    'message' => 'PaymentIntent metadata does not match this appointment.',
-                ];
+            $metaClientEmail = $paymentIntent->metadata->client_email ?? null;
+            $metaClientId = $paymentIntent->metadata->client_id ?? null;
+            $receiptEmail = $paymentIntent->receipt_email ?? ($paymentIntent->charges->data[0]->billing_details->email ?? null);
+
+            // Strong ownership validation:
+            // 1. If appointment ID is in metadata, it MUST match this appointment
+            if (!empty($metaAppId)) {
+                if ((string) $metaAppId !== (string) $appointment->id && (string) $metaAppId !== (string) $appointment->bansal_appointment_id) {
+                    return [
+                        'success' => false,
+                        'data' => [],
+                        'message' => 'PaymentIntent metadata does not match this appointment.',
+                    ];
+                }
+            } else {
+                // 2. When appointment_id is missing from metadata, ensure client ownership by client_id or client_email
+                $hasMatchingClient = false;
+                if (!empty($metaClientId) && (int) $metaClientId === (int) $appointment->client_id) {
+                    $hasMatchingClient = true;
+                }
+                if (!empty($metaClientEmail) && strtolower(trim($metaClientEmail)) === strtolower(trim($appointment->client_email))) {
+                    $hasMatchingClient = true;
+                }
+                if (!empty($receiptEmail) && !empty($appointment->client_email) && strtolower(trim($receiptEmail)) === strtolower(trim($appointment->client_email))) {
+                    $hasMatchingClient = true;
+                }
+
+                if (!$hasMatchingClient) {
+                    return [
+                        'success' => false,
+                        'data' => [],
+                        'message' => 'PaymentIntent ownership cannot be verified for this appointment.',
+                    ];
+                }
             }
 
             // Avoid duplicate record for same PaymentIntent

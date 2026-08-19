@@ -1105,13 +1105,22 @@ class BookingAppointmentsController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-        $appointment = BookingAppointment::findOrFail($id);
-        $this->assertBookingAppointmentAccess($appointment);
-
         $request->validate([
             'status' => 'required|in:pending,paid,confirmed,completed,cancelled,no_show,rescheduled',
             'cancellation_reason' => 'required_if:status,cancelled|nullable|string|max:500'
         ]);
+
+        $currentUser = Auth::guard('admin')->user() ?? Auth::user();
+        if ($request->status === 'completed' && $currentUser && ($currentUser instanceof Admin || (isset($currentUser->type) && $currentUser->type === 'client'))) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Clients cannot complete appointments. Appointment completion must be confirmed by staff.',
+            ], 403);
+        }
+
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
 
         $oldStatus = $appointment->status;
         $appointment->status = $request->status;

@@ -795,10 +795,14 @@ Status key (2026-08-07):
 - **Now:** When booking an appointment via `ClientsController::addAppointmentBook`, if the Bansal API reports that the time slot is unavailable, already booked, or taken, the request is immediately rejected with HTTP 422 (`The selected time slot is not available. Please choose a different time slot.`) and creation of a local database record is prevented. Only general network/API timeouts allow temporary ID creation.
 
 ### 14.13 Medium — Duplicate-slot check is per-client only (race + multi-client)
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::addAppointmentBook`, `PublicBookingController::addAppointment`, `SecurityBugFixes14Test`
+- **Now:** Duplicate slot validation checks across all active appointments (`status NOT IN ('cancelled', 'rescheduled', 'no_show')`) at the requested datetime rather than scoping strictly to `client_id`. This prevents different clients or concurrent requests from double-booking the same consultant/office time slot.
 
 ### 14.14 Medium — Client can self-complete appointments
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `BookingAppointmentsController::updateStatus`, `PublicBookingController::updateAppointmentStatus`, `SecurityBugFixes14Test`
+- **Now:** Only staff members can set an appointment's status to `completed`. If a client account attempts to mark an appointment as `completed` (via `BookingAppointmentsController::updateStatus` or `PublicBookingController::updateAppointmentStatus`), the action is rejected with HTTP 403 (`Clients cannot complete appointments. Appointment completion must be confirmed by staff.`). Clients are restricted to cancellations.
 
 ### 14.15 Medium — Sync skip-on-existing never updates payment/status from website
 - **Status:** Open\*

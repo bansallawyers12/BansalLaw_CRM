@@ -561,6 +561,7 @@ class PublicBookingController extends BaseController
             }
 
             // Create booking appointment
+            $isPaymentCompleted = ($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false');
             $appointment = BookingAppointment::create([
                 'bansal_appointment_id' => $bansalAppointmentId,
                 'order_hash' => null, // No payment for manually created appointments
@@ -589,17 +590,14 @@ class PublicBookingController extends BaseController
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $enquiryDetails,
                 
-                // Determine status based on service type and payment status
-                // Case 1: Free appointment (serviceId == 2) -> status = 'confirmed'
-                // Case 2: Paid appointment (serviceId != 2) -> status = 'paid' if payment successful, 'pending' if payment failed
                 'status' => ($serviceId == 2) 
                     ? 'confirmed' 
-                    : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
-                'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
-                'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
+                    : ($isPaymentCompleted ? 'paid' : 'pending'),
+                'confirmed_at' => ($serviceId == 2) ? now() : ($isPaymentCompleted ? now() : null),
+                'is_paid' => ($serviceId == 2) ? false : $isPaymentCompleted,
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? ($isPaymentCompleted ? 'completed' : 'pending')),
                 
                 // Boolean fields with default values
                 'confirmation_email_sent' => false,
@@ -770,10 +768,9 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Appointment date and time must be in the future', [], 422);
             }
 
-            // Check for duplicate appointments
-            $existingAppointment = BookingAppointment::where('client_id', $client->id)
-                ->where('appointment_datetime', $appointmentDateTime)
-                ->whereNotIn('status', ['cancelled', 'rescheduled'])
+            // Check for duplicate appointments - prevent booking the same time slot across all clients
+            $existingAppointment = BookingAppointment::where('appointment_datetime', $appointmentDateTime)
+                ->whereNotIn('status', ['cancelled', 'rescheduled', 'no_show'])
                 ->first();
 
             if ($existingAppointment) {
@@ -821,10 +818,10 @@ class PublicBookingController extends BaseController
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'],
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $enquiryDetails,
-                'is_paid' => ($serviceId == 2) ? false : true,
+                'is_paid' => ($serviceId == 2) ? false : (($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false')),
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : 'pending',
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
             ];
 
             $bansalAppointmentId = null;
@@ -883,6 +880,7 @@ class PublicBookingController extends BaseController
             }
 
             // Create booking appointment
+            $isPaymentCompleted = ($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false');
             $appointment = BookingAppointment::create([
                 'bansal_appointment_id' => $bansalAppointmentId,
                 'order_hash' => null,
@@ -908,12 +906,12 @@ class PublicBookingController extends BaseController
                 'enquiry_details' => $enquiryDetails,
                 'status' => ($serviceId == 2)
                     ? 'confirmed'
-                    : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
-                'confirmed_at' => ($serviceId == 2) ? now() : null,
-                'is_paid' => ($serviceId == 2) ? false : true,
+                    : ($isPaymentCompleted ? 'paid' : 'pending'),
+                'confirmed_at' => ($serviceId == 2) ? now() : ($isPaymentCompleted ? now() : null),
+                'is_paid' => ($serviceId == 2) ? false : $isPaymentCompleted,
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? ($isPaymentCompleted ? 'completed' : 'pending')),
                 'confirmation_email_sent' => false,
                 'reminder_sms_sent' => false,
                 'sync_status' => $bansalApiError ? 'error' : 'synced',
@@ -1505,8 +1503,11 @@ class PublicBookingController extends BaseController
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
             }
 
-            if ($request->type === 'complete' && !\Auth::guard('admin')->check()) {
-                return $this->sendError('Clients can only cancel appointments. Appointment completion must be confirmed by staff.', [], 403);
+            if ($request->type === 'complete') {
+                $isAdminStaff = \Auth::guard('admin')->check() && (\Auth::guard('admin')->user() instanceof \App\Models\Staff || (isset(\Auth::guard('admin')->user()->type) && \Auth::guard('admin')->user()->type !== 'client'));
+                if (!$isAdminStaff) {
+                    return $this->sendError('Clients can only cancel appointments. Appointment completion must be confirmed by staff.', [], 403);
+                }
             }
 
             // Map 'cancel' to 'cancelled' and 'complete' to 'completed'
