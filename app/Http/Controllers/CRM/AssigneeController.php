@@ -473,24 +473,25 @@ class AssigneeController extends Controller
                 $dataTable = DataTables::of($query)
                     ->addIndexColumn()
                     ->addColumn('done_action', function($data) {
-                        $done_action = '<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">';
-                        return $done_action;
+                        return '<label class="action-done-toggle" title="Mark complete">'
+                            .'<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">'
+                            .'</label>';
                     })
                     ->addColumn('assigner_name', function($data) {
                         try {
+                            $name = 'N/P';
                             // Query actions created by client (e.g. client-submitted items): show client name as assigner
                             if (isset($data->task_group) && (string) $data->task_group === 'Query' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
                                 $portalLabel = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
-                                return $portalLabel !== '' ? $portalLabel : 'N/P';
-                            }
-                            if ($data->noteStaff) {
+                                $name = $portalLabel !== '' ? $portalLabel : 'N/P';
+                            } elseif ($data->noteStaff) {
                                 $firstName = Utf8Helper::safeSanitize($data->noteStaff->first_name ?? '');
                                 $lastName = Utf8Helper::safeSanitize($data->noteStaff->last_name ?? '');
-                                return $firstName . ' ' . $lastName;
+                                $name = trim($firstName . ' ' . $lastName) ?: 'N/P';
                             }
-                            return 'N/P';
+                            return '<span class="action-assigner">'.e($name).'</span>';
                         } catch (\Exception $e) {
-                            return 'N/P';
+                            return '<span class="action-assigner">N/P</span>';
                         }
                     })
                     ->addColumn('client_reference', function($data) {
@@ -504,12 +505,13 @@ class AssigneeController extends Controller
                                 $matterRef = Utf8Helper::safeSanitize($data->matterReference() ?? '');
                                 $detailUrl = $data->clientDetailUrl() ?: url('/clients/detail/' . base64_encode(convert_uuencode($data->client_id)));
                                 $linkLabel = $matterRef !== '' ? $matterRef : $clientId;
-                                $client_name = $label;
-                                $client_name .= "<br>";
-                                $client_name .= '<a href="'.e($detailUrl).'" target="_blank">'.e($linkLabel).'</a>';
+                                $client_name = '<div class="action-client-cell">';
+                                $client_name .= '<span class="action-client-name">'.e($label).'</span>';
+                                $client_name .= '<a class="action-client-matter" href="'.e($detailUrl).'" target="_blank">'.e($linkLabel).'</a>';
                                 if ($matterRef !== '' && $clientId !== '') {
-                                    $client_name .= '<br><small class="text-muted">'.e($clientId).'</small>';
+                                    $client_name .= '<span class="action-client-id">'.e($clientId).'</span>';
                                 }
+                                $client_name .= '</div>';
                             } else {
                                 // Personal Action - no client assigned (theme: theme.md navy / page-bg tint)
                                 $client_name = '<span class="action-badge-personal">Personal Action</span>';
@@ -521,14 +523,17 @@ class AssigneeController extends Controller
                     })
                     ->addColumn('assign_date', function($data) {
                         try {
-                            return $data->action_date ? date('d/m/Y', strtotime($data->action_date)) : 'N/P';
+                            $date = $data->action_date ? date('d/m/Y', strtotime($data->action_date)) : 'N/P';
+                            return '<span class="action-date">'.e($date).'</span>';
                         } catch (\Exception $e) {
-                            return 'N/P';
+                            return '<span class="action-date">N/P</span>';
                         }
                     })
                     ->addColumn('task_group', function($data) {
                         try {
-                            return $data->task_group ? Utf8Helper::safeSanitize($data->task_group) : 'N/P';
+                            $group = $data->task_group ? Utf8Helper::safeSanitize($data->task_group) : 'N/P';
+                            $slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $group), '-'));
+                            return '<span class="action-type-badge action-type-'.e($slug).'">'.e($group).'</span>';
                         } catch (\Exception $e) {
                             return 'N/P';
                         }
@@ -545,9 +550,9 @@ class AssigneeController extends Controller
                                     $encoded_for_attr = $safe_display_text;
                                     // For display: use safe truncation with HTML encoding
                                     $truncated_desc = htmlspecialchars(Utf8Helper::safeTruncate($sanitized_description, 190, ''), ENT_QUOTES, 'UTF-8');
-                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button>';
+                                    $final_desc = '<div class="action-note">'.$truncated_desc.' <button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button></div>';
                                 } else {
-                                    $final_desc = $safe_display_text;
+                                    $final_desc = '<div class="action-note">'.$safe_display_text.'</div>';
                                 }
                             } else {
                                 $final_desc = "N/P";
@@ -581,19 +586,19 @@ class AssigneeController extends Controller
                             }
                             $clientLabel = htmlspecialchars(Utf8Helper::safeSanitize($clientLabelRaw), ENT_QUOTES, 'UTF-8');
                             if ($detailUrl) {
-                                $actionBtn .= '<a href="'.e($detailUrl).'" target="_blank" class="btn btn-info" title="Open matter"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></a> ';
+                                $actionBtn .= '<a href="'.e($detailUrl).'" target="_blank" class="btn btn-sm btn-info" title="Open matter"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></a>';
                             }
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" data-matterref="'.$matterRef.'" data-matterurl="'.$matterUrl.'" data-clientlabel="'.$clientLabel.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" data-matterref="'.$matterRef.'" data-matterurl="'.$matterUrl.'" data-clientlabel="'.$clientLabel.'" class="btn btn-sm btn-primary update_task" data-role="popover" title="Update task"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 
-                            return $actionBtn;
+                            return '<div class="action-row-btns">'.$actionBtn.'</div>';
                         } catch (\Exception $e) {
                             return '';
                         }
                     })
-                    ->rawColumns(['done_action', 'client_reference', 'note_description', 'action'])
+                    ->rawColumns(['done_action', 'assigner_name', 'client_reference', 'assign_date', 'task_group', 'note_description', 'action'])
                     // Define how to filter computed columns
                     ->filterColumn('assigner_name', function($query, $keyword) {
                         $keywordLower = strtolower($keyword);

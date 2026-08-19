@@ -2,651 +2,45 @@
 @include('components.require-datatables')
 @section('title', 'Action')
 
+@section('styles')
+<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
+<link rel="stylesheet" href="{{ asset('css/action-list.css') }}?v={{ @filemtime(public_path('css/action-list.css')) ?: time() }}">
+@endsection
+
 @section('content')
-<style>
-    /* Reset and base styles */
-    * { box-sizing: border-box; }
-    
-    /* Prevent horizontal overflow globally */
-    html, body {
-        overflow-x: hidden;
-        max-width: 100vw;
-    }
-    
-    /* Main content containers */
-    .main-content {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-    
-    .section {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-    
-    .section-body {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-    
-    /* Header styles — docs/theme.md (tokens from crm-theme.css :root) */
-    .client-header { 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        margin-bottom: 30px; 
-        padding: 20px 0; 
-        border-bottom: 2px solid var(--border, #c8dcef);
-        flex-wrap: wrap;
-        gap: 15px;
-        max-width: 100%;
-    }
-    
-    .client-header h1 { 
-        font-size: 2em; 
-        font-weight: 700; 
-        color: var(--navy, #1e3d60); 
-        margin: 0; 
-        word-wrap: break-word;
-    }
-    
-    .client-status {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        min-width: 0;
-    }
-    
-    /* Button styles */
-    .btn { 
-        padding: 10px 20px; 
-        border: none; 
-        border-radius: 8px; 
-        cursor: pointer; 
-        font-size: 0.9em; 
-        font-weight: 600; 
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    /* Add New Task button specific styling */
-    .add_my_task {
-        margin-right: 15px !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        min-width: auto !important;
-        max-width: none !important;
-        flex-shrink: 0 !important;
-        width: auto !important;
-    }
-    .add_my_task.add-my-task-header-btn {
-        padding: 12px 20px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    
-    .btn-primary { 
-        background-color: var(--navy, #1e3d60); 
-        color: #fff; 
-        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
-    }
-    
-    .btn-primary:hover { 
-        background-color: var(--sidebar-active, #3a6fa8); 
-        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.15);
-        transform: translateY(-1px);
-    }
-    
-    /* Tab styles */
-    .tabs { 
-        display: flex; 
-        gap: 8px; 
-        margin-bottom: 25px; 
-        flex-wrap: wrap;
-        max-width: 100%;
-        background-color: var(--sidebar-bg, #ddeaf8);
-        padding: 8px;
-        border-radius: 10px;
-        border: 1px solid var(--border, #c8dcef);
-    }
-    
-    .tab-button { 
-        padding: 12px 20px; 
-        border: 2px solid transparent; 
-        border-radius: 8px; 
-        background-color: var(--text-muted, #5e7a90); 
-        color: #fff; 
-        font-size: 0.9em; 
-        font-weight: 600; 
-        cursor: pointer; 
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .tab-button.active, .tab-button:hover { 
-        background-color: var(--sidebar-active, #3a6fa8); 
-        color: #fff !important;
-        border-color: var(--navy, #1e3d60);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.12);
-    }
-    
-    .tab-button .badge { 
-        background-color: #fff; 
-        color: var(--navy, #1e3d60); 
-        border-radius: 12px; 
-        padding: 4px 8px; 
-        margin-left: 8px; 
-        font-size: 0.75em; 
-        font-weight: 700;
-    }
-    
-    /* Search controls */
-    .header-controls {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-bottom: 25px;
-        flex-wrap: wrap;
-        gap: 15px;
-        max-width: 100%;
-        background-color: var(--page-bg, #f0f6ff);
-        padding: 15px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--border, #c8dcef);
-    }
-    
-    .search-bar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-shrink: 0;
-        min-width: 0;
-    }
-    
-    .search-bar label { 
-        font-size: 0.9em; 
-        color: var(--text-muted, #5e7a90); 
-        white-space: nowrap;
-        font-weight: 600;
-    }
-    
-    .search-bar input {
-        padding: 12px 16px;
-        border: 2px solid var(--border, #c8dcef);
-        border-radius: 8px;
-        font-size: 0.9em;
-        width: 250px;
-        max-width: 100%;
-        flex-shrink: 0;
-        transition: all 0.3s ease;
-        background-color: var(--card-bg, #fff);
-        color: var(--text-dark, #1a2c40);
-    }
-    
-    .search-bar input:focus {
-        outline: none;
-        border-color: var(--sidebar-active, #3a6fa8);
-        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
-    }
-    
-    /* Table container */
-    .table-responsive {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: auto;
-    }
-    
-    /* Table styles */
-    .table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-bottom: 20px; 
-        min-width: 800px; /* Ensure minimum width for readability */
-        background-color: var(--card-bg, #fff);
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-        border: 1px solid var(--border, #c8dcef);
-    }
-    
-    .table th, .table td { 
-        padding: 15px 12px; 
-        text-align: left; 
-        border-bottom: 1px solid var(--border, #c8dcef); 
-        font-size: 0.9em; 
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        vertical-align: middle;
-        white-space: normal;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .table th { 
-        background-color: var(--page-bg, #f0f6ff); 
-        font-weight: 700; 
-        color: var(--navy, #1e3d60); 
-        text-transform: uppercase; 
-        cursor: pointer;
-        letter-spacing: 0.5px;
-        font-size: 0.8em;
-    }
-    
-    .table tbody tr { 
-        transition: background-color 0.2s ease;
-    }
-    
-    .table tbody tr:hover { 
-        background-color: var(--sidebar-hover, #c8dcef); 
-    }
-    
-    .table tbody tr:nth-child(even) {
-        background-color: var(--card-bg, #fff);
-    }
-    
-    .table tbody tr:nth-child(even):hover {
-        background-color: var(--sidebar-hover, #c8dcef);
-    }
-    
-    .table tbody td {
-        color: var(--text-dark, #1a2c40) !important;
-    }
-    .table thead th {
-        color: var(--navy, #1e3d60) !important;
-    }
-    
-    /* Column width constraints to prevent overflow */
-    .table th:nth-child(1), .table td:nth-child(1) { 
-        width: 60px; 
-        min-width: 60px; 
-        max-width: 60px; 
-        text-align: center; /* Center align SNO column */
-    } /* Sno */
-    .table th:nth-child(2), .table td:nth-child(2) { width: 80px; min-width: 80px; max-width: 80px; } /* Done */
-    .table th:nth-child(3), .table td:nth-child(3) { width: 120px; min-width: 120px; max-width: 120px; } /* Assigner Name */
-    .table th:nth-child(4), .table td:nth-child(4) { width: 150px; min-width: 150px; max-width: 150px; } /* Client Reference */
-    .table th:nth-child(5), .table td:nth-child(5) { width: 100px; min-width: 100px; max-width: 100px; } /* Assign Date */
-    .table th:nth-child(6), .table td:nth-child(6) { width: 100px; min-width: 100px; max-width: 100px; } /* Type */
-    .table th:nth-child(7), .table td:nth-child(7) { width: 200px; min-width: 200px; } /* Note - flexible */
-    .table th:nth-child(8), .table td:nth-child(8) { width: 120px; min-width: 120px; max-width: 120px; } /* Action */
-    
-    /* Action buttons */
-    .action-buttons .btn { 
-        margin-right: 5px; 
-        margin-bottom: 3px;
-        font-size: 0.8em;
-        padding: 8px 12px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    
-    .action-buttons .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Pagination */
-    .pagination { 
-        display: flex; 
-        justify-content: flex-end; 
-        gap: 10px; 
-        margin-top: 20px; 
-        flex-wrap: wrap;
-    }
-    
-    .pagination a, .pagination span { 
-        padding: 8px 12px; 
-        border: 1px solid var(--border, #c8dcef); 
-        border-radius: 6px; 
-        font-size: 0.9em; 
-        text-decoration: none; 
-        color: var(--navy, #1e3d60); 
-    }
-    
-    .pagination a:hover { 
-        background-color: var(--sidebar-bg, #ddeaf8); 
-    }
-    
-    .pagination .active span { 
-        background-color: var(--sidebar-active, #3a6fa8); 
-        color: #fff; 
-        border-color: var(--sidebar-active, #3a6fa8); 
-    }
-    
-    /* DataTables customization — selectors cover DT 1.x (dataTables_*) and DT 2.x (dt-*) class names */
-    .dataTables_wrapper,
-    .dt-container {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-    
-    .dataTables_wrapper .dataTables_length,
-    .dt-container .dt-length { 
-        margin-bottom: 0; 
-    }
-    
-    .dataTables_wrapper .dataTables_filter,
-    .dt-container .dt-search { 
-        display: none; 
-    }
-    
-    #DataTables_Table_0_info,
-    .dt-info { 
-        margin-top: 20px; 
-    }
-    
-    .bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 25px;
-        flex-wrap: wrap;
-        gap: 15px;
-        max-width: 100%;
-        background-color: var(--page-bg, #f0f6ff);
-        padding: 15px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--border, #c8dcef);
-    }
-    
-    .dataTables_length,
-    .dt-length {
-        flex-shrink: 0;
-    }
-    
-    .dataTables_length select,
-    .dt-length select {
-        padding: 10px 15px;
-        border: 2px solid var(--border, #c8dcef);
-        border-radius: 8px;
-        font-size: 0.9em;
-        background-color: var(--card-bg, #fff);
-        color: var(--text-dark, #1a2c40);
-        transition: all 0.3s ease;
-    }
-    
-    .dataTables_length select:focus,
-    .dt-length select:focus {
-        outline: none;
-        border-color: var(--sidebar-active, #3a6fa8);
-        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
-    }
-    
-    .dataTables_length label,
-    .dt-length label {
-        font-size: 0.9em;
-        color: var(--text-muted, #5e7a90);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-        font-weight: 600;
-    }
-    
-    .dataTables_info,
-    .dt-info {
-        flex-grow: 1;
-        text-align: center;
-        font-size: 0.9em;
-        color: var(--text-muted, #5e7a90);
-        word-wrap: break-word;
-        font-weight: 500;
-    }
-    
-    /* Error messages */
-    .error-message {
-        color: var(--danger, #a83020);
-        font-size: 0.8em;
-        margin-top: 5px;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .client-header {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 15px 0;
-            margin-bottom: 20px;
-        }
-        
-        .client-header h1 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-        
-        .client-status {
-            width: 100%;
-            justify-content: flex-start;
-            gap: 8px;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            font-size: 0.8em;
-        }
-        
-        .tabs {
-            gap: 4px;
-            padding: 6px;
-            margin-bottom: 20px;
-        }
-        
-        .tab-button {
-            padding: 10px 16px;
-            font-size: 0.8em;
-        }
-        
-        .header-controls {
-            padding: 12px 15px;
-            margin-bottom: 20px;
-        }
-        
-        .search-bar {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        
-        .search-bar input {
-            width: 100%;
-            max-width: 300px;
-        }
-        
-        .table {
-            min-width: 600px;
-            font-size: 0.85em;
-        }
-        
-        .table th, .table td {
-            padding: 10px 8px;
-            font-size: 0.85em;
-        }
-        
-        .action-buttons .btn {
-            padding: 6px 10px;
-            font-size: 0.75em;
-            margin-right: 3px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .client-header h1 {
-            font-size: 1.3em;
-        }
-        
-        .tab-button {
-            padding: 8px 12px;
-            font-size: 0.75em;
-        }
-        
-        .table th, .table td {
-            padding: 8px 6px;
-            font-size: 0.8em;
-        }
-        
-        .action-buttons .btn {
-            padding: 5px 8px;
-            font-size: 0.7em;
-        }
-    }
-    
-    /* Hide horizontal scrollbar but keep functionality */
-    .table-responsive::-webkit-scrollbar {
-        height: 8px;
-    }
-    
-    .table-responsive::-webkit-scrollbar-track {
-        background: var(--sidebar-bg, #ddeaf8);
-        border-radius: 4px;
-    }
-    
-    .table-responsive::-webkit-scrollbar-thumb {
-        background: var(--border, #c8dcef);
-        border-radius: 4px;
-    }
-    
-    .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: var(--text-muted, #5e7a90);
-    }
-
-    /* Complete Task modal: #completionNotesModal — see public/css/crm-theme.css */
-
-    /* Client column — Personal Action label (replaces Bootstrap badge-info) */
-    .action-badge-personal {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 8px;
-        background: rgba(30, 61, 96, 0.1);
-        color: var(--navy, #1e3d60);
-        font-weight: 600;
-        font-size: 0.8rem;
-        border: 1px solid var(--border, #c8dcef);
-    }
-
-    /* DataTables pagination — DT 1.x + DT 2.x selectors (dataTables_paginate / dt-paging) */
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link,
-    .assignee-action-page .dt-container .dt-paging .pagination .page-link {
-        color: var(--navy, #1e3d60) !important;
-        background-color: var(--card-bg, #ffffff) !important;
-        border-color: var(--border, #c8dcef) !important;
-        box-shadow: none !important;
-    }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button:not(.active):not(.disabled) .page-link:hover {
-        color: var(--navy, #1e3d60) !important;
-        background-color: var(--sidebar-hover, #c8dcef) !important;
-        border-color: var(--border, #c8dcef) !important;
-    }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible,
-    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus,
-    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus-visible {
-        color: var(--navy, #1e3d60) !important;
-        background-color: var(--card-bg, #ffffff) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        outline: none !important;
-        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.22) !important;
-    }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link {
-        color: #fff !important;
-        background-color: var(--sidebar-active, #3a6fa8) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-    }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:hover,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus-visible,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:hover,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:hover,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:focus {
-        color: #fff !important;
-        background-color: var(--sidebar-active, #3a6fa8) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        box-shadow: none !important;
-    }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link,
-    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link:hover {
-        color: var(--text-muted, #5e7a90) !important;
-        background-color: var(--card-bg, #ffffff) !important;
-        border-color: var(--border, #c8dcef) !important;
-        box-shadow: none !important;
-        opacity: 0.85;
-    }
-
-    /* Action column — compact square edit (global .btn padding no longer applies) */
-    .assignee-action-page .yajra-datatable .table th:nth-child(8),
-    .assignee-action-page .yajra-datatable .table td:nth-child(8) {
-        text-align: center !important;
-        vertical-align: middle !important;
-        padding: 10px 8px !important;
-    }
-    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task {
-        background-color: var(--navy, #1e3d60) !important;
-        border: 1px solid var(--navy, #1e3d60) !important;
-        color: #fff !important;
-        background-image: none !important;
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
-        max-width: 36px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-        border-radius: 8px !important;
-        box-sizing: border-box !important;
-    }
-    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task:hover,
-    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task:focus {
-        background-color: var(--sidebar-active, #3a6fa8) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        color: #fff !important;
-        box-shadow: 0 2px 6px rgba(30, 61, 96, 0.18) !important;
-    }
-    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task i {
-        color: #fff !important;
-        font-size: 14px !important;
-        line-height: 1 !important;
-    }
-</style>
-
-<!-- Main Content -->
-<div class="main-content assignee-action-page">
-    <section class="section" style="padding-top: 70px;">
-        <div class="section-body">
+<div class="listing-container assignee-action-page">
+    <section class="listing-section">
+        <div class="listing-section-body">
             <div class="server-error">
                 @include('../Elements/flash-message')
             </div>
             <div class="custom-error-msg"></div>
 
-            <div class="client-header">
-                <h1>Action</h1>
-                <div class="client-status" style="margin-right: 50px;">
-                    <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
-                    <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/action_completed')}}">Completed</a>
+            <div class="card">
+                <div class="card-header">
+                    <div class="action-page-header">
+                        <div class="action-page-header__title">
+                            <span class="action-page-header__icon" aria-hidden="true">
+                                <i class="fa-solid fa-list-check"></i>
+                            </span>
+                            <div>
+                                <h4>Action</h4>
+                                <p class="action-page-header__subtitle">Open tasks — complete, update, or open the matter</p>
+                            </div>
+                        </div>
+                        <div class="card-header-actions">
+                            <div class="per-page-wrap">
+                                <label for="actionPageLength">Show</label>
+                                <select id="actionPageLength" class="form-control per-page-select" aria-label="Results per page">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <a class="btn btn-outline-navy" id="assigned_by_me" href="{{ URL::to('/assigned_by_me') }}">Assigned by me</a>
+                            <a class="btn btn-outline-navy" id="archived-tab" href="{{ URL::to('/action_completed') }}">Completed</a>
                     {{-- Popover body from <template> (data-content attribute breaks on staff names with quotes / long HTML) --}}
                     <template id="action-add-task-popover-template">
                         <div class="modern-popover-content add-task-layout">
@@ -704,50 +98,50 @@
                     </template>
                     {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Tom Select. --}}
                     {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Tom Select without dropdownParent). --}}
-                    <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
-                        <i class="fa-solid fa-plus"></i> Add My Task
-                    </button>
+                            <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
+                                <i class="fa-solid fa-plus"></i> Add My Task
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Tabs (Filters) -->
-            <div class="tabs">
-                <button class="tab-button active" data-filter="all">ALL <span class="badge" id="all-count">0</span></button>
-                <button class="tab-button" data-filter="call">Call <span class="badge" id="call-count">0</span></button>
-                <button class="tab-button" data-filter="checklist">Checklist <span class="badge" id="checklist-count">0</span></button>
-                <button class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
-                <button class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
-                <button class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
-                <button class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
-                <button class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
-            </div>
+                <div class="card-body">
+                    <div class="action-toolbar">
+                        <div class="tabs">
+                            <button type="button" class="tab-button active" data-filter="all">All <span class="badge" id="all-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="call">Call <span class="badge" id="call-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="checklist">Checklist <span class="badge" id="checklist-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
+                        </div>
+                        <div class="action-search">
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                            <input type="text" id="searchInput" placeholder="Search tasks..." aria-label="Search tasks">
+                        </div>
+                    </div>
 
-            <!-- Header Controls (Only Search Bar) -->
-            <div class="header-controls">
-                <div class="search-bar">
-                    <label for="searchInput">Search:</label>
-                    <input type="text" id="searchInput" placeholder="Search tasks...">
+                    <div class="table-responsive">
+                        <table class="table yajra-datatable">
+                            <thead>
+                                <tr>
+                                    <th data-column="DT_RowIndex">#</th>
+                                    <th data-column="done">Done</th>
+                                    <th data-column="assigner_name">Assigner</th>
+                                    <th data-column="client_reference">Client / Matter</th>
+                                    <th data-column="assign_date">Date</th>
+                                    <th data-column="task_group">Type</th>
+                                    <th data-column="note_description">Note</th>
+                                    <th data-column="action">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Table -->
-            <div class="table-responsive">
-                <table class="table yajra-datatable">
-                    <thead>
-                        <tr>
-                            <th data-column="DT_RowIndex">Sno</th>
-                            <th data-column="done">Done</th>
-                            <th data-column="assigner_name">Assigner Name</th>
-                            <th data-column="client_reference">Client Reference</th>
-                            <th data-column="assign_date">Assign Date</th>
-                            <th data-column="task_group">Type</th>
-                            <th data-column="note_description">Note</th>
-                            <th data-column="action">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
             </div>
         </div>
     </section>
@@ -1442,6 +836,19 @@ $(function () {
         $(this).popover(popoverOpts);
     });
 
+    if ($.fn.DataTable && $.fn.DataTable.ext && $.fn.DataTable.ext.pager) {
+        $.fn.DataTable.ext.pager._numbers = function(page, pages) {
+            var i, items = [];
+            if (pages <= 5) {
+                for (i = 0; i < pages; i++) {
+                    items.push(i);
+                }
+                return items;
+            }
+            return [0, 1, 2, 'ellipsis', pages - 2, pages - 1];
+        };
+    }
+
     var table = ($.fn.DataTable && $('.yajra-datatable').length)
         ? $('.yajra-datatable').DataTable({
         processing: true,
@@ -1480,7 +887,13 @@ $(function () {
             {data: 'note_description', name: 'note_description', orderable: true, searchable: true},
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
-        "drawCallback": function() {
+        drawCallback: function() {
+            $('.assignee-action-page .dt-container .dt-layout-row').each(function() {
+                if ($(this).find('.dt-paging, .dt-info').length) {
+                    $(this).addClass('action-dt-footer');
+                }
+            });
+
             // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
             $('[data-bs-toggle="popover"]').not('.update_task').not('.add_my_task').popover({
                 html: true,
@@ -1494,15 +907,42 @@ $(function () {
             // Update badge counts
             updateBadgeCounts();
         },
-        "scrollX": true,
-        "scrollCollapse": true,
-        "dom": 'rt<"bottom"lip><"clear">', // Move length menu (l) to bottom with info (i) and pagination (p)
-        "pageLength": 10,
-        "lengthMenu": [10, 25, 50, 100], // Options for entries dropdown
-        "order": [[4, 'desc']], // Default sorting by assign_date descending
-        "responsive": false,
-        "autoWidth": false
+        layout: {
+            topStart: null,
+            topEnd: null,
+            bottomStart: 'info',
+            bottomEnd: {
+                paging: {
+                    type: 'simple_numbers',
+                    buttons: 5,
+                    boundaryNumbers: false
+                }
+            }
+        },
+        paging: true,
+        lengthChange: false,
+        pageLength: 10,
+        order: [[4, 'desc']],
+        responsive: false,
+        autoWidth: false,
+        language: {
+            info: 'Showing _START_–_END_ of _TOTAL_ entries',
+            infoEmpty: 'Showing 0–0 of 0 entries',
+            infoFiltered: '(filtered from _MAX_ total entries)',
+            paginate: {
+                previous: '«',
+                next: '»'
+            },
+            emptyTable: 'No open actions found',
+            zeroRecords: 'No matching actions found'
+        }
     }) : null;
+
+    $('#actionPageLength').on('change', function() {
+        if (table) {
+            table.page.len(parseInt($(this).val(), 10) || 10).draw();
+        }
+    });
 
     // Search functionality
     $('#searchInput').on('keyup', function() {
