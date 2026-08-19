@@ -355,4 +355,169 @@ class SecurityBugFixes14Test extends TestCase
         $appointment->refresh();
         $this->assertEquals('confirmed', $appointment->status);
     }
+
+    /** @test */
+    public function test_14_15_sync_updates_payment_and_status_for_existing_appointments()
+    {
+        $client = \App\Models\Admin::create([
+            'first_name' => 'Sync',
+            'last_name' => 'Tester',
+            'email' => 'sync_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+        ]);
+
+        $bansalId = 9990000 + mt_rand(1, 99999);
+        $appointment = \App\Models\BookingAppointment::create([
+            'bansal_appointment_id' => $bansalId,
+            'client_id' => $client->id,
+            'client_name' => 'Sync Tester',
+            'client_email' => $client->email,
+            'appointment_datetime' => '2026-12-01 10:00:00',
+            'location' => 'melbourne',
+            'amount' => 150.00,
+            'final_amount' => 150.00,
+            'service_id' => 1,
+            'noe_id' => 1,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'is_paid' => false,
+        ]);
+
+        // Mock BansalApiClient to return updated payment and confirmed status for this appointment
+        $mockApiClient = $this->createMock(\App\Services\BansalAppointmentSync\BansalApiClient::class);
+        $mockApiClient->method('getRecentAppointments')->willReturn([
+            [
+                'id' => $bansalId,
+                'full_name' => 'Sync Tester',
+                'email' => $client->email,
+                'status' => 'confirmed',
+                'is_paid' => true,
+                'payment' => [
+                    'status' => 'completed',
+                    'payment_method' => 'stripe',
+                    'paid_at' => '2026-12-01 09:00:00',
+                ],
+                'amount' => 150.00,
+                'final_amount' => 150.00,
+                'service_id' => 1,
+                'noe_id' => 1,
+                'appointment_datetime' => '2026-12-01 10:00:00',
+            ],
+        ]);
+
+        $syncService = new \App\Services\BansalAppointmentSync\AppointmentSyncService(
+            $mockApiClient,
+            app(\App\Services\BansalAppointmentSync\ClientMatchingService::class),
+            app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class)
+        );
+
+        $stats = $syncService->syncRecentAppointments(10);
+        $this->assertEquals(1, $stats['updated']);
+
+        $appointment->refresh();
+        $this->assertTrue((bool) $appointment->is_paid);
+        $this->assertEquals('completed', $appointment->payment_status);
+        $this->assertEquals('confirmed', $appointment->status);
+        $this->assertEquals('stripe', $appointment->payment_method);
+        $this->assertNotNull($appointment->paid_at);
+        $this->assertEquals('synced', $appointment->sync_status);
+    }
+
+    /** @test */
+    public function test_14_16_front_desk_checkin_enforces_today_appointment()
+    {
+        $staff = \App\Models\Staff::create([
+            'first_name' => 'Reception',
+            'last_name' => 'Staff',
+            'email' => 'reception_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'role' => null,
+            'office_id' => null,
+        ]);
+
+        $client = \App\Models\Admin::create([
+            'first_name' => 'Visitor',
+            'last_name' => 'Client',
+            'email' => 'visitor_' . uniqid() . '@example.com',
+            'phone' => '0412345678',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+        ]);
+
+        // Future appointment (tomorrow)
+        $futureAppt = \App\Models\BookingAppointment::create([
+            'bansal_appointment_id' => 9990000 + mt_rand(1, 99999),
+            'client_id' => $client->id,
+            'client_name' => 'Visitor Client',
+            'client_email' => $client->email,
+            'appointment_datetime' => now()->addDays(2),
+            'location' => 'melbourne',
+            'amount' => 150.00,
+            'final_amount' => 150.00,
+            'service_id' => 1,
+            'noe_id' => 1,
+            'status' => 'confirmed',
+            'payment_status' => 'completed',
+            'is_paid' => true,
+        ]);
+
+        \Illuminate\Support\Facades\Auth::guard('admin')->login($staff);
+        config(['crm_access.exempt_staff_ids' => [$staff->id]]);
+
+        $controller = app(\App\Http\Controllers\CRM\FrontDeskCheckInController::class);
+
+        // Submitting with future appointment ID should be rejected with 422
+        $request = new Request([
+            'phone' => '0412345678',
+            'email' => $client->email,
+            'admin_id' => $client->id,
+            'admin_type' => 'client',
+            'appointment_id' => $futureAppt->id,
+            'claimed_appointment' => true,
+            'visit_reason' => 'appointment_followup',
+        ]);
+
+        $response = $controller->submit($request);
+        $this->assertNotNull($response);
+        $this->assertEquals(422, $response->getStatusCode());
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertFalse($responseData['success']);
+        $this->assertStringContainsString('not scheduled for today', $responseData['message']);
+
+        // Today appointment should be accepted
+        $todayAppt = \App\Models\BookingAppointment::create([
+            'bansal_appointment_id' => 9990000 + mt_rand(1, 99999),
+            'client_id' => $client->id,
+            'client_name' => 'Visitor Client',
+            'client_email' => $client->email,
+            'appointment_datetime' => now()->setTime(14, 0),
+            'location' => 'melbourne',
+            'amount' => 150.00,
+            'final_amount' => 150.00,
+            'service_id' => 1,
+            'noe_id' => 1,
+            'status' => 'confirmed',
+            'payment_status' => 'completed',
+            'is_paid' => true,
+        ]);
+
+        $validRequest = new Request([
+            'phone' => '0412345678',
+            'email' => $client->email,
+            'admin_id' => $client->id,
+            'admin_type' => 'client',
+            'appointment_id' => $todayAppt->id,
+            'claimed_appointment' => true,
+            'visit_reason' => 'appointment_followup',
+        ]);
+
+        $validResponse = $controller->submit($validRequest);
+        $this->assertNotNull($validResponse);
+        $this->assertEquals(200, $validResponse->getStatusCode());
+        $validData = json_decode($validResponse->getContent(), true);
+        $this->assertTrue($validData['success']);
+    }
 }

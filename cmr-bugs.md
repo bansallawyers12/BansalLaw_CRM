@@ -805,10 +805,14 @@ Status key (2026-08-07):
 - **Now:** Only staff members can set an appointment's status to `completed`. If a client account attempts to mark an appointment as `completed` (via `BookingAppointmentsController::updateStatus` or `PublicBookingController::updateAppointmentStatus`), the action is rejected with HTTP 403 (`Clients cannot complete appointments. Appointment completion must be confirmed by staff.`). Clients are restricted to cancellations.
 
 ### 14.15 Medium — Sync skip-on-existing never updates payment/status from website
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `AppointmentSyncService::processAppointment`, `SecurityBugFixes14Test`
+- **Now:** When polling or backfilling appointments via `AppointmentSyncService::processAppointment`, existing local records (`where('bansal_appointment_id', $bansalId)`) are actively synchronized with remote status changes, payment completion statuses (`payment_status`, `is_paid`, `payment_method`, `paid_at`), and transaction amounts/promo codes, correctly transitioning terminal status timestamps and advancing sync tracking without silently skipping updates.
 
 ### 14.16 Medium — Front-desk submit does not enforce “today” on appointment
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `FrontDeskCheckInController::submit`, `SecurityBugFixes14Test`
+- **Now:** When submitting a front-desk check-in (`FrontDeskCheckInController::submit`), if an `appointment_id` is passed, the controller strictly validates that the appointment exists, belongs to the matched visitor, and is scheduled for today in the office timezone (`config('app.timezone')`). If an appointment from another date or another client is submitted, the request is rejected with HTTP 422 (`The selected appointment is not scheduled for today` or `The selected appointment does not belong to this visitor`).
 
 ### 14.17 Medium — Stored XSS in office-visit detail HTML
 - **Status:** Open\*
