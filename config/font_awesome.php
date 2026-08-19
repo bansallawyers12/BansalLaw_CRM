@@ -24,8 +24,7 @@ return [
     | Icon names renamed or removed in FA6+ (legacy name => current name)
     |--------------------------------------------------------------------------
     |
-    | Applied by FontAwesomeHelper::iconName() / migrateClasses() and the
-    | fontawesome:migrate-db-icons artisan command.
+    | Applied by FontAwesomeHelper::iconName() / migrateClasses().
     |
     */
     'icon_renames' => [

@@ -18,8 +18,6 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\InPersonCompleteTaskRemoval',
         '\App\Console\Commands\ProcessServiceAccountTokens',
-        '\App\Console\Commands\MigrateSecondDatabase',
-        '\App\Console\Commands\CleanUtf8Data',
         
         // Appointment Sync System Commands
         '\App\Console\Commands\SyncBansalAppointments',
@@ -32,14 +30,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\ArchiveOldDrafts',
         '\App\Console\Commands\SendSignatureReminders',
         
-        // SQL Migration Tools
-        //'\App\Console\Commands\FixMySqlDumpForPostgres', // Command file does not exist
-        //'\App\Console\Commands\FixRemainingSqlIssues', // Command file does not exist
-        
-        // Login Data Import
-        '\App\Console\Commands\ImportLoginDataFromMySQL',
-        '\App\Console\Commands\ImportReferenceMasterData',
-        
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
         
@@ -49,11 +39,6 @@ class Kernel extends ConsoleKernel
         // Activity Cleanup Commands
         '\App\Console\Commands\CleanupActivityDescriptions',
         
-        // Database Comparison
-        '\App\Console\Commands\CompareDatabaseTables',
-        '\App\Console\Commands\CheckMigrationTablesExist',
-        '\App\Console\Commands\MarkMigrationsAsRunCommand',
-
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
 
@@ -62,9 +47,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\SyncInboxEmails',
         '\App\Console\Commands\PurgeUnassignedSyncedEmails',
         '\App\Console\Commands\PruneEmailOpsLogs',
-
-        // Font Awesome FA6 migration (one-time DB icon class updates)
-        '\App\Console\Commands\MigrateFontAwesomeDbIcons',
     ];
 
     /**

@@ -57,7 +57,7 @@ class PythonService
             return $response->json();
         } catch (Exception $e) {
             return [
-                'service' => 'Migration Manager Python Services',
+                'service' => 'CRM Python Services',
                 'status' => 'unavailable',
                 'error' => $e->getMessage()
             ];

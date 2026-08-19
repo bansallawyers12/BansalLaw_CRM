@@ -263,7 +263,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **gst_no** | Empty | **Used:** My Profile, AdminConsole user create/edit; `ClientController` (adminconsole) saves it. | 🗑️ **Marked for deletion** (legacy) |
 | **is_business_gst** | Empty | **Used:** `CRMUtilityController` saves it; return setting view (GST Yes/No). | 🗑️ **Marked for deletion** (legacy) |
 | **gstin** | Empty | **Used:** `CRMUtilityController` saves it; return setting view (GSTIN field). | 🗑️ **Marked for deletion** (legacy) |
-| **gst_date** | Empty | **Used:** `CRMUtilityController` saves it; return setting view; import command date list. | 🗑️ **Marked for deletion** (legacy) |
+| **gst_date** | Empty | **Used:** `CRMUtilityController` saves it; return setting view. | 🗑️ **Marked for deletion** (legacy) |
 | **smtp_host** | Empty | In `Admin::$fillable` only. SMTP in use comes from **`emails`** table / `Email` model, not `admins`. | ✅ Yes |
 | **smtp_port** | Empty | Same as smtp_host – app uses `emails` table for SMTP. | ✅ Yes |
 | **smtp_enc** | Empty | Same as smtp_host – app uses `emails` table for SMTP. | ✅ Yes |
@@ -381,10 +381,9 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 2. Remove GST logic from `CRMUtilityController` (is_business_gst, gstin, gst_date)
 3. Remove `company_fax` from `CRMUtilityController`, AdminConsole view, My Profile
 4. Remove `business_fax` from AdminConsole user view, ClientsController export, `AgentDetails` model
-5. Remove `gst_date` from `ImportLoginDataFromMySQL` command dateFields array
-6. Remove columns from `Admin::$fillable` and `AgentDetails`
-7. Create migration to drop: `gst_no`, `is_business_gst`, `gstin`, `gst_date`, `company_fax`, `business_fax`
-8. Test; deploy
+5. Remove columns from `Admin::$fillable` and `AgentDetails`
+6. Create migration to drop: `gst_no`, `is_business_gst`, `gstin`, `gst_date`, `company_fax`, `business_fax`
+7. Test; deploy
 
 ---
 

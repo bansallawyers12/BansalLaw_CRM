@@ -724,7 +724,6 @@ Configured in `config/auth.php`:
 | `admin` | session | `staff` | `App\Models\Staff` | **CRM web login** (`/login`) |
 | `web` | session | `admins` | `App\Models\Admin` | Legacy admin provider |
 | `api` | sanctum | `admins` | `App\Models\Admin` | API token auth |
-| `provider` | session | `providers` | `App\Provider` | External provider portal |
 
 Default guard: `admin`
 

@@ -95,17 +95,6 @@ class Staff extends Authenticatable
     ];
 
     /**
-     * Legacy attribute name for solicitor flag; persists to column `is_solicitor`.
-     */
-    protected function isMigrationAgent(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => (int) ($this->attributes['is_solicitor'] ?? 0),
-            set: fn ($value) => ['is_solicitor' => ((bool) $value) ? 1 : 0],
-        );
-    }
-
-    /**
      * Store and return email signatures as real HTML, not escaped source.
      */
     protected function emailSignature(): Attribute

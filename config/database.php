@@ -54,21 +54,6 @@ return [
             'engine' => null,
         ],
 
-        'mysql_source' => [
-            'driver' => 'mysql',
-            'host' => env('MYSQL_SOURCE_HOST', '127.0.0.1'),
-            'port' => env('MYSQL_SOURCE_PORT', '3306'),
-            'database' => env('MYSQL_SOURCE_DATABASE', ''),
-            'username' => env('MYSQL_SOURCE_USERNAME', 'root'),
-            'password' => env('MYSQL_SOURCE_PASSWORD', ''),
-            'unix_socket' => env('MYSQL_SOURCE_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'strict' => false,
-            'engine' => null,
-        ],
-
         'pgsql' => [
             'driver' => 'pgsql',
             'host' => env('DB_HOST', '127.0.0.1'),
@@ -91,28 +76,6 @@ return [
                 PDO::ATTR_TIMEOUT => env('DB_TIMEOUT', 10), // Connection timeout in seconds
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Always throw exceptions
             ] : [],
-        ],
-
-        /*
-        |--------------------------------------------------------------------------
-        | Reference PostgreSQL (e.g. local Migration Manager CRM)
-        |--------------------------------------------------------------------------
-        |
-        | Read-only source for importing master data (user_roles, branches, etc.)
-        | into the default database. Configure PG_REFERENCE_* in .env.
-        |
-        */
-        'pgsql_reference' => [
-            'driver' => 'pgsql',
-            'host' => env('PG_REFERENCE_HOST', '127.0.0.1'),
-            'port' => env('PG_REFERENCE_PORT', env('DB_PORT', '5432')),
-            'database' => env('PG_REFERENCE_DATABASE', ''),
-            'username' => env('PG_REFERENCE_USERNAME', env('DB_USERNAME', 'forge')),
-            'password' => env('PG_REFERENCE_PASSWORD', env('DB_PASSWORD', '')),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'schema' => env('PG_REFERENCE_SCHEMA', 'public'),
-            'sslmode' => env('PG_REFERENCE_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [

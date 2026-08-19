@@ -19,7 +19,6 @@ Country.php
 Document.php
 DocumentChecklist.php
 Email.php
-EmailAccount.php
 EmailDraft.php
 EmailRecord.php
 EmailSignature.php

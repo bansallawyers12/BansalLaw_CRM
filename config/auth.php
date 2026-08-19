@@ -57,10 +57,6 @@ return [
             'driver' => 'session',
             'provider' => 'staff',  // CRM login uses staff table
         ],
-		'provider' => [
-            'driver' => 'session',
-            'provider' => 'providers',
-        ],
     ],
 
     /*
@@ -93,10 +89,6 @@ return [
 		'staff' => [
             'driver' => 'eloquent',
             'model' => App\Models\Staff::class,
-        ],
-		'providers' => [
-            'driver' => 'eloquent',
-            'model' => App\Provider::class,
         ],
     ],
 
@@ -131,11 +123,6 @@ return [
             'provider' => 'staff',
             'table' => 'password_reset_tokens',
             'expire' => 15,
-        ],
-		'providers' => [
-            'provider' => 'providers',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
         ],
     ],
 

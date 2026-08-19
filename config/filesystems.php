@@ -27,12 +27,6 @@ $s3LocalDisk = [
     'throw' => false,
 ];
 
-$s3EmailsLocalDisk = [
-    'driver' => 'local',
-    'root' => storage_path('app/s3-emails-local'),
-    'throw' => false,
-];
-
 return [
 
     /*
@@ -92,8 +86,6 @@ return [
             'root'   => public_path() . '/invoices',
         ],
         's3' => $s3Configured ? $s3AwsDisk : $s3LocalDisk,
-
-        's3-emails' => $s3Configured ? $s3AwsDisk : $s3EmailsLocalDisk,
 
     ],
 

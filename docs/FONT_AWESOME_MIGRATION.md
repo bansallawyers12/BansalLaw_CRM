@@ -88,21 +88,12 @@ FontAwesomeHelper::iconName('clock-o'); // 'clock'
 
 `email_labels.icon` stores FA class strings. The seed migration already uses FA6+ (`fa-solid fa-inbox`, etc.).
 
-For environments seeded earlier with `fas fa-*`:
-
-```bash
-php artisan fontawesome:migrate-db-icons --dry-run
-php artisan fontawesome:migrate-db-icons --force
-```
-
-Or run the data migration:
+For environments seeded earlier with `fas fa-*`, the idempotent data migration is:
 
 ```bash
 php artisan migrate
 # database/migrations/2026_07_09_140000_migrate_email_label_icons_to_fa6.php
 ```
-
-Both are idempotent.
 
 ## Verification
 

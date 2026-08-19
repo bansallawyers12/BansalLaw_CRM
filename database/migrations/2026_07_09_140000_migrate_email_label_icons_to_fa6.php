@@ -3,12 +3,8 @@
 /**
  * One-time data migration: update stored FA4/5 icon class strings to FA6.
  *
- * Prefer the artisan command (idempotent, uses FontAwesomeHelper):
- *   php artisan fontawesome:migrate-db-icons
- *   php artisan fontawesome:migrate-db-icons --dry-run
- *
- * This migration is safe to run on environments that already have FA6 seed
- * values — rows that do not need changes are left alone.
+ * Safe to run on environments that already have FA6 seed values — rows that
+ * do not need changes are left alone.
  */
 
 use App\Helpers\FontAwesomeHelper;
