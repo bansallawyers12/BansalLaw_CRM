@@ -770,23 +770,29 @@ Status key (2026-08-07):
 - **Now:** All fee transfer sum calculations across `ClientAccountsController` and `FinancialStatsService` consistently filter out both `void_fee_transfer = 1` and `trust_voided_at IS NOT NULL` when calculating invoice payment totals, balances, and statuses.
 
 ### 14.8 Medium — Period lock uses strict `d/m/Y`; bad dates can bypass lock check
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `TrustPeriodService::assertTransDateUnlocked`, `TrustPeriodService::isLockedForRow`, `SecurityBugFixes14Test`
+- **Now:** `TrustPeriodService::assertTransDateUnlocked` robustly handles both hyphenated formats (`YYYY-MM-DD`, `DD-MM-YYYY`) and slash formats (`DD/MM/YYYY`, `YYYY/MM/DD`). Any malformed or unparseable date strings immediately throw a `RuntimeException` with `'Invalid transaction date format'` instead of silently bypassing period lock validation.
 
 ### 14.9 Critical — Unauthenticated booking API accepts `is_paid` / `payment_status=completed`
-- **Status:** Partial
-- **Files:** `LeadBookingApiController::storeBookingAppointment`
-- **Now:** Unauthenticated callers force `is_paid=false`, `payment_status=pending`, and demote `status=paid` → `pending`. Authenticated admin callers can still set paid fields — confirm that is intentional.
+- **Status:** Fixed
+- **Files:** `LeadBookingApiController::storeBookingAppointment`, `SecurityBugFixes14Test`
+- **Now:** Unauthenticated callers to `/api/booking-appointments` strictly force `is_paid = false`, `payment_status = 'pending'`, `paid_at = null`, and demote `status = 'paid'` to `'pending'`, evaluated after all payload mappings. Authenticated staff/admins can still set paid fields directly.
 
 ### 14.10 High — Paid bookings created with `is_paid = true` before payment
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::addAppointmentBook`, `PublicBookingController::addAppointmentWithoutLogin`, `PublicBookingController::addAppointment`, `SecurityBugFixes14Test`
+- **Now:** Paid bookings (`serviceId != 2` / non-free consultations) are created with `is_paid = false`, `payment_status = 'pending'`, and `status = 'pending'`. Only upon verified completion of payment checkout (or explicit admin payment completion) is `is_paid` set to `true`, `payment_status = 'completed'`, and `status = 'paid'`. Free appointments (`serviceId == 2`) remain `is_paid = false` with `status = 'confirmed'`.
 
 ### 14.11 High — `recordPaymentByIntent` weak ownership when metadata empty
-- **Status:** Open
-- **Files:** `StripePaymentService::recordPaymentByIntent`
-- **Now:** Amount + AUD currency checked; metadata appointment match only enforced when metadata present. Empty metadata + matching cents can still attach a succeeded PI to another unpaid appointment.
+- **Status:** Fixed
+- **Files:** `StripePaymentService::recordPaymentByIntent`, `SecurityBugFixes14Test`
+- **Now:** Enforces multi-layer ownership validation. If `appointment_id` is present in metadata, it must match the target appointment. If `appointment_id` metadata is missing, it verifies client ownership via `metadata.client_id`, `metadata.client_email`, or Stripe customer/receipt billing email matching the target appointment's client before allowing the payment intent to attach.
 
 ### 14.12 High — Logged-in booking ignores Bansal slot-unavailable and still creates locally
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `ClientsController::addAppointmentBook`, `SecurityBugFixes14Test`
+- **Now:** When booking an appointment via `ClientsController::addAppointmentBook`, if the Bansal API reports that the time slot is unavailable, already booked, or taken, the request is immediately rejected with HTTP 422 (`The selected time slot is not available. Please choose a different time slot.`) and creation of a local database record is prevented. Only general network/API timeouts allow temporary ID creation.
 
 ### 14.13 Medium — Duplicate-slot check is per-client only (race + multi-client)
 - **Status:** Open\*
