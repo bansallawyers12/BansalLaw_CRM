@@ -1,6 +1,10 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Bookings')
 
+@section('styles')
+<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
+@endsection
+
 @section('content')
 
 <style>
@@ -297,59 +301,6 @@
     color: var(--navy);
 }
 
-/* Pagination — docs/theme.md (outline + primary); crm-theme.css sets BS pagination variables */
-.booking-appointments-page #appointments-pagination p.text-muted,
-.booking-appointments-page #appointments-pagination .text-muted {
-    color: var(--text-muted) !important;
-}
-
-.booking-appointments-page #appointments-pagination .pagination {
-    gap: 0.25rem;
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-link {
-    box-shadow: none;
-    color: var(--navy);
-    background-color: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-link:hover {
-    color: var(--navy);
-    background-color: var(--sidebar-bg);
-    border-color: var(--border);
-    box-shadow: none;
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-link:focus {
-    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.2);
-    color: var(--navy);
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link {
-    background-color: var(--navy);
-    border-color: var(--navy);
-    color: #fff;
-    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link:hover,
-.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link:focus {
-    background-color: var(--sidebar-active);
-    border-color: var(--sidebar-active);
-    color: #fff;
-}
-
-.booking-appointments-page #appointments-pagination .pagination .page-item.disabled .page-link {
-    color: var(--text-muted);
-    background-color: var(--page-bg);
-    border-color: var(--border);
-    opacity: 0.55;
-    pointer-events: none;
-    box-shadow: none;
-}
 </style>
 
 <div class="section-body booking-appointments-page">
@@ -537,7 +488,7 @@
                         </table>
                     </div>
 
-                    <div id="appointments-pagination" class="mt-3"></div>
+                    <div id="appointments-pagination" class="listing-container"></div>
 
                     <!-- Edit Date & Time Modal -->
                     <div class="modal fade" id="editDatetimeModal" tabindex="-1" role="dialog" aria-labelledby="editDatetimeModalLabel" aria-hidden="true">
@@ -717,6 +668,24 @@ function buildAppointmentRowHtml(row) {
     );
 }
 
+function buildCompactAppointmentPageItems(lastPage) {
+    if (lastPage <= 5) {
+        const items = [];
+        for (let page = 1; page <= lastPage; page++) {
+            items.push({ type: 'page', page: page });
+        }
+        return items;
+    }
+    return [
+        { type: 'page', page: 1 },
+        { type: 'page', page: 2 },
+        { type: 'page', page: 3 },
+        { type: 'dots' },
+        { type: 'page', page: lastPage - 1 },
+        { type: 'page', page: lastPage },
+    ];
+}
+
 function renderAppointmentsPagination(meta) {
     const $wrap = $('#appointments-pagination');
     $wrap.empty();
@@ -728,27 +697,33 @@ function renderAppointmentsPagination(meta) {
     const from = meta.from != null ? meta.from : 0;
     const to = meta.to != null ? meta.to : 0;
     const total = meta.total != null ? meta.total : 0;
+    const pageItems = buildCompactAppointmentPageItems(last);
 
-    let html = '<div class="d-flex flex-column align-items-center">';
-    html += '<p class="text-muted small mb-2">Showing ' + from + '–' + to + ' of ' + total + '</p>';
-    html += '<nav><ul class="pagination pagination-sm mb-0">';
+    let html = '<div class="card-footer">';
+    html += '<div class="showing-text">Showing ' + from + '&ndash;' + to + ' of ' + total + ' results</div>';
+    html += '<nav><ul class="pagination">';
 
-    html += '<li class="page-item' + (cur <= 1 ? ' disabled' : '') + '">';
-    html += '<a class="page-link appointments-page-link" href="#" data-page="' + (cur - 1) + '">Previous</a></li>';
-
-    const windowSize = 5;
-    let start = Math.max(1, cur - Math.floor(windowSize / 2));
-    let end = Math.min(last, start + windowSize - 1);
-    if (end - start < windowSize - 1) {
-        start = Math.max(1, end - windowSize + 1);
-    }
-    for (let i = start; i <= end; i++) {
-        html += '<li class="page-item' + (i === cur ? ' active' : '') + '">';
-        html += '<a class="page-link appointments-page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+    if (cur <= 1) {
+        html += '<li class="disabled" aria-disabled="true"><span>&laquo;</span></li>';
+    } else {
+        html += '<li><a href="#" class="appointments-page-link" data-page="' + (cur - 1) + '" rel="prev">&laquo;</a></li>';
     }
 
-    html += '<li class="page-item' + (cur >= last ? ' disabled' : '') + '">';
-    html += '<a class="page-link appointments-page-link" href="#" data-page="' + (cur + 1) + '">Next</a></li>';
+    pageItems.forEach(function (item) {
+        if (item.type === 'dots') {
+            html += '<li class="disabled" aria-disabled="true"><span>&hellip;</span></li>';
+        } else if (item.page === cur) {
+            html += '<li class="active" aria-current="page"><span>' + item.page + '</span></li>';
+        } else {
+            html += '<li><a href="#" class="appointments-page-link" data-page="' + item.page + '">' + item.page + '</a></li>';
+        }
+    });
+
+    if (cur >= last) {
+        html += '<li class="disabled" aria-disabled="true"><span>&raquo;</span></li>';
+    } else {
+        html += '<li><a href="#" class="appointments-page-link" data-page="' + (cur + 1) + '" rel="next">&raquo;</a></li>';
+    }
 
     html += '</ul></nav></div>';
     $wrap.html(html);
