@@ -520,4 +520,63 @@ class SecurityBugFixes14Test extends TestCase
         $validData = json_decode($validResponse->getContent(), true);
         $this->assertTrue($validData['success']);
     }
+
+    /** @test */
+    public function test_14_17_office_visit_detail_escapes_html_output()
+    {
+        $client = \App\Models\Admin::create([
+            'first_name' => '<script>alert("xss")</script>',
+            'last_name' => 'Tester',
+            'email' => 'xss_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+        ]);
+
+        $checkinLog = \App\Models\CheckinLog::create([
+            'client_id' => $client->id,
+            'user_id' => 2,
+            'visit_purpose' => '<img src=x onerror=alert(1)>',
+            'office' => 1,
+            'contact_type' => '<script>alert("type")</script>',
+            'status' => 0,
+            'date' => now()->toDateString(),
+        ]);
+
+        \App\Models\CheckinHistory::create([
+            'subject' => '<script>alert("subject")</script>',
+            'description' => '<svg/onload=alert("desc")>',
+            'created_by' => 2,
+            'checkin_id' => $checkinLog->id,
+        ]);
+
+        $admin = \App\Models\Staff::first() ?? \App\Models\Staff::create([
+            'first_name' => 'Admin',
+            'last_name' => 'Staff',
+            'email' => 'admin_staff_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'role' => null,
+        ]);
+        \Illuminate\Support\Facades\Auth::guard('admin')->login($admin);
+        config(['crm_access.exempt_staff_ids' => [$admin->id]]);
+
+        $controller = app(\App\Http\Controllers\CRM\OfficeVisitController::class);
+        $request = new Request(['id' => $checkinLog->id]);
+
+        $html = $controller->getcheckin($request);
+        $this->assertNotEmpty($html);
+
+        // Raw malicious script tags must NOT appear unescaped in HTML
+        $this->assertStringNotContainsString('<script>alert("xss")</script>', $html);
+        $this->assertStringNotContainsString('<img src=x onerror=alert(1)>', $html);
+        $this->assertStringNotContainsString('<script>alert("type")</script>', $html);
+        $this->assertStringNotContainsString('<script>alert("subject")</script>', $html);
+        $this->assertStringNotContainsString('<svg/onload=alert("desc")>', $html);
+
+        // Escaped entities must be present
+        $this->assertStringContainsString('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', $html);
+        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $html);
+        $this->assertStringContainsString('&lt;script&gt;alert(&quot;subject&quot;)&lt;/script&gt;', $html);
+        $this->assertStringContainsString('&lt;svg/onload=alert(&quot;desc&quot;)&gt;', $html);
+    }
 }

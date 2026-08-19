@@ -815,7 +815,9 @@ Status key (2026-08-07):
 - **Now:** When submitting a front-desk check-in (`FrontDeskCheckInController::submit`), if an `appointment_id` is passed, the controller strictly validates that the appointment exists, belongs to the matched visitor, and is scheduled for today in the office timezone (`config('app.timezone')`). If an appointment from another date or another client is submitted, the request is rejected with HTTP 422 (`The selected appointment is not scheduled for today` or `The selected appointment does not belong to this visitor`).
 
 ### 14.17 Medium — Stored XSS in office-visit detail HTML
-- **Status:** Open\*
+- **Status:** Fixed
+- **Files:** `OfficeVisitController::getcheckin`, `SecurityBugFixes14Test`
+- **Now:** All user-controlled fields rendered in the AJAX office-visit detail popup modal (`OfficeVisitController::getcheckin`)—including visitor contact names/emails, contact types, branch names, assignee full names and emails, wait/attend time strings, and log history subjects and descriptions—are strictly HTML-escaped using `e()` or `htmlspecialchars()`, preventing stored cross-site scripting attacks when inspecting visit session logs.
 
 ---
 

@@ -188,10 +188,26 @@ class FrontDeskCheckInController extends Controller
         $appointmentId = null;
         if (!empty($validated['appointment_id'])) {
             $appt = BookingAppointment::find((int) $validated['appointment_id']);
-            $isToday = $appt && $appt->appointment_datetime && \Carbon\Carbon::parse($appt->appointment_datetime)->isToday();
-            if ($appt && $adminId && (int) $appt->client_id === $adminId && $isToday) {
-                $appointmentId = $appt->id;
+            $tz = config('app.timezone', 'Australia/Melbourne');
+            $isToday = $appt && $appt->appointment_datetime && \Carbon\Carbon::parse($appt->appointment_datetime)->setTimezone($tz)->isToday();
+            
+            if (!$appt || !$adminId || (int) $appt->client_id !== $adminId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected appointment does not belong to this visitor.',
+                    'errors'  => ['appointment_id' => ['Appointment owner mismatch.']],
+                ], 422);
             }
+
+            if (!$isToday) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected appointment is not scheduled for today.',
+                    'errors'  => ['appointment_id' => ['Only today\'s appointments can be selected for front-desk check-in.']],
+                ], 422);
+            }
+
+            $appointmentId = $appt->id;
         }
 
         try {

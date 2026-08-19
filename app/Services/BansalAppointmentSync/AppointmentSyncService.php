@@ -139,18 +139,49 @@ class AppointmentSyncService
 
         if ($existingAppointment) {
             $updated = false;
-            $newPaymentStatus = $appointmentData['payment_status'] ?? $appointmentData['payment']['status'] ?? null;
-            $newIsPaid = $appointmentData['is_paid'] ?? null;
+            $mappedPaymentStatus = $this->mapPaymentStatus($appointmentData) ?? ($appointmentData['payment_status'] ?? null);
+            $newIsPaid = isset($appointmentData['is_paid']) ? (bool) $appointmentData['is_paid'] : null;
             $newStatus = $appointmentData['status'] ?? null;
 
-            if ($newPaymentStatus && $existingAppointment->payment_status !== $newPaymentStatus) {
-                $existingAppointment->payment_status = $newPaymentStatus;
+            if ($mappedPaymentStatus && $existingAppointment->payment_status !== $mappedPaymentStatus) {
+                $existingAppointment->payment_status = $mappedPaymentStatus;
                 $updated = true;
             }
-            if ($newIsPaid !== null && (bool)$existingAppointment->is_paid !== (bool)$newIsPaid) {
-                $existingAppointment->is_paid = (bool)$newIsPaid;
+            if ($newIsPaid !== null && (bool) $existingAppointment->is_paid !== $newIsPaid) {
+                $existingAppointment->is_paid = $newIsPaid;
                 $updated = true;
             }
+            if (!empty($appointmentData['payment']['paid_at'])) {
+                $parsedPaidAt = Carbon::parse($appointmentData['payment']['paid_at']);
+                if ($existingAppointment->paid_at != $parsedPaidAt) {
+                    $existingAppointment->paid_at = $parsedPaidAt;
+                    $updated = true;
+                }
+            } elseif ($newIsPaid === true && empty($existingAppointment->paid_at)) {
+                $existingAppointment->paid_at = now();
+                $updated = true;
+            }
+            if (!empty($appointmentData['payment']['payment_method']) && $existingAppointment->payment_method !== $appointmentData['payment']['payment_method']) {
+                $existingAppointment->payment_method = $appointmentData['payment']['payment_method'];
+                $updated = true;
+            }
+            if (isset($appointmentData['final_amount']) && (float) $existingAppointment->final_amount !== (float) $appointmentData['final_amount']) {
+                $existingAppointment->final_amount = $appointmentData['final_amount'];
+                $updated = true;
+            }
+            if (isset($appointmentData['amount']) && (float) $existingAppointment->amount !== (float) $appointmentData['amount']) {
+                $existingAppointment->amount = $appointmentData['amount'];
+                $updated = true;
+            }
+            if (isset($appointmentData['discount_amount']) && (float) $existingAppointment->discount_amount !== (float) $appointmentData['discount_amount']) {
+                $existingAppointment->discount_amount = $appointmentData['discount_amount'];
+                $updated = true;
+            }
+            if (!empty($appointmentData['promo_code']) && $existingAppointment->promo_code !== $appointmentData['promo_code']) {
+                $existingAppointment->promo_code = $appointmentData['promo_code'];
+                $updated = true;
+            }
+
             if ($newStatus !== null && $newStatus !== '') {
                 $mappedStatus = $this->mapStatus((string) $newStatus);
                 $terminal = ['cancelled', 'completed', 'no_show'];
@@ -163,13 +194,27 @@ class AppointmentSyncService
                     if ($mappedStatus === 'cancelled' && empty($existingAppointment->cancelled_at)) {
                         $existingAppointment->cancelled_at = now();
                     }
+                    if ($mappedStatus === 'confirmed' && empty($existingAppointment->confirmed_at)) {
+                        $existingAppointment->confirmed_at = now();
+                    }
+                    if ($mappedStatus === 'completed' && empty($existingAppointment->completed_at)) {
+                        $existingAppointment->completed_at = now();
+                    }
                 }
             }
+
+            // Always update last sync timestamps
+            $existingAppointment->last_synced_at = now();
+            $existingAppointment->sync_status = 'synced';
+            $existingAppointment->sync_error = null;
+
             if ($updated) {
                 $existingAppointment->save();
                 Log::info('Updated existing appointment from website sync', ['bansal_id' => $bansalId]);
                 return 'updated';
             }
+
+            $existingAppointment->save();
             return 'skipped';
         }
 

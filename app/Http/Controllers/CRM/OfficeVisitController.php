@@ -270,12 +270,12 @@ class OfficeVisitController extends Controller
 						</div>
 					</div>
 					<div class="col-md-6">
-						<b><?php echo $CheckinLog->contact_type; ?></b>
+						<b><?php echo e($CheckinLog->contact_type); ?></b>
 						<br>
 						<?php
 						$checkin = \App\Models\Branch::where('id', $CheckinLog->office)->first();
 						if($checkin){
-						echo '<a target="_blank" href="'.\URL::to('/branch/view/'.@$checkin->id).'">'.@$checkin->office_name.'</a>';
+						echo '<a target="_blank" href="'.\URL::to('/branch/view/'.(int)$checkin->id).'">'.e($checkin->office_name).'</a>';
 						}
 						?>
 
@@ -284,7 +284,7 @@ class OfficeVisitController extends Controller
 					<div class="col-md-12">
 						<div class="form-group">
 							<label>Visit Purpose</label>
-								<textarea class="form-control visitpurpose" data-id="<?php echo $CheckinLog->id; ?>" ><?php echo htmlspecialchars($CheckinLog->visit_purpose ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+								<textarea class="form-control visitpurpose" data-id="<?php echo (int) $CheckinLog->id; ?>" ><?php echo htmlspecialchars($CheckinLog->visit_purpose ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
 						</div>
 					</div>
 
@@ -311,10 +311,10 @@ class OfficeVisitController extends Controller
 						<div class="checkin-session-time-bar">
 							<div class="row g-0">
 								<div class="col-md-6 checkin-session-time-wait">
-									<div class="checkin-session-time-inner ag-flex col-hr-3" style="flex-direction: column;"><p class="marginNone text-semi-bold text-white">Wait Time</p> <p class="marginNone small text-white"><?php if($CheckinLog->status == 0){ ?><span id="waitcount"> 00h 0m 0s </span><?php }else if($CheckinLog->status == 2){ echo '<span>'.$CheckinLog->wait_time.'</span>'; }else if($CheckinLog->status == 1){ echo '<span>'.$CheckinLog->wait_time.'</span>'; }else{ echo '<span >-</span>'; } ?></p></div>
+									<div class="checkin-session-time-inner ag-flex col-hr-3" style="flex-direction: column;"><p class="marginNone text-semi-bold text-white">Wait Time</p> <p class="marginNone small text-white"><?php if($CheckinLog->status == 0){ ?><span id="waitcount"> 00h 0m 0s </span><?php }else if($CheckinLog->status == 2){ echo '<span>'.e($CheckinLog->wait_time).'</span>'; }else if($CheckinLog->status == 1){ echo '<span>'.e($CheckinLog->wait_time).'</span>'; }else{ echo '<span >-</span>'; } ?></p></div>
 								</div>
 								<div class="col-md-6 checkin-session-time-attend">
-									<div class="checkin-session-time-inner ag-flex" style="flex-direction: column;"><p class="marginNone text-semi-bold text-white">Attend Time</p> <p class="marginNone small text-white"><?php if($CheckinLog->status == 2){ ?><span id="attendtime"> 00h 0m 0s </span><?php }else if($CheckinLog->status == 1){ echo '<span>'.$CheckinLog->attend_time.'</span>'; }else{ echo '<span >-</span>'; } ?></p></div>
+									<div class="checkin-session-time-inner ag-flex" style="flex-direction: column;"><p class="marginNone text-semi-bold text-white">Attend Time</p> <p class="marginNone small text-white"><?php if($CheckinLog->status == 2){ ?><span id="attendtime"> 00h 0m 0s </span><?php }else if($CheckinLog->status == 1){ echo '<span>'.e($CheckinLog->attend_time).'</span>'; }else{ echo '<span >-</span>'; } ?></p></div>
 								</div>
 							</div>
 						</div>
@@ -325,9 +325,9 @@ class OfficeVisitController extends Controller
 						<?php
 						$admin = \App\Models\Staff::find($CheckinLog->user_id);
 						?>
-						<a href=""><?php echo @$admin->first_name.' '.@$admin->last_name; ?></a>
+						<a href=""><?php echo e((@$admin->first_name ?? '') . ' ' . (@$admin->last_name ?? '')); ?></a>
 						<br>
-						<span><?php echo @$admin->email; ?></span>
+						<span><?php echo e(@$admin->email); ?></span>
 					</div>
 						<div class="assignee" style="display:none;">
 						    <div class="row">
@@ -337,12 +337,12 @@ class OfficeVisitController extends Controller
 											foreach(\App\Models\Staff::orderby('first_name','ASC')->get() as $admin){
 												$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 										?>
-												<option value="<?php echo $admin->id; ?>"><?php echo $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')'; ?></option>
+												<option value="<?php echo (int) $admin->id; ?>"><?php echo e($admin->first_name.' '.$admin->last_name.' ('.(@$branchname->office_name ?? '').')'); ?></option>
 										<?php } ?>
 									</select>
 								</div>
 								<div class="col-md-2">
-									<a class="saveassignee btn btn-success" data-id="<?php echo $CheckinLog->id; ?>" href="javascript:;">Save</a>
+									<a class="saveassignee btn btn-success" data-id="<?php echo (int) $CheckinLog->id; ?>" href="javascript:;">Save</a>
 								</div>
 								<div class="col-md-2">
 									<a class="closeassignee" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
@@ -354,9 +354,9 @@ class OfficeVisitController extends Controller
 					<?php
 					if($CheckinLog->status == 0){
 					?>
-						<a data-id="<?php echo $CheckinLog->id; ?>" href="javascript:;" class="btn btn-success attendsession">Attend Session</a>
+						<a data-id="<?php echo (int) $CheckinLog->id; ?>" href="javascript:;" class="btn btn-success attendsession">Attend Session</a>
 					<?php }else if($CheckinLog->status == 2){ ?>
-						<a data-id="<?php echo $CheckinLog->id; ?>" href="javascript:;" class="btn btn-success completesession">Complete Session</a>
+						<a data-id="<?php echo (int) $CheckinLog->id; ?>" href="javascript:;" class="btn btn-success completesession">Complete Session</a>
 					<?php } ?>
 					</div>
 					<input type="hidden" value="" id="waitcountdata">
@@ -367,7 +367,7 @@ class OfficeVisitController extends Controller
 							<textarea class="form-control visit_comment" name="comment"></textarea>
 						</div>
 						<div class="form-group">
-							<button data-id="<?php echo $CheckinLog->id; ?>" type="button" class="savevisitcomment btn btn-primary">Save</button>
+							<button data-id="<?php echo (int) $CheckinLog->id; ?>" type="button" class="savevisitcomment btn btn-primary">Save</button>
 						</div>
 					</div>
 
@@ -382,8 +382,8 @@ class OfficeVisitController extends Controller
 							<div class="logsitem">
 								<div class="row">
 									<div class="col-md-7">
-										<span class="ag-avatar"><?php echo $admin ? substr($admin->first_name ?? '', 0, 1) : '?'; ?></span>
-										<span class="text_info"><span><?php echo $admin ? ($admin->first_name ?? '') : 'System'; ?></span><?php echo $llist->subject; ?></span>
+										<span class="ag-avatar"><?php echo e($admin ? substr($admin->first_name ?? '', 0, 1) : '?'); ?></span>
+										<span class="text_info"><span><?php echo e($admin ? ($admin->first_name ?? '') : 'System'); ?></span><?php echo e($llist->subject); ?></span>
 									</div>
 									<div class="col-md-5">
 										<span class="logs_date"><?php echo date('d M Y h:i A', strtotime($llist->created_at)); ?></span>
