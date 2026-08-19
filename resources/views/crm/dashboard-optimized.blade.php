@@ -387,14 +387,14 @@
                 </table>
             </div>
             
-            {{-- Pagination --}}
+            {{-- Pagination (shared CRM listing styles) --}}
             @if($data->hasPages())
-                <div class="pagination-container">
-                    <div class="pagination-info">
-                        Showing <strong>{{ $data->firstItem() ?? 0 }}</strong> to <strong>{{ $data->lastItem() ?? 0 }}</strong> of <strong>{{ $data->total() }}</strong> results
-                    </div>
-                    <div class="pagination-links">
-                        {{ $data->appends(request()->query())->links() }}
+                <div class="listing-container">
+                    <div class="card-footer">
+                        <div class="showing-text">
+                            Showing {{ $data->firstItem() ?? 0 }}&ndash;{{ $data->lastItem() ?? 0 }} of {{ $data->total() }} results
+                        </div>
+                        {!! $data->appends(request()->except('page'))->render() !!}
                     </div>
                 </div>
             @endif
@@ -423,6 +423,7 @@
 @once
 @vite(['resources/css/fullcalendar-v6.css'])
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ @filemtime(public_path('css/dashboard.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}">
 <style>
 .dashboard-theme-icon-primary {

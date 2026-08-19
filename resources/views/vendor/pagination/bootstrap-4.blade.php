@@ -1,4 +1,22 @@
 @if ($paginator->hasPages())
+    @php
+        $lastPage = $paginator->lastPage();
+        $currentPage = $paginator->currentPage();
+
+        // Compact CRM pattern: 1, 2, 3, …, last-1, last (show all when <= 5 pages)
+        if ($lastPage <= 5) {
+            $pageItems = collect(range(1, $lastPage))->map(fn ($page) => ['type' => 'page', 'page' => $page]);
+        } else {
+            $pageItems = collect([
+                ['type' => 'page', 'page' => 1],
+                ['type' => 'page', 'page' => 2],
+                ['type' => 'page', 'page' => 3],
+                ['type' => 'dots'],
+                ['type' => 'page', 'page' => $lastPage - 1],
+                ['type' => 'page', 'page' => $lastPage],
+            ]);
+        }
+    @endphp
     <nav>
         <ul class="pagination">
             {{-- Previous Page Link --}}
@@ -12,28 +30,20 @@
                 </li>
             @endif
 
-            {{-- Pagination Elements --}}
-            @foreach ($elements as $element)
-                {{-- "Three Dots" Separator --}}
-                @if (is_string($element))
+            {{-- Page Numbers --}}
+            @foreach ($pageItems as $item)
+                @if ($item['type'] === 'dots')
                     <li class="disabled" aria-disabled="true">
-                        <span>{{ $element }}</span>
+                        <span>&hellip;</span>
                     </li>
-                @endif
-
-                {{-- Array Of Links --}}
-                @if (is_array($element))
-                    @foreach ($element as $page => $url)
-                        @if ($page == $paginator->currentPage())
-                            <li class="active" aria-current="page">
-                                <span>{{ $page }}</span>
-                            </li>
-                        @else
-                            <li>
-                                <a href="{{ $url }}">{{ $page }}</a>
-                            </li>
-                        @endif
-                    @endforeach
+                @elseif ($item['page'] == $currentPage)
+                    <li class="active" aria-current="page">
+                        <span>{{ $item['page'] }}</span>
+                    </li>
+                @else
+                    <li>
+                        <a href="{{ $paginator->url($item['page']) }}">{{ $item['page'] }}</a>
+                    </li>
                 @endif
             @endforeach
 
@@ -49,4 +59,4 @@
             @endif
         </ul>
     </nav>
-@endif 
+@endif
