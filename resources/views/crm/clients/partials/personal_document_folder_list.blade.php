@@ -7,14 +7,14 @@
     @endphp
     <tr class="drow" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
-            <div data-id="{{ $fetch->id }}" data-personalchecklistname="{{ htmlspecialchars($fetch->checklist) }}" class="personalchecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;">
-                <span style="flex: 1;">{{ htmlspecialchars($fetch->checklist) }}</span>
+            <div data-id="{{ $fetch->id }}" data-personalchecklistname="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" class="personalchecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;">
+                <span style="flex: 1;">{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}</span>
                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                     @if (!$fetch->file_name)
-                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
-                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                             <i class="fa-solid fa-trash"></i>
                         </a>
                     @endif

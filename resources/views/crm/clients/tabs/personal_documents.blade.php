@@ -43,7 +43,7 @@
                                     ?>
                                     <div class="button-container pd-folder-tab-wrap">
                                         <button type="button" class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
-                                            <?= htmlspecialchars($catVal->title) ?>
+                                            <?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated || $isSuperAdmin): ?>
                                             <div class="action-buttons pd-folder-tab-actions">
@@ -51,7 +51,7 @@
                                                     <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <?php if ($isSuperAdmin): ?>
-                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" title="Delete folder"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>" title="Delete folder"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
@@ -80,12 +80,12 @@
                                 <div class="subtab2-pane <?= $isActive ?>" id="<?= $id ?>-subtab2">
                                     <div class="checklist-table-container">
                                         <div class="subtab2-header pd-section-header">
-                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?> Documents</h3>
                                             <div class="pd-section-actions">
                                                 <button type="button" class="btn pd-btn pd-btn-primary add-checklist-btn add_education_doc" data-type="personal" data-categoryid="<?= $id ?>">
                                                     <i class="fa-solid fa-plus"></i> Add Checklist
                                                 </button>
-                                                <button type="button" class="btn pd-btn pd-btn-outline bulk-upload-toggle-btn" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>">
+                                                <button type="button" class="btn pd-btn pd-btn-outline bulk-upload-toggle-btn" data-categoryid="<?= $id ?>" data-categoryname="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>">
                                                     <i class="fa-solid fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>
@@ -98,7 +98,7 @@
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to 50MB (500MB for videos)</p>
+                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 300) }}MB for videos)</p>
                                                 <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
@@ -149,14 +149,14 @@
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
-                                                                <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
+                                                                <span style="flex: 1;"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                                                                     <?php if (!$fetch->file_name): ?>
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Edit Checklist Name">
                                                                         <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
-                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
@@ -165,9 +165,9 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
-                                                                        <i class="fa-solid <?= $fileIcon ?>"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
+                                                                        <i class="fa-solid <?= $fileIcon ?>"></i> <span><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -208,7 +208,7 @@
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($fetch->myfile_key ?: basename(parse_url($fetch->myfile, PHP_URL_PATH) ?: $fetch->myfile)) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= \App\Support\DocumentLabel::forDisplay($fetch->myfile_key ?: basename(parse_url($fetch->myfile, PHP_URL_PATH) ?: $fetch->myfile)) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
@@ -244,12 +244,12 @@
                                                             <i class="fa-solid <?= $gridFileIcon ?>"></i>
                                                         </div>
                                                         <div class="grid_content">
-                                                            <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
+                                                            <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?></span>
                                                             <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                 <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                                                 <div class="dropdown-menu">
                                                                     <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrlGrid) ?>, <?= json_encode('preview-container-' . $id) ?>)'>Preview</a>
-                                                                    <a href="#" class="dropdown-item download-file" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($dlFilenameGrid) ?>">Download</a>
+                                                                    <a href="#" class="dropdown-item download-file" data-document-id="<?= $fetch->id ?>" data-filename="<?= \App\Support\DocumentLabel::forDisplay($dlFilenameGrid) ?>">Download</a>
                                                                     <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                 </div>
                                                             </div>
@@ -1813,8 +1813,10 @@
                     
                     // Validate and add files to array
                     const invalidFiles = [];
-                    const maxSize = 50 * 1024 * 1024; // 50MB
-                    const maxVideoSize = 500 * 1024 * 1024; // 500MB (MS Teams recordings)
+                    const maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
+                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+                    const maxSize = maxFileMb * 1024 * 1024;
+                    const maxVideoSize = maxVideoMb * 1024 * 1024;
                     const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
                     
@@ -1824,7 +1826,7 @@
                             || videoExtensions.includes(ext)
                             || String(file.type || '').indexOf('video/') === 0;
                         const sizeLimit = isVideo ? maxVideoSize : maxSize;
-                        const sizeLabel = isVideo ? '500MB' : '50MB';
+                        const sizeLabel = isVideo ? (maxVideoMb + 'MB') : (maxFileMb + 'MB');
 
                         // Check file size
                         if (file.size > sizeLimit) {

@@ -59,6 +59,22 @@
         return isNaN(d.getTime()) ? String(iso) : d.toLocaleString();
     }
 
+    function escapeHtmlAttribute(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function escapeHtmlText(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     // Utilities (see utils/): Flatpickr, Editor - flatpickr-helpers.js, editor-helpers.js | DOM - dom-helpers.js (adjustActivityFeedHeight, adjustPreviewContainers, downloadFile)
 
     $(document).ready(function() {
@@ -5537,8 +5553,8 @@ success: function(response) {
 
             var trRow = '<tr class="drow" id="id_' + doc.id + '">' +
                 '<td style="white-space: initial;">' +
-                    '<div data-id="' + doc.id + '" data-personalchecklistname="' + checklist + '" class="personalchecklist-row" title="' + uploadTitle + '" style="display: flex; align-items: center; gap: 8px;">' +
-                        '<span style="flex: 1;">' + checklist + '</span>' +
+                    '<div data-id="' + doc.id + '" data-personalchecklistname="' + escapeHtmlAttribute(checklist) + '" class="personalchecklist-row" title="' + escapeHtmlAttribute(uploadTitle) + '" style="display: flex; align-items: center; gap: 8px;">' +
+                        '<span style="flex: 1;">' + escapeHtmlText(checklist) + '</span>' +
                     '</div>' +
                 '</td>' +
                 '<td style="white-space: initial;">' +
@@ -7572,9 +7588,11 @@ success: function(response) {
             }
 
             var isVideoUploadCheck = isPersonalDocVideoFile(file);
-            var maxAllowed = isVideoUploadCheck ? (500 * 1024 * 1024) : (50 * 1024 * 1024);
+            var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+            var maxAllowed = isVideoUploadCheck ? (maxVideoMb * 1024 * 1024) : (maxFileMb * 1024 * 1024);
             if (file.size > maxAllowed) {
-                alert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? '500MB' : '50MB') + '.');
+                alert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? (maxVideoMb + 'MB') : (maxFileMb + 'MB')) + '.');
                 return false;
             }
 
@@ -7683,10 +7701,12 @@ success: function(response) {
                 alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.).');
                 return false;
             }
-            var maxSize = 50 * 1024 * 1024;
-            var maxVideoSize = 500 * 1024 * 1024;
+            var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+            var maxSize = maxFileMb * 1024 * 1024;
+            var maxVideoSize = maxVideoMb * 1024 * 1024;
             var sizeLimit = isVideo ? maxVideoSize : maxSize;
-            var sizeLabel = isVideo ? '500MB' : '50MB';
+            var sizeLabel = isVideo ? (maxVideoMb + 'MB') : (maxFileMb + 'MB');
             if (file.size > sizeLimit) {
                 alert('File exceeds the maximum allowed size of ' + sizeLabel + '.');
                 return false;

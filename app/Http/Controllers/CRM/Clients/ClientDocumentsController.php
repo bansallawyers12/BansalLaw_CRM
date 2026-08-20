@@ -24,6 +24,7 @@ use App\Models\VisaDocumentType;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
+use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
 use App\Services\PythonConverterService;
 use App\Services\PersonalDocumentVideoUploadService;
@@ -166,7 +167,7 @@ class ClientDocumentsController extends Controller
                             // For PostgreSQL, keep folder_name as string to avoid type issues
                             // PostgreSQL will handle the conversion if needed
                             $obj->folder_name = (string)$request->folder_name;
-                            $obj->checklist = trim($item);
+                            $obj->checklist = DocumentLabel::normalize(trim($item));
                             
                             // Validate required fields before saving
                             if(empty($obj->user_id) || empty($obj->client_id) || empty($obj->folder_name) || empty($obj->checklist)) {
@@ -220,14 +221,14 @@ class ClientDocumentsController extends Controller
                         ?>
                         <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="flex: 1;"><?php echo DocumentLabel::forDisplay($fetch->checklist); ?></span>
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
-                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
-                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
                                         <?php endif; ?>
@@ -473,7 +474,7 @@ class ClientDocumentsController extends Controller
                     // Get checklist name right before use to prevent race conditions
                     // Refresh document to get latest checklist name
                     $obj->refresh();
-                    $checklistName = $obj->checklist;
+                    $checklistName = DocumentLabel::normalize($obj->checklist);
     
                     // Validate checklist name is still present after refresh
                     if (empty($checklistName)) {
@@ -493,17 +494,16 @@ class ClientDocumentsController extends Controller
                     $timestamp = time();
                     $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
+                    if ($sizeError = PersonalDocumentVideoUploadService::sizeLimitError($file, (int) $size)) {
+                        $response['message'] = $sizeError;
+                        ob_end_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode($response);
+                        exit;
+                    }
+
                     if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoFile($file)) {
                         $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
-                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
-                        if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
-                            $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
-                            ob_end_clean();
-                            header('Content-Type: application/json');
-                            echo json_encode($response);
-                            exit;
-                        }
 
                         $videoService = app(PersonalDocumentVideoUploadService::class);
 
@@ -566,7 +566,7 @@ class ClientDocumentsController extends Controller
     
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
-                    $finalChecklistName = $obj->checklist;
+                    $finalChecklistName = DocumentLabel::normalize($obj->checklist);
                     
                     // Use the latest checklist name
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
@@ -703,7 +703,7 @@ class ClientDocumentsController extends Controller
                     $obj->type = $request->type;
                     $obj->doc_type = $doctype;
                     $obj->client_matter_id = $request->client_matter_id;
-                    $obj->checklist = $item;
+                    $obj->checklist = DocumentLabel::normalize($item);
                     $obj->folder_name = $request->folder_name;
                     $saved = $obj->save();
                 }  //end foreach
@@ -765,14 +765,14 @@ class ClientDocumentsController extends Controller
                         ?>
                         <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls;?>>
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="flex: 1;"><?php echo DocumentLabel::forDisplay($fetch->checklist); ?></span>
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
-                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
-                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
                                         <?php endif; ?>
@@ -1003,7 +1003,7 @@ class ClientDocumentsController extends Controller
                     // Get checklist name right before use to prevent race conditions
                     // Refresh document to get latest checklist name
                     $obj->refresh();
-                    $checklistName = $obj->checklist;
+                    $checklistName = DocumentLabel::normalize($obj->checklist);
 
                     // Validate checklist name is still present after refresh
                     if (empty($checklistName)) {
@@ -1019,18 +1019,17 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
 
+                    if ($sizeError = PersonalDocumentVideoUploadService::sizeLimitError($file, (int) $size)) {
+                        $response['message'] = $sizeError;
+                        ob_end_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode($response);
+                        exit;
+                    }
+
                     // Large videos including MS Teams recordings: stream via same pipeline as personal documents
                     if (PersonalDocumentVideoUploadService::isVideoFile($file)) {
                         $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
-                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
-                        if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
-                            $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
-                            ob_end_clean();
-                            header('Content-Type: application/json');
-                            echo json_encode($response);
-                            exit;
-                        }
 
                         $videoService = app(PersonalDocumentVideoUploadService::class);
 
@@ -1111,7 +1110,7 @@ class ClientDocumentsController extends Controller
 
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
-                    $finalChecklistName = $obj->checklist;
+                    $finalChecklistName = DocumentLabel::normalize($obj->checklist);
                     
                     // Use the latest checklist name
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
@@ -1978,7 +1977,7 @@ class ClientDocumentsController extends Controller
         
         try {
             $id = $request->id;
-            $checklist = $request->checklist;
+            $checklist = DocumentLabel::normalize($request->checklist);
             if(\App\Models\Document::where('id',$id)->exists()){
             $doc = \App\Models\Document::where('id',$id)->first();
             if ($this->blockEchoUnlessStaffClientAccess((int) ($doc->client_id ?? 0))) {
@@ -1987,13 +1986,13 @@ class ClientDocumentsController extends Controller
             $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
             if($res){
                 // Build complete HTML structure to restore UI state
-                $html = '<span style="flex: 1;">' . htmlspecialchars($checklist) . '</span>';
+                $html = '<span style="flex: 1;">' . DocumentLabel::forDisplay($checklist) . '</span>';
                 
                 // Only show edit/delete buttons if no file uploaded
                 if (!$doc->file_name) {
                     $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
-                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></a>';
-                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>';
+                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . DocumentLabel::forDisplay($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></a>';
+                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . DocumentLabel::forDisplay($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>';
                     $html .= '</div>';
                 }
                 
@@ -3080,7 +3079,7 @@ class ClientDocumentsController extends Controller
      * Add Personal Document Category
      */
     public function addPersonalDocCategory(Request $request) {
-        $categoryTitle = trim($request->input('personal_doc_category'));
+        $categoryTitle = DocumentLabel::normalize($request->input('personal_doc_category'));
         $clientId = $request->input('clientid');
 
         $request->merge(['personal_doc_category' => $categoryTitle]);
@@ -3185,7 +3184,7 @@ class ClientDocumentsController extends Controller
             return response()->json(['status' => false, 'message' => 'Only client-generated folders can be updated.']);
         }
 
-        $categoryTitle = trim($request->input('title'));
+        $categoryTitle = DocumentLabel::normalize($request->input('title'));
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
         $existsForNullClient = PersonalDocumentType::where('title', $categoryTitle)
@@ -3228,7 +3227,7 @@ class ClientDocumentsController extends Controller
      * Add Visa Document Category
      */
     public function addVisaDocCategory(Request $request) {
-        $categoryTitle = trim($request->input('visa_doc_category'));
+        $categoryTitle = DocumentLabel::normalize($request->input('visa_doc_category'));
         $clientId = $request->input('clientid');
         $clientMatterId = $request->input('clientmatterid');
 
@@ -3347,7 +3346,7 @@ class ClientDocumentsController extends Controller
             return $deny ?? response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
         }
 
-        $categoryTitle = trim($request->input('title'));
+        $categoryTitle = DocumentLabel::normalize($request->input('title'));
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
         $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
@@ -3761,7 +3760,7 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
                     
-                    $checklistName = $mapping['name'] ?? null;
+                    $checklistName = DocumentLabel::normalize($mapping['name'] ?? '');
                     if (!$checklistName) {
                         $errors[] = "No checklist name specified for file '{$fileName}'";
                         continue;
@@ -3817,14 +3816,13 @@ class ClientDocumentsController extends Controller
                     
                     $extension = strtolower($file->getClientOriginalExtension());
 
+                    if ($sizeError = PersonalDocumentVideoUploadService::sizeLimitError($file, (int) $size)) {
+                        $errors[] = "File '{$fileName}': {$sizeError}";
+                        continue;
+                    }
+
                     if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoFile($file)) {
                         $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
-                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
-                        if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
-                            $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
-                            continue;
-                        }
 
                         $videoService = app(PersonalDocumentVideoUploadService::class);
 
@@ -4046,7 +4044,7 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
                     
-                    $checklistName = $mapping['name'] ?? null;
+                    $checklistName = DocumentLabel::normalize($mapping['name'] ?? '');
                     if (!$checklistName) {
                         $errors[] = "No checklist name specified for file '{$fileName}'";
                         continue;
@@ -4127,15 +4125,14 @@ class ClientDocumentsController extends Controller
                     $checklistName = $finalChecklistName;
                     $extension = strtolower($file->getClientOriginalExtension());
 
+                    if ($sizeError = PersonalDocumentVideoUploadService::sizeLimitError($file, (int) $size)) {
+                        $errors[] = "File '{$fileName}': {$sizeError}";
+                        continue;
+                    }
+
                     // Videos including MS Teams recordings (same formats/limits as personal documents)
                     if (PersonalDocumentVideoUploadService::isVideoFile($file)) {
                         $extension = PersonalDocumentVideoUploadService::resolveVideoExtension($file);
-                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
-                        if ($size > $maxVideoBytes) {
-                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 500);
-                            $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
-                            continue;
-                        }
 
                         $videoService = app(PersonalDocumentVideoUploadService::class);
 

@@ -122,9 +122,39 @@ class PersonalDocumentVideoUploadService
         @ignore_user_abort(true);
     }
 
+    public static function maxDocumentMb(): int
+    {
+        return max(1, (int) config('crm.document_upload.max_file_size_mb', 100));
+    }
+
+    public static function maxDocumentBytes(): int
+    {
+        return self::maxDocumentMb() * 1024 * 1024;
+    }
+
+    public static function maxVideoMb(): int
+    {
+        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 300));
+    }
+
     public static function maxVideoBytes(): int
     {
-        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 500)) * 1024 * 1024;
+        return self::maxVideoMb() * 1024 * 1024;
+    }
+
+    public static function sizeLimitError(UploadedFile $file, int $size): ?string
+    {
+        $isVideo = self::isVideoFile($file);
+        $maxBytes = $isVideo ? self::maxVideoBytes() : self::maxDocumentBytes();
+        if ($size <= $maxBytes) {
+            return null;
+        }
+
+        $maxMb = $isVideo ? self::maxVideoMb() : self::maxDocumentMb();
+
+        return $isVideo
+            ? "Video file exceeds the maximum allowed size of {$maxMb}MB."
+            : "File exceeds the maximum allowed size of {$maxMb}MB.";
     }
 
     public function cacheKey(string $token): string
