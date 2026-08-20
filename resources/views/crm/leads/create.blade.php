@@ -2104,13 +2104,25 @@
                 document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             }
 
+            function escapeHtml(value) {
+                const div = document.createElement('div');
+                div.textContent = value == null ? '' : String(value);
+                return div.innerHTML;
+            }
+
+            function restoreSaveButton(originalBtnHtml) {
+                if (!saveBtn) return;
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalBtnHtml;
+            }
+
             function renderSpaErrorSummary(messages) {
                 if (!alertContainer) return;
-                let listHtml = messages.map(msg => `<li style="color: #721c24; margin-bottom: 5px;">${msg}</li>`).join('');
+                const listHtml = messages.map(msg => `<li style="color: #721c24; margin-bottom: 5px;">${escapeHtml(msg)}</li>`).join('');
                 alertContainer.innerHTML = `
-                    <div class="alert alert-danger" style="margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
+                    <div class="alert alert-danger" role="alert" style="margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
                         <h4 style="margin: 0 0 10px 0; color: #721c24; font-size: 16px;">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Please fix the following errors:
+                            <i class="fa-solid fa-triangle-exclamation"></i> Please fix the following:
                         </h4>
                         <ul style="margin: 0; padding-left: 20px;">
                             ${listHtml}
@@ -2123,13 +2135,35 @@
             function renderSpaSuccessMessage(msg) {
                 if (!alertContainer) return;
                 alertContainer.innerHTML = `
-                    <div class="alert alert-success" style="margin: 20px 0; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;">
-                        <h4 style="margin: 0; color: #155724; font-size: 16px;">
-                            <i class="fa-solid fa-circle-check"></i> ${msg}
+                    <div class="alert alert-success" role="alert" style="margin: 20px 0; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;">
+                        <h4 style="margin: 0 0 6px 0; color: #155724; font-size: 16px;">
+                            <i class="fa-solid fa-circle-check"></i> ${escapeHtml(msg)}
                         </h4>
+                        <p style="margin: 0; color: #155724; font-size: 13px;">You will be taken to the lead record in a moment.</p>
                     </div>
                 `;
                 alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function collectErrorMessages(data) {
+                const allMessages = [];
+                const errors = data && data.errors;
+                if (errors && typeof errors === 'object') {
+                    Object.keys(errors).forEach(key => {
+                        const raw = errors[key];
+                        const list = Array.isArray(raw) ? raw : [raw];
+                        list.forEach(m => {
+                            if (m == null || m === '') return;
+                            const text = String(m);
+                            allMessages.push(text);
+                            renderInlineFieldError(key, text);
+                        });
+                    });
+                }
+                if (allMessages.length === 0 && data && data.message && data.message !== 'Validation failed') {
+                    allMessages.push(String(data.message));
+                }
+                return allMessages;
             }
 
             function renderInlineFieldError(fieldName, msg) {
@@ -2171,6 +2205,7 @@
                     const response = await fetch(form.action, {
                         method: 'POST',
                         body: formData,
+                        credentials: 'same-origin',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json',
@@ -2178,49 +2213,49 @@
                         }
                     });
 
-                    const data = await response.json();
+                    let data = {};
+                    const rawBody = await response.text();
+                    if (rawBody) {
+                        try {
+                            data = JSON.parse(rawBody);
+                        } catch (parseErr) {
+                            restoreSaveButton(originalBtnHtml);
+                            if (response.status === 419) {
+                                renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
+                            } else {
+                                renderSpaErrorSummary(['We could not save this lead. Please try again.']);
+                            }
+                            return;
+                        }
+                    }
 
                     if (response.ok && data.success) {
-                        renderSpaSuccessMessage(data.message || 'Lead added successfully! Redirecting...');
+                        renderSpaSuccessMessage(data.message || 'Lead saved successfully.');
                         if (saveBtn) {
                             saveBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Saved!</span>';
                         }
                         setTimeout(() => {
                             if (data.redirect_url) {
                                 window.location.href = data.redirect_url;
+                            } else {
+                                restoreSaveButton(originalBtnHtml);
                             }
-                        }, 500);
+                        }, 800);
+                        return;
+                    }
+
+                    restoreSaveButton(originalBtnHtml);
+                    const allMessages = collectErrorMessages(data);
+                    if (allMessages.length > 0) {
+                        renderSpaErrorSummary(allMessages);
+                    } else if (response.status === 419) {
+                        renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                     } else {
-                        if (saveBtn) {
-                            saveBtn.disabled = false;
-                            saveBtn.innerHTML = originalBtnHtml;
-                        }
-
-                        const allMessages = [];
-                        if (data.errors) {
-                            Object.keys(data.errors).forEach(key => {
-                                const errMsgs = data.errors[key];
-                                errMsgs.forEach(m => {
-                                    allMessages.push(m);
-                                    renderInlineFieldError(key, m);
-                                });
-                            });
-                        } else if (data.message) {
-                            allMessages.push(data.message);
-                        }
-
-                        if (allMessages.length > 0) {
-                            renderSpaErrorSummary(allMessages);
-                        } else {
-                            renderSpaErrorSummary(['An unexpected error occurred while saving.']);
-                        }
+                        renderSpaErrorSummary(['We could not save this lead. Please check the form and try again.']);
                     }
                 } catch (err) {
-                    if (saveBtn) {
-                        saveBtn.disabled = false;
-                        saveBtn.innerHTML = originalBtnHtml;
-                    }
-                    renderSpaErrorSummary(['Network error or server unavailable. Please try again.']);
+                    restoreSaveButton(originalBtnHtml);
+                    renderSpaErrorSummary(['Could not reach the server. Check your internet connection and try again.']);
                 }
             });
         });

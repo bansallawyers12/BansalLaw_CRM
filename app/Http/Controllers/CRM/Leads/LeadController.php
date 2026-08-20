@@ -1116,7 +1116,7 @@ class LeadController extends Controller
                             $phoneModified = true;
                             Log::info('Phone number modified to: ' . $primaryPhone);
                         } else {
-                            $errors["phone.0"] = "This phone number is already registered.";
+                            $errors["phone.0"] = 'This phone number is already used by another lead or client. Please enter a different number.';
                         }
                     }
                     if (!$phoneModified) {
@@ -1127,7 +1127,7 @@ class LeadController extends Controller
                                 $phoneModified = true;
                                 Log::info('Phone number modified to: ' . $primaryPhone);
                             } else {
-                                $errors["phone.0"] = "This phone number is already registered.";
+                                $errors["phone.0"] = 'This phone number is already used by another lead or client. Please enter a different number.';
                             }
                         }
                     }
@@ -1143,7 +1143,7 @@ class LeadController extends Controller
                             $emailModified = true;
                             Log::info('Email address modified to: ' . $primaryEmail);
                         } else {
-                            $errors["email.0"] = "This email address is already registered.";
+                            $errors["email.0"] = 'This email is already used by another lead or client. Please enter a different email.';
                         }
                     }
                     if (!$emailModified) {
@@ -1155,7 +1155,7 @@ class LeadController extends Controller
                                 $emailModified = true;
                                 Log::info('Email address modified to: ' . $primaryEmail);
                             } else {
-                                $errors["email.0"] = "This email address is already registered.";
+                                $errors["email.0"] = 'This email is already used by another lead or client. Please enter a different email.';
                             }
                         }
                     }
@@ -1165,19 +1165,10 @@ class LeadController extends Controller
                 // The original primaryEmail is kept for ClientEmail - only admin record gets placeholder
             }
 
-            // If there are any custom errors, return them
+            // If there are any custom errors, return them (Laravel-style arrays so the SPA can list them)
             if (!empty($errors)) {
                 Log::warning('Custom validation errors: ' . json_encode($errors));
-                if ($request->expectsJson() || $request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validation failed',
-                        'errors' => $errors
-                    ], 422);
-                }
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors($errors);
+                throw ValidationException::withMessages($errors);
             }
             
             Log::info('Custom validation passed - proceeding to insert');
@@ -1444,31 +1435,33 @@ class LeadController extends Controller
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Lead added successfully',
+                        'message' => 'Lead saved successfully. Opening the record…',
                         'id' => $admin->id,
                         'redirect_url' => route('clients.edit', ['id' => $encodedId])
                     ]);
                 }
 
                 return redirect()->route('clients.edit', ['id' => $encodedId])
-                    ->with('success', 'Lead added successfully');
+                    ->with('success', 'Lead saved successfully.');
             } catch (\Exception $e) {
                 DB::rollBack();
                 
                 Log::error('Lead creation failed: ' . $e->getMessage());
                 Log::error('Stack trace: ' . $e->getTraceAsString());
+
+                $userMessage = 'We could not save this lead. Please try again. If it keeps happening, contact support.';
                 
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Failed to create lead: ' . $e->getMessage(),
-                        'errors' => ['error' => ['Failed to create lead: ' . $e->getMessage()]]
+                        'message' => $userMessage,
+                        'errors' => ['error' => [$userMessage]]
                     ], 500);
                 }
 
                 return redirect()->back()
                     ->withInput()
-                    ->withErrors(['error' => 'Failed to create lead: ' . $e->getMessage()]);
+                    ->withErrors(['error' => $userMessage]);
             }
         }
         
