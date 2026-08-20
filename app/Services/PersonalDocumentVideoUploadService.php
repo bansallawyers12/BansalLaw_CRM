@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\ProcessPersonalDocumentVideoUploadJob;
 use App\Models\Admin;
 use App\Models\Document;
+use App\Support\DocumentLabel;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -65,7 +66,8 @@ class PersonalDocumentVideoUploadService
 
     /**
      * Stored S3 names are generated; original names are not used as paths.
-     * Allow Teams meeting titles (colons, apostrophes, dashes) and only block traversal.
+     * Allow special characters in original filenames (apostrophes, parentheses,
+     * colons, Teams meeting titles, etc.) and only block path traversal.
      */
     public static function isSafeOriginalFilename(string $fileName): bool
     {
@@ -74,6 +76,7 @@ class PersonalDocumentVideoUploadService
             return false;
         }
 
+        // Path separators only — spaces, apostrophes, parentheses, colons are allowed.
         return ! preg_match('/[\/\\\\]/', $fileName);
     }
 
@@ -384,19 +387,19 @@ class PersonalDocumentVideoUploadService
             : 'client';
 
         $obj->refresh();
-        $checklistName = $obj->checklist;
+        $checklistName = DocumentLabel::normalize($obj->checklist);
         $timestamp = time();
-        $name = $clientFirstName . '_' . $checklistName . '_' . $timestamp . '.' . $extension;
+        $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp, $extension);
         $filePath = $clientUniqueId . '/' . $doctype . '/' . $name;
 
         $disk = Storage::disk('s3');
         $this->streamPathToDisk($disk, $localPath, $filePath);
 
         $obj->refresh();
-        $finalChecklistName = $obj->checklist;
+        $finalChecklistName = DocumentLabel::normalize($obj->checklist);
         if (! empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
             $checklistName = $finalChecklistName;
-            $name = $clientFirstName . '_' . $checklistName . '_' . $timestamp . '.' . $extension;
+            $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp, $extension);
             $newFilePath = $clientUniqueId . '/' . $doctype . '/' . $name;
             if ($newFilePath !== $filePath) {
                 try {
@@ -412,7 +415,7 @@ class PersonalDocumentVideoUploadService
             }
         }
 
-        $obj->file_name = $clientFirstName . '_' . $checklistName . '_' . $timestamp;
+        $obj->file_name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp);
         $obj->filetype = $extension;
         $obj->user_id = $userId;
         $obj->myfile = $disk->url($filePath);
