@@ -105,7 +105,7 @@
                                     ?>
                                     <div class="button-container md-folder-tab-wrap">
                                         <button type="button" class="subtab6-button <?= $isActive ?>" data-subtab6="<?= $id ?>">
-                                            <?= htmlspecialchars($catVal->title) ?>
+                                            <?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons md-folder-tab-actions">
@@ -136,12 +136,12 @@
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container">
                                         <div class="subtab6-header md-section-header">
-                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?> Documents</h3>
                                             <div class="md-section-actions">
                                                 <button type="button" class="btn md-btn md-btn-primary add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
                                                     <i class="fa-solid fa-plus"></i> Add Checklist
                                                 </button>
-                                                <button type="button" class="btn md-btn md-btn-outline bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
+                                                <button type="button" class="btn md-btn md-btn-outline bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
                                                     <i class="fa-solid fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>
@@ -154,7 +154,7 @@
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to 50MB (500MB for videos). You can select multiple files.</p>
+                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 300) }}MB for videos). You can select multiple files.</p>
                                                 <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
@@ -197,14 +197,14 @@
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row md-checklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
-                                                                <span class="md-checklist-label"><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="visachecklist-row md-checklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
+                                                                <span class="md-checklist-label"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions">
                                                                     <?php if (!$fetch->file_name): ?>
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Edit Checklist Name">
                                                                         <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
-                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
@@ -228,9 +228,9 @@
                                                                     $matterFileIcon = 'fa-file-image';
                                                                 }
                                                                 ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode($matterPreviewContainerId) ?>)'>
-                                                                        <i class="fa-solid <?= $matterFileIcon ?> matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
+                                                                        <i class="fa-solid <?= $matterFileIcon ?> matter-doc-file-icon"></i> <span><?= \App\Support\DocumentLabel::forDisplay($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -308,16 +308,16 @@
                                                     <tr class="drow visa-signed-row" data-matterid="<?= $signedDoc->client_matter_id ?>" data-catid="<?= $signedDoc->folder_name ?>" id="id_<?= $signedDoc->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $signedDoc->id ?>" class="visachecklist-row" style="display: flex; align-items: center; gap: 8px;">
-                                                                <span style="flex: 1;"><?= htmlspecialchars($signedDoc->checklist) ?></span>
+                                                                <span style="flex: 1;"><?= \App\Support\DocumentLabel::forDisplay($signedDoc->checklist) ?></span>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php
                                                             $signedFileUrlJs = addslashes($signedFileUrl);
                                                             ?>
-                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
+                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= \App\Support\DocumentLabel::forDisplay($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
                                                                 <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
-                                                                    <i class="fa-solid fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                    <i class="fa-solid fa-file-image"></i> <span><?= \App\Support\DocumentLabel::forDisplay($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -344,13 +344,13 @@
                                                     <tr class="drow visa-signed-row" data-matterid="<?= $signedDoc->client_matter_id ?>" data-catid="<?= $signedDoc->folder_name ?>" id="id_<?= $signedDoc->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $signedDoc->id ?>" class="visachecklist-row" style="display: flex; align-items: center; gap: 8px;">
-                                                                <span style="flex: 1;"><?= htmlspecialchars($signedDoc->checklist) ?></span>
+                                                                <span style="flex: 1;"><?= \App\Support\DocumentLabel::forDisplay($signedDoc->checklist) ?></span>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
+                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= \App\Support\DocumentLabel::forDisplay($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
                                                                 <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
-                                                                    <i class="fa-solid fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                    <i class="fa-solid fa-file-image"></i> <span><?= \App\Support\DocumentLabel::forDisplay($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -402,7 +402,7 @@
                                                                 <i class="fa-solid <?= $gridFileIcon ?>"></i>
                                                             </div>
                                                             <div class="grid_content">
-                                                                <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
+                                                                <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?></span>
                                                                 <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                     <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                                                     <div class="dropdown-menu">
@@ -1293,8 +1293,10 @@
                     
                     // Validate and add files to array (aligned with personal documents)
                     const invalidFiles = [];
-                    const maxSize = 50 * 1024 * 1024; // 50MB
-                    const maxVideoSize = 500 * 1024 * 1024; // 500MB (MS Teams recordings)
+                    const maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
+                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+                    const maxSize = maxFileMb * 1024 * 1024;
+                    const maxVideoSize = maxVideoMb * 1024 * 1024;
                     const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
                     
@@ -1304,7 +1306,7 @@
                             || videoExtensions.includes(ext)
                             || String(file.type || '').indexOf('video/') === 0;
                         const sizeLimit = isVideo ? maxVideoSize : maxSize;
-                        const sizeLabel = isVideo ? '500MB' : '50MB';
+                        const sizeLabel = isVideo ? (maxVideoMb + 'MB') : (maxFileMb + 'MB');
 
                         // Check file size
                         if (file.size > sizeLimit) {
@@ -1374,7 +1376,7 @@
                     const checklistNames = new Set();
                     
                     $('.migdocumnetlist_' + categoryId + ' .visachecklist-row').each(function() {
-                        const checklistName = String($(this).attr('data-visachecklistname') || '').trim();
+                        const checklistName = String($(this).data('visachecklistname') || '').trim();
                         const checklistId = $(this).closest('tr').attr('id').replace('id_', '');
                         
                         if (checklistName && !checklistNames.has(checklistName)) {

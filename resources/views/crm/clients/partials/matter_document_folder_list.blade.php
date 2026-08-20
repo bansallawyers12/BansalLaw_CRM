@@ -7,14 +7,14 @@
     @endphp
     <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
-            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ htmlspecialchars($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}">
-                <span class="md-checklist-label">{{ htmlspecialchars($fetch->checklist) }}</span>
+            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}">
+                <span class="md-checklist-label">{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}</span>
                 <div class="checklist-actions">
                     @if (!$fetch->file_name)
-                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name">
+                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" title="Edit Checklist Name">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
-                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist">
+                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::forDisplay($fetch->checklist) }}" title="Delete Checklist">
                             <i class="fa-solid fa-trash"></i>
                         </a>
                     @endif

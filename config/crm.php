@@ -319,6 +319,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Matter / personal document uploads (non-video)
+    |--------------------------------------------------------------------------
+    */
+    'document_upload' => [
+        'max_file_size_mb' => max(1, (int) env('DOCUMENT_UPLOAD_MAX_MB', 100)),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Personal document video upload queue
     |--------------------------------------------------------------------------
     | Default sync + afterResponse processes videos in the same web request after
@@ -336,7 +345,7 @@ return [
         'execution_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME', 1800)),
         'max_input_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME', 1800)),
         'socket_timeout_seconds' => max(120, (int) env('PERSONAL_VIDEO_UPLOAD_SOCKET_TIMEOUT', 600)),
-        'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 500)),
+        'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 300)),
     ],
 
 ];
