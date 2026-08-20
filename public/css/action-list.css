@@ -510,107 +510,68 @@
     border-color: var(--sidebar-active, #3a6fa8) !important;
 }
 
-/* DataTables footer — listing pagination look */
+/* DataTables footer — pagination removed; infinite scroll info below table */
 .assignee-action-page .dt-container {
     width: 100%;
 }
 
 .assignee-action-page .dt-container .dt-search,
-.assignee-action-page .dt-container .dataTables_filter {
+.assignee-action-page .dt-container .dataTables_filter,
+.assignee-action-page .dt-container .dt-paging,
+.assignee-action-page .dt-container .dt-info,
+.assignee-action-page .dt-container .action-dt-footer {
     display: none !important;
 }
 
-.assignee-action-page .dt-container .action-dt-footer {
-    display: flex !important;
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center !important;
-    gap: 10px;
-    margin: 16px -24px 0 !important;
-    padding: 1rem 1.5rem;
-    background: var(--page-bg, #f0f6ff);
-    border-top: 1px solid var(--border, #c8dcef);
-    border-radius: 0 0 10px 10px;
-    width: auto;
-}
-
-.assignee-action-page .dt-container .action-dt-footer > [class*="col-"],
-.assignee-action-page .dt-container .action-dt-footer .dt-layout-cell {
+.assignee-action-page .action-infinite-loader {
     display: flex;
-    justify-content: center !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 16px 0 8px;
+    padding: 14px 16px;
+    color: var(--text-muted, #5e7a90);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--page-bg, #f0f6ff);
+    border: 1px solid var(--border, #c8dcef);
+    border-radius: 10px;
 }
 
-.assignee-action-page .dt-info {
+.assignee-action-page .action-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.assignee-action-page .action-infinite-loader__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(30, 61, 96, 0.15);
+    border-top-color: var(--navy, #1e3d60);
+    border-radius: 50%;
+    animation: actionInfiniteSpin 0.75s linear infinite;
+}
+
+@keyframes actionInfiniteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.assignee-action-page .action-scroll-info {
     text-align: center;
     color: var(--text-muted, #5e7a90);
     font-size: 14px;
     font-weight: 500;
-    margin: 0;
+    margin: 0 0 12px;
+    padding-bottom: 4px;
 }
 
-.assignee-action-page .dt-paging nav,
-.assignee-action-page .dt-paging {
+.assignee-action-page .action-scroll-sentinel {
     width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-.assignee-action-page .dt-paging .pagination {
-    display: flex;
-    list-style: none;
-    padding: 0;
+    height: 1px;
     margin: 0;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 3px;
-}
-
-.assignee-action-page .dt-paging .pagination .page-link,
-.assignee-action-page .dt-paging .pagination li a,
-.assignee-action-page .dt-paging .pagination li span,
-.assignee-action-page .dt-paging .pagination .ellipsis {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    padding: 0 6px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--navy, #1e3d60) !important;
-    background: var(--card-bg, #ffffff) !important;
-    border: 1px solid var(--border, #c8dcef) !important;
-    border-radius: 8px;
-    text-decoration: none;
-    box-shadow: none !important;
-}
-
-.assignee-action-page .dt-paging .pagination .page-item.active .page-link,
-.assignee-action-page .dt-paging .pagination .dt-paging-button.active .page-link,
-.assignee-action-page .dt-paging .pagination .page-item.active span {
-    background-color: var(--navy, #1e3d60) !important;
-    border-color: var(--navy, #1e3d60) !important;
-    color: #fff !important;
-}
-
-.assignee-action-page .dt-paging .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
-    background-color: var(--sidebar-bg, #ddeaf8) !important;
-    border-color: var(--border, #c8dcef) !important;
-    color: var(--navy, #1e3d60) !important;
-}
-
-.assignee-action-page .dt-paging .pagination .page-item.disabled .page-link,
-.assignee-action-page .dt-paging .pagination .dt-paging-button.disabled .page-link {
-    color: var(--text-muted, #5e7a90) !important;
-    background-color: var(--page-bg, #f0f6ff) !important;
-    opacity: 0.55;
-    cursor: not-allowed;
+    padding: 0;
+    pointer-events: none;
 }
 
 .assignee-action-page .dt-processing {

@@ -100,6 +100,12 @@ class SyncedInboxFullMailboxAccessTest extends TestCase
         $this->assertTrue(
             method_exists(IncomingEmailSyncService::class, 'applySyncedMailboxHasZohoPasswordFilter')
         );
+        $this->assertTrue(
+            method_exists(IncomingEmailSyncService::class, 'syncableMailboxAddresses')
+        );
+        $this->assertTrue(
+            method_exists(IncomingEmailSyncService::class, 'findSyncableMailbox')
+        );
     }
 
     #[Test]

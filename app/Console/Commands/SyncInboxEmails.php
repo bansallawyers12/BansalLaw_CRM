@@ -28,6 +28,17 @@ class SyncInboxEmails extends Command
 
         $email = $this->argument('email');
 
+        if ($email) {
+            $mailbox = IncomingEmailSyncService::findSyncableMailbox((string) $email);
+            if ($mailbox === null) {
+                $this->warn(
+                    "Skipping {$email}: automatic inbox sync requires an active mailbox with a Zoho password."
+                );
+
+                return self::SUCCESS;
+            }
+        }
+
         if ($this->option('full') && $this->option('today')) {
             $this->error('Use either --today or --full, not both.');
 
@@ -36,6 +47,7 @@ class SyncInboxEmails extends Command
 
         if ($this->option('full')) {
             $query = Email::query()->where('status', true)->where('sync_enabled', true);
+            IncomingEmailSyncService::applyMailboxHasZohoPasswordScope($query);
             if ($email) {
                 $query->whereRaw('LOWER(email) = ?', [strtolower(trim((string) $email))]);
             }

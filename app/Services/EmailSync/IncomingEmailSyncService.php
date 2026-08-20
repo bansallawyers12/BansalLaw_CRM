@@ -82,6 +82,16 @@ class IncomingEmailSyncService
             $summary['total_failed'] += (int) ($summary['mailboxes'][$mailbox->email]['failed'] ?? 0);
         }
 
+        try {
+            $summary['subject_auto_assigned'] = app(SubjectReferenceAutoAssignService::class)
+                ->assignMatchingUnassignedEmails();
+        } catch (Throwable $e) {
+            InboxSyncLogger::warning('Subject-reference auto-assign after sync failed', [
+                'error' => $e->getMessage(),
+            ]);
+            $summary['subject_auto_assigned'] = 0;
+        }
+
         return $summary;
     }
 
@@ -1146,7 +1156,8 @@ class IncomingEmailSyncService
     public static function applyMailboxHasZohoPasswordScope($query): void
     {
         $query->whereNotNull('password')
-            ->where('password', '!=', '');
+            ->where('password', '!=', '')
+            ->whereRaw("TRIM(password) != ''");
     }
 
     /**
@@ -1491,7 +1502,7 @@ class IncomingEmailSyncService
             return;
         }
 
-        $query->where('sync_assignment_status', 'unassigned')
+        $query->whereIn('sync_assignment_status', ['unassigned', 'unlinked'])
             ->where(function ($clientQuery) {
                 $clientQuery->whereNull('client_id')
                     ->orWhere('client_id', 0);

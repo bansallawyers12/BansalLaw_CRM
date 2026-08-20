@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Logging\InboxSyncLogger;
 use App\Models\Email;
 use App\Models\EmailLog;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\EmailSync\ZohoImapFetcher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
@@ -40,6 +41,7 @@ class SyncEmailReadState extends Command
             ->where('status', true)
             ->where('sync_enabled', true)
             ->orderBy('email');
+        IncomingEmailSyncService::applyMailboxHasZohoPasswordScope($mailboxQuery);
 
         if ($mailboxFilter !== '') {
             $mailboxQuery->whereRaw('LOWER(email) = ?', [$mailboxFilter]);

@@ -103,6 +103,93 @@ class SyncedEmailController extends Controller
 
     }
 
+    public function assignBySubject(\App\Services\EmailSync\SubjectReferenceAutoAssignService $autoAssignService)
+    {
+        if (! $this->staffCanSyncInbox()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to assign synced inbox emails.',
+            ], 403);
+        }
+
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff account required.',
+            ], 403);
+        }
+
+        @set_time_limit(120);
+
+        $result = $autoAssignService->scanAndAssignForStaff($staff);
+
+        return response()->json([
+            'success' => true,
+            'message' => $this->assignBySubjectSummary($result),
+            'assigned_count' => $result['assigned_count'],
+            'assigned' => $result['assigned'],
+            'needs_matter' => $result['needs_matter'],
+            'skipped_count' => $result['skipped_count'],
+        ]);
+    }
+
+    public function confirmSubjectAssignments(
+        Request $request,
+        \App\Services\EmailSync\SubjectReferenceAutoAssignService $autoAssignService
+    ) {
+        if (! $this->staffCanSyncInbox()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to assign synced inbox emails.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'assignments' => 'required|array|min:1|max:200',
+            'assignments.*.email_log_id' => 'required|integer|min:1',
+            'assignments.*.client_id' => 'required|integer|min:1',
+            'assignments.*.client_matter_id' => 'required|integer|min:1',
+        ]);
+
+        foreach ($validated['assignments'] as $item) {
+            if (! $this->canAccessSyncedEmail((int) $item['email_log_id'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email not found or you do not have permission to update it.',
+                ], 404);
+            }
+        }
+
+        $result = $autoAssignService->confirmMatterChoices($validated['assignments'], true);
+        $result['message'] = $result['assigned_count'] === 1
+            ? '1 email assigned to the selected matter.'
+            : $result['assigned_count'] . ' emails assigned to the selected matters.';
+
+        return response()->json($result, $result['success'] ? 200 : 422);
+    }
+
+    /**
+     * @param array{assigned_count: int, needs_matter: list<mixed>, skipped_count: int} $result
+     */
+    protected function assignBySubjectSummary(array $result): string
+    {
+        $assigned = (int) ($result['assigned_count'] ?? 0);
+        $needs = count($result['needs_matter'] ?? []);
+        $parts = [];
+        $parts[] = $assigned === 1 ? '1 email assigned from client ID + matter.' : $assigned . ' emails assigned from client ID + matter.';
+        if ($needs > 0) {
+            $parts[] = $needs === 1
+                ? '1 client needs a matter chosen.'
+                : $needs . ' clients need a matter chosen.';
+        }
+        if ($assigned === 0 && $needs === 0) {
+            return 'No unassigned emails had a matching client ID and matter, or a unique client name.';
+        }
+
+        return implode(' ', $parts);
+    }
+
 
 
     public function unlinkFromClient(Request $request, UnassignedEmailAssignmentService $assignmentService)

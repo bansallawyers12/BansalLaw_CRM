@@ -144,23 +144,15 @@ class Kernel extends ConsoleKernel
     }
 
     /**
-     * Active mailbox addresses that have IMAP sync enabled.
+     * Active mailbox addresses that have IMAP sync enabled and a Zoho password.
+     * Outlook / password-less accounts must not be scheduled.
      *
      * @return list<string>
      */
     protected function syncEnabledMailboxes(): array
     {
         try {
-            return \App\Models\Email::query()
-                ->where('status', true)
-                ->where('sync_enabled', true)
-                ->orderBy('email')
-                ->pluck('email')
-                ->filter()
-                ->map(fn ($email) => strtolower(trim((string) $email)))
-                ->unique()
-                ->values()
-                ->all();
+            return \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses();
         } catch (\Throwable $e) {
             return [];
         }
