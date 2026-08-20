@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return 20;
     }
 
-    let perPage = compactPagination ? 20 : readStoredPerPage();
+    let perPage = unassignedOnly ? 20 : (compactPagination ? 20 : readStoredPerPage());
     if (perPageSelect) {
         perPageSelect.value = String(perPage);
     }
@@ -201,6 +201,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let listTotal = 0;
     let listFrom = 0;
     let listLastPage = 1;
+    let emailListLoading = false;
+    let emailListLoadingMore = false;
+    const emailInfiniteLoader = document.getElementById('emailInfiniteLoader');
     const emailUiModeSwitch = document.getElementById('emailUiModeSwitch');
     const outlookListPane = document.querySelector('.outlook-list-pane');
     const EMAIL_UI_MODE_STORAGE_KEY = 'crm_email_ui_mode';
@@ -956,13 +959,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (currentPage < listLastPage) {
+            const previousCount = emails.length;
             currentPage += 1;
-            loadEmails().then(function () {
-                if (emails.length) {
-                    const firstEmail = emails[0];
-                    const el = emailListContainer.querySelector('[data-email-id="' + firstEmail.id + '"]');
-                    showEmail(firstEmail, el);
+            loadEmails(unassignedOnly ? { append: true } : undefined).then(function () {
+                if (!emails.length) {
+                    return;
                 }
+                const nextEmail = unassignedOnly && emails.length > previousCount
+                    ? emails[previousCount]
+                    : emails[0];
+                if (!nextEmail) {
+                    return;
+                }
+                const el = emailListContainer.querySelector('[data-email-id="' + nextEmail.id + '"]');
+                showEmail(nextEmail, el);
             });
         }
     }
@@ -1491,17 +1501,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    prevBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            loadEmails();
-        }
-    });
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadEmails();
+            }
+        });
+    }
 
-    nextBtn.addEventListener('click', () => {
-        currentPage++;
-        loadEmails();
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            currentPage++;
+            loadEmails();
+        });
+    }
 
     if (perPageSelect) {
         perPageSelect.addEventListener('change', function () {
@@ -3305,24 +3319,79 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Fetch from backend
-    async function loadEmails() {
+    function setEmailInfiniteLoader(visible) {
+        if (!emailInfiniteLoader) {
+            return;
+        }
+        emailInfiniteLoader.hidden = !visible;
+    }
+
+    function hasMoreUnassignedEmails() {
+        return unassignedOnly && listTotal > emails.length && currentPage < listLastPage;
+    }
+
+    async function loadMoreUnassignedEmails() {
+        if (!unassignedOnly || emailListLoading || emailListLoadingMore) {
+            return;
+        }
+        if (currentPage >= listLastPage || emails.length >= listTotal) {
+            return;
+        }
+        currentPage += 1;
+        await loadEmails({ append: true });
+    }
+
+    function maybeLoadMoreUnassignedEmails() {
+        if (!unassignedOnly || !emailListContainer || emailListLoading || emailListLoadingMore) {
+            return;
+        }
+        if (currentPage >= listLastPage || emails.length >= listTotal) {
+            return;
+        }
+        const remaining = emailListContainer.scrollHeight - emailListContainer.scrollTop - emailListContainer.clientHeight;
+        if (remaining <= 240) {
+            loadMoreUnassignedEmails();
+        }
+    }
+
+    if (unassignedOnly && emailListContainer) {
+        emailListContainer.addEventListener('scroll', function () {
+            maybeLoadMoreUnassignedEmails();
+        }, { passive: true });
+    }
+
+    async function loadEmails(options) {
+        const append = !!(options && options.append && unassignedOnly);
+
         if (unassignedOnly && isSyncedInboxFolder(currentFolder) && !canViewSyncedInbox) {
             currentFolder = 'unassigned';
             switchToFolder(currentFolder);
         }
 
-        emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
+        if (append) {
+            if (emailListLoading || emailListLoadingMore) {
+                return;
+            }
+            emailListLoadingMore = true;
+            setEmailInfiniteLoader(true);
+        } else {
+            emailListLoading = true;
+            emailListLoadingMore = false;
+            setEmailInfiniteLoader(false);
+            emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
+        }
 
         try {
             const query = searchInput.value;
             const label = labelFilter ? labelFilter.value : '';
             const sender = senderFilter ? senderFilter.value : '';
             const folderToFetch = currentFolder;
+            const pageToFetch = Math.max(1, currentPage || 1);
             
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
             url.searchParams.append('folder', folderToFetch);
-            url.searchParams.append('page', currentPage);
-            url.searchParams.append('per_page', perPage);
+            url.searchParams.append('page', pageToFetch);
+            url.searchParams.append('per_page', unassignedOnly ? 20 : perPage);
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
@@ -3366,7 +3435,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            emails = Array.isArray(data.emails) ? data.emails : [];
+            const fetchedEmails = Array.isArray(data.emails) ? data.emails : [];
+            if (append) {
+                const existingIds = {};
+                emails.forEach(function (email) {
+                    if (email && email.id != null) {
+                        existingIds[String(email.id)] = true;
+                    }
+                });
+                const uniqueEmails = fetchedEmails.filter(function (email) {
+                    if (!email || email.id == null) {
+                        return false;
+                    }
+                    const key = String(email.id);
+                    if (existingIds[key]) {
+                        return false;
+                    }
+                    existingIds[key] = true;
+                    return true;
+                });
+                emails = emails.concat(uniqueEmails);
+            } else {
+                emails = fetchedEmails;
+            }
+
             if (data.date_summary) {
                 syncedDateSummary = data.date_summary;
                 renderSyncedDateSummaryBar(syncedDateSummary);
@@ -3378,8 +3470,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Pagination
             const total = data.total || 0;
             const lastPage = data.last_page || 1;
-            const from = data.from || 0;
-            const to = data.to || 0;
+            const from = append ? (listFrom || 1) : (data.from || 0);
+            const to = append
+                ? Math.min(total, emails.length)
+                : (data.to || 0);
             if (total > 0) {
                 updatePaginationDisplay(total, lastPage, from, to);
             } else {
@@ -3396,15 +3490,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 senderFilter.innerHTML = optionsHtml;
             }
 
-            renderEmailList();
-            refreshSelectedEmailAfterReload();
+            if (append) {
+                const scrollTop = emailListContainer.scrollTop;
+                renderEmailList();
+                emailListContainer.scrollTop = scrollTop;
+            } else {
+                renderEmailList();
+                refreshSelectedEmailAfterReload();
+            }
+
+            if (unassignedOnly) {
+                window.requestAnimationFrame(maybeLoadMoreUnassignedEmails);
+            }
         } catch (error) {
             console.error('Failed to fetch emails', error);
-            emails = [];
-            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">'
-                + escapeHtml(error.message || 'Error loading emails')
-                + '</div>';
-            updatePaginationDisplay(0, 1, 0, 0);
+            if (append) {
+                currentPage = Math.max(1, currentPage - 1);
+            } else {
+                emails = [];
+                emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">'
+                    + escapeHtml(error.message || 'Error loading emails')
+                    + '</div>';
+                updatePaginationDisplay(0, 1, 0, 0);
+            }
+        } finally {
+            emailListLoading = false;
+            emailListLoadingMore = false;
+            setEmailInfiniteLoader(false);
         }
     }
 

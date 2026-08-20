@@ -4225,6 +4225,39 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     margin-top: auto;
 }
 
+.outlook-container--unassigned .email-infinite-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 12px 14px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.outlook-container--unassigned .email-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.outlook-container--unassigned .email-infinite-loader__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(30, 58, 138, 0.15);
+    border-top-color: #1e3a8a;
+    border-radius: 50%;
+    animation: emailInfiniteSpin 0.75s linear infinite;
+}
+
+@keyframes emailInfiniteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .outlook-container--unassigned .email-list,
 .outlook-container--unassigned .email-list--synced {
     flex: 1 1 auto;
