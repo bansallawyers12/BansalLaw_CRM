@@ -381,6 +381,8 @@ Route::get('/clients/unassigned-emails', [\App\Http\Controllers\CRM\SyncedEmailC
 Route::get('/clients/auto-assignment-review', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'autoAssignmentReviewIndex'])->name('clients.auto-assignment-review');
 Route::get('/clients/synced-emails/unassigned-count', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'unassignedCount'])->name('clients.synced-emails.unassigned-count');
 Route::post('/clients/synced-emails/assign', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'assignToClient'])->name('clients.synced-emails.assign');
+Route::post('/clients/synced-emails/assign-by-subject', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'assignBySubject'])->name('clients.synced-emails.assign-by-subject');
+Route::post('/clients/synced-emails/assign-by-subject/confirm', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'confirmSubjectAssignments'])->name('clients.synced-emails.assign-by-subject.confirm');
 Route::post('/clients/synced-emails/unlink', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'unlinkFromClient'])->name('clients.synced-emails.unlink');
 Route::post('/clients/synced-emails/mark-read', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'markFolderRead'])->name('clients.synced-emails.mark-read');
 Route::post('/clients/synced-emails/sync-now', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'syncNow'])->name('clients.synced-emails.sync-now');

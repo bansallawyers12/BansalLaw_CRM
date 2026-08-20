@@ -114,6 +114,8 @@
     data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'
     @if($canSyncInbox)
     data-assign-email-url="{{ url('/clients/synced-emails/assign') }}"
+    data-assign-by-subject-url="{{ url('/clients/synced-emails/assign-by-subject') }}"
+    data-assign-by-subject-confirm-url="{{ url('/clients/synced-emails/assign-by-subject/confirm') }}"
     @endif
     @if($canShowInboxSync)
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
@@ -190,10 +192,18 @@
                         </button>
                     </div>
                     @endif
-                <button type="button" class="list-filter-toggle" id="btnToggleListFilters" aria-expanded="false" aria-controls="unassignedListFilters" title="Show filters">
-                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                    <span class="list-filter-toggle__text">Filters</span>
-                </button>
+                <div class="list-toolbar__side-actions">
+                    @if($canSyncInbox && ! $assignmentReviewOnly)
+                    <button type="button" class="list-toolbar__assign-subject" id="btnAssignBySubject" title="Assign unassigned emails whose subject has a matching client ID and matter">
+                        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                        <span class="list-toolbar__assign-subject-text">Assign by subject</span>
+                    </button>
+                    @endif
+                    <button type="button" class="list-filter-toggle" id="btnToggleListFilters" aria-expanded="false" aria-controls="unassignedListFilters" title="Show filters">
+                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        <span class="list-filter-toggle__text">Filters</span>
+                    </button>
+                </div>
                 @else
                 <div class="folder-tabs" role="tablist" aria-label="Mail folders">
                     <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
@@ -218,20 +228,21 @@
         @endif
 
         @if($canShowInboxSync && $unassignedOnly && ! $assignmentReviewOnly)
-        <div class="sync-inbox-panel{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
-            <div class="sync-inbox-panel__top">
+        <div class="sync-inbox-panel sync-inbox-panel--redesign{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
+            <div class="sync-inbox-panel__section sync-inbox-panel__section--sync">
+                <div class="sync-inbox-panel__section-label">Fetch mail</div>
                 <div class="sync-inbox-panel__sync-row">
                     @if($canSelectSyncMailbox)
-                    <div class="sync-inbox-panel__field">
+                    <div class="sync-inbox-panel__field sync-inbox-panel__field--grow">
                         <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
-                            <option value="">Select</option>
+                            <option value="">Select mailbox</option>
                             @foreach($syncMailboxOptions as $mailboxAddress)
                                 <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
                             @endforeach
                         </select>
                     </div>
                     @endif
-                    <div class="sync-inbox-panel__field">
+                    <div class="sync-inbox-panel__field sync-inbox-panel__field--range">
                         <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
                             @foreach($unassignedSyncRangeOptions as $rangeValue => $rangeLabel)
                                 <option value="{{ $rangeValue }}" @selected($rangeValue === $defaultUnassignedSyncRange)>{{ $rangeLabel }}</option>
@@ -244,54 +255,50 @@
                     </button>
                 </div>
             </div>
-            <div class="sync-inbox-panel__list-tools">
-                <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
-                    <option value="">All senders</option>
-                </select>
-                @if(! empty($listMailboxFilterOptions))
-                <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
-                    <option value="">All</option>
-                    @foreach($listMailboxFilterOptions as $mailboxAddress)
-                        <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
-                    @endforeach
-                </select>
-                @endif
-                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
-                    <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
-                    <option value="asc">Oldest</option>
-                    <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
-                </select>
+            <div class="sync-inbox-panel__section sync-inbox-panel__section--filters">
+                <div class="sync-inbox-panel__section-label">Refine list</div>
+                <div class="sync-inbox-panel__list-tools">
+                    <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
+                        <option value="">All senders</option>
+                    </select>
+                    @if(! empty($listMailboxFilterOptions))
+                    <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
+                        <option value="">All mailboxes</option>
+                        @foreach($listMailboxFilterOptions as $mailboxAddress)
+                            <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                        @endforeach
+                    </select>
+                    @endif
+                    <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
+                        <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
+                        <option value="asc">Oldest</option>
+                        <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
+                    </select>
+                </div>
             </div>
         </div>
         @elseif($unassignedOnly)
-        <div class="sync-inbox-panel sync-inbox-panel--tools-only">
-            <div class="sync-inbox-panel__top">
-                <div class="sync-inbox-panel__intro">
-                    <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
-                        <i class="fa-solid {{ $assignmentReviewOnly ? 'fa-triangle-exclamation' : 'fa-inbox' }}"></i>
-                    </div>
-                    <div>
-                        <div class="sync-inbox-panel__title" id="unassignedPanelTitle">{{ $assignmentReviewOnly ? 'Auto-assignment review' : 'Synced inbox' }}</div>
-                    </div>
+        <div class="sync-inbox-panel sync-inbox-panel--redesign sync-inbox-panel--tools-only">
+            <div class="sync-inbox-panel__section sync-inbox-panel__section--filters">
+                <div class="sync-inbox-panel__section-label" id="unassignedPanelTitle">{{ $assignmentReviewOnly ? 'Review filters' : 'Refine list' }}</div>
+                <div class="sync-inbox-panel__list-tools">
+                    <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
+                        <option value="">All senders</option>
+                    </select>
+                    @if(! empty($listMailboxFilterOptions))
+                    <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
+                        <option value="">All mailboxes</option>
+                        @foreach($listMailboxFilterOptions as $mailboxAddress)
+                            <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                        @endforeach
+                    </select>
+                    @endif
+                    <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
+                        <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
+                        <option value="asc">Oldest</option>
+                        <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
+                    </select>
                 </div>
-            </div>
-            <div class="sync-inbox-panel__list-tools">
-                <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
-                    <option value="">All senders</option>
-                </select>
-                @if(! empty($listMailboxFilterOptions))
-                <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
-                    <option value="">All mailboxes</option>
-                    @foreach($listMailboxFilterOptions as $mailboxAddress)
-                        <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
-                    @endforeach
-                </select>
-                @endif
-                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort or filter">
-                    <option value="desc" @selected(! $assignmentReviewOnly)>Newest</option>
-                    <option value="asc">Oldest</option>
-                    <option value="review" @selected($assignmentReviewOnly)>Needs Review</option>
-                </select>
             </div>
         </div>
         @endif
@@ -938,6 +945,37 @@
                 <button type="button" class="btn outlook-ui-modal__btn outlook-ui-modal__btn--confirm assign-email-modal__btn assign-email-modal__btn--confirm" id="assignEmailConfirmBtn" disabled>
                     <i class="fa-solid fa-link" aria-hidden="true"></i>
                     Assign Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+@if($unassignedOnly && $canSyncInbox && empty($assignmentReviewOnly))
+<div class="modal fade assign-subject-modal outlook-ui-modal-wrapper" id="assignBySubjectModal" tabindex="-1" role="dialog" aria-labelledby="assignBySubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered assign-subject-modal__dialog" role="document">
+        <div class="modal-content outlook-ui-modal">
+            <div class="modal-header outlook-ui-modal__header">
+                <div class="outlook-ui-modal__header-main">
+                    <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div class="outlook-ui-modal__header-text">
+                        <h5 class="modal-title outlook-ui-modal__title" id="assignBySubjectModalLabel">Assign by subject</h5>
+                        <p class="outlook-ui-modal__subtitle" id="assignBySubjectModalSubtitle">Matching unassigned emails to clients.</p>
+                    </div>
+                </div>
+                <button type="button" class="outlook-ui-modal__close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body outlook-ui-modal__body assign-subject-modal__body" id="assignBySubjectModalBody"></div>
+            <div class="modal-footer outlook-ui-modal__footer">
+                <button type="button" class="btn outlook-ui-modal__btn outlook-ui-modal__btn--cancel" data-bs-dismiss="modal" id="assignBySubjectCloseBtn">Close</button>
+                <button type="button" class="btn outlook-ui-modal__btn outlook-ui-modal__btn--confirm" id="assignBySubjectConfirmBtn" hidden>
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    Assign selected
                 </button>
             </div>
         </div>

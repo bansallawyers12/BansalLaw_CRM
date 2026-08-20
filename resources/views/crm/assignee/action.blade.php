@@ -30,15 +30,6 @@
                             </div>
                         </div>
                         <div class="card-header-actions">
-                            <div class="per-page-wrap">
-                                <label for="actionPageLength">Show</label>
-                                <select id="actionPageLength" class="form-control per-page-select" aria-label="Results per page">
-                                    <option value="10" selected>10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                            </div>
                             <a class="btn btn-outline-navy" id="assigned_by_me" href="{{ URL::to('/assigned_by_me') }}">Assigned by me</a>
                             <a class="btn btn-outline-navy" id="archived-tab" href="{{ URL::to('/action_completed') }}">Completed</a>
                     {{-- Popover body from <template> (data-content attribute breaks on staff names with quotes / long HTML) --}}
@@ -141,6 +132,12 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="actionInfiniteLoader" class="action-infinite-loader" hidden aria-live="polite">
+                        <span class="action-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Loading more actions...</span>
+                    </div>
+                    <div id="actionScrollSentinel" class="action-scroll-sentinel" aria-hidden="true"></div>
+                    <div id="actionScrollInfo" class="action-scroll-info">Showing 0 of 0 entries</div>
                 </div>
             </div>
         </div>
@@ -836,17 +833,276 @@ $(function () {
         $(this).popover(popoverOpts);
     });
 
-    if ($.fn.DataTable && $.fn.DataTable.ext && $.fn.DataTable.ext.pager) {
-        $.fn.DataTable.ext.pager._numbers = function(page, pages) {
-            var i, items = [];
-            if (pages <= 5) {
-                for (i = 0; i < pages; i++) {
-                    items.push(i);
-                }
-                return items;
+    var ACTION_PAGE_SIZE = 20;
+    var actionScrollState = {
+        ready: false,
+        loadingMore: false,
+        hasMore: true,
+        total: 0,
+        loaded: 0,
+        drawCounter: 0,
+        seenIds: {}
+    };
+
+    function getActionListFilter() {
+        var $activeTab = $('.tabs .tab-button.active');
+        return $activeTab.length ? ($activeTab.data('filter') || 'all') : 'all';
+    }
+
+    function applyActionListRequestData(d, start) {
+        d.filter = getActionListFilter();
+        d.search = d.search || {};
+        d.search.value = $('#searchInput').val() || '';
+        d.start = typeof start === 'number' ? start : 0;
+        d.length = ACTION_PAGE_SIZE;
+        return d;
+    }
+
+    function getActionRowId(row) {
+        if (!row) {
+            return '';
+        }
+        if (row.id != null && row.id !== '') {
+            return String(row.id);
+        }
+        var html = String(row.done_action || '');
+        var match = html.match(/data-id="(\d+)"/);
+        return match ? match[1] : '';
+    }
+
+    function rememberActionRowIds(rows) {
+        (rows || []).forEach(function(row) {
+            var id = getActionRowId(row);
+            if (id) {
+                actionScrollState.seenIds[id] = true;
             }
-            return [0, 1, 2, 'ellipsis', pages - 2, pages - 1];
+        });
+    }
+
+    function getActionAjaxParams(start) {
+        var params = {
+            draw: actionScrollState.drawCounter + 1,
+            start: parseInt(start, 10) || 0,
+            length: ACTION_PAGE_SIZE,
+            filter: getActionListFilter(),
+            search: {
+                value: $('#searchInput').val() || '',
+                regex: false
+            },
+            order: [{ column: 4, dir: 'desc' }],
+            columns: []
         };
+
+        if (table) {
+            var order = table.order();
+            if (order && order.length) {
+                params.order = order.map(function(item) {
+                    return { column: item[0], dir: item[1] };
+                });
+            }
+            var settings = table.settings()[0];
+            params.columns = (settings.aoColumns || []).map(function(col, idx) {
+                return {
+                    data: col.data != null ? col.data : (col.mData != null ? col.mData : idx),
+                    name: col.name != null ? col.name : (col.sName || ''),
+                    searchable: col.searchable != null ? col.searchable : !!col.bSearchable,
+                    orderable: col.orderable != null ? col.orderable : !!col.bSortable,
+                    search: { value: '', regex: false }
+                };
+            });
+        }
+
+        actionScrollState.drawCounter = params.draw;
+        return params;
+    }
+
+    function buildActionRowHtml(row, rowNumber) {
+        return '<tr data-action-id="' + getActionRowId(row) + '">'
+            + '<td>' + rowNumber + '</td>'
+            + '<td>' + (row.done_action || '') + '</td>'
+            + '<td>' + (row.assigner_name || '') + '</td>'
+            + '<td>' + (row.client_reference || '') + '</td>'
+            + '<td>' + (row.assign_date || '') + '</td>'
+            + '<td>' + (row.task_group || '') + '</td>'
+            + '<td>' + (row.note_description || '') + '</td>'
+            + '<td>' + (row.action || '') + '</td>'
+            + '</tr>';
+    }
+
+    function appendActionRows(rows) {
+        if (!rows || !rows.length) {
+            return 0;
+        }
+        var startNumber = actionScrollState.loaded;
+        var appended = 0;
+        var html = '';
+        rows.forEach(function(row) {
+            var id = getActionRowId(row);
+            if (id && actionScrollState.seenIds[id]) {
+                return;
+            }
+            if (id) {
+                actionScrollState.seenIds[id] = true;
+            }
+            html += buildActionRowHtml(row, startNumber + appended + 1);
+            appended += 1;
+        });
+        if (!appended) {
+            return 0;
+        }
+        var $tbody = $('.assignee-action-page .yajra-datatable tbody');
+        $tbody.append(html);
+
+        $tbody.find('tr').slice(-appended).find('[data-bs-toggle="popover"]')
+            .not('.update_task')
+            .not('.add_my_task')
+            .popover({
+                html: true,
+                sanitize: false,
+                trigger: 'click',
+                placement: 'bottom',
+                boundary: 'viewport',
+                container: 'body'
+            });
+        return appended;
+    }
+
+    function updateActionScrollInfo() {
+        var loaded = actionScrollState.loaded;
+        var total = actionScrollState.total;
+        var text = loaded > 0
+            ? ('Showing 1–' + loaded + ' of ' + total + (total === 1 ? ' entry' : ' entries'))
+            : (total > 0 ? ('Showing 0 of ' + total + ' entries') : 'Showing 0 of 0 entries');
+        $('#actionScrollInfo').text(text);
+    }
+
+    function setActionInfiniteLoader(visible) {
+        $('#actionInfiniteLoader').prop('hidden', !visible);
+    }
+
+    function resetActionScrollState() {
+        actionScrollState.ready = false;
+        actionScrollState.loadingMore = false;
+        actionScrollState.hasMore = true;
+        actionScrollState.total = 0;
+        actionScrollState.loaded = 0;
+        actionScrollState.seenIds = {};
+        setActionInfiniteLoader(false);
+        updateActionScrollInfo();
+    }
+
+    function syncActionScrollStateFromJson(json, appendCount) {
+        var batchCount = (json && json.data) ? json.data.length : 0;
+        actionScrollState.total = json ? (json.recordsFiltered || 0) : 0;
+        if (typeof appendCount === 'number') {
+            actionScrollState.loaded += appendCount;
+        } else {
+            actionScrollState.loaded = batchCount;
+            rememberActionRowIds(json && json.data);
+        }
+        actionScrollState.hasMore = actionScrollState.loaded < actionScrollState.total;
+        actionScrollState.ready = actionScrollState.loaded > 0 || actionScrollState.total === 0;
+        if (json && json.draw) {
+            actionScrollState.drawCounter = parseInt(json.draw, 10) || actionScrollState.drawCounter;
+        }
+        updateActionScrollInfo();
+    }
+
+    function maybeFillActionViewport() {
+        if (!actionScrollState.ready || !table || actionScrollState.loadingMore || !actionScrollState.hasMore) {
+            return;
+        }
+        var sentinel = document.getElementById('actionScrollSentinel');
+        if (!sentinel) {
+            return;
+        }
+        var rect = sentinel.getBoundingClientRect();
+        if (rect.top <= window.innerHeight + 120) {
+            loadMoreActions();
+        }
+    }
+
+    function loadMoreActions() {
+        if (!actionScrollState.ready || !table || actionScrollState.loadingMore || !actionScrollState.hasMore) {
+            return;
+        }
+        var start = actionScrollState.loaded;
+        if (start < ACTION_PAGE_SIZE) {
+            return;
+        }
+
+        actionScrollState.loadingMore = true;
+        setActionInfiniteLoader(true);
+
+        var params = getActionAjaxParams(start);
+
+        $.ajax({
+            url: "{{ route('action.list') }}",
+            type: 'GET',
+            data: params,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            success: function(json) {
+                if (json && json.data && json.data.length) {
+                    var appended = appendActionRows(json.data);
+                    syncActionScrollStateFromJson(json, appended);
+                    if (!appended) {
+                        actionScrollState.hasMore = false;
+                    }
+                } else {
+                    actionScrollState.hasMore = false;
+                    updateActionScrollInfo();
+                }
+            },
+            error: function(xhr) {
+                var st = xhr && xhr.status;
+                if (st === 401 || st === 419 || st === 403) {
+                    window.location.reload();
+                    return;
+                }
+                console.error('Action infinite scroll error:', st, xhr && xhr.responseText);
+            },
+            complete: function() {
+                actionScrollState.loadingMore = false;
+                setActionInfiniteLoader(false);
+                window.requestAnimationFrame(maybeFillActionViewport);
+            }
+        });
+    }
+
+    var actionInfiniteScrollBound = false;
+
+    function bindActionInfiniteScroll() {
+        if (actionInfiniteScrollBound) {
+            return;
+        }
+        actionInfiniteScrollBound = true;
+
+        var sentinel = document.getElementById('actionScrollSentinel');
+        if (!sentinel) {
+            return;
+        }
+
+        if ('IntersectionObserver' in window) {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        loadMoreActions();
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '240px 0px',
+                threshold: 0
+            });
+            observer.observe(sentinel);
+        }
+
+        $(window).on('scroll.actionInfinite resize.actionInfinite', function() {
+            maybeFillActionViewport();
+        });
     }
 
     var table = ($.fn.DataTable && $('.yajra-datatable').length)
@@ -860,9 +1116,7 @@ $(function () {
                 Accept: 'application/json'
             },
             data: function(d) {
-                var $activeTab = $('.tabs .tab-button.active');
-                d.filter = $activeTab.length ? ($activeTab.data('filter') || 'all') : 'all';
-                d.search.value = $('#searchInput').val() || ''; // Pass the search term to the server in DataTables format
+                applyActionListRequestData(d, 0);
             },
             error: function(xhr, error, thrown) {
                 var st = xhr && xhr.status;
@@ -888,12 +1142,6 @@ $(function () {
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         drawCallback: function() {
-            $('.assignee-action-page .dt-container .dt-layout-row').each(function() {
-                if ($(this).find('.dt-paging, .dt-info').length) {
-                    $(this).addClass('action-dt-footer');
-                }
-            });
-
             // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
             $('[data-bs-toggle="popover"]').not('.update_task').not('.add_my_task').popover({
                 html: true,
@@ -910,43 +1158,44 @@ $(function () {
         layout: {
             topStart: null,
             topEnd: null,
-            bottomStart: 'info',
-            bottomEnd: {
-                paging: {
-                    type: 'simple_numbers',
-                    buttons: 5,
-                    boundaryNumbers: false
-                }
-            }
+            bottomStart: null,
+            bottomEnd: null
         },
         paging: true,
         lengthChange: false,
-        pageLength: 10,
+        pageLength: ACTION_PAGE_SIZE,
         order: [[4, 'desc']],
         responsive: false,
         autoWidth: false,
         language: {
-            info: 'Showing _START_–_END_ of _TOTAL_ entries',
-            infoEmpty: 'Showing 0–0 of 0 entries',
-            infoFiltered: '(filtered from _MAX_ total entries)',
-            paginate: {
-                previous: '«',
-                next: '»'
-            },
             emptyTable: 'No open actions found',
             zeroRecords: 'No matching actions found'
         }
     }) : null;
 
-    $('#actionPageLength').on('change', function() {
-        if (table) {
-            table.page.len(parseInt($(this).val(), 10) || 10).draw();
-        }
-    });
+    if (table) {
+        table.on('preXhr.dt', function() {
+            if (!actionScrollState.loadingMore) {
+                resetActionScrollState();
+            }
+        });
+
+        table.on('xhr.dt', function(e, settings, json) {
+            if (!actionScrollState.loadingMore) {
+                syncActionScrollStateFromJson(json, false);
+                bindActionInfiniteScroll();
+                window.requestAnimationFrame(maybeFillActionViewport);
+            }
+        });
+    }
 
     // Search functionality
+    var actionSearchTimer = null;
     $('#searchInput').on('keyup', function() {
-        if (table) { table.ajax.reload(); } // Trigger DataTables reload with the new search term
+        clearTimeout(actionSearchTimer);
+        actionSearchTimer = setTimeout(function() {
+            if (table) { table.ajax.reload(); }
+        }, 300);
     });
 
     // Deep link from client Tasks tab (note_id query param)

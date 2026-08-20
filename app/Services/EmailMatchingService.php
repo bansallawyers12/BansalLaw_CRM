@@ -43,6 +43,11 @@ class EmailMatchingService
         $mailType = $this->detectMailType($parsedData);
 
         $candidates = [];
+        $uniquePair = $this->findUniqueClientMatterAssignment($searchText);
+
+        if ($uniquePair) {
+            $this->addCandidate($candidates, $uniquePair);
+        }
 
         foreach ($this->matchByMatterReference($searchText) as $match) {
             $this->addCandidate($candidates, $match);
@@ -79,6 +84,16 @@ class EmailMatchingService
             ? $confidence - (int) ($runnerUp['confidence'] ?? 0)
             : null;
         $isAmbiguous = $runnerUp !== null && $confidenceGap < 10;
+
+        // A unique client-id + matter-no pair in the subject is definitive, even if
+        // the same short matter code (CRM_2) exists on other clients.
+        if ($uniquePair) {
+            $best = $uniquePair;
+            $confidence = (int) $uniquePair['confidence'];
+            $matchedBy = array_values(array_unique($uniquePair['matched_by'] ?? []));
+            $isAmbiguous = false;
+            $confidenceGap = null;
+        }
 
         return [
             'suggestions' => array_slice($suggestions, 0, 5),
@@ -187,7 +202,15 @@ class EmailMatchingService
             'matters.title as matter_title'
         )->get();
 
+        $clientIdsByMatter = [];
         foreach ($rows as $row) {
+            $matterKey = strtoupper((string) $row->client_unique_matter_no);
+            $clientIdsByMatter[$matterKey][(int) $row->client_id] = true;
+        }
+
+        foreach ($rows as $row) {
+            $matterKey = strtoupper((string) $row->client_unique_matter_no);
+            $sharedAcrossClients = count($clientIdsByMatter[$matterKey] ?? []) > 1;
             $matches[] = $this->formatCandidate(
                 (int) $row->client_id,
                 (int) $row->client_matter_id,
@@ -197,7 +220,7 @@ class EmailMatchingService
                 (string) $row->client_unique_matter_no,
                 (string) ($row->matter_title ?? ''),
                 (string) ($row->record_type ?? 'client'),
-                92,
+                $sharedAcrossClients ? 72 : 92,
                 'matter_reference',
                 (int) $row->matter_status === 1
             );
@@ -231,9 +254,10 @@ class EmailMatchingService
         });
 
         $clients = $query->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')->get();
+        $preferredMatterRefs = $this->extractMatterReferences($searchText);
 
         foreach ($clients as $client) {
-            $matter = $this->resolveMatterForClient((int) $client->id);
+            $matter = $this->resolveMatterForClient((int) $client->id, $preferredMatterRefs);
             if (! $matter) {
                 continue;
             }
@@ -356,8 +380,32 @@ class EmailMatchingService
         return $matches;
     }
 
-    private function resolveMatterForClient(int $clientId): ?object
+    private function resolveMatterForClient(int $clientId, array $preferredMatterRefs = []): ?object
     {
+        if ($preferredMatterRefs !== []) {
+            $preferred = ClientMatter::query()
+                ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                ->where('client_matters.client_id', $clientId)
+                ->where(function ($q) use ($preferredMatterRefs) {
+                    foreach ($preferredMatterRefs as $ref) {
+                        $q->orWhereRaw('LOWER(client_matters.client_unique_matter_no) = ?', [strtolower($ref)]);
+                    }
+                })
+                ->orderByDesc('client_matters.matter_status')
+                ->orderByDesc('client_matters.id')
+                ->select(
+                    'client_matters.id',
+                    'client_matters.client_unique_matter_no',
+                    'client_matters.matter_status',
+                    'matters.title as matter_title'
+                )
+                ->first();
+
+            if ($preferred) {
+                return $preferred;
+            }
+        }
+
         $active = ClientMatter::query()
             ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
             ->where('client_matters.client_id', $clientId)
@@ -389,9 +437,68 @@ class EmailMatchingService
     }
 
     /**
+     * Unique client-id + matter-no pair from subject/body (e.g. GURD2600002 / CRM_2).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findUniqueClientMatterAssignment(string $text): ?array
+    {
+        $pairs = $this->extractClientMatterPairs($text);
+        if ($pairs === []) {
+            $clientRefs = $this->extractClientReferences($text);
+            $matterRefs = $this->extractMatterReferences($text);
+            foreach ($clientRefs as $clientRef) {
+                foreach ($matterRefs as $matterRef) {
+                    $pairs[] = [
+                        'client_ref' => $clientRef,
+                        'matter_ref' => $matterRef,
+                    ];
+                }
+            }
+        }
+
+        if ($pairs === []) {
+            return null;
+        }
+
+        $hits = [];
+        foreach ($pairs as $pair) {
+            $match = $this->lookupClientMatterPair($pair['client_ref'], $pair['matter_ref']);
+            if ($match === null) {
+                continue;
+            }
+            $hits[$match['client_id'] . ':' . $match['client_matter_id']] = $match;
+        }
+
+        if (count($hits) !== 1) {
+            return null;
+        }
+
+        return array_values($hits)[0];
+    }
+
+    /**
+     * @return list<array{client_ref: string, matter_ref: string}>
+     */
+    public function extractClientMatterPairs(string $text): array
+    {
+        $pairs = [];
+        if (preg_match_all('/\b([A-Z]{1,6}\d{7,})\s*\/\s*([A-Z]{2,6}_[0-9]{1,6})\b/i', $text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $pairs[strtoupper($match[1]) . '/' . strtoupper($match[2])] = [
+                    'client_ref' => strtoupper($match[1]),
+                    'matter_ref' => strtoupper($match[2]),
+                ];
+            }
+        }
+
+        return array_values($pairs);
+    }
+
+    /**
      * @return list<string>
      */
-    private function extractMatterReferences(string $text): array
+    public function extractMatterReferences(string $text): array
     {
         $refs = [];
         if (preg_match_all('/\b([A-Z]{2,6}_[0-9]{4}_[0-9]{1,6})\b/i', $text, $matches)) {
@@ -411,7 +518,7 @@ class EmailMatchingService
     /**
      * @return list<string>
      */
-    private function extractClientReferences(string $text): array
+    public function extractClientReferences(string $text): array
     {
         $refs = [];
         if (preg_match_all('/\b(CLI[0-9]{4,}[A-Z0-9]*)\b/i', $text, $matches)) {
@@ -419,8 +526,240 @@ class EmailMatchingService
                 $refs[] = strtoupper($ref);
             }
         }
+        // Bansal client ids: GURD2600002, JOHN2500337 (prefix + YY + 5-digit counter).
+        if (preg_match_all('/\b([A-Z]{1,6}\d{7,})\b/i', $text, $matches)) {
+            foreach ($matches[1] as $ref) {
+                $refs[] = strtoupper($ref);
+            }
+        }
 
         return array_values(array_unique($refs));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function extractNameCandidates(string $subject): array
+    {
+        $subject = trim((string) $subject);
+        $subject = preg_replace('/^(re|fw|fwd)\s*:\s*/i', '', $subject) ?? $subject;
+        $parts = preg_split('/\s*\|\s*/', $subject) ?: [];
+        $names = [];
+
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+            $part = preg_replace('/^(our ref|your ref)\s*:?\s*/i', '', $part) ?? $part;
+            $part = trim((string) $part);
+            $part = preg_replace('/\s+/', ' ', $part) ?? $part;
+            if (strlen($part) < 6) {
+                continue;
+            }
+            if ($this->extractClientReferences($part) !== [] || $this->extractMatterReferences($part) !== []) {
+                continue;
+            }
+            if (preg_match('/\d{3,}/', $part)) {
+                continue;
+            }
+            if (! preg_match('/^[A-Za-z][A-Za-z\'\-\.]+(?:\s+[A-Za-z][A-Za-z\'\-\.]+){1,5}$/', $part)) {
+                continue;
+            }
+            $names[] = $part;
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findUniqueClientByReference(string $text): ?array
+    {
+        $refs = $this->extractClientReferences($text);
+        if ($refs === []) {
+            return null;
+        }
+
+        $clients = Admin::query()
+            ->whereIn('type', ['client', 'lead'])
+            ->whereNull('is_deleted')
+            ->where('is_archived', 0)
+            ->where(function ($q) use ($refs) {
+                foreach ($refs as $ref) {
+                    $q->orWhereRaw('LOWER(client_id) = ?', [strtolower($ref)]);
+                }
+            })
+            ->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')
+            ->get();
+
+        $unique = $clients->unique('id');
+        if ($unique->count() !== 1) {
+            return null;
+        }
+
+        return $this->clientSummary($unique->first());
+    }
+
+    /**
+     * Unique client whose full name appears in the subject (no client id required).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findUniqueClientByName(string $subject): ?array
+    {
+        $hits = [];
+
+        foreach ($this->extractNameCandidates($subject) as $candidate) {
+            $key = strtolower($candidate);
+            foreach ($this->clientNameIndex()[$key] ?? [] as $client) {
+                $hits[(int) $client->id] = $client;
+            }
+        }
+
+        if ($hits === []) {
+            $haystack = strtolower(preg_replace('/\s+/', ' ', $subject) ?? $subject);
+            foreach ($this->clientNameIndex() as $fullName => $clients) {
+                if (! str_contains($fullName, ' ') || strlen($fullName) < 8) {
+                    continue;
+                }
+                if (preg_match('/\b' . preg_quote($fullName, '/') . '\b/u', $haystack)) {
+                    foreach ($clients as $client) {
+                        $hits[(int) $client->id] = $client;
+                    }
+                }
+            }
+        }
+
+        if (count($hits) !== 1) {
+            return null;
+        }
+
+        return $this->clientSummary(array_values($hits)[0]);
+    }
+
+    /**
+     * @return list<array{id: int, matter_no: string, matter_title: string, matter_active: bool}>
+     */
+    public function listMattersForClient(int $clientId): array
+    {
+        $rows = ClientMatter::query()
+            ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+            ->where('client_matters.client_id', $clientId)
+            ->orderByDesc('client_matters.matter_status')
+            ->orderByDesc('client_matters.id')
+            ->select(
+                'client_matters.id',
+                'client_matters.client_unique_matter_no',
+                'client_matters.matter_status',
+                'matters.title as matter_title'
+            )
+            ->get();
+
+        $matters = [];
+        foreach ($rows as $row) {
+            $matters[] = [
+                'id' => (int) $row->id,
+                'matter_no' => (string) ($row->client_unique_matter_no ?? ''),
+                'matter_title' => (string) ($row->matter_title ?? ''),
+                'matter_active' => (int) $row->matter_status === 1,
+            ];
+        }
+
+        return $matters;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function clientSummary(object $client): array
+    {
+        return [
+            'client_id' => (int) $client->id,
+            'client_ref' => (string) ($client->client_id ?? $client->client_ref ?? ''),
+            'client_name' => trim((string) ($client->first_name ?? '') . ' ' . (string) ($client->last_name ?? '')),
+            'email' => (string) ($client->email ?? ''),
+            'record_type' => (string) ($client->type ?? $client->record_type ?? 'client'),
+        ];
+    }
+
+    /**
+     * @return array<string, list<object>>
+     */
+    private function clientNameIndex(): array
+    {
+        if ($this->clientNameIndex !== null) {
+            return $this->clientNameIndex;
+        }
+
+        $this->clientNameIndex = [];
+        $clients = Admin::query()
+            ->whereIn('type', ['client', 'lead'])
+            ->whereNull('is_deleted')
+            ->where('is_archived', 0)
+            ->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')
+            ->get();
+
+        foreach ($clients as $client) {
+            $full = strtolower(trim(preg_replace(
+                '/\s+/',
+                ' ',
+                (string) ($client->first_name ?? '') . ' ' . (string) ($client->last_name ?? '')
+            ) ?? ''));
+            if ($full === '' || ! str_contains($full, ' ')) {
+                continue;
+            }
+            $this->clientNameIndex[$full][] = $client;
+        }
+
+        return $this->clientNameIndex;
+    }
+
+    /** @var array<string, list<object>>|null */
+    private ?array $clientNameIndex = null;
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function lookupClientMatterPair(string $clientRef, string $matterRef): ?array
+    {
+        $row = Admin::query()
+            ->join('client_matters', 'client_matters.client_id', '=', 'admins.id')
+            ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+            ->whereIn('admins.type', ['client', 'lead'])
+            ->whereNull('admins.is_deleted')
+            ->where('admins.is_archived', 0)
+            ->whereRaw('LOWER(admins.client_id) = ?', [strtolower($clientRef)])
+            ->whereRaw('LOWER(client_matters.client_unique_matter_no) = ?', [strtolower($matterRef)])
+            ->select(
+                'client_matters.id as client_matter_id',
+                'client_matters.client_unique_matter_no',
+                'client_matters.matter_status',
+                'admins.id as client_id',
+                'admins.client_id as client_ref',
+                'admins.first_name',
+                'admins.last_name',
+                'admins.email',
+                'admins.type as record_type',
+                'matters.title as matter_title'
+            )
+            ->first();
+
+        if (! $row) {
+            return null;
+        }
+
+        return $this->formatCandidate(
+            (int) $row->client_id,
+            (int) $row->client_matter_id,
+            (string) $row->client_ref,
+            trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
+            (string) ($row->email ?? ''),
+            (string) $row->client_unique_matter_no,
+            (string) ($row->matter_title ?? ''),
+            (string) ($row->record_type ?? 'client'),
+            96,
+            'client_matter_pair',
+            (int) $row->matter_status === 1
+        );
     }
 
     private function isCompanyEmail(string $email): bool

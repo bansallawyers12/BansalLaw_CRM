@@ -28,7 +28,9 @@ class UnassignedEmailAssignmentService
         int $clientId,
         int $clientMatterId,
         ?int $staffUserId = null,
-        bool $allowReassign = false
+        bool $allowReassign = false,
+        string $assignmentStatus = 'manual_assigned',
+        bool $enforceStaffAccess = true
     ): array
     {
         $emailLog = EmailLog::find($emailLogId);
@@ -49,11 +51,11 @@ class UnassignedEmailAssignmentService
         }
 
         $user = Auth::guard('admin')->user();
-        if ($user && ! StaffClientVisibility::canAccessClientOrLead($clientId, $user)) {
+        if ($enforceStaffAccess && $user && ! StaffClientVisibility::canAccessClientOrLead($clientId, $user)) {
             return ['success' => false, 'message' => 'Unauthorized access to target client.'];
         }
 
-        if ($user && $isReassigning && $previousClientId > 0 && ! StaffClientVisibility::canAccessClientOrLead($previousClientId, $user)) {
+        if ($enforceStaffAccess && $user && $isReassigning && $previousClientId > 0 && ! StaffClientVisibility::canAccessClientOrLead($previousClientId, $user)) {
             return ['success' => false, 'message' => 'Unauthorized access to current assigned client.'];
         }
 
@@ -84,7 +86,9 @@ class UnassignedEmailAssignmentService
             $emailLog->client_matter_id = $clientMatterId;
             $emailLog->type = in_array($client->type, ['client', 'lead'], true) ? $client->type : 'client';
             $emailLog->user_id = $staffUserId;
-            $emailLog->sync_assignment_status = 'manual_assigned';
+            $emailLog->sync_assignment_status = in_array($assignmentStatus, ['auto_assigned', 'manual_assigned'], true)
+                ? $assignmentStatus
+                : 'manual_assigned';
             $emailLog->save();
 
             $matter->updated_at = now();
@@ -199,7 +203,7 @@ class UnassignedEmailAssignmentService
             $emailLog->client_id = null;
             $emailLog->client_matter_id = null;
             $emailLog->user_id = $staffUserId ?: (int) Auth::id();
-            $emailLog->sync_assignment_status = 'unassigned';
+            $emailLog->sync_assignment_status = 'unlinked';
             $emailLog->save();
 
             try {

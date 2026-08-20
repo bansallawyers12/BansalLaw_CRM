@@ -4291,12 +4291,58 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     min-width: 0;
 }
 
+.list-toolbar__side-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.list-toolbar__assign-subject {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #99f6e4;
+    border-radius: 9px;
+    background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%);
+    color: #0f766e;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+
+.list-toolbar__assign-subject:hover:not(:disabled) {
+    background: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%);
+    border-color: #5eead4;
+    color: #115e59;
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.16);
+}
+
+.list-toolbar__assign-subject:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+}
+
+.list-toolbar__assign-subject[hidden] {
+    display: none !important;
+}
+
+.list-toolbar__assign-subject i {
+    font-size: 13px;
+}
+
 .list-filter-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
-    margin-left: auto;
+    margin-left: 0;
     height: 36px;
     padding: 0 12px;
     border: 1px solid #e2e8f0;
@@ -4359,7 +4405,7 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     width: auto;
     max-width: none;
     flex: none;
-    margin: 10px 14px 8px;
+    margin: 12px 14px 10px;
     padding: 0;
     background: transparent;
 }
@@ -4470,7 +4516,7 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     width: auto;
     min-width: 0;
     max-width: none;
-    margin: 10px 14px 8px;
+    margin: 12px 14px 10px;
 }
 
 .outlook-container--unassigned .list-toolbar__folder-row .folder-tabs {
@@ -4603,9 +4649,188 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f1f5f9;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.sync-inbox-panel--redesign {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 14px 12px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.outlook-container--unassigned .sync-inbox-panel--redesign {
+    padding: 12px;
+}
+
+.list-filters-drawer .sync-inbox-panel--redesign {
+    margin: 0 14px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sync-inbox-panel__section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.sync-inbox-panel__section--sync {
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.sync-inbox-panel__section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.sync-inbox-panel--redesign .sync-inbox-panel__sync-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    justify-content: stretch;
+    flex-wrap: nowrap;
+}
+
+.sync-inbox-panel--redesign.sync-inbox-panel--admin .sync-inbox-panel__sync-row {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
+}
+
+.sync-inbox-panel--redesign:not(.sync-inbox-panel--admin) .sync-inbox-panel__sync-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.sync-inbox-panel--redesign .sync-inbox-panel__field {
+    min-width: 0;
+    width: 100%;
+}
+
+.sync-inbox-panel--redesign .sync-inbox-panel__field .list-filter-select {
+    width: 100%;
+}
+
+.sync-inbox-panel--redesign .sync-inbox-panel__btn {
+    white-space: nowrap;
+}
+
+.sync-inbox-panel__btn--assign-subject {
+    display: none !important;
+}
+
+.assign-subject-modal__dialog {
+    max-width: 640px;
+}
+
+.assign-subject-modal__body {
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+}
+
+.assign-subject-summary {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.assign-subject-summary--alert {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-weight: 600;
+}
+
+.assign-subject-results {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.assign-subject-results li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px;
+}
+
+.assign-subject-results li:last-child {
+    border-bottom: none;
+}
+
+.assign-subject-results__subject {
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.assign-subject-results__meta {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.assign-subject-ref {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 11px;
+    color: #0f766e;
+}
+
+.assign-subject-group {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.assign-subject-group__header {
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.assign-subject-group__reason {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #9a3412;
+}
+
+.assign-subject-group__matter-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.assign-subject-group__matter {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.assign-subject-results--pending {
+    margin-bottom: 0;
+    background: #fff;
 }
 
 .outlook-container--unassigned .sync-inbox-panel--tools-only .sync-inbox-panel__list-tools {
@@ -5776,8 +6001,15 @@ body.assign-email-modal-open .ts-dropdown .no-results,
         flex-wrap: nowrap;
     }
 
-    .list-filter-toggle__text {
+    .list-filter-toggle__text,
+    .list-toolbar__assign-subject-text {
         display: none;
+    }
+
+    .list-toolbar__assign-subject,
+    .list-filter-toggle {
+        width: 36px;
+        padding: 0;
     }
 
     .outlook-container--unassigned .list-filters-drawer .list-toolbar__search {
@@ -5788,6 +6020,16 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 
     .sync-inbox-panel__list-tools {
         grid-template-columns: 1fr;
+    }
+
+    .sync-inbox-panel--redesign .sync-inbox-panel__sync-row,
+    .sync-inbox-panel--redesign.sync-inbox-panel--admin .sync-inbox-panel__sync-row,
+    .sync-inbox-panel--redesign:not(.sync-inbox-panel--admin) .sync-inbox-panel__sync-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sync-inbox-panel--redesign .sync-inbox-panel__btn {
+        width: 100%;
     }
 
     .sync-inbox-panel__actions {
