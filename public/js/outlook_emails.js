@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const outlookContainer = document.getElementById('outlookContainer');
     const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
     const unassignedOnly = !!(outlookContainer && outlookContainer.getAttribute('data-unassigned-only') === '1');
+    const compactPagination = !!(outlookContainer && outlookContainer.getAttribute('data-compact-pagination') === '1');
     let defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
     // Client matter Emails tab only has Inbox/Sent — never start on synced-mail folders.
     if (!unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
@@ -95,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return 20;
     }
 
-    let perPage = readStoredPerPage();
+    let perPage = compactPagination ? 20 : readStoredPerPage();
     if (perPageSelect) {
         perPageSelect.value = String(perPage);
     }
@@ -1062,21 +1063,30 @@ document.addEventListener('DOMContentLoaded', function() {
         listTotal = safeTotal;
         listFrom = Math.max(0, Number(from) || 0);
         listLastPage = safeLastPage;
-        const syncedListFooter = isSyncedInboxFolder(currentFolder);
 
-        if (listTotalCount) {
-            listTotalCount.textContent = formatMailTotalLabel(safeTotal);
-        }
+        if (compactPagination) {
+            if (listTotalCount) {
+                listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+            }
 
-        if (pageSummary) {
-            pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
-        }
+            if (pageSummary) {
+                pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
+            }
+        } else {
+            if (listTotalCount) {
+                listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+            }
 
-        if (pageInfo) {
-            if (safeTotal > 0) {
-                pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
-            } else {
-                pageInfo.textContent = 'No emails found';
+            if (pageSummary) {
+                pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
+            }
+
+            if (pageInfo) {
+                if (safeTotal > 0) {
+                    pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
+                } else {
+                    pageInfo.textContent = 'No emails found';
+                }
             }
         }
 
@@ -3388,7 +3398,6 @@ document.addEventListener('DOMContentLoaded', function() {
             emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">'
                 + escapeHtml(error.message || 'Error loading emails')
                 + '</div>';
-            pageInfo.textContent = 'No emails found';
             updatePaginationDisplay(0, 1, 0, 0);
         }
     }

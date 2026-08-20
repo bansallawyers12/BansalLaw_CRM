@@ -1299,6 +1299,60 @@ body, html {
     cursor: not-allowed;
 }
 
+/* Client detail emails tab — compact pagination (page + total, icon nav only) */
+#emails-tab .outlook-container--compact-pagination .pagination-bar--compact {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-top-color: #dbeafe;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 12px;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+#emails-tab .outlook-container--compact-pagination .pagination-bar--compact .pagination-bar__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+#emails-tab .outlook-container--compact-pagination .pagination-bar--compact .pagination-bar__page {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+#emails-tab .outlook-container--compact-pagination .pagination-bar--compact .pagination-bar__total {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a8a;
+    white-space: nowrap;
+}
+
+#emails-tab .outlook-container--compact-pagination .pagination-bar--compact .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+#emails-tab .outlook-container--compact-pagination .pagination-btn--icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 10px;
+    border-color: #cbd5e1;
+}
+
 /* Modal styles for Reply/Forward — tall reading-pane style compose */
 .compose-modal {
     display: none;
@@ -6559,20 +6613,20 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 }
 
 @media (max-width: 900px) {
-    .pagination-bar {
+    .pagination-bar:not(.pagination-bar--compact) {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .pagination-controls {
+    .pagination-bar:not(.pagination-bar--compact) .pagination-controls {
         justify-content: space-between;
     }
 
-    .pagination-btn span {
+    .pagination-bar:not(.pagination-bar--compact) .pagination-btn span {
         display: none;
     }
 
-    .pagination-btn {
+    .pagination-bar:not(.pagination-bar--compact) .pagination-btn {
         min-width: 42px;
         justify-content: center;
         padding: 10px 12px;

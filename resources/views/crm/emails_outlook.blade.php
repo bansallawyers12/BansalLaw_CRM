@@ -69,6 +69,7 @@
         && $authStaff->canViewSyncedInboxMail();
     $unassignedOnly = ! empty($unassignedOnly);
     $assignmentReviewOnly = ! empty($assignmentReviewOnly);
+    $compactPagination = ! $unassignedOnly && ! empty($compactPagination);
     $canUnlinkSyncedEmail = $authStaff instanceof \App\Models\Staff
         && (
             $canSyncInbox
@@ -103,7 +104,7 @@
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
 
-<div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}" id="outlookContainer"
+<div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}{{ $compactPagination ? ' outlook-container--compact-pagination' : '' }}" id="outlookContainer"
     data-base-url="{{ url('/') }}"
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
@@ -129,6 +130,7 @@
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
+    data-compact-pagination="{{ $compactPagination ? '1' : '0' }}"
     data-default-folder="{{ $assignmentReviewOnly ? 'review' : ($unassignedOnly ? 'unassigned' : 'inbox') }}"
     data-matters-url="{{ route('clients.listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
@@ -407,6 +409,22 @@
         <div class="email-list" id="emailList">
             <div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>
         </div>
+        @if($compactPagination)
+        <div class="pagination-bar pagination-bar--compact" id="emailPaginationBar">
+            <div class="pagination-bar__summary">
+                <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
+                <span class="pagination-bar__total" id="listTotalCount">Total: 0 emails</span>
+            </div>
+            <div class="pagination-controls">
+                <button type="button" class="pagination-btn pagination-btn--icon" id="prevBtn" disabled aria-label="Previous page">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="pagination-btn pagination-btn--icon" id="nextBtn" disabled aria-label="Next page">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+        @else
         <div class="pagination-bar" id="emailPaginationBar">
             <div class="pagination-bar__summary">
                 <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
@@ -435,6 +453,7 @@
                 </button>
             </div>
         </div>
+        @endif
         @endif
     </div>
 
