@@ -56,6 +56,7 @@
                     dropdownClass: 'ts-dropdown crm-global-search-dropdown',
                     placeholder: 'Search name, email, phone…',
                     loadThrottle: 300,
+                    minQueryLength: 2,
                     showAccessBadges: true,
                     onItemAdd: navigateFromGlobalSearch,
                     onChange: navigateFromGlobalSearch

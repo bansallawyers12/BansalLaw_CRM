@@ -80,6 +80,61 @@
   }
 
   /**
+   * Race-safe Tom Select remote load: aborts stale requests and ignores out-of-order responses.
+   *
+   * @param {function(string, AbortController|null): Promise<Array>} fetchItems
+   * @returns {function(string, function): void}
+   */
+  function createCrmTomSelectAjaxLoad(fetchItems) {
+    var state = { controller: null, seq: 0 };
+
+    return function (query, callback) {
+      var seq = ++state.seq;
+
+      if (state.controller && typeof state.controller.abort === 'function') {
+        state.controller.abort();
+      }
+
+      var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      state.controller = controller;
+
+      var pending;
+      try {
+        pending = fetchItems(String(query || ''), controller);
+      } catch (e) {
+        if (seq === state.seq) {
+          callback([]);
+        }
+        return;
+      }
+
+      if (!pending || typeof pending.then !== 'function') {
+        if (seq === state.seq) {
+          callback([]);
+        }
+        return;
+      }
+
+      pending
+        .then(function (items) {
+          if (seq !== state.seq) {
+            return;
+          }
+          callback(Array.isArray(items) ? items : []);
+        })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') {
+            return;
+          }
+          if (seq !== state.seq) {
+            return;
+          }
+          callback([]);
+        });
+    };
+  }
+
+  /**
    * Build a client/lead detail URL from a global-search Tom Select value.
    * Values look like "ENCODED/Matter/FAM_1" or "ENCODED/Client". Encoded ids may
    * contain "/" or "=", so never split the whole string on "/".
@@ -144,7 +199,7 @@
     var dropdownParent = opts.dropdownParent !== undefined ? opts.dropdownParent : 'body';
     var placeholder = opts.placeholder || 'Search client...';
     var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 250;
-    var minQueryLen = opts.minQueryLength != null ? opts.minQueryLength : 1;
+    var minQueryLen = opts.minQueryLength != null ? opts.minQueryLength : 2;
     var showAccessBadges = !!opts.showAccessBadges;
 
     function buildClientSearchDescription(item, escape) {
@@ -232,20 +287,22 @@
           return '<div>' + escape(item.name || item.text || '') + '</div>';
         }
       },
-      load: function (query, callback) {
-        if (!url) {
-          callback([]);
-          return;
+      load: createCrmTomSelectAjaxLoad(function (query, controller) {
+        if (!url || String(query).length < minQueryLen) {
+          return Promise.resolve([]);
         }
         var sep = url.indexOf('?') >= 0 ? '&' : '?';
-        var qEnc = encodeURIComponent(String(query));
-        fetch(url + sep + 'q=' + qEnc, {
+        var fetchOpts = {
           credentials: 'same-origin',
           headers: {
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
           }
-        })
+        };
+        if (controller) {
+          fetchOpts.signal = controller.signal;
+        }
+        return fetch(url + sep + 'q=' + encodeURIComponent(query), fetchOpts)
           .then(function (r) {
             if (!r.ok) {
               throw new Error('HTTP ' + r.status);
@@ -253,12 +310,9 @@
             return r.json();
           })
           .then(function (data) {
-            callback(data && data.items ? data.items : []);
-          })
-          .catch(function () {
-            callback([]);
+            return data && data.items ? data.items : [];
           });
-      }
+      })
     };
 
     if (opts.dropdownClass) {
