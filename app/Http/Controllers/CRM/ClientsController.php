@@ -2204,68 +2204,31 @@ class ClientsController extends Controller
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
-                ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
-                    $join->on('client_contacts.client_id', '=', 'admins.id');
-                    $join->where(function ($phoneQuery) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
-                        if ($isUniversalPhone) {
-                            // For universal phone (4444444444), also search for timestamped versions
-                            $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
-                                      ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
-                        } else {
-                            $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
-                        }
-
-                        // Digit-normalized match (handles +61 vs local number / country_code split storage)
-                        if ($phoneDigitVariants !== []) {
-                            $phoneQuery->orWhere(function ($digitQuery) use ($phoneDigitVariants) {
-                                GlobalSearchPhoneMatcher::whereContactPhoneDigitsMatch(
-                                    $digitQuery,
-                                    $phoneDigitVariants
-                                );
-                            });
-                        }
-                    });
-                })
-                ->leftJoin('client_emails', function($join) use ($squery, $squeryLower, $isUniversalEmail) {
-                    $join->on('client_emails.client_id', '=', 'admins.id');
-                    if ($isUniversalEmail) {
-                        // For universal email (demo@gmail.com), also search for timestamped versions
-                        $join->where(function($emailQuery) use ($squeryLower) {
-                            $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"])
-                                      ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ['demo_%@gmail.com']);
-                        });
-                    } else {
-                        $join->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
-                    }
-                })
                 ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone, $phoneDigitVariants) {
-                    // Handle universal email search in admins.email
                     if ($isUniversalEmail) {
-                        $query->where(function($emailSubQuery) use ($squeryLower) {
+                        $query->where(function ($emailSubQuery) use ($squeryLower) {
                             $emailSubQuery->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"])
-                                          ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
+                                ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
                         });
                     } else {
-                        $query->whereRaw('LOWER(admins.email) LIKE ?', ["%$squeryLower%"]);
+                        $query->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"]);
                     }
-                    
-                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"]);
-                    
-                    // Search by company name (for company clients/leads)
-                    $query->orWhereHas('company', function($q) use ($squeryLower) {
+
+                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%{$squeryLower}%"]);
+
+                    $query->orWhereHas('company', function ($q) use ($squeryLower) {
                         $q->whereRaw('LOWER(company_name) LIKE ?', ["%{$squeryLower}%"]);
                     });
-                    
-                    // Handle universal phone search in admins.phone
+
                     if ($isUniversalPhone) {
-                        $query->orWhere(function($phoneSubQuery) use ($squery, $squeryLower) {
+                        $query->orWhere(function ($phoneSubQuery) use ($squery, $squeryLower) {
                             $phoneSubQuery->whereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"])
-                                          ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squery}_%"]);
+                                ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squery}_%"]);
                         });
                     } else {
-                        $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"]);
+                        $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"]);
                     }
 
                     if ($phoneDigitVariants !== []) {
@@ -2284,12 +2247,47 @@ class ClientsController extends Controller
                             );
                         });
                     }
-                    
-                    $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
-                        ->orWhereNotNull('client_contacts.client_id')  // Matches phone search
-                        ->orWhereNotNull('client_emails.client_id');    // Matches email search
 
-                    if ($d != "") {
+                    $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%{$squeryLower}%"]);
+
+                    $query->orWhereExists(function ($sub) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
+                        $sub->select(DB::raw('1'))
+                            ->from('client_contacts')
+                            ->whereColumn('client_contacts.client_id', 'admins.id')
+                            ->where(function ($phoneQuery) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
+                                if ($isUniversalPhone) {
+                                    $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
+                                        ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
+                                } else {
+                                    $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
+                                }
+
+                                if ($phoneDigitVariants !== []) {
+                                    $phoneQuery->orWhere(function ($digitQuery) use ($phoneDigitVariants) {
+                                        GlobalSearchPhoneMatcher::whereContactPhoneDigitsMatch(
+                                            $digitQuery,
+                                            $phoneDigitVariants
+                                        );
+                                    });
+                                }
+                            });
+                    });
+
+                    $query->orWhereExists(function ($sub) use ($squeryLower, $isUniversalEmail) {
+                        $sub->select(DB::raw('1'))
+                            ->from('client_emails')
+                            ->whereColumn('client_emails.client_id', 'admins.id')
+                            ->where(function ($emailQuery) use ($squeryLower, $isUniversalEmail) {
+                                if ($isUniversalEmail) {
+                                    $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"])
+                                        ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ['demo_%@gmail.com']);
+                                } else {
+                                    $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
+                                }
+                            });
+                    });
+
+                    if ($d != '') {
                         $query->orWhere('admins.dob', '=', $d);
                     }
                 });
@@ -2297,10 +2295,7 @@ class ClientsController extends Controller
                 StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
             });
             $clientsQuery = $clientsQuery
-                ->select(
-                    'admins.*'
-                )
-                ->distinct()
+                ->select('admins.*')
                 ->orderBy('admins.created_at', 'desc')
                 ->get();
 
