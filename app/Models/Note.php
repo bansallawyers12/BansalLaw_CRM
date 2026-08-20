@@ -119,6 +119,11 @@ class Note extends Model
         return $this->belongsTo(ClientMatter::class, 'matter_id');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(NoteAttachment::class, 'note_id');
+    }
+
     /**
      * Prefer notes.matter_id; fall back to linked checklist task matter for legacy rows.
      */

@@ -9,10 +9,13 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\Note;
+use App\Models\NoteAttachment;
 use App\Models\Staff;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use App\Models\ClientMatter;
+use App\Services\NoteAttachmentService;
+use App\Support\NoteAttachmentHtml;
 use App\Support\NoteDescriptionHtml;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Facades\Auth;
@@ -109,6 +112,11 @@ class ClientNotesController extends Controller
         }*/
         $obj->mobile_number = $request->mobileNumber ?? null; // Handle case when mobileNumber is not provided
         $obj->task_group = $request->task_group;
+
+        $uploadError = NoteAttachmentService::validateUploads($request->file('attachments'));
+        if ($uploadError) {
+            return response()->json(['status' => false, 'message' => $uploadError], 200, [], JSON_UNESCAPED_UNICODE);
+        }
         
         // PostgreSQL NOT NULL constraints - must set these fields
         if(!$isUpdate) {
@@ -119,6 +127,22 @@ class ClientNotesController extends Controller
         
         try {
             $saved = $obj->save();
+
+            if ($saved) {
+                $removeIds = $request->input('remove_attachment_ids', []);
+                if (! is_array($removeIds)) {
+                    $removeIds = $removeIds !== null && $removeIds !== '' ? [$removeIds] : [];
+                }
+                if ($isUpdate && $removeIds !== []) {
+                    $toRemove = NoteAttachment::where('note_id', $obj->id)
+                        ->whereIn('id', array_map('intval', $removeIds))
+                        ->get();
+                    foreach ($toRemove as $attachment) {
+                        NoteAttachmentService::deleteAttachment($attachment);
+                    }
+                }
+                NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
+            }
             
             if($saved){
                 // BUGFIX #5: Log activity for BOTH client and lead notes (not just client)
@@ -298,11 +322,23 @@ class ClientNotesController extends Controller
 			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
 		$this->ensureCrmRecordAccess((int) $note->client_id);
-		$data = Note::select('title','description','task_group','mobile_number')->where('id',$note_id)->first();
+		$data = Note::select('title','description','task_group','mobile_number','matter_id')->where('id',$note_id)->first();
+        $attachments = NoteAttachment::where('note_id', $note_id)->orderBy('id')->get()->map(function (NoteAttachment $a) {
+            return [
+                'id' => $a->id,
+                'name' => $a->original_name,
+                'size' => NoteAttachmentHtml::humanSize((int) $a->file_size),
+                'is_image' => $a->isImage(),
+                'extension' => $a->extension,
+                'download_url' => url('/note-attachments/' . $a->id . '/download'),
+                'preview_url' => url('/note-attachments/' . $a->id . '/preview'),
+            ];
+        })->values();
 		
 		return response()->json([
 			'status' => true,
-			'data' => $data
+			'data' => $data,
+            'attachments' => $attachments,
 		]);
 	}
 
@@ -369,7 +405,7 @@ class ClientNotesController extends Controller
         $type = $request->type; 
         $task_group = $request->task_group;
         //if($task_group == ''){
-            $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->orderby('pin', 'DESC')->orderBy('updated_at', 'DESC')->get();
+            $notelist = Note::with('attachments')->where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->orderby('pin', 'DESC')->orderBy('updated_at', 'DESC')->get();
         /*}else{
             $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->where('task_group',$task_group)->orderby('pin', 'DESC')->orderBy('created_at', 'DESC')->get();
         }*/
@@ -446,6 +482,7 @@ class ClientNotesController extends Controller
                     echo NoteDescriptionHtml::forDisplay($list->description ?? '');
                     ?>
                 </div>
+                <?php echo NoteAttachmentHtml::forNoteCard($list->attachments); ?>
             </div>
             <?php
         }
@@ -471,6 +508,7 @@ class ClientNotesController extends Controller
 		}
 		$this->ensureCrmRecordAccess((int) $note->client_id);
 		$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
+        NoteAttachmentService::deleteAllForNote($note);
 		$res = DB::table('notes')->where('id', @$note_id)->delete();
 		if ($res) {
 			if ($data->type == 'client') {
@@ -535,6 +573,55 @@ class ClientNotesController extends Controller
 			'message' => $newPin ? 'Note pinned successfully' : 'Note unpinned successfully'
 		]);
 	}
+
+    /**
+     * Download a note attachment (auth + CRM access required).
+     */
+    public function downloadAttachment($id)
+    {
+        return $this->streamAttachment($id, false);
+    }
+
+    /**
+     * Preview images / PDFs inline; other types download.
+     */
+    public function previewAttachment($id)
+    {
+        return $this->streamAttachment($id, true);
+    }
+
+    private function streamAttachment($id, bool $inline)
+    {
+        $attachment = NoteAttachment::with('note')->find($id);
+        if (! $attachment) {
+            abort(404, 'Attachment not found');
+        }
+
+        $clientId = (int) ($attachment->client_id ?: 0);
+        if ($clientId <= 0 && $attachment->note) {
+            $clientId = (int) $attachment->note->client_id;
+        }
+        if ($clientId <= 0) {
+            abort(404, 'Attachment not found');
+        }
+        $this->ensureCrmRecordAccess($clientId);
+
+        $abs = NoteAttachmentService::absolutePath($attachment);
+        if (! $abs) {
+            abort(404, 'Attachment file not found');
+        }
+
+        $name = $attachment->original_name ?: 'attachment';
+        $mime = $attachment->mime_type ?: 'application/octet-stream';
+        $disposition = ($inline && $attachment->isImage()) || ($inline && strtolower((string) $attachment->extension) === 'pdf')
+            ? 'inline'
+            : 'attachment';
+
+        return response()->file($abs, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => $disposition . '; filename="' . str_replace('"', '', $name) . '"',
+        ]);
+    }
 
     /**
      * Save previous visa information - DEPRECATED Phase 4

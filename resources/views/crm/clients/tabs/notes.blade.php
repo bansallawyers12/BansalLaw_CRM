@@ -202,12 +202,62 @@
                         .note-card-redesign.pinned {
                             border-left: 3px solid #2563eb;
                         }
+                        .note-attachments-list {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 10px;
+                            margin-top: 14px;
+                        }
+                        .note-attachment-thumb {
+                            display: flex;
+                            flex-direction: column;
+                            width: 110px;
+                            text-decoration: none;
+                            color: #334155;
+                            font-size: 0.75rem;
+                        }
+                        .note-attachment-thumb img {
+                            width: 110px;
+                            height: 80px;
+                            object-fit: cover;
+                            border-radius: 10px;
+                            border: 1px solid #e2e8f0;
+                            background: #f8fafc;
+                        }
+                        .note-attachment-thumb span,
+                        .note-attachment-name {
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                            margin-top: 4px;
+                        }
+                        .note-attachment-file {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 10px;
+                            padding: 8px 12px;
+                            text-decoration: none;
+                            color: #1e293b;
+                            font-size: 0.85rem;
+                            max-width: 100%;
+                        }
+                        .note-attachment-file:hover {
+                            border-color: #93c5fd;
+                            color: #1d4ed8;
+                        }
+                        .note-attachment-size {
+                            color: #64748b;
+                            font-size: 0.75rem;
+                        }
                     </style>
 
                     <!-- Notes List -->
                     <div class="note_term_list subtab8-content">
                         <?php
-                        $notelist = \App\Models\Note::where('client_id', $fetchedData->id)
+                        $notelist = \App\Models\Note::with('attachments')->where('client_id', $fetchedData->id)
                             ->whereNull('assigned_to')
                             ->where('type', 'client')
                             ->orderby('pin', 'DESC')
@@ -303,6 +353,7 @@
                                     {!! \App\Support\NoteDescriptionHtml::forDisplay($list->description) !!}
                                 @endif
                             </div>
+                            {!! \App\Support\NoteAttachmentHtml::forNoteCard($list->attachments) !!}
                         </div>
                         <?php } ?>
                     </div>

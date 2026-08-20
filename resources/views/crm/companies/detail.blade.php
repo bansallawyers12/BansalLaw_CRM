@@ -1282,7 +1282,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
 {{-- Phase 3 modules --}}
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/notes.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>

@@ -1549,7 +1549,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
 {{-- Phase 3 modules --}}
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/notes.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/matter-tasks.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/matter-tasks.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
@@ -1595,6 +1595,10 @@ $(document).ready(function() {
 @include('crm.clients.partials.quick-add-matter-scripts')
 @endif
 {{-- Main detail page JavaScript --}}
+<script>
+    window.__CRM_DOC_MAX_FILE_MB__ = {{ (int) config('crm.document_upload.max_file_size_mb', 100) }};
+    window.__CRM_DOC_MAX_VIDEO_MB__ = {{ (int) config('crm.personal_video_upload.max_size_mb', 300) }};
+</script>
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 <script>
 (function ($) {

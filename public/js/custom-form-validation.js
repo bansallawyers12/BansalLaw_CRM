@@ -2407,6 +2407,9 @@ function customValidate(formName, savetype = '')
 							var obj = typeof response === 'string' ? $.parseJSON(response) : response;
 							if(obj.status){
 								$('#create_note').modal('hide');
+								if (typeof window.resetNoteAttachments === 'function') {
+									window.resetNoteAttachments($('#create_note'));
+								}
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
 										url: site_url+'/get-notes',
@@ -2447,6 +2450,9 @@ function customValidate(formName, savetype = '')
 								    $('#create_note_d input[name="title"]').val('');
 								$("#create_note_d .tinymce-editor").val('');
 								$('#create_note_d input[name="noteid"]').val('');
+								if (typeof window.resetNoteAttachments === 'function') {
+									window.resetNoteAttachments($('#create_note_d'));
+								}
 								// Clear TinyMCE editor if initialized
 								if (typeof tinymce !== 'undefined') {
 									$("#create_note_d .tinymce-editor").each(function() {

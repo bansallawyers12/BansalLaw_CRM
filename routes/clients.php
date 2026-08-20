@@ -140,6 +140,8 @@ Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicati
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
 Route::post('/pinnote', [ClientNotesController::class, 'pinnote']);
+Route::get('/note-attachments/{id}/download', [ClientNotesController::class, 'downloadAttachment'])->name('clients.noteAttachment.download');
+Route::get('/note-attachments/{id}/preview', [ClientNotesController::class, 'previewAttachment'])->name('clients.noteAttachment.preview');
 
 Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index'])->name('clients.matterTask.index');
 Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');

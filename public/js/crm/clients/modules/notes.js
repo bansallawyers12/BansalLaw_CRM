@@ -77,7 +77,126 @@
 
     window.getallnotes = getallnotes;
 
+    var MAX_NOTE_FILES = 10;
+
+    function noteAttachmentField($form) {
+        return $form.find('.note-attachments-field').first();
+    }
+
+    function resetNoteAttachments($form) {
+        var $field = noteAttachmentField($form);
+        if (!$field.length) return;
+        var $input = $field.find('.note-attachments-input');
+        $input.val('');
+        $field.find('.note-selected-files').empty();
+        $field.find('.note-existing-attachments').empty();
+        $field.data('files', []);
+    }
+
+    function syncNoteFileInput($field) {
+        var files = $field.data('files') || [];
+        var input = $field.find('.note-attachments-input')[0];
+        if (!input) return;
+        var dt = new DataTransfer();
+        files.forEach(function(f) { dt.items.add(f); });
+        try {
+            input.files = dt.files;
+        } catch (err) {
+            // Keep native FileList if DataTransfer assignment is unsupported
+        }
+        renderSelectedNoteFiles($field);
+    }
+
+    function renderSelectedNoteFiles($field) {
+        var files = $field.data('files') || [];
+        var $list = $field.find('.note-selected-files');
+        $list.empty();
+        files.forEach(function(file, idx) {
+            var size = file.size < 1048576
+                ? (Math.round(file.size / 102.4) / 10) + ' KB'
+                : (Math.round(file.size / 104857.6) / 10) + ' MB';
+            var $li = $('<li class="note-file-chip"></li>');
+            $li.append($('<i class="fa-solid fa-paperclip"></i>'));
+            $li.append($('<span></span>').text(file.name + ' (' + size + ')'));
+            var $btn = $('<button type="button" aria-label="Remove file"><i class="fa-solid fa-xmark"></i></button>');
+            $btn.on('click', function() {
+                var next = ($field.data('files') || []).filter(function(_, i) { return i !== idx; });
+                $field.data('files', next);
+                syncNoteFileInput($field);
+            });
+            $li.append($btn);
+            $list.append($li);
+        });
+    }
+
+    function addNoteFiles($field, fileList) {
+        var current = $field.data('files') || [];
+        var incoming = Array.prototype.slice.call(fileList || []);
+        incoming.forEach(function(f) {
+            if (current.length >= MAX_NOTE_FILES) return;
+            current.push(f);
+        });
+        $field.data('files', current);
+        syncNoteFileInput($field);
+    }
+
+    function renderExistingNoteAttachments($form, attachments) {
+        var $field = noteAttachmentField($form);
+        var $wrap = $field.find('.note-existing-attachments');
+        $wrap.empty();
+        (attachments || []).forEach(function(att) {
+            var $chip = $('<div class="note-existing-chip"></div>');
+            $chip.append($('<i class="fa-solid fa-paperclip"></i>'));
+            var $link = $('<a target="_blank" rel="noopener noreferrer"></a>')
+                .attr('href', att.download_url)
+                .text(att.name + (att.size ? ' (' + att.size + ')' : ''));
+            $chip.append($link);
+            var $rm = $('<button type="button" aria-label="Remove attachment"><i class="fa-solid fa-xmark"></i></button>');
+            $rm.on('click', function() {
+                $form.append($('<input type="hidden" name="remove_attachment_ids[]">').val(att.id));
+                $chip.remove();
+            });
+            $chip.append($rm);
+            $wrap.append($chip);
+        });
+    }
+
+    function bindNoteAttachmentUi($form) {
+        var $field = noteAttachmentField($form);
+        if (!$field.length || $field.data('bound')) return;
+        $field.data('bound', true);
+        $field.data('files', []);
+        var $zone = $field.find('.note-dropzone');
+        var $input = $field.find('.note-attachments-input');
+
+        $input.on('change', function() {
+            addNoteFiles($field, this.files);
+        });
+
+        $zone.on('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $zone.addClass('is-dragover');
+        });
+        $zone.on('dragleave drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $zone.removeClass('is-dragover');
+        });
+        $zone.on('drop', function(e) {
+            var dt = e.originalEvent && e.originalEvent.dataTransfer;
+            if (dt && dt.files && dt.files.length) {
+                addNoteFiles($field, dt.files);
+            }
+        });
+    }
+
+    window.resetNoteAttachments = resetNoteAttachments;
+
     $(document).ready(function() {
+        bindNoteAttachmentUi($('#create_note'));
+        bindNoteAttachmentUi($('#create_note_d'));
+
         $(document).delegate('.create_note_d', 'click', function() {
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note_d select[name="task_group"]').val('');
@@ -88,6 +207,7 @@
             $('#create_note_d input[name="title"]').val("Matter Discussion");
             $('#create_note_d input[name="noteid"]').val('');
             $('#create_note_d #appliationModalLabel').html('Create Note');
+            resetNoteAttachments($('#create_note_d'));
 
             // Pre-select the currently active matter so notes are saved under the right matter
             var activeMatterId = $('#sel_matter_id_client_detail').val() || '';
@@ -114,6 +234,7 @@
             $('#create_note input[name="title"]').val('');
             $('#create_note #appliationModalLabel').html('Create Note');
             $('#create_note input[name="noteid"]').val('');
+            resetNoteAttachments($('#create_note'));
             if (typeof clearEditor === 'function') {
                 clearEditor("#create_note .tinymce-editor");
             }
@@ -154,6 +275,8 @@
             $('#create_note #appliationModalLabel').html('Edit Note');
             var v = $(this).attr('data-id');
             $('#create_note input[name="noteid"]').val(v);
+            resetNoteAttachments($('#create_note'));
+            $('#create_note input[name="remove_attachment_ids[]"]').remove();
             $('.popuploader').show();
             $.ajax({
                 url: window.ClientDetailConfig.urls.getNoteDetail,
@@ -172,6 +295,7 @@
                     if (typeof setEditorContent === 'function') {
                         setEditorContent("#create_note .tinymce-editor", res.data.description);
                     }
+                    renderExistingNoteAttachments($('#create_note'), res.attachments || []);
 
                     $('#create_note select[name="task_group"]').trigger('change');
 

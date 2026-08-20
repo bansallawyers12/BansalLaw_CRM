@@ -49,6 +49,9 @@
 								</span>
 							</div>
 						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							@include('crm.clients.modals.partials.note-attachments')
+						</div>
 						<!--<div class="col-12 col-md-12 col-lg-12 is_not_note" style="display:none;">
 							
 							<div class="form-group">
@@ -174,6 +177,10 @@
 									<strong></strong>
 								</span>
 							</div>
+						</div>
+
+						<div class="col-12">
+							@include('crm.clients.modals.partials.note-attachments')
 						</div>
 
                         <div class="col-12">
@@ -544,5 +551,127 @@
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
+}
+
+.note-dropzone {
+    position: relative;
+    display: block;
+    margin: 0;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 18px 16px;
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    cursor: pointer;
+}
+.note-dropzone.is-dragover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+.note-dropzone .note-attachments-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.note-dropzone-inner i {
+    font-size: 1.35rem;
+    color: #2563eb;
+    margin-bottom: 6px;
+}
+.note-dropzone-inner p {
+    margin: 4px 0;
+    font-weight: 600;
+    color: #334155;
+}
+.note-dropzone-inner p span {
+    color: #2563eb;
+    text-decoration: underline;
+}
+.note-dropzone-inner small {
+    color: #64748b;
+}
+.note-selected-files,
+.note-existing-attachments {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+.note-file-chip,
+.note-existing-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+.note-file-chip button,
+.note-existing-chip button {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+}
+.note-file-chip button:hover,
+.note-existing-chip button:hover {
+    color: #ef4444;
+}
+.note-attachments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+.note-attachment-thumb {
+    display: flex;
+    flex-direction: column;
+    width: 110px;
+    text-decoration: none;
+    color: #334155;
+    font-size: 0.75rem;
+}
+.note-attachment-thumb img {
+    width: 110px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.note-attachment-thumb span,
+.note-attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 4px;
+}
+.note-attachment-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #1e293b;
+    font-size: 0.85rem;
+    max-width: 100%;
+}
+.note-attachment-file:hover {
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+.note-attachment-size {
+    color: #64748b;
+    font-size: 0.75rem;
 }
 </style>
