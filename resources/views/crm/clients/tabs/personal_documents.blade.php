@@ -1956,15 +1956,21 @@
                         const fileName = file.name;
                         const fileSize = formatFileSize(file.size);
                         const match = matches[fileName] || null;
+                        const autoCreateDefault = $('#auto-create-unmatched').is(':checked');
                         
                         let selectedChecklist = '';
                         let statusClass = 'manual';
                         let statusText = 'Manual selection';
+                        let preferNewChecklist = false;
                         
                         if (match && match.checklist) {
                             selectedChecklist = match.checklist;
                             statusClass = match.confidence === 'high' ? 'auto-matched' : 'manual';
                             statusText = match.confidence === 'high' ? 'Auto-matched' : 'Suggested';
+                        } else if (autoCreateDefault) {
+                            preferNewChecklist = true;
+                            statusClass = 'new-checklist';
+                            statusText = 'New checklist';
                         }
                         
                         html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
@@ -1980,13 +1986,13 @@
                         html += '<td>';
                         html += '<select class="form-control checklist-select" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<option value="">-- Select Checklist --</option>';
-                        html += '<option value="__NEW__">+ Create New Checklist</option>';
+                        html += '<option value="__NEW__"' + (preferNewChecklist ? ' selected' : '') + '>+ Create New Checklist</option>';
                         checklists.forEach(checklist => {
-                            const selected = selectedChecklist === checklist.name ? 'selected' : '';
+                            const selected = !preferNewChecklist && selectedChecklist === checklist.name ? 'selected' : '';
                             html += '<option value="' + escapeHtml(checklist.name) + '" ' + selected + '>' + escapeHtml(checklist.name) + '</option>';
                         });
                         html += '</select>';
-                        html += '<input type="text" class="form-control mt-2 new-checklist-input" data-file-index="' + index + '" placeholder="Enter new checklist name" style="display: none;">';
+                        html += '<input type="text" class="form-control mt-2 new-checklist-input" data-file-index="' + index + '" placeholder="Enter new checklist name" value="' + escapeHtml(extractChecklistNameFromFile(fileName)) + '"' + (preferNewChecklist ? '' : ' style="display: none;"') + '>';
                         html += '</td>';
                         html += '<td>';
                         html += '<span class="match-status ' + statusClass + '">' + statusText + '</span>';
@@ -2013,17 +2019,22 @@
                     $(document).off('change.bulkUploadMapping', '.checklist-select').on('change.bulkUploadMapping', '.checklist-select', function() {
                         const fileIndex = $(this).data('file-index');
                         const value = $(this).val();
-                        const newInput = $('.new-checklist-input[data-file-index="' + fileIndex + '"]');
+                        const $row = $(this).closest('tr');
+                        const newInput = $row.find('.new-checklist-input[data-file-index="' + fileIndex + '"]');
+                        const originalFileName = $row.attr('data-file-name') || '';
                         
                         if (value === '__NEW__') {
+                            if (!String(newInput.val() || '').trim()) {
+                                newInput.val(extractChecklistNameFromFile(originalFileName));
+                            }
                             newInput.show();
                             newInput.attr('required', true);
-                            $(this).closest('tr').find('.match-status').removeClass('auto-matched manual').addClass('new-checklist').text('New checklist');
+                            $row.find('.match-status').removeClass('auto-matched manual').addClass('new-checklist').text('New checklist');
                         } else {
                             newInput.hide();
                             newInput.removeAttr('required');
                             if (value) {
-                                $(this).closest('tr').find('.match-status').removeClass('new-checklist').addClass('manual').text('Manual selection');
+                                $row.find('.match-status').removeClass('new-checklist').addClass('manual').text('Manual selection');
                             }
                         }
                     });
@@ -2173,20 +2184,23 @@
                     uploadBulkFiles(categoryId, files, mappings);
                 }
                 
-                // Extract checklist name from filename
+                // Extract checklist name from filename (keep apostrophes, parentheses, etc.)
                 function extractChecklistNameFromFile(fileName) {
-                    // Remove extension
-                    let name = fileName.replace(/\.[^/.]+$/, '');
-                    // Remove client name prefix (if exists)
-                    name = name.replace(/^[^_]+_/, '');
+                    let name = String(fileName || '').replace(/\.[^/.]+$/, '');
                     // Remove timestamps
                     name = name.replace(/_\d{10,}$/, '');
                     // Replace underscores with spaces
                     name = name.replace(/_/g, ' ');
-                    // Capitalize first letter of each word
-                    name = name.replace(/\b\w/g, l => l.toUpperCase());
-                    return name || 'Document';
+                    name = name.replace(/\s+/g, ' ').trim();
+                    if (!name) {
+                        return 'Document';
+                    }
+                    // Title-case on spaces/hyphens only (do not capitalize after apostrophes).
+                    return name.replace(/(^|[\s-])([A-Za-z])/g, function(_, sep, ch) {
+                        return sep + ch.toUpperCase();
+                    });
                 }
+                window.extractChecklistNameFromFile = extractChecklistNameFromFile;
                 
                 // Upload bulk files
                 function uploadBulkFiles(categoryId, files, mappings) {
