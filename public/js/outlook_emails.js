@@ -4585,19 +4585,66 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pdfToPreview) {
             // PDF.js / Chrome viewer needs scripts; the HTML sandbox blocks them and
             // leaves a blank reading pane when the stored body is empty.
+            // Also: if Parsed email.pdf is missing from S3, /documents/preview returns
+            // Laravel "404 | Not Found" inside this iframe — detect and fall back.
+            function buildUnavailableEmailBodyHtml(reason) {
+                let html = '<div style="font-family:system-ui,-apple-system,sans-serif;padding:16px;color:#374151;line-height:1.45;">'
+                    + '<p style="margin:0 0 8px;font-weight:600;">Email content could not be previewed.</p>';
+                if (reason === 'pdf_missing') {
+                    html += '<p style="margin:0 0 8px;">The stored PDF preview is missing from storage. '
+                        + 'Use <strong>Original email.msg</strong> or <strong>Parsed email.pdf</strong> under attachments if available.</p>';
+                } else {
+                    html += '<p style="margin:0 0 8px;">No content available.</p>';
+                }
+                const preview = String(email.text_preview || '').trim();
+                if (preview && !isCalendarPayload(preview)) {
+                    html += '<p style="margin:12px 0 0;white-space:pre-wrap;color:#6b7280;">'
+                        + escapeHtml(preview) + '</p>';
+                }
+                html += '</div>';
+                return html;
+            }
+
+            function fallbackReadingPaneFromFailedPdf() {
+                iframe.onload = null;
+                iframe.removeAttribute('src');
+                iframe.classList.remove('read-body--pdf');
+                setReadingBodyMode(iframe, '');
+                iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
+                renderHtmlIframe(iframe, buildUnavailableEmailBodyHtml('pdf_missing'));
+                resetReadBodyIframeSizing(iframe);
+            }
+
+            function isEmbeddedPreviewHttpErrorPage(doc) {
+                try {
+                    const text = ((doc && doc.body) ? doc.body.innerText : '') || '';
+                    const title = ((doc && doc.title) ? doc.title : '') || '';
+                    const combined = (title + '\n' + text).replace(/\s+/g, ' ').trim();
+                    if (!combined) {
+                        return false;
+                    }
+                    if (/403\s*\|\s*Forbidden/i.test(combined) || /404\s*\|\s*Not Found/i.test(combined)) {
+                        return true;
+                    }
+                    if (/^\s*40[34]\b/.test(combined)) {
+                        return true;
+                    }
+                    if (/File not found in S3/i.test(combined) || /Error loading preview/i.test(combined)) {
+                        return true;
+                    }
+                    return false;
+                } catch (e) {
+                    return false;
+                }
+            }
+
             iframe.classList.add('read-body--pdf');
             setReadingBodyMode(iframe, 'pdf');
             iframe.onload = function () {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    const text = ((doc && doc.body) ? doc.body.innerText : '') || '';
-                    if (/403\s*\|\s*Forbidden/i.test(text) || /^\s*403\b/.test(text.trim())) {
-                        iframe.onload = null;
-                        iframe.removeAttribute('src');
-                        setReadingBodyMode(iframe, '');
-                        iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
-                        renderHtmlIframe(iframe, '<p>No content available.</p>');
-                        resetReadBodyIframeSizing(iframe);
+                    if (isEmbeddedPreviewHttpErrorPage(doc)) {
+                        fallbackReadingPaneFromFailedPdf();
                         return;
                     }
                 } catch (e) {

@@ -43,7 +43,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
 
         '\App\Console\Commands\BackfillEmailPdfPreviews',
-
+        '\App\Console\Commands\RestoreEmailFromZoho',
         '\App\Console\Commands\SyncInboxEmails',
         '\App\Console\Commands\PurgeUnassignedSyncedEmails',
         '\App\Console\Commands\PruneEmailOpsLogs',
