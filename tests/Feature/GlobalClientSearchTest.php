@@ -125,4 +125,43 @@ class GlobalClientSearchTest extends TestCase
         $cids = collect($response->json('items'))->pluck('cid')->map(fn ($id) => (int) $id)->all();
         $this->assertContains($client->id, $cids);
     }
+
+    #[Test]
+    public function global_search_finds_client_by_full_name(): void
+    {
+        $staff = Staff::factory()->superAdmin()->create();
+        $this->actingAs($staff, 'admin');
+
+        $match = Admin::factory()->create([
+            'first_name' => 'Gurdeep',
+            'last_name' => 'Singh',
+            'email' => 'gurdeep.singh@example.com',
+            'client_id' => 'GURD2600999',
+            'type' => 'client',
+            'is_archived' => 0,
+        ]);
+
+        Admin::factory()->create([
+            'first_name' => 'Jugraj',
+            'last_name' => 'Singh',
+            'email' => 'jugraj.singh@example.com',
+            'client_id' => 'JUGR2600015',
+            'type' => 'client',
+            'is_archived' => 0,
+        ]);
+
+        $response = $this->getJson('/clients/get-allclients?q=gur');
+
+        $response->assertOk();
+        $cids = collect($response->json('items'))->pluck('cid')->map(fn ($id) => (int) $id)->all();
+
+        $this->assertContains($match->id, $cids);
+        $this->assertNotContains(
+            Admin::query()->where('client_id', 'JUGR2600015')->value('id'),
+            $cids
+        );
+        $cacheControl = strtolower((string) $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringContainsString('private', $cacheControl);
+    }
 }

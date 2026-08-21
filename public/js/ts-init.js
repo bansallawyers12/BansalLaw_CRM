@@ -88,7 +88,18 @@
   function createCrmTomSelectAjaxLoad(fetchItems) {
     var state = { controller: null, seq: 0 };
 
+    function clearRemoteOptions(ts) {
+      // Global search uses filter:false + score:1, so stale options from prior
+      // keystrokes stay visible until cleared (very noticeable on slow production).
+      if (ts && typeof ts.clearOptions === 'function') {
+        try {
+          ts.clearOptions();
+        } catch (e) { /* ignore */ }
+      }
+    }
+
     return function (query, callback) {
+      var self = this;
       var seq = ++state.seq;
 
       if (state.controller && typeof state.controller.abort === 'function') {
@@ -98,11 +109,14 @@
       var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       state.controller = controller;
 
+      clearRemoteOptions(self);
+
       var pending;
       try {
         pending = fetchItems(String(query || ''), controller);
       } catch (e) {
         if (seq === state.seq) {
+          clearRemoteOptions(self);
           callback([]);
         }
         return;
@@ -110,6 +124,7 @@
 
       if (!pending || typeof pending.then !== 'function') {
         if (seq === state.seq) {
+          clearRemoteOptions(self);
           callback([]);
         }
         return;
@@ -120,6 +135,7 @@
           if (seq !== state.seq) {
             return;
           }
+          clearRemoteOptions(self);
           callback(Array.isArray(items) ? items : []);
         })
         .catch(function (err) {
@@ -129,6 +145,7 @@
           if (seq !== state.seq) {
             return;
           }
+          clearRemoteOptions(self);
           callback([]);
         });
     };

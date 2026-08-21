@@ -2173,6 +2173,7 @@ class ClientsController extends Controller
                     'client_matters.matter_status',
                     'ws.name as workflow_stage_name'
                 )
+                ->limit(40)
                 ->get();
             
             // Log matter matches for debugging
@@ -2249,7 +2250,11 @@ class ClientsController extends Controller
                         });
                     }
 
-                    $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%{$squeryLower}%"]);
+                    // CONCAT works on MySQL/MariaDB and PostgreSQL; `||` is logical OR on MySQL.
+                    $query->orWhereRaw(
+                        "LOWER(CONCAT(COALESCE(admins.first_name, ''), ' ', COALESCE(admins.last_name, ''))) LIKE ?",
+                        ["%{$squeryLower}%"]
+                    );
 
                     $query->orWhereExists(function ($sub) use ($squery, $squeryLower, $isUniversalPhone, $phoneDigitVariants) {
                         $sub->select(DB::raw('1'))
@@ -2298,6 +2303,7 @@ class ClientsController extends Controller
             $clientsQuery = $clientsQuery
                 ->select('admins.*')
                 ->orderBy('admins.created_at', 'desc')
+                ->limit(40)
                 ->get();
 
             // Get client IDs for batch loading of related data
@@ -2438,11 +2444,20 @@ class ClientsController extends Controller
 
             $results = $this->enrichGlobalSearchResultRefs($results);
 
-            return response()->json(['items' => $results]);
+            // Keep dropdown snappy on large production DBs.
+            if (count($results) > 50) {
+                $results = array_slice($results, 0, 50);
+            }
+
+            return response()->json(['items' => $results])
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+                ->header('Pragma', 'no-cache');
         }
         
         // Return empty array when query is empty
-        return response()->json(['items' => []]);
+        return response()->json(['items' => []])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->header('Pragma', 'no-cache');
     }
 
     /**
