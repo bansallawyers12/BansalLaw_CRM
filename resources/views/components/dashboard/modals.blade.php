@@ -49,7 +49,7 @@
                                 <div id="dashboard-staff-list" class="staff-list-container">
                                     @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                     <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                    <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
+                                    <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
                                         <label class="modern-staff-label">
                                             <input type="checkbox" class="checkbox-item modern-checkbox dashboard-checkbox-item" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
                                             <i class="fa-solid fa-user-circle me-2 text-muted"></i>
@@ -74,7 +74,7 @@
                         <label class="simple-form-label">
                             <i class="fa-solid fa-align-left text-primary"></i> Task Description
                         </label>
-                        <textarea class="simple-form-control simple-textarea" id="dashboard_assignnote" name="description" placeholder="Enter task description..." rows="4"></textarea>
+                        <textarea class="simple-form-control simple-textarea js-staff-mentions" id="dashboard_assignnote" name="description" placeholder="Enter task description... (type @ to tag staff)" rows="4"></textarea>
                         <span class="custom-error note_error" role="alert" style="display: none;"></span>
                     </div>
 

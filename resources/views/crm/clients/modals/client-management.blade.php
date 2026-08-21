@@ -692,7 +692,7 @@
                                     <div id="staff-list" class="staff-list-container">
                                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                         <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                        <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
+                                        <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
                                             <label class="modern-staff-label">
                                                 <input type="checkbox" class="checkbox-item modern-checkbox" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
                                                 <i class="fa-solid fa-user-circle me-2 text-muted"></i>
@@ -725,7 +725,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text"><i class="fa-solid fa-align-left"></i></span>
                                 </div>
-                                <textarea id="assignnote" class="form-control enhanced-textarea" placeholder="Enter a note..."></textarea>
+                                <textarea id="assignnote" class="form-control enhanced-textarea js-staff-mentions" placeholder="Enter a note... (type @ to tag staff)"></textarea>
                             </div>
                         </div>
                     </div>
@@ -815,3 +815,9 @@
 </div>
 
 @include('crm.clients.modals.change-matter-assignee-modal')
+
+@push('scripts')
+@once
+<script src="{{ asset('js/components/task-description-mentions.js') }}?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
+@endonce
+@endpush

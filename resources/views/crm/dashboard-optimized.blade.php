@@ -136,7 +136,7 @@
                             </div>
                             <div class="form-group form-group-full-width">
                                 <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
+                                <textarea id="assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="note-error" class="error-message"></div>
                             </div>
                             <input id="task_group" name="task_group" type="hidden" value="Personal Action">
@@ -1283,20 +1283,14 @@
     margin-bottom: 0;
 }
 
-.popover .js-data-example-ajaxccsearch__addmytask {
+/* Client search: style lives on .ts-control (see task-popover-modern.css) — do not pad the wrapper */
+.popover .js-data-example-ajaxccsearch__addmytask.ts-wrapper,
+.popover select.js-data-example-ajaxccsearch__addmytask {
     width: 100%;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
-    background-color: #fff;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.popover .js-data-example-ajaxccsearch__addmytask:focus {
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
-    outline: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .custom-error {
