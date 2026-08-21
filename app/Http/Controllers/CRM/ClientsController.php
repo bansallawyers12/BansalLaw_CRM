@@ -643,6 +643,8 @@ class ClientsController extends Controller
         if (! in_array($perPage, $allowedPerPage, true)) {
             $perPage = 20;
         }
+        // Infinite scroll listings always load in batches of 20.
+        $perPage = 20;
 
         $lists = $query->sortable(['id' => 'desc'])
             ->paginate($perPage)

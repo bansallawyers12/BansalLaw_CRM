@@ -687,7 +687,14 @@
         return $value !== null && $value !== '';
     })->count();
 @endphp
-<div id="clients-listing-spa-root" class="listing-container clients-listing clients-listing--leads" data-spa-root="1">
+<div id="clients-listing-spa-root"
+     class="listing-container clients-listing clients-listing--leads"
+     data-spa-root="1"
+     data-infinite-scroll="1"
+     data-current-page="{{ $lists->currentPage() }}"
+     data-last-page="{{ $lists->lastPage() }}"
+     data-total="{{ $lists->total() }}"
+     data-per-page="20">
     <section class="listing-section">
         <div class="listing-section-body" id="clients-listing-spa-inner">
             @include('../Elements/flash-message')
@@ -719,16 +726,6 @@
                                 <i class="fa-solid fa-upload"></i> Import Lead
                             </a>
                             <a href="{{ route('leads.create') }}" class="btn btn-primary">Create Lead</a>
-                            <div class="per-page-wrap">
-                                <label for="per_page">Show</label>
-                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
-                                    @foreach([10, 20, 50, 100, 200] as $option)
-                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
-                                            {{ $option }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeLeadFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
                                 <i class="fa-solid fa-filter"></i> Filter
                                 @if($activeLeadFilters > 0)
@@ -903,8 +900,8 @@
                     </div>
 
                     @if($lists->total() > 0)
-                    <div class="clients-results-bar">
-                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} leads
+                    <div class="clients-results-bar" id="clientsResultsBar">
+                        Showing 1&ndash;<span data-loaded-count>{{ number_format($lists->count()) }}</span> of {{ number_format($lists->total()) }} leads
                         @if($activeLeadFilters > 0)
                             <span class="clients-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
                         @endif
@@ -930,7 +927,6 @@
                             </thead>
                             <tbody class="tdata">
                                 @if($lists->count() > 0)
-                                <?php $i = 0; ?>
                                 @foreach ($lists as $list)
                                     <?php
                                     $encodedId = base64_encode(convert_uuencode(@$list->id));
@@ -963,8 +959,8 @@
                                     ?>
                                     <tr id="id_{{ @$list->id }}" class="client-data-row">
                                         <td class="client-select-cell">
-                                            <label class="client-row-checkbox" for="checkbox-{{ $i }}" title="Select lead">
-                                                <input data-id="{{ @$list->id }}" data-email="{{ @$list->email }}" data-name="{{ @$list->first_name }} {{ @$list->last_name }}" data-clientid="{{ @$list->client_id }}" data-unread="{{ $unreadMailCount }}" type="checkbox" data-checkboxes="mygroup" class="cb-element your-checkbox" id="checkbox-{{ $i }}">
+                                            <label class="client-row-checkbox" for="checkbox-{{ @$list->id }}" title="Select lead">
+                                                <input data-id="{{ @$list->id }}" data-email="{{ @$list->email }}" data-name="{{ @$list->first_name }} {{ @$list->last_name }}" data-clientid="{{ @$list->client_id }}" data-unread="{{ $unreadMailCount }}" type="checkbox" data-checkboxes="mygroup" class="cb-element your-checkbox" id="checkbox-{{ @$list->id }}">
                                                 <span class="client-row-checkbox__box" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                                             </label>
                                         </td>
@@ -1039,7 +1035,6 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    <?php $i++; ?>
                                 @endforeach
                                 @else
                                     <tr>
@@ -1069,8 +1064,9 @@
                         </table>
                     </div>
 
-                    <div class="card-footer">
-                        {!! $lists->appends(\Request::except('page'))->render() !!}
+                    <div class="clients-infinite-loader" id="clientsInfiniteLoader" hidden aria-live="polite">
+                        <span class="clients-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Loading more leads...</span>
                     </div>
                 </div>
             </div>
