@@ -21,14 +21,21 @@
 				window.__crmStaffEmailSignatures = data.signatures_by_email || {};
 				window.__crmCurrentUserSignature = data.current_user_signature || '';
 				window.__crmDefaultFromEmail = defaultFrom;
-				selects.forEach(function(select) {
+						selects.forEach(function(select) {
 					select.innerHTML = '<option value="">Select From</option>';
 					if (senders.length > 0) {
 						senders.forEach(function(s) {
 							var opt = document.createElement('option');
 							opt.value = s.email || '';
-							var provider = s.provider ? (' [' + s.provider + ']') : '';
-							opt.textContent = (s.name && s.name !== s.email) ? (s.name + ' <' + s.email + '>' + provider) : ((s.email || '') + provider);
+							var email = s.email || '';
+							var name = (s.name && s.name !== email) ? String(s.name).trim() : '';
+							var provider = s.provider ? String(s.provider) : '';
+							// Keep option text readable in the closed select (avoid cut-off "Name <email> [zoho]")
+							if (name && email) {
+								opt.textContent = name + ' — ' + email + (provider ? ' (' + provider + ')' : '');
+							} else {
+								opt.textContent = email + (provider ? ' (' + provider + ')' : '');
+							}
 							if (s.email && s.email === defaultFrom) opt.selected = true;
 							select.appendChild(opt);
 						});

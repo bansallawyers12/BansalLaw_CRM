@@ -1435,8 +1435,20 @@ $(document).ready(function() {
 
 
 
-        $('.selecttemplate').each(function () {
-            initTS(this, { dropdownParent: '#emailmodal', create: false, allowEmptyOption: true });
+        // Compose Email templates stay as a native <select> — Tom Select was rendering
+        // a solid blue control in #emailmodal. Other .selecttemplate pickers still use TS.
+        $('#emailmodal select.selecttemplate').each(function () {
+            if (typeof destroyTS === 'function') {
+                destroyTS(this);
+            }
+        });
+        $('.selecttemplate').not('#emailmodal select.selecttemplate').each(function () {
+            var parent = $(this).closest('.modal').attr('id');
+            initTS(this, {
+                dropdownParent: parent ? ('#' + parent) : 'body',
+                create: false,
+                allowEmptyOption: true
+            });
         });
 
 

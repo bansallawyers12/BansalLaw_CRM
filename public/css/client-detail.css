@@ -6331,3 +6331,132 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .hide-list-view .preview-pane { flex: 0 0 100% !important; max-width: 100% !important; }
 .hide-list-view .grid_data { display: none !important; }
 .active-preview-doc { background-color: rgba(58, 111, 168, 0.1) !important; }
+
+/* Compose Email (#emailmodal): normal inputs + readable template dropdown */
+#emailmodal .modal-body .form-group {
+  margin-bottom: 0.85rem;
+}
+
+#emailmodal .modal-body .form-group > label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #5f6368;
+}
+
+#emailmodal .modal-body .form-control,
+#emailmodal .modal-body .form-select,
+#emailmodal .modal-body select.email-from-compose,
+#emailmodal .modal-body select.selecttemplate {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  height: auto !important;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #202124 !important;
+  background-color: #fff !important;
+  background-image: none;
+  border: 1px solid #dadce0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+#emailmodal .modal-body select.form-select.selecttemplate,
+#emailmodal .modal-body select.selecttemplate {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #fff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%235f6368' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 12px 12px !important;
+  padding-right: 2.25rem !important;
+  color: #202124 !important;
+}
+
+#emailmodal .modal-body select.email-from-compose {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%235f6368' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px 12px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+#emailmodal .modal-body .form-control:focus,
+#emailmodal .modal-body .form-select:focus,
+#emailmodal .modal-body select.email-from-compose:focus,
+#emailmodal .modal-body select.selecttemplate:focus {
+  border-color: #1a73e8 !important;
+  box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.15) !important;
+  outline: 0;
+}
+
+/* Recipient Tom Select (To / Cc / Bcc) — match normal inputs, no solid fill */
+#emailmodal .modal-body .ts-wrapper,
+#emailmodal .modal-body .ts-wrapper.form-control,
+#emailmodal .modal-body .ts-wrapper.form-select {
+  width: 100% !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#emailmodal .modal-body .ts-wrapper .ts-control,
+#emailmodal .modal-body .ts-wrapper.single .ts-control,
+#emailmodal .modal-body .ts-wrapper.multi .ts-control,
+#emailmodal .modal-body .ts-wrapper.form-control .ts-control,
+#emailmodal .modal-body .ts-wrapper.form-select .ts-control {
+  min-height: 40px !important;
+  padding: 0.35rem 0.65rem !important;
+  border: 1px solid #dadce0 !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  color: #202124 !important;
+}
+
+#emailmodal .modal-body .ts-wrapper.focus .ts-control {
+  border-color: #1a73e8 !important;
+  box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.15) !important;
+}
+
+#emailmodal .modal-body .ts-wrapper.multi .ts-control > div,
+#emailmodal .modal-body .ts-wrapper.multi .ts-control .item {
+  background: #e8f0fe !important;
+  border: 0 !important;
+  color: #174ea6 !important;
+  border-radius: 12px !important;
+  padding: 2px 8px !important;
+  margin: 2px 4px 2px 0 !important;
+}
+
+#emailmodal .modal-body .ts-wrapper.multi .ts-control > div.active,
+#emailmodal .modal-body .ts-wrapper.multi .ts-control .item.active {
+  background: #d2e3fc !important;
+  color: #174ea6 !important;
+}
+
+#emailmodal .modal-body .ts-wrapper.single .ts-control .item {
+  background: transparent !important;
+  color: #202124 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#emailmodal .modal-body .ts-dropdown {
+  z-index: 1060;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
