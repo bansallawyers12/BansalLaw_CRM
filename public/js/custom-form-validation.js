@@ -2604,6 +2604,24 @@ function customValidate(formName, savetype = '')
 							$('.custom-error-msg').html('<span class="alert alert-danger">Form not found. Please refresh the page and try again.</span>');
 							return false;
 						}
+
+						// Matter reference (CLIENT_ID / MATTER_REF) is mandatory in subject
+						if (typeof window.validateComposeSubjectHasReference === 'function') {
+							var refCheck = window.validateComposeSubjectHasReference();
+							if (!refCheck.ok) {
+								$('.popuploader').hide();
+								var refMsg = refCheck.message || ('Subject must include the matter reference: ' + (refCheck.ref || ''));
+								$('.custom-error-msg').html('');
+								if (typeof crmSendMailNotify === 'function') {
+									crmSendMailNotify(refMsg, 'error');
+								} else if (typeof iziToast !== 'undefined') {
+									iziToast.error({ message: refMsg, position: 'topRight' });
+								} else {
+									alert(refMsg);
+								}
+								return false;
+							}
+						}
 						
 						// Get CSRF token from meta tag (most current source)
 						var csrfToken = $('meta[name="csrf-token"]').attr('content');

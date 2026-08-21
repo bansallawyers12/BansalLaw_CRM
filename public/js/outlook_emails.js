@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
     const unassignedOnly = !!(outlookContainer && outlookContainer.getAttribute('data-unassigned-only') === '1');
     const compactPagination = !!(outlookContainer && outlookContainer.getAttribute('data-compact-pagination') === '1');
+    const useEmailInfiniteScroll = unassignedOnly || compactPagination;
     let defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
     // Client matter Emails tab only has Inbox/Sent — never start on synced-mail folders.
     if (!unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return 20;
     }
 
-    let perPage = unassignedOnly ? 20 : (compactPagination ? 20 : readStoredPerPage());
+    let perPage = useEmailInfiniteScroll ? 20 : readStoredPerPage();
     if (perPageSelect) {
         perPageSelect.value = String(perPage);
     }
@@ -961,11 +962,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentPage < listLastPage) {
             const previousCount = emails.length;
             currentPage += 1;
-            loadEmails(unassignedOnly ? { append: true } : undefined).then(function () {
+            loadEmails(useEmailInfiniteScroll ? { append: true } : undefined).then(function () {
                 if (!emails.length) {
                     return;
                 }
-                const nextEmail = unassignedOnly && emails.length > previousCount
+                const nextEmail = useEmailInfiniteScroll && emails.length > previousCount
                     ? emails[previousCount]
                     : emails[0];
                 if (!nextEmail) {
@@ -3326,12 +3327,12 @@ document.addEventListener('DOMContentLoaded', function() {
         emailInfiniteLoader.hidden = !visible;
     }
 
-    function hasMoreUnassignedEmails() {
-        return unassignedOnly && listTotal > emails.length && currentPage < listLastPage;
+    function hasMoreInfiniteEmails() {
+        return useEmailInfiniteScroll && listTotal > emails.length && currentPage < listLastPage;
     }
 
-    async function loadMoreUnassignedEmails() {
-        if (!unassignedOnly || emailListLoading || emailListLoadingMore) {
+    async function loadMoreInfiniteEmails() {
+        if (!useEmailInfiniteScroll || emailListLoading || emailListLoadingMore) {
             return;
         }
         if (currentPage >= listLastPage || emails.length >= listTotal) {
@@ -3341,8 +3342,8 @@ document.addEventListener('DOMContentLoaded', function() {
         await loadEmails({ append: true });
     }
 
-    function maybeLoadMoreUnassignedEmails() {
-        if (!unassignedOnly || !emailListContainer || emailListLoading || emailListLoadingMore) {
+    function maybeLoadMoreInfiniteEmails() {
+        if (!useEmailInfiniteScroll || !emailListContainer || emailListLoading || emailListLoadingMore) {
             return;
         }
         if (currentPage >= listLastPage || emails.length >= listTotal) {
@@ -3350,18 +3351,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const remaining = emailListContainer.scrollHeight - emailListContainer.scrollTop - emailListContainer.clientHeight;
         if (remaining <= 240) {
-            loadMoreUnassignedEmails();
+            loadMoreInfiniteEmails();
         }
     }
 
-    if (unassignedOnly && emailListContainer) {
+    if (useEmailInfiniteScroll && emailListContainer) {
         emailListContainer.addEventListener('scroll', function () {
-            maybeLoadMoreUnassignedEmails();
+            maybeLoadMoreInfiniteEmails();
         }, { passive: true });
     }
 
     async function loadEmails(options) {
-        const append = !!(options && options.append && unassignedOnly);
+        const append = !!(options && options.append && useEmailInfiniteScroll);
 
         if (unassignedOnly && isSyncedInboxFolder(currentFolder) && !canViewSyncedInbox) {
             currentFolder = 'unassigned';
@@ -3391,7 +3392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
             url.searchParams.append('folder', folderToFetch);
             url.searchParams.append('page', pageToFetch);
-            url.searchParams.append('per_page', unassignedOnly ? 20 : perPage);
+            url.searchParams.append('per_page', useEmailInfiniteScroll ? 20 : perPage);
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
@@ -3499,8 +3500,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshSelectedEmailAfterReload();
             }
 
-            if (unassignedOnly) {
-                window.requestAnimationFrame(maybeLoadMoreUnassignedEmails);
+            if (useEmailInfiniteScroll) {
+                window.requestAnimationFrame(maybeLoadMoreInfiniteEmails);
             }
         } catch (error) {
             console.error('Failed to fetch emails', error);
@@ -4169,12 +4170,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        const totalCount = items.length;
-        let html = '<div class="email-att-footer">'
-            + '  <div class="email-att-footer__title">'
-            + '    <i class="fa-solid fa-paperclip" aria-hidden="true"></i>'
-            + '    <span>' + totalCount + ' attachment' + (totalCount === 1 ? '' : 's') + '</span>'
-            + '  </div>';
+        // Count only real attachments — exclude Original email.msg / Parsed email.pdf.
+        const totalCount = userFiles.length;
+        let html = '<div class="email-att-footer">';
+
+        if (totalCount > 0) {
+            html += '  <div class="email-att-footer__title">'
+                + '    <i class="fa-solid fa-paperclip" aria-hidden="true"></i>'
+                + '    <span>' + totalCount + ' attachment' + (totalCount === 1 ? '' : 's') + '</span>'
+                + '  </div>';
+        }
 
         if (storedCopies.length) {
             html += '<div class="email-att-footer__copies">'
@@ -5083,7 +5088,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const attachmentCount = Array.isArray(email.attachments) ? email.attachments.length : 0;
+        const attachmentCount = getUserEmailAttachments(email).length;
         const confirmDelete = typeof window.showEmailDeleteConfirm === 'function'
             ? await window.showEmailDeleteConfirm({
                 subject: email.subject || '(No subject)',

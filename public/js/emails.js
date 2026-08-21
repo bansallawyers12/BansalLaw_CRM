@@ -2322,10 +2322,16 @@
             }
         }
 
-        // Set subject
+        // Set subject — include CLIENT_ID / MATTER_REF for matching when composing new mail
         const subjectInput = document.getElementById('compose_email_subject');
-        if (subjectInput && data.subject) {
-            subjectInput.value = data.subject;
+        if (subjectInput) {
+            if (data.subject) {
+                subjectInput.value = (typeof window.ensureSubjectHasComposeReference === 'function')
+                    ? window.ensureSubjectHasComposeReference(data.subject)
+                    : data.subject;
+            } else if (typeof window.prefillComposeSubjectWithReference === 'function') {
+                window.prefillComposeSubjectWithReference(true);
+            }
         }
 
         // Set message (for TinyMCE editor)

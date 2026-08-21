@@ -699,8 +699,10 @@ use App\Http\Controllers\Controller;
 
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="subject">Subject <span class="span_req">*</span></label>
-								<input type="text" name="subject" id="compose_email_subject" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject" value="" />
+								<label for="compose_email_subject">Subject <span class="span_req">*</span></label>
+								<input type="text" name="subject" id="compose_email_subject" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject (must include matter reference)" value="" />
+								<small class="form-text text-muted" id="compose_subject_ref_hint">Matter reference is required in the subject (start or end is fine).</small>
+								<span class="custom-error text-danger" id="compose_subject_ref_error" role="alert" style="display:none;"></span>
 								@if ($errors->has('subject'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('subject') }}</strong>
@@ -1373,6 +1375,20 @@ $(document).ready(function() {
     // Auto-select matter first email and dedicated checklists when compose modal opens
     // When matter is selected: filter checklist table by matter (DataTables API); otherwise show all
     $('#emailmodal').on('shown.bs.modal', function() {
+        if (typeof window.prefillComposeSubjectWithReference === 'function') {
+            window.prefillComposeSubjectWithReference(true);
+        }
+        var ref = typeof window.getComposeClientMatterReference === 'function'
+            ? window.getComposeClientMatterReference()
+            : '';
+        var $hint = $('#compose_subject_ref_hint');
+        if ($hint.length) {
+            $hint.text(ref
+                ? ('Matter reference required in subject: ' + ref + ' (start or end is fine).')
+                : 'Matter reference is required in the subject (start or end is fine).');
+        }
+        $('#compose_subject_ref_error').hide().text('');
+        $('#compose_email_subject').removeClass('is-invalid');
         var clientMatterId = $('#compose_client_matter_id').val();
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
             window.composeChecklistFilterIds = null;
@@ -1448,6 +1464,9 @@ $(document).ready(function() {
         activeTab: @json(($activeTab ?? 'personaldetails')),
         cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
+        // Human refs for compose subject (e.g. CPRE2600130 / CIV_1)
+        clientRef: @json(($fetchedData->client_id ?? '')),
+        matterUniqueNo: @json(($cdnMatterRefLabel ?? '')),
         clientMatterId: @json($cdnMatterRow?->id ?? null),
         isClosedMatterView: @json(!empty($isClosedMatterView)),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
