@@ -119,7 +119,7 @@
                                                     $searchText = strtolower($admin->first_name . $admin->last_name . (@$branchname->office_name ?? ''));
                                                     $searchText = str_replace(' ', '', $searchText);
                                                 @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}">
+                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $admin->id }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
                                                     <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
                                                     {{ e($admin->first_name) }} {{ e($admin->last_name) }} ({{ e(@$branchname->office_name ?? '') }})
                                                 </label>
@@ -136,7 +136,7 @@
                             </div>
                             <div class="form-group form-group-full-width">
                                 <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
+                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="note-error" class="error-message"></div>
                             </div>
                             <input id="task_group" name="task_group" type="hidden" value="Personal Action">
@@ -424,7 +424,7 @@
 @vite(['resources/css/fullcalendar-v6.css'])
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ @filemtime(public_path('css/dashboard.css')) ?: time() }}">
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
-<link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}">
+<link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}?v={{ @filemtime(public_path('css/task-popover-modern.css')) ?: time() }}">
 <style>
 .dashboard-theme-icon-primary {
     color: var(--primary-color);
@@ -1328,6 +1328,7 @@ body > .ts-dropdown {
 @push('scripts')
 @once
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
+<script src="{{ asset('js/components/task-description-mentions.js') }}?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
 <script>
     // Define dashboard routes and data before loading the main script
     window.dashboardRoutes = {

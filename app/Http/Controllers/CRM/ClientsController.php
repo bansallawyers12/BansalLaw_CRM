@@ -34,6 +34,7 @@ use App\Support\ClientTagStorage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
+use App\Services\ActionTaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\MatterAssigneeDefaults;
@@ -5611,25 +5612,7 @@ class ClientsController extends Controller
                         . 'Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
-                    // Log the activity for the current assignee
-                    $objs = new ActivitiesLog;
-                    $objs->client_id = $clientId;
-                    $objs->created_by = Auth::user()->id;
-                    $objs->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Set action for ' . $assigneeName;
-                    $objs->description = '<span class="text-semi-bold">' . ($requestData['remindersubject'] ?? '') . '</span><p>' . ($requestData['description'] ?? '') . '</p>';
-                    $objs->task_status = 0;
-                    $objs->pin = 0;
-
-                    if (Auth::user()->id != $assigneeId) {
-                        $objs->use_for = $assigneeId;
-                    } else {
-                        $objs->use_for = "";
-                    }
-
-                    $objs->followup_date = $requestData['followup_datetime'] ?? null;
-                    $objs->task_group = $requestData['task_group'] ?? null;
-                    $objs->activity_type = 'activity';
-                    $objs->save();
+                    app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
                 }
             }
             
@@ -5944,6 +5927,10 @@ class ClientsController extends Controller
                     $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                     $notification->seen = 0;
                     $notification->save();
+
+                    if ($clientId) {
+                        app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
+                    }
                 }
             }
 
@@ -6023,22 +6010,7 @@ class ClientsController extends Controller
             // Log to Activity Feed when action is updated (only for client-linked actions)
             if ($clientId !== null) {
                 $assigneeName = $this->getAssigneeName($action->assigned_to);
-                $activityLog = new ActivitiesLog;
-                $activityLog->client_id = $clientId;
-                $activityLog->created_by = Auth::user()->id;
-                $activityLog->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Updated action for ' . $assigneeName;
-                $activityLog->description = '<span class="text-semi-bold">' . ($action->task_group ?? '') . '</span><p>' . ($action->description ?? '') . '</p>';
-                $activityLog->task_status = $action->status === '1' ? 1 : 0;
-                $activityLog->pin = 0;
-                if (Auth::user()->id != $action->assigned_to) {
-                    $activityLog->use_for = $action->assigned_to;
-                } else {
-                    $activityLog->use_for = null;
-                }
-                $activityLog->followup_date = isset($action->action_date) ? $action->action_date : null;
-                $activityLog->task_group = $action->task_group;
-                $activityLog->activity_type = 'activity';
-                $activityLog->save();
+                app(ActionTaskTimelineService::class)->logActionUpdated($action, $clientLabel, $assigneeName);
             }
 
             return response()->json(['success' => true, 'message' => 'Action updated successfully']);
@@ -6117,6 +6089,10 @@ class ClientsController extends Controller
                 $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                 $notification->seen = 0;
                 $notification->save();
+
+                if ($clientId) {
+                    app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
+                }
             }
 
             return response()->json(['success' => true, 'message' => 'Action created successfully']);
