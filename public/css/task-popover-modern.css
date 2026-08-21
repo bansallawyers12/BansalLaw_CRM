@@ -103,11 +103,16 @@
     height: auto !important;
     border-radius: 8px !important;
     border: 1px solid #c8dcef !important;
-    padding: 8px 12px !important;
+    /* Leave right room for clear × (padding shorthand would clip it) */
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    padding-left: 12px !important;
+    padding-right: 2.25rem !important;
     background: #fff !important;
     box-shadow: none !important;
     overflow: hidden;
     line-height: 1.4 !important;
+    position: relative !important;
 }
 
 .popover-body .ts-wrapper.single.focus .ts-control,
@@ -131,11 +136,13 @@
     box-shadow: none !important;
     background: transparent !important;
     vertical-align: middle !important;
+    color: #1a2c40 !important;
 }
 
+/* Placeholder needs stronger contrast on white (WCAG-ish ~4.5:1 vs #a0aec0) */
 .popover-body .ts-wrapper.single .ts-control > input::placeholder,
 .popover .ts-wrapper.single .ts-control > input::placeholder {
-    color: #a0aec0;
+    color: #5e7a90 !important;
     line-height: 1.4;
     opacity: 1;
 }
@@ -145,7 +152,43 @@
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
+    padding-right: 0.25rem !important;
     line-height: 1.4 !important;
+    color: #1a2c40 !important;
+    max-width: calc(100% - 0.5rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * Clear (×) button — default Tom Select keeps it opacity:0 until hover/focus
+ * and inherits a light color; force visible navy × when a client is selected.
+ */
+.popover .plugin-clear_button.has-items .clear-button,
+.popover-body .plugin-clear_button.has-items .clear-button {
+    opacity: 1 !important;
+    color: #1e3d60 !important;
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 5 !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 2px !important;
+    cursor: pointer !important;
+}
+
+.popover .plugin-clear_button.has-items .clear-button:hover,
+.popover .plugin-clear_button.has-items .clear-button:focus,
+.popover-body .plugin-clear_button.has-items .clear-button:hover,
+.popover-body .plugin-clear_button.has-items .clear-button:focus {
+    color: #a83020 !important;
+    opacity: 1 !important;
 }
 
 /* Keep selected Tom Select values inside the control (Update Task) */
@@ -442,10 +485,11 @@
     color: #1e3d60;
 }
 
-/* Placeholder styling */
+/* Placeholder styling — mid slate for readable contrast on white */
 .popover-body .form-control::placeholder {
-    color: #a0aec0;
+    color: #5e7a90;
     font-style: italic;
+    opacity: 1;
 }
 
 /* Focus visible for accessibility */
