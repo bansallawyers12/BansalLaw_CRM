@@ -36,8 +36,10 @@ class DashboardController extends Controller
 
         if ($staff instanceof Staff) {
             $dashboardData['calendarStats'] = $this->personalCalendarFeed->statsForStaff($staff);
+            $dashboardData['bookingCalendarType'] = $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff);
         } else {
             $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
+            $dashboardData['bookingCalendarType'] = null;
         }
 
         return view('crm.dashboard-optimized', $dashboardData);

@@ -211,6 +211,9 @@
 .dashboard-cal-dot--reminder { background: #d97706; }
 .dashboard-cal-dot--other { background: #111; }
 .dashboard-cal-dot--action { background: #c0392b; }
+.dashboard-cal-dot--pending { background: #D4A84A; }
+.dashboard-cal-dot--paid { background: #1E3D60; }
+.dashboard-cal-dot--confirmed { background: #1E7A52; }
 
 .dashboard-calendar-wrapper {
     padding: 16px 20px 24px;

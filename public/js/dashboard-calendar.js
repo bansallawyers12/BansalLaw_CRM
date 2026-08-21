@@ -14,6 +14,12 @@
         return (el && el.getAttribute('data-timezone')) || 'Australia/Melbourne';
     }
 
+    function calendarElTzBookingType() {
+        var el = document.getElementById(CALENDAR_EL_ID);
+        var type = el && el.getAttribute('data-booking-calendar-type');
+        return type === 'ajay' || type === 'kunal' ? type : null;
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
@@ -81,6 +87,7 @@
         if (kind === 'court_hearing') return 'court';
         if (kind === 'action' || kind === 'matter_deadline') return 'deadline';
         var type = String((props && props.event_type) || 'other');
+        if (kind === 'website_booking') return 'meeting';
         if (type === 'court' || type === 'meeting' || type === 'deadline' || type === 'reminder') {
             return type;
         }
@@ -411,7 +418,7 @@
                         is_all_day: allDay,
                         location: document.getElementById('personalEventLocation').value.trim() || null,
                         notes: document.getElementById('personalEventNotes').value.trim() || null,
-                        calendar_type: null,
+                        calendar_type: calendarElTzBookingType(),
                     }),
                 });
 

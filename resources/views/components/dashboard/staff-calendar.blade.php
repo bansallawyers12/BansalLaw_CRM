@@ -1,6 +1,7 @@
 @props([
     'stats' => ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0],
     'timezone' => config('app.timezone'),
+    'bookingCalendarType' => null,
 ])
 
 <section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
@@ -35,6 +36,10 @@
         </div>
 
         <div class="dashboard-calendar-legend" aria-label="Event colours">
+            <span class="dashboard-cal-legend-group-label">Bookings</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--pending"></span> Pending</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--paid"></span> Paid</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--confirmed"></span> Confirmed</span>
             <span class="dashboard-cal-legend-group-label">Important Events</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--court"></span> Court / Hearing</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--meeting"></span> Meeting</span>
@@ -44,7 +49,7 @@
         </div>
 
         <div class="dashboard-calendar-wrapper">
-            <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}"></div>
+            <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $bookingCalendarType }}"></div>
         </div>
 
         <div class="dashboard-upcoming-panel" id="dashboardUpcomingPanel">

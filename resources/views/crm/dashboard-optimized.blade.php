@@ -76,6 +76,7 @@
         <x-dashboard.staff-calendar
             :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
             :timezone="$dashboardTz"
+            :booking-calendar-type="$bookingCalendarType ?? null"
         />
 
         @include('crm.partials.access-approvals-dashboard')
