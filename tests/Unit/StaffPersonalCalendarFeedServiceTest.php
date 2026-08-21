@@ -68,4 +68,19 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
         $this->assertContains('event-court', $event['classNames']);
         $this->assertSame('malcolm.s.heys@gmail.com', $event['extendedProps']['client_email']);
     }
+
+    #[Test]
+    public function to_full_calendar_event_colours_website_bookings_as_meetings(): void
+    {
+        $event = $this->service()->toFullCalendarEvent([
+            'id' => 'booking-9',
+            'title' => 'Jane Doe — Confirmed',
+            'event_type' => 'meeting',
+            'event_kind' => 'website_booking',
+            'starts_at' => '2026-08-21T11:00:00+10:00',
+        ]);
+
+        $this->assertSame('#0d6efd', $event['backgroundColor']);
+        $this->assertContains('event-kind-website_booking', $event['classNames']);
+    }
 }
