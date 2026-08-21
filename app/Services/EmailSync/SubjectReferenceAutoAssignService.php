@@ -29,19 +29,19 @@ class SubjectReferenceAutoAssignService
     }
 
     /**
-     * Button-driven scan: auto-assign unique client-id + matter pairs, and return
-     * name/id-only matches that need a matter chosen.
+     * Button-driven scan: return matches for staff to select; do not assign yet.
      *
      * @return array{
      *     assigned_count: int,
      *     assigned: list<array<string, mixed>>,
+     *     ready_pairs: list<array<string, mixed>>,
      *     needs_matter: list<array<string, mixed>>,
      *     skipped_count: int
      * }
      */
     public function scanAndAssignForStaff(Staff $staff, int $limit = 400): array
     {
-        return $this->scanAndAssign($staff, $limit, true, true);
+        return $this->scanAndAssign($staff, $limit, true, true, true);
     }
 
     /**
@@ -111,12 +111,18 @@ class SubjectReferenceAutoAssignService
      * @return array{
      *     assigned_count: int,
      *     assigned: list<array<string, mixed>>,
+     *     ready_pairs: list<array<string, mixed>>,
      *     needs_matter: list<array<string, mixed>>,
      *     skipped_count: int
      * }
      */
-    protected function scanAndAssign(?Staff $staff, int $limit, bool $collectNeedsMatter, bool $enforceStaffAccess): array
-    {
+    protected function scanAndAssign(
+        ?Staff $staff,
+        int $limit,
+        bool $collectNeedsMatter,
+        bool $enforceStaffAccess,
+        bool $previewOnly = false
+    ): array {
         $query = EmailLog::query()
             ->where('sync_assignment_status', 'unassigned')
             ->where(function ($clientQuery) {
@@ -134,18 +140,21 @@ class SubjectReferenceAutoAssignService
         }
 
         $assigned = [];
+        $readyPairs = [];
         $needsMatterByClient = [];
         $skipped = 0;
         $processed = 0;
 
         $query->orderBy('id')->chunkById(40, function ($emailLogs) use (
             &$assigned,
+            &$readyPairs,
             &$needsMatterByClient,
             &$skipped,
             &$processed,
             $limit,
             $collectNeedsMatter,
             $enforceStaffAccess,
+            $previewOnly,
             $staff
         ) {
             foreach ($emailLogs as $emailLog) {
@@ -164,6 +173,22 @@ class SubjectReferenceAutoAssignService
                         $skipped++;
                         continue;
                     }
+
+                    if ($previewOnly) {
+                        $readyPairs[] = array_merge(
+                            $this->assignedRow(
+                                $emailLog,
+                                $pair,
+                                (int) $pair['client_matter_id'],
+                                'client_matter_pair'
+                            ),
+                            [
+                                'client_matter_id' => (int) $pair['client_matter_id'],
+                            ]
+                        );
+                        continue;
+                    }
+
                     $result = $this->tryAssign(
                         $emailLog,
                         (int) $pair['client_id'],
@@ -242,6 +267,7 @@ class SubjectReferenceAutoAssignService
         return [
             'assigned_count' => count($assigned),
             'assigned' => $assigned,
+            'ready_pairs' => $readyPairs,
             'needs_matter' => array_values($needsMatterByClient),
             'skipped_count' => $skipped,
         ];

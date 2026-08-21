@@ -129,6 +129,7 @@ class SyncedEmailController extends Controller
             'message' => $this->assignBySubjectSummary($result),
             'assigned_count' => $result['assigned_count'],
             'assigned' => $result['assigned'],
+            'ready_pairs' => $result['ready_pairs'] ?? [],
             'needs_matter' => $result['needs_matter'],
             'skipped_count' => $result['skipped_count'],
         ]);
@@ -163,27 +164,31 @@ class SyncedEmailController extends Controller
 
         $result = $autoAssignService->confirmMatterChoices($validated['assignments'], true);
         $result['message'] = $result['assigned_count'] === 1
-            ? '1 email assigned to the selected matter.'
-            : $result['assigned_count'] . ' emails assigned to the selected matters.';
+            ? '1 selected email assigned.'
+            : $result['assigned_count'] . ' selected emails assigned.';
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
     /**
-     * @param array{assigned_count: int, needs_matter: list<mixed>, skipped_count: int} $result
+     * @param array{ready_pairs?: list<mixed>, needs_matter: list<mixed>, skipped_count: int} $result
      */
     protected function assignBySubjectSummary(array $result): string
     {
-        $assigned = (int) ($result['assigned_count'] ?? 0);
+        $ready = count($result['ready_pairs'] ?? []);
         $needs = count($result['needs_matter'] ?? []);
         $parts = [];
-        $parts[] = $assigned === 1 ? '1 email assigned from client ID + matter.' : $assigned . ' emails assigned from client ID + matter.';
+        if ($ready > 0) {
+            $parts[] = $ready === 1
+                ? '1 email matched client ID + matter — select to assign.'
+                : $ready . ' emails matched client ID + matter — select to assign.';
+        }
         if ($needs > 0) {
             $parts[] = $needs === 1
                 ? '1 client needs a matter chosen.'
                 : $needs . ' clients need a matter chosen.';
         }
-        if ($assigned === 0 && $needs === 0) {
+        if ($parts === []) {
             return 'No unassigned emails had a matching client ID and matter, or a unique client name.';
         }
 
