@@ -47,6 +47,12 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\SyncInboxEmails',
         '\App\Console\Commands\PurgeUnassignedSyncedEmails',
         '\App\Console\Commands\PruneEmailOpsLogs',
+
+        // Database Comparison
+        '\App\Console\Commands\CompareDatabaseTables',
+
+        // Migration Management
+        '\App\Console\Commands\MarkMigrationsAsRun',
     ];
 
     /**
