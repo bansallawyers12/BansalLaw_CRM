@@ -614,6 +614,18 @@ class PublicBookingController extends BaseController
             // Format and return the created appointment
             $result = $this->formatAppointmentData($appointment);
 
+            // CRM confirmation email (Bansal site may also send its own instant notice)
+            try {
+                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService->sendDetailedConfirmationEmail($appointment);
+            } catch (\Throwable $e) {
+                Log::error('Failed to send public booking confirmation email', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // Prepare response message (sync failures are logged and stored on booking_appointments.sync_error)
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
@@ -921,6 +933,17 @@ class PublicBookingController extends BaseController
             ]);
 
             $result = $this->formatAppointmentData($appointment);
+
+            try {
+                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService->sendDetailedConfirmationEmail($appointment);
+            } catch (\Throwable $e) {
+                Log::error('Failed to send public (no-login) booking confirmation email', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {

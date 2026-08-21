@@ -32,14 +32,26 @@ class NotificationService
      */
     public function sendDetailedConfirmationEmail(BookingAppointment $appointment): bool
     {
-        $mailer = null;
+        $mailerName = $this->mailRouting->systemMailerName();
         try {
             // Only send if not already sent
             if ($appointment->confirmation_email_sent) {
                 return true;
             }
 
-            $mailer = $this->appointmentMailer();
+            $to = trim((string) $appointment->client_email);
+            if ($to === '' || ! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                Log::warning('Cannot send appointment confirmation: invalid client email', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                ]);
+                return false;
+            }
+
+            // Ensure consultant relation is available for the email body
+            if ($appointment->consultant_id && ! $appointment->relationLoaded('consultant')) {
+                $appointment->load('consultant');
+            }
 
             $details = [
                 'client_name' => $appointment->client_name,
@@ -51,7 +63,8 @@ class NotificationService
                 'admin_notes' => $appointment->admin_notes,
             ];
 
-            $mailer->to($appointment->client_email)->send(
+            // sendNow avoids accidental queueing if a mailable later gains ShouldQueue
+            $this->appointmentMailer()->to($to)->sendNow(
                 new \App\Mail\AppointmentDetailedConfirmation($details)
             );
 
@@ -62,15 +75,16 @@ class NotificationService
 
             Log::info('Sent detailed confirmation email', [
                 'appointment_id' => $appointment->id,
-                'email' => $appointment->client_email,
-                'mailer' => config('mail_routing.system_mailer', 'ses'),
+                'email' => $to,
+                'mailer' => $mailerName,
             ]);
 
             return true;
         } catch (\Throwable $e) {
             Log::error('Failed to send confirmation email', [
                 'appointment_id' => $appointment->id,
-                'mailer' => $mailer ?? null,
+                'email' => $appointment->client_email,
+                'mailer' => $mailerName,
                 'error' => $e->getMessage(),
             ]);
             return false;
@@ -82,8 +96,21 @@ class NotificationService
      */
     public function sendCancellationConfirmationEmail(BookingAppointment $appointment, ?string $cancellationReason = null): bool
     {
-        $mailer = $this->appointmentMailer();
+        $mailerName = $this->mailRouting->systemMailerName();
         try {
+            $to = trim((string) $appointment->client_email);
+            if ($to === '' || ! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                Log::warning('Cannot send appointment cancellation email: invalid client email', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                ]);
+                return false;
+            }
+
+            if ($appointment->consultant_id && ! $appointment->relationLoaded('consultant')) {
+                $appointment->load('consultant');
+            }
+
             $details = [
                 'client_name' => $appointment->client_name,
                 'appointment_datetime' => $appointment->appointment_datetime,
@@ -94,21 +121,22 @@ class NotificationService
                 'cancellation_reason' => $cancellationReason,
             ];
 
-            $mailer->to($appointment->client_email)->send(
+            $this->appointmentMailer()->to($to)->sendNow(
                 new \App\Mail\AppointmentCancellation($details)
             );
 
             Log::info('Sent cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
-                'email' => $appointment->client_email,
-                'mailer' => config('mail_routing.system_mailer', 'ses'),
+                'email' => $to,
+                'mailer' => $mailerName,
             ]);
 
             return true;
         } catch (\Throwable $e) {
             Log::error('Failed to send cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
-                'mailer' => $mailer ?? null,
+                'email' => $appointment->client_email,
+                'mailer' => $mailerName,
                 'error' => $e->getMessage(),
             ]);
             return false;
@@ -221,4 +249,3 @@ class NotificationService
         return $stats;
     }
 }
-
