@@ -9,7 +9,9 @@
     var clickedOrder = [];
     var clickedIds = [];
     var isLoading = false;
+    var isLoadingMore = false;
     var spaEventsBound = false;
+    var infiniteScrollBound = false;
 
     function cfg() {
         return window.ClientsListingSpaConfig || {};
@@ -17,6 +19,105 @@
 
     function $root() {
         return $('#clients-listing-spa-root');
+    }
+
+    function usesInfiniteScroll() {
+        return $root().attr('data-infinite-scroll') === '1';
+    }
+
+    function setInfiniteLoader(visible) {
+        var $loader = $root().find('#clientsInfiniteLoader');
+        if ($loader.length) {
+            $loader.prop('hidden', !visible);
+        }
+    }
+
+    function hasMoreClients() {
+        if (!usesInfiniteScroll()) {
+            return false;
+        }
+        var current = parseInt($root().attr('data-current-page'), 10) || 1;
+        var last = parseInt($root().attr('data-last-page'), 10) || 1;
+        return current < last;
+    }
+
+    function loadMoreClients() {
+        if (!usesInfiniteScroll() || isLoading || isLoadingMore || !hasMoreClients()) {
+            return;
+        }
+
+        var $r = $root();
+        var current = parseInt($r.attr('data-current-page'), 10) || 1;
+        var nextPage = current + 1;
+        var url = new URL(window.location.href);
+        url.searchParams.set('page', String(nextPage));
+        url.searchParams.set('per_page', '20');
+
+        isLoadingMore = true;
+        setInfiniteLoader(true);
+
+        $.ajax({
+            url: url.href,
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+            success: function (html) {
+                var $newRoot = extractSpaRootFromHtml(html);
+                if (!$newRoot.length) {
+                    return;
+                }
+
+                var lastPage = parseInt($newRoot.attr('data-last-page'), 10) || nextPage;
+                var $rows = $newRoot.find('tbody.tdata tr.client-data-row');
+                var $tbody = $r.find('tbody.tdata');
+                var appended = 0;
+
+                $rows.each(function () {
+                    var rowId = this.id;
+                    if (rowId && $tbody.find('#' + rowId).length) {
+                        return;
+                    }
+                    $tbody.append(this);
+                    appended += 1;
+                });
+
+                $r.attr('data-current-page', String(nextPage));
+                $r.attr('data-last-page', String(lastPage));
+                updateBulkSelectionUI();
+
+                if (!appended && nextPage >= lastPage) {
+                    setInfiniteLoader(false);
+                }
+            },
+            error: function () {
+                // Keep current page so the user can retry by scrolling again.
+            },
+            complete: function () {
+                isLoadingMore = false;
+                setInfiniteLoader(false);
+                window.requestAnimationFrame(maybeLoadMoreClients);
+            }
+        });
+    }
+
+    function maybeLoadMoreClients() {
+        if (!usesInfiniteScroll() || isLoading || isLoadingMore || !hasMoreClients()) {
+            return;
+        }
+        var scrollBottom = window.innerHeight + window.scrollY;
+        var triggerLine = document.documentElement.scrollHeight - 280;
+        if (scrollBottom >= triggerLine) {
+            loadMoreClients();
+        }
+    }
+
+    function bindInfiniteScroll() {
+        if (infiniteScrollBound) {
+            return;
+        }
+        infiniteScrollBound = true;
+        $(window).on('scroll.clientsInfinite resize.clientsInfinite', function () {
+            maybeLoadMoreClients();
+        });
     }
 
     function clientsSwalBase() {
@@ -184,6 +285,7 @@
 
                 resetSelectionState();
                 initPanel();
+                window.requestAnimationFrame(maybeLoadMoreClients);
             },
             error: function () {
                 clientsSwalAlert({
@@ -209,6 +311,10 @@
         }
 
         updateBulkSelectionUI();
+        if (usesInfiniteScroll()) {
+            bindInfiniteScroll();
+            window.requestAnimationFrame(maybeLoadMoreClients);
+        }
     }
 
     function bindSpaEvents() {
@@ -249,6 +355,9 @@
         });
 
         $(document).on('change.clientsListingSpa', '#clients-listing-spa-root #per_page', function () {
+            if (usesInfiniteScroll()) {
+                return;
+            }
             var url = new URL(window.location.href);
             url.searchParams.set('per_page', $(this).val());
             url.searchParams.delete('page');
@@ -259,7 +368,12 @@
             e.preventDefault();
             var qs = $(this).serialize();
             var base = $(this).attr('action') || window.location.pathname;
-            loadListing(base + (qs ? '?' + qs : ''));
+            var url = new URL(base + (qs ? '?' + qs : ''), window.location.origin);
+            if (usesInfiniteScroll() || url.pathname === '/clients') {
+                url.searchParams.set('per_page', '20');
+                url.searchParams.delete('page');
+            }
+            loadListing(url.toString());
         });
 
         $(document).on('click.clientsListingSpa', '#clients-listing-spa-root #clearFilters', function (e) {

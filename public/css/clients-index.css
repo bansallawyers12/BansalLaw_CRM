@@ -695,6 +695,41 @@ body.sidebar-mini .clients-listing .card .card-body table.table tbody tr td:last
     font-size: 0.875rem;
 }
 
+/* Infinite scroll loader (replaces pagination footer on /clients) */
+.clients-listing .clients-infinite-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    padding: 16px 24px;
+    color: var(--text-muted, #5e7a90);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
+    border-radius: 0 0 10px 10px;
+}
+
+.clients-listing .clients-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.clients-listing .clients-infinite-loader__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(30, 61, 96, 0.15);
+    border-top-color: var(--navy, #1e3d60);
+    border-radius: 50%;
+    animation: clientsInfiniteSpin 0.75s linear infinite;
+}
+
+@keyframes clientsInfiniteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Pagination footer */
 .clients-listing .card-footer {
     padding: 16px 24px;
