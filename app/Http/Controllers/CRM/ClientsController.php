@@ -152,6 +152,8 @@ class ClientsController extends Controller
             if (!in_array($perPage, $allowedPerPage, true)) {
                 $perPage = 20;
             }
+            // Clients listing uses infinite scroll in fixed batches of 20.
+            $perPage = 20;
             
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
@@ -170,6 +172,7 @@ class ClientsController extends Controller
             if (!in_array($perPage, $allowedPerPage, true)) {
                 $perPage = 20;
             }
+            $perPage = 20;
 		    $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
 		    $totalData = 0;
             $unreadEmailCounts = [];
