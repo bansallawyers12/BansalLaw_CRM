@@ -1,6 +1,6 @@
 @extends('layouts.crm_client_detail')
 @include('components.require-datatables')
-@section('title', 'Action')
+@section('title', 'Tasks')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
@@ -25,7 +25,7 @@
                                 <i class="fa-solid fa-list-check"></i>
                             </span>
                             <div>
-                                <h4>Action</h4>
+                                <h4>Tasks</h4>
                                 <p class="action-page-header__subtitle">Open tasks — complete, update, or open the matter</p>
                             </div>
                         </div>
@@ -79,7 +79,7 @@
                                 <textarea id="add_task_assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="add_task_note_error" class="error-message"></div>
                             </div>
-                            <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Action">
+                            <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Task">
                             <div class="text-center">
                                 <button type="button" class="btn btn-primary" id="add_my_task_submit">
                                     <i class="fa-solid fa-circle-plus"></i> Add My Task
@@ -105,7 +105,7 @@
                             <button type="button" class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
                             <button type="button" class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
                             <button type="button" class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
+                            <button type="button" class="tab-button" data-filter="personal_action">Personal Task <span class="badge" id="personal-task-count">0</span></button>
                             <button type="button" class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
                         </div>
                         <div class="action-search">
@@ -134,7 +134,7 @@
                     </div>
                     <div id="actionInfiniteLoader" class="action-infinite-loader" hidden aria-live="polite">
                         <span class="action-infinite-loader__spinner" aria-hidden="true"></span>
-                        <span>Loading more actions...</span>
+                        <span>Loading more tasks...</span>
                     </div>
                     <div id="actionScrollSentinel" class="action-scroll-sentinel" aria-hidden="true"></div>
                     <div id="actionScrollInfo" class="action-scroll-info">Showing 0 of 0 entries</div>
@@ -1267,8 +1267,8 @@ $(function () {
                         <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
                         <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
-                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Action</option>
-                        <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
+                        <option value="Personal Task" ${taskGroup == 'Personal Task' || taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Task</option>
+                        <option value="Follow Up" ${taskGroup == 'Follow Up' || taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>

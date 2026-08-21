@@ -560,8 +560,8 @@
                             <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
                             <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
                             <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
-                            <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Action</option>
-                            <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
+                            <option value="Personal Task" ${taskGroup == 'Personal Task' || taskGroup == 'Personal Action' ? 'selected' : ''}>Personal Task</option>
+                            <option value="Follow Up" ${taskGroup == 'Follow Up' || taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>Follow up</option>
                         </select>
                         <div id="task-group-error" class="error-message"></div>
                     </div>

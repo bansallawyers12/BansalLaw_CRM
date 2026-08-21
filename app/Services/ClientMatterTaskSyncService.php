@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Bidirectional mirror between client checklist tasks (client_matter_tasks) and Action page rows (notes).
+ * Bidirectional mirror between client checklist tasks (client_matter_tasks) and Tasks page rows (notes).
  */
 class ClientMatterTaskSyncService
 {
-    public const DEFAULT_TASK_GROUP = 'Personal Action';
+    public const DEFAULT_TASK_GROUP = 'Personal Task';
 
     /**
      * After a client checklist task is saved, create the linked Action (Note) if missing.
@@ -232,6 +232,6 @@ class ClientMatterTaskSyncService
 
         $raw = trim(strip_tags((string) ($note->title ?? '')));
 
-        return $raw !== '' ? mb_substr($raw, 0, 500) : 'Action';
+        return $raw !== '' ? mb_substr($raw, 0, 500) : 'Task';
     }
 }

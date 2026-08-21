@@ -57,20 +57,20 @@ class ActivitySearchController extends Controller
             'note' => 'Note',
             'financial' => 'Financial',
             'lead_converted' => 'Lead Converted',
-            'followup_scheduled' => 'Action Scheduled',
-            'followup_completed' => 'Action Completed',
-            'followup_rescheduled' => 'Action Rescheduled',
-            'followup_cancelled' => 'Action Cancelled',
+            'followup_scheduled' => 'Task Scheduled',
+            'followup_completed' => 'Task Completed',
+            'followup_rescheduled' => 'Task Rescheduled',
+            'followup_cancelled' => 'Task Cancelled',
         ];
 
-        // Get task groups (action categories)
+        // Get task groups (task categories)
         $taskGroups = [
             'Call' => 'Call',
             'Checklist' => 'Checklist',
             'Review' => 'Review',
             'Query' => 'Query',
             'Urgent' => 'Urgent',
-            'Personal Action' => 'Personal Action',
+            'Personal Task' => 'Personal Task',
         ];
 
         $activities = collect();

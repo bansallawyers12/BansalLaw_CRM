@@ -502,7 +502,7 @@
 .task-desc-mention-menu {
     display: none;
     position: fixed;
-    z-index: 10060;
+    z-index: 20000;
     max-height: 220px;
     overflow-y: auto;
     background: #fff;

@@ -16,7 +16,7 @@ class ActivityFeedQuery
     public const PER_PAGE_MAX = 100;
 
     /** Matches ActivityFeed TASK_ACTION_SUBJECT_RE (subject text, case-insensitive). */
-    public const TASK_ACTION_PATTERN = '(set action for|updated action for|completed action for|action completed for|new action assigned for|deleted([[:space:]]+completed)?[[:space:]]+action|appointment created|booking appointment|converted activity to note|extended note deadline|note added to booking appointment)';
+    public const TASK_ACTION_PATTERN = '(set (action|task) for|updated (action|task) for|completed (action|task) for|(action|task) completed for|new (action|task) assigned for|deleted([[:space:]]+completed)?[[:space:]]+(action|task)|appointment created|booking appointment|converted activity to note|extended note deadline|note added to booking appointment)';
 
     public const LEAD_CONVERTED_PATTERN = 'lead converted';
 

@@ -552,7 +552,7 @@
             html +=
                 '<a class="cdn-matter-task__action-link" href="' +
                 actionHref +
-                '" title="Open on Action page" aria-label="Open on Action page"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Action</span></a>';
+                '" title="Open on Tasks page" aria-label="Open on Tasks page"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Tasks</span></a>';
         }
         html +=
             '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>';
@@ -600,7 +600,7 @@
                 '<div class="cdn-matter-task__empty">' +
                     '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>' +
                     '<p class="cdn-matter-task__empty-title">No tasks yet</p>' +
-                    '<p class="cdn-matter-task__empty-hint">Add a task for this matter. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
+                    '<p class="cdn-matter-task__empty-hint">Add a task for this matter. Tasks you create here also appear on the <strong>Tasks</strong> page for follow-up.</p>' +
                     '</div>'
             );
         }

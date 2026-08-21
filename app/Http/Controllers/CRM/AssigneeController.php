@@ -99,7 +99,7 @@ class AssigneeController extends Controller
 
         $noteData = Note::find($noteId);
         if (!$noteData) {
-            return response()->json(['status' => false, 'message' => 'Action not found']);
+            return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
         if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
@@ -169,7 +169,7 @@ class AssigneeController extends Controller
                 $objs = new ActivitiesLog;
                 $objs->client_id = $note_data['client_id'];
                 $objs->created_by = $user?->id ?? 0;
-                $objs->subject = 'completed action for '.@$assignee_name;
+                $objs->subject = 'completed task for '.@$assignee_name;
                 $objs->description = $description;
                 if(($user?->id ?? 0) != @$note_data['assigned_to']){
                     $objs->use_for = @$note_data['assigned_to'];
@@ -186,7 +186,7 @@ class AssigneeController extends Controller
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($note_data, true);
             }
             $response['status'] 	= 	true;
-            $response['message']	=	'Action completed successfully';
+            $response['message']	=	'Task completed successfully';
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
@@ -204,7 +204,7 @@ class AssigneeController extends Controller
 
         $noteData = Note::find($noteId);
         if (!$noteData) {
-            return response()->json(['status' => false, 'message' => 'Action not found']);
+            return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
         if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
@@ -249,7 +249,7 @@ class AssigneeController extends Controller
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteRow, false);
             }
             $response['status'] 	= 	true;
-            $response['message']	=	'Action updated successfully';
+            $response['message']	=	'Task updated successfully';
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
@@ -310,10 +310,16 @@ class AssigneeController extends Controller
                 return $query->where('assigned_to', $staff->id);
             })
             ->when($task_group !== 'All', function ($query) use ($task_group) {
+                if ($task_group === 'Personal Task' || $task_group === 'Personal Action') {
+                    return $query->whereIn('task_group', ['Personal Task', 'Personal Action']);
+                }
+                if ($task_group === 'Follow Up' || $task_group === 'Follow up') {
+                    return $query->whereIn('task_group', ['Follow Up', 'Follow up']);
+                }
                 return $query->where('task_group', 'like', $task_group);
             });
 
-        // Apply sorting - match Action page: default action_date desc; respect sortable links
+        // Apply sorting - match Tasks page: default action_date desc; respect sortable links
         $sortParam = $request->get('sort', '-action_date');
         $sortColumn = ltrim($sortParam, '-');
         $sortDirection = str_starts_with($sortParam, '-') ? 'desc' : 'asc';
@@ -365,8 +371,8 @@ class AssigneeController extends Controller
             'Review' => $groupedCounts['Review'] ?? 0,
             'Query' => $groupedCounts['Query'] ?? 0,
             'Urgent' => $groupedCounts['Urgent'] ?? 0,
-            'Personal Action' => $groupedCounts['Personal Action'] ?? 0,
-            'Follow Up' => $groupedCounts['Follow Up'] ?? 0,
+            'Personal Task' => ($groupedCounts['Personal Task'] ?? 0) + ($groupedCounts['Personal Action'] ?? 0),
+            'Follow Up' => ($groupedCounts['Follow Up'] ?? 0) + ($groupedCounts['Follow up'] ?? 0),
         ];
 
         return $counts;
@@ -415,13 +421,12 @@ class AssigneeController extends Controller
                         // Handle special cases for filter keys that use underscores (convert to correct task_group value)
                         $actionGroup = $request->filter;
                         if ($actionGroup == 'personal_action') {
-                            $actionGroup = 'Personal Action';
+                            $query->whereIn('notes.task_group', ['Personal Task', 'Personal Action']);
                         } elseif ($actionGroup == 'follow_up') {
-                            $actionGroup = 'Follow Up';
+                            $query->whereIn('notes.task_group', ['Follow Up', 'Follow up']);
                         } else {
-                            $actionGroup = ucfirst($actionGroup);
+                            $query->where('notes.task_group', ucfirst($actionGroup));
                         }
-                        $query->where('notes.task_group', $actionGroup);
                     }
                 }
 
@@ -514,8 +519,8 @@ class AssigneeController extends Controller
                                 }
                                 $client_name .= '</div>';
                             } else {
-                                // Personal Action - no client assigned (theme: theme.md navy / page-bg tint)
-                                $client_name = '<span class="action-badge-personal">Personal Action</span>';
+                                // Personal Task - no client assigned (theme: theme.md navy / page-bg tint)
+                                $client_name = '<span class="action-badge-personal">Personal Task</span>';
                             }
                             return $client_name;
                         } catch (\Exception $e) {
@@ -568,7 +573,7 @@ class AssigneeController extends Controller
                             $actionBtn = '';
                             $current_date1 = $list->action_date ?: date('Y-m-d');
 
-                            // Update Action button - available for all actions including Personal Actions
+                            // Update Task button - available for all tasks including Personal Tasks
                             // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
                             $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
                             $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
@@ -688,8 +693,8 @@ class AssigneeController extends Controller
         $counts['review'] = (clone $query)->where('task_group', 'Review')->count();
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
-        $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
-        $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
+        $counts['personal_action'] = (clone $query)->whereIn('task_group', ['Personal Task', 'Personal Action'])->count();
+        $counts['follow_up'] = (clone $query)->whereIn('task_group', ['Follow Up', 'Follow up'])->count();
 
         return response()->json($counts);
     }
@@ -752,9 +757,9 @@ class AssigneeController extends Controller
             $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
-                $objs->subject = 'deleted action for '.@$assign_full_name;
+                $objs->subject = 'deleted task for '.@$assign_full_name;
             } else {
-                $objs->subject = 'deleted action ';
+                $objs->subject = 'deleted task ';
             }
 
             $objs->description = '<p>'.$appointment->description.'</p>';
@@ -798,9 +803,9 @@ class AssigneeController extends Controller
             $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
-                $objs->subject = 'deleted action for '.@$assign_full_name;
+                $objs->subject = 'deleted task for '.@$assign_full_name;
             } else {
-                $objs->subject = 'deleted action ';
+                $objs->subject = 'deleted task ';
             }
 
             $objs->description = '<p>'.$appointment->description.'</p>';
@@ -835,9 +840,9 @@ class AssigneeController extends Controller
             $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
-                $objs->subject = 'deleted completed action for '.@$assign_full_name;
+                $objs->subject = 'deleted completed task for '.@$assign_full_name;
             } else {
-                $objs->subject = 'deleted completed action ';
+                $objs->subject = 'deleted completed task ';
             }
 
             $objs->description = '<p>'.$appointment->description.'</p>';
@@ -852,7 +857,7 @@ class AssigneeController extends Controller
             $objs->pin = 0;
             $objs->activity_type = 'activity';
             $objs->save();
-            return redirect()->route('assignee.action_completed')->with('success','Action deleted successfully');
+            return redirect()->route('assignee.action_completed')->with('success','Task deleted successfully');
         }
     }
 
@@ -897,13 +902,18 @@ class AssigneeController extends Controller
         // Validate the incoming request data
         $validated = $request->validate([
             'id' => 'required|exists:notes,id', // Ensure the action ID exists in the notes table
-            'client_id' => 'nullable|string', // Client ID is optional for Personal Actions
+            'client_id' => 'nullable|string', // Client ID is optional for Personal Tasks
             'assigned_to' => 'required|exists:staff,id',
             'description' => 'required|string',
-            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action',
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Task,Follow Up,Follow up',
         ]);
 
         try {
+            // Normalize Follow up casing to the canonical stored value.
+            if (strcasecmp($validated['task_group'], 'Follow up') === 0) {
+                $validated['task_group'] = 'Follow Up';
+            }
+
             // Log the incoming assigned_to value for debugging
             Log::info('Updating action with assigned_to: ' . $validated['assigned_to']);
 
@@ -929,7 +939,7 @@ class AssigneeController extends Controller
                 $completionLog = new ActivitiesLog;
                 $completionLog->client_id = $currentAction->client_id;
                 $completionLog->created_by = Auth::user()->id;
-                $completionLog->subject = 'Action completed for ' . $assignee_name_old;
+                $completionLog->subject = 'Task completed for ' . $assignee_name_old;
                 $completionLog->description = '<p>' . $currentAction->description . '</p>';
                 if (Auth::user()->id != $currentAction->assigned_to) {
                     $completionLog->use_for = $currentAction->assigned_to;
@@ -978,15 +988,15 @@ class AssigneeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Action completed and new action created successfully.'
+                'message' => 'Task completed and new task created successfully.'
             ], 200);
 
         } catch (\Exception $e) {
             // Log the exception for debugging
-            Log::error('Error updating action: ' . $e->getMessage());
+            Log::error('Error updating task: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the action: ' . $e->getMessage()
+                'message' => 'An error occurred while updating the task: ' . $e->getMessage()
             ], 500);
         }
     }

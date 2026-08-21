@@ -123,13 +123,13 @@ class ActivityFeedPaginationTest extends TestCase
         $staff = $this->actingSuperAdmin();
         $client = $this->makeClient();
         $this->log($client->id, $staff->id, 'added Call Notes', 'note');
-        $this->log($client->id, $staff->id, 'Set action for Jane Smith', 'note');
+        $this->log($client->id, $staff->id, 'Set task for Jane Smith', 'note');
 
         $response = $this->getJson('/get-activities?id='.$client->id.'&type=note');
         $response->assertOk();
         $subjects = collect($response->json('data'))->pluck('subject')->all();
         $this->assertContains('added Call Notes', $subjects);
-        $this->assertNotContains('Set action for Jane Smith', $subjects);
+        $this->assertNotContains('Set task for Jane Smith', $subjects);
     }
 
     #[Test]
@@ -168,14 +168,14 @@ class ActivityFeedPaginationTest extends TestCase
         $staff = $this->actingSuperAdmin();
         $client = $this->makeClient();
         $this->log($client->id, $staff->id, 'sent SMS', 'sms');
-        $this->log($client->id, $staff->id, 'Set action for Jane Smith', 'note');
+        $this->log($client->id, $staff->id, 'Set task for Jane Smith', 'note');
         $this->log($client->id, $staff->id, 'added Call Notes', 'note');
 
         $response = $this->getJson('/get-activities?id='.$client->id.'&type=activity');
         $response->assertOk();
         $subjects = collect($response->json('data'))->pluck('subject')->all();
         $this->assertContains('sent SMS', $subjects);
-        $this->assertContains('Set action for Jane Smith', $subjects);
+        $this->assertContains('Set task for Jane Smith', $subjects);
         $this->assertNotContains('added Call Notes', $subjects);
     }
 

@@ -725,7 +725,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text"><i class="fa-solid fa-align-left"></i></span>
                                 </div>
-                                <textarea id="assignnote" class="form-control enhanced-textarea js-staff-mentions" placeholder="Enter a note... (type @ to tag staff)"></textarea>
+                                <textarea id="assignnote" class="form-control enhanced-textarea js-staff-mentions" placeholder="Enter a note... (type @ to tag staff)" rows="3"></textarea>
                             </div>
                         </div>
                     </div>
@@ -815,9 +815,3 @@
 </div>
 
 @include('crm.clients.modals.change-matter-assignee-modal')
-
-@push('scripts')
-@once
-<script src="{{ asset('js/components/task-description-mentions.js') }}?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
-@endonce
-@endpush

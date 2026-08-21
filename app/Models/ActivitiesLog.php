@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * 
  * Database field clarifications for the Action feature:
  * - task_status (field name preserved): Action completion status (0 = incomplete action, 1 = completed action)
- * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
+ * - task_group (field name preserved): The task category (Call, Checklist, Review, Query, Urgent, Personal Task)
  * - followup_date (field name preserved): The scheduled date for the action
  * - activity_type: Can include 'followup_scheduled', 'followup_completed', etc. (these refer to Actions in the UI)
  * 

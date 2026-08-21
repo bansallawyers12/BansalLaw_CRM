@@ -22,7 +22,7 @@ class ActionTaskTimelineService
         Note $action,
         string $clientLabel = '',
         ?string $assigneeName = null,
-        string $verb = 'Set action'
+        string $verb = 'Set task'
     ): ?ActivitiesLog {
         $clientId = (int) ($action->client_id ?? 0);
         if ($clientId < 1) {
@@ -71,7 +71,7 @@ class ActionTaskTimelineService
         string $clientLabel = '',
         ?string $assigneeName = null
     ): ?ActivitiesLog {
-        return $this->logActionCreated($action, $clientLabel, $assigneeName, 'Updated action');
+        return $this->logActionCreated($action, $clientLabel, $assigneeName, 'Updated task');
     }
 
     /**

@@ -845,7 +845,7 @@ class LegalFormsController extends Controller
 
         foreach ($notes as $note) {
             $date = $note->created_at ? $note->created_at->format('Y-m-d H:i') : '';
-            $kind = ((int) $note->is_action === 1) ? 'Action' : 'Note';
+            $kind = ((int) $note->is_action === 1) ? 'Task' : 'Note';
             $title = trim((string) ($note->title ?? ''));
             $body = trim((string) ($note->description ?? ''));
             $chunk = "[{$date}] {$kind}".($title !== '' ? ": {$title}" : '')."\n{$body}\n";
