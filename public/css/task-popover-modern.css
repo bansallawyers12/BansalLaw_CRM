@@ -73,17 +73,79 @@
     outline: none;
 }
 
-/* Tom Select inside popover */
-.popover-body .ts-wrapper.single .ts-control {
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    padding: 8px 14px;
-    height: auto;
+/*
+ * Tom Select inside popover
+ * .form-control / select padding must NOT apply to the wrapper — that creates a
+ * tall empty box with "Search client..." clipped at the bottom.
+ */
+.popover-body .ts-wrapper,
+.popover-body .ts-wrapper.form-control,
+.popover-body .ts-wrapper.form-select,
+.popover .ts-wrapper,
+.popover .ts-wrapper.form-control,
+.popover .ts-wrapper.form-select,
+.popover .ts-wrapper.js-data-example-ajaxccsearch__addmytask {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: block !important;
 }
 
-.popover-body .ts-wrapper.single.focus .ts-control {
-    border-color: #3a6fa8;
-    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+.popover-body .ts-wrapper.single .ts-control,
+.popover .ts-wrapper.single .ts-control {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    min-height: 40px !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    border: 1px solid #c8dcef !important;
+    padding: 8px 12px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    line-height: 1.4 !important;
+}
+
+.popover-body .ts-wrapper.single.focus .ts-control,
+.popover .ts-wrapper.single.focus .ts-control {
+    border-color: #3a6fa8 !important;
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15) !important;
+}
+
+.popover-body .ts-wrapper.single .ts-control > input,
+.popover .ts-wrapper.single .ts-control > input {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: 1.4 !important;
+    font-size: 0.9rem !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+}
+
+.popover-body .ts-wrapper.single .ts-control > input::placeholder,
+.popover .ts-wrapper.single .ts-control > input::placeholder {
+    color: #a0aec0;
+    line-height: 1.4;
+    opacity: 1;
+}
+
+.popover-body .ts-wrapper.single .ts-control .item,
+.popover .ts-wrapper.single .ts-control .item {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.4 !important;
 }
 
 /* Keep selected Tom Select values inside the control (Update Task) */

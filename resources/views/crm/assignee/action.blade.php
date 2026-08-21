@@ -76,7 +76,7 @@
                             </div>
                             <div class="form-group form-group-full-width">
                                 <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="add_task_assignnote" class="form-control" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
+                                <textarea id="add_task_assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="add_task_note_error" class="error-message"></div>
                             </div>
                             <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Action">
@@ -728,23 +728,15 @@
     margin-bottom: 0;
 }
 
-/* Client search select styling */
-.popover .js-data-example-ajaxccsearch__addmytask {
+/* Client search: style lives on .ts-control (see task-popover-modern.css) — do not pad the wrapper */
+.popover .js-data-example-ajaxccsearch__addmytask.ts-wrapper,
+.popover select.js-data-example-ajaxccsearch__addmytask {
     width: 100%;
-    border: 1px solid var(--border, #c8dcef);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
-    background-color: var(--card-bg, #fff);
-    color: var(--text-dark, #1a2c40);
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
 }
-
-    .popover .js-data-example-ajaxccsearch__addmytask:focus {
-        border-color: var(--sidebar-active, #3a6fa8);
-        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
-        outline: 0;
-    }
     
     /* Final overflow prevention rules removed (redundant — handled by top-level styles) */
 
@@ -1283,7 +1275,7 @@ $(function () {
 
                 <div class="form-group form-group-full-width">
                     <label class="control-label" for="update_task_assignnote">Description</label>
-                    <textarea id="update_task_assignnote" class="form-control" rows="4">${noteId}</textarea>
+                    <textarea id="update_task_assignnote" class="form-control js-staff-mentions" rows="4" placeholder="Type @ to tag staff">${noteId}</textarea>
                     <div id="note-error" class="error-message"></div>
                 </div>
 

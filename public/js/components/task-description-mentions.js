@@ -1,13 +1,10 @@
 /**
- * Task Description @mentions (Add My Task)
+ * Task Description @mentions
  *
- * Type @ in the description field to pick staff from the Assignees list.
- * Selecting a person inserts @Name and checks them as an assignee.
- * Assignees remains the source of truth for ownership.
+ * Type @ in a task/note field to pick staff. Selecting a person inserts @Name
+ * and adds them as an assignee (checkbox or select). Assignees stay the source of truth.
  *
- * The picker is attached to document.body (so it is not clipped by the popover).
- * Mouse events are bound on the menu node itself so they do not bubble to
- * document — Bootstrap click-triggered popovers would otherwise close.
+ * Targets: .js-staff-mentions and known Add/Update Task textareas.
  */
 (function ($) {
     'use strict';
@@ -17,7 +14,15 @@
     }
 
     var MENU_ID = 'task-desc-mention-menu';
-    var TEXTAREA_SEL = '.add-task-layout #add_task_assignnote, .add-task-layout #assignnote';
+    var STYLE_ID = 'task-desc-mention-styles';
+    var TEXTAREA_SEL = [
+        '.js-staff-mentions',
+        '#add_task_assignnote',
+        '.add-task-layout #assignnote',
+        '#create_action_popup #assignnote',
+        '#create_task_modal #dashboard_assignnote',
+        '#update_task_assignnote'
+    ].join(', ');
     var MAX_RESULTS = 80;
     var activeState = null;
     var listenersBound = false;
@@ -25,6 +30,7 @@
     var applyingMention = false;
 
     $(function () {
+        ensureStyles();
         initTaskDescriptionMentions();
     });
 
@@ -55,7 +61,7 @@
             }, 150);
         });
 
-        $(document).on('hide.bs.popover', '.add_my_task', function () {
+        $(document).on('hide.bs.popover hide.bs.modal', function () {
             hideMenu();
         });
 
@@ -65,6 +71,23 @@
             }
             hideMenu();
         });
+    }
+
+    function ensureStyles() {
+        if (document.getElementById(STYLE_ID)) {
+            return;
+        }
+        var css = [
+            '.task-desc-mention-menu{display:none;position:fixed;z-index:10060;max-height:220px;overflow-y:auto;',
+            'background:#fff;border:1px solid #c8dcef;border-radius:8px;',
+            'box-shadow:0 8px 24px rgba(30,61,96,.14);padding:4px;}',
+            '.task-desc-mention-item{display:flex;align-items:center;gap:8px;width:100%;border:0;',
+            'background:transparent;text-align:left;padding:8px 10px;border-radius:6px;',
+            'color:#1a2c40;font-size:.9rem;cursor:pointer;}',
+            '.task-desc-mention-item i{color:#3a6fa8;font-size:.8rem;}',
+            '.task-desc-mention-item:hover,.task-desc-mention-item.is-active{background:#ddeaf8;}'
+        ].join('');
+        $('<style id="' + STYLE_ID + '">').text(css).appendTo('head');
     }
 
     function ensureMenu() {
@@ -107,15 +130,22 @@
     }
 
     function isTaskDescriptionTextarea(el) {
-        if (!el) {
-            return false;
-        }
-        return $(el).is(TEXTAREA_SEL);
+        return !!(el && $(el).is(TEXTAREA_SEL));
     }
 
     /**
-     * @param {HTMLTextAreaElement} textarea
+     * @param {HTMLElement} textarea
+     * @returns {JQuery}
      */
+    function findRoot($textarea) {
+        var $root = $textarea.closest('.add-task-layout, .update-task-layout, #create_action_popup, #create_task_modal');
+        if ($root.length) {
+            return $root.first();
+        }
+        $root = $textarea.closest('.popover, .modal');
+        return $root.first();
+    }
+
     function handleInput(textarea) {
         var mention = getMentionAtCaret(textarea);
         if (!mention) {
@@ -123,7 +153,7 @@
             return;
         }
 
-        var $root = $(textarea).closest('.add-task-layout');
+        var $root = findRoot($(textarea));
         if (!$root.length) {
             hideMenu();
             return;
@@ -140,10 +170,6 @@
         renderMenu(textarea, filtered, 0);
     }
 
-    /**
-     * @param {JQuery.Event} e
-     * @param {HTMLTextAreaElement} textarea
-     */
     function handleKeydown(e, textarea) {
         var $menu = $menuCached;
         if (!$menu || !$menu.length || !$menu.is(':visible')) {
@@ -181,10 +207,6 @@
         }
     }
 
-    /**
-     * @param {HTMLTextAreaElement} textarea
-     * @returns {{ start: number, end: number, query: string }|null}
-     */
     function getMentionAtCaret(textarea) {
         var value = textarea.value || '';
         var pos = typeof textarea.selectionStart === 'number' ? textarea.selectionStart : value.length;
@@ -193,32 +215,31 @@
         if (!match) {
             return null;
         }
-        var atIndex = before.lastIndexOf('@');
         return {
-            start: atIndex,
+            start: before.lastIndexOf('@'),
             end: pos,
             query: match[2] || ''
         };
     }
 
-    /**
-     * @param {JQuery} $root
-     * @returns {Array<{id: string, name: string, search: string}>}
-     */
     function collectStaff($root) {
         var list = [];
         var seen = {};
-        $root.find('.assignee-item').each(function () {
-            var $item = $(this);
-            var $cb = $item.find('.checkbox-item').first();
-            if (!$cb.length) {
-                return;
-            }
+
+        $root.find('.checkbox-item').each(function () {
+            var $cb = $(this);
             var id = String($cb.val() || '');
             if (!id || seen[id]) {
                 return;
             }
-            var name = ($item.attr('data-staff-name') || '').trim();
+            var $item = $cb.closest('.assignee-item, .staff-item, .modern-staff-item, label');
+            var name = (
+                $item.attr('data-staff-name') ||
+                $cb.attr('data-staff-name') ||
+                $cb.attr('data-name') ||
+                $item.find('.staff-name').first().text() ||
+                ''
+            ).trim();
             if (!name) {
                 var raw = ($item.text() || '').replace(/\s+/g, ' ').trim();
                 name = raw.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -227,16 +248,35 @@
                 return;
             }
             seen[id] = true;
-            var search = ($item.attr('data-searchtext') || (name + id)).toLowerCase().replace(/\s+/g, '');
+            var search = ($item.attr('data-searchtext') || $item.attr('data-name') || (name + id))
+                .toLowerCase()
+                .replace(/\s+/g, '');
             list.push({ id: id, name: name, search: search });
         });
+
+        if (!list.length) {
+            $root.find('select#update_task_rem_cat option, select#add_task_rem_cat option, select#rem_cat option, select#dashboard_rem_cat option').each(function () {
+                var $opt = $(this);
+                var id = String($opt.val() || '');
+                if (!id || seen[id]) {
+                    return;
+                }
+                var name = ($opt.text() || '').replace(/\s+/g, ' ').trim().replace(/\s*\([^)]*\)\s*$/, '').trim();
+                if (!name) {
+                    return;
+                }
+                seen[id] = true;
+                list.push({
+                    id: id,
+                    name: name,
+                    search: (name + id).toLowerCase().replace(/\s+/g, '')
+                });
+            });
+        }
+
         return list;
     }
 
-    /**
-     * @param {Array<{id: string, name: string, search: string}>} staff
-     * @param {string} query
-     */
     function filterStaff(staff, query) {
         var q = String(query || '').toLowerCase().replace(/\s+/g, '');
         var matched = !q ? staff.slice() : staff.filter(function (s) {
@@ -245,11 +285,6 @@
         return matched.slice(0, MAX_RESULTS);
     }
 
-    /**
-     * @param {HTMLTextAreaElement} textarea
-     * @param {Array} items
-     * @param {number} activeIndex
-     */
     function renderMenu(textarea, items, activeIndex) {
         var $menu = ensureMenu();
         var html = items.map(function (item, i) {
@@ -266,9 +301,6 @@
         positionMenu(textarea, $menu);
     }
 
-    /**
-     * @param {number} index
-     */
     function highlightMenu(index) {
         var $menu = ensureMenu();
         $menu.find('.task-desc-mention-item').removeClass('is-active')
@@ -279,10 +311,6 @@
         }
     }
 
-    /**
-     * @param {HTMLTextAreaElement} textarea
-     * @param {JQuery} $menu
-     */
     function positionMenu(textarea, $menu) {
         var rect = textarea.getBoundingClientRect();
         var menuHeight = $menu.outerHeight() || 200;
@@ -301,12 +329,6 @@
         });
     }
 
-    /**
-     * @param {HTMLTextAreaElement} textarea
-     * @param {{ start: number, end: number, query: string }} mention
-     * @param {string} staffId
-     * @param {string} staffName
-     */
     function applyMention(textarea, mention, staffId, staffName) {
         applyingMention = true;
         try {
@@ -319,7 +341,7 @@
                 textarea.setSelectionRange(caret, caret);
             }
 
-            var $root = $(textarea).closest('.add-task-layout');
+            var $root = findRoot($(textarea));
             if (!$root.length) {
                 return;
             }
@@ -328,6 +350,11 @@
             }).first();
             if ($cb.length && !$cb.prop('checked')) {
                 $cb.prop('checked', true).trigger('change');
+            }
+
+            var $select = $root.find('#update_task_rem_cat');
+            if ($select.length) {
+                $select.val(String(staffId)).trigger('change');
             }
         } finally {
             applyingMention = false;
