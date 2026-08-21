@@ -2127,6 +2127,10 @@ function customValidate(formName, savetype = '')
 							$('.timeslot_col_date_time').hide();
 							var myform = document.getElementById('appointform');
 							var fd = new FormData(myform);
+							// Explicitly set so confirmation email is not dropped when the checkbox
+							// sits in a previously-hidden section or FormData omits it.
+							var sendConfirmation = document.getElementById('send_confirmation_email');
+							fd.set('send_confirmation_email', (sendConfirmation && sendConfirmation.checked) ? '1' : '0');
                             $.ajax({
                                 type:'post',
                                 url:$("form[name="+formName+"]").attr('action'),

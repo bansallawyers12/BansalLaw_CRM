@@ -6685,15 +6685,17 @@ class ClientsController extends Controller
             // Log activity with detailed appointment information
             $this->createActivityLogForBookingAppointment($appointment, $serviceId, $requestData['noe_id']);
 
-            // Send confirmation email if checkbox was checked
+            // Send confirmation email unless staff explicitly opted out (checkbox / send_confirmation_email=0).
+            // Default true so a missing field still emails the client (CRM booking expectation).
             $confirmationEmailSent = false;
             $confirmationEmailFailed = false;
-            if ($request->has('send_confirmation_email') && $request->boolean('send_confirmation_email')) {
+            $shouldSendConfirmationEmail = $request->boolean('send_confirmation_email', true);
+            if ($shouldSendConfirmationEmail) {
                 try {
                     $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
                     $confirmationEmailSent = $notificationService->sendDetailedConfirmationEmail($appointment);
                     $confirmationEmailFailed = !$confirmationEmailSent;
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $confirmationEmailFailed = true;
                     Log::error('Failed to send appointment confirmation email', [
                         'appointment_id' => $appointment->id,
@@ -6702,6 +6704,11 @@ class ClientsController extends Controller
                         'trace' => $e->getTraceAsString()
                     ]);
                 }
+            } else {
+                Log::info('Appointment confirmation email skipped by staff opt-out', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                ]);
             }
 
             // Prepare response message

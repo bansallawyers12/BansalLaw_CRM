@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -45,7 +46,7 @@ class AppointmentDetailedConfirmation extends Mailable
             view: 'emails.appointment-confirmation',
             with: [
                 'clientName' => $this->details['client_name'] ?? 'Valued Client',
-                'appointmentDate' => $this->details['appointment_datetime']?->format('l, d F Y') ?? 'N/A',
+                'appointmentDate' => $this->formatAppointmentDate($this->details['appointment_datetime'] ?? null),
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
                 'location' => 'Melbourne',
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
@@ -55,6 +56,26 @@ class AppointmentDetailedConfirmation extends Mailable
                 'adminNotes' => $this->details['admin_notes'] ?? null,
             ],
         );
+    }
+
+    /**
+     * Safely format appointment datetime whether Carbon or string.
+     */
+    protected function formatAppointmentDate(mixed $datetime): string
+    {
+        if ($datetime instanceof \DateTimeInterface) {
+            return Carbon::parse($datetime)->format('l, d F Y');
+        }
+
+        if (is_string($datetime) && trim($datetime) !== '') {
+            try {
+                return Carbon::parse($datetime)->format('l, d F Y');
+            } catch (\Throwable) {
+                return $datetime;
+            }
+        }
+
+        return 'N/A';
     }
 
     /**

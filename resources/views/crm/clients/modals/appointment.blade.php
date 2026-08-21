@@ -221,6 +221,8 @@
                                                     <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
                                                 </div>
                                                 <div class="form-check mt-2">
+                                                    {{-- Hidden 0 so unchecked state is submitted; checked box overrides with 1 --}}
+                                                    <input type="hidden" name="send_confirmation_email" value="0">
                                                     <input type="checkbox" class="form-check-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
                                                     <label class="form-check-label" for="send_confirmation_email">
                                                         <i class="fa-solid fa-envelope me-2"></i>Send confirmation email to client
