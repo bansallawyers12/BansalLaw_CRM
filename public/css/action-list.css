@@ -435,7 +435,8 @@
     border-color: rgba(168, 48, 32, 0.25);
 }
 
-.assignee-action-page .action-type-personal-action {
+.assignee-action-page .action-type-personal-action,
+.assignee-action-page .action-type-personal-task {
     background: rgba(30, 61, 96, 0.08);
     color: var(--navy, #1e3d60);
     border-color: var(--border, #c8dcef);

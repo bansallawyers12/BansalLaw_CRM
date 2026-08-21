@@ -139,7 +139,7 @@
                                 <textarea id="assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="note-error" class="error-message"></div>
                             </div>
-                            <input id="task_group" name="task_group" type="hidden" value="Personal Action">
+                            <input id="task_group" name="task_group" type="hidden" value="Personal Task">
                             <div class="text-center">
                                 <button type="button" class="btn btn-primary" id="add_my_task">
                                     <i class="fa-solid fa-circle-plus"></i> Add My Task
@@ -168,8 +168,8 @@
                         </ul>
                         @if($count_note_deadline > 6)
                             <div class="todo-load-more">
-                                <p>Showing 6 of {{ $count_note_deadline }} actions</p>
-                                <a href="{{ route('assignee.action') }}" class="todo-view-all-link">View all actions →</a>
+                                <p>Showing 6 of {{ $count_note_deadline }} tasks</p>
+                                <a href="{{ route('assignee.action') }}" class="todo-view-all-link">View all tasks →</a>
                             </div>
                         @endif
                     @else

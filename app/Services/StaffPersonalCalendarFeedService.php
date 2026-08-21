@@ -177,7 +177,7 @@ class StaffPersonalCalendarFeedService
             ->map(function (Note $note) use ($tz) {
                 $deadline = Carbon::parse($note->note_deadline, $tz)->startOfDay()->setTime(9, 0);
                 $clientName = $this->clientDisplayName($note->client);
-                $title = trim(($clientName ? $clientName . ' — ' : '') . ($note->title ?: 'Action'));
+                $title = trim(($clientName ? $clientName . ' — ' : '') . ($note->title ?: 'Task'));
 
                 return [
                     'id' => 'action-' . $note->id,

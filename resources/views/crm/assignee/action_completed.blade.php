@@ -1,6 +1,6 @@
 @extends('layouts.crm_client_detail')
 @include('components.require-tinymce')
-@section('title', 'Completed Action')
+@section('title', 'Completed Tasks')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
@@ -289,7 +289,7 @@
             <div class="card">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
-                        <h4>Completed Action</h4>
+                        <h4>Completed Tasks</h4>
                         <ul class="nav nav-pills" id="client_tabs" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link" id="incomplete-tab" href="{{ URL::to('/action') }}">Incomplete</a>
@@ -323,7 +323,7 @@
                                         <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' || $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] ?? 0 }}</span></a>
                                     </button>
                                     <button type="button">
                                         <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
@@ -386,7 +386,7 @@
                                                     </td>
                                                     <td>
                                                         <div class="action-buttons">
-                                                            @if($list->task_group != 'Personal Action')
+                                                            @if($list->task_group != 'Personal Task' && $list->task_group != 'Personal Action')
                                                                 <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary btn-sm update_task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="<div id='popover-content'>
                                                                     <h4 class='text-center'>Update Task</h4>
                                                                     <div class='clearfix'></div>

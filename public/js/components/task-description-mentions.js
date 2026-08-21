@@ -13,8 +13,14 @@
         return;
     }
 
+    if (window.__taskDescMentionsBound) {
+        return;
+    }
+    window.__taskDescMentionsBound = true;
+
     var MENU_ID = 'task-desc-mention-menu';
     var STYLE_ID = 'task-desc-mention-styles';
+    var MENU_Z = 20000;
     var TEXTAREA_SEL = [
         '.js-staff-mentions',
         '#add_task_assignnote',
@@ -78,7 +84,7 @@
             return;
         }
         var css = [
-            '.task-desc-mention-menu{display:none;position:fixed;z-index:10060;max-height:220px;overflow-y:auto;',
+            '.task-desc-mention-menu{display:none;position:fixed;z-index:20000;max-height:220px;overflow-y:auto;',
             'background:#fff;border:1px solid #c8dcef;border-radius:8px;',
             'box-shadow:0 8px 24px rgba(30,61,96,.14);padding:4px;}',
             '.task-desc-mention-item{display:flex;align-items:center;gap:8px;width:100%;border:0;',
@@ -90,8 +96,22 @@
         $('<style id="' + STYLE_ID + '">').text(css).appendTo('head');
     }
 
-    function ensureMenu() {
+    function menuHost(textarea) {
+        if (textarea) {
+            var $modal = $(textarea).closest('.modal');
+            if ($modal.length) {
+                return $modal.first();
+            }
+        }
+        return $(document.body);
+    }
+
+    function ensureMenu(textarea) {
         if ($menuCached && $menuCached.length && document.body.contains($menuCached[0])) {
+            var $host = menuHost(textarea);
+            if ($menuCached.parent()[0] !== $host[0]) {
+                $host.append($menuCached);
+            }
             return $menuCached;
         }
 
@@ -100,8 +120,8 @@
             $menuCached = $existing;
         } else {
             $menuCached = $('<div id="' + MENU_ID + '" class="task-desc-mention-menu" role="listbox" aria-label="Tag staff"></div>');
-            $('body').append($menuCached);
         }
+        menuHost(textarea).append($menuCached);
 
         $menuCached.off('.taskMentions');
         $menuCached.on('mousedown.taskMentions click.taskMentions touchstart.taskMentions', function (e) {
@@ -286,7 +306,7 @@
     }
 
     function renderMenu(textarea, items, activeIndex) {
-        var $menu = ensureMenu();
+        var $menu = ensureMenu(textarea);
         var html = items.map(function (item, i) {
             var activeClass = i === activeIndex ? ' is-active' : '';
             return '<button type="button" class="task-desc-mention-item' + activeClass + '" role="option"' +
@@ -302,7 +322,7 @@
     }
 
     function highlightMenu(index) {
-        var $menu = ensureMenu();
+        var $menu = ensureMenu(activeState && activeState.textarea);
         $menu.find('.task-desc-mention-item').removeClass('is-active')
             .eq(index).addClass('is-active');
         var el = $menu.find('.task-desc-mention-item').get(index);
@@ -325,7 +345,7 @@
             top: Math.max(8, top) + 'px',
             left: Math.max(8, left) + 'px',
             width: width + 'px',
-            zIndex: 10060
+            zIndex: MENU_Z
         });
     }
 

@@ -411,7 +411,7 @@ window.openTaskDetail = function(taskId) {
     
     // Populate panel with task data
     $('#taskDetailTitle').text(stripHtml(data.description));
-    $('#taskDetailClientName').text(data.clientName || 'Personal Action');
+    $('#taskDetailClientName').text(data.clientName || 'Personal Task');
     $('#taskDetailClientCode').text(data.clientCode ? `(${data.clientCode})` : '');
     $('#taskDetailClientLink').attr('href', isPersonalAction ? personalActionUrl : (clientDetailUrl || '#'));
     
@@ -504,7 +504,7 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                     });
                 }, 200);
                 
-                showNotification('Action completed successfully!', 'success');
+                showNotification('Task completed successfully!', 'success');
             } else {
                 showNotification(response.message || 'Failed to complete action', 'error');
             }

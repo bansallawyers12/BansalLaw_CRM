@@ -97,7 +97,7 @@ class DashboardService
     /**
      * Get all actions (notes with is_action = 1) for the user
      * Shows actions with deadlines first (ordered by urgency), then actions without deadlines
-     * Matches Action page: includes Personal Actions (null client_id) and all task groups
+     * Matches Tasks page: includes Personal Tasks (null client_id) and all task groups
      */
     private function getNotesData($user)
     {
@@ -328,8 +328,8 @@ class DashboardService
     }
 
     /**
-     * Get note deadline count (all actions count)
-     * Matches Action page getActionCounts: includes Personal Actions
+     * Get note deadline count (all tasks count)
+     * Matches Tasks page getActionCounts: includes Personal Tasks
      */
     private function getNoteDeadlineCount($user): int
     {
@@ -652,7 +652,7 @@ class DashboardService
         $noteData = Note::where('id', $noteId)->first();
 
         if (!$noteData) {
-            return ['success' => false, 'message' => 'Action not found'];
+            return ['success' => false, 'message' => 'Task not found'];
         }
 
         if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
@@ -722,7 +722,7 @@ class DashboardService
             ActivitiesLog::create([
                 'client_id' => $noteData->client_id,
                 'created_by' => Auth::id(),
-                'subject' => 'completed action for ' . $assigneeName,
+                'subject' => 'completed task for ' . $assigneeName,
                 'description' => $description,
                 'activity_type' => 'activity',
                 'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
@@ -733,7 +733,7 @@ class DashboardService
             ]);
         }
 
-        return ['success' => true, 'message' => 'Action completed successfully'];
+        return ['success' => true, 'message' => 'Task completed successfully'];
     }
 
     /**
@@ -753,11 +753,11 @@ class DashboardService
                     'module_id' => $note->client_id ?? 0,
                     'url' => $notificationUrl,
                     'notification_type' => 'client',
-                    'message' => 'Action Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
+                    'message' => 'Task Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
                 ]);
             }
 
-            // Create activity log (client_id may be null for Personal Actions)
+            // Create activity log (client_id may be null for Personal Tasks)
             ActivitiesLog::create([
                 'client_id' => $note->client_id,
                 'created_by' => Auth::id(),

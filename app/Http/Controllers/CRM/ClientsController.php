@@ -5954,7 +5954,7 @@ class ClientsController extends Controller
                 }
             }
 
-            return response()->json(['success' => true, 'message' => 'Action created successfully']);
+            return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
             Log::error('Error in storePersonalAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -6033,7 +6033,7 @@ class ClientsController extends Controller
                 app(ActionTaskTimelineService::class)->logActionUpdated($action, $clientLabel, $assigneeName);
             }
 
-            return response()->json(['success' => true, 'message' => 'Action updated successfully']);
+            return response()->json(['success' => true, 'message' => 'Task updated successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating action: ' . $e->getMessage()], 500);
         }
@@ -6115,7 +6115,7 @@ class ClientsController extends Controller
                 }
             }
 
-            return response()->json(['success' => true, 'message' => 'Action created successfully']);
+            return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
             Log::error('Error in reassignAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),

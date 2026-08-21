@@ -26,7 +26,7 @@
     }
 
     /** Tasks/actions and other non-note timeline events (incl. legacy rows stored as activity_type note). */
-    var TASK_ACTION_SUBJECT_RE = /\b(?:set action for|updated action for|completed action for|action completed for|new action assigned for|deleted(?:\s+completed)?\s+action|appointment created|booking appointment|converted activity to note|extended note deadline|note added to booking appointment)\b/i;
+    var TASK_ACTION_SUBJECT_RE = /\b(?:set (?:action|task) for|updated (?:action|task) for|completed (?:action|task) for|(?:action|task) completed for|new (?:action|task) assigned for|deleted(?:\s+completed)?\s+(?:action|task)|appointment created|booking appointment|converted activity to note|extended note deadline|note added to booking appointment)\b/i;
 
     function isTaskOrActionTimelineItem($item) {
         if ($item.hasClass('activity-type-activity')) {

@@ -23,7 +23,7 @@
                         <span class="dashboard-cal-stat-value" id="calStatWeek">{{ $stats['this_week'] ?? 0 }}</span>
                         <span class="dashboard-cal-stat-label">This week</span>
                     </div>
-                    <div class="dashboard-cal-stat dashboard-cal-stat--overdue" title="Overdue actions">
+                    <div class="dashboard-cal-stat dashboard-cal-stat--overdue" title="Overdue tasks">
                         <span class="dashboard-cal-stat-value" id="calStatOverdue">{{ $stats['overdue_actions'] ?? 0 }}</span>
                         <span class="dashboard-cal-stat-label">Overdue</span>
                     </div>
