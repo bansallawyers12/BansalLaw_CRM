@@ -6,6 +6,7 @@ use App\Models\ClientCourtHearing;
 use App\Models\EmailCalendarLink;
 use App\Models\EmailLog;
 use App\Models\StaffCalendarEvent;
+use App\Support\CalendarEventText;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -16,6 +17,10 @@ class EmailCalendarMergeService
 {
     /** @var list<string> */
     protected array $scheduleKeywords = [
+        'directions hearing',
+        'case management',
+        'court hearing',
+        'court date',
         'hearing',
         'interview',
         'walk in',
@@ -23,12 +28,7 @@ class EmailCalendarMergeService
         'walkin',
         'appointment',
         'consultation',
-        'scheduled',
-        'schedule',
-        'court date',
         'mention',
-        'directions hearing',
-        'case management',
         'mediation',
         'conference',
         'tribunal',
@@ -123,14 +123,20 @@ class EmailCalendarMergeService
 
         foreach ($pendingLinks as $pendingLink) {
             try {
+                $startsAt = $pendingLink->starts_at;
+                $endsAt = $pendingLink->ends_at;
+                $isAllDay = $startsAt instanceof Carbon
+                    && $startsAt->format('H:i:s') === '00:00:00'
+                    && ($endsAt === null || ($endsAt instanceof Carbon && $endsAt->format('H:i:s') === '00:00:00'));
+
                 $event = [
                     'title' => $pendingLink->event_title,
                     'event_type' => $pendingLink->event_type,
-                    'starts_at' => $pendingLink->starts_at,
-                    'ends_at' => $pendingLink->ends_at,
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
                     'location' => $pendingLink->location,
                     'source' => $pendingLink->source,
-                    'is_all_day' => false,
+                    'is_all_day' => $isAllDay,
                 ];
 
                 $calendarId = $this->createCalendarRecord($emailLog, $event, $staffUserId);
@@ -240,7 +246,7 @@ class EmailCalendarMergeService
             }
 
             $summary = $this->icsFieldValue($block, 'SUMMARY') ?: 'Calendar event';
-            $location = $this->icsFieldValue($block, 'LOCATION');
+            $location = CalendarEventText::sanitizeLocation($this->icsFieldValue($block, 'LOCATION'));
             $description = $this->icsFieldValue($block, 'DESCRIPTION') ?? '';
             $startsAt = $this->parseIcsDateTime($this->icsFieldValue($block, 'DTSTART'));
             $endsAt = $this->parseIcsDateTime($this->icsFieldValue($block, 'DTEND'));
@@ -250,14 +256,17 @@ class EmailCalendarMergeService
             }
 
             $classificationText = strtolower($summary . ' ' . $description);
+            $eventType = $this->classifyEventType($classificationText) ?? 'meeting';
+            $isAllDay = $this->icsValueIsAllDay($this->icsFieldValue($block, 'DTSTART'));
+
             $events[] = [
-                'title' => $summary,
-                'event_type' => $this->classifyEventType($classificationText),
+                'title' => $this->cleanStaffEventTitle($summary, $eventType),
+                'event_type' => $eventType,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'location' => $location,
                 'source' => $source,
-                'is_all_day' => $this->icsValueIsAllDay($this->icsFieldValue($block, 'DTSTART')),
+                'is_all_day' => $isAllDay,
             ];
         }
 
@@ -284,7 +293,7 @@ class EmailCalendarMergeService
 
         foreach ($lines as $line) {
             $line = trim($line);
-            if ($line === '' || ! $this->containsScheduleKeyword($line)) {
+            if ($line === '' || CalendarEventText::isNoiseScheduleLine($line) || ! $this->containsScheduleKeyword($line)) {
                 continue;
             }
 
@@ -301,7 +310,7 @@ class EmailCalendarMergeService
             }
         }
 
-        if ($events === [] && $this->containsScheduleKeyword($combined)) {
+        if ($events === [] && $this->containsScheduleKeyword($combined) && ! CalendarEventText::isNoiseScheduleLine($combined)) {
             foreach ($this->extractDatesFromLine($combined, $timezone) as $dateInfo) {
                 $events[] = [
                     'title' => $this->buildEventTitle($subject, $combined, $dateInfo['event_type']),
@@ -349,14 +358,32 @@ class EmailCalendarMergeService
             $notes .= ' (Email #' . $emailLog->id . ')';
         }
 
+        $location = CalendarEventText::sanitizeLocation($event['location'] ?? null);
+        $isAllDay = (bool) ($event['is_all_day'] ?? false);
+        $startsAt = $event['starts_at'];
+
         if ($this->calendarTypeForEvent($event['event_type']) === EmailCalendarLink::TYPE_COURT_HEARING) {
+            $hearingType = CalendarEventText::sanitizeHearingType(
+                ucfirst(str_replace('_', ' ', $event['event_type']))
+            );
+            $hearingTime = $isAllDay ? null : $startsAt->format('H:i');
+
+            $existingId = $this->findExistingHearingId(
+                (int) $emailLog->client_id,
+                $startsAt->toDateString(),
+                $hearingTime
+            );
+            if ($existingId !== null) {
+                return $existingId;
+            }
+
             $hearing = ClientCourtHearing::create([
                 'client_id' => (int) $emailLog->client_id,
                 'client_matter_id' => $emailLog->client_matter_id ?: null,
-                'court_name' => $event['location'] ?? null,
-                'hearing_date' => $event['starts_at']->toDateString(),
-                'hearing_time' => ($event['is_all_day'] ?? false) ? null : $event['starts_at']->format('H:i'),
-                'hearing_type' => ucfirst(str_replace('_', ' ', $event['event_type'])),
+                'court_name' => $location,
+                'hearing_date' => $startsAt->toDateString(),
+                'hearing_time' => $hearingTime,
+                'hearing_type' => $hearingType,
                 'notes' => $notes,
                 'status' => 'Scheduled',
             ]);
@@ -364,23 +391,125 @@ class EmailCalendarMergeService
             return (int) $hearing->id;
         }
 
-        $startsAt = $event['starts_at'];
         $endsAt = $event['ends_at'] ?: $startsAt->copy()->addHour();
+        $title = $this->cleanStaffEventTitle((string) ($event['title'] ?? ''), $event['event_type']);
+
+        $existingStaffId = $this->findExistingStaffEventId(
+            $emailLog->client_id ? (int) $emailLog->client_id : null,
+            $startsAt,
+            $isAllDay,
+            $this->staffEventType($event['event_type'])
+        );
+        if ($existingStaffId !== null) {
+            return $existingStaffId;
+        }
 
         $staffEvent = StaffCalendarEvent::create([
-            'title' => mb_substr($event['title'], 0, 255),
+            'title' => mb_substr($title, 0, 255),
             'event_type' => $this->staffEventType($event['event_type']),
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-            'is_all_day' => (bool) ($event['is_all_day'] ?? false),
+            'is_all_day' => $isAllDay,
             'client_id' => $emailLog->client_id ?: null,
             'client_matter_id' => $emailLog->client_matter_id ?: null,
-            'location' => $event['location'] ?? null,
+            'location' => $location,
             'notes' => $notes,
             'created_by_staff_id' => $staffUserId ?: null,
         ]);
 
         return (int) $staffEvent->id;
+    }
+
+    protected function findExistingHearingId(int $clientId, string $hearingDate, ?string $hearingTime): ?int
+    {
+        if (! Schema::hasTable('client_court_hearings') || $clientId <= 0) {
+            return null;
+        }
+
+        $query = ClientCourtHearing::query()
+            ->where('client_id', $clientId)
+            ->whereDate('hearing_date', $hearingDate);
+
+        if ($hearingTime !== null) {
+            $query->where(function ($q) use ($hearingTime) {
+                $q->whereNull('hearing_time')
+                    ->orWhereTime('hearing_time', $hearingTime)
+                    ->orWhere('hearing_time', $hearingTime)
+                    ->orWhere('hearing_time', $hearingTime . ':00');
+            });
+        }
+
+        $id = $query->orderByRaw('CASE WHEN hearing_time IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('hearing_time')
+            ->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    protected function findExistingStaffEventId(
+        ?int $clientId,
+        Carbon $startsAt,
+        bool $isAllDay,
+        string $eventType
+    ): ?int {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return null;
+        }
+
+        $query = StaffCalendarEvent::query()
+            ->where('event_type', $eventType)
+            ->where('is_all_day', $isAllDay);
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        } else {
+            $query->whereNull('client_id');
+        }
+
+        $query->whereDate('starts_at', $startsAt->toDateString());
+        if (! $isAllDay) {
+            $query->whereTime('starts_at', $startsAt->copy()->startOfMinute()->format('H:i:s'));
+        }
+
+        $id = $query->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    protected function cleanStaffEventTitle(string $title, string $eventType): string
+    {
+        $title = trim($title);
+        $fallback = ucfirst(str_replace('_', ' ', $this->staffEventType($eventType)));
+
+        if ($title === '' || CalendarEventText::looksLikeJunkEventTitle($title)) {
+            return $fallback;
+        }
+
+        // Strip common reply prefixes for calendar readability.
+        $title = preg_replace('/^(?:re|fw|fwd)\s*:\s*/i', '', $title) ?? $title;
+        $title = trim($title);
+
+        if ($title === '' || CalendarEventText::looksLikeJunkEventTitle($title) || ! $this->subjectLooksLikeEventTitle($title)) {
+            return $fallback;
+        }
+
+        return mb_substr($title, 0, 255);
+    }
+
+    protected function subjectLooksLikeEventTitle(string $subject): bool
+    {
+        $normalized = strtolower($subject);
+
+        if (preg_match('/\b(appointment|consultation|interview|meeting|mediation|conference|hearing|mention|walk[\s-]?in)\b/i', $normalized)) {
+            return true;
+        }
+
+        // Reject court-file / ref-only email subjects.
+        if (preg_match('/\b(our ref|your ref|court file|invoice|requires more documents)\b/i', $normalized)) {
+            return false;
+        }
+
+        return mb_strlen($subject) <= 80;
     }
 
     protected function calendarTypeForEvent(string $eventType): string
@@ -399,11 +528,23 @@ class EmailCalendarMergeService
         };
     }
 
-    protected function classifyEventType(string $text): string
+    protected function classifyEventType(string $text): ?string
     {
         $normalized = strtolower($text);
 
-        if (preg_match('/\b(directions hearing|case management|court hearing|hearing|mention|tribunal|listing)\b/i', $normalized)) {
+        if (preg_match('/\b(directions hearing|case management hearing|court hearing|mention|tribunal|court listing|listed (?:for|at))\b/i', $normalized)) {
+            return 'hearing';
+        }
+        // Require hearing to look like a scheduled court event, not "hearing attached invoice".
+        if (preg_match('/\bhearing\b/i', $normalized)
+            && preg_match('/\b(court|directions|listed|before|judge|registry|federal|magistrates|family court|ncat|aat)\b/i', $normalized)
+        ) {
+            return 'hearing';
+        }
+        if (preg_match('/\bhearing\b/i', $normalized)
+            && preg_match('/\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{4})\b/i', $normalized)
+            && ! CalendarEventText::looksLikeBodySnippet($text)
+        ) {
             return 'hearing';
         }
         if (preg_match('/\bwalk[\s-]?in\b/i', $normalized)) {
@@ -419,7 +560,7 @@ class EmailCalendarMergeService
             return 'meeting';
         }
 
-        return 'meeting';
+        return null;
     }
 
     protected function containsScheduleKeyword(string $text): bool
@@ -431,7 +572,7 @@ class EmailCalendarMergeService
             }
         }
 
-        return (bool) preg_match('/\b(court|schedule|scheduled)\b/i', $normalized);
+        return (bool) preg_match('/\bcourt\b/i', $normalized);
     }
 
     /**
@@ -441,6 +582,10 @@ class EmailCalendarMergeService
     {
         $results = [];
         $eventType = $this->classifyEventType($line);
+        if ($eventType === null) {
+            return [];
+        }
+
         $location = $this->extractLocationFromLine($line);
 
         $patterns = [
@@ -460,17 +605,24 @@ class EmailCalendarMergeService
                     continue;
                 }
 
+                $hasExplicitTime = ! empty($match[2]);
                 $results[] = [
                     'starts_at' => $startsAt,
                     'ends_at' => $startsAt->copy()->addHour(),
                     'event_type' => $eventType,
                     'location' => $location,
-                    'is_all_day' => empty($match[2]),
+                    'is_all_day' => ! $hasExplicitTime,
                 ];
             }
         }
 
-        return $results;
+        $unique = [];
+        foreach ($results as $row) {
+            $key = $row['starts_at']->format('Y-m-d H:i') . '|' . ($row['is_all_day'] ? '1' : '0');
+            $unique[$key] = $row;
+        }
+
+        return array_values($unique);
     }
 
     protected function parseFlexibleDateTime(string $datePart, ?string $timePart, string $timezone): ?Carbon
@@ -509,26 +661,16 @@ class EmailCalendarMergeService
 
     protected function buildEventTitle(string $subject, string $contextLine, string $eventType): string
     {
-        $subject = trim($subject) ?: 'Scheduled event';
-        $label = ucfirst(str_replace('_', ' ', $eventType));
-
-        if (strlen($subject) <= 120) {
-            return $subject;
+        if (in_array($eventType, ['hearing', 'court', 'mention', 'tribunal'], true)) {
+            return CalendarEventText::sanitizeHearingType(ucfirst(str_replace('_', ' ', $eventType)));
         }
 
-        return mb_substr($label . ': ' . $contextLine, 0, 255);
+        return $this->cleanStaffEventTitle($subject !== '' ? $subject : $contextLine, $eventType);
     }
 
     protected function extractLocationFromLine(string $line): ?string
     {
-        if (preg_match('/\b(?:at|@|venue:|location:)\s*(.{3,120})/i', $line, $match)) {
-            $location = trim($match[1]);
-            $location = preg_replace('/\s*(?:on|at)\s+\d.*$/i', '', $location) ?? $location;
-
-            return mb_substr(trim($location), 0, 255) ?: null;
-        }
-
-        return null;
+        return CalendarEventText::extractLocationCandidate($line);
     }
 
     protected function plainTextFromEmail(EmailLog $emailLog): string
@@ -605,12 +747,15 @@ class EmailCalendarMergeService
         $unique = [];
 
         foreach ($events as $event) {
-            $key = md5(
-                mb_strtolower($event['title'])
-                . '|' . $event['starts_at']->format('Y-m-d H:i')
-                . '|' . ($event['location'] ?? '')
-            );
-            $unique[$key] = $event;
+            $bucket = $this->calendarTypeForEvent($event['event_type']);
+            $timeKey = ($event['is_all_day'] ?? false)
+                ? $event['starts_at']->format('Y-m-d') . '|allday'
+                : $event['starts_at']->format('Y-m-d H:i');
+            $key = $bucket . '|' . $timeKey;
+            // Prefer ICS / cleaner titles over text detection when colliding.
+            if (! isset($unique[$key]) || ($event['source'] ?? '') !== 'text_detection') {
+                $unique[$key] = $event;
+            }
         }
 
         return array_values($unique);
@@ -621,11 +766,19 @@ class EmailCalendarMergeService
      */
     protected function linkExists(int $emailLogId, array $event): bool
     {
-        return EmailCalendarLink::query()
+        $query = EmailCalendarLink::query()
             ->where('email_log_id', $emailLogId)
-            ->where('starts_at', $event['starts_at'])
-            ->where('event_title', $event['title'])
-            ->exists();
+            ->whereDate('starts_at', $event['starts_at']->toDateString())
+            ->where(function ($q) use ($event) {
+                $q->where('event_type', $event['event_type'])
+                    ->orWhere('calendar_type', $this->calendarTypeForEvent($event['event_type']));
+            });
+
+        if (! ($event['is_all_day'] ?? false)) {
+            $query->whereTime('starts_at', $event['starts_at']->format('H:i:s'));
+        }
+
+        return $query->exists();
     }
 
     protected function readAttachmentContent(?string $s3Key, ?string $filePath): string

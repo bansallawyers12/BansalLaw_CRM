@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Models\Admin;
 use App\Models\ClientCourtHearing;
 use App\Models\StaffCalendarEvent;
+use App\Support\CalendarEventText;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Exception;
@@ -110,6 +111,12 @@ class StaffCalendarFeedService
 
         return $query->orderBy('hearing_date')->orderBy('hearing_time')->get()
             ->map(fn (ClientCourtHearing $h) => $this->payloadFromCourtHearing($h))
+            ->unique(function (array $row) {
+                $start = (string) ($row['starts_at'] ?? '');
+                $clientId = (string) ($row['client_id'] ?? '');
+
+                return $clientId . '|' . substr($start, 0, 16);
+            })
             ->values()
             ->all();
     }
@@ -181,24 +188,28 @@ class StaffCalendarFeedService
             ? base64_encode(convert_uuencode((string) $event->client_id))
             : null;
 
+        $title = CalendarEventText::displayStaffTitle((string) $event->title, (string) $event->event_type);
+        $location = CalendarEventText::sanitizeLocation($event->location);
+        $isAllDay = (bool) $event->is_all_day;
+
         return [
             'id' => 'staff-cal-' . $event->id,
             'event_kind' => 'staff_event',
             'staff_calendar_event_id' => $event->id,
             'read_only' => false,
-            'title' => $event->title,
+            'title' => $title,
             'event_type' => $event->event_type,
             'appointment_datetime' => $start->toIso8601String(),
             'duration_minutes' => max(15, (int) $start->diffInMinutes($end)),
             'starts_at' => $start->toIso8601String(),
             'ends_at' => $end->toIso8601String(),
-            'is_all_day' => $event->is_all_day,
+            'is_all_day' => $isAllDay,
             'calendar_type' => $event->calendar_type,
             'client_id' => $event->client_id,
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
             'client_matter_id' => $event->client_matter_id,
-            'location' => $event->location,
+            'location' => $location,
             'notes' => $event->notes,
             'status'           => $event->event_type,
             'status_label'     => ucfirst(str_replace('_', ' ', $event->event_type)),
@@ -229,8 +240,9 @@ class StaffCalendarFeedService
         $clientName = $this->clientDisplayName($hearing->client);
         $encodedClientId = base64_encode(convert_uuencode((string) $hearing->client_id));
 
-        $typeLabel = $hearing->hearing_type ?: 'Court hearing';
-        $courtLabel = $hearing->court_name ? ' @ ' . $hearing->court_name : '';
+        $typeLabel = CalendarEventText::sanitizeHearingType($hearing->hearing_type);
+        $courtName = CalendarEventText::sanitizeLocation($hearing->court_name);
+        $courtLabel = $courtName ? ' @ ' . $courtName : '';
         $title = trim(($clientName ?: 'Client') . ' — ' . $typeLabel . $courtLabel);
 
         return [
@@ -249,12 +261,12 @@ class StaffCalendarFeedService
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
             'client_matter_id' => $hearing->client_matter_id,
-            'court_name' => $hearing->court_name,
+            'court_name' => $courtName,
             'case_number' => $hearing->case_number,
             'judge_name' => $hearing->judge_name,
-            'hearing_type' => $hearing->hearing_type,
+            'hearing_type' => $typeLabel,
             'hearing_status' => $hearing->status,
-            'location' => $hearing->court_name,
+            'location' => $courtName,
             'notes' => $hearing->notes,
             'status' => 'court',
             'status_label' => $hearing->status ?? 'Scheduled',
