@@ -687,8 +687,8 @@ use App\Http\Controllers\Controller;
                                     $clientAssigneeName = 'NA';
                                 }
                                 ?>
-								<select data-valid="" class="form-control crm-ts-plain selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
-									<option value="">Select</option>
+								<select data-valid="" class="form-select form-control selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
+									<option value="">Select template</option>
 									@foreach( \App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
