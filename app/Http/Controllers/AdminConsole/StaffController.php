@@ -152,6 +152,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant mailbox inbox sync pause permission.', 422);
             }
 
+            $canGrantAssignEmailsBySubject = Staff::canGrantAssignEmailsBySubjectPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantAssignEmailsBySubject && $request->has('can_assign_emails_by_subject')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
+            }
+
             $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -266,6 +273,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantPauseMailboxInboxSyncPermission($actor instanceof Staff ? $actor : null) && $request->has('can_pause_mailbox_inbox_sync')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant mailbox inbox sync pause permission.', 422);
+            }
+
+            if (! Staff::canGrantAssignEmailsBySubjectPermission($actor instanceof Staff ? $actor : null) && $request->has('can_assign_emails_by_subject')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
             }
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
@@ -531,6 +542,13 @@ class StaffController extends Controller
         );
         if ($canGrantPauseMailboxInboxSync && Schema::hasColumn('staff', 'can_pause_mailbox_inbox_sync')) {
             $obj->can_pause_mailbox_inbox_sync = $request->boolean('can_pause_mailbox_inbox_sync');
+        }
+
+        $canGrantAssignEmailsBySubject = Staff::canGrantAssignEmailsBySubjectPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantAssignEmailsBySubject && Schema::hasColumn('staff', 'can_assign_emails_by_subject')) {
+            $obj->can_assign_emails_by_subject = $request->boolean('can_assign_emails_by_subject');
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(

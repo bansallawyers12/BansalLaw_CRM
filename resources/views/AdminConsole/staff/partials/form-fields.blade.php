@@ -22,6 +22,9 @@
     $canGrantPauseMailboxInboxSync = \App\Models\Staff::canGrantPauseMailboxInboxSyncPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantAssignEmailsBySubject = \App\Models\Staff::canGrantAssignEmailsBySubjectPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -251,6 +254,18 @@
                         <span>Can pause and start inbox sync for any mailbox</span>
                     </label>
                     <small class="text-muted d-block mt-1">Lets this staff member pause or resume automatic IMAP sync for any account on Admin Console → Email (Inbox Sync column).</small>
+                </div>
+                @endif
+
+                @if($canGrantAssignEmailsBySubject && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_assign_emails_by_subject'))
+                <div class="form-group">
+                    <input type="hidden" name="can_assign_emails_by_subject" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_assign_emails_by_subject" value="1"
+                            @checked(old('can_assign_emails_by_subject', $isEdit ? ($fetchedData->can_assign_emails_by_subject ?? false) : false))>
+                        <span>Can assign unassigned emails by subject</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Shows the Assign by subject button on Unassigned Mail so this staff member can match and assign emails from client ID / matter in the subject.</small>
                 </div>
                 @endif
 

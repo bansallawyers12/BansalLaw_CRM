@@ -61,6 +61,7 @@ class Staff extends Authenticatable
         'can_sync_inbox_emails',
         'can_view_all_synced_inbox_mail',
         'can_pause_mailbox_inbox_sync',
+        'can_assign_emails_by_subject',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
         'trust_rule42_supervisor',
@@ -87,6 +88,7 @@ class Staff extends Authenticatable
         'can_sync_inbox_emails' => 'boolean',
         'can_view_all_synced_inbox_mail' => 'boolean',
         'can_pause_mailbox_inbox_sync' => 'boolean',
+        'can_assign_emails_by_subject' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
@@ -494,6 +496,43 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_pause_mailbox_inbox_sync ?? false);
+    }
+
+    /**
+     * Role IDs that may grant {@see canAssignEmailsBySubject()} to others.
+     * Default: native Super Admin (1) only.
+     */
+    public static function assignEmailsBySubjectGrantRoleIds(): array
+    {
+        $ids = config('crm.assign_emails_by_subject_grant_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may toggle Assign by subject on staff records.
+     * Only native Super Admin (role 1) may grant this.
+     */
+    public static function canGrantAssignEmailsBySubjectPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::assignEmailsBySubjectGrantRoleIds(), true);
+    }
+
+    /**
+     * Native Super Admin, or staff with the per-user grant, may use Assign by
+     * subject on Unassigned Mail (preview + confirm assignment).
+     */
+    public function canAssignEmailsBySubject(): bool
+    {
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
+        return (bool) ($this->can_assign_emails_by_subject ?? false);
     }
 
     /**

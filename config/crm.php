@@ -61,6 +61,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Assign unassigned emails by subject grant (native Super Admin only)
+    |--------------------------------------------------------------------------
+    |
+    | Only role 1 may toggle {@see Staff::can_assign_emails_by_subject}. That
+    | flag shows the Assign by subject button on Unassigned Mail and allows
+    | the related assign endpoints.
+    |
+    */
+    'assign_emails_by_subject_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_ASSIGN_EMAILS_BY_SUBJECT_GRANT_ROLE_IDS', '1'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff roles that may close/discontinue client matters
     |--------------------------------------------------------------------------
     |

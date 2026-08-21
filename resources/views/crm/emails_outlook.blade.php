@@ -62,6 +62,8 @@
         && $authStaff->canDeleteEmailWithAttachments();
     $canSyncInbox = $authStaff instanceof \App\Models\Staff
         && $authStaff->canSyncInboxEmails();
+    $canAssignBySubject = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canAssignEmailsBySubject();
     $canShowInboxSync = $canSyncInbox
         && $authStaff instanceof \App\Models\Staff
         && $authStaff->canViewAllSyncedInboxMail();
@@ -193,7 +195,7 @@
                     </div>
                     @endif
                 <div class="list-toolbar__side-actions">
-                    @if($canSyncInbox && ! $assignmentReviewOnly)
+                    @if($canSyncInbox && $canAssignBySubject && ! $assignmentReviewOnly)
                     <button type="button" class="list-toolbar__assign-subject" id="btnAssignBySubject" title="Assign unassigned emails whose subject has a matching client ID and matter">
                         <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
                         <span class="list-toolbar__assign-subject-text">Assign by subject</span>
@@ -917,7 +919,7 @@
 </div>
 @endif
 
-@if($unassignedOnly && $canSyncInbox && empty($assignmentReviewOnly))
+@if($unassignedOnly && $canSyncInbox && $canAssignBySubject && empty($assignmentReviewOnly))
 <div class="modal fade assign-subject-modal outlook-ui-modal-wrapper" id="assignBySubjectModal" tabindex="-1" role="dialog" aria-labelledby="assignBySubjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered assign-subject-modal__dialog" role="document">
         <div class="modal-content outlook-ui-modal">
