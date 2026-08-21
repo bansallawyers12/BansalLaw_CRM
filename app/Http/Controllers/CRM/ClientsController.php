@@ -7389,10 +7389,23 @@ class ClientsController extends Controller
 
     /**
      * Resolve S3 URL for the generated PDF viewer document linked to an email log.
+     * Returns empty string when the Document row is missing so the reading pane does
+     * not iframe a Laravel 404 page.
      */
     protected function resolveEmailPdfPreviewUrl($email): string
     {
         if (empty($email->pdf_doc_id)) {
+            return '';
+        }
+
+        $pdfDoc = null;
+        if (is_object($email) && method_exists($email, 'relationLoaded') && $email->relationLoaded('pdfDocument')) {
+            $pdfDoc = $email->pdfDocument;
+        }
+        if (! $pdfDoc) {
+            $pdfDoc = \App\Models\Document::find((int) $email->pdf_doc_id);
+        }
+        if (! $pdfDoc) {
             return '';
         }
 

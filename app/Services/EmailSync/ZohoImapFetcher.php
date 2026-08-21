@@ -141,6 +141,75 @@ class ZohoImapFetcher
         }
     }
 
+    /**
+     * Fetch a single message body by IMAP UID (used for local repair/restore).
+     *
+     * @return array{uid: int, raw_eml: string, subject: string, folder: string}|null
+     */
+    public function fetchRawMessageByUid(Email $mailbox, int $uid, ?string $preferredFolder = null): ?array
+    {
+        if ($uid <= 0) {
+            return null;
+        }
+
+        $password = $this->resolvePassword($mailbox);
+        if ($password === '') {
+            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+        }
+
+        $folders = [];
+        if ($preferredFolder) {
+            $folders[] = $preferredFolder;
+        }
+        foreach (array_merge(
+            (array) config('imap_sync.folders', ['INBOX']),
+            (array) config('imap_sync.sent_folders', ['Sent'])
+        ) as $folderName) {
+            $folderName = trim((string) $folderName);
+            if ($folderName !== '' && ! in_array($folderName, $folders, true)) {
+                $folders[] = $folderName;
+            }
+        }
+
+        $client = $this->connect($mailbox, $password);
+
+        try {
+            foreach ($folders as $folderName) {
+                $folder = $client->getFolder($folderName);
+                if ($folder === null) {
+                    continue;
+                }
+
+                $message = $this->findMessageByUid($folder, $uid);
+                if (! $message instanceof Message) {
+                    continue;
+                }
+
+                $isSeen = $this->messageIsSeen($message);
+                $rawEml = $this->buildRawEml($message);
+                $this->restoreUnreadStateIfNeeded($message, $isSeen);
+
+                if ($rawEml === '') {
+                    return null;
+                }
+
+                return [
+                    'uid' => (int) $message->getUid(),
+                    'raw_eml' => $rawEml,
+                    'subject' => (string) ($message->getSubject()?->toString() ?? ''),
+                    'folder' => $folderName,
+                ];
+            }
+        } finally {
+            try {
+                $client->disconnect();
+            } catch (Throwable) {
+            }
+        }
+
+        return null;
+    }
+
     protected function connect(Email $mailbox, string $password): Client
     {
         $host = $mailbox->imap_host ?: config('imap_sync.default_host');
