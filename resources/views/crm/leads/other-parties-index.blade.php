@@ -20,7 +20,13 @@
     $shownCount = method_exists($lists, 'count') ? $lists->count() : (is_countable($lists) ? count($lists) : 0);
 @endphp
 
-<div class="listing-container other-parties-listing">
+<div class="listing-container other-parties-listing"
+     id="otherPartiesListingRoot"
+     data-infinite-scroll="1"
+     data-current-page="{{ method_exists($lists, 'currentPage') ? $lists->currentPage() : 1 }}"
+     data-last-page="{{ method_exists($lists, 'lastPage') ? $lists->lastPage() : 1 }}"
+     data-total="{{ $totalCount }}"
+     data-per-page="20">
     <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
@@ -42,14 +48,6 @@
                         </div>
 
                         <div class="card-header-actions">
-                            <div class="per-page-wrap">
-                                <label for="per_page">Show</label>
-                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
-                                    @foreach([10, 20, 50, 100] as $option)
-                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeOpFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
                                 <i class="fa-solid fa-filter"></i> Filter
                                 @if($activeOpFilters > 0)
@@ -96,9 +94,6 @@
                         </div>
 
                         <form action="{{ route('leads.other_parties.index') }}" method="get" id="opFilterForm">
-                            @if(request()->filled('per_page'))
-                                <input type="hidden" name="per_page" value="{{ request('per_page') }}">
-                            @endif
                             <div class="row g-3">
                                 <div class="col-md-3 col-sm-6">
                                     <div class="form-group mb-0">
@@ -134,10 +129,10 @@
                         </form>
                     </div>
 
-                    <div class="op-results-bar">
+                    <div class="op-results-bar" id="opResultsBar">
                         <span>
-                            Showing <strong>{{ number_format($shownCount) }}</strong>
-                            of <strong>{{ number_format($totalCount) }}</strong>
+                            Showing <strong data-loaded-count>{{ number_format($shownCount) }}</strong>
+                            of <strong data-total-count>{{ number_format($totalCount) }}</strong>
                         </span>
                         @if($activeOpFilters > 0)
                             <span class="op-results-bar__filtered">
@@ -158,14 +153,14 @@
                                     <th style="width: 72px;">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="op-tdata">
                                 @forelse($lists as $list)
                                     @php
                                         $fullName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
                                         $detailUrl = route('clients.detail', base64_encode(convert_uuencode($list->id)));
                                         $editUrl = route('clients.edit', base64_encode(convert_uuencode($list->id)));
                                     @endphp
-                                    <tr>
+                                    <tr id="op_id_{{ $list->id }}" class="op-data-row" data-op-id="{{ $list->id }}">
                                         <td>
                                             <a href="{{ $detailUrl }}" class="op-name-link" title="Open {{ $fullName }}">
                                                 {{ $fullName !== '' ? $fullName : '—' }}
@@ -204,7 +199,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
+                                    <tr class="op-empty-row">
                                         <td colspan="6" class="op-empty">
                                             <div class="op-empty__inner">
                                                 <i class="fa-solid fa-user-tag" aria-hidden="true"></i>
@@ -229,17 +224,9 @@
                         </table>
                     </div>
 
-                    <div class="op-footer">
-                        <div class="op-footer__meta">
-                            @if($totalCount > 0)
-                                Showing {{ number_format($shownCount) }} of {{ number_format($totalCount) }}
-                            @else
-                                No records
-                            @endif
-                        </div>
-                        <div>
-                            {{ $lists->links() }}
-                        </div>
+                    <div class="clients-infinite-loader op-infinite-loader" id="opInfiniteLoader" hidden aria-live="polite">
+                        <span class="clients-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Loading more parties...</span>
                     </div>
                 </div>
             </div>
@@ -251,14 +238,9 @@
 @section('scripts')
 <script>
 (function () {
-    var perPage = document.getElementById('per_page');
-    if (perPage) {
-        perPage.addEventListener('change', function () {
-            var url = new URL(window.location.href);
-            url.searchParams.set('per_page', this.value);
-            window.location.href = url.toString();
-        });
-    }
+    var root = document.getElementById('otherPartiesListingRoot');
+    var loader = document.getElementById('opInfiniteLoader');
+    var loadingMore = false;
 
     var toggleBtn = document.getElementById('filterToggleBtn');
     var panel = document.getElementById('opFilterPanel');
@@ -268,6 +250,102 @@
             panel.classList.toggle('is-open');
         });
     }
+
+    if (!root || root.getAttribute('data-infinite-scroll') !== '1') {
+        return;
+    }
+
+    function setLoader(visible) {
+        if (loader) {
+            loader.hidden = !visible;
+        }
+    }
+
+    function hasMore() {
+        var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+        var last = parseInt(root.getAttribute('data-last-page'), 10) || 1;
+        return current < last;
+    }
+
+    function updateResultsBar() {
+        var loadedEl = root.querySelector('[data-loaded-count]');
+        var tbody = root.querySelector('tbody.op-tdata');
+        if (!loadedEl || !tbody) {
+            return;
+        }
+        loadedEl.textContent = String(tbody.querySelectorAll('tr.op-data-row').length);
+    }
+
+    function loadMore() {
+        if (loadingMore || !hasMore()) {
+            return;
+        }
+
+        var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+        var nextPage = current + 1;
+        var url = new URL(window.location.href);
+        url.searchParams.set('page', String(nextPage));
+        url.searchParams.set('per_page', '20');
+
+        loadingMore = true;
+        setLoader(true);
+
+        fetch(url.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error('Failed to load more parties');
+            }
+            return response.text();
+        }).then(function (html) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            var newRoot = doc.getElementById('otherPartiesListingRoot');
+            if (!newRoot) {
+                return;
+            }
+
+            var lastPage = parseInt(newRoot.getAttribute('data-last-page'), 10) || nextPage;
+            var tbody = root.querySelector('tbody.op-tdata');
+            var newRows = newRoot.querySelectorAll('tbody.op-tdata tr.op-data-row');
+
+            newRows.forEach(function (row) {
+                var rowId = row.id;
+                if (rowId && tbody.querySelector('#' + rowId)) {
+                    return;
+                }
+                tbody.appendChild(document.importNode(row, true));
+            });
+
+            root.setAttribute('data-current-page', String(nextPage));
+            root.setAttribute('data-last-page', String(lastPage));
+            updateResultsBar();
+        }).catch(function () {
+            // Keep current page so scroll can retry.
+        }).finally(function () {
+            loadingMore = false;
+            setLoader(false);
+            window.requestAnimationFrame(maybeLoadMore);
+        });
+    }
+
+    function maybeLoadMore() {
+        if (loadingMore || !hasMore()) {
+            return;
+        }
+        var scrollBottom = window.innerHeight + window.scrollY;
+        var triggerLine = document.documentElement.scrollHeight - 280;
+        if (scrollBottom >= triggerLine) {
+            loadMore();
+        }
+    }
+
+    window.addEventListener('scroll', maybeLoadMore, { passive: true });
+    window.addEventListener('resize', maybeLoadMore);
+    window.requestAnimationFrame(maybeLoadMore);
 })();
 </script>
 @endsection

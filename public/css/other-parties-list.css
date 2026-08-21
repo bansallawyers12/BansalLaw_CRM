@@ -424,6 +424,42 @@
     font-weight: 500;
 }
 
+.other-parties-listing .op-infinite-loader,
+.other-parties-listing .clients-infinite-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    padding: 16px 24px;
+    color: var(--text-muted, #5e7a90);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
+    border-radius: 0 0 10px 10px;
+}
+
+.other-parties-listing .op-infinite-loader[hidden],
+.other-parties-listing .clients-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.other-parties-listing .clients-infinite-loader__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(30, 61, 96, 0.15);
+    border-top-color: var(--navy, #1e3d60);
+    border-radius: 50%;
+    animation: opInfiniteSpin 0.75s linear infinite;
+}
+
+@keyframes opInfiniteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @media (max-width: 768px) {
     .other-parties-listing .op-page-header {
         align-items: flex-start;

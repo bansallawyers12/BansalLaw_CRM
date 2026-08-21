@@ -25,6 +25,15 @@
         return $root().attr('data-infinite-scroll') === '1';
     }
 
+    function updateLoadedCountLabel() {
+        var $r = $root();
+        var $count = $r.find('[data-loaded-count]');
+        if (!$count.length) {
+            return;
+        }
+        $count.text(String($r.find('tbody.tdata tr.client-data-row').length));
+    }
+
     function setInfiniteLoader(visible) {
         var $loader = $root().find('#clientsInfiniteLoader');
         if ($loader.length) {
@@ -83,6 +92,7 @@
                 $r.attr('data-current-page', String(nextPage));
                 $r.attr('data-last-page', String(lastPage));
                 updateBulkSelectionUI();
+                updateLoadedCountLabel();
 
                 if (!appended && nextPage >= lastPage) {
                     setInfiniteLoader(false);
@@ -369,7 +379,7 @@
             var qs = $(this).serialize();
             var base = $(this).attr('action') || window.location.pathname;
             var url = new URL(base + (qs ? '?' + qs : ''), window.location.origin);
-            if (usesInfiniteScroll() || url.pathname === '/clients') {
+            if (usesInfiniteScroll() || url.pathname === '/clients' || url.pathname === '/leads' || url.pathname === '/archived') {
                 url.searchParams.set('per_page', '20');
                 url.searchParams.delete('page');
             }
