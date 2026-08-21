@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM\Clients;
 use App\Http\Controllers\Controller;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
+use App\Services\ActionTaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -131,6 +132,8 @@ class ClientMatterTaskController extends Controller
         app(ClientMatterTaskSyncService::class)->mirrorClientTaskToAction($task);
         $task->refresh();
 
+        app(ActionTaskTimelineService::class)->logTaskCreated($task, $matter);
+
         return response()->json(['status' => true, 'data' => $task]);
     }
 
@@ -144,11 +147,19 @@ class ClientMatterTaskController extends Controller
         }
 
         $changed = false;
+        $timelineChanges = [];
 
         $sync = app(ClientMatterTaskSyncService::class);
 
         if ($request->exists('is_done')) {
+            $oldDone = (bool) $task->is_done;
             $task->is_done = $this->parseBoolean($request->input('is_done'));
+            if ($oldDone !== (bool) $task->is_done) {
+                $timelineChanges['Status'] = [
+                    'old' => $oldDone ? 'Completed' : 'Open',
+                    'new' => $task->is_done ? 'Completed' : 'Open',
+                ];
+            }
             $changed = true;
         }
 
@@ -158,6 +169,12 @@ class ClientMatterTaskController extends Controller
             if ($t === '') {
                 return response()->json(['status' => false, 'message' => 'Title is required'], 422);
             }
+            if ($t !== (string) $task->title) {
+                $timelineChanges['Title'] = [
+                    'old' => (string) $task->title,
+                    'new' => $t,
+                ];
+            }
             $task->title = $t;
             $changed = true;
         }
@@ -165,7 +182,16 @@ class ClientMatterTaskController extends Controller
         if ($request->exists('due_date')) {
             $request->validate(['due_date' => 'nullable|date']);
             $rawDue = $request->input('due_date');
-            $task->due_date = ($rawDue !== null && trim((string) $rawDue) !== '') ? $rawDue : null;
+            $newDue = ($rawDue !== null && trim((string) $rawDue) !== '') ? $rawDue : null;
+            $oldDue = $task->due_date ? $task->due_date->format('Y-m-d') : '';
+            $newDueStr = $this->normalizeDueDateYmd($newDue);
+            if ($oldDue !== $newDueStr) {
+                $timelineChanges['Due date'] = [
+                    'old' => $oldDue !== '' ? date('d/m/Y', strtotime($oldDue)) : '',
+                    'new' => $newDueStr !== '' ? date('d/m/Y', strtotime($newDueStr)) : '',
+                ];
+            }
+            $task->due_date = $newDueStr !== '' ? $newDueStr : null;
             $changed = true;
         }
 
@@ -183,6 +209,10 @@ class ClientMatterTaskController extends Controller
         }
         if ($request->exists('due_date')) {
             $sync->syncDueDateFromClientTask($task);
+        }
+
+        if ($timelineChanges !== []) {
+            app(ActionTaskTimelineService::class)->logTaskUpdated($task, $timelineChanges);
         }
 
         return response()->json(['status' => true, 'data' => $task]);
@@ -225,5 +255,33 @@ class ClientMatterTaskController extends Controller
         }
 
         return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Normalise due dates to Y-m-d so ISO and d/m/Y compare as the same day.
+     */
+    private function normalizeDueDateYmd(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return '';
+        }
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $raw, $m)) {
+            return $m[1] . '-' . $m[2] . '-' . $m[3];
+        }
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $raw, $m)) {
+            return sprintf('%04d-%02d-%02d', (int) $m[3], (int) $m[2], (int) $m[1]);
+        }
+
+        $ts = strtotime($raw);
+
+        return $ts ? date('Y-m-d', $ts) : '';
     }
 }

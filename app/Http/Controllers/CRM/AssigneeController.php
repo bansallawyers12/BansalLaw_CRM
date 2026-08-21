@@ -19,6 +19,7 @@ use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\ActionTaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
@@ -972,22 +973,7 @@ class AssigneeController extends Controller
 
             // Step 4: Activity Feed log for the new action
             if ($clientId) {
-                $newActionLog = new ActivitiesLog;
-                $newActionLog->client_id = $clientId;
-                $newActionLog->created_by = Auth::user()->id;
-                $newActionLog->subject = 'New action assigned for ' . $assignee_name;
-                $newActionLog->description = '<p>' . $validated['description'] . '</p>';
-                if (Auth::user()->id != $validated['assigned_to']) {
-                    $newActionLog->use_for = $validated['assigned_to'];
-                } else {
-                    $newActionLog->use_for = null;
-                }
-                $newActionLog->followup_date = $followupDate;
-                $newActionLog->task_group = $validated['task_group'];
-                $newActionLog->task_status = 0; // New action is incomplete
-                $newActionLog->pin = 0;
-                $newActionLog->activity_type = 'activity';
-                $newActionLog->save();
+                app(ActionTaskTimelineService::class)->logActionCreated($newAction, '', $assignee_name);
             }
 
             return response()->json([

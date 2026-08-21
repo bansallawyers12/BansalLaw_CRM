@@ -1299,6 +1299,37 @@ body, html {
     cursor: not-allowed;
 }
 
+/* Client detail emails tab — infinite scroll loader (replaces compact pagination) */
+#emails-tab .outlook-container--compact-pagination .email-infinite-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    border-top: 1px solid #dbeafe;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+#emails-tab .outlook-container--compact-pagination .email-infinite-loader[hidden] {
+    display: none !important;
+}
+
+#emails-tab .outlook-container--compact-pagination .email-infinite-loader__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(30, 58, 138, 0.15);
+    border-top-color: #1e3a8a;
+    border-radius: 50%;
+    animation: emailInfiniteSpin 0.75s linear infinite;
+}
+
 /* Client detail emails tab — compact pagination (page + total, icon nav only) */
 #emails-tab .outlook-container--compact-pagination .pagination-bar--compact {
     width: 100%;
@@ -4808,15 +4839,18 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 }
 
 .assign-subject-results__subject {
-    font-weight: 600;
+    font-weight: 700;
     color: #0f172a;
-    line-height: 1.3;
+    line-height: 1.35;
+    display: block;
 }
 
 .assign-subject-results__meta {
     margin-top: 2px;
     color: #64748b;
     font-size: 11px;
+    font-weight: 500;
+    display: block;
 }
 
 .assign-subject-ref {
@@ -4833,6 +4867,11 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     background: #f8fafc;
 }
 
+.assign-subject-group--ready {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+}
+
 .assign-subject-group__header {
     margin-bottom: 8px;
     font-size: 13px;
@@ -4842,7 +4881,7 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 .assign-subject-group__reason {
     margin-top: 4px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     color: #9a3412;
 }
 
@@ -4861,9 +4900,47 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     margin-bottom: 8px;
 }
 
+.assign-subject-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+}
+
+.assign-subject-select-all__input,
+.assign-subject-email-check {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: #0f766e;
+    cursor: pointer;
+}
+
+.assign-subject-row__label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
+}
+
+.assign-subject-row__body {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .assign-subject-results--pending {
     margin-bottom: 0;
     background: #fff;
+}
+
+.assign-subject-results--pending .assign-subject-row {
+    padding: 10px;
 }
 
 .outlook-container--unassigned .sync-inbox-panel--tools-only .sync-inbox-panel__list-tools {

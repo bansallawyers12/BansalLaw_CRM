@@ -392,3 +392,42 @@
     outline-offset: 2px;
 }
 
+/* Task description @mention picker (body-attached; above popover z-index 9999) */
+.task-desc-mention-menu {
+    display: none;
+    position: fixed;
+    z-index: 10060;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #c8dcef;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(30, 61, 96, 0.14);
+    padding: 4px;
+}
+
+.task-desc-mention-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: #1a2c40;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.task-desc-mention-item i {
+    color: #3a6fa8;
+    font-size: 0.8rem;
+}
+
+.task-desc-mention-item:hover,
+.task-desc-mention-item.is-active {
+    background: #ddeaf8;
+}
+

@@ -6674,16 +6674,50 @@ document.addEventListener('DOMContentLoaded', function() {
             + '</ul>';
     }
 
-    function renderNeedsMatterGroups(groups) {
-        if (!groups || !groups.length || !assignBySubjectModalBody) {
-            return;
+    function renderReadyPairRows(items) {
+        if (!items || !items.length) {
+            return '';
         }
-        const html = groups.map(function (group, groupIndex) {
+        return '<section class="assign-subject-group assign-subject-group--ready" data-group-type="ready">'
+            + '<div class="assign-subject-group__header">'
+            + '<strong>Matched client ID + matter</strong>'
+            + '<div class="assign-subject-group__reason">Select the emails you want to assign.</div>'
+            + '</div>'
+            + '<label class="assign-subject-select-all">'
+            + '<input type="checkbox" class="assign-subject-select-all__input" checked>'
+            + '<span>Select all</span>'
+            + '</label>'
+            + '<ul class="assign-subject-results assign-subject-results--pending">'
+            + items.map(function (row) {
+                const matterId = row.client_matter_id || row.matter_id || '';
+                const clientMeta = escapeHtml((row.client_name || row.client_ref || 'Client') + '')
+                    + (row.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(row.client_ref) + '</span>' : '');
+                const matterMeta = escapeHtml((row.matter_no || '') + (row.matter_title ? ' · ' + row.matter_title : ''));
+                return '<li class="assign-subject-row">'
+                    + '<label class="assign-subject-row__label">'
+                    + '<input type="checkbox" class="assign-subject-email-check" checked'
+                    + ' data-email-log-id="' + escapeHtml(String(row.email_log_id)) + '"'
+                    + ' data-client-id="' + escapeHtml(String(row.client_id)) + '"'
+                    + ' data-client-matter-id="' + escapeHtml(String(matterId)) + '">'
+                    + '<span class="assign-subject-row__body">'
+                    + '<span class="assign-subject-results__subject">' + escapeHtml(row.subject || '(No subject)') + '</span>'
+                    + '<span class="assign-subject-results__meta">' + clientMeta
+                    + (matterMeta ? ' · ' + matterMeta : '')
+                    + '</span></span></label></li>';
+            }).join('')
+            + '</ul></section>';
+    }
+
+    function renderNeedsMatterGroups(groups) {
+        if (!groups || !groups.length) {
+            return '';
+        }
+        return groups.map(function (group, groupIndex) {
             const emails = group.emails || [];
             const matters = group.matters || [];
             const reason = group.matched_by === 'client_name'
-                ? 'Matched by client name — choose a matter to assign.'
-                : 'Client ID found — choose a matter to assign.';
+                ? 'Matched by client name — choose a matter, then select emails to assign.'
+                : 'Client ID found — choose a matter, then select emails to assign.';
             const options = matters.map(function (matter) {
                 const label = (matter.matter_no || ('Matter #' + matter.id))
                     + (matter.matter_title ? ' — ' + matter.matter_title : '')
@@ -6691,12 +6725,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return '<option value="' + escapeHtml(String(matter.id)) + '">' + escapeHtml(label) + '</option>';
             }).join('');
             const emailList = emails.map(function (email) {
-                return '<li data-email-log-id="' + escapeHtml(String(email.email_log_id)) + '">'
-                    + '<div class="assign-subject-results__subject">' + escapeHtml(email.subject || '(No subject)') + '</div>'
-                    + '<div class="assign-subject-results__meta">' + escapeHtml(email.from_mail || '') + '</div>'
-                    + '</li>';
+                return '<li class="assign-subject-row">'
+                    + '<label class="assign-subject-row__label">'
+                    + '<input type="checkbox" class="assign-subject-email-check" checked'
+                    + ' data-email-log-id="' + escapeHtml(String(email.email_log_id)) + '">'
+                    + '<span class="assign-subject-row__body">'
+                    + '<span class="assign-subject-results__subject">' + escapeHtml(email.subject || '(No subject)') + '</span>'
+                    + '<span class="assign-subject-results__meta">' + escapeHtml(email.from_mail || '') + '</span>'
+                    + '</span></label></li>';
             }).join('');
-            return '<section class="assign-subject-group" data-group-index="' + groupIndex + '" data-client-id="' + escapeHtml(String(group.client_id)) + '">'
+            return '<section class="assign-subject-group" data-group-index="' + groupIndex + '" data-group-type="needs" data-client-id="' + escapeHtml(String(group.client_id)) + '">'
                 + '<div class="assign-subject-group__header">'
                 + '<strong>' + escapeHtml(group.client_name || group.client_ref || 'Client') + '</strong>'
                 + (group.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(group.client_ref) + '</span>' : '')
@@ -6707,10 +6745,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 + '<option value="">Select matter</option>'
                 + options
                 + '</select>'
+                + '<label class="assign-subject-select-all">'
+                + '<input type="checkbox" class="assign-subject-select-all__input" checked>'
+                + '<span>Select all</span>'
+                + '</label>'
                 + '<ul class="assign-subject-results assign-subject-results--pending">' + emailList + '</ul>'
                 + '</section>';
         }).join('');
-        assignBySubjectModalBody.insertAdjacentHTML('beforeend', html);
+    }
+
+    function bindAssignBySubjectSelectAll() {
+        if (!assignBySubjectModalBody) {
+            return;
+        }
+        assignBySubjectModalBody.querySelectorAll('.assign-subject-select-all__input').forEach(function (master) {
+            master.addEventListener('change', function () {
+                const group = master.closest('.assign-subject-group');
+                if (!group) {
+                    return;
+                }
+                group.querySelectorAll('.assign-subject-email-check').forEach(function (box) {
+                    box.checked = master.checked;
+                });
+            });
+        });
     }
 
     function collectMatterChoiceAssignments() {
@@ -6718,15 +6776,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!assignBySubjectModalBody) {
             return assignments;
         }
-        assignBySubjectModalBody.querySelectorAll('.assign-subject-group').forEach(function (group) {
+
+        assignBySubjectModalBody.querySelectorAll('.assign-subject-group--ready .assign-subject-email-check:checked').forEach(function (box) {
+            const emailLogId = parseInt(box.getAttribute('data-email-log-id') || '0', 10);
+            const clientId = parseInt(box.getAttribute('data-client-id') || '0', 10);
+            const matterId = parseInt(box.getAttribute('data-client-matter-id') || '0', 10);
+            if (emailLogId && clientId && matterId) {
+                assignments.push({
+                    email_log_id: emailLogId,
+                    client_id: clientId,
+                    client_matter_id: matterId
+                });
+            }
+        });
+
+        assignBySubjectModalBody.querySelectorAll('.assign-subject-group[data-group-type="needs"]').forEach(function (group) {
             const select = group.querySelector('.assign-subject-group__matter');
             const matterId = select ? parseInt(select.value, 10) : 0;
             const clientId = parseInt(group.getAttribute('data-client-id') || '0', 10);
-            if (!matterId || !clientId) {
+            const checked = group.querySelectorAll('.assign-subject-email-check:checked');
+            if (!matterId || !clientId || !checked.length) {
                 return;
             }
-            group.querySelectorAll('[data-email-log-id]').forEach(function (row) {
-                const emailLogId = parseInt(row.getAttribute('data-email-log-id') || '0', 10);
+            checked.forEach(function (box) {
+                const emailLogId = parseInt(box.getAttribute('data-email-log-id') || '0', 10);
                 if (emailLogId) {
                     assignments.push({
                         email_log_id: emailLogId,
@@ -6757,36 +6830,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await response.json();
                 if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Could not assign emails by subject.');
+                    throw new Error(data.message || 'Could not match emails by subject.');
                 }
 
                 if (assignBySubjectModalSubtitle) {
                     assignBySubjectModalSubtitle.textContent = data.message || '';
                 }
                 if (assignBySubjectModalBody) {
-                    const assignedCount = data.assigned_count || 0;
+                    const ready = data.ready_pairs || [];
                     const needs = data.needs_matter || [];
-                    let html = '<p class="assign-subject-summary"><strong>' + assignedCount + '</strong> email'
-                        + (assignedCount === 1 ? '' : 's') + ' assigned from a matching client ID and matter.</p>';
-                    html += renderAssignedEmailRows(data.assigned || []);
-                    if (needs.length) {
-                        html += '<p class="assign-subject-summary assign-subject-summary--alert">'
-                            + 'These emails matched a client name or ID but need a matter. Choose a matter, then Assign selected.</p>';
+                    let html = '';
+                    if (!ready.length && !needs.length) {
+                        html = '<p class="assign-subject-summary">No matching unassigned emails found.</p>';
+                    } else {
+                        html = '<p class="assign-subject-summary assign-subject-summary--alert">'
+                            + 'Select emails to assign. For name/ID-only matches, choose a matter first.</p>';
+                        html += renderReadyPairRows(ready);
+                        html += renderNeedsMatterGroups(needs);
                     }
                     assignBySubjectModalBody.innerHTML = html;
-                    renderNeedsMatterGroups(needs);
+                    bindAssignBySubjectSelectAll();
                     if (assignBySubjectConfirmBtn) {
-                        assignBySubjectConfirmBtn.hidden = needs.length === 0;
+                        assignBySubjectConfirmBtn.hidden = !(ready.length || needs.length);
                     }
                 }
                 showAssignBySubjectModal();
-                loadEmails();
-                refreshUnassignedNavCount();
                 if (typeof crmToast === 'function') {
-                    crmToast(data.message, (data.assigned_count || (data.needs_matter || []).length) ? 'success' : 'info');
+                    crmToast(data.message, ((data.ready_pairs || []).length || (data.needs_matter || []).length) ? 'info' : 'info');
                 }
             } catch (error) {
-                crmToast(error.message || 'Could not assign emails by subject.', 'error');
+                crmToast(error.message || 'Could not match emails by subject.', 'error');
             } finally {
                 btnAssignBySubject.disabled = false;
                 btnAssignBySubject.innerHTML = originalHtml;
@@ -6796,9 +6869,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (assignBySubjectConfirmBtn && assignBySubjectConfirmUrl) {
         assignBySubjectConfirmBtn.addEventListener('click', async function () {
+            const needsGroups = assignBySubjectModalBody
+                ? assignBySubjectModalBody.querySelectorAll('.assign-subject-group[data-group-type="needs"]')
+                : [];
+            let missingMatter = false;
+            needsGroups.forEach(function (group) {
+                const checked = group.querySelectorAll('.assign-subject-email-check:checked');
+                const select = group.querySelector('.assign-subject-group__matter');
+                if (checked.length && select && !select.value) {
+                    missingMatter = true;
+                }
+            });
+            if (missingMatter) {
+                crmToast('Choose a matter for each client with selected emails.', 'warning');
+                return;
+            }
+
             const assignments = collectMatterChoiceAssignments();
             if (!assignments.length) {
-                crmToast('Choose a matter for at least one matched client.', 'warning');
+                crmToast('Select at least one email to assign.', 'warning');
                 return;
             }
             const originalHtml = assignBySubjectConfirmBtn.innerHTML;
@@ -6817,29 +6906,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await response.json();
                 if (!response.ok && !(data.assigned_count > 0)) {
-                    throw new Error(data.message || 'Could not assign the selected matters.');
+                    throw new Error(data.message || 'Could not assign the selected emails.');
                 }
                 if (assignBySubjectModalBody) {
-                    const extra = renderAssignedEmailRows(data.assigned || []);
+                    const assignedIds = {};
+                    (data.assigned || []).forEach(function (row) {
+                        assignedIds[String(row.email_log_id)] = true;
+                    });
+                    assignBySubjectModalBody.querySelectorAll('.assign-subject-email-check:checked').forEach(function (box) {
+                        const id = box.getAttribute('data-email-log-id');
+                        if (assignedIds[id]) {
+                            const row = box.closest('.assign-subject-row');
+                            if (row) {
+                                row.remove();
+                            }
+                        }
+                    });
+                    assignBySubjectModalBody.querySelectorAll('.assign-subject-group').forEach(function (group) {
+                        if (!group.querySelector('.assign-subject-email-check')) {
+                            group.remove();
+                        }
+                    });
+                    const remaining = assignBySubjectModalBody.querySelectorAll('.assign-subject-email-check').length;
                     assignBySubjectModalBody.insertAdjacentHTML(
                         'afterbegin',
                         '<p class="assign-subject-summary"><strong>'
                             + (data.assigned_count || 0)
-                            + '</strong> more email'
+                            + '</strong> email'
                             + ((data.assigned_count || 0) === 1 ? '' : 's')
-                            + ' assigned after matter choice.</p>'
-                            + extra
+                            + ' assigned.</p>'
+                            + renderAssignedEmailRows(data.assigned || [])
                     );
-                    assignBySubjectModalBody.querySelectorAll('.assign-subject-group').forEach(function (group) {
-                        group.remove();
-                    });
-                    const alertEl = assignBySubjectModalBody.querySelector('.assign-subject-summary--alert');
-                    if (alertEl) {
-                        alertEl.remove();
+                    if (!remaining && assignBySubjectConfirmBtn) {
+                        assignBySubjectConfirmBtn.hidden = true;
                     }
-                }
-                if (assignBySubjectConfirmBtn) {
-                    assignBySubjectConfirmBtn.hidden = true;
                 }
                 if (assignBySubjectModalSubtitle) {
                     assignBySubjectModalSubtitle.textContent = data.message || 'Assigned.';
@@ -6848,7 +6948,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshUnassignedNavCount();
                 crmToast(data.message || 'Emails assigned.', 'success');
             } catch (error) {
-                crmToast(error.message || 'Could not assign the selected matters.', 'error');
+                crmToast(error.message || 'Could not assign the selected emails.', 'error');
             } finally {
                 assignBySubjectConfirmBtn.disabled = false;
                 assignBySubjectConfirmBtn.innerHTML = originalHtml;

@@ -59,7 +59,7 @@
                                                     $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
                                                     $searchText = str_replace(' ', '', $searchText);
                                                 @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}">
+                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $admin->id }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
                                                     <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
                                                     {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
                                                 </label>
@@ -76,7 +76,7 @@
                             </div>
                             <div class="form-group form-group-full-width">
                                 <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="add_task_assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
+                                <textarea id="add_task_assignnote" class="form-control" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
                                 <div id="add_task_note_error" class="error-message"></div>
                             </div>
                             <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Action">
@@ -193,8 +193,9 @@
 @endsection
 
 @push('scripts')
-<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
+<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css?v={{ @filemtime(public_path('css/task-popover-modern.css')) ?: time() }}">
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
+<script src="{{URL::to('/')}}/js/components/task-description-mentions.js?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
 <style>
 /* Ensure popovers display correctly */
 

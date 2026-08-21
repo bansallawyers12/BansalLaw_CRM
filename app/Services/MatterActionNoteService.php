@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Note;
+use App\Models\Staff;
 
 class MatterActionNoteService
 {
@@ -54,6 +55,7 @@ class MatterActionNoteService
             return;
         }
 
+        $timeline = app(ActionTaskTimelineService::class);
         $uniqueGroupId = 'group_' . uniqid('', true);
         foreach ($ids as $assignedToStaffId) {
             $actionNote = new Note();
@@ -70,6 +72,12 @@ class MatterActionNoteService
             $actionNote->pin = 0;
             $actionNote->unique_group_id = $uniqueGroupId;
             $actionNote->save();
+
+            $staff = Staff::find($assignedToStaffId);
+            $assigneeName = $staff
+                ? trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''))
+                : 'Unknown';
+            $timeline->logActionCreated($actionNote, '', $assigneeName);
         }
     }
 }

@@ -392,19 +392,9 @@
             <div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>
         </div>
         @if($compactPagination)
-        <div class="pagination-bar pagination-bar--compact" id="emailPaginationBar">
-            <div class="pagination-bar__summary">
-                <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
-                <span class="pagination-bar__total" id="listTotalCount">Total: 0 emails</span>
-            </div>
-            <div class="pagination-controls">
-                <button type="button" class="pagination-btn pagination-btn--icon" id="prevBtn" disabled aria-label="Previous page">
-                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="pagination-btn pagination-btn--icon" id="nextBtn" disabled aria-label="Next page">
-                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                </button>
-            </div>
+        <div class="email-infinite-loader" id="emailInfiniteLoader" hidden aria-live="polite">
+            <span class="email-infinite-loader__spinner" aria-hidden="true"></span>
+            <span>Loading more emails...</span>
         </div>
         @else
         <div class="pagination-bar" id="emailPaginationBar">
