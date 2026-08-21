@@ -113,10 +113,10 @@ class SyncedEmailController extends Controller
         }
 
         $staff = Auth::guard('admin')->user();
-        if (! $staff instanceof Staff) {
+        if (! $staff instanceof Staff || ! $staff->canAssignEmailsBySubject()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Staff account required.',
+                'message' => 'You do not have permission to use Assign by subject.',
             ], 403);
         }
 
@@ -143,6 +143,14 @@ class SyncedEmailController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to assign synced inbox emails.',
+            ], 403);
+        }
+
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canAssignEmailsBySubject()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to use Assign by subject.',
             ], 403);
         }
 

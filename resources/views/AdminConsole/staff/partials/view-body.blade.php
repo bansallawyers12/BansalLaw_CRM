@@ -63,6 +63,14 @@
                         <span class="badge bg-secondary">Cannot pause mailbox sync</span>
                     @endif
                 </dd>
+                <dt>Assign by subject</dt>
+                <dd>
+                    @if($fetchedData->canAssignEmailsBySubject())
+                        <span class="badge bg-success">Can assign unassigned emails by subject</span>
+                    @else
+                        <span class="badge bg-secondary">No Assign by subject access</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>
