@@ -2228,13 +2228,30 @@ class ClientDocumentsController extends Controller
      */
     public function preview_document(Request $request, int $id)
     {
-        $document = Document::findOrFail($id);
+        $document = Document::find($id);
+        if (! $document) {
+            if ($request->boolean('embed')) {
+                return response(
+                    $this->officePreviewErrorHtml('The document file could not be found in storage (File not found in S3).'),
+                    404
+                )->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+            abort(404, 'Document not found');
+        }
         if (! $this->staffCanAccessDocument($document)) {
             abort(403);
         }
 
         $s3Key = $this->resolveS3KeyForDocument($document);
         if ($s3Key === null) {
+            // Embed previews (email reading pane iframe) should not show the raw Laravel
+            // "404 | Not Found" chrome — return a small HTML error the UI can detect/replace.
+            if ($request->boolean('embed')) {
+                return response(
+                    $this->officePreviewErrorHtml('The document file could not be found in storage (File not found in S3).'),
+                    404
+                )->header('Content-Type', 'text/html; charset=UTF-8');
+            }
             abort(404, 'File not found in S3');
         }
 
