@@ -1301,10 +1301,64 @@ public function getChapters(Request $request)
 			->exists();
 	}
 
+	/**
+	 * Require CLIENT_ID / MATTER_REF in compose subjects (e.g. CPRE2600130 / CIV_1).
+	 * Returns null when valid; otherwise a user-facing error message.
+	 */
+	protected function validateComposeSubjectHasClientMatterReference(string $subject, $clientId, $clientMatterId): ?string
+	{
+		$subject = trim($subject);
+		if ($clientId === null || $clientId === '' || ! is_numeric($clientId)) {
+			return null;
+		}
+
+		$client = Admin::find((int) $clientId);
+		$clientRef = trim((string) ($client->client_id ?? ''));
+		if ($clientRef === '') {
+			return null;
+		}
+
+		$matterRef = '';
+		if ($clientMatterId !== null && $clientMatterId !== '' && is_numeric($clientMatterId)) {
+			$matter = ClientMatter::find((int) $clientMatterId);
+			$matterRef = trim((string) ($matter->client_unique_matter_no ?? ''));
+		}
+
+		$ref = $matterRef !== '' ? ($clientRef . ' / ' . $matterRef) : $clientRef;
+		$normalizedSubject = preg_replace('/\s+/', ' ', strtoupper($subject)) ?? '';
+
+		if ($matterRef !== '') {
+			$pattern = '/' . preg_quote(strtoupper($clientRef), '/') . '\s*\/\s*' . preg_quote(strtoupper($matterRef), '/') . '/';
+			if ($normalizedSubject !== '' && preg_match($pattern, $normalizedSubject)) {
+				return null;
+			}
+		} elseif ($normalizedSubject !== '' && stripos($normalizedSubject, strtoupper($clientRef)) !== false) {
+			return null;
+		}
+
+		return 'Subject must include the matter reference: ' . $ref . ' (at the start or end is fine).';
+	}
+
     public function sendmail(Request $request){
 		$requestData = $request->all();
 		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
 		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
+		$subjectRefError = $this->validateComposeSubjectHasClientMatterReference(
+			(string) ($requestData['subject'] ?? ''),
+			$requestData['client_id'] ?? $requestData['lead_id'] ?? null,
+			$requestData['compose_client_matter_id'] ?? null
+		);
+		if ($subjectRefError !== null) {
+			if ($request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'status' => false,
+					'success' => false,
+					'message' => $subjectRefError,
+				], 422);
+			}
+
+			return redirect()->back()->with('error', $subjectRefError)->withInput();
+		}
 		if (($requestData['message_encoding'] ?? '') === 'b64') {
 			$encodedMessage = $requestData['message'] ?? '';
 			if (is_string($encodedMessage) && $encodedMessage !== '') {

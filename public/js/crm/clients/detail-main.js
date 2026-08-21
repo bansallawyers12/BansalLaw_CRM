@@ -14,6 +14,149 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    /**
+     * Build CLIENT_ID / MATTER_REF for compose subjects (email auto-matching).
+     * Example: "CPRE2600130 / CIV_1"
+     */
+    function getComposeClientMatterReference() {
+        var cfg = window.ClientDetailConfig || {};
+        var clientRef = String(cfg.clientRef || '').trim();
+        var matterRef = '';
+
+        var $matterSelect = $('#sel_matter_id_client_detail');
+        if ($matterSelect.length && $matterSelect.val()) {
+            matterRef = String($matterSelect.find('option:selected').data('clientuniquematterno') || '').trim();
+        }
+
+        if (!matterRef) {
+            var $checkedMatter = $('.general_matter_checkbox_client_detail:checked').first();
+            if ($checkedMatter.length) {
+                var checkedVal = $checkedMatter.val();
+                var $opt = $matterSelect.find('option[value="' + checkedVal + '"]');
+                matterRef = String(($opt.data('clientuniquematterno') || $checkedMatter.data('clientuniquematterno') || '')).trim();
+            }
+        }
+
+        if (!matterRef) {
+            matterRef = String(cfg.matterUniqueNo || '').trim();
+        }
+
+        // Ignore URL tab slugs accidentally stored as matterId
+        var tabSlugs = {
+            personaldetails: 1, overview: 1, activityfeed: 1, clientaction: 1, noteterm: 1,
+            personaldocuments: 1, matterdocuments: 1, documents: 1, emails: 1, legalforms: 1,
+            formgenerations: 1, formgenerationsl: 1, application: 1, account: 1,
+            notuseddocuments: 1, companydetails: 1
+        };
+        if (matterRef && tabSlugs[matterRef.toLowerCase()]) {
+            matterRef = '';
+        }
+
+        if (clientRef && matterRef) {
+            return clientRef + ' / ' + matterRef;
+        }
+        return clientRef;
+    }
+
+    function ensureSubjectHasComposeReference(subject) {
+        var ref = getComposeClientMatterReference();
+        if (!ref) {
+            return subject || '';
+        }
+        subject = String(subject || '').trim();
+        if (subjectContainsComposeReference(subject, ref)) {
+            return subject;
+        }
+        if (!subject) {
+            return ref;
+        }
+        return subject + ' | ' + ref;
+    }
+
+    /**
+     * True if subject already includes the required CLIENT / MATTER reference
+     * (anywhere — start, middle, or end; spacing around "/" is flexible).
+     */
+    function subjectContainsComposeReference(subject, ref) {
+        ref = String(ref || getComposeClientMatterReference() || '').trim();
+        if (!ref) {
+            return true;
+        }
+        var subjectNorm = String(subject || '').replace(/\s+/g, ' ').trim().toUpperCase();
+        if (!subjectNorm) {
+            return false;
+        }
+        var refParts = ref.split('/').map(function (p) { return p.trim().toUpperCase(); }).filter(Boolean);
+        if (refParts.length >= 2) {
+            var pattern = refParts.map(function (p) {
+                return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }).join('\\s*\\/\\s*');
+            try {
+                return new RegExp(pattern, 'i').test(subjectNorm);
+            } catch (e) {
+                return subjectNorm.indexOf(ref.replace(/\s+/g, ' ').toUpperCase()) !== -1;
+            }
+        }
+        return subjectNorm.indexOf(ref.toUpperCase()) !== -1;
+    }
+
+    function prefillComposeSubjectWithReference(onlyIfEmpty) {
+        var $subj = $('#emailmodal #compose_email_subject');
+        if (!$subj.length) {
+            $subj = $('#emailmodal .selectedsubject');
+        }
+        if (!$subj.length) {
+            return;
+        }
+        var current = String($subj.val() || '').trim();
+        if (onlyIfEmpty && current) {
+            return;
+        }
+        $subj.val(ensureSubjectHasComposeReference(current));
+    }
+
+    function validateComposeSubjectHasReference() {
+        var ref = getComposeClientMatterReference();
+        if (!ref) {
+            return { ok: true, ref: '' };
+        }
+        var $subj = $('#emailmodal #compose_email_subject');
+        if (!$subj.length) {
+            $subj = $('form[name="sendmail"] [name="subject"]');
+        }
+        var subject = String(($subj.val && $subj.val()) || '').trim();
+        if (subjectContainsComposeReference(subject, ref)) {
+            $('#compose_subject_ref_error').hide().text('');
+            $subj.removeClass('is-invalid');
+            return { ok: true, ref: ref };
+        }
+        var msg = 'Subject must include the matter reference: ' + ref;
+        var $err = $('#compose_subject_ref_error');
+        if ($err.length) {
+            $err.text(msg).show();
+        }
+        $subj.addClass('is-invalid');
+        try { $subj.trigger('focus'); } catch (e) {}
+        return { ok: false, ref: ref, message: msg };
+    }
+
+    window.getComposeClientMatterReference = getComposeClientMatterReference;
+    window.ensureSubjectHasComposeReference = ensureSubjectHasComposeReference;
+    window.subjectContainsComposeReference = subjectContainsComposeReference;
+    window.prefillComposeSubjectWithReference = prefillComposeSubjectWithReference;
+    window.validateComposeSubjectHasReference = validateComposeSubjectHasReference;
+
+    $(document).on('input change', '#compose_email_subject, #emailmodal .selectedsubject', function () {
+        var ref = getComposeClientMatterReference();
+        if (!ref) {
+            return;
+        }
+        if (subjectContainsComposeReference($(this).val(), ref)) {
+            $('#compose_subject_ref_error').hide().text('');
+            $(this).removeClass('is-invalid');
+        }
+    });
+
     function getInvoiceChargeTypeOptions() {
         var types = (window.ClientDetailConfig && window.ClientDetailConfig.invoiceChargeTypes) || [
             'Professional Fees',
@@ -6198,6 +6341,7 @@ success: function(response) {
             $('#emailmodal #compose_client_matter_id').val(selectedMatterL);
 
             $('#emailmodal').modal('show');
+            prefillComposeSubjectWithReference(true);
 
             var array = [];
 
@@ -6539,7 +6683,7 @@ success: function(response) {
                         subjct_description = repl(subjct_description);
                     }
 
-                    $('.selectedsubject').val(subjct_message);
+                    $('.selectedsubject').val(ensureSubjectHasComposeReference(subjct_message));
 
                     clearEditor("#emailmodal .tinymce-editor");
 
