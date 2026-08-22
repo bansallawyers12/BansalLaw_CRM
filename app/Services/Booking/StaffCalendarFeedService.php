@@ -131,10 +131,15 @@ class StaffCalendarFeedService
         Carbon $startOfToday,
         bool $includePast
     ): void {
-        if ($includePast && $request->filled('start') && $request->filled('end')) {
+        if ($request->filled('start') && $request->filled('end')) {
             try {
                 $rangeStart = Carbon::parse($request->get('start'), config('app.timezone'));
                 $rangeEnd = Carbon::parse($request->get('end'), config('app.timezone'));
+
+                if (! $includePast && $rangeStart->lt($startOfToday)) {
+                    $rangeStart = $startOfToday->copy();
+                }
+
                 $query->where($column, '>=', $rangeStart)
                     ->where($column, '<', $rangeEnd);
 
@@ -156,10 +161,15 @@ class StaffCalendarFeedService
         Carbon $startOfToday,
         bool $includePast
     ): void {
-        if ($includePast && $request->filled('start') && $request->filled('end')) {
+        if ($request->filled('start') && $request->filled('end')) {
             try {
                 $rangeStart = Carbon::parse($request->get('start'), config('app.timezone'))->startOfDay();
                 $rangeEnd = Carbon::parse($request->get('end'), config('app.timezone'))->startOfDay();
+
+                if (! $includePast && $rangeStart->lt($startOfToday)) {
+                    $rangeStart = $startOfToday->copy()->startOfDay();
+                }
+
                 $query->whereDate('hearing_date', '>=', $rangeStart->toDateString())
                     ->whereDate('hearing_date', '<', $rangeEnd->toDateString());
 

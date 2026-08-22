@@ -39,12 +39,131 @@ class StaffPersonalCalendarFeedService
             $this->bookingCalendarImportantEvents($calendarType ?? '', $request)
         );
 
+        $events = $this->deduplicateEvents($events);
+
         usort($events, fn (array $a, array $b) => strcmp(
             (string) ($a['starts_at'] ?? ''),
             (string) ($b['starts_at'] ?? '')
         ));
 
         return $events;
+    }
+
+    /**
+     * Remove duplicate rows from merged booking + staff/court feeds.
+     *
+     * @param  list<array<string, mixed>>  $events
+     * @return list<array<string, mixed>>
+     */
+    protected function deduplicateEvents(array $events): array
+    {
+        $byCanonical = [];
+
+        foreach ($events as $event) {
+            $key = $this->canonicalEventKey($event);
+            if (! isset($byCanonical[$key])) {
+                $byCanonical[$key] = $event;
+
+                continue;
+            }
+
+            $byCanonical[$key] = $this->pickPreferredEvent($byCanonical[$key], $event);
+        }
+
+        $bySlot = [];
+        foreach ($byCanonical as $event) {
+            $slot = $this->eventSlotKey($event);
+            if ($slot === null) {
+                $bySlot[$this->canonicalEventKey($event)] = $event;
+
+                continue;
+            }
+
+            if (! isset($bySlot[$slot])) {
+                $bySlot[$slot] = $event;
+
+                continue;
+            }
+
+            $bySlot[$slot] = $this->pickPreferredEvent($bySlot[$slot], $event);
+        }
+
+        return array_values($bySlot);
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    protected function canonicalEventKey(array $row): string
+    {
+        $kind = (string) ($row['event_kind'] ?? '');
+
+        if ($kind === 'website_booking' && ! empty($row['booking_appointment_id'])) {
+            return 'booking:' . $row['booking_appointment_id'];
+        }
+
+        if ($kind === 'staff_event' && ! empty($row['staff_calendar_event_id'])) {
+            return 'staff:' . $row['staff_calendar_event_id'];
+        }
+
+        if ($kind === 'court_hearing' && ! empty($row['court_hearing_id'])) {
+            return 'court:' . $row['court_hearing_id'];
+        }
+
+        $id = (string) ($row['id'] ?? '');
+        if ($id !== '') {
+            return 'id:' . $id;
+        }
+
+        $start = substr((string) ($row['starts_at'] ?? ''), 0, 16);
+        $clientId = (string) ($row['client_id'] ?? '');
+
+        return $kind . '|' . (string) ($row['event_type'] ?? '') . '|' . $clientId . '|' . $start;
+    }
+
+    /**
+     * Cross-source key for the same client at the same minute (booking vs staff event).
+     *
+     * @param  array<string, mixed>  $row
+     */
+    protected function eventSlotKey(array $row): ?string
+    {
+        $start = (string) ($row['starts_at'] ?? '');
+        if ($start === '') {
+            return null;
+        }
+
+        $kind = (string) ($row['event_kind'] ?? '');
+        $type = (string) ($row['event_type'] ?? '');
+
+        if (! in_array($kind, ['website_booking', 'staff_event', 'court_hearing'], true)
+            && ! in_array($type, ['meeting', 'court'], true)) {
+            return null;
+        }
+
+        $clientId = (string) ($row['client_id'] ?? '0');
+        $minute = substr($start, 0, 16);
+
+        return $clientId . '|' . $minute . '|' . ($type !== '' ? $type : $kind);
+    }
+
+    /**
+     * @param  array<string, mixed>  $a
+     * @param  array<string, mixed>  $b
+     * @return array<string, mixed>
+     */
+    protected function pickPreferredEvent(array $a, array $b): array
+    {
+        $priority = [
+            'website_booking' => 3,
+            'court_hearing' => 2,
+            'staff_event' => 1,
+        ];
+
+        $priorityA = $priority[(string) ($a['event_kind'] ?? '')] ?? 0;
+        $priorityB = $priority[(string) ($b['event_kind'] ?? '')] ?? 0;
+
+        return $priorityA >= $priorityB ? $a : $b;
     }
 
     /**
