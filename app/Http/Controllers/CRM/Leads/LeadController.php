@@ -21,6 +21,7 @@ use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
 use App\Services\LeadSpreadsheetImportService;
+use App\Services\ContactVerificationService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
 
@@ -1831,6 +1832,10 @@ class LeadController extends Controller
                             // Update existing contact
                             $existingContact = ClientContact::find($contactId);
                             if ($existingContact && $existingContact->client_id == $lead->id) {
+                                $contactVerification = app(ContactVerificationService::class);
+                                if ($contactVerification->phoneIdentityChanged($existingContact, $phone, $countryCode)) {
+                                    $contactVerification->invalidatePhoneVerification($existingContact);
+                                }
                                 $existingContact->update([
                                     'admin_id' => Auth::user()->id,
                                     'contact_type' => $contactType,
@@ -1875,6 +1880,10 @@ class LeadController extends Controller
                             // Update existing email
                             $existingEmail = ClientEmail::find($emailId);
                             if ($existingEmail && $existingEmail->client_id == $lead->id) {
+                                $contactVerification = app(ContactVerificationService::class);
+                                if ($contactVerification->emailIdentityChanged($existingEmail, $email)) {
+                                    $contactVerification->invalidateEmailVerification($existingEmail);
+                                }
                                 $existingEmail->update([
                                     'admin_id' => Auth::user()->id,
                                     'email_type' => $emailType,

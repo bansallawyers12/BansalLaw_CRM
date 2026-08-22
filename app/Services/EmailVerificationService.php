@@ -8,7 +8,6 @@ use App\Mail\EmailVerificationMail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
 
 class EmailVerificationService
 {
@@ -16,7 +15,8 @@ class EmailVerificationService
     protected $maxAttemptsPerDay = 5;
 
     public function __construct(
-        protected MailRoutingService $mailRouting
+        protected MailRoutingService $mailRouting,
+        protected ContactVerificationService $contactVerification
     ) {}
 
     /**
@@ -26,53 +26,44 @@ class EmailVerificationService
     {
         $clientEmail = ClientEmail::findOrFail($emailId);
 
-        // Check if already verified
         if ($clientEmail->is_verified) {
             return [
                 'success' => false,
-                'message' => 'Email is already verified'
+                'message' => 'Email is already verified',
             ];
         }
 
-        // Check rate limiting
-        if (!$this->canSendVerification($clientEmail)) {
+        if (! $this->canSendVerification($clientEmail)) {
             return [
                 'success' => false,
-                'message' => 'Too many verification requests. Please try again tomorrow.'
+                'message' => 'Too many verification requests. Please try again tomorrow.',
             ];
         }
 
-        // Generate token
         $token = EmailVerification::generateToken();
         $expiresAt = Carbon::now()->addHours($this->tokenValidHours);
 
-        // Invalidate previous tokens
-        EmailVerification::where('client_email_id', $emailId)
-                        ->where('is_verified', false)
-                        ->delete();
+        $this->contactVerification->supersedePendingEmailVerifications($emailId);
 
-        // Create verification record
         $verification = EmailVerification::create([
             'client_email_id' => $emailId,
             'client_id' => $clientEmail->client_id,
             'email' => $clientEmail->email,
             'verification_token' => $token,
+            'status' => EmailVerification::STATUS_PENDING,
             'is_verified' => false,
             'token_sent_at' => now(),
             'token_expires_at' => $expiresAt,
         ]);
 
-        // Update client email
         $clientEmail->update([
             'verification_token' => $token,
             'token_expires_at' => $expiresAt,
             'verification_sent_at' => now(),
         ]);
 
-        // Generate verification URL
         $verificationUrl = route('clients.email.verify', ['token' => $token]);
 
-        // Send email
         try {
             $this->mailRouting->mailer(null, true)->to($clientEmail->email)->send(new EmailVerificationMail(
                 $clientEmail,
@@ -82,25 +73,36 @@ class EmailVerificationService
         } catch (\Exception $e) {
             Log::error('Failed to send verification email', [
                 'email_id' => $emailId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
-            
+
+            $verification->update([
+                'status' => EmailVerification::STATUS_SUPERSEDED,
+                'token_sent_at' => null,
+            ]);
+
+            $clientEmail->update([
+                'verification_token' => null,
+                'token_expires_at' => null,
+                'verification_sent_at' => null,
+            ]);
+
             return [
                 'success' => false,
-                'message' => 'Failed to send verification email. Please try again.'
+                'message' => 'Failed to send verification email. Please try again.',
             ];
         }
 
         Log::info('Verification email sent', [
             'email_id' => $emailId,
             'email' => $clientEmail->email,
-            'expires_at' => $expiresAt
+            'expires_at' => $expiresAt,
         ]);
 
         return [
             'success' => true,
             'message' => 'Verification email sent successfully',
-            'expires_at' => $expiresAt->toIso8601String()
+            'expires_at' => $expiresAt->toIso8601String(),
         ];
     }
 
@@ -110,52 +112,63 @@ class EmailVerificationService
     public function verifyToken($token, $ipAddress = null, $userAgent = null)
     {
         $verification = EmailVerification::where('verification_token', $token)
-                                        ->where('is_verified', false)
-                                        ->latest()
-                                        ->first();
+            ->pending()
+            ->latest()
+            ->first();
 
-        if (!$verification) {
+        if (! $verification) {
             return [
                 'success' => false,
-                'message' => 'Invalid or already used verification link'
+                'message' => 'Invalid or already used verification link',
             ];
         }
 
-        // Check if expired
         if ($verification->isExpired()) {
+            $verification->update(['status' => EmailVerification::STATUS_EXPIRED]);
+
             return [
                 'success' => false,
-                'message' => 'Verification link has expired. Please request a new one.'
+                'message' => 'Verification link has expired. Please request a new one.',
             ];
         }
 
-        // Mark as verified
+        $clientEmail = ClientEmail::find($verification->client_email_id);
+        if (! $clientEmail) {
+            $verification->update(['status' => EmailVerification::STATUS_SUPERSEDED]);
+
+            return [
+                'success' => false,
+                'message' => 'Email record no longer exists',
+            ];
+        }
+
+        $verifiedBy = Auth::guard('admin')->id() ?? Auth::id();
+
         $verification->update([
+            'status' => EmailVerification::STATUS_VERIFIED,
             'is_verified' => true,
             'verified_at' => now(),
-            'verified_by' => Auth::id() ?? null,
+            'verified_by' => $verifiedBy,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
         ]);
 
-        // Update client email
-        $clientEmail = ClientEmail::find($verification->client_email_id);
         $clientEmail->update([
             'is_verified' => true,
             'verified_at' => now(),
-            'verified_by' => Auth::id() ?? null,
+            'verified_by' => $verifiedBy,
         ]);
 
         Log::info('Email verified', [
             'email_id' => $verification->client_email_id,
             'email' => $verification->email,
-            'ip' => $ipAddress
+            'ip' => $ipAddress,
         ]);
 
         return [
             'success' => true,
             'message' => 'Email verified successfully',
-            'client_email' => $clientEmail
+            'client_email' => $clientEmail,
         ];
     }
 
@@ -165,8 +178,8 @@ class EmailVerificationService
     protected function canSendVerification($clientEmail)
     {
         $recentAttempts = EmailVerification::where('email', $clientEmail->email)
-                                          ->where('token_sent_at', '>', Carbon::now()->subDay())
-                                          ->count();
+            ->where('token_sent_at', '>', Carbon::now()->subDay())
+            ->count();
 
         return $recentAttempts < $this->maxAttemptsPerDay;
     }
@@ -177,10 +190,11 @@ class EmailVerificationService
     public function canResendVerification($emailId)
     {
         $lastSent = EmailVerification::where('client_email_id', $emailId)
-                                     ->latest('token_sent_at')
-                                     ->value('token_sent_at');
+            ->whereNotNull('token_sent_at')
+            ->latest('token_sent_at')
+            ->value('token_sent_at');
 
-        if (!$lastSent) {
+        if (! $lastSent) {
             return true;
         }
 

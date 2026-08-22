@@ -57,7 +57,7 @@
 
 <!-- Assign Staff Modal (create_action_popup), styles, and popuploader removed - now in modals/client-management.blade.php -->
 
-<!-- Financial Modals (Edit Ledger Entry, Cost Assignments) removed - now in modals/financial.blade.php -->
+<!-- Financial Modals (Edit Ledger Entry) in modals/financial.blade.php -->
 <!-- Change Matter Assignee Modal removed - now in modals/client-management.blade.php -->
 
 <!-- Document folder modals (personal + matter) — see modals/documents.blade.php -->

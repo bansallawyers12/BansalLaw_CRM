@@ -37,6 +37,7 @@ use App\Models\Lead;
 use App\Models\Staff;
 use App\Services\LeadFollowUpNoteService;
 use App\Services\CompanyDirectorEmailService;
+use App\Services\ContactVerificationService;
 use App\Traits\LogsClientActivity;
 
 /**
@@ -2172,6 +2173,10 @@ class ClientPersonalDetailsController extends Controller
                         // Update existing contact if ID is provided
                         $existingContact = ClientContact::find($contactId);
                         if ($existingContact && $existingContact->client_id == $client->id) {
+                            $contactVerification = app(ContactVerificationService::class);
+                            if ($contactVerification->phoneIdentityChanged($existingContact, $phone, $countryCode)) {
+                                $contactVerification->invalidatePhoneVerification($existingContact);
+                            }
                             $existingContact->update([
                                 'admin_id' => Auth::user()->id,
                                 'contact_type' => $contactType,
@@ -2381,6 +2386,10 @@ class ClientPersonalDetailsController extends Controller
                         // Update existing email if ID is provided
                         $existingEmail = ClientEmail::find($emailId);
                         if ($existingEmail && $existingEmail->client_id == $client->id) {
+                            $contactVerification = app(ContactVerificationService::class);
+                            if ($contactVerification->emailIdentityChanged($existingEmail, $email)) {
+                                $contactVerification->invalidateEmailVerification($existingEmail);
+                            }
                             $existingEmail->update([
                                 'admin_id' => Auth::user()->id,
                                 'email_type' => $emailData['email_type'],

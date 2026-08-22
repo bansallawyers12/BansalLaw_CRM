@@ -274,14 +274,6 @@ Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountr
 /*---------- Client Agreements & Forms ----------*/
 Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');
 Route::post('/clients/getVisaAgreementLegalPractitionerDetail', [ClientsController::class, 'getVisaAgreementLegalPractitionerDetail'])->name('clients.getVisaAgreementLegalPractitionerDetail');
-Route::post('/clients/getCostAssignmentLegalPractitionerDetail', [ClientsController::class, 'getCostAssignmentLegalPractitionerDetail'])->name('clients.getCostAssignmentLegalPractitionerDetail');
-Route::post('/clients/savecostassignment', [ClientsController::class, 'savecostassignment'])->name('clients.savecostassignment');
-Route::post('/clients/check-cost-assignment', [ClientsController::class, 'checkCostAssignment']);
-
-// Lead cost assignment
-Route::post('/clients/savecostassignmentlead', [ClientsController::class, 'savecostassignmentlead'])->name('clients.savecostassignmentlead');
-Route::post('/clients/getCostAssignmentLegalPractitionerDetailLead', [ClientsController::class, 'getCostAssignmentLegalPractitionerDetailLead'])->name('clients.getCostAssignmentLegalPractitionerDetailLead');
-
 Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
 
 // Legal Forms (Short Costs Disclosure, Long Costs Disclosure, Authority to Act)

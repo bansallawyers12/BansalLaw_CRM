@@ -4165,211 +4165,171 @@ success: function(response) {
                 return false;
             }
 
-            // First check if cost assignment exists
-
             $.ajax({
 
-                url: window.ClientDetailConfig.urls.checkCostAssignment,
+                type: 'post',
 
-                type: "POST",
+                url: window.ClientDetailConfig.urls.getVisaAgreementLegalPractitioner,
 
-                data: {
+                data: {client_matter_id: client_matter_id},
 
-                    client_id: client_id,
+                success: function(agentResponse) {
 
-                    client_matter_id: client_matter_id,
+                    var obj = safeParseJsonResponse(agentResponse);
+                    if (!obj) return;
+                    if(obj.agentInfo) {
 
-                    _token: $('meta[name="csrf-token"]').attr('content')
+                        // Prepare form data for AJAX submission
 
-                },
+                        var formData = {
 
-                success: function (response) {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
 
-                    if (response.exists) {
+                            client_id: client_id,
 
-                        // Get agent details and then submit via AJAX
+                            client_matter_id: client_matter_id,
+
+                            agent_id: obj.agentInfo.agentId,
+
+                            agent_name: obj.agentInfo.last_name != '' ?
+
+                                obj.agentInfo.first_name + ' ' + obj.agentInfo.last_name :
+
+                                obj.agentInfo.first_name,
+
+                            business_name: obj.agentInfo.company_name || ''
+
+                        };
+
+
+
+                        // Submit via AJAX
 
                         $.ajax({
 
-                            type: 'post',
+                            url: window.ClientDetailConfig.urls.generateAgreement,
 
-                            url: window.ClientDetailConfig.urls.getVisaAgreementLegalPractitioner,
+                            method: 'POST',
 
-                            data: {client_matter_id: client_matter_id},
+                            data: formData,
 
-                            success: function(agentResponse) {
+                            success: function(response) {
 
-                                var obj = safeParseJsonResponse(agentResponse);
-                                if (!obj) return;
-                                if(obj.agentInfo) {
+                                // Handle successful response
 
-                                    // Prepare form data for AJAX submission
+                                if (response.success && response.download_url) {
 
-                                    var formData = {
+                                    // Use window.open for download - single method to prevent duplicates
 
-                                        _token: $('meta[name="csrf-token"]').attr('content'),
+                                    try {
 
-                                        client_id: client_id,
+                                        // Primary method: window.open for download
 
-                                        client_matter_id: client_matter_id,
+                                        var downloadWindow = window.open(response.download_url, '_blank');
 
-                                        agent_id: obj.agentInfo.agentId,
+                                        
 
-                                        agent_name: obj.agentInfo.last_name != '' ?
+                                        // Check if window.open was blocked or failed immediately
 
-                                            obj.agentInfo.first_name + ' ' + obj.agentInfo.last_name :
+                                        if (!downloadWindow || downloadWindow.closed) {
 
-                                            obj.agentInfo.first_name,
+                                            // Fallback: Use direct link click only if window.open was blocked
 
-                                        business_name: obj.agentInfo.company_name || ''
+                                            var link = document.createElement('a');
 
-                                    };
+                                            link.href = response.download_url;
 
+                                            link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
 
+                                            link.target = '_blank';
 
-                                    // Submit via AJAX
+                                            link.style.display = 'none';
 
-                                    $.ajax({
+                                            document.body.appendChild(link);
 
-                                        url: window.ClientDetailConfig.urls.generateAgreement,
+                                            link.click();
 
-                                        method: 'POST',
+                                            // Clean up after a short delay
 
-                                        data: formData,
+                                            setTimeout(function() {
 
-                                        success: function(response) {
+                                                document.body.removeChild(link);
 
-                                            // Handle successful response
-
-                                            if (response.success && response.download_url) {
-
-                                                // Use window.open for download - single method to prevent duplicates
-
-                                                try {
-
-                                                    // Primary method: window.open for download
-
-                                                    var downloadWindow = window.open(response.download_url, '_blank');
-
-                                                    
-
-                                                    // Check if window.open was blocked or failed immediately
-
-                                                    if (!downloadWindow || downloadWindow.closed) {
-
-                                                        // Fallback: Use direct link click only if window.open was blocked
-
-                                                        var link = document.createElement('a');
-
-                                                        link.href = response.download_url;
-
-                                                        link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
-
-                                                        link.target = '_blank';
-
-                                                        link.style.display = 'none';
-
-                                                        document.body.appendChild(link);
-
-                                                        link.click();
-
-                                                        // Clean up after a short delay
-
-                                                        setTimeout(function() {
-
-                                                            document.body.removeChild(link);
-
-                                                        }, 100);
-
-                                                    }
-
-                                                    
-
-                                                    // Show success message
-
-                                                    alert('Visa agreement generated successfully!');
-
-                                                } catch (error) {
-
-                                                    console.error('Download error:', error);
-
-                                                    
-
-                                                    // Last resort: Direct link approach only if window.open throws an error
-
-                                                    try {
-
-                                                        var link = document.createElement('a');
-
-                                                        link.href = response.download_url;
-
-                                                        link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
-
-                                                        link.target = '_blank';
-
-                                                        link.style.display = 'none';
-
-                                                        document.body.appendChild(link);
-
-                                                        link.click();
-
-                                                        setTimeout(function() {
-
-                                                            document.body.removeChild(link);
-
-                                                        }, 100);
-
-                                                        
-
-                                                        alert('Visa agreement generated successfully!');
-
-                                                    } catch (fallbackError) {
-
-                                                        console.error('Fallback download error:', fallbackError);
-
-                                                        alert('Visa agreement generated successfully! Please check your downloads folder or browser download settings.');
-
-                                                    }
-
-                                                }
-
-                                            } else {
-
-                                                alert('Document generated but no download URL returned.');
-
-                                            }
-
-                                        },
-
-                                        error: function(xhr) {
-
-                                            // Handle errors
-
-                                            if (xhr.responseJSON && xhr.responseJSON.message) {
-
-                                                alert('Error: ' + xhr.responseJSON.message);
-
-                                            } else {
-
-                                                alert('Error generating visa agreement.');
-
-                                            }
+                                            }, 100);
 
                                         }
 
-                                    });
+                                        
+
+                                        // Show success message
+
+                                        alert('Visa agreement generated successfully!');
+
+                                    } catch (error) {
+
+                                        console.error('Download error:', error);
+
+                                        
+
+                                        // Last resort: Direct link approach only if window.open throws an error
+
+                                        try {
+
+                                            var link = document.createElement('a');
+
+                                            link.href = response.download_url;
+
+                                            link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
+
+                                            link.target = '_blank';
+
+                                            link.style.display = 'none';
+
+                                            document.body.appendChild(link);
+
+                                            link.click();
+
+                                            setTimeout(function() {
+
+                                                document.body.removeChild(link);
+
+                                            }, 100);
+
+                                            
+
+                                            alert('Visa agreement generated successfully!');
+
+                                        } catch (fallbackError) {
+
+                                            console.error('Fallback download error:', fallbackError);
+
+                                            alert('Visa agreement generated successfully! Please check your downloads folder or browser download settings.');
+
+                                        }
+
+                                    }
 
                                 } else {
 
-                                    alert("Agent information not found.");
+                                    alert('Document generated but no download URL returned.');
 
                                 }
 
                             },
 
-                            error: function() {
+                            error: function(xhr) {
 
-                                alert("Error fetching agent details.");
+                                // Handle errors
+
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+
+                                    alert('Error: ' + xhr.responseJSON.message);
+
+                                } else {
+
+                                    alert('Error generating visa agreement.');
+
+                                }
 
                             }
 
@@ -4377,7 +4337,7 @@ success: function(response) {
 
                     } else {
 
-                        alert("Please first create Cost Assignment.");
+                        alert("Agent information not found.");
 
                     }
 
@@ -4385,7 +4345,7 @@ success: function(response) {
 
                 error: function() {
 
-                    alert("Error checking cost assignment.");
+                    alert("Error fetching agent details.");
 
                 }
 
@@ -4507,378 +4467,6 @@ success: function(response) {
 
 
 
-        // Note: costAssignmentCreateForm click handler and switchToCostAssignmentList
-        // removed — Form Generation tab no longer exists. Cost assignment create/amend
-        // now happens exclusively via the modal in the Checklists tab.
-
-
-
-         // Get cost assignment Legal Practitioner detail
-        // modalContainer: optional selector (e.g. '#costAssignmentCreateFormModel') to scope field updates to a specific container (for modal edit)
-        // onLoadedCallback: optional function called after data is loaded (e.g. to show modal)
-        function getCostAssignmentLegalPractitionerDetail(client_id,client_matter_id, modalContainer, onLoadedCallback) {
-
-            var $scope = (modalContainer && $(modalContainer).length) ? $(modalContainer) : $(document);
-
-            $.ajax({
-
-                type:'post',
-
-                url: window.ClientDetailConfig.urls.getCostAssignmentLegalPractitioner,
-
-                sync:true,
-
-                data: {client_id:client_id,client_matter_id:client_matter_id},
-
-                success: function(response){
-
-                    var obj = safeParseJsonResponse(response);
-                    if (!obj) return;
-                    if(obj.agentInfo){
-
-                        $scope.find('#costassign_agent_id').val(obj.agentInfo.agentId);
-
-                        if(obj.agentInfo.last_name != ''){
-
-                            var agentFullName = obj.agentInfo.first_name+' '+obj.agentInfo.last_name;
-
-                        } else {
-
-                            var agentFullName =  obj.agentInfo.first_name;
-
-                        }
-
-                        //$('#costassign_agent_name').val(agentFullName);
-
-                        $scope.find('#costassign_agent_name_label').html(agentFullName);
-
-
-
-                        //$('#costassign_business_name').val(obj.agentInfo.company_name);
-
-                        $scope.find('#costassign_business_name_label').html(obj.agentInfo.company_name);
-
-                        $scope.find('#costassign_client_matter_name_label').html(obj.matterInfo.title);
-
-
-
-                        //Fetch matter related cost assignments
-
-                        if(obj.cost_assignment_matterInfo){
-
-                            $scope.find('#Block_1_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_1_Ex_Tax);
-                            $scope.find('#Block_2_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_2_Ex_Tax);
-                            $scope.find('#Block_3_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_3_Ex_Tax);
-                            $scope.find('#additional_fee_1').val(obj.cost_assignment_matterInfo.additional_fee_1);
-                            $scope.find('#TotalBLOCKFEE').val(obj.cost_assignment_matterInfo.TotalBLOCKFEE);
-
-                            // Populate disbursement lines
-                            var lines = obj.cost_assignment_matterInfo.disbursement_lines || [];
-                            populateDisbursementRows(lines, $scope.find('#disbursement-rows'));
-                            calculateTotalDisbursements(modalContainer);
-
-                        } else {
-
-                            $scope.find('#Block_1_Ex_Tax').val(obj.matterInfo.Block_1_Ex_Tax);
-                            $scope.find('#Block_2_Ex_Tax').val(obj.matterInfo.Block_2_Ex_Tax);
-                            $scope.find('#Block_3_Ex_Tax').val(obj.matterInfo.Block_3_Ex_Tax);
-                            $scope.find('#additional_fee_1').val(obj.matterInfo.additional_fee_1);
-                            $scope.find('#TotalBLOCKFEE').val(obj.matterInfo.TotalBLOCKFEE);
-                            populateDisbursementRows([], $scope.find('#disbursement-rows'));
-
-                        }
-
-                        // Initialize calculation handlers after data is loaded
-                        setTimeout(function() {
-                            initializeCostAssignmentCalculations(modalContainer);
-                            calculateTotalBlockFee(modalContainer);
-                            calculateTotalDisbursements(modalContainer);
-                            if (typeof onLoadedCallback === 'function') {
-                                onLoadedCallback();
-                            }
-                        }, 100);
-
-                    }
-                },
-                error: function(xhr, status, error) {
-                    // error handled silently
-                }
-            });
-        }
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Disbursement row helpers
-        // ──────────────────────────────────────────────────────────────────
-        var disbursementNatures = {
-            court_fees:      'Court Fees',
-            barrister_fees:  'Barrister Fees',
-            expert_report:   'Expert Report',
-            travel:          'Travel',
-            postage:         'Postage / Courier',
-            filing_registry: 'Filing / Registry',
-            search_fees:     'Search Fees',
-            other:           'Other'
-        };
-
-        function buildNatureOptions(selected) {
-            var html = '';
-            $.each(disbursementNatures, function(val, label) {
-                html += '<option value="' + val + '"' + (val === selected ? ' selected' : '') + '>' + label + '</option>';
-            });
-            return html;
-        }
-
-        function buildDisbursementRow(idx, nature, description, amount) {
-            nature      = nature      || 'other';
-            description = description || '';
-            amount      = amount      !== undefined ? amount : '';
-            return (
-                '<div class="disbursement-row row mb-2 align-items-center">' +
-                    '<div class="col-md-4 col-12 mb-1 mb-md-0">' +
-                        '<select name="disbursements[' + idx + '][nature]" class="form-control form-control-sm disbursement-nature-select">' +
-                            buildNatureOptions(nature) +
-                        '</select>' +
-                    '</div>' +
-                    '<div class="col-md-4 col-12 mb-1 mb-md-0">' +
-                        '<input type="text" name="disbursements[' + idx + '][description]" class="form-control form-control-sm" placeholder="Description (optional)" value="' + description + '">' +
-                    '</div>' +
-                    '<div class="col-md-3 col-10 mb-1 mb-md-0">' +
-                        '<input type="number" name="disbursements[' + idx + '][amount]" class="form-control form-control-sm disbursement-amount-input" placeholder="0.00" step="0.01" min="0" value="' + amount + '">' +
-                    '</div>' +
-                    '<div class="col-md-1 col-2 text-right">' +
-                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fa-solid fa-xmark"></i></button>' +
-                    '</div>' +
-                '</div>'
-            );
-        }
-
-        function populateDisbursementRows(lines, $container) {
-            $container.empty();
-            if (lines && lines.length > 0) {
-                $.each(lines, function(idx, line) {
-                    $container.append(buildDisbursementRow(idx, line.nature, line.description, line.amount));
-                });
-            } else {
-                $container.append(buildDisbursementRow(0, 'other', '', ''));
-            }
-            rebindDisbursementRowNames($container);
-        }
-
-        function rebindDisbursementRowNames($container) {
-            $container.find('.disbursement-row').each(function(idx) {
-                $(this).find('[name^="disbursements"]').each(function() {
-                    var oldName = $(this).attr('name');
-                    var newName = oldName.replace(/disbursements\[\d+\]/, 'disbursements[' + idx + ']');
-                    $(this).attr('name', newName);
-                });
-            });
-        }
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Disbursement UI — Add / Remove row handlers (client modal)
-        // ──────────────────────────────────────────────────────────────────
-        $(document).on('click', '.btn-add-disbursement-row, .btn-add-disbursement-row-lead', function() {
-            var isLead = $(this).hasClass('btn-add-disbursement-row-lead');
-            var rowContainerId = isLead ? '#disbursement-rows-lead' : '#disbursement-rows';
-            var $modal = $(this).closest('.modal');
-            var $container = $modal.length ? $modal.find(rowContainerId) : $(rowContainerId);
-            if (!$container.length) $container = $(rowContainerId);
-            var idx = $container.find('.disbursement-row').length;
-            $container.append(buildDisbursementRow(idx, 'other', '', ''));
-            rebindDisbursementRowNames($container);
-        });
-
-        $(document).on('click', '.btn-remove-disbursement-row', function() {
-            var $container = $(this).closest('#disbursement-rows, #disbursement-rows-lead');
-            $(this).closest('.disbursement-row').remove();
-            rebindDisbursementRowNames($container);
-            calculateTotalDisbursements($(this).closest('.modal').length ? '#' + $(this).closest('.modal').attr('id') : null);
-        });
-
-        $(document).on('input change keyup', '.disbursement-amount-input', function() {
-            var modalId = $(this).closest('.modal').attr('id');
-            calculateTotalDisbursements(modalId ? '#' + modalId : null);
-        });
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Cost assignment calculation functions
-        // ──────────────────────────────────────────────────────────────────
-        function initializeCostAssignmentCalculations(containerScope) {
-            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
-
-            $scope.find('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup').on('input change keyup', function() {
-                calculateTotalBlockFee(containerScope);
-            });
-
-            calculateTotalBlockFee(containerScope);
-            calculateTotalDisbursements(containerScope);
-        }
-
-        function calculateTotalBlockFee(containerScope) {
-            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
-            var block1 = parseFloat($scope.find('#Block_1_Ex_Tax').val()) || 0;
-            var block2 = parseFloat($scope.find('#Block_2_Ex_Tax').val()) || 0;
-            var block3 = parseFloat($scope.find('#Block_3_Ex_Tax').val()) || 0;
-            $scope.find('#TotalBLOCKFEE').val((block1 + block2 + block3).toFixed(2));
-        }
-
-        function calculateTotalDisbursements(containerScope) {
-            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
-            var total = 0;
-            $scope.find('.disbursement-amount-input').each(function() {
-                total += parseFloat($(this).val()) || 0;
-            });
-            // Update whichever total field exists within the scope
-            var $total = $scope.find('#TotalDisbursements, #TotalDisbursements_lead').first();
-            if ($total.length) {
-                $total.val(total.toFixed(2));
-            } else {
-                // Fall back to document-level if not scoped
-                $('#TotalDisbursements, #TotalDisbursements_lead').val(total.toFixed(2));
-            }
-        }
-
-        window.initializeCostAssignmentCalculations = initializeCostAssignmentCalculations;
-        window.calculateTotalBlockFee               = calculateTotalBlockFee;
-        window.calculateTotalDisbursements          = calculateTotalDisbursements;
-        window.populateDisbursementRows             = populateDisbursementRows;
-        window.getCostAssignmentLegalPractitionerDetail = getCostAssignmentLegalPractitionerDetail;
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Cost assignment form submit handler
-        // ──────────────────────────────────────────────────────────────────
-        $(document).on('submit', '#costAssignmentform', function(e) {
-            e.preventDefault();
-            $.ajax({
-                url: $(this).attr('action'),
-                method: 'POST',
-                data: $(this).serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    var obj = safeParseJsonResponse(response);
-                    if (obj && obj.status) {
-                        var $modal = $('#costAssignmentCreateFormModel');
-                        if ($modal.length && $modal.hasClass('show')) {
-                            $modal.modal('hide');
-                        }
-                        localStorage.setItem('activeTab', 'account');
-                        setTimeout(function() { location.reload(); }, 500);
-                    }
-                },
-                error: function(xhr) {
-                    $('.custom-error-msg').html('');
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        for (var field in errors) {
-                            $('.custom-error-msg').append('<p class="text-red-600">' + errors[field][0] + '</p>');
-                        }
-                    } else {
-                        $('.custom-error-msg').append('<p class="text-red-600">An error occurred while submitting the form.</p>');
-                    }
-                }
-            });
-        });
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Lead section — cost assignment
-        // ──────────────────────────────────────────────────────────────────
-        $(document).delegate('.costAssignmentCreateFormLead', 'click', function() {
-            $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
-            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').each(function () {
-                initTS(this, typeof buildPlainSingleTomSelectConfig === 'function'
-                    ? buildPlainSingleTomSelectConfig({ dropdownParent: '#costAssignmentCreateFormModelLead' })
-                    : { dropdownParent: '#costAssignmentCreateFormModelLead', create: false, maxItems: 1, allowEmptyOption: true });
-            });
-            $('#costAssignmentCreateFormModelLead').modal('show');
-        });
-
-        $(document).delegate('#sel_matter_id_lead', 'change', function() {
-            var client_matter_id = $(this).val();
-            var client_id = window.ClientDetailConfig.clientId;
-            if (client_id && client_matter_id) {
-                getCostAssignmentLegalPractitionerDetailLead(client_id, client_matter_id);
-            }
-        });
-
-        function getCostAssignmentLegalPractitionerDetailLead(client_id, client_matter_id) {
-            $.ajax({
-                type: 'post',
-                url: window.ClientDetailConfig.urls.getCostAssignmentLegalPractitionerLead,
-                sync: true,
-                data: {client_id: client_id, client_matter_id: client_matter_id},
-                success: function(response) {
-                    var obj = safeParseJsonResponse(response);
-                    if (!obj) return;
-
-                    if (obj.cost_assignment_matterInfo) {
-                        $('#Block_1_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_1_Ex_Tax);
-                        $('#Block_2_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_2_Ex_Tax);
-                        $('#Block_3_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_3_Ex_Tax);
-                        $('#additional_fee_1_lead').val(obj.cost_assignment_matterInfo.additional_fee_1);
-                        $('#TotalBLOCKFEE_lead').val(obj.cost_assignment_matterInfo.TotalBLOCKFEE);
-                        var lines = obj.cost_assignment_matterInfo.disbursement_lines || [];
-                        populateDisbursementRows(lines, $('#disbursement-rows-lead'));
-                        calculateTotalDisbursements('#costAssignmentCreateFormModelLead');
-                    } else {
-                        $('#Block_1_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_1_Ex_Tax : '');
-                        $('#Block_2_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_2_Ex_Tax : '');
-                        $('#Block_3_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_3_Ex_Tax : '');
-                        $('#additional_fee_1_lead').val(obj.matterInfo ? obj.matterInfo.additional_fee_1 : '');
-                        $('#TotalBLOCKFEE_lead').val(obj.matterInfo ? obj.matterInfo.TotalBLOCKFEE : '');
-                        populateDisbursementRows([], $('#disbursement-rows-lead'));
-                    }
-
-                    initializeCostAssignmentCalculationsLead();
-                }
-            });
-        }
-
-        function initializeCostAssignmentCalculationsLead() {
-            $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').off('input change keyup').on('input change keyup', function() {
-                calculateTotalBlockFeeLead();
-            });
-            calculateTotalBlockFeeLead();
-            calculateTotalDisbursements('#costAssignmentCreateFormModelLead');
-        }
-
-        function calculateTotalBlockFeeLead() {
-            var block1 = parseFloat($('#Block_1_Ex_Tax_lead').val()) || 0;
-            var block2 = parseFloat($('#Block_2_Ex_Tax_lead').val()) || 0;
-            var block3 = parseFloat($('#Block_3_Ex_Tax_lead').val()) || 0;
-            $('#TotalBLOCKFEE_lead').val((block1 + block2 + block3).toFixed(2));
-        }
-
-        window.initializeCostAssignmentCalculationsLead = initializeCostAssignmentCalculationsLead;
-        window.calculateTotalBlockFeeLead               = calculateTotalBlockFeeLead;
-
-        // ──────────────────────────────────────────────────────────────────
-        //  Lead form submit handler
-        // ──────────────────────────────────────────────────────────────────
-        $(document).on('submit', '#costAssignmentformLead, #costAssignmentformlead', function(e) {
-            e.preventDefault();
-            $.ajax({
-                url: $(this).attr('action'),
-                method: 'POST',
-                data: $(this).serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    var obj = safeParseJsonResponse(response);
-                    if (obj && obj.status) {
-                        $('#costAssignmentCreateFormModelLead').modal('hide');
-                        localStorage.setItem('activeTab', 'account');
-                        setTimeout(function() { location.reload(); }, 500);
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        for (var field in errors) {
-                            $('.custom-error-msg-lead').append('<p class="text-red-600">' + errors[field][0] + '</p>');
-                        }
-                    }
-                }
-            });
-        });
 
         // Agreement modal: drag-and-drop and click-to-browse; auto-upload on file set
         (function() {

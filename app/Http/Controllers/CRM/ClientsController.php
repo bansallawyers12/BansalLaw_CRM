@@ -64,7 +64,6 @@ use App\Models\SmsTemplate;
 use Illuminate\Support\Facades\Http;
 
 use PhpOffice\PhpWord\TemplateProcessor;
-use App\Models\CostAssignmentForm;
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
 use PhpOffice\PhpWord\IOFactory;
@@ -2826,7 +2825,6 @@ class ClientsController extends Controller
                     'appointments' => ['client_id'],
                     'booking_appointments' => ['client_id'],
                     'quotations' => ['client_id'],
-                    'cost_assignment_forms' => ['client_id'],
                     'email_logs' => ['client_id'],
                     'checkin_logs' => ['client_id'],
                     'front_desk_check_ins' => ['client_id', 'admin_id'],
@@ -4105,62 +4103,40 @@ class ClientsController extends Controller
             $BlocktotalfeesincltaxFormated = '0.00';
             $GrandTotalFeesAndCostsFormated = '0.00';
             $matter_info = null;
-            $matter_info_arr = null;
 
             if( isset($request->client_matter_id) && $request->client_matter_id != '' )
-            {  //dd($request->client_matter_id);
-                //First check cost is assigned for this matter wrt client or not
-                $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id',$request->client_id)->where('client_matter_id',$request->client_matter_id)->count();
-	            if($cost_assignment_cnt >0)
-                { //dd('iff');
-                    // Get cost assignment form fee info
-                    $matter_info = DB::table('cost_assignment_forms')->where('client_id', $request->client_id)->where('client_matter_id', $request->client_matter_id)->first();
-
-                    $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
-                    // Get matter info
-                    if( $client_matter_info ){ //dd($client_matter_info);
-                        $matter_info_arr = DB::table('matters')->select('title','nick_name','Block_1_Description','Block_2_Description','Block_3_Description')->where('id', $client_matter_info->sel_matter_id )->first();
-                    }
-                    if( $matter_info && $matter_info_arr ) {
-                        $matter_info->title = $matter_info_arr->title ?? '';
-                        $matter_info->nick_name = $matter_info_arr->nick_name ?? '';
-                        $matter_info->Block_1_Description = $matter_info_arr->Block_1_Description ?? '';
-                        $matter_info->Block_2_Description = $matter_info_arr->Block_2_Description ?? '';
-                        $matter_info->Block_3_Description = $matter_info_arr->Block_3_Description ?? '';
-                    }
-
-                }
-                else
-                { //dd('elsee');
-                    $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
-                    // Get matter info
-                    if( $client_matter_info ){ //dd($client_matter_info);
-                        $matter_info = DB::table('matters')->where('id', $client_matter_info->sel_matter_id )->first();
-                    }
+            {
+                $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
+                if( $client_matter_info ){
+                    $matter_info = DB::table('matters')->where('id', $client_matter_info->sel_matter_id )->first();
                 }
 
                 if ($matter_info)
-                { //dd($matter_info);
-
+                {
                     $visa_subclass = $matter_info->title ?? '';
                     $visa_stream = $matter_info->nick_name ?? '';
 
-                    $Block_1_Description = $matter_info->Block_1_Description ?? '';
-                    $Block_1_Ex_Tax = $matter_info->Block_1_Ex_Tax ?? 0;
+                    // Block/disbursement columns exist on some installs of `matters`; live schema may not have them.
+                    $matterCol = static function ($row, string $column, $default = 0) {
+                        return property_exists($row, $column) ? ($row->{$column} ?? $default) : $default;
+                    };
 
-                    $Block_2_Description = $matter_info->Block_2_Description ?? '';
-                    $Block_2_Ex_Tax = $matter_info->Block_2_Ex_Tax ?? 0;
+                    $Block_1_Description = $matterCol($matter_info, 'Block_1_Description', '');
+                    $Block_1_Ex_Tax = $matterCol($matter_info, 'Block_1_Ex_Tax', 0);
 
-                    $Block_3_Description = $matter_info->Block_3_Description ?? '';
-                    $Block_3_Ex_Tax = $matter_info->Block_3_Ex_Tax ?? 0;
+                    $Block_2_Description = $matterCol($matter_info, 'Block_2_Description', '');
+                    $Block_2_Ex_Tax = $matterCol($matter_info, 'Block_2_Ex_Tax', 0);
+
+                    $Block_3_Description = $matterCol($matter_info, 'Block_3_Description', '');
+                    $Block_3_Ex_Tax = $matterCol($matter_info, 'Block_3_Ex_Tax', 0);
 
                     $Blocktotalfeesincltax = floatval($Block_1_Ex_Tax) + floatval($Block_2_Ex_Tax) + floatval($Block_3_Ex_Tax);
                     $BlocktotalfeesincltaxFormated = number_format($Blocktotalfeesincltax, 2, '.', '');
 
-                    $TotalDisbursements = floatval($matter_info->TotalDisbursements ?? 0);
+                    $TotalDisbursements = floatval($matterCol($matter_info, 'TotalDisbursements', 0));
                     $TotalDisbursementsFormatted = number_format($TotalDisbursements, 2, '.', '');
 
-                    $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
+                    $TotalEstimatedOtherCosts = $matterCol($matter_info, 'additional_fee_1', 0);
                     $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + $TotalDisbursements + floatval($TotalEstimatedOtherCosts);
                     $GrandTotalFeesAndCostsFormated = number_format($GrandTotalFeesAndCosts, 2, '.', '');
                 }
@@ -4279,7 +4255,7 @@ class ClientsController extends Controller
                 return response()->json([
                     'success' => false,
                     'error' => 'Document validation failed.',
-                    'message' => 'The generated document appears to be corrupted. Please ensure all client matter and cost assignment data is complete before generating the agreement.',
+                    'message' => 'The generated document appears to be corrupted. Please ensure all client matter data is complete before generating the agreement.',
                     'technical_details' => $validationException->getMessage()
                 ], 500);
             }
@@ -4396,10 +4372,17 @@ class ClientsController extends Controller
     // Get visa agreement Legal Practitioner detail
     public function getVisaAgreementLegalPractitionerDetail(Request $request)
     {
+        $response = [
+            'status' => false,
+            'message' => 'Record is not exist.Please try again',
+            'agentInfo' => '',
+            'matterInfo' => '',
+        ];
         $requestData = 	$request->all();
-        $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
-        //dd($clientMatterInfo);
+        $client_matter_id = $requestData['client_matter_id'] ?? null;
+        $clientMatterInfo = $client_matter_id
+            ? DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first()
+            : null;
         if($clientMatterInfo) {
             //get matter name
             $matterInfo = DB::table('matters')->select('title','nick_name')->where('id',$clientMatterInfo->sel_matter_id)->first();
@@ -4433,155 +4416,6 @@ class ClientsController extends Controller
                 $response['agentInfo'] 	= "";
                 $response['status'] 	= 	false;
                 $response['message']	=	'Record is not exist.Please try again';
-            }
-        }
-        echo json_encode($response);
-    }
-
-    // Get cost assignment Legal Practitioner detail
-    public function getCostAssignmentLegalPractitionerDetail(Request $request)
-    {
-        $requestData = 	$request->all(); //dd($requestData);
-        $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
-        //dd($clientMatterInfo);
-        if($clientMatterInfo) {
-            //get matter name
-            $matterInfo = DB::table('matters')->where('id',$clientMatterInfo->sel_matter_id)->first();
-            //dd($matterInfo);
-            if($matterInfo){
-                $response['matterInfo'] = $matterInfo;
-            } else {
-                $response['matterInfo'] = "";
-            }
-
-            //get cost assignment matter fee
-            $costassignmentmatterInfo = DB::table('cost_assignment_forms')->where('client_id',$requestData['client_id'])->where('client_matter_id',$requestData['client_matter_id'])->first();
-            if($costassignmentmatterInfo){
-                $disbursementLines = DB::table('disbursement_lines')
-                    ->where('cost_assignment_form_id', $costassignmentmatterInfo->id)
-                    ->orderBy('sort_order')
-                    ->get();
-                $costassignmentmatterInfo->disbursement_lines = $disbursementLines;
-            }
-            if($matterInfo){
-                $response['cost_assignment_matterInfo'] = $costassignmentmatterInfo;
-            } else {
-                $response['cost_assignment_matterInfo'] = "";
-            }
-
-            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
-            $agentInfo = DB::table('staff')->select(
-                'id as agentId',
-                'first_name',
-                'last_name',
-                'company_name',
-                'is_solicitor',
-                'legal_practitioner_number',
-                'business_address',
-                'business_phone',
-                'business_mobile',
-                'business_email',
-                'tax_number'
-            )->where('id', $sel_legal_practitioner)->first();
-            //dd($agentInfo);
-            if($agentInfo){
-                $response['agentInfo'] 	= $agentInfo;
-                $response['status'] 	= 	true;
-                $response['message']	=	'Record is exist';
-            } else {
-                $response['agentInfo'] 	= "";
-                $response['status'] 	= 	false;
-                $response['message']	=	'Record is not exist.Please try again';
-            }
-        }
-        echo json_encode($response);
-    }
-
-    //Store Cost Assignment Form Values
-    public function savecostassignment(Request $request)
-    {
-        if ($request->isMethod('post'))
-        {
-            $requestData = $request->all();
-
-            $disbursements = array_values(array_filter($requestData['disbursements'] ?? [], fn($d) => isset($d['amount']) && floatval($d['amount']) > 0));
-            $TotalDisbursements = array_sum(array_column($disbursements, 'amount'));
-            $TotalBLOCKFEE = floatval($requestData['Block_1_Ex_Tax'] ?? 0)
-                           + floatval($requestData['Block_2_Ex_Tax'] ?? 0)
-                           + floatval($requestData['Block_3_Ex_Tax'] ?? 0);
-
-            $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id', $requestData['client_id'])->where('client_matter_id', $requestData['client_matter_id'])->count();
-
-            if ($cost_assignment_cnt > 0) {
-                $costAssignment = \App\Models\CostAssignmentForm::where('client_id', $requestData['client_id'])
-                    ->where('client_matter_id', $requestData['client_matter_id'])
-                    ->first();
-                if ($costAssignment) {
-                    $saved = $costAssignment->update([
-                        'agent_id'           => $requestData['agent_id'],
-                        'Block_1_Ex_Tax'     => $requestData['Block_1_Ex_Tax'] ?? 0,
-                        'Block_2_Ex_Tax'     => $requestData['Block_2_Ex_Tax'] ?? 0,
-                        'Block_3_Ex_Tax'     => $requestData['Block_3_Ex_Tax'] ?? 0,
-                        'additional_fee_1'   => $requestData['additional_fee_1'] ?? 0,
-                        'TotalBLOCKFEE'      => $TotalBLOCKFEE,
-                        'TotalDisbursements' => $TotalDisbursements,
-                    ]);
-                    if ($saved) {
-                        $costAssignment->disbursementLines()->delete();
-                        foreach ($disbursements as $i => $d) {
-                            $costAssignment->disbursementLines()->create([
-                                'nature'      => $d['nature'] ?? 'other',
-                                'description' => $d['description'] ?? null,
-                                'amount'      => floatval($d['amount']),
-                                'sort_order'  => $i,
-                            ]);
-                        }
-                    }
-                }
-            } else {
-                $obj = new CostAssignmentForm;
-                $obj->client_id          = $requestData['client_id'];
-                $obj->client_matter_id   = $requestData['client_matter_id'];
-                $obj->agent_id           = $requestData['agent_id'];
-                $obj->Block_1_Ex_Tax     = $requestData['Block_1_Ex_Tax'] ?? 0;
-                $obj->Block_2_Ex_Tax     = $requestData['Block_2_Ex_Tax'] ?? 0;
-                $obj->Block_3_Ex_Tax     = $requestData['Block_3_Ex_Tax'] ?? 0;
-                $obj->additional_fee_1   = $requestData['additional_fee_1'] ?? 0;
-                $obj->TotalBLOCKFEE      = $TotalBLOCKFEE;
-                $obj->TotalDisbursements = $TotalDisbursements;
-                $saved = $obj->save();
-                if ($saved) {
-                    foreach ($disbursements as $i => $d) {
-                        $obj->disbursementLines()->create([
-                            'nature'      => $d['nature'] ?? 'other',
-                            'description' => $d['description'] ?? null,
-                            'amount'      => floatval($d['amount']),
-                            'sort_order'  => $i,
-                        ]);
-                    }
-                }
-            }
-            if (!$saved) {
-                $response['status'] 	= 	false;
-                $response['message']	=	'Cost assignment not added successfully.Please try again';
-            } else {
-                $response['status'] 	= 	true;
-                $response['message']	=	'Cost assignment added successfully';
-                
-                // Log activity
-                $action = ($cost_assignment_cnt > 0) ? 'updated' : 'created';
-                $matter = \App\Models\ClientMatter::find($requestData['client_matter_id']);
-                $matterName = $matter ? $matter->title : 'N/A';
-                
-                $activity = new \App\Models\ActivitiesLog;
-                $activity->client_id = $requestData['client_id'];
-                $activity->created_by = Auth::user()->id;
-                $activity->subject = $action . ' cost assignment form';
-                $activity->description = '<p>Cost assignment form has been ' . $action . ' for matter: <strong>' . $matterName . '</strong></p>';
-                $activity->task_status = 0;
-                $activity->pin = 0;
-                $activity->save();
             }
         }
         echo json_encode($response);
@@ -4622,19 +4456,8 @@ class ClientsController extends Controller
         return response()->json(['success' => false, 'message' => 'Only client-generated categories can be deleted.']);
     }*/
 
-    //Check same client_id and same client matter is already exist in db or not
-    public function checkCostAssignment(Request $request)
-    {
-        $exists = \App\Models\CostAssignmentForm::where('client_id', $request->client_id)
-                    ->where('client_matter_id', $request->client_matter_id)
-                    ->exists();
-
-        return response()->json(['exists' => $exists]);
-    }
-
     /**
-     * Create an active client_matters row for a lead from the CRM client edit page (no cost assignment).
-     * client_matters.client_id is admins.id (same pattern as savecostassignmentlead).
+     * Store a court hearing for a client matter.
      */
     public function storeCourtHearing(Request $request)
     {
@@ -4957,129 +4780,6 @@ class ClientsController extends Controller
         }
 
         return null;
-    }
-
-    //Store Cost Assignment Form Values of Lead
-    public function savecostassignmentlead(Request $request)
-    {   
-        $response = ['status' => false, 'message' => 'An error occurred. Please try again.'];
-        if ($request->isMethod('post'))
-        {
-            $requestData = $request->all(); //dd($requestData);
-            $clientForMatter = Admin::find($requestData['client_id'] ?? null);
-            if (!$clientForMatter || ! $clientForMatter->isCrmClientOrLeadSubject()) {
-                $response['message'] = 'Invalid client.';
-                echo json_encode($response);
-                return;
-            }
-            if (! StaffClientVisibility::canAccessClientOrLead((int) $clientForMatter->id, Auth::user())) {
-                $response['message'] = config('constants.unauthorized');
-                echo json_encode($response);
-                return;
-            }
-            $matterId = (int) ($requestData['matter_id'] ?? 0);
-            if (! Matter::allowedForClientIsCompany($matterId, (bool) $clientForMatter->is_company)) {
-                $response['message'] = 'This matter type is not valid for this client record.';
-                echo json_encode($response);
-                return;
-            }
-            //insert into client matter table
-            $obj5 = new ClientMatter();
-            $obj5->user_id = Auth::user()->id;
-            $obj5->client_id = $requestData['client_id'];
-            $obj5->office_id = $requestData['office_id'] ?? optional(Auth::user())->office_id ?? null;
-            $obj5->sel_legal_practitioner = $requestData['legal_practitioner'];
-            $obj5->sel_person_responsible = $requestData['person_responsible'];
-            $obj5->sel_person_assisting = $requestData['person_assisting'];
-            $obj5->sel_matter_id = $requestData['matter_id'];
-            
-            $obj5->client_unique_matter_no = \App\Models\ClientMatter::generateUniqueMatterNumber((int) $requestData['client_id'], (int) $requestData['matter_id']);
-            $matterType = Matter::find($requestData['matter_id']);
-            $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
-            $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
-                ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
-            $obj5->workflow_id = $workflowId;
-            $obj5->workflow_stage_id = $firstStageId;
-            $obj5->matter_status = 1; // Active by default
-            MatterAssigneeDefaults::applyMissingToNewMatter($obj5);
-            $saved5 = $obj5->save();
-            $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
-            if($saved5) 
-            {
-                \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $requestData['client_id']);
-
-                $disbursements = array_values(array_filter($requestData['disbursements'] ?? [], fn($d) => isset($d['amount']) && floatval($d['amount']) > 0));
-                $TotalDisbursements = array_sum(array_column($disbursements, 'amount'));
-                $TotalBLOCKFEE = floatval($requestData['Block_1_Ex_Tax'] ?? 0)
-                               + floatval($requestData['Block_2_Ex_Tax'] ?? 0)
-                               + floatval($requestData['Block_3_Ex_Tax'] ?? 0);
-
-                $obj = new CostAssignmentForm;
-                $obj->client_id          = $requestData['client_id'];
-                $obj->client_matter_id   = $lastInsertedId;
-                $obj->agent_id           = $requestData['legal_practitioner'];
-                $obj->Block_1_Ex_Tax     = $requestData['Block_1_Ex_Tax'] ?? 0;
-                $obj->Block_2_Ex_Tax     = $requestData['Block_2_Ex_Tax'] ?? 0;
-                $obj->Block_3_Ex_Tax     = $requestData['Block_3_Ex_Tax'] ?? 0;
-                $obj->additional_fee_1   = $requestData['additional_fee_1'] ?? 0;
-                $obj->TotalBLOCKFEE      = $TotalBLOCKFEE;
-                $obj->TotalDisbursements = $TotalDisbursements;
-                $saved = $obj->save();
-                if ($saved) {
-                    foreach ($disbursements as $i => $d) {
-                        $obj->disbursementLines()->create([
-                            'nature'      => $d['nature'] ?? 'other',
-                            'description' => $d['description'] ?? null,
-                            'amount'      => floatval($d['amount']),
-                            'sort_order'  => $i,
-                        ]);
-                    }
-                }
-                if (!$saved) 
-                {
-                    $response['status'] 	= 	false;
-                    $response['message']	=	'Cost assignment not added successfully.Please try again';
-                } 
-                else 
-                {
-                    $response['status'] 	= 	true;
-                    $response['message']	=	'Cost assignment added successfully';
-                }
-            }
-        }
-        echo json_encode($response);
-    }
-
-    // Get cost assignment Legal Practitioner detail Lead
-    public function getCostAssignmentLegalPractitionerDetailLead(Request $request)
-    {
-        $requestData = 	$request->all(); //dd($requestData);
-        //get matter info
-		$matterInfo = DB::table('matters')->where('id',$requestData['client_matter_id'])->first();
-		//dd($matterInfo);
-		if($matterInfo){
-			$response['matterInfo'] = $matterInfo;
-			$response['status'] 	= 	true;
-			$response['message']	=	'Record is exist';
-		} else {
-			$response['matterInfo'] = "";
-			$response['status'] 	= 	false;
-			$response['message']	=	'Record is not exist.Please try again';
-		}
-
-		//get cost assignment matter fee
-		$costassignmentmatterInfo = DB::table('cost_assignment_forms')->where('client_id',$requestData['client_id'])->where('client_matter_id',$requestData['client_matter_id'])->first();
-		if($costassignmentmatterInfo){
-			$disbursementLines = DB::table('disbursement_lines')
-				->where('cost_assignment_form_id', $costassignmentmatterInfo->id)
-				->orderBy('sort_order')
-				->get();
-			$costassignmentmatterInfo->disbursement_lines = $disbursementLines;
-			$response['cost_assignment_matterInfo'] = $costassignmentmatterInfo;
-		} else {
-			$response['cost_assignment_matterInfo'] = "";
-		}
-		echo json_encode($response);
     }
 
     //Upload agreement in PDF
@@ -5428,7 +5128,7 @@ class ClientsController extends Controller
 	}
 
     /**
-     * Convert lead to client only (no new matter - for leads who already have matters from cost assignment)
+     * Convert lead to client only (no new matter - for leads who already have matters)
      */
     public function convertLeadOnly(Request $request)
     {
