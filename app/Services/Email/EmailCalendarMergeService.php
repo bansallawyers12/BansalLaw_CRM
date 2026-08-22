@@ -173,15 +173,28 @@ class EmailCalendarMergeService
      */
     public function extractEvents(EmailLog $emailLog, array $icsAttachments = []): array
     {
-        $events = [];
+        $icsEvents = [];
+
+        $hadIcsSource = false;
 
         foreach ($icsAttachments as $attachment) {
-            $events = array_merge($events, $this->parseIcsContent($attachment['content'] ?? '', 'ics_attachment'));
+            $content = (string) ($attachment['content'] ?? '');
+            if (trim($content) === '') {
+                continue;
+            }
+            $hadIcsSource = true;
+            $icsEvents = array_merge($icsEvents, $this->parseIcsContent($content, 'ics_attachment'));
         }
 
         $inlineIcs = $this->extractInlineIcsBlocks(strip_tags((string) ($emailLog->message ?? '')));
         foreach ($inlineIcs as $icsBlock) {
-            $events = array_merge($events, $this->parseIcsContent($icsBlock, 'ics_inline'));
+            $hadIcsSource = true;
+            $icsEvents = array_merge($icsEvents, $this->parseIcsContent($icsBlock, 'ics_inline'));
+        }
+
+        // Prefer ICS when present — including cancelled-only invites — so body text cannot double-create.
+        if ($hadIcsSource) {
+            return $this->dedupeEvents($icsEvents);
         }
 
         $plainText = $this->plainTextFromEmail($emailLog);
@@ -189,9 +202,8 @@ class EmailCalendarMergeService
             (string) ($emailLog->subject ?? ''),
             $plainText
         );
-        $events = array_merge($events, $textEvents);
 
-        return $this->dedupeEvents($events);
+        return $this->dedupeEvents($textEvents);
     }
 
     /**
@@ -240,11 +252,20 @@ class EmailCalendarMergeService
         }
 
         $normalized = str_replace(["\r\n", "\r"], "\n", $icsContent);
+        if ($this->icsCalendarIsCancelled($normalized)) {
+            return [];
+        }
+
         $events = [];
         $blocks = preg_split('/BEGIN:VEVENT\s*/i', $normalized) ?: [];
 
         foreach ($blocks as $block) {
             if (! str_contains(strtoupper($block), 'END:VEVENT')) {
+                continue;
+            }
+
+            $status = strtoupper((string) ($this->icsFieldValue($block, 'STATUS') ?? ''));
+            if (in_array($status, ['CANCELLED', 'CANCELED'], true)) {
                 continue;
             }
 
@@ -436,18 +457,23 @@ class EmailCalendarMergeService
             ->where('client_id', $clientId)
             ->whereDate('hearing_date', $hearingDate);
 
-        if ($hearingTime !== null) {
+        $hearingTime = is_string($hearingTime) ? trim($hearingTime) : $hearingTime;
+        if ($hearingTime === '') {
+            $hearingTime = null;
+        }
+
+        // All-day and timed hearings are distinct — never collapse one into the other.
+        if ($hearingTime === null) {
+            $query->whereNull('hearing_time');
+        } else {
             $query->where(function ($q) use ($hearingTime) {
-                $q->whereNull('hearing_time')
-                    ->orWhereTime('hearing_time', $hearingTime)
+                $q->whereTime('hearing_time', $hearingTime)
                     ->orWhere('hearing_time', $hearingTime)
                     ->orWhere('hearing_time', $hearingTime . ':00');
             });
         }
 
-        $id = $query->orderByRaw('CASE WHEN hearing_time IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('hearing_time')
-            ->value('id');
+        $id = $query->value('id');
 
         return $id ? (int) $id : null;
     }
@@ -705,6 +731,15 @@ class EmailCalendarMergeService
         return array_values(array_filter($matches[0] ?? []));
     }
 
+    protected function icsCalendarIsCancelled(string $icsContent): bool
+    {
+        if (! preg_match('/^METHOD(?:;[^:]*)?:(.*)$/mi', $icsContent, $match)) {
+            return false;
+        }
+
+        return strtoupper(trim(str_replace('\\,', ',', $match[1]))) === 'CANCEL';
+    }
+
     protected function icsFieldValue(string $block, string $field): ?string
     {
         if (! preg_match('/^' . preg_quote($field, '/') . '(?:;[^:]*)?:(.*)$/mi', $block, $match)) {
@@ -780,7 +815,9 @@ class EmailCalendarMergeService
                     ->orWhere('calendar_type', $this->calendarTypeForEvent($event['event_type']));
             });
 
-        if (! ($event['is_all_day'] ?? false)) {
+        if ($event['is_all_day'] ?? false) {
+            $query->whereTime('starts_at', '00:00:00');
+        } else {
             $query->whereTime('starts_at', $event['starts_at']->format('H:i:s'));
         }
 

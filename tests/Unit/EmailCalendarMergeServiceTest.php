@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\EmailLog;
 use App\Services\Email\EmailCalendarMergeService;
 use App\Support\CalendarEventText;
 use Carbon\Carbon;
@@ -123,35 +124,47 @@ class EmailCalendarMergeServiceTest extends TestCase
     }
 
     #[Test]
-    public function extract_events_dedupes_same_datetime_across_noisy_titles(): void
+    public function extract_events_skips_text_when_ics_is_present(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-21 10:00:00', 'Australia/Melbourne'));
         config(['app.timezone' => 'Australia/Melbourne']);
 
-        $email = new class {
-            public $subject = 'Listing';
-            public $message = "Court hearing at Federal Court on 30/08/2026 at 12:00 PM\nHearing listed Federal Court 30/08/2026 12:00pm";
-            public $text_preview = '';
-            public function attachments()
-            {
-                return new class {
-                    public function get()
-                    {
-                        return collect();
-                    }
-                };
-            }
-        };
+        $email = new EmailLog([
+            'subject' => 'Court listing',
+            'message' => 'Court hearing at Federal Court on 30/08/2026',
+            'text_preview' => '',
+        ]);
 
-        // Use parseText directly then dedupe via extract path reflection-free: call parse twice merge.
-        $service = $this->service();
-        $a = $service->parseTextForScheduledEvents('Listing', (string) $email->message);
-        $this->assertNotEmpty($a);
+        $ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Directions Hearing\nDTSTART:20260830T100000\nDTEND:20260830T110000\nLOCATION:Federal Court\nEND:VEVENT\nEND:VCALENDAR";
 
-        $ref = new \ReflectionClass($service);
-        $dedupe = $ref->getMethod('dedupeEvents');
-        $dedupe->setAccessible(true);
-        $deduped = $dedupe->invoke($service, array_merge($a, $a));
-        $this->assertCount(1, $deduped);
+        $events = $this->service()->extractEvents($email, [
+            ['filename' => 'invite.ics', 'content' => $ics],
+        ]);
+
+        $this->assertCount(1, $events);
+        $this->assertSame('ics_attachment', $events[0]['source']);
+        $this->assertFalse($events[0]['is_all_day']);
+        $this->assertSame('2026-08-30 10:00:00', $events[0]['starts_at']->format('Y-m-d H:i:s'));
+    }
+
+    #[Test]
+    public function extract_events_skips_text_when_ics_is_a_cancellation(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-21 10:00:00', 'Australia/Melbourne'));
+        config(['app.timezone' => 'Australia/Melbourne']);
+
+        $email = new EmailLog([
+            'subject' => 'Court listing',
+            'message' => 'Court hearing at Federal Court on 30/08/2026 at 10:00 AM',
+            'text_preview' => '',
+        ]);
+
+        $ics = "BEGIN:VCALENDAR\nMETHOD:CANCEL\nBEGIN:VEVENT\nSUMMARY:Directions Hearing\nDTSTART:20260830T100000\nDTEND:20260830T110000\nSTATUS:CANCELLED\nEND:VEVENT\nEND:VCALENDAR";
+
+        $events = $this->service()->extractEvents($email, [
+            ['filename' => 'invite.ics', 'content' => $ics],
+        ]);
+
+        $this->assertSame([], $events);
     }
 }
