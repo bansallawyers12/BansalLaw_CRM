@@ -14,7 +14,6 @@ use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\AssigneeController;
 use App\Http\Controllers\CRM\ActiveStaffController;
 use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
-// use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\CRM\TrustAccountingAdminController;
 use App\Http\Controllers\Auth\AdminLoginController;
@@ -208,21 +207,7 @@ Route::middleware(['auth:admin'])->group(function () {
             Route::post('/compare-agents', [LeadAnalyticsController::class, 'compareAgents'])->name('compare');
         });
 
-        // Legacy routes (deprecated functionality)
-        Route::get('/notes/delete/{id}', [LeadController::class, 'leaddeleteNotes'])->name('notes.delete');
-        Route::get('/pin/{id}', [LeadController::class, 'leadPin'])->name('pin');
     });
-
-    // Global route (outside leads prefix) - kept for backward compatibility
-    Route::get('/get-notedetail', [LeadController::class, 'getnotedetail'])->name('get-notedetail');
-
-    /*---------- Email Templates ----------*/
-    // DISABLED: email_templates table has been deleted
-    // Route::get('/email_templates', [EmailTemplateController::class, 'index'])->name('email.index');
-    // Route::get('/email_templates/create', [EmailTemplateController::class, 'create'])->name('email.create');
-    // Route::post('/email_templates/store', [EmailTemplateController::class, 'store'])->name('email.store');
-    // Route::get('/edit_email_template/{id}', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template');
-    // Route::post('/edit_email_template', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template.update');
 
     /*--------------------------------------------------
 	| SECTION: Client Management Routes
