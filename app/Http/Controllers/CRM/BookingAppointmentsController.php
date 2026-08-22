@@ -350,17 +350,25 @@ class BookingAppointmentsController extends Controller
         }
 
         $user = Auth::guard('admin')->user();
-        $startsAt = Carbon::parse($validated['starts_at'], config('app.timezone'));
-        $endsAt = ! empty($validated['ends_at'])
-            ? Carbon::parse($validated['ends_at'], config('app.timezone'))
-            : $startsAt->copy()->addHour();
+        $isAllDay = (bool) ($validated['is_all_day'] ?? false);
+        [$startsAt, $endsAt] = $this->normalizeStaffCalendarEventWindow(
+            Carbon::parse($validated['starts_at'], config('app.timezone')),
+            ! empty($validated['ends_at'])
+                ? Carbon::parse($validated['ends_at'], config('app.timezone'))
+                : null,
+            $isAllDay
+        );
+
+        if ($error = $this->staffCalendarEventOutsideBusinessHoursMessage($startsAt, $endsAt, $isAllDay)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
+        }
 
         $event = StaffCalendarEvent::create([
             'title'            => $validated['title'],
             'event_type'       => $validated['event_type'],
             'starts_at'        => $startsAt,
             'ends_at'          => $endsAt,
-            'is_all_day'       => (bool) ($validated['is_all_day'] ?? false),
+            'is_all_day'       => $isAllDay,
             'calendar_type'    => $validated['calendar_type'] ?? null,
             'client_id'        => $validated['client_id'] ?? null,
             'client_matter_id' => $validated['client_matter_id'] ?? null,
@@ -402,12 +410,26 @@ class BookingAppointmentsController extends Controller
             return response()->json(['success' => false, 'message' => 'You do not have access to this client.'], 403);
         }
 
-        if (isset($validated['starts_at'])) {
-            $validated['starts_at'] = Carbon::parse($validated['starts_at'], config('app.timezone'));
+        $isAllDay = array_key_exists('is_all_day', $validated)
+            ? (bool) $validated['is_all_day']
+            : (bool) $event->is_all_day;
+
+        $startsAt = isset($validated['starts_at'])
+            ? Carbon::parse($validated['starts_at'], config('app.timezone'))
+            : Carbon::parse($event->starts_at, config('app.timezone'));
+        $endsAt = array_key_exists('ends_at', $validated) && $validated['ends_at'] !== null
+            ? Carbon::parse($validated['ends_at'], config('app.timezone'))
+            : ($event->ends_at ? Carbon::parse($event->ends_at, config('app.timezone')) : null);
+
+        [$startsAt, $endsAt] = $this->normalizeStaffCalendarEventWindow($startsAt, $endsAt, $isAllDay);
+
+        if ($error = $this->staffCalendarEventOutsideBusinessHoursMessage($startsAt, $endsAt, $isAllDay)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
         }
-        if (array_key_exists('ends_at', $validated) && $validated['ends_at'] !== null) {
-            $validated['ends_at'] = Carbon::parse($validated['ends_at'], config('app.timezone'));
-        }
+
+        $validated['starts_at'] = $startsAt;
+        $validated['ends_at'] = $endsAt;
+        $validated['is_all_day'] = $isAllDay;
 
         $event->update($validated);
 
@@ -415,6 +437,43 @@ class BookingAppointmentsController extends Controller
             'success' => true,
             'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
         ]);
+    }
+
+    /**
+     * Clamp all-day events to 9:00–18:00 and ensure timed events have an end.
+     *
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     */
+    protected function normalizeStaffCalendarEventWindow(Carbon $startsAt, ?Carbon $endsAt, bool $isAllDay): array
+    {
+        if ($isAllDay) {
+            $day = $startsAt->copy()->timezone(config('app.timezone'))->startOfDay();
+
+            return [$day->copy()->setTime(9, 0), $day->copy()->setTime(18, 0)];
+        }
+
+        $endsAt = $endsAt ?: $startsAt->copy()->addHour();
+
+        return [$startsAt, $endsAt];
+    }
+
+    /**
+     * Timed personal/staff events must stay within 9:00 AM – 6:00 PM.
+     */
+    protected function staffCalendarEventOutsideBusinessHoursMessage(Carbon $startsAt, Carbon $endsAt, bool $isAllDay): ?string
+    {
+        if ($isAllDay) {
+            return null;
+        }
+
+        $startMinutes = ((int) $startsAt->format('H') * 60) + (int) $startsAt->format('i');
+        $endMinutes = ((int) $endsAt->format('H') * 60) + (int) $endsAt->format('i');
+
+        if ($startMinutes < (9 * 60) || $endMinutes > (18 * 60) || $endMinutes <= $startMinutes) {
+            return 'Events can only be booked between 9:00 AM and 6:00 PM.';
+        }
+
+        return null;
     }
 
     public function destroyCalendarEvent(int $id)

@@ -412,67 +412,354 @@
     }
 
     function initPersonalEventModal(calendar) {
+        var BUSINESS_START = '09:00';
+        var BUSINESS_END = '18:00';
         var addBtn = document.getElementById('btnAddPersonalEvent');
         var saveBtn = document.getElementById('personalEventSaveBtn');
         var allDayEl = document.getElementById('personalEventAllDay');
         var modalEl = document.getElementById('personalEventModal');
+        var startTimeEl = document.getElementById('personalEventStartTime');
+        var endTimeEl = document.getElementById('personalEventEndTime');
+        var timeRow = document.getElementById('personalEventTimeRow');
+        var typeInput = document.getElementById('personalEventType');
+        var typeChips = document.getElementById('personalEventTypeChips');
+        var durationChips = document.getElementById('personalEventDurationChips');
+        var dateInput = document.getElementById('personalEventDate');
+        var titleInput = document.getElementById('personalEventTitle');
+        var summaryEl = document.getElementById('personalEventSummary');
+        var summaryTextEl = document.getElementById('personalEventSummaryText');
+        var selectedDurationMinutes = 60;
 
         if (!addBtn || !saveBtn || !modalEl) return;
 
-        addBtn.addEventListener('click', function () {
-            var today = todayDateStr(calendarElTz());
-            var dateInput = document.getElementById('personalEventDate');
-            document.getElementById('personalEventTitle').value = '';
-            document.getElementById('personalEventType').value = 'meeting';
-            dateInput.value = today;
-            dateInput.min = today;
-            document.getElementById('personalEventStartTime').value = '09:00';
-            document.getElementById('personalEventEndTime').value = '10:00';
-            document.getElementById('personalEventAllDay').checked = false;
-            document.getElementById('personalEventLocation').value = '';
-            document.getElementById('personalEventNotes').value = '';
-            document.getElementById('personalEventError').classList.add('d-none');
+        function timeToMinutes(value) {
+            var parts = String(value || '').split(':');
+            var h = parseInt(parts[0], 10);
+            var m = parseInt(parts[1], 10);
+            if (isNaN(h) || isNaN(m)) {
+                return null;
+            }
+            return (h * 60) + m;
+        }
 
+        function minutesToTime(total) {
+            var h = Math.floor(total / 60);
+            var m = total % 60;
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        function formatDisplayTime(value) {
+            var mins = timeToMinutes(value);
+            if (mins === null) {
+                return value;
+            }
+            var h = Math.floor(mins / 60);
+            var m = mins % 60;
+            var suffix = h >= 12 ? 'PM' : 'AM';
+            var hour12 = h % 12;
+            if (hour12 === 0) hour12 = 12;
+            return hour12 + ':' + String(m).padStart(2, '0') + ' ' + suffix;
+        }
+
+        function formatDisplayDate(value) {
+            if (!value) {
+                return 'Pick a date';
+            }
+            try {
+                var d = new Date(value + 'T12:00:00');
+                return d.toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                });
+            } catch (e) {
+                return value;
+            }
+        }
+
+        function clampTime(value, minValue, maxValue) {
+            var mins = timeToMinutes(value);
+            var minMins = timeToMinutes(minValue);
+            var maxMins = timeToMinutes(maxValue);
+            if (mins === null) {
+                return minValue;
+            }
+            if (mins < minMins) {
+                return minValue;
+            }
+            if (mins > maxMins) {
+                return maxValue;
+            }
+            return value.length === 5 ? value : value.slice(0, 5);
+        }
+
+        function setActiveChip(group, attr, value) {
+            if (!group) {
+                return;
+            }
+            group.querySelectorAll('.pe-modal__chip').forEach(function (chip) {
+                chip.classList.toggle('is-active', chip.getAttribute(attr) === String(value));
+            });
+        }
+
+        function applyDurationFromStart(minutes) {
+            if (!startTimeEl || !endTimeEl || (allDayEl && allDayEl.checked)) {
+                return;
+            }
+            selectedDurationMinutes = minutes;
+            setActiveChip(durationChips, 'data-minutes', minutes);
+            var startMins = timeToMinutes(clampTime(startTimeEl.value || BUSINESS_START, BUSINESS_START, '17:45'));
+            if (startMins === null) {
+                return;
+            }
+            var endMins = Math.min(startMins + minutes, 18 * 60);
+            if (endMins <= startMins) {
+                endMins = Math.min(startMins + 15, 18 * 60);
+            }
+            startTimeEl.value = minutesToTime(startMins);
+            endTimeEl.value = minutesToTime(endMins);
+            syncTimeBounds(false);
+            updateSummary();
+        }
+
+        function syncTimeBounds(updateDurationChip) {
+            if (!startTimeEl || !endTimeEl) {
+                return;
+            }
+            startTimeEl.value = clampTime(startTimeEl.value || BUSINESS_START, BUSINESS_START, '17:45');
+            var startMins = timeToMinutes(startTimeEl.value);
+            var minEndMins = Math.min((startMins || (9 * 60)) + 15, 18 * 60);
+            var minEnd = minutesToTime(minEndMins);
+            endTimeEl.min = minEnd;
+            endTimeEl.value = clampTime(endTimeEl.value || '10:00', minEnd, BUSINESS_END);
+
+            if (updateDurationChip !== false && durationChips) {
+                var endMins = timeToMinutes(endTimeEl.value);
+                var duration = (endMins || 0) - (startMins || 0);
+                selectedDurationMinutes = duration;
+                var matched = false;
+                durationChips.querySelectorAll('.pe-modal__chip').forEach(function (chip) {
+                    var mins = parseInt(chip.getAttribute('data-minutes'), 10);
+                    var active = mins === duration;
+                    chip.classList.toggle('is-active', active);
+                    if (active) matched = true;
+                });
+                if (!matched) {
+                    durationChips.querySelectorAll('.pe-modal__chip').forEach(function (chip) {
+                        chip.classList.remove('is-active');
+                    });
+                }
+            }
+            updateSummary();
+        }
+
+        function setTimeInputsEnabled(enabled) {
+            if (startTimeEl) startTimeEl.disabled = !enabled;
+            if (endTimeEl) endTimeEl.disabled = !enabled;
+            if (timeRow) timeRow.classList.toggle('is-disabled', !enabled);
+            if (durationChips) durationChips.classList.toggle('is-disabled', !enabled);
+            updateSummary();
+        }
+
+        function updateSummary() {
+            if (!summaryTextEl) {
+                return;
+            }
+            var dateLabel = formatDisplayDate(dateInput ? dateInput.value : '');
+            var typeLabel = (typeInput && typeInput.value)
+                ? typeInput.value.charAt(0).toUpperCase() + typeInput.value.slice(1)
+                : 'Meeting';
+            var text;
+
+            if (allDayEl && allDayEl.checked) {
+                text = dateLabel + ' · All day · ' + typeLabel;
+            } else {
+                var start = startTimeEl ? startTimeEl.value : BUSINESS_START;
+                var end = endTimeEl ? endTimeEl.value : '10:00';
+                var startMins = timeToMinutes(start);
+                var endMins = timeToMinutes(end);
+                var durationMins = (startMins !== null && endMins !== null) ? Math.max(endMins - startMins, 0) : 0;
+                var durationLabel = durationMins >= 60
+                    ? ((durationMins % 60 === 0)
+                        ? (durationMins / 60) + 'h'
+                        : Math.floor(durationMins / 60) + 'h ' + (durationMins % 60) + 'm')
+                    : durationMins + 'm';
+                text = dateLabel + ' · ' + formatDisplayTime(start) + ' – ' + formatDisplayTime(end) + ' · ' + durationLabel + ' · ' + typeLabel;
+            }
+
+            summaryTextEl.textContent = text;
+            if (summaryEl) {
+                summaryEl.classList.toggle('is-ready', !!(dateInput && dateInput.value));
+            }
+        }
+
+        function showError(message) {
+            var errorEl = document.getElementById('personalEventError');
+            if (!errorEl) {
+                return;
+            }
+            errorEl.textContent = message;
+            errorEl.classList.remove('d-none');
+            if (titleInput && !titleInput.value.trim()) {
+                titleInput.classList.add('is-invalid');
+            }
+            if (dateInput && !dateInput.value) {
+                dateInput.classList.add('is-invalid');
+            }
+        }
+
+        function clearError() {
+            var errorEl = document.getElementById('personalEventError');
+            if (!errorEl) {
+                return;
+            }
+            errorEl.textContent = '';
+            errorEl.classList.add('d-none');
+            if (titleInput) titleInput.classList.remove('is-invalid');
+            if (dateInput) dateInput.classList.remove('is-invalid');
+        }
+
+        function openModal() {
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                 bootstrap.Modal.getOrCreateInstance(modalEl).show();
             } else if (typeof $ !== 'undefined') {
                 $(modalEl).modal('show');
             }
+            window.setTimeout(function () {
+                if (titleInput) titleInput.focus();
+            }, 180);
+        }
+
+        function resetForm(preferredDate) {
+            var today = todayDateStr(calendarElTz());
+            if (titleInput) titleInput.value = '';
+            if (typeInput) typeInput.value = 'meeting';
+            setActiveChip(typeChips, 'data-type', 'meeting');
+            if (dateInput) {
+                dateInput.value = preferredDate || today;
+                dateInput.min = today;
+            }
+            if (startTimeEl) startTimeEl.value = BUSINESS_START;
+            if (endTimeEl) endTimeEl.value = '10:00';
+            if (allDayEl) allDayEl.checked = false;
+            document.getElementById('personalEventLocation').value = '';
+            document.getElementById('personalEventNotes').value = '';
+            selectedDurationMinutes = 60;
+            setActiveChip(durationChips, 'data-minutes', 60);
+            clearError();
+            setTimeInputsEnabled(true);
+            syncTimeBounds();
+            updateSummary();
+        }
+
+        addBtn.addEventListener('click', function () {
+            resetForm();
+            openModal();
         });
 
-        if (allDayEl) {
-            allDayEl.addEventListener('change', function () {
-                var disabled = allDayEl.checked;
-                document.getElementById('personalEventStartTime').disabled = disabled;
-                document.getElementById('personalEventEndTime').disabled = disabled;
+        if (typeChips) {
+            typeChips.addEventListener('click', function (e) {
+                var chip = e.target.closest('.pe-modal__chip');
+                if (!chip) return;
+                var type = chip.getAttribute('data-type');
+                if (!type || !typeInput) return;
+                typeInput.value = type;
+                setActiveChip(typeChips, 'data-type', type);
+                updateSummary();
             });
         }
 
+        if (durationChips) {
+            durationChips.addEventListener('click', function (e) {
+                var chip = e.target.closest('.pe-modal__chip');
+                if (!chip || (allDayEl && allDayEl.checked)) return;
+                var minutes = parseInt(chip.getAttribute('data-minutes'), 10);
+                if (!minutes) return;
+                applyDurationFromStart(minutes);
+            });
+        }
+
+        if (startTimeEl) {
+            startTimeEl.addEventListener('change', function () {
+                syncTimeBounds();
+                if (selectedDurationMinutes) {
+                    applyDurationFromStart(selectedDurationMinutes);
+                }
+            });
+        }
+        if (endTimeEl) {
+            endTimeEl.addEventListener('change', function () {
+                syncTimeBounds();
+            });
+        }
+        if (dateInput) {
+            dateInput.addEventListener('change', updateSummary);
+        }
+        if (titleInput) {
+            titleInput.addEventListener('input', function () {
+                titleInput.classList.remove('is-invalid');
+            });
+        }
+
+        if (allDayEl) {
+            allDayEl.addEventListener('change', function () {
+                setTimeInputsEnabled(!allDayEl.checked);
+            });
+        }
+
+        modalEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                saveBtn.click();
+            }
+        });
+
         saveBtn.addEventListener('click', async function () {
-            var title = document.getElementById('personalEventTitle').value.trim();
-            var date = document.getElementById('personalEventDate').value;
-            var errorEl = document.getElementById('personalEventError');
-            var allDay = document.getElementById('personalEventAllDay').checked;
-            var startTime = document.getElementById('personalEventStartTime').value || '09:00';
-            var endTime = document.getElementById('personalEventEndTime').value || '10:00';
+            var title = titleInput ? titleInput.value.trim() : '';
+            var date = dateInput ? dateInput.value : '';
+            var allDay = allDayEl && allDayEl.checked;
+            var startTime = BUSINESS_START;
+            var endTime = BUSINESS_END;
+
+            clearError();
 
             if (!title || !date) {
-                errorEl.textContent = 'Title and date are required.';
-                errorEl.classList.remove('d-none');
+                showError('Title and date are required.');
                 return;
             }
 
             if (isPastDateStr(date, calendarElTz())) {
-                errorEl.textContent = 'Please choose today or a future date.';
-                errorEl.classList.remove('d-none');
+                showError('Please choose today or a future date.');
                 return;
             }
 
-            var startsAt = allDay ? date + 'T00:00:00' : date + 'T' + startTime + ':00';
-            var endsAt = allDay ? date + 'T23:59:59' : date + 'T' + endTime + ':00';
+            if (!allDay) {
+                syncTimeBounds();
+                startTime = clampTime(startTimeEl.value || BUSINESS_START, BUSINESS_START, '17:45');
+                endTime = clampTime(endTimeEl.value || '10:00', '09:15', BUSINESS_END);
+                var startMins = timeToMinutes(startTime);
+                var endMins = timeToMinutes(endTime);
+
+                if (startMins === null || endMins === null) {
+                    showError('Please choose a valid start and end time.');
+                    return;
+                }
+                if (startMins < (9 * 60) || endMins > (18 * 60)) {
+                    showError('Events can only be booked between 9:00 AM and 6:00 PM.');
+                    return;
+                }
+                if (endMins <= startMins) {
+                    showError('End time must be after start time.');
+                    return;
+                }
+            }
+
+            var startsAt = date + 'T' + startTime + ':00';
+            var endsAt = date + 'T' + endTime + ':00';
 
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving…';
 
             try {
                 var response = await fetch(STORE_EVENT_API, {
@@ -486,7 +773,7 @@
                     },
                     body: JSON.stringify({
                         title: title,
-                        event_type: document.getElementById('personalEventType').value,
+                        event_type: typeInput ? typeInput.value : 'meeting',
                         starts_at: startsAt,
                         ends_at: endsAt,
                         is_all_day: allDay,
@@ -514,11 +801,10 @@
                     window.showToast('Event saved to your calendar.', 'success');
                 }
             } catch (err) {
-                errorEl.textContent = err.message || 'Could not save event.';
-                errorEl.classList.remove('d-none');
+                showError(err.message || 'Could not save event.');
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Event';
+                saveBtn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Save event';
             }
         });
     }
