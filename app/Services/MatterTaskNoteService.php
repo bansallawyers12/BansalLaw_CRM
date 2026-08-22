@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Models\Note;
 use App\Models\Staff;
 
-class MatterActionNoteService
+class MatterTaskNoteService
 {
     /**
-     * Create Action-page notes (task_group Query) for Person Responsible and Person Assisting,
+     * Create Tasks-page notes (task_group Query) for Person Responsible and Person Assisting,
      * sharing one unique_group_id so marking complete updates every row together.
      */
     public static function createGroupedForMatter(
@@ -55,29 +55,29 @@ class MatterActionNoteService
             return;
         }
 
-        $timeline = app(ActionTaskTimelineService::class);
+        $timeline = app(TaskTimelineService::class);
         $uniqueGroupId = 'group_' . uniqid('', true);
         foreach ($ids as $assignedToStaffId) {
-            $actionNote = new Note();
-            $actionNote->user_id = $actorUserId;
-            $actionNote->client_id = $clientId;
-            $actionNote->matter_id = $matterId;
-            $actionNote->assigned_to = $assignedToStaffId;
-            $actionNote->description = $description;
-            $actionNote->action_date = now()->toDateString();
-            $actionNote->task_group = 'Query';
-            $actionNote->type = 'client';
-            $actionNote->is_action = 1;
-            $actionNote->status = '0';
-            $actionNote->pin = 0;
-            $actionNote->unique_group_id = $uniqueGroupId;
-            $actionNote->save();
+            $taskNote = new Note();
+            $taskNote->user_id = $actorUserId;
+            $taskNote->client_id = $clientId;
+            $taskNote->matter_id = $matterId;
+            $taskNote->assigned_to = $assignedToStaffId;
+            $taskNote->description = $description;
+            $taskNote->action_date = now()->toDateString();
+            $taskNote->task_group = 'Query';
+            $taskNote->type = 'client';
+            $taskNote->is_action = 1;
+            $taskNote->status = '0';
+            $taskNote->pin = 0;
+            $taskNote->unique_group_id = $uniqueGroupId;
+            $taskNote->save();
 
             $staff = Staff::find($assignedToStaffId);
             $assigneeName = $staff
                 ? trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''))
                 : 'Unknown';
-            $timeline->logActionCreated($actionNote, '', $assigneeName);
+            $timeline->logTaskNoteCreated($taskNote, '', $assigneeName);
         }
     }
 }

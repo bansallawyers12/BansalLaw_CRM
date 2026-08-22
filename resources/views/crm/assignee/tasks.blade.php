@@ -5,7 +5,7 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/action-list.css') }}?v={{ @filemtime(public_path('css/action-list.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('css/task-list.css') }}?v={{ @filemtime(public_path('css/task-list.css')) ?: time() }}">
 @endsection
 
 @section('content')

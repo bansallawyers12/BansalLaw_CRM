@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class TaskRouteAliasesTest extends TestCase
+class TaskRoutesTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -37,34 +37,22 @@ class TaskRouteAliasesTest extends TestCase
     }
 
     #[Test]
-    public function deprecated_action_route_names_still_resolve(): void
-    {
-        $this->assertSame(url('/action'), route('assignee.action'));
-        $this->assertSame(url('/action_completed'), route('assignee.action_completed'));
-        $this->assertSame(url('/action/list'), route('action.list'));
-        $this->assertSame(url('/action/counts'), route('action.counts'));
-        $this->assertSame(url('/dashboard/update-action-completed'), route('dashboard.update-action-completed'));
-    }
-
-    #[Test]
-    public function tasks_page_and_legacy_action_page_both_load_for_staff(): void
+    public function legacy_action_get_urls_redirect_to_tasks(): void
     {
         $staff = new Staff();
         $staff->id = 501;
         $staff->role = 1;
-        $staff->first_name = 'Task';
-        $staff->last_name = 'Tester';
 
         $this->actingAs($staff, 'admin');
 
-        $this->get('/tasks')->assertOk();
-        $this->get('/action')->assertOk();
-        $this->get('/tasks/completed')->assertOk();
-        $this->get('/action_completed')->assertOk();
+        $this->get('/action')->assertRedirect('/tasks');
+        $this->get('/action_completed')->assertRedirect('/tasks/completed');
+        $this->get('/action/list')->assertRedirect('/tasks/list');
+        $this->get('/action/counts')->assertRedirect('/tasks/counts');
     }
 
     #[Test]
-    public function tasks_list_and_legacy_action_list_both_return_json(): void
+    public function tasks_pages_load_for_staff(): void
     {
         $staff = new Staff();
         $staff->id = 502;
@@ -72,25 +60,46 @@ class TaskRouteAliasesTest extends TestCase
 
         $this->actingAs($staff, 'admin');
 
+        $this->get('/tasks')->assertOk();
+        $this->get('/tasks/completed')->assertOk();
+    }
+
+    #[Test]
+    public function tasks_list_returns_json(): void
+    {
+        $staff = new Staff();
+        $staff->id = 503;
+        $staff->role = 1;
+
+        $this->actingAs($staff, 'admin');
+
         $note = new Note();
         $note->id = 777;
-        $note->user_id = 502;
-        $note->assigned_to = 502;
+        $note->user_id = 503;
+        $note->assigned_to = 503;
         $note->type = 'client';
         $note->is_action = 1;
         $note->status = '0';
-        $note->description = 'Canonical route test task';
+        $note->description = 'Tasks list route test';
         $note->save();
 
-        $canonical = $this->getJson('/tasks/list');
-        $legacy = $this->getJson('/action/list');
+        $response = $this->getJson('/tasks/list');
 
-        $canonical->assertOk();
-        $legacy->assertOk();
+        $response->assertOk();
+        $this->assertStringContainsString('Tasks list route test', json_encode($response->json()));
+    }
 
-        $canonicalBody = json_encode($canonical->json());
-        $legacyBody = json_encode($legacy->json());
-        $this->assertStringContainsString('Canonical route test task', $canonicalBody);
-        $this->assertStringContainsString('Canonical route test task', $legacyBody);
+    #[Test]
+    public function unauthenticated_tasks_list_and_counts_return_json_401(): void
+    {
+        $list = $this->getJson('/tasks/list');
+        $list->assertUnauthorized();
+        $list->assertJsonPath('data', []);
+        $list->assertJsonPath('recordsTotal', 0);
+
+        $counts = $this->getJson('/tasks/counts');
+        $counts->assertUnauthorized();
+        $counts->assertJsonPath('personal_action', 0);
+        $counts->assertJsonPath('unauthenticated', true);
     }
 }

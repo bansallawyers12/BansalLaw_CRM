@@ -53,7 +53,7 @@ class EmptyUniqueGroupIdMassCompleteTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         // Send completion for note1 with empty unique_group_id
-        $response = $this->post('/update-action-completed', [
+        $response = $this->post('/tasks/complete', [
             'id' => $note1->id,
             'unique_group_id' => '',
         ]);
@@ -92,7 +92,7 @@ class EmptyUniqueGroupIdMassCompleteTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         $service = app(\App\Services\DashboardService::class);
-        $result = $service->updateActionCompleted($note1->id, '', null, $admin);
+        $result = $service->completeTask($note1->id, '', null, $admin);
 
         $this->assertTrue($result['success']);
         $this->assertEquals(1, $note1->fresh()->status);

@@ -11,30 +11,30 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Writes detailed activity-feed (timeline) rows for Actions and matter checklist Tasks.
+ * Writes detailed activity-feed (timeline) rows for Tasks-page notes and matter checklist tasks.
  */
-class ActionTaskTimelineService
+class TaskTimelineService
 {
     /**
-     * Log creation of an Action (notes.is_action = 1) on the client timeline.
+     * Log creation of a Tasks-page note (notes.is_action = 1) on the client timeline.
      */
-    public function logActionCreated(
-        Note $action,
+    public function logTaskNoteCreated(
+        Note $taskNote,
         string $clientLabel = '',
         ?string $assigneeName = null,
         string $verb = 'Set task'
     ): ?ActivitiesLog {
-        $clientId = (int) ($action->client_id ?? 0);
+        $clientId = (int) ($taskNote->client_id ?? 0);
         if ($clientId < 1) {
             return null;
         }
 
         try {
-            $assigneeName = $assigneeName ?: $this->staffName($action->assigned_to);
+            $assigneeName = $assigneeName ?: $this->staffName($taskNote->assigned_to);
             $subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '')
                 . $verb . ' for ' . $assigneeName;
 
-            $createdBy = $this->resolveCreatedBy($action->user_id);
+            $createdBy = $this->resolveCreatedBy($taskNote->user_id);
             if ($createdBy === null) {
                 return null;
             }
@@ -43,19 +43,19 @@ class ActionTaskTimelineService
             $log->client_id = $clientId;
             $log->created_by = $createdBy;
             $log->subject = $subject;
-            $log->description = $this->buildActionDescription($action, $assigneeName);
-            $log->task_status = ((string) $action->status === '1') ? 1 : 0;
+            $log->description = $this->buildTaskNoteDescription($taskNote, $assigneeName);
+            $log->task_status = ((string) $taskNote->status === '1') ? 1 : 0;
             $log->pin = 0;
-            $log->use_for = $this->useForAssignee($action->assigned_to);
-            $log->followup_date = $action->action_date ?: null;
-            $log->task_group = $action->task_group ?? null;
+            $log->use_for = $this->useForAssignee($taskNote->assigned_to);
+            $log->followup_date = $taskNote->action_date ?: null;
+            $log->task_group = $taskNote->task_group ?? null;
             $log->activity_type = 'activity';
             $log->save();
 
             return $log;
         } catch (\Throwable $e) {
-            Log::warning('ActionTaskTimeline: failed to log action created', [
-                'note_id' => $action->id ?? null,
+            Log::warning('TaskTimeline: failed to log task note created', [
+                'note_id' => $taskNote->id ?? null,
                 'error' => $e->getMessage(),
             ]);
 
@@ -64,14 +64,14 @@ class ActionTaskTimelineService
     }
 
     /**
-     * Log an action update on the client timeline.
+     * Log a Tasks-page note update on the client timeline.
      */
-    public function logActionUpdated(
-        Note $action,
+    public function logTaskNoteUpdated(
+        Note $taskNote,
         string $clientLabel = '',
         ?string $assigneeName = null
     ): ?ActivitiesLog {
-        return $this->logActionCreated($action, $clientLabel, $assigneeName, 'Updated task');
+        return $this->logTaskNoteCreated($taskNote, $clientLabel, $assigneeName, 'Updated task');
     }
 
     /**
@@ -113,7 +113,7 @@ class ActionTaskTimelineService
 
             return $log;
         } catch (\Throwable $e) {
-            Log::warning('ActionTaskTimeline: failed to log task created', [
+            Log::warning('TaskTimeline: failed to log checklist task created', [
                 'task_id' => $task->id ?? null,
                 'error' => $e->getMessage(),
             ]);
@@ -139,7 +139,6 @@ class ActionTaskTimelineService
             $matter = $matter ?: $task->clientMatter;
             $matterRef = $matter?->client_unique_matter_no ?? '';
 
-            // Controller keys completion as "Status"; keep "is_done" for callers that pass the field name.
             if (isset($changes['Status']) || isset($changes['is_done'])) {
                 $verb = $task->is_done ? 'Completed task' : 'Reopened task';
             } else {
@@ -188,7 +187,7 @@ class ActionTaskTimelineService
 
             return $log;
         } catch (\Throwable $e) {
-            Log::warning('ActionTaskTimeline: failed to log task updated', [
+            Log::warning('TaskTimeline: failed to log checklist task updated', [
                 'task_id' => $task->id ?? null,
                 'error' => $e->getMessage(),
             ]);
@@ -197,13 +196,13 @@ class ActionTaskTimelineService
         }
     }
 
-    private function buildActionDescription(Note $action, string $assigneeName): string
+    private function buildTaskNoteDescription(Note $taskNote, string $assigneeName): string
     {
-        $title = trim((string) ($action->title ?? ''));
-        $body = (string) ($action->description ?? '');
-        $group = trim((string) ($action->task_group ?? ''));
-        $due = $this->formatDate($action->action_date);
-        $matterRef = $this->matterRefForNote($action);
+        $title = trim((string) ($taskNote->title ?? ''));
+        $body = (string) ($taskNote->description ?? '');
+        $group = trim((string) ($taskNote->task_group ?? ''));
+        $due = $this->formatDate($taskNote->action_date);
+        $matterRef = $this->matterRefForNote($taskNote);
 
         $parts = [];
         if ($title !== '') {
@@ -255,9 +254,9 @@ class ActionTaskTimelineService
         return '<div class="activity-task-details">' . implode('', $parts) . '</div>';
     }
 
-    private function matterRefForNote(Note $action): string
+    private function matterRefForNote(Note $taskNote): string
     {
-        $matterId = (int) ($action->matter_id ?? 0);
+        $matterId = (int) ($taskNote->matter_id ?? 0);
         if ($matterId < 1) {
             return '';
         }

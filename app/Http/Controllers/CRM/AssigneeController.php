@@ -20,8 +20,9 @@ use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Services\ActionTaskTimelineService;
+use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
+use App\Services\DashboardService;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
 use App\Helpers\SortableHelper;
@@ -40,11 +41,9 @@ class AssigneeController extends Controller
          $this->middleware('auth:admin');
      }
 
-    private function viewerSeesAllActions(): bool
+    private function viewerSeesAllTasks(): bool
     {
-        $u = Auth::user();
-
-        return $u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges();
+        return app(DashboardService::class)->viewerSeesAllMattersAndTasks(Auth::user());
     }
 
     /**
@@ -104,7 +103,7 @@ class AssigneeController extends Controller
             ->where('is_action', 1)
             ->where('status','<>','1');
 
-        if ($this->viewerSeesAllActions()) {
+        if ($this->viewerSeesAllTasks()) {
             $query->whereNotNull('client_id');
         } else {
             $query->where('assigned_to', Auth::user()->id);
@@ -124,7 +123,7 @@ class AssigneeController extends Controller
             ->where('is_action', 1)
             ->where('status','1');
 
-        if ($this->viewerSeesAllActions()) {
+        if ($this->viewerSeesAllTasks()) {
             $query->whereNotNull('client_id');
         } else {
             $query->where('assigned_to', Auth::user()->id);
@@ -137,7 +136,7 @@ class AssigneeController extends Controller
     }
 
     //Update action to be complete
-    public function updateActionCompleted(Request $request)
+    public function completeTask(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
         $data = $request->all();
@@ -149,7 +148,7 @@ class AssigneeController extends Controller
             return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
-        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
+        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndTasks($user)) {
             $uid = (int) $user->id;
             $notesToCheck = collect([$noteData]);
             if ($uniqueGroupId !== '') {
@@ -242,7 +241,7 @@ class AssigneeController extends Controller
     }
 
     //Update action to be not complete
-    public function updateActionNotCompleted(Request $request)
+    public function reopenTask(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
         $data = $request->all();
@@ -254,7 +253,7 @@ class AssigneeController extends Controller
             return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
-        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndActions($user)) {
+        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndTasks($user)) {
             $uid = (int) $user->id;
             $notesToCheck = collect([$noteData]);
             if ($uniqueGroupId !== '') {
@@ -312,7 +311,7 @@ class AssigneeController extends Controller
             ->where('type','client')
             ->where('is_action', 1);
 
-        if ($this->viewerSeesAllActions()) {
+        if ($this->viewerSeesAllTasks()) {
             $query->whereNotNull('client_id');
         } else {
             $query->where('user_id', Auth::user()->id);
@@ -332,7 +331,7 @@ class AssigneeController extends Controller
             ->where('is_action', 1)
             ->where('assigned_to', Auth::user()->id);
 
-        if ($this->viewerSeesAllActions()) {
+        if ($this->viewerSeesAllTasks()) {
             $base->whereNotNull('client_id');
         }
 
@@ -343,7 +342,7 @@ class AssigneeController extends Controller
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
-    public function action_completed(Request $request)
+    public function tasksCompleted(Request $request)
     {   //dd($request->all());
         $req_data = $request->all();
         if( isset($req_data['group_type'])  && $req_data['group_type'] != ""){
@@ -379,10 +378,10 @@ class AssigneeController extends Controller
         $assignees_completed = $this->sortNotesList($assignees_completed, '-action_date')->paginate(20);
 
         // Get action group counts with single optimized query
-        $taskGroupCounts = $this->getCompletedActionGroupCounts($staff);
+        $taskGroupCounts = $this->getCompletedTaskGroupCounts($staff);
         
         //dd(count($assignees_completed));
-        return view('crm.assignee.action_completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
+        return view('crm.assignee.tasks.completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
     /**
@@ -392,7 +391,7 @@ class AssigneeController extends Controller
      * @param \App\Models\Admin $staff
      * @return array
      */
-    private function getCompletedActionGroupCounts($staff)
+    private function getCompletedTaskGroupCounts($staff)
     {
         $query = \App\Models\Note::where('status', 1)
             ->where('type', 'client')
@@ -427,11 +426,11 @@ class AssigneeController extends Controller
         return $counts;
     }
 
-    public function action() {
-        return view('crm.assignee.action');
+    public function tasks() {
+        return view('crm.assignee.tasks');
     }
 
-    public function getAction(Request $request)
+    public function getTasks(Request $request)
     {
         try {
                 // Select specific columns from the notes table, using the correct column name 'user_id'
@@ -456,7 +455,7 @@ class AssigneeController extends Controller
                     ->where('notes.is_action', 1);
 
                 // Check if staff member is authenticated and has proper role
-                if (Auth::check() && ! $this->viewerSeesAllActions()) {
+                if (Auth::check() && ! $this->viewerSeesAllTasks()) {
                     $query->where('notes.assigned_to', Auth::user()->id);
                 }
 
@@ -715,7 +714,7 @@ class AssigneeController extends Controller
         }
     }
 
-    public function getActionCounts(Request $request)
+    public function getTaskCounts(Request $request)
     {
         $counts = [
             'all' => 0,
@@ -732,7 +731,7 @@ class AssigneeController extends Controller
             ->where('type', 'client')
             ->where('is_action', 1);
 
-        if (! $this->viewerSeesAllActions()) {
+        if (! $this->viewerSeesAllTasks()) {
             $query->where('assigned_to', Auth::user()->id);
         }
 
@@ -946,7 +945,7 @@ class AssigneeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateAction(Request $request)
+    public function updateTask(Request $request)
     {
         // Validate the incoming request data
         $validated = $request->validate([
@@ -1027,12 +1026,12 @@ class AssigneeController extends Controller
             $newAction->save();
 
             if ($clientId) {
-                app(ClientMatterTaskSyncService::class)->mirrorActionToClientTask($newAction);
+                app(ClientMatterTaskSyncService::class)->mirrorTaskNoteToClientTask($newAction);
             }
 
             // Step 4: Activity Feed log for the new action
             if ($clientId) {
-                app(ActionTaskTimelineService::class)->logActionCreated($newAction, '', $assignee_name);
+                app(TaskTimelineService::class)->logTaskNoteCreated($newAction, '', $assignee_name);
             }
 
             return response()->json([

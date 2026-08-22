@@ -34,7 +34,7 @@ use App\Support\ClientTagStorage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
-use App\Services\ActionTaskTimelineService;
+use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\MatterAssigneeDefaults;
@@ -5503,7 +5503,7 @@ class ClientsController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function actionStore(Request $request)
+    public function taskStore(Request $request)
     {
         try {
             $requestData = $request->all();
@@ -5545,11 +5545,11 @@ class ClientsController extends Controller
                 echo json_encode(array('success' => false, 'message' => config('constants.unauthorized')));
                 exit;
             }
-            $clientLabel = $this->actionClientDisplayName($targetClient);
+            $clientLabel = $this->taskClientDisplayName($targetClient);
             
             // Get the next unique ID for this action
             $actionUniqueId = 'group_' . uniqid('', true);
-            $matterId = $this->resolveActionMatterId($requestData, (int) $clientId);
+            $matterId = $this->resolveTaskMatterId($requestData, (int) $clientId);
 
             // Loop through each assignee and create an action
             $mirroredToClientTask = false;
@@ -5595,7 +5595,7 @@ class ClientsController extends Controller
 
                 if ($saved) {
                     if (! $mirroredToClientTask) {
-                        $taskSync->mirrorActionToClientTask($action);
+                        $taskSync->mirrorTaskNoteToClientTask($action);
                         $mirroredToClientTask = true;
                     }
 
@@ -5610,7 +5610,7 @@ class ClientsController extends Controller
                     $o->sender_id = Auth::user()->id;
                     $o->receiver_id = $assigneeId;
                     $o->module_id = $clientId;
-                    $o->url = $this->actionClientDetailUrl((int) $clientId, $matterId, $requestData['client_id'] ?? null);
+                    $o->url = $this->taskClientDetailUrl((int) $clientId, $matterId, $requestData['client_id'] ?? null);
                     $o->notification_type = 'client';
                     $o->receiver_status = 0; // Unread
                     $o->seen = 0; // Not seen
@@ -5631,7 +5631,7 @@ class ClientsController extends Controller
                         . 'Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
-                    app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
+                    app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
                 }
             }
             
@@ -5639,7 +5639,7 @@ class ClientsController extends Controller
             exit;
             
         } catch (\Exception $e) {
-            Log::error('Error in actionStore: ' . $e->getMessage(), [
+            Log::error('Error in taskStore: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -5666,7 +5666,7 @@ class ClientsController extends Controller
     /**
      * Human label for actions/notifications: company name when is_company, else person name.
      */
-    protected function actionClientDisplayName(Admin $client): string
+    protected function taskClientDisplayName(Admin $client): string
     {
         $label = trim($client->company_name_or_personal_name);
         if ($label === '') {
@@ -5684,7 +5684,7 @@ class ClientsController extends Controller
      *
      * @return array{encoded: ?string, client_id: ?int, matter_ref: ?string, matter_id: ?int}
      */
-    protected function parseActionClientMatterPath(?string $clientPath): array
+    protected function parseTaskClientMatterPath(?string $clientPath): array
     {
         $result = [
             'encoded' => null,
@@ -5728,7 +5728,7 @@ class ClientsController extends Controller
     /**
      * Resolve matter_id for an action from explicit request field and/or client picker path.
      */
-    protected function resolveActionMatterId(array $requestData, ?int $clientId): ?int
+    protected function resolveTaskMatterId(array $requestData, ?int $clientId): ?int
     {
         if (! empty($requestData['matter_id']) && is_numeric($requestData['matter_id'])) {
             $matterId = (int) $requestData['matter_id'];
@@ -5753,7 +5753,7 @@ class ClientsController extends Controller
         }
 
         if (! empty($requestData['client_id'])) {
-            $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+            $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
             if (! empty($parsed['matter_id'])) {
                 return (int) $parsed['matter_id'];
             }
@@ -5765,11 +5765,11 @@ class ClientsController extends Controller
     /**
      * Build client detail URL for action notifications (includes matter when available).
      */
-    protected function actionClientDetailUrl(?int $clientId, ?int $matterId = null, ?string $encodedOrPath = null): string
+    protected function taskClientDetailUrl(?int $clientId, ?int $matterId = null, ?string $encodedOrPath = null): string
     {
         $encoded = null;
         if ($encodedOrPath) {
-            $parsed = $this->parseActionClientMatterPath($encodedOrPath);
+            $parsed = $this->parseTaskClientMatterPath($encodedOrPath);
             if (! empty($parsed['encoded']) && ! empty($parsed['matter_ref'])) {
                 return URL::to('/clients/detail/' . $parsed['encoded'] . '/' . $parsed['matter_ref']);
             }
@@ -5863,9 +5863,9 @@ class ClientsController extends Controller
 
     /**
      * Store personal action (Add My Action functionality)
-     * Used by: action.blade.php
+     * Used by: tasks.blade.php
      */
-    public function storePersonalAction(Request $request)
+    public function storePersonalTask(Request $request)
     {
         try {
             $requestData = $request->all();
@@ -5876,13 +5876,13 @@ class ClientsController extends Controller
             $matterId = null;
             
             if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
                 $encodedClientId = $parsed['encoded'];
                 if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
                 $clientId = (int) $parsed['client_id'];
-                $matterId = $this->resolveActionMatterId($requestData, $clientId);
+                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
             }
 
             // Generate unique action ID
@@ -5898,7 +5898,7 @@ class ClientsController extends Controller
                 if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
-                $clientLabel = $this->actionClientDisplayName($targetClient);
+                $clientLabel = $this->taskClientDisplayName($targetClient);
             }
 
             // Handle single or multiple assignees
@@ -5932,7 +5932,7 @@ class ClientsController extends Controller
 
                 if ($saved) {
                     if ($clientId && ! $mirroredToClientTask) {
-                        $taskSync->mirrorActionToClientTask($action);
+                        $taskSync->mirrorTaskNoteToClientTask($action);
                         $mirroredToClientTask = true;
                     }
 
@@ -5941,21 +5941,21 @@ class ClientsController extends Controller
                     $notification->sender_id = Auth::user()->id;
                     $notification->receiver_id = $assigneeId;
                     $notification->module_id = $clientId;
-                    $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? $encodedClientId);
+                    $notification->url = $this->taskClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? $encodedClientId);
                     
                     $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                     $notification->seen = 0;
                     $notification->save();
 
                     if ($clientId) {
-                        app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
+                        app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
                     }
                 }
             }
 
             return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in storePersonalAction: ' . $e->getMessage(), [
+            Log::error('Error in storePersonalTask: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
@@ -5967,7 +5967,7 @@ class ClientsController extends Controller
      * Update existing action
      * Used by: assign_by_me.blade.php
      */
-    public function updateAction(Request $request)
+    public function updateTask(Request $request)
     {
         $requestData = $request->all();
         
@@ -5980,7 +5980,7 @@ class ClientsController extends Controller
             $clientLabel = '';
             $matterId = null;
             if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
                 if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
@@ -5992,8 +5992,8 @@ class ClientsController extends Controller
                 if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
-                $clientLabel = $this->actionClientDisplayName($targetForAction);
-                $matterId = $this->resolveActionMatterId($requestData, $clientId);
+                $clientLabel = $this->taskClientDisplayName($targetForAction);
+                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
             }
             
             // Update action fields
@@ -6019,7 +6019,7 @@ class ClientsController extends Controller
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
-                $notification->url = $this->actionClientDetailUrl($clientId, $action->matter_id ? (int) $action->matter_id : $matterId, $requestData['client_id'] ?? null);
+                $notification->url = $this->taskClientDetailUrl($clientId, $action->matter_id ? (int) $action->matter_id : $matterId, $requestData['client_id'] ?? null);
                 
                 $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
                 $notification->seen = 0;
@@ -6029,7 +6029,7 @@ class ClientsController extends Controller
             // Log to Activity Feed when action is updated (only for client-linked actions)
             if ($clientId !== null) {
                 $assigneeName = $this->getAssigneeName($action->assigned_to);
-                app(ActionTaskTimelineService::class)->logActionUpdated($action, $clientLabel, $assigneeName);
+                app(TaskTimelineService::class)->logTaskNoteUpdated($action, $clientLabel, $assigneeName);
             }
 
             return response()->json(['success' => true, 'message' => 'Task updated successfully']);
@@ -6040,9 +6040,9 @@ class ClientsController extends Controller
 
     /**
      * Reassign action (for completed actions)
-     * Used by: action_completed.blade.php
+     * Used by: tasks/completed.blade.php
      */
-    public function reassignAction(Request $request)
+    public function reassignTask(Request $request)
     {
         try {
             $requestData = $request->all();
@@ -6052,7 +6052,7 @@ class ClientsController extends Controller
             $clientLabel = '';
             $matterId = null;
             if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseActionClientMatterPath((string) $requestData['client_id']);
+                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
                 if (empty($parsed['client_id'])) {
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
@@ -6064,8 +6064,8 @@ class ClientsController extends Controller
                 if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
-                $clientLabel = $this->actionClientDisplayName($targetForAction);
-                $matterId = $this->resolveActionMatterId($requestData, $clientId);
+                $clientLabel = $this->taskClientDisplayName($targetForAction);
+                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
             }
 
             // Generate unique action ID
@@ -6095,7 +6095,7 @@ class ClientsController extends Controller
 
             if ($saved) {
                 if ($clientId) {
-                    app(ClientMatterTaskSyncService::class)->mirrorActionToClientTask($action);
+                    app(ClientMatterTaskSyncService::class)->mirrorTaskNoteToClientTask($action);
                 }
 
                 // Create a notification for the assignee
@@ -6103,20 +6103,20 @@ class ClientsController extends Controller
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
-                $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? null);
+                $notification->url = $this->taskClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? null);
                 
                 $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                 $notification->seen = 0;
                 $notification->save();
 
                 if ($clientId) {
-                    app(ActionTaskTimelineService::class)->logActionCreated($action, $clientLabel, $assigneeName);
+                    app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
                 }
             }
 
             return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in reassignAction: ' . $e->getMessage(), [
+            Log::error('Error in reassignTask: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);

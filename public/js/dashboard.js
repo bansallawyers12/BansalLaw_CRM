@@ -303,7 +303,7 @@ window.completeTaskFromDetail = function() {
 // Complete Task Function (called after modal confirm or directly)
 function completeTask(taskId, uniqueGroupId, completionNotes) {
     if (!taskId) {
-        showNotification('Invalid action data', 'error');
+        showNotification('Invalid task data', 'error');
         return;
     }
     
@@ -342,8 +342,8 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
         },
         error: function(xhr, status, error) {
             $('.popuploader').hide();
-            console.error('Error completing action:', error);
-            showNotification('An error occurred while completing the action', 'error');
+            console.error('Error completing task:', error);
+            showNotification('An error occurred while completing the task', 'error');
         }
     });
 }

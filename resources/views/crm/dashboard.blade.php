@@ -1137,7 +1137,6 @@ body > .ts-dropdown {
         calendarEvents: "{{ route('dashboard.calendar-events') }}",
         storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
-        updateActionCompleted: "{{ route('dashboard.tasks.complete') }}",
         updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
         assigneeAction: "{{ route('assignee.tasks') }}"
     };

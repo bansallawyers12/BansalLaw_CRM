@@ -92,7 +92,7 @@ class Area7SecurityTest extends TestCase
         $note->description = '<script>alert("XSS")</script>';
         $note->save();
 
-        $response = $this->getJson('/action/list');
+        $response = $this->getJson('/tasks/list');
 
         $response->assertStatus(200);
         $content = json_encode($response->json());

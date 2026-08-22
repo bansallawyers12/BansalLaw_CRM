@@ -19,7 +19,7 @@ class DashboardService
     /**
      * Native Super Admin (role 1) or session-elevated grant — same matter/action visibility as role 1.
      */
-    public function viewerSeesAllMattersAndActions($user): bool
+    public function viewerSeesAllMattersAndTasks($user): bool
     {
         return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
     }
@@ -92,7 +92,7 @@ class DashboardService
             ->where('status', '!=', 1);
 
         // Super Admin (or elevated) sees ALL actions — matching Action page behavior
-        if (! $this->viewerSeesAllMattersAndActions($user)) {
+        if (! $this->viewerSeesAllMattersAndTasks($user)) {
             $query->where('assigned_to', $user->id);
         }
 
@@ -117,7 +117,7 @@ class DashboardService
             ->where('matter_status', 1)
             ->where('updated_at', '>=', Carbon::now()->subDays(100));
 
-        if (! $this->viewerSeesAllMattersAndActions($user)) {
+        if (! $this->viewerSeesAllMattersAndTasks($user)) {
             $query->whereHas('client', function ($q) use ($user) {
                 StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
             });
@@ -218,7 +218,7 @@ class DashboardService
      */
     private function applyRoleBasedFiltering($query, $user)
     {
-        if ($this->viewerSeesAllMattersAndActions($user)) {
+        if ($this->viewerSeesAllMattersAndTasks($user)) {
             return;
         }
 
@@ -313,12 +313,12 @@ class DashboardService
 
     /**
      * Get note deadline count (all tasks count)
-     * Matches Tasks page getActionCounts: includes Personal Tasks
+     * Matches Tasks page getTaskCounts: includes Personal Tasks
      */
     private function getNoteDeadlineCount($user): int
     {
         $userId = $user ? (int) $user->id : 0;
-        $seeAll = $this->viewerSeesAllMattersAndActions($user);
+        $seeAll = $this->viewerSeesAllMattersAndTasks($user);
 
         return Cache::remember('dashboard_note_deadline_count_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
             $query = Note::where('type', 'client')
@@ -339,7 +339,7 @@ class DashboardService
     private function getCasesRequiringAttentionCount($user): int
     {
         $userId = $user ? (int) $user->id : 0;
-        $seeAll = $this->viewerSeesAllMattersAndActions($user);
+        $seeAll = $this->viewerSeesAllMattersAndTasks($user);
 
         return Cache::remember('dashboard_cases_attention_count_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
             $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
@@ -445,7 +445,7 @@ class DashboardService
                 return ['success' => false, 'message' => 'No notes found with the provided criteria'];
             }
 
-            if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+            if ($user && !$this->viewerSeesAllMattersAndTasks($user)) {
                 $uid = (int) $user->id;
                 foreach ($notes as $note) {
                     $isOwnerOrAssignee = ((int)$note->assigned_to === $uid || (int)$note->user_id === $uid);
@@ -497,7 +497,7 @@ class DashboardService
      * Update action completion status and create completed action activity
      * Matches Action tab behavior: updates note(s), creates ActivitiesLog with optional completion notes
      */
-    public function updateActionCompleted($noteId, $uniqueGroupId, ?string $completionNotes = null, $user = null): array
+    public function completeTask($noteId, $uniqueGroupId, ?string $completionNotes = null, $user = null): array
     {
         $user = $user ?? Auth::user();
         $noteData = Note::where('id', $noteId)->first();
@@ -506,7 +506,7 @@ class DashboardService
             return ['success' => false, 'message' => 'Task not found'];
         }
 
-        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
+        if ($user && !$this->viewerSeesAllMattersAndTasks($user)) {
             $uid = (int) $user->id;
             $notesToCheck = collect([$noteData]);
             $groupId = trim((string) ($uniqueGroupId ?? ''));

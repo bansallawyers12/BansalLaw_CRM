@@ -548,7 +548,7 @@ use App\Http\Controllers\Controller;
             
             @include('crm.clients.tabs.activityfeed_tab')
 
-            @include('crm.clients.tabs.client_action_tab')
+            @include('crm.clients.tabs.client_task_tab')
             
             @include('crm.clients.tabs.notes')
             

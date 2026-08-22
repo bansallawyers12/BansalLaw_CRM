@@ -150,7 +150,7 @@ class DashboardController extends Controller
     /**
      * Update action completion status
      */
-    public function updateActionCompleted(Request $request)
+    public function completeTask(Request $request)
     {
         try {
             Log::info('Update action completed request data:', $request->all());
@@ -162,7 +162,7 @@ class DashboardController extends Controller
             ]);
 
             $user = Auth::guard('admin')->user() ?: Auth::user();
-            $result = $this->dashboardService->updateActionCompleted(
+            $result = $this->dashboardService->completeTask(
                 $request->id,
                 $request->unique_group_id ?? '',
                 $request->completion_notes,
@@ -177,13 +177,13 @@ class DashboardController extends Controller
 
             return response()->json($result);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error in updateActionCompleted:', $e->errors());
+            Log::error('Validation error in completeTask:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed: ' . implode(', ', Arr::flatten($e->errors()))
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error in updateActionCompleted: ' . $e->getMessage(), [
+            Log::error('Error in completeTask: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([

@@ -1,4 +1,4 @@
-/* Action listing — matches Clients / Matters listing + shared pagination tokens */
+/* Tasks listing — matches Clients / Matters listing + shared pagination tokens */
 
 .assignee-action-page.listing-container {
     overflow-x: hidden;

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WLhNTcZejcsHACHN92RXegMrf72SFitmPxU6E2X72OgjhH7RRh19EwP9KXTMieD
+\restrict NXdywLmlOiIcqQBmC0egcgIS30enWm7k0D3x8cB1FsNJloXGmG9adXgj5uuxr1Y
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -112,18 +112,7 @@ CREATE TABLE public.account_client_receipts (
     voided_or_validated_by bigint,
     partial_paid_amount numeric(15,2),
     withdraw_amount_before_void numeric(15,2),
-    trust_voided_at timestamp(0) without time zone,
-    trust_voided_by bigint,
-    trust_void_reason text,
-    trust_reversal_of_entry_id bigint,
-    payer_name character varying(255),
-    bank_deposit_reference character varying(191),
-    banking_date character varying(32),
-    payee_name character varying(255),
-    cheque_number character varying(32),
-    eft_account_name character varying(255),
-    eft_bsb character varying(16),
-    eft_account_number character varying(64)
+    reversal_of_entry_id bigint
 );
 
 
@@ -157,7 +146,7 @@ CREATE TABLE public.activities_logs (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     sms_log_id bigint,
-    activity_type character varying(64) DEFAULT 'note'::character varying NOT NULL,
+    activity_type character varying(64) DEFAULT 'activity'::character varying NOT NULL,
     source character varying(50),
     created_by bigint,
     subject text,
@@ -228,23 +217,10 @@ CREATE TABLE public.admins (
     status smallint DEFAULT '1'::smallint NOT NULL,
     service_token character varying(191),
     token_generated_at timestamp(0) without time zone,
-    visa_expiry_verified_at timestamp(0) without time zone,
-    visa_expiry_verified_by integer,
-    naati_test character varying(191),
-    py_test character varying(191),
-    naati_date date,
-    py_date date,
     marital_status character varying(191),
-    is_deleted timestamp(0) without time zone,
     remember_token character varying(100),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    australian_study boolean DEFAULT false NOT NULL,
-    australian_study_date date,
-    specialist_education boolean DEFAULT false NOT NULL,
-    specialist_education_date date,
-    regional_study boolean DEFAULT false NOT NULL,
-    regional_study_date date,
     client_counter character varying(5),
     client_id character varying(20),
     archived_by bigint,
@@ -253,6 +229,7 @@ CREATE TABLE public.admins (
     followup_date timestamp(0) without time zone,
     google_review_reminder_status character varying(32),
     google_review_reminder_snooze_until timestamp(0) without time zone,
+    is_deleted timestamp(0) without time zone,
     is_archived smallint DEFAULT 0 NOT NULL,
     archived_on timestamp without time zone,
     type character varying(32),
@@ -262,56 +239,14 @@ CREATE TABLE public.admins (
     gender character varying(32),
     dob_verified_date timestamp(0) without time zone,
     dob_verified_by bigint,
-    email_type character varying(191),
-    contact_type character varying(191),
     country_code character varying(32),
     phone character varying(100),
     user_id bigint,
+    email_type character varying(191),
+    contact_type character varying(191),
     tagname text,
-    source character varying(120)
+    is_other_party boolean DEFAULT false NOT NULL
 );
-
-
---
--- Name: COLUMN admins.australian_study; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.australian_study IS 'Has Australian study requirement (2+ years)';
-
-
---
--- Name: COLUMN admins.australian_study_date; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.australian_study_date IS 'Australian study completion date';
-
-
---
--- Name: COLUMN admins.specialist_education; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.specialist_education IS 'Has specialist education qualification (STEM)';
-
-
---
--- Name: COLUMN admins.specialist_education_date; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.specialist_education_date IS 'Specialist education completion date';
-
-
---
--- Name: COLUMN admins.regional_study; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.regional_study IS 'Has regional study (studied in regional Australia)';
-
-
---
--- Name: COLUMN admins.regional_study_date; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.admins.regional_study_date IS 'Regional study completion date';
 
 
 --
@@ -348,85 +283,6 @@ ALTER SEQUENCE public.admins_id_seq OWNED BY public.admins.id;
 
 
 --
--- Name: agent_details; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.agent_details (
-    id bigint NOT NULL,
-    business_name character varying(255),
-    agent_name character varying(255),
-    full_name character varying(255),
-    email character varying(255),
-    marn_number character varying(128),
-    legal_practitioner_number character varying(128),
-    business_address text,
-    business_phone character varying(64),
-    business_mobile character varying(64),
-    business_email character varying(255),
-    agent_type character varying(64),
-    related_office character varying(255),
-    struture character varying(255),
-    tax_number character varying(128),
-    contract_expiry_date date,
-    is_acrchived smallint,
-    status smallint DEFAULT '1'::smallint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: agent_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.agent_details_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: agent_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.agent_details_id_seq OWNED BY public.agent_details.id;
-
-
---
--- Name: cp_doc_checklists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.cp_doc_checklists (
-    id bigint CONSTRAINT application_document_lists_id_not_null NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    wf_stage character varying(255),
-    wf_stage_id bigint
-);
-
-
---
--- Name: application_document_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.application_document_lists_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: application_document_lists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.application_document_lists_id_seq OWNED BY public.cp_doc_checklists.id;
-
-
---
 -- Name: appointment_consultants; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -440,8 +296,8 @@ CREATE TABLE public.appointment_consultants (
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT appointment_consultants_calendar_type_check CHECK (((calendar_type)::text = ANY ((ARRAY['paid'::character varying, 'jrp'::character varying, 'education'::character varying, 'tourist'::character varying, 'adelaide'::character varying, 'ajay'::character varying, 'kunal'::character varying])::text[]))),
-    CONSTRAINT appointment_consultants_location_check CHECK (((location)::text = ANY ((ARRAY['melbourne'::character varying, 'adelaide'::character varying])::text[])))
+    CONSTRAINT appointment_consultants_calendar_type_check CHECK (((calendar_type)::text = ANY ((ARRAY['ajay'::character varying, 'kunal'::character varying])::text[]))),
+    CONSTRAINT appointment_consultants_location_check CHECK (((location)::text = 'melbourne'::text))
 );
 
 
@@ -496,8 +352,8 @@ CREATE TABLE public.appointment_payments (
     processed_at timestamp(0) without time zone,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT appointment_payments_payment_gateway_check CHECK (((payment_gateway)::text = ANY ((ARRAY['stripe'::character varying, 'paypal'::character varying, 'manual'::character varying])::text[]))),
-    CONSTRAINT appointment_payments_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'succeeded'::character varying, 'failed'::character varying, 'refunded'::character varying, 'partially_refunded'::character varying])::text[])))
+    CONSTRAINT appointment_payments_payment_gateway_check CHECK (((payment_gateway)::text = ANY (ARRAY[('stripe'::character varying)::text, ('paypal'::character varying)::text, ('manual'::character varying)::text]))),
+    CONSTRAINT appointment_payments_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('processing'::character varying)::text, ('succeeded'::character varying)::text, ('failed'::character varying)::text, ('refunded'::character varying)::text, ('partially_refunded'::character varying)::text])))
 );
 
 
@@ -637,8 +493,8 @@ CREATE TABLE public.appointment_sync_logs (
     sync_details json,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT appointment_sync_logs_status_check CHECK (((status)::text = ANY ((ARRAY['running'::character varying, 'success'::character varying, 'failed'::character varying])::text[]))),
-    CONSTRAINT appointment_sync_logs_sync_type_check CHECK (((sync_type)::text = ANY ((ARRAY['polling'::character varying, 'manual'::character varying, 'backfill'::character varying])::text[])))
+    CONSTRAINT appointment_sync_logs_status_check CHECK (((status)::text = ANY (ARRAY[('running'::character varying)::text, ('success'::character varying)::text, ('failed'::character varying)::text]))),
+    CONSTRAINT appointment_sync_logs_sync_type_check CHECK (((sync_type)::text = ANY (ARRAY[('polling'::character varying)::text, ('manual'::character varying)::text, ('backfill'::character varying)::text])))
 );
 
 
@@ -721,11 +577,12 @@ CREATE TABLE public.booking_appointments (
     updated_at timestamp(0) without time zone,
     user_id bigint,
     website_status_code smallint,
-    CONSTRAINT booking_appointments_location_check CHECK (((location)::text = ANY ((ARRAY['melbourne'::character varying, 'adelaide'::character varying])::text[]))),
-    CONSTRAINT booking_appointments_meeting_type_check CHECK (((meeting_type)::text = ANY ((ARRAY['in_person'::character varying, 'phone'::character varying, 'video'::character varying])::text[]))),
-    CONSTRAINT booking_appointments_payment_status_check CHECK (((payment_status)::text = ANY ((ARRAY['pending'::character varying, 'completed'::character varying, 'failed'::character varying, 'refunded'::character varying])::text[]))),
-    CONSTRAINT booking_appointments_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'paid'::character varying, 'confirmed'::character varying, 'completed'::character varying, 'cancelled'::character varying, 'no_show'::character varying, 'rescheduled'::character varying])::text[]))),
-    CONSTRAINT booking_appointments_sync_status_check CHECK (((sync_status)::text = ANY ((ARRAY['new'::character varying, 'synced'::character varying, 'error'::character varying])::text[])))
+    noe_scheme character varying(32) DEFAULT 'immigration'::character varying NOT NULL,
+    CONSTRAINT booking_appointments_location_check CHECK (((location)::text = ANY (ARRAY[('melbourne'::character varying)::text, ('adelaide'::character varying)::text]))),
+    CONSTRAINT booking_appointments_meeting_type_check CHECK (((meeting_type)::text = ANY (ARRAY[('in_person'::character varying)::text, ('phone'::character varying)::text, ('video'::character varying)::text]))),
+    CONSTRAINT booking_appointments_payment_status_check CHECK (((payment_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('refunded'::character varying)::text]))),
+    CONSTRAINT booking_appointments_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('paid'::character varying)::text, ('confirmed'::character varying)::text, ('completed'::character varying)::text, ('cancelled'::character varying)::text, ('no_show'::character varying)::text, ('rescheduled'::character varying)::text]))),
+    CONSTRAINT booking_appointments_sync_status_check CHECK (((sync_status)::text = ANY (ARRAY[('new'::character varying)::text, ('synced'::character varying)::text, ('error'::character varying)::text])))
 );
 
 
@@ -1059,53 +916,36 @@ ALTER SEQUENCE public.client_addresses_id_seq OWNED BY public.client_addresses.i
 
 
 --
--- Name: client_art_references; Type: TABLE; Schema: public; Owner: -
+-- Name: client_conflict_checks; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.client_art_references (
+CREATE TABLE public.client_conflict_checks (
     id bigint NOT NULL,
     client_id bigint NOT NULL,
-    client_matter_id bigint NOT NULL,
-    submission_last_date date,
-    status_of_file character varying(50) DEFAULT 'submission_pending'::character varying NOT NULL,
-    hearing_time character varying(191),
-    member_name character varying(191),
-    outcome character varying(191),
-    comments text,
-    created_by bigint,
-    updated_by bigint,
+    checked_by bigint NOT NULL,
+    checked_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    search_terms json,
+    matches json,
+    outcome character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    outcome_notes text,
+    consent_obtained boolean DEFAULT false NOT NULL,
+    consent_notes text,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    is_pinned boolean DEFAULT false NOT NULL
+    client_matter_id bigint,
+    match_count smallint DEFAULT '0'::smallint NOT NULL,
+    informational_count smallint DEFAULT '0'::smallint NOT NULL,
+    informational_matches json,
+    parties_snapshot_at timestamp(0) without time zone,
+    search_hash character varying(64)
 );
 
 
 --
--- Name: COLUMN client_art_references.status_of_file; Type: COMMENT; Schema: public; Owner: -
+-- Name: client_conflict_checks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.client_art_references.status_of_file IS 'submission_pending, submission_done, hearing_invitation_sent, waiting_for_hearing, hearing, decided, withdrawn';
-
-
---
--- Name: COLUMN client_art_references.hearing_time; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_art_references.hearing_time IS 'e.g. 10:30 am (NSW time)';
-
-
---
--- Name: COLUMN client_art_references.member_name; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_art_references.member_name IS 'Tribunal member';
-
-
---
--- Name: client_art_references_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_art_references_id_seq
+CREATE SEQUENCE public.client_conflict_checks_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1114,33 +954,54 @@ CREATE SEQUENCE public.client_art_references_id_seq
 
 
 --
--- Name: client_art_references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: client_conflict_checks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.client_art_references_id_seq OWNED BY public.client_art_references.id;
+ALTER SEQUENCE public.client_conflict_checks_id_seq OWNED BY public.client_conflict_checks.id;
 
 
 --
--- Name: client_characters; Type: TABLE; Schema: public; Owner: -
+-- Name: client_conflict_parties; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.client_characters (
+CREATE TABLE public.client_conflict_parties (
     id bigint NOT NULL,
-    client_id bigint,
-    admin_id bigint,
-    type_of_character smallint,
-    character_detail text,
-    character_date date,
+    client_id bigint NOT NULL,
+    party_type character varying(20) DEFAULT 'individual'::character varying NOT NULL,
+    party_role character varying(64),
+    first_name character varying(255),
+    last_name character varying(255),
+    aliases json,
+    dob date,
+    company_name character varying(255),
+    trading_name character varying(255),
+    abn character varying(20),
+    acn character varying(20),
+    address character varying(500),
+    suburb character varying(100),
+    state character varying(64),
+    postcode character varying(20),
+    country character varying(100) DEFAULT 'Australia'::character varying,
+    rep_firm_name character varying(255),
+    rep_name character varying(255),
+    rep_email character varying(255),
+    rep_phone character varying(64),
+    rep_country_code character varying(10),
+    notes text,
+    sort_order smallint DEFAULT '0'::smallint NOT NULL,
+    created_by bigint,
+    client_matter_id bigint,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    opposing_lead_id bigint
 );
 
 
 --
--- Name: client_characters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: client_conflict_parties_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.client_characters_id_seq
+CREATE SEQUENCE public.client_conflict_parties_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1149,10 +1010,10 @@ CREATE SEQUENCE public.client_characters_id_seq
 
 
 --
--- Name: client_characters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: client_conflict_parties_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.client_characters_id_seq OWNED BY public.client_characters.id;
+ALTER SEQUENCE public.client_conflict_parties_id_seq OWNED BY public.client_conflict_parties.id;
 
 
 --
@@ -1210,7 +1071,9 @@ CREATE TABLE public.client_court_hearings (
     notes text,
     status character varying(50) DEFAULT 'Scheduled'::character varying NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    reminder_minutes smallint,
+    reminder_sms_sent_at timestamp(0) without time zone
 );
 
 
@@ -1250,7 +1113,8 @@ CREATE TABLE public.client_emails (
     verified_by integer,
     verification_token character varying(255),
     token_expires_at timestamp(0) without time zone,
-    verification_sent_at timestamp(0) without time zone
+    verification_sent_at timestamp(0) without time zone,
+    is_shared_company_email boolean DEFAULT false NOT NULL
 );
 
 
@@ -1271,55 +1135,6 @@ CREATE SEQUENCE public.client_emails_id_seq
 --
 
 ALTER SEQUENCE public.client_emails_id_seq OWNED BY public.client_emails.id;
-
-
---
--- Name: client_experiences; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_experiences (
-    id bigint NOT NULL,
-    client_id bigint,
-    job_country character varying(191),
-    job_type character varying(191),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    fte_multiplier numeric(3,2) DEFAULT '1'::numeric NOT NULL,
-    admin_id bigint,
-    job_title character varying(500),
-    job_code character varying(100),
-    job_start_date date,
-    job_finish_date date,
-    relevant_experience boolean DEFAULT false NOT NULL,
-    job_emp_name character varying(500),
-    job_state character varying(100)
-);
-
-
---
--- Name: COLUMN client_experiences.fte_multiplier; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_experiences.fte_multiplier IS 'Full-time equivalent multiplier (1.00 = full-time, 0.50 = half-time, etc.)';
-
-
---
--- Name: client_experiences_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_experiences_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_experiences_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_experiences_id_seq OWNED BY public.client_experiences.id;
 
 
 --
@@ -1365,7 +1180,10 @@ CREATE TABLE public.client_legal_forms (
     signed_date date,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT client_legal_forms_form_type_check CHECK (((form_type)::text = ANY ((ARRAY['short_costs_disclosure'::character varying, 'cost_agreement'::character varying, 'authority_to_act'::character varying])::text[])))
+    attachment_path character varying(191),
+    attachment_original_name character varying(191),
+    is_uploaded boolean DEFAULT false NOT NULL,
+    CONSTRAINT client_legal_forms_form_type_check CHECK (((form_type)::text = ANY (ARRAY[('short_costs_disclosure'::character varying)::text, ('cost_agreement'::character varying)::text, ('authority_to_act'::character varying)::text])))
 );
 
 
@@ -1399,7 +1217,13 @@ CREATE TABLE public.client_matter_opposing_parties (
     party_role character varying(255),
     sort_order smallint DEFAULT '0'::smallint NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    opposing_lead_id bigint,
+    rep_firm character varying(255),
+    rep_name character varying(255),
+    rep_email character varying(255),
+    rep_phone character varying(64),
+    rep_notes text
 );
 
 
@@ -1423,96 +1247,6 @@ ALTER SEQUENCE public.client_matter_opposing_parties_id_seq OWNED BY public.clie
 
 
 --
--- Name: client_matter_payment_forms_verifications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_matter_payment_forms_verifications (
-    id bigint NOT NULL,
-    client_matter_id bigint CONSTRAINT client_matter_payment_forms_verificat_client_matter_id_not_null NOT NULL,
-    verified_by bigint NOT NULL,
-    verified_at timestamp(0) without time zone NOT NULL,
-    note text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: COLUMN client_matter_payment_forms_verifications.verified_by; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matter_payment_forms_verifications.verified_by IS 'Migration Agent (staff id) who verified';
-
-
---
--- Name: COLUMN client_matter_payment_forms_verifications.note; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matter_payment_forms_verifications.note IS 'Optional text from Migration Agent';
-
-
---
--- Name: client_matter_payment_forms_verifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_matter_payment_forms_verifications_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_matter_payment_forms_verifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_matter_payment_forms_verifications_id_seq OWNED BY public.client_matter_payment_forms_verifications.id;
-
-
---
--- Name: client_matter_references; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_matter_references (
-    id bigint NOT NULL,
-    type character varying(50) NOT NULL,
-    client_id bigint NOT NULL,
-    client_matter_id bigint NOT NULL,
-    current_status text,
-    payment_display_note character varying(100),
-    institute_override character varying(255),
-    visa_category_override character varying(50),
-    comments text,
-    checklist_sent_at date,
-    is_pinned boolean DEFAULT false NOT NULL,
-    created_by bigint,
-    updated_by bigint,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: client_matter_references_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_matter_references_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_matter_references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_matter_references_id_seq OWNED BY public.client_matter_references.id;
-
-
---
 -- Name: client_matter_tasks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1525,7 +1259,9 @@ CREATE TABLE public.client_matter_tasks (
     sort_order integer DEFAULT 0 NOT NULL,
     created_by bigint,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    note_id bigint,
+    due_date date
 );
 
 
@@ -1559,17 +1295,10 @@ CREATE TABLE public.client_matters (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     office_id integer,
-    tr_checklist_status character varying(32),
-    visitor_checklist_status character varying(32),
-    student_checklist_status character varying(32),
-    pr_checklist_status character varying(32),
-    employer_sponsored_checklist_status character varying(32),
     deadline date,
     decision_outcome character varying(50),
     decision_note text,
     workflow_id bigint,
-    partner_checklist_status character varying(32),
-    parents_checklist_status character varying(32),
     sel_matter_id bigint,
     workflow_stage_id bigint,
     sel_person_responsible bigint,
@@ -1581,7 +1310,11 @@ CREATE TABLE public.client_matters (
     incidence_type character varying(255),
     sel_legal_practitioner bigint,
     our_party_role character varying(64),
-    trust_last_statement_sent_at timestamp(0) without time zone
+    closed_by bigint,
+    discontinue_reason character varying(191),
+    discontinue_notes text,
+    reopen_requested_by bigint,
+    matter_completion_checklist json
 );
 
 
@@ -1593,59 +1326,10 @@ COMMENT ON COLUMN public.client_matters.office_id IS 'Manually assigned handling
 
 
 --
--- Name: COLUMN client_matters.tr_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.tr_checklist_status IS 'TR sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
--- Name: COLUMN client_matters.visitor_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.visitor_checklist_status IS 'Visitor sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
--- Name: COLUMN client_matters.student_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.student_checklist_status IS 'Student sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
--- Name: COLUMN client_matters.pr_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.pr_checklist_status IS 'PR sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
--- Name: COLUMN client_matters.employer_sponsored_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.employer_sponsored_checklist_status IS 'Employer Sponsored sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
 -- Name: COLUMN client_matters.deadline; Type: COMMENT; Schema: public; Owner: -
 --
 
 COMMENT ON COLUMN public.client_matters.deadline IS 'Optional matter deadline; null when not set';
-
-
---
--- Name: COLUMN client_matters.partner_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.partner_checklist_status IS 'Partner Visa sheet checklist status: active, hold, convert_to_client, discontinue';
-
-
---
--- Name: COLUMN client_matters.parents_checklist_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_matters.parents_checklist_status IS 'Parents Visa sheet checklist status: active, hold, convert_to_client, discontinue';
 
 
 --
@@ -1665,367 +1349,6 @@ CREATE SEQUENCE public.client_matters_id_seq
 --
 
 ALTER SEQUENCE public.client_matters_id_seq OWNED BY public.client_matters.id;
-
-
---
--- Name: client_occupations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_occupations (
-    id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    client_id bigint,
-    admin_id bigint,
-    skill_assessment character varying(255),
-    nomi_occupation character varying(500),
-    occupation_code character varying(100),
-    list character varying(100),
-    visa_subclass character varying(100),
-    dates date,
-    expiry_dates date,
-    relevant_occupation boolean DEFAULT false NOT NULL,
-    occ_reference_no character varying(191)
-);
-
-
---
--- Name: client_occupations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_occupations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_occupations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_occupations_id_seq OWNED BY public.client_occupations.id;
-
-
---
--- Name: client_passport_informations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_passport_informations (
-    id bigint NOT NULL,
-    client_id bigint,
-    admin_id bigint,
-    passport character varying(191),
-    passport_number character varying(191),
-    passport_country bigint,
-    passport_issue_date date,
-    passport_expiry_date date,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: client_passport_informations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_passport_informations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_passport_informations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_passport_informations_id_seq OWNED BY public.client_passport_informations.id;
-
-
---
--- Name: client_qualifications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_qualifications (
-    id bigint NOT NULL,
-    client_id bigint,
-    country character varying(191),
-    relevant_qualification boolean DEFAULT false NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    admin_id bigint,
-    level character varying(191),
-    name character varying(500),
-    qual_college_name character varying(500),
-    qual_campus character varying(255),
-    qual_state character varying(100),
-    start_date date,
-    finish_date date
-);
-
-
---
--- Name: client_qualifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_qualifications_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_qualifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_qualifications_id_seq OWNED BY public.client_qualifications.id;
-
-
---
--- Name: client_relationships; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_relationships (
-    id bigint NOT NULL,
-    admin_id bigint,
-    client_id bigint,
-    related_client_id bigint,
-    details text,
-    relationship_type character varying(191),
-    company_type character varying(191),
-    email character varying(255),
-    first_name character varying(255),
-    last_name character varying(255),
-    phone character varying(64),
-    gender character varying(64),
-    dob date,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: client_relationships_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_relationships_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_relationships_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_relationships_id_seq OWNED BY public.client_relationships.id;
-
-
---
--- Name: client_spouse_details; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_spouse_details (
-    id bigint NOT NULL,
-    client_id bigint,
-    spouse_assessment_date date,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    is_citizen boolean DEFAULT false NOT NULL,
-    has_pr boolean DEFAULT false NOT NULL,
-    dob date,
-    related_client_id bigint
-);
-
-
---
--- Name: COLUMN client_spouse_details.is_citizen; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_spouse_details.is_citizen IS 'Partner is Australian citizen';
-
-
---
--- Name: COLUMN client_spouse_details.has_pr; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_spouse_details.has_pr IS 'Partner has Australian Permanent Residency (PR)';
-
-
---
--- Name: COLUMN client_spouse_details.dob; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_spouse_details.dob IS 'Partner date of birth for points calculation';
-
-
---
--- Name: COLUMN client_spouse_details.related_client_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_spouse_details.related_client_id IS 'Reference to the partner client ID for EOI calculation';
-
-
---
--- Name: client_spouse_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_spouse_details_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_spouse_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_spouse_details_id_seq OWNED BY public.client_spouse_details.id;
-
-
---
--- Name: client_testscore; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_testscore (
-    id bigint NOT NULL,
-    overall_score character varying(32),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    proficiency_level character varying(191),
-    proficiency_points integer,
-    client_id bigint,
-    admin_id bigint,
-    test_type character varying(50),
-    listening character varying(32),
-    reading character varying(32),
-    writing character varying(32),
-    speaking character varying(32),
-    test_date date,
-    relevant_test boolean DEFAULT false NOT NULL,
-    test_reference_no character varying(191)
-);
-
-
---
--- Name: COLUMN client_testscore.proficiency_level; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_testscore.proficiency_level IS 'Calculated English proficiency level (e.g., Competent English, Proficient English, Superior English)';
-
-
---
--- Name: COLUMN client_testscore.proficiency_points; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_testscore.proficiency_points IS 'Points awarded for this proficiency level (0, 10, or 20)';
-
-
---
--- Name: client_testscore_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_testscore_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_testscore_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_testscore_id_seq OWNED BY public.client_testscore.id;
-
-
---
--- Name: client_travel_informations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_travel_informations (
-    id bigint NOT NULL,
-    client_id bigint,
-    admin_id bigint,
-    travel_country_visited character varying(255),
-    travel_arrival_date date,
-    travel_departure_date date,
-    travel_purpose character varying(500),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: client_travel_informations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_travel_informations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_travel_informations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_travel_informations_id_seq OWNED BY public.client_travel_informations.id;
-
-
---
--- Name: client_visa_countries; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_visa_countries (
-    id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    client_id bigint,
-    admin_id bigint,
-    visa_type bigint,
-    visa_description text,
-    visa_expiry_date date,
-    visa_grant_date date
-);
-
-
---
--- Name: COLUMN client_visa_countries.visa_type; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.client_visa_countries.visa_type IS 'matters.id';
-
-
---
--- Name: client_visa_countries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_visa_countries_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_visa_countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_visa_countries_id_seq OWNED BY public.client_visa_countries.id;
 
 
 --
@@ -2050,33 +1373,8 @@ CREATE TABLE public.companies (
     trust_abn character varying(64),
     trustee_name character varying(255),
     trustee_details text,
-    sponsorship_type character varying(50),
-    sponsorship_status character varying(50),
-    sponsorship_start_date date,
-    sponsorship_end_date date,
-    trn character varying(50),
-    regional_sponsorship boolean,
-    adverse_information boolean,
-    previous_sponsorship_notes text,
-    annual_turnover numeric(15,2),
-    wages_expenditure numeric(15,2),
-    workforce_australian_citizens integer,
-    workforce_permanent_residents integer,
-    workforce_temp_visa_holders integer,
-    workforce_total integer,
-    business_operating_since date,
-    main_business_activity character varying(255),
-    lmt_required boolean,
-    lmt_start_date date,
-    lmt_end_date date,
-    lmt_notes text,
-    training_position_title character varying(255),
-    trainer_name character varying(255),
-    workforce_foreign_494 integer,
-    workforce_foreign_other_temp_activity integer,
-    workforce_foreign_overseas_students integer,
-    workforce_foreign_working_holiday integer,
-    workforce_foreign_other integer
+    solicitor_id bigint,
+    solicitor_position character varying(255)
 );
 
 
@@ -2144,13 +1442,6 @@ COMMENT ON COLUMN public.companies.contact_person_position IS 'Position/Title of
 
 
 --
--- Name: COLUMN companies.trn; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.companies.trn IS 'Training Reference Number';
-
-
---
 -- Name: companies_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2214,103 +1505,6 @@ ALTER SEQUENCE public.company_directors_id_seq OWNED BY public.company_directors
 
 
 --
--- Name: company_nominations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.company_nominations (
-    id bigint NOT NULL,
-    company_id bigint NOT NULL,
-    position_title character varying(255),
-    anzsco_code character varying(10),
-    position_description text,
-    salary numeric(12,2),
-    duration character varying(100),
-    nominated_client_id bigint,
-    nominated_person_name character varying(255),
-    trn character varying(50),
-    status character varying(50),
-    nomination_date date,
-    expiry_date date,
-    sort_order integer DEFAULT 0 NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: COLUMN company_nominations.nominated_client_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.company_nominations.nominated_client_id IS 'FK to admins.id when person is client/lead';
-
-
---
--- Name: COLUMN company_nominations.nominated_person_name; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.company_nominations.nominated_person_name IS 'Name when person not in system';
-
-
---
--- Name: company_nominations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.company_nominations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: company_nominations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.company_nominations_id_seq OWNED BY public.company_nominations.id;
-
-
---
--- Name: company_sponsorships; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.company_sponsorships (
-    id bigint NOT NULL,
-    company_id bigint NOT NULL,
-    sponsorship_type character varying(50),
-    sponsorship_status character varying(50),
-    sponsorship_start_date date,
-    sponsorship_end_date date,
-    trn character varying(50),
-    regional_sponsorship boolean DEFAULT false NOT NULL,
-    adverse_information boolean DEFAULT false NOT NULL,
-    previous_sponsorship_notes text,
-    sort_order integer DEFAULT 0 NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: company_sponsorships_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.company_sponsorships_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: company_sponsorships_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.company_sponsorships_id_seq OWNED BY public.company_sponsorships.id;
-
-
---
 -- Name: company_trading_names; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2342,6 +1536,73 @@ CREATE SEQUENCE public.company_trading_names_id_seq
 --
 
 ALTER SEQUENCE public.company_trading_names_id_seq OWNED BY public.company_trading_names.id;
+
+
+--
+-- Name: conflict_party_contacts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conflict_party_contacts (
+    id bigint NOT NULL,
+    conflict_party_id bigint NOT NULL,
+    contact_type character varying(64) DEFAULT 'Mobile'::character varying,
+    country_code character varying(10) DEFAULT '+61'::character varying,
+    phone character varying(64) NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: conflict_party_contacts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.conflict_party_contacts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: conflict_party_contacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.conflict_party_contacts_id_seq OWNED BY public.conflict_party_contacts.id;
+
+
+--
+-- Name: conflict_party_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.conflict_party_emails (
+    id bigint NOT NULL,
+    conflict_party_id bigint NOT NULL,
+    email_type character varying(64) DEFAULT 'Personal'::character varying,
+    email character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: conflict_party_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.conflict_party_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: conflict_party_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.conflict_party_emails_id_seq OWNED BY public.conflict_party_emails.id;
 
 
 --
@@ -2420,44 +1681,6 @@ ALTER SEQUENCE public.countries_id_seq OWNED BY public.countries.id;
 
 
 --
--- Name: device_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.device_tokens (
-    id bigint NOT NULL,
-    user_id integer NOT NULL,
-    device_token character varying(500) NOT NULL,
-    device_name character varying(191),
-    device_type character varying(191),
-    app_version character varying(191),
-    os_version character varying(191),
-    is_active boolean DEFAULT true NOT NULL,
-    last_used_at timestamp(0) without time zone,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: device_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.device_tokens_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: device_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.device_tokens_id_seq OWNED BY public.device_tokens.id;
-
-
---
 -- Name: disbursement_lines; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2497,76 +1720,13 @@ ALTER SEQUENCE public.disbursement_lines_id_seq OWNED BY public.disbursement_lin
 --
 
 CREATE TABLE public.document_checklists (
-    id bigint CONSTRAINT portal_document_checklists_id_not_null NOT NULL,
-    name character varying(255) CONSTRAINT portal_document_checklists_name_not_null NOT NULL,
-    doc_type smallint DEFAULT '1'::smallint CONSTRAINT portal_document_checklists_doc_type_not_null NOT NULL,
-    status smallint DEFAULT '1'::smallint CONSTRAINT portal_document_checklists_status_not_null NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: document_notes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.document_notes (
     id bigint NOT NULL,
-    document_id integer NOT NULL,
-    created_by integer NOT NULL,
-    action_type character varying(50) NOT NULL,
-    note text,
-    metadata json,
+    name character varying(255) NOT NULL,
+    doc_type smallint DEFAULT '1'::smallint NOT NULL,
+    status smallint DEFAULT '1'::smallint NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
 );
-
-
---
--- Name: COLUMN document_notes.created_by; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.document_notes.created_by IS 'Admin who performed the action';
-
-
---
--- Name: COLUMN document_notes.action_type; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.document_notes.action_type IS 'associated, detached, status_changed, etc.';
-
-
---
--- Name: COLUMN document_notes.note; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.document_notes.note IS 'User-provided note or system-generated description';
-
-
---
--- Name: COLUMN document_notes.metadata; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.document_notes.metadata IS 'Additional data: entity type/id, old values, etc.';
-
-
---
--- Name: document_notes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.document_notes_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: document_notes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.document_notes_id_seq OWNED BY public.document_notes.id;
 
 
 --
@@ -2575,15 +1735,12 @@ ALTER SEQUENCE public.document_notes_id_seq OWNED BY public.document_notes.id;
 
 CREATE TABLE public.documents (
     id bigint NOT NULL,
-    status character varying(32),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     created_by integer,
     office_id integer,
-    cp_list_id bigint,
-    cp_rejection_reason text,
-    cp_doc_status smallint,
     lead_id bigint,
+    status character varying(32),
     client_id bigint,
     user_id bigint,
     client_matter_id character varying(64),
@@ -2599,7 +1756,11 @@ CREATE TABLE public.documents (
     myfile_key text,
     file_size character varying(64),
     signature_doc_link text,
-    signed_doc_link text
+    signed_doc_link text,
+    signed_hash character varying(64),
+    original_hash character varying(64),
+    hash_generated_at timestamp(0) without time zone,
+    certificate_path character varying(191)
 );
 
 
@@ -2608,20 +1769,6 @@ CREATE TABLE public.documents (
 --
 
 COMMENT ON COLUMN public.documents.office_id IS 'Office for ad-hoc documents (without matter)';
-
-
---
--- Name: COLUMN documents.cp_list_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.documents.cp_list_id IS 'FK to cp_doc_checklist.id';
-
-
---
--- Name: COLUMN documents.cp_doc_status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.documents.cp_doc_status IS '0=InProgress, 1=Approved, 2=Rejected';
 
 
 --
@@ -2644,13 +1791,67 @@ ALTER SEQUENCE public.documents_id_seq OWNED BY public.documents.id;
 
 
 --
+-- Name: email_calendar_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_calendar_links (
+    id bigint NOT NULL,
+    email_log_id bigint NOT NULL,
+    calendar_type character varying(32) NOT NULL,
+    calendar_id bigint,
+    event_type character varying(32) DEFAULT 'meeting'::character varying NOT NULL,
+    event_title character varying(255) NOT NULL,
+    starts_at timestamp(0) without time zone NOT NULL,
+    ends_at timestamp(0) without time zone,
+    location character varying(255),
+    source character varying(32) DEFAULT 'text_detection'::character varying NOT NULL,
+    status character varying(16) DEFAULT 'merged'::character varying NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: COLUMN email_calendar_links.calendar_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.email_calendar_links.calendar_type IS 'staff_event or court_hearing';
+
+
+--
+-- Name: COLUMN email_calendar_links.status; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.email_calendar_links.status IS 'merged or pending';
+
+
+--
+-- Name: email_calendar_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_calendar_links_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_calendar_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_calendar_links_id_seq OWNED BY public.email_calendar_links.id;
+
+
+--
 -- Name: email_label_email_log; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.email_label_email_log (
-    id bigint CONSTRAINT email_label_mail_report_id_not_null NOT NULL,
-    email_log_id bigint CONSTRAINT email_label_mail_report_mail_report_id_not_null NOT NULL,
-    email_label_id bigint CONSTRAINT email_label_mail_report_email_label_id_not_null NOT NULL,
+    id bigint NOT NULL,
+    email_log_id bigint NOT NULL,
+    email_label_id bigint NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
 );
@@ -2717,16 +1918,16 @@ ALTER SEQUENCE public.email_labels_id_seq OWNED BY public.email_labels.id;
 --
 
 CREATE TABLE public.email_log_attachments (
-    id bigint CONSTRAINT mail_report_attachments_id_not_null NOT NULL,
-    email_log_id integer CONSTRAINT mail_report_attachments_mail_report_id_not_null NOT NULL,
-    filename character varying(191) CONSTRAINT mail_report_attachments_filename_not_null NOT NULL,
+    id bigint NOT NULL,
+    email_log_id integer NOT NULL,
+    filename character varying(191) NOT NULL,
     display_name character varying(191),
     content_type character varying(191),
     file_path character varying(500),
     s3_key character varying(500),
-    file_size bigint DEFAULT '0'::bigint CONSTRAINT mail_report_attachments_file_size_not_null NOT NULL,
+    file_size bigint DEFAULT '0'::bigint NOT NULL,
     content_id character varying(191),
-    is_inline boolean DEFAULT false CONSTRAINT mail_report_attachments_is_inline_not_null NOT NULL,
+    is_inline boolean DEFAULT false NOT NULL,
     description character varying(191),
     headers json,
     extension character varying(10),
@@ -2740,34 +1941,27 @@ CREATE TABLE public.email_log_attachments (
 --
 
 CREATE TABLE public.email_logs (
-    id bigint CONSTRAINT mail_reports_id_not_null NOT NULL,
+    id bigint NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     python_analysis json,
-    python_rendering json,
-    sentiment character varying(255) DEFAULT 'neutral'::character varying CONSTRAINT mail_reports_sentiment_not_null NOT NULL,
+    sentiment character varying(255) DEFAULT 'neutral'::character varying NOT NULL,
     language character varying(191),
-    enhanced_html text,
-    rendered_html text,
     text_preview text,
     security_issues json,
     thread_info json,
     message_id character varying(191),
-    thread_id character varying(191),
     received_date timestamp(0) without time zone,
     processed_at timestamp(0) without time zone,
-    last_accessed_at timestamp(0) without time zone,
     file_hash character varying(191),
     user_id bigint,
     from_mail character varying(512),
     to_mail text,
     cc text,
     template_id bigint,
-    reciept_id bigint,
     subject character varying(512),
     type character varying(64),
     message text,
-    attachments text,
     mail_type character varying(64),
     client_id bigint,
     client_matter_id bigint,
@@ -2776,7 +1970,19 @@ CREATE TABLE public.email_logs (
     fetch_mail_sent_time timestamp(0) without time zone,
     uploaded_doc_id bigint,
     mail_is_read boolean DEFAULT false NOT NULL,
-    CONSTRAINT mail_reports_sentiment_check CHECK (((sentiment)::text = ANY ((ARRAY['positive'::character varying, 'neutral'::character varying, 'negative'::character varying])::text[])))
+    pdf_doc_id bigint,
+    send_status character varying(20) DEFAULT 'sent'::character varying NOT NULL,
+    send_error text,
+    bcc text,
+    sent_at timestamp(0) without time zone,
+    failed_at timestamp(0) without time zone,
+    retry_count smallint DEFAULT '0'::smallint NOT NULL,
+    mailbox_email character varying(191),
+    synced_email_id bigint,
+    sync_assignment_status character varying(30),
+    imap_uid bigint,
+    sync_source character varying(20),
+    CONSTRAINT mail_reports_sentiment_check CHECK (((sentiment)::text = ANY (ARRAY[('positive'::character varying)::text, ('neutral'::character varying)::text, ('negative'::character varying)::text])))
 );
 
 
@@ -2869,7 +2075,21 @@ CREATE TABLE public.emails (
     display_name character varying(255),
     status boolean DEFAULT true NOT NULL,
     email_signature text,
-    user_id text
+    user_id text,
+    mail_provider character varying(20) DEFAULT 'zoho'::character varying NOT NULL,
+    smtp_host character varying(191) DEFAULT 'smtp.zoho.com'::character varying,
+    smtp_port smallint DEFAULT '587'::smallint,
+    smtp_encryption character varying(10) DEFAULT 'tls'::character varying,
+    password text,
+    sync_enabled boolean DEFAULT true NOT NULL,
+    last_synced_at timestamp(0) without time zone,
+    last_imap_uid bigint,
+    last_sync_error text,
+    imap_host character varying(191),
+    imap_port smallint DEFAULT '993'::smallint,
+    imap_encryption character varying(10) DEFAULT 'ssl'::character varying,
+    last_imap_uid_sent bigint,
+    sync_sent_enabled boolean DEFAULT false NOT NULL
 );
 
 
@@ -3049,84 +2269,6 @@ ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
 
 
 --
--- Name: lead_matter_references; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.lead_matter_references (
-    id bigint NOT NULL,
-    type character varying(50) NOT NULL,
-    lead_id bigint NOT NULL,
-    matter_id bigint NOT NULL,
-    checklist_sent_at date,
-    created_by bigint,
-    updated_by bigint,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: lead_matter_references_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.lead_matter_references_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: lead_matter_references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.lead_matter_references_id_seq OWNED BY public.lead_matter_references.id;
-
-
---
--- Name: lead_reminders; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.lead_reminders (
-    id bigint NOT NULL,
-    visa_type character varying(50) NOT NULL,
-    lead_id bigint NOT NULL,
-    type character varying(20) NOT NULL,
-    reminded_at timestamp(0) without time zone NOT NULL,
-    reminded_by bigint,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: COLUMN lead_reminders.type; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.lead_reminders.type IS 'email, sms, or phone';
-
-
---
--- Name: lead_reminders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.lead_reminders_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: lead_reminders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.lead_reminders_id_seq OWNED BY public.lead_reminders.id;
-
-
---
 -- Name: mail_report_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -3198,55 +2340,6 @@ ALTER SEQUENCE public.matter_checklists_id_seq OWNED BY public.matter_checklists
 
 
 --
--- Name: matter_reminders; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.matter_reminders (
-    id bigint NOT NULL,
-    visa_type character varying(50) NOT NULL,
-    client_matter_id bigint NOT NULL,
-    type character varying(20) NOT NULL,
-    reminded_at timestamp(0) without time zone NOT NULL,
-    reminded_by bigint,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: COLUMN matter_reminders.type; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.matter_reminders.type IS 'email, sms, or phone';
-
-
---
--- Name: COLUMN matter_reminders.reminded_by; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.matter_reminders.reminded_by IS 'Staff who sent the reminder';
-
-
---
--- Name: matter_reminders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.matter_reminders_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: matter_reminders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.matter_reminders_id_seq OWNED BY public.matter_reminders.id;
-
-
---
 -- Name: matters; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3290,108 +2383,6 @@ ALTER SEQUENCE public.matters_id_seq OWNED BY public.matters.id;
 
 
 --
--- Name: message_attachments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.message_attachments (
-    id bigint NOT NULL,
-    message_id bigint NOT NULL,
-    filename character varying(191) NOT NULL,
-    original_filename character varying(191) NOT NULL,
-    path character varying(191) NOT NULL,
-    mime_type character varying(100) NOT NULL,
-    type character varying(20) DEFAULT 'document'::character varying NOT NULL,
-    size integer,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: message_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.message_attachments_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: message_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.message_attachments_id_seq OWNED BY public.message_attachments.id;
-
-
---
--- Name: message_recipients; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.message_recipients (
-    id bigint NOT NULL,
-    message_id bigint NOT NULL,
-    recipient_id bigint NOT NULL,
-    recipient character varying(191),
-    is_read boolean DEFAULT false NOT NULL,
-    read_at timestamp(0) without time zone,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: message_recipients_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.message_recipients_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: message_recipients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.message_recipients_id_seq OWNED BY public.message_recipients.id;
-
-
---
--- Name: messages; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.messages (
-    id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: messages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.messages_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.messages_id_seq OWNED BY public.messages.id;
-
-
---
 -- Name: migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3420,40 +2411,6 @@ CREATE SEQUENCE public.migrations_id_seq
 --
 
 ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
-
-
---
--- Name: nomination_document_types; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.nomination_document_types (
-    id bigint NOT NULL,
-    title character varying(191) NOT NULL,
-    status smallint DEFAULT '1'::smallint NOT NULL,
-    client_id bigint,
-    client_matter_id bigint,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: nomination_document_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.nomination_document_types_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: nomination_document_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.nomination_document_types_id_seq OWNED BY public.nomination_document_types.id;
 
 
 --
@@ -3554,6 +2511,43 @@ CREATE TABLE public.password_reset_tokens (
 
 
 --
+-- Name: personal_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.personal_access_tokens (
+    id bigint NOT NULL,
+    tokenable_type character varying(191) NOT NULL,
+    tokenable_id bigint NOT NULL,
+    name character varying(191) NOT NULL,
+    token character varying(64) NOT NULL,
+    abilities text,
+    last_used_at timestamp(0) without time zone,
+    expires_at timestamp(0) without time zone,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: personal_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.personal_access_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: personal_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.personal_access_tokens_id_seq OWNED BY public.personal_access_tokens.id;
+
+
+--
 -- Name: personal_document_types; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3648,41 +2642,6 @@ ALTER SEQUENCE public.portal_document_checklists_id_seq OWNED BY public.document
 
 
 --
--- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.refresh_tokens (
-    id bigint NOT NULL,
-    user_id integer NOT NULL,
-    token character varying(500) NOT NULL,
-    device_name character varying(191),
-    expires_at timestamp(0) without time zone NOT NULL,
-    is_revoked boolean DEFAULT false NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: refresh_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.refresh_tokens_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.refresh_tokens_id_seq OWNED BY public.refresh_tokens.id;
-
-
---
 -- Name: sessions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3708,8 +2667,19 @@ CREATE TABLE public.signature_activities (
     note text,
     metadata json,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    signer_id bigint,
+    actor_type character varying(20),
+    ip_address character varying(45),
+    user_agent character varying(500)
 );
+
+
+--
+-- Name: COLUMN signature_activities.actor_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.signature_activities.actor_type IS 'staff|signer|system';
 
 
 --
@@ -3776,22 +2746,22 @@ ALTER SEQUENCE public.signature_fields_id_seq OWNED BY public.signature_fields.i
 
 CREATE TABLE public.signers (
     id bigint NOT NULL,
-    document_id bigint,
-    email character varying(191),
-    name character varying(191),
-    token character varying(64),
     status character varying(20),
     reminder_count integer DEFAULT 0,
-    signed_at timestamp(0) without time zone,
-    opened_at timestamp(0) without time zone,
-    last_reminder_sent_at timestamp(0) without time zone,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     email_template character varying(191),
     email_subject character varying(191),
     email_message text,
     from_email character varying(191),
-    cancelled_at timestamp(0) without time zone
+    cancelled_at timestamp(0) without time zone,
+    document_id bigint,
+    signed_at timestamp(0) without time zone,
+    email character varying(255),
+    name character varying(255),
+    token character varying(64),
+    opened_at timestamp(0) without time zone,
+    last_reminder_sent_at timestamp(0) without time zone
 );
 
 
@@ -3838,8 +2808,8 @@ CREATE TABLE public.sms_logs (
     delivered_at timestamp(0) without time zone,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT sms_logs_message_type_check CHECK (((message_type)::text = ANY ((ARRAY['verification'::character varying, 'notification'::character varying, 'manual'::character varying, 'reminder'::character varying])::text[]))),
-    CONSTRAINT sms_logs_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'sent'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))
+    CONSTRAINT sms_logs_message_type_check CHECK (((message_type)::text = ANY (ARRAY[('verification'::character varying)::text, ('notification'::character varying)::text, ('manual'::character varying)::text, ('reminder'::character varying)::text]))),
+    CONSTRAINT sms_logs_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('sent'::character varying)::text, ('delivered'::character varying)::text, ('failed'::character varying)::text])))
 );
 
 
@@ -4095,8 +3065,6 @@ CREATE TABLE public.staff (
     permission text,
     office_id bigint,
     show_dashboard_per smallint DEFAULT '0'::smallint NOT NULL,
-    time_zone character varying(50),
-    marn_number character varying(100),
     legal_practitioner_number character varying(100),
     company_name character varying(191),
     company_website character varying(500),
@@ -4111,8 +3079,78 @@ CREATE TABLE public.staff (
     quick_access_enabled boolean DEFAULT false NOT NULL,
     grant_super_admin_access boolean,
     is_solicitor smallint DEFAULT '0'::smallint NOT NULL,
-    trust_rule42_supervisor boolean DEFAULT false NOT NULL
+    email_signature text,
+    can_delete_email_with_attachments boolean DEFAULT false NOT NULL,
+    can_close_discontinue_matter boolean DEFAULT false NOT NULL,
+    can_sync_inbox_emails boolean DEFAULT false NOT NULL,
+    can_edit_final_invoice boolean DEFAULT false NOT NULL,
+    can_view_all_synced_inbox_mail boolean DEFAULT false NOT NULL,
+    can_pause_mailbox_inbox_sync boolean DEFAULT false NOT NULL
 );
+
+
+--
+-- Name: staff_calendar_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.staff_calendar_events (
+    id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    event_type character varying(32) DEFAULT 'meeting'::character varying NOT NULL,
+    starts_at timestamp(0) without time zone NOT NULL,
+    ends_at timestamp(0) without time zone,
+    is_all_day boolean DEFAULT false NOT NULL,
+    calendar_type character varying(32),
+    client_id integer,
+    client_matter_id bigint,
+    location character varying(255),
+    notes text,
+    created_by_staff_id bigint,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    reminder_minutes smallint,
+    reminder_sent_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: COLUMN staff_calendar_events.calendar_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.staff_calendar_events.calendar_type IS 'ajay, kunal, or null for both';
+
+
+--
+-- Name: COLUMN staff_calendar_events.reminder_minutes; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.staff_calendar_events.reminder_minutes IS 'Minutes before starts_at to fire reminder; null = no reminder';
+
+
+--
+-- Name: COLUMN staff_calendar_events.reminder_sent_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.staff_calendar_events.reminder_sent_at IS 'Set once the reminder has been delivered';
+
+
+--
+-- Name: staff_calendar_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.staff_calendar_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: staff_calendar_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.staff_calendar_events_id_seq OWNED BY public.staff_calendar_events.id;
 
 
 --
@@ -4139,7 +3177,7 @@ ALTER SEQUENCE public.staff_id_seq OWNED BY public.staff.id;
 --
 
 CREATE TABLE public.staff_login_logs (
-    id bigint CONSTRAINT user_logs_id_not_null NOT NULL,
+    id bigint NOT NULL,
     level character varying(50),
     user_id bigint,
     ip_address character varying(45),
@@ -4180,315 +3218,6 @@ CREATE SEQUENCE public.teams_id_seq
 --
 
 ALTER SEQUENCE public.teams_id_seq OWNED BY public.teams.id;
-
-
---
--- Name: trust_accounting_periods; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_accounting_periods (
-    id bigint NOT NULL,
-    period_start date NOT NULL,
-    period_end date NOT NULL,
-    status character varying(32) DEFAULT 'locked'::character varying NOT NULL,
-    locked_at timestamp(0) without time zone,
-    locked_by_staff_id bigint,
-    notes text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    unlocked_at timestamp(0) without time zone,
-    unlocked_by_staff_id bigint,
-    unlock_reason text
-);
-
-
---
--- Name: trust_accounting_periods_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_accounting_periods_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_accounting_periods_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_accounting_periods_id_seq OWNED BY public.trust_accounting_periods.id;
-
-
---
--- Name: trust_audit_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_audit_logs (
-    id bigint NOT NULL,
-    table_name character varying(128) NOT NULL,
-    row_id bigint NOT NULL,
-    event character varying(64) NOT NULL,
-    field_name character varying(128),
-    old_value text,
-    new_value text,
-    performed_by bigint,
-    ip_address character varying(45),
-    context text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_audit_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_audit_logs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_audit_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_audit_logs_id_seq OWNED BY public.trust_audit_logs.id;
-
-
---
--- Name: trust_bank_accounts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_bank_accounts (
-    id bigint NOT NULL,
-    name character varying(191) NOT NULL,
-    bsb character varying(16),
-    account_number_hint character varying(32),
-    is_active boolean DEFAULT true NOT NULL,
-    notes text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_bank_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_bank_accounts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_bank_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_bank_accounts_id_seq OWNED BY public.trust_bank_accounts.id;
-
-
---
--- Name: trust_bank_statement_lines; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_bank_statement_lines (
-    id bigint NOT NULL,
-    trust_bank_account_id bigint NOT NULL,
-    value_date date NOT NULL,
-    amount numeric(14,2) NOT NULL,
-    narrative text,
-    bank_reference character varying(500),
-    matched_account_client_receipt_id bigint,
-    matched_at timestamp(0) without time zone,
-    matched_by_staff_id bigint,
-    match_notes text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_bank_statement_lines_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_bank_statement_lines_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_bank_statement_lines_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_bank_statement_lines_id_seq OWNED BY public.trust_bank_statement_lines.id;
-
-
---
--- Name: trust_monthly_archives; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_monthly_archives (
-    id bigint NOT NULL,
-    period_year smallint NOT NULL,
-    period_month smallint NOT NULL,
-    archive_type character varying(32) NOT NULL,
-    prepared_by_staff_id bigint,
-    prepared_at timestamp(0) without time zone,
-    file_document_id bigint,
-    status character varying(16) DEFAULT 'finalised'::character varying NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_monthly_archives_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_monthly_archives_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_monthly_archives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_monthly_archives_id_seq OWNED BY public.trust_monthly_archives.id;
-
-
---
--- Name: trust_practice_sequences; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_practice_sequences (
-    id bigint NOT NULL,
-    trust_year_start_year smallint NOT NULL,
-    last_sequence integer DEFAULT 0 NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    sequence_type character varying(8) DEFAULT 'TR'::character varying NOT NULL
-);
-
-
---
--- Name: COLUMN trust_practice_sequences.trust_year_start_year; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.trust_practice_sequences.trust_year_start_year IS 'Victorian trust year begins 1 April; value is calendar year of 1 April (e.g. 2025 for Apr 2025–Mar 2026)';
-
-
---
--- Name: COLUMN trust_practice_sequences.sequence_type; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.trust_practice_sequences.sequence_type IS 'TR = trust receipt; TJ = trust journal';
-
-
---
--- Name: trust_practice_sequences_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_practice_sequences_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_practice_sequences_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_practice_sequences_id_seq OWNED BY public.trust_practice_sequences.id;
-
-
---
--- Name: trust_withdrawal_authorities; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_withdrawal_authorities (
-    id bigint NOT NULL,
-    account_client_receipt_id bigint NOT NULL,
-    client_id bigint NOT NULL,
-    invoice_no character varying(191),
-    withdrawal_amount numeric(14,2) NOT NULL,
-    authority_type_id bigint NOT NULL,
-    authorised_by_staff_id bigint NOT NULL,
-    notice_given_date date,
-    authority_notes text,
-    supervisor_override boolean DEFAULT false NOT NULL,
-    override_reason text,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_withdrawal_authorities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_withdrawal_authorities_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_withdrawal_authorities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_withdrawal_authorities_id_seq OWNED BY public.trust_withdrawal_authorities.id;
-
-
---
--- Name: trust_withdrawal_authority_types; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.trust_withdrawal_authority_types (
-    id bigint NOT NULL,
-    label character varying(191) NOT NULL,
-    sort_order smallint DEFAULT '0'::smallint NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: trust_withdrawal_authority_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.trust_withdrawal_authority_types_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: trust_withdrawal_authority_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.trust_withdrawal_authority_types_id_seq OWNED BY public.trust_withdrawal_authority_types.id;
 
 
 --
@@ -4672,13 +3401,6 @@ ALTER TABLE ONLY public.admins ALTER COLUMN id SET DEFAULT nextval('public.admin
 
 
 --
--- Name: agent_details id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agent_details ALTER COLUMN id SET DEFAULT nextval('public.agent_details_id_seq'::regclass);
-
-
---
 -- Name: appointment_consultants id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4742,17 +3464,17 @@ ALTER TABLE ONLY public.client_addresses ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- Name: client_art_references id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: client_conflict_checks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_art_references ALTER COLUMN id SET DEFAULT nextval('public.client_art_references_id_seq'::regclass);
+ALTER TABLE ONLY public.client_conflict_checks ALTER COLUMN id SET DEFAULT nextval('public.client_conflict_checks_id_seq'::regclass);
 
 
 --
--- Name: client_characters id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: client_conflict_parties id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_characters ALTER COLUMN id SET DEFAULT nextval('public.client_characters_id_seq'::regclass);
+ALTER TABLE ONLY public.client_conflict_parties ALTER COLUMN id SET DEFAULT nextval('public.client_conflict_parties_id_seq'::regclass);
 
 
 --
@@ -4777,13 +3499,6 @@ ALTER TABLE ONLY public.client_emails ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- Name: client_experiences id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_experiences ALTER COLUMN id SET DEFAULT nextval('public.client_experiences_id_seq'::regclass);
-
-
---
 -- Name: client_legal_forms id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4795,20 +3510,6 @@ ALTER TABLE ONLY public.client_legal_forms ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.client_matter_opposing_parties ALTER COLUMN id SET DEFAULT nextval('public.client_matter_opposing_parties_id_seq'::regclass);
-
-
---
--- Name: client_matter_payment_forms_verifications id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_payment_forms_verifications ALTER COLUMN id SET DEFAULT nextval('public.client_matter_payment_forms_verifications_id_seq'::regclass);
-
-
---
--- Name: client_matter_references id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references ALTER COLUMN id SET DEFAULT nextval('public.client_matter_references_id_seq'::regclass);
 
 
 --
@@ -4826,62 +3527,6 @@ ALTER TABLE ONLY public.client_matters ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: client_occupations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_occupations ALTER COLUMN id SET DEFAULT nextval('public.client_occupations_id_seq'::regclass);
-
-
---
--- Name: client_passport_informations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_passport_informations ALTER COLUMN id SET DEFAULT nextval('public.client_passport_informations_id_seq'::regclass);
-
-
---
--- Name: client_qualifications id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_qualifications ALTER COLUMN id SET DEFAULT nextval('public.client_qualifications_id_seq'::regclass);
-
-
---
--- Name: client_relationships id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_relationships ALTER COLUMN id SET DEFAULT nextval('public.client_relationships_id_seq'::regclass);
-
-
---
--- Name: client_spouse_details id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_spouse_details ALTER COLUMN id SET DEFAULT nextval('public.client_spouse_details_id_seq'::regclass);
-
-
---
--- Name: client_testscore id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_testscore ALTER COLUMN id SET DEFAULT nextval('public.client_testscore_id_seq'::regclass);
-
-
---
--- Name: client_travel_informations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_travel_informations ALTER COLUMN id SET DEFAULT nextval('public.client_travel_informations_id_seq'::regclass);
-
-
---
--- Name: client_visa_countries id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_visa_countries ALTER COLUMN id SET DEFAULT nextval('public.client_visa_countries_id_seq'::regclass);
-
-
---
 -- Name: companies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4896,24 +3541,24 @@ ALTER TABLE ONLY public.company_directors ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- Name: company_nominations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_nominations ALTER COLUMN id SET DEFAULT nextval('public.company_nominations_id_seq'::regclass);
-
-
---
--- Name: company_sponsorships id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_sponsorships ALTER COLUMN id SET DEFAULT nextval('public.company_sponsorships_id_seq'::regclass);
-
-
---
 -- Name: company_trading_names id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.company_trading_names ALTER COLUMN id SET DEFAULT nextval('public.company_trading_names_id_seq'::regclass);
+
+
+--
+-- Name: conflict_party_contacts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conflict_party_contacts ALTER COLUMN id SET DEFAULT nextval('public.conflict_party_contacts_id_seq'::regclass);
+
+
+--
+-- Name: conflict_party_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conflict_party_emails ALTER COLUMN id SET DEFAULT nextval('public.conflict_party_emails_id_seq'::regclass);
 
 
 --
@@ -4931,20 +3576,6 @@ ALTER TABLE ONLY public.countries ALTER COLUMN id SET DEFAULT nextval('public.co
 
 
 --
--- Name: cp_doc_checklists id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cp_doc_checklists ALTER COLUMN id SET DEFAULT nextval('public.application_document_lists_id_seq'::regclass);
-
-
---
--- Name: device_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_tokens ALTER COLUMN id SET DEFAULT nextval('public.device_tokens_id_seq'::regclass);
-
-
---
 -- Name: disbursement_lines id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4959,17 +3590,17 @@ ALTER TABLE ONLY public.document_checklists ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
--- Name: document_notes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_notes ALTER COLUMN id SET DEFAULT nextval('public.document_notes_id_seq'::regclass);
-
-
---
 -- Name: documents id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documents ALTER COLUMN id SET DEFAULT nextval('public.documents_id_seq'::regclass);
+
+
+--
+-- Name: email_calendar_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_calendar_links ALTER COLUMN id SET DEFAULT nextval('public.email_calendar_links_id_seq'::regclass);
 
 
 --
@@ -5043,31 +3674,10 @@ ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id
 
 
 --
--- Name: lead_matter_references id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references ALTER COLUMN id SET DEFAULT nextval('public.lead_matter_references_id_seq'::regclass);
-
-
---
--- Name: lead_reminders id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_reminders ALTER COLUMN id SET DEFAULT nextval('public.lead_reminders_id_seq'::regclass);
-
-
---
 -- Name: matter_checklists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.matter_checklists ALTER COLUMN id SET DEFAULT nextval('public.matter_checklists_id_seq'::regclass);
-
-
---
--- Name: matter_reminders id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.matter_reminders ALTER COLUMN id SET DEFAULT nextval('public.matter_reminders_id_seq'::regclass);
 
 
 --
@@ -5078,38 +3688,10 @@ ALTER TABLE ONLY public.matters ALTER COLUMN id SET DEFAULT nextval('public.matt
 
 
 --
--- Name: message_attachments id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_attachments ALTER COLUMN id SET DEFAULT nextval('public.message_attachments_id_seq'::regclass);
-
-
---
--- Name: message_recipients id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_recipients ALTER COLUMN id SET DEFAULT nextval('public.message_recipients_id_seq'::regclass);
-
-
---
--- Name: messages id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.messages ALTER COLUMN id SET DEFAULT nextval('public.messages_id_seq'::regclass);
-
-
---
 -- Name: migrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
-
-
---
--- Name: nomination_document_types id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.nomination_document_types ALTER COLUMN id SET DEFAULT nextval('public.nomination_document_types_id_seq'::regclass);
 
 
 --
@@ -5127,6 +3709,13 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: personal_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.personal_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.personal_access_tokens_id_seq'::regclass);
+
+
+--
 -- Name: personal_document_types id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5138,13 +3727,6 @@ ALTER TABLE ONLY public.personal_document_types ALTER COLUMN id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public.phone_verifications ALTER COLUMN id SET DEFAULT nextval('public.phone_verifications_id_seq'::regclass);
-
-
---
--- Name: refresh_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('public.refresh_tokens_id_seq'::regclass);
 
 
 --
@@ -5190,6 +3772,13 @@ ALTER TABLE ONLY public.staff ALTER COLUMN id SET DEFAULT nextval('public.staff_
 
 
 --
+-- Name: staff_calendar_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.staff_calendar_events ALTER COLUMN id SET DEFAULT nextval('public.staff_calendar_events_id_seq'::regclass);
+
+
+--
 -- Name: staff_login_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5201,62 +3790,6 @@ ALTER TABLE ONLY public.staff_login_logs ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.teams ALTER COLUMN id SET DEFAULT nextval('public.teams_id_seq'::regclass);
-
-
---
--- Name: trust_accounting_periods id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_accounting_periods ALTER COLUMN id SET DEFAULT nextval('public.trust_accounting_periods_id_seq'::regclass);
-
-
---
--- Name: trust_audit_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_audit_logs ALTER COLUMN id SET DEFAULT nextval('public.trust_audit_logs_id_seq'::regclass);
-
-
---
--- Name: trust_bank_accounts id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_accounts ALTER COLUMN id SET DEFAULT nextval('public.trust_bank_accounts_id_seq'::regclass);
-
-
---
--- Name: trust_bank_statement_lines id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines ALTER COLUMN id SET DEFAULT nextval('public.trust_bank_statement_lines_id_seq'::regclass);
-
-
---
--- Name: trust_monthly_archives id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_monthly_archives ALTER COLUMN id SET DEFAULT nextval('public.trust_monthly_archives_id_seq'::regclass);
-
-
---
--- Name: trust_practice_sequences id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_practice_sequences ALTER COLUMN id SET DEFAULT nextval('public.trust_practice_sequences_id_seq'::regclass);
-
-
---
--- Name: trust_withdrawal_authorities id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities ALTER COLUMN id SET DEFAULT nextval('public.trust_withdrawal_authorities_id_seq'::regclass);
-
-
---
--- Name: trust_withdrawal_authority_types id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authority_types ALTER COLUMN id SET DEFAULT nextval('public.trust_withdrawal_authority_types_id_seq'::regclass);
 
 
 --
@@ -5325,22 +3858,6 @@ ALTER TABLE ONLY public.admins
 
 ALTER TABLE ONLY public.admins
     ADD CONSTRAINT admins_pkey PRIMARY KEY (id);
-
-
---
--- Name: agent_details agent_details_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agent_details
-    ADD CONSTRAINT agent_details_pkey PRIMARY KEY (id);
-
-
---
--- Name: cp_doc_checklists application_document_lists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cp_doc_checklists
-    ADD CONSTRAINT application_document_lists_pkey PRIMARY KEY (id);
 
 
 --
@@ -5440,19 +3957,19 @@ ALTER TABLE ONLY public.client_addresses
 
 
 --
--- Name: client_art_references client_art_references_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: client_conflict_checks client_conflict_checks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_art_references
-    ADD CONSTRAINT client_art_references_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.client_conflict_checks
+    ADD CONSTRAINT client_conflict_checks_pkey PRIMARY KEY (id);
 
 
 --
--- Name: client_characters client_characters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: client_conflict_parties client_conflict_parties_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_characters
-    ADD CONSTRAINT client_characters_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.client_conflict_parties
+    ADD CONSTRAINT client_conflict_parties_pkey PRIMARY KEY (id);
 
 
 --
@@ -5480,14 +3997,6 @@ ALTER TABLE ONLY public.client_emails
 
 
 --
--- Name: client_experiences client_experiences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_experiences
-    ADD CONSTRAINT client_experiences_pkey PRIMARY KEY (id);
-
-
---
 -- Name: client_legal_forms client_legal_forms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5504,30 +4013,6 @@ ALTER TABLE ONLY public.client_matter_opposing_parties
 
 
 --
--- Name: client_matter_payment_forms_verifications client_matter_payment_forms_verifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_payment_forms_verifications
-    ADD CONSTRAINT client_matter_payment_forms_verifications_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_matter_references client_matter_ref_type_client_matter_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_ref_type_client_matter_unique UNIQUE (type, client_id, client_matter_id);
-
-
---
--- Name: client_matter_references client_matter_references_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_references_pkey PRIMARY KEY (id);
-
-
---
 -- Name: client_matter_tasks client_matter_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5541,70 +4026,6 @@ ALTER TABLE ONLY public.client_matter_tasks
 
 ALTER TABLE ONLY public.client_matters
     ADD CONSTRAINT client_matters_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_occupations client_occupations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_occupations
-    ADD CONSTRAINT client_occupations_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_passport_informations client_passport_informations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_passport_informations
-    ADD CONSTRAINT client_passport_informations_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_qualifications client_qualifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_qualifications
-    ADD CONSTRAINT client_qualifications_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_relationships client_relationships_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_relationships
-    ADD CONSTRAINT client_relationships_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_spouse_details client_spouse_details_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_spouse_details
-    ADD CONSTRAINT client_spouse_details_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_testscore client_testscore_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_testscore
-    ADD CONSTRAINT client_testscore_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_travel_informations client_travel_informations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_travel_informations
-    ADD CONSTRAINT client_travel_informations_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_visa_countries client_visa_countries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_visa_countries
-    ADD CONSTRAINT client_visa_countries_pkey PRIMARY KEY (id);
 
 
 --
@@ -5632,27 +4053,27 @@ ALTER TABLE ONLY public.company_directors
 
 
 --
--- Name: company_nominations company_nominations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_nominations
-    ADD CONSTRAINT company_nominations_pkey PRIMARY KEY (id);
-
-
---
--- Name: company_sponsorships company_sponsorships_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_sponsorships
-    ADD CONSTRAINT company_sponsorships_pkey PRIMARY KEY (id);
-
-
---
 -- Name: company_trading_names company_trading_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.company_trading_names
     ADD CONSTRAINT company_trading_names_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conflict_party_contacts conflict_party_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conflict_party_contacts
+    ADD CONSTRAINT conflict_party_contacts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conflict_party_emails conflict_party_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conflict_party_emails
+    ADD CONSTRAINT conflict_party_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -5680,22 +4101,6 @@ ALTER TABLE ONLY public.countries
 
 
 --
--- Name: device_tokens device_tokens_device_token_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_tokens
-    ADD CONSTRAINT device_tokens_device_token_unique UNIQUE (device_token);
-
-
---
--- Name: device_tokens device_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_tokens
-    ADD CONSTRAINT device_tokens_pkey PRIMARY KEY (id);
-
-
---
 -- Name: disbursement_lines disbursement_lines_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5704,19 +4109,19 @@ ALTER TABLE ONLY public.disbursement_lines
 
 
 --
--- Name: document_notes document_notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_notes
-    ADD CONSTRAINT document_notes_pkey PRIMARY KEY (id);
-
-
---
 -- Name: documents documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documents
     ADD CONSTRAINT documents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_calendar_links email_calendar_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_calendar_links
+    ADD CONSTRAINT email_calendar_links_pkey PRIMARY KEY (id);
 
 
 --
@@ -5808,30 +4213,6 @@ ALTER TABLE ONLY public.jobs
 
 
 --
--- Name: lead_matter_references lead_matter_ref_type_lead_matter_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_ref_type_lead_matter_unique UNIQUE (type, lead_id, matter_id);
-
-
---
--- Name: lead_matter_references lead_matter_references_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_references_pkey PRIMARY KEY (id);
-
-
---
--- Name: lead_reminders lead_reminders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_reminders
-    ADD CONSTRAINT lead_reminders_pkey PRIMARY KEY (id);
-
-
---
 -- Name: email_log_attachments mail_report_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5856,14 +4237,6 @@ ALTER TABLE ONLY public.matter_checklists
 
 
 --
--- Name: matter_reminders matter_reminders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.matter_reminders
-    ADD CONSTRAINT matter_reminders_pkey PRIMARY KEY (id);
-
-
---
 -- Name: matters matters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5872,43 +4245,11 @@ ALTER TABLE ONLY public.matters
 
 
 --
--- Name: message_attachments message_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_attachments
-    ADD CONSTRAINT message_attachments_pkey PRIMARY KEY (id);
-
-
---
--- Name: message_recipients message_recipients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_recipients
-    ADD CONSTRAINT message_recipients_pkey PRIMARY KEY (id);
-
-
---
--- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.messages
-    ADD CONSTRAINT messages_pkey PRIMARY KEY (id);
-
-
---
 -- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.migrations
     ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
-
-
---
--- Name: nomination_document_types nomination_document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.nomination_document_types
-    ADD CONSTRAINT nomination_document_types_pkey PRIMARY KEY (id);
 
 
 --
@@ -5936,6 +4277,22 @@ ALTER TABLE ONLY public.password_reset_tokens
 
 
 --
+-- Name: personal_access_tokens personal_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.personal_access_tokens
+    ADD CONSTRAINT personal_access_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: personal_access_tokens personal_access_tokens_token_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.personal_access_tokens
+    ADD CONSTRAINT personal_access_tokens_token_unique UNIQUE (token);
+
+
+--
 -- Name: personal_document_types personal_document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5957,22 +4314,6 @@ ALTER TABLE ONLY public.phone_verifications
 
 ALTER TABLE ONLY public.document_checklists
     ADD CONSTRAINT portal_document_checklists_pkey PRIMARY KEY (id);
-
-
---
--- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.refresh_tokens
-    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
-
-
---
--- Name: refresh_tokens refresh_tokens_token_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.refresh_tokens
-    ADD CONSTRAINT refresh_tokens_token_unique UNIQUE (token);
 
 
 --
@@ -6032,6 +4373,14 @@ ALTER TABLE ONLY public.sms_templates
 
 
 --
+-- Name: staff_calendar_events staff_calendar_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.staff_calendar_events
+    ADD CONSTRAINT staff_calendar_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: staff staff_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6053,102 +4402,6 @@ ALTER TABLE ONLY public.staff
 
 ALTER TABLE ONLY public.teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_accounting_periods trust_accounting_periods_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_accounting_periods
-    ADD CONSTRAINT trust_accounting_periods_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_monthly_archives trust_archive_period_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_monthly_archives
-    ADD CONSTRAINT trust_archive_period_type_unique UNIQUE (period_year, period_month, archive_type);
-
-
---
--- Name: trust_audit_logs trust_audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_audit_logs
-    ADD CONSTRAINT trust_audit_logs_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_bank_accounts trust_bank_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_accounts
-    ADD CONSTRAINT trust_bank_accounts_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_bank_statement_lines trust_bank_statement_lines_matched_account_client_receipt_id_un; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines
-    ADD CONSTRAINT trust_bank_statement_lines_matched_account_client_receipt_id_un UNIQUE (matched_account_client_receipt_id);
-
-
---
--- Name: trust_bank_statement_lines trust_bank_statement_lines_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines
-    ADD CONSTRAINT trust_bank_statement_lines_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_monthly_archives trust_monthly_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_monthly_archives
-    ADD CONSTRAINT trust_monthly_archives_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_practice_sequences trust_practice_sequences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_practice_sequences
-    ADD CONSTRAINT trust_practice_sequences_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_practice_sequences trust_seq_year_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_practice_sequences
-    ADD CONSTRAINT trust_seq_year_type_unique UNIQUE (trust_year_start_year, sequence_type);
-
-
---
--- Name: trust_withdrawal_authorities trust_withdrawal_authorities_account_client_receipt_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities
-    ADD CONSTRAINT trust_withdrawal_authorities_account_client_receipt_id_unique UNIQUE (account_client_receipt_id);
-
-
---
--- Name: trust_withdrawal_authorities trust_withdrawal_authorities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities
-    ADD CONSTRAINT trust_withdrawal_authorities_pkey PRIMARY KEY (id);
-
-
---
--- Name: trust_withdrawal_authority_types trust_withdrawal_authority_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authority_types
-    ADD CONSTRAINT trust_withdrawal_authority_types_pkey PRIMARY KEY (id);
 
 
 --
@@ -6234,6 +4487,13 @@ CREATE INDEX activities_logs_client_id_activity_type_index ON public.activities_
 
 
 --
+-- Name: activities_logs_client_id_created_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX activities_logs_client_id_created_at_index ON public.activities_logs USING btree (client_id, created_at);
+
+
+--
 -- Name: activities_logs_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6276,6 +4536,13 @@ CREATE INDEX admins_dob_verified_by_index ON public.admins USING btree (dob_veri
 
 
 --
+-- Name: admins_is_other_party_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX admins_is_other_party_index ON public.admins USING btree (is_other_party);
+
+
+--
 -- Name: admins_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6287,20 +4554,6 @@ CREATE INDEX admins_type_index ON public.admins USING btree (type);
 --
 
 CREATE INDEX admins_user_id_index ON public.admins USING btree (user_id);
-
-
---
--- Name: agent_details_agent_name_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX agent_details_agent_name_index ON public.agent_details USING btree (agent_name);
-
-
---
--- Name: agent_details_status_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX agent_details_status_index ON public.agent_details USING btree (status);
 
 
 --
@@ -6437,6 +4690,20 @@ CREATE INDEX booking_appointments_user_id_index ON public.booking_appointments U
 
 
 --
+-- Name: ccp_client_opposing_lead_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ccp_client_opposing_lead_unique ON public.client_conflict_parties USING btree (client_id, opposing_lead_id) WHERE ((client_matter_id IS NULL) AND (opposing_lead_id IS NOT NULL));
+
+
+--
+-- Name: ccp_matter_opposing_lead_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ccp_matter_opposing_lead_unique ON public.client_conflict_parties USING btree (client_matter_id, opposing_lead_id) WHERE ((client_matter_id IS NOT NULL) AND (opposing_lead_id IS NOT NULL));
+
+
+--
 -- Name: checkin_history_checkin_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6500,45 +4767,38 @@ CREATE INDEX client_addresses_suburb_index ON public.client_addresses USING btre
 
 
 --
--- Name: client_art_references_client_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: client_conflict_checks_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX client_art_references_client_id_index ON public.client_art_references USING btree (client_id);
-
-
---
--- Name: client_art_references_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_art_references_client_matter_id_index ON public.client_art_references USING btree (client_matter_id);
+CREATE INDEX client_conflict_checks_client_id_index ON public.client_conflict_checks USING btree (client_id);
 
 
 --
--- Name: client_art_references_is_pinned_index; Type: INDEX; Schema: public; Owner: -
+-- Name: client_conflict_checks_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX client_art_references_is_pinned_index ON public.client_art_references USING btree (is_pinned);
-
-
---
--- Name: client_characters_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_characters_admin_id_index ON public.client_characters USING btree (admin_id);
+CREATE INDEX client_conflict_checks_client_matter_id_index ON public.client_conflict_checks USING btree (client_matter_id);
 
 
 --
--- Name: client_characters_client_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: client_conflict_parties_abn_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX client_characters_client_id_index ON public.client_characters USING btree (client_id);
+CREATE INDEX client_conflict_parties_abn_index ON public.client_conflict_parties USING btree (abn);
 
 
 --
--- Name: client_characters_type_of_character_index; Type: INDEX; Schema: public; Owner: -
+-- Name: client_conflict_parties_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX client_characters_type_of_character_index ON public.client_characters USING btree (type_of_character);
+CREATE INDEX client_conflict_parties_client_id_index ON public.client_conflict_parties USING btree (client_id);
+
+
+--
+-- Name: client_conflict_parties_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX client_conflict_parties_client_matter_id_index ON public.client_conflict_parties USING btree (client_matter_id);
 
 
 --
@@ -6612,27 +4872,6 @@ CREATE INDEX client_emails_token_expires_at_index ON public.client_emails USING 
 
 
 --
--- Name: client_experiences_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_experiences_admin_id_index ON public.client_experiences USING btree (admin_id);
-
-
---
--- Name: client_experiences_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_experiences_client_id_index ON public.client_experiences USING btree (client_id);
-
-
---
--- Name: client_experiences_job_finish_date_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_experiences_job_finish_date_index ON public.client_experiences USING btree (job_finish_date);
-
-
---
 -- Name: client_legal_forms_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6658,41 +4897,6 @@ CREATE INDEX client_legal_forms_form_type_index ON public.client_legal_forms USI
 --
 
 CREATE INDEX client_matter_opposing_parties_client_matter_id_sort_order_inde ON public.client_matter_opposing_parties USING btree (client_matter_id, sort_order);
-
-
---
--- Name: client_matter_payment_forms_verifications_client_matter_id_inde; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_matter_payment_forms_verifications_client_matter_id_inde ON public.client_matter_payment_forms_verifications USING btree (client_matter_id);
-
-
---
--- Name: client_matter_references_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_matter_references_client_id_index ON public.client_matter_references USING btree (client_id);
-
-
---
--- Name: client_matter_references_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_matter_references_client_matter_id_index ON public.client_matter_references USING btree (client_matter_id);
-
-
---
--- Name: client_matter_references_is_pinned_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_matter_references_is_pinned_index ON public.client_matter_references USING btree (is_pinned);
-
-
---
--- Name: client_matter_references_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_matter_references_type_index ON public.client_matter_references USING btree (type);
 
 
 --
@@ -6759,160 +4963,6 @@ CREATE INDEX client_matters_workflow_stage_id_index ON public.client_matters USI
 
 
 --
--- Name: client_occupations_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_occupations_admin_id_index ON public.client_occupations USING btree (admin_id);
-
-
---
--- Name: client_occupations_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_occupations_client_id_index ON public.client_occupations USING btree (client_id);
-
-
---
--- Name: client_passport_informations_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_passport_informations_admin_id_index ON public.client_passport_informations USING btree (admin_id);
-
-
---
--- Name: client_passport_informations_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_passport_informations_client_id_index ON public.client_passport_informations USING btree (client_id);
-
-
---
--- Name: client_qualifications_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_qualifications_admin_id_index ON public.client_qualifications USING btree (admin_id);
-
-
---
--- Name: client_qualifications_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_qualifications_client_id_index ON public.client_qualifications USING btree (client_id);
-
-
---
--- Name: client_qualifications_finish_date_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_qualifications_finish_date_index ON public.client_qualifications USING btree (finish_date);
-
-
---
--- Name: client_relationships_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_relationships_admin_id_index ON public.client_relationships USING btree (admin_id);
-
-
---
--- Name: client_relationships_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_relationships_client_id_index ON public.client_relationships USING btree (client_id);
-
-
---
--- Name: client_relationships_related_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_relationships_related_client_id_index ON public.client_relationships USING btree (related_client_id);
-
-
---
--- Name: client_relationships_relationship_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_relationships_relationship_type_index ON public.client_relationships USING btree (relationship_type);
-
-
---
--- Name: client_spouse_details_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_spouse_details_client_id_index ON public.client_spouse_details USING btree (client_id);
-
-
---
--- Name: client_testscore_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_testscore_admin_id_index ON public.client_testscore USING btree (admin_id);
-
-
---
--- Name: client_testscore_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_testscore_client_id_index ON public.client_testscore USING btree (client_id);
-
-
---
--- Name: client_testscore_test_date_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_testscore_test_date_index ON public.client_testscore USING btree (test_date);
-
-
---
--- Name: client_testscore_test_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_testscore_test_type_index ON public.client_testscore USING btree (test_type);
-
-
---
--- Name: client_travel_informations_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_travel_informations_admin_id_index ON public.client_travel_informations USING btree (admin_id);
-
-
---
--- Name: client_travel_informations_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_travel_informations_client_id_index ON public.client_travel_informations USING btree (client_id);
-
-
---
--- Name: client_visa_countries_admin_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_visa_countries_admin_id_index ON public.client_visa_countries USING btree (admin_id);
-
-
---
--- Name: client_visa_countries_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_visa_countries_client_id_index ON public.client_visa_countries USING btree (client_id);
-
-
---
--- Name: client_visa_countries_visa_expiry_date_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_visa_countries_visa_expiry_date_index ON public.client_visa_countries USING btree (visa_expiry_date);
-
-
---
--- Name: client_visa_countries_visa_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX client_visa_countries_visa_type_index ON public.client_visa_countries USING btree (visa_type);
-
-
---
 -- Name: companies_admin_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6934,6 +4984,13 @@ CREATE INDEX companies_contact_person_id_index ON public.companies USING btree (
 
 
 --
+-- Name: companies_solicitor_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX companies_solicitor_id_index ON public.companies USING btree (solicitor_id);
+
+
+--
 -- Name: company_directors_company_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6941,24 +4998,24 @@ CREATE INDEX company_directors_company_id_index ON public.company_directors USIN
 
 
 --
--- Name: company_nominations_company_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX company_nominations_company_id_index ON public.company_nominations USING btree (company_id);
-
-
---
--- Name: company_sponsorships_company_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX company_sponsorships_company_id_index ON public.company_sponsorships USING btree (company_id);
-
-
---
 -- Name: company_trading_names_company_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX company_trading_names_company_id_index ON public.company_trading_names USING btree (company_id);
+
+
+--
+-- Name: conflict_party_contacts_conflict_party_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conflict_party_contacts_conflict_party_id_index ON public.conflict_party_contacts USING btree (conflict_party_id);
+
+
+--
+-- Name: conflict_party_emails_conflict_party_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conflict_party_emails_conflict_party_id_index ON public.conflict_party_emails USING btree (conflict_party_id);
 
 
 --
@@ -6983,52 +5040,10 @@ CREATE INDEX cost_assignment_forms_client_matter_id_index ON public.cost_assignm
 
 
 --
--- Name: device_tokens_device_token_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX device_tokens_device_token_index ON public.device_tokens USING btree (device_token);
-
-
---
--- Name: device_tokens_user_id_is_active_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX device_tokens_user_id_is_active_index ON public.device_tokens USING btree (user_id, is_active);
-
-
---
 -- Name: disbursement_lines_cost_assignment_form_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX disbursement_lines_cost_assignment_form_id_index ON public.disbursement_lines USING btree (cost_assignment_form_id);
-
-
---
--- Name: document_notes_action_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_notes_action_type_index ON public.document_notes USING btree (action_type);
-
-
---
--- Name: document_notes_created_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_notes_created_at_index ON public.document_notes USING btree (created_at);
-
-
---
--- Name: document_notes_created_by_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_notes_created_by_index ON public.document_notes USING btree (created_by);
-
-
---
--- Name: document_notes_document_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_notes_document_id_index ON public.document_notes USING btree (document_id);
 
 
 --
@@ -7057,6 +5072,34 @@ CREATE INDEX documents_type_index ON public.documents USING btree (type);
 --
 
 CREATE INDEX documents_user_id_index ON public.documents USING btree (user_id);
+
+
+--
+-- Name: email_calendar_links_calendar_type_calendar_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_calendar_links_calendar_type_calendar_id_index ON public.email_calendar_links USING btree (calendar_type, calendar_id);
+
+
+--
+-- Name: email_calendar_links_email_log_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_calendar_links_email_log_id_index ON public.email_calendar_links USING btree (email_log_id);
+
+
+--
+-- Name: email_calendar_links_starts_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_calendar_links_starts_at_index ON public.email_calendar_links USING btree (starts_at);
+
+
+--
+-- Name: email_calendar_links_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_calendar_links_status_index ON public.email_calendar_links USING btree (status);
 
 
 --
@@ -7116,10 +5159,45 @@ CREATE INDEX email_logs_mail_type_index ON public.email_logs USING btree (mail_t
 
 
 --
--- Name: email_logs_reciept_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: email_logs_mailbox_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX email_logs_reciept_id_index ON public.email_logs USING btree (reciept_id);
+CREATE INDEX email_logs_mailbox_email_index ON public.email_logs USING btree (mailbox_email);
+
+
+--
+-- Name: email_logs_pdf_doc_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_logs_pdf_doc_id_index ON public.email_logs USING btree (pdf_doc_id);
+
+
+--
+-- Name: email_logs_send_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_logs_send_status_index ON public.email_logs USING btree (send_status);
+
+
+--
+-- Name: email_logs_sync_assignment_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_logs_sync_assignment_status_index ON public.email_logs USING btree (sync_assignment_status);
+
+
+--
+-- Name: email_logs_sync_source_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_logs_sync_source_index ON public.email_logs USING btree (sync_source);
+
+
+--
+-- Name: email_logs_synced_email_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_logs_synced_email_id_index ON public.email_logs USING btree (synced_email_id);
 
 
 --
@@ -7277,27 +5355,6 @@ CREATE INDEX idx_admins_is_company ON public.admins USING btree (is_company) WHE
 
 
 --
--- Name: idx_art_client_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_art_client_status ON public.client_art_references USING btree (client_id, status_of_file);
-
-
---
--- Name: idx_art_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_art_status ON public.client_art_references USING btree (status_of_file);
-
-
---
--- Name: idx_art_submission_date; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_art_submission_date ON public.client_art_references USING btree (submission_last_date);
-
-
---
 -- Name: idx_cag_approver_queue; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7330,20 +5387,6 @@ CREATE INDEX idx_cag_status_requested ON public.client_access_grants USING btree
 --
 
 CREATE INDEX idx_calendar_type ON public.appointment_consultants USING btree (calendar_type);
-
-
---
--- Name: idx_client_country; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_client_country ON public.client_qualifications USING btree (client_id, country);
-
-
---
--- Name: idx_client_experiences_client_job_country; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_client_experiences_client_job_country ON public.client_experiences USING btree (client_id, job_country);
 
 
 --
@@ -7431,59 +5474,10 @@ CREATE INDEX idx_notifications_type_receiver_status ON public.notifications USIN
 
 
 --
--- Name: idx_spouse_client; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_spouse_client ON public.client_spouse_details USING btree (client_id);
-
-
---
 -- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX jobs_queue_index ON public.jobs USING btree (queue);
-
-
---
--- Name: lead_matter_references_lead_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_matter_references_lead_id_index ON public.lead_matter_references USING btree (lead_id);
-
-
---
--- Name: lead_matter_references_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_matter_references_matter_id_index ON public.lead_matter_references USING btree (matter_id);
-
-
---
--- Name: lead_matter_references_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_matter_references_type_index ON public.lead_matter_references USING btree (type);
-
-
---
--- Name: lead_reminders_lead_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_reminders_lead_id_index ON public.lead_reminders USING btree (lead_id);
-
-
---
--- Name: lead_reminders_visa_lead_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_reminders_visa_lead_type_idx ON public.lead_reminders USING btree (visa_type, lead_id, type);
-
-
---
--- Name: lead_reminders_visa_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX lead_reminders_visa_type_index ON public.lead_reminders USING btree (visa_type);
 
 
 --
@@ -7522,87 +5516,10 @@ CREATE INDEX mail_reports_message_id_index ON public.email_logs USING btree (mes
 
 
 --
--- Name: mail_reports_thread_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX mail_reports_thread_id_index ON public.email_logs USING btree (thread_id);
-
-
---
 -- Name: matter_checklists_matter_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX matter_checklists_matter_id_index ON public.matter_checklists USING btree (matter_id);
-
-
---
--- Name: matter_reminders_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX matter_reminders_client_matter_id_index ON public.matter_reminders USING btree (client_matter_id);
-
-
---
--- Name: matter_reminders_visa_matter_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX matter_reminders_visa_matter_type_idx ON public.matter_reminders USING btree (visa_type, client_matter_id, type);
-
-
---
--- Name: matter_reminders_visa_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX matter_reminders_visa_type_index ON public.matter_reminders USING btree (visa_type);
-
-
---
--- Name: message_attachments_message_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_attachments_message_id_index ON public.message_attachments USING btree (message_id);
-
-
---
--- Name: message_recipients_message_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_recipients_message_id_index ON public.message_recipients USING btree (message_id);
-
-
---
--- Name: message_recipients_message_id_recipient_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_recipients_message_id_recipient_id_index ON public.message_recipients USING btree (message_id, recipient_id);
-
-
---
--- Name: message_recipients_recipient_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_recipients_recipient_id_index ON public.message_recipients USING btree (recipient_id);
-
-
---
--- Name: message_recipients_recipient_id_is_read_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_recipients_recipient_id_is_read_index ON public.message_recipients USING btree (recipient_id, is_read);
-
-
---
--- Name: nomination_document_types_client_id_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX nomination_document_types_client_id_client_matter_id_index ON public.nomination_document_types USING btree (client_id, client_matter_id);
-
-
---
--- Name: nomination_document_types_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX nomination_document_types_client_id_index ON public.nomination_document_types USING btree (client_id);
 
 
 --
@@ -7655,6 +5572,13 @@ CREATE INDEX notifications_sender_id_index ON public.notifications USING btree (
 
 
 --
+-- Name: personal_access_tokens_tokenable_type_tokenable_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX personal_access_tokens_tokenable_type_tokenable_id_index ON public.personal_access_tokens USING btree (tokenable_type, tokenable_id);
+
+
+--
 -- Name: personal_document_types_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7701,27 +5625,6 @@ CREATE INDEX portal_document_checklists_doc_type_index ON public.document_checkl
 --
 
 CREATE INDEX portal_document_checklists_status_index ON public.document_checklists USING btree (status);
-
-
---
--- Name: refresh_tokens_expires_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX refresh_tokens_expires_at_index ON public.refresh_tokens USING btree (expires_at);
-
-
---
--- Name: refresh_tokens_token_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX refresh_tokens_token_index ON public.refresh_tokens USING btree (token);
-
-
---
--- Name: refresh_tokens_user_id_is_revoked_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX refresh_tokens_user_id_is_revoked_index ON public.refresh_tokens USING btree (user_id, is_revoked);
 
 
 --
@@ -7837,45 +5740,31 @@ CREATE INDEX sms_templates_is_active_index ON public.sms_templates USING btree (
 
 
 --
--- Name: trust_accounting_periods_period_start_period_end_index; Type: INDEX; Schema: public; Owner: -
+-- Name: staff_calendar_events_calendar_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX trust_accounting_periods_period_start_period_end_index ON public.trust_accounting_periods USING btree (period_start, period_end);
-
-
---
--- Name: trust_audit_logs_performed_by_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX trust_audit_logs_performed_by_index ON public.trust_audit_logs USING btree (performed_by);
+CREATE INDEX staff_calendar_events_calendar_type_index ON public.staff_calendar_events USING btree (calendar_type);
 
 
 --
--- Name: trust_audit_logs_table_name_row_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: staff_calendar_events_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX trust_audit_logs_table_name_row_id_index ON public.trust_audit_logs USING btree (table_name, row_id);
-
-
---
--- Name: trust_bank_statement_lines_trust_bank_account_id_value_date_ind; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX trust_bank_statement_lines_trust_bank_account_id_value_date_ind ON public.trust_bank_statement_lines USING btree (trust_bank_account_id, value_date);
+CREATE INDEX staff_calendar_events_client_id_index ON public.staff_calendar_events USING btree (client_id);
 
 
 --
--- Name: trust_monthly_archives_period_year_period_month_index; Type: INDEX; Schema: public; Owner: -
+-- Name: staff_calendar_events_event_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX trust_monthly_archives_period_year_period_month_index ON public.trust_monthly_archives USING btree (period_year, period_month);
+CREATE INDEX staff_calendar_events_event_type_index ON public.staff_calendar_events USING btree (event_type);
 
 
 --
--- Name: trust_withdrawal_authorities_client_id_invoice_no_index; Type: INDEX; Schema: public; Owner: -
+-- Name: staff_calendar_events_starts_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX trust_withdrawal_authorities_client_id_invoice_no_index ON public.trust_withdrawal_authorities USING btree (client_id, invoice_no);
+CREATE INDEX staff_calendar_events_starts_at_index ON public.staff_calendar_events USING btree (starts_at);
 
 
 --
@@ -7965,35 +5854,35 @@ ALTER TABLE ONLY public.client_access_grants
 
 
 --
--- Name: client_art_references client_art_references_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: client_conflict_checks client_conflict_checks_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_art_references
-    ADD CONSTRAINT client_art_references_client_id_foreign FOREIGN KEY (client_id) REFERENCES public.admins(id) ON DELETE CASCADE;
-
-
---
--- Name: client_art_references client_art_references_client_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_art_references
-    ADD CONSTRAINT client_art_references_client_matter_id_foreign FOREIGN KEY (client_matter_id) REFERENCES public.client_matters(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.client_conflict_checks
+    ADD CONSTRAINT client_conflict_checks_client_id_foreign FOREIGN KEY (client_id) REFERENCES public.admins(id) ON DELETE CASCADE;
 
 
 --
--- Name: client_art_references client_art_references_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: client_conflict_checks client_conflict_checks_client_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_art_references
-    ADD CONSTRAINT client_art_references_created_by_foreign FOREIGN KEY (created_by) REFERENCES public.admins(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.client_conflict_checks
+    ADD CONSTRAINT client_conflict_checks_client_matter_id_foreign FOREIGN KEY (client_matter_id) REFERENCES public.client_matters(id) ON DELETE SET NULL;
 
 
 --
--- Name: client_art_references client_art_references_updated_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: client_conflict_parties client_conflict_parties_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_art_references
-    ADD CONSTRAINT client_art_references_updated_by_foreign FOREIGN KEY (updated_by) REFERENCES public.admins(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.client_conflict_parties
+    ADD CONSTRAINT client_conflict_parties_client_id_foreign FOREIGN KEY (client_id) REFERENCES public.admins(id) ON DELETE CASCADE;
+
+
+--
+-- Name: client_conflict_parties client_conflict_parties_opposing_lead_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.client_conflict_parties
+    ADD CONSTRAINT client_conflict_parties_opposing_lead_id_foreign FOREIGN KEY (opposing_lead_id) REFERENCES public.admins(id) ON DELETE SET NULL;
 
 
 --
@@ -8021,43 +5910,11 @@ ALTER TABLE ONLY public.client_matter_opposing_parties
 
 
 --
--- Name: client_matter_payment_forms_verifications client_matter_payment_forms_verifications_client_matter_id_fore; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: client_matter_opposing_parties client_matter_opposing_parties_opposing_lead_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_matter_payment_forms_verifications
-    ADD CONSTRAINT client_matter_payment_forms_verifications_client_matter_id_fore FOREIGN KEY (client_matter_id) REFERENCES public.client_matters(id) ON DELETE CASCADE;
-
-
---
--- Name: client_matter_references client_matter_references_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_references_client_id_foreign FOREIGN KEY (client_id) REFERENCES public.admins(id) ON DELETE CASCADE;
-
-
---
--- Name: client_matter_references client_matter_references_client_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_references_client_matter_id_foreign FOREIGN KEY (client_matter_id) REFERENCES public.client_matters(id) ON DELETE CASCADE;
-
-
---
--- Name: client_matter_references client_matter_references_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_references_created_by_foreign FOREIGN KEY (created_by) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: client_matter_references client_matter_references_updated_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_matter_references
-    ADD CONSTRAINT client_matter_references_updated_by_foreign FOREIGN KEY (updated_by) REFERENCES public.staff(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.client_matter_opposing_parties
+    ADD CONSTRAINT client_matter_opposing_parties_opposing_lead_id_foreign FOREIGN KEY (opposing_lead_id) REFERENCES public.admins(id) ON DELETE SET NULL;
 
 
 --
@@ -8085,11 +5942,11 @@ ALTER TABLE ONLY public.client_matter_tasks
 
 
 --
--- Name: client_spouse_details client_spouse_details_related_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: client_matter_tasks client_matter_tasks_note_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.client_spouse_details
-    ADD CONSTRAINT client_spouse_details_related_client_id_foreign FOREIGN KEY (related_client_id) REFERENCES public.admins(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.client_matter_tasks
+    ADD CONSTRAINT client_matter_tasks_note_id_foreign FOREIGN KEY (note_id) REFERENCES public.notes(id) ON DELETE SET NULL;
 
 
 --
@@ -8109,6 +5966,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: companies companies_solicitor_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.companies
+    ADD CONSTRAINT companies_solicitor_id_foreign FOREIGN KEY (solicitor_id) REFERENCES public.admins(id) ON DELETE SET NULL;
+
+
+--
 -- Name: company_directors company_directors_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8125,30 +5990,6 @@ ALTER TABLE ONLY public.company_directors
 
 
 --
--- Name: company_nominations company_nominations_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_nominations
-    ADD CONSTRAINT company_nominations_company_id_foreign FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE CASCADE;
-
-
---
--- Name: company_nominations company_nominations_nominated_client_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_nominations
-    ADD CONSTRAINT company_nominations_nominated_client_id_foreign FOREIGN KEY (nominated_client_id) REFERENCES public.admins(id) ON DELETE SET NULL;
-
-
---
--- Name: company_sponsorships company_sponsorships_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.company_sponsorships
-    ADD CONSTRAINT company_sponsorships_company_id_foreign FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE CASCADE;
-
-
---
 -- Name: company_trading_names company_trading_names_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8157,11 +5998,19 @@ ALTER TABLE ONLY public.company_trading_names
 
 
 --
--- Name: device_tokens device_tokens_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: conflict_party_contacts conflict_party_contacts_conflict_party_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.device_tokens
-    ADD CONSTRAINT device_tokens_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.admins(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.conflict_party_contacts
+    ADD CONSTRAINT conflict_party_contacts_conflict_party_id_foreign FOREIGN KEY (conflict_party_id) REFERENCES public.client_conflict_parties(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conflict_party_emails conflict_party_emails_conflict_party_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conflict_party_emails
+    ADD CONSTRAINT conflict_party_emails_conflict_party_id_foreign FOREIGN KEY (conflict_party_id) REFERENCES public.client_conflict_parties(id) ON DELETE CASCADE;
 
 
 --
@@ -8181,94 +6030,6 @@ ALTER TABLE ONLY public.email_templates
 
 
 --
--- Name: lead_matter_references lead_matter_references_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_references_created_by_foreign FOREIGN KEY (created_by) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: lead_matter_references lead_matter_references_lead_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_references_lead_id_foreign FOREIGN KEY (lead_id) REFERENCES public.admins(id) ON DELETE CASCADE;
-
-
---
--- Name: lead_matter_references lead_matter_references_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_references_matter_id_foreign FOREIGN KEY (matter_id) REFERENCES public.matters(id) ON DELETE CASCADE;
-
-
---
--- Name: lead_matter_references lead_matter_references_updated_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_matter_references
-    ADD CONSTRAINT lead_matter_references_updated_by_foreign FOREIGN KEY (updated_by) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: lead_reminders lead_reminders_lead_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_reminders
-    ADD CONSTRAINT lead_reminders_lead_id_foreign FOREIGN KEY (lead_id) REFERENCES public.admins(id) ON DELETE CASCADE;
-
-
---
--- Name: lead_reminders lead_reminders_reminded_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lead_reminders
-    ADD CONSTRAINT lead_reminders_reminded_by_foreign FOREIGN KEY (reminded_by) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: matter_reminders matter_reminders_client_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.matter_reminders
-    ADD CONSTRAINT matter_reminders_client_matter_id_foreign FOREIGN KEY (client_matter_id) REFERENCES public.client_matters(id) ON DELETE CASCADE;
-
-
---
--- Name: matter_reminders matter_reminders_reminded_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.matter_reminders
-    ADD CONSTRAINT matter_reminders_reminded_by_foreign FOREIGN KEY (reminded_by) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: message_attachments message_attachments_message_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_attachments
-    ADD CONSTRAINT message_attachments_message_id_foreign FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
-
-
---
--- Name: message_recipients message_recipients_message_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_recipients
-    ADD CONSTRAINT message_recipients_message_id_foreign FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
-
-
---
--- Name: refresh_tokens refresh_tokens_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.refresh_tokens
-    ADD CONSTRAINT refresh_tokens_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.admins(id) ON DELETE CASCADE;
-
-
---
 -- Name: signature_activities signature_activities_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8282,6 +6043,14 @@ ALTER TABLE ONLY public.signature_activities
 
 ALTER TABLE ONLY public.signature_activities
     ADD CONSTRAINT signature_activities_document_id_foreign FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: signature_activities signature_activities_signer_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signature_activities
+    ADD CONSTRAINT signature_activities_signer_id_foreign FOREIGN KEY (signer_id) REFERENCES public.signers(id) ON DELETE SET NULL;
 
 
 --
@@ -8301,6 +6070,14 @@ ALTER TABLE ONLY public.signature_fields
 
 
 --
+-- Name: signers signers_document_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signers
+    ADD CONSTRAINT signers_document_id_foreign FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE SET NULL;
+
+
+--
 -- Name: staff staff_office_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8317,64 +6094,16 @@ ALTER TABLE ONLY public.staff
 
 
 --
--- Name: trust_bank_statement_lines trust_bank_statement_lines_matched_account_client_receipt_id_fo; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines
-    ADD CONSTRAINT trust_bank_statement_lines_matched_account_client_receipt_id_fo FOREIGN KEY (matched_account_client_receipt_id) REFERENCES public.account_client_receipts(id) ON DELETE SET NULL;
-
-
---
--- Name: trust_bank_statement_lines trust_bank_statement_lines_matched_by_staff_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines
-    ADD CONSTRAINT trust_bank_statement_lines_matched_by_staff_id_foreign FOREIGN KEY (matched_by_staff_id) REFERENCES public.staff(id) ON DELETE SET NULL;
-
-
---
--- Name: trust_bank_statement_lines trust_bank_statement_lines_trust_bank_account_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_bank_statement_lines
-    ADD CONSTRAINT trust_bank_statement_lines_trust_bank_account_id_foreign FOREIGN KEY (trust_bank_account_id) REFERENCES public.trust_bank_accounts(id) ON DELETE CASCADE;
-
-
---
--- Name: trust_withdrawal_authorities trust_withdrawal_authorities_account_client_receipt_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities
-    ADD CONSTRAINT trust_withdrawal_authorities_account_client_receipt_id_foreign FOREIGN KEY (account_client_receipt_id) REFERENCES public.account_client_receipts(id) ON DELETE CASCADE;
-
-
---
--- Name: trust_withdrawal_authorities trust_withdrawal_authorities_authorised_by_staff_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities
-    ADD CONSTRAINT trust_withdrawal_authorities_authorised_by_staff_id_foreign FOREIGN KEY (authorised_by_staff_id) REFERENCES public.staff(id) ON DELETE RESTRICT;
-
-
---
--- Name: trust_withdrawal_authorities trust_withdrawal_authorities_authority_type_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.trust_withdrawal_authorities
-    ADD CONSTRAINT trust_withdrawal_authorities_authority_type_id_foreign FOREIGN KEY (authority_type_id) REFERENCES public.trust_withdrawal_authority_types(id) ON DELETE RESTRICT;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WLhNTcZejcsHACHN92RXegMrf72SFitmPxU6E2X72OgjhH7RRh19EwP9KXTMieD
+\unrestrict NXdywLmlOiIcqQBmC0egcgIS30enWm7k0D3x8cB1FsNJloXGmG9adXgj5uuxr1Y
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict hUY07OBj61Grq4n1GTlEqGdckketfD29ESGmv2kHrvOVTsHuPNri2G9m8x3p5iQ
+\restrict a4mgInEvGDG8idjgxNFo10LD5vGWNKA0kRAYXcoV7T0XAo7S3pdsvDGGLj2Scni
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -8594,21 +6323,21 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 196	2026_04_01_220000_fix_sms_templates_column_defaults	1
 197	2026_04_02_000000_add_grant_super_admin_access_to_staff_table	1
 198	2026_04_03_120000_drop_client_eoi_references_table	1
-199	2026_04_03_140000_update_sms_templates_bansal_lawyers_brand	1
-200	2026_04_04_000001_remove_anzsco_occupation_system	1
-201	2026_04_04_120000_add_status_to_documents_table	1
-202	2026_04_04_130000_add_is_deleted_to_admins_table	1
-203	2026_04_04_140000_add_office_visit_columns_to_checkin_logs_table	1
-204	2026_04_04_150000_add_missing_note_columns_to_notes_table	1
-205	2026_04_04_000000_add_core_columns_to_account_client_receipts_table	2
-206	2026_04_04_100000_fix_account_client_receipts_trans_dates_to_varchar	3
-207	2026_04_04_160000_add_legacy_client_matters_columns_for_postgresql	4
-208	2026_04_04_200000_create_countries_table_if_missing	4
-209	2026_04_04_210000_add_archive_columns_to_admins_if_missing	4
-210	2026_04_04_220000_ensure_archive_columns_on_admins	4
-211	2026_04_04_230000_add_core_columns_to_matters_if_missing	4
-212	2026_04_04_240000_add_core_columns_to_branches_if_missing	4
-213	2026_04_08_120000_add_type_to_admins_if_missing	4
+199	2026_04_03_140000_update_sms_templates_bansal_lawyers_brand	2
+200	2026_04_04_000000_add_core_columns_to_account_client_receipts_table	3
+201	2026_04_04_000001_remove_anzsco_occupation_system	3
+202	2026_04_04_100000_fix_account_client_receipts_trans_dates_to_varchar	3
+203	2026_04_04_120000_add_status_to_documents_table	3
+204	2026_04_04_130000_add_is_deleted_to_admins_table	3
+205	2026_04_04_140000_add_office_visit_columns_to_checkin_logs_table	3
+206	2026_04_04_150000_add_missing_note_columns_to_notes_table	3
+207	2026_04_04_160000_add_legacy_client_matters_columns_for_postgresql	3
+208	2026_04_04_200000_create_countries_table_if_missing	3
+209	2026_04_04_210000_add_archive_columns_to_admins_if_missing	3
+210	2026_04_04_220000_ensure_archive_columns_on_admins	3
+211	2026_04_04_230000_add_core_columns_to_matters_if_missing	3
+212	2026_04_04_240000_add_core_columns_to_branches_if_missing	3
+213	2026_04_08_120000_add_type_to_admins_if_missing	3
 214	2026_04_08_140000_create_client_travel_informations_table	4
 215	2026_04_08_150000_create_client_characters_table	4
 216	2026_04_08_160000_create_client_relationships_table	4
@@ -8625,69 +6354,135 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 227	2026_04_09_210000_add_legacy_client_qualifications_columns_if_missing	4
 228	2026_04_09_220000_add_legacy_client_experiences_columns_if_missing	4
 229	2026_04_09_230000_add_case_detail_to_client_matters_if_missing	4
-230	2026_04_09_235000_rename_kunal_calendar_consultant_name_to_michael	4
-231	2026_04_10_120000_add_incidence_fields_to_client_matters_if_missing	4
-232	2026_04_10_140000_create_personal_document_types_if_missing	4
-233	2026_04_10_160000_add_core_documents_columns_if_missing	4
-234	2026_04_10_170000_create_visa_document_types_if_missing	4
-235	2026_04_10_175000_ensure_user_roles_display_columns	4
-236	2026_04_10_180000_rename_migration_agent_user_role_to_solicitor	4
-237	2026_04_11_100000_create_cost_assignment_forms_if_missing	4
-238	2026_04_11_130000_create_portal_document_checklists_if_missing	4
-239	2026_04_11_140000_create_agent_details_if_missing	4
-240	2026_04_11_150000_create_matter_checklists_if_missing	4
-241	2026_04_11_160000_seed_melbourne_india_branches	5
-242	2026_04_11_170000_seed_default_teams_for_staff_departments	6
-243	2026_04_11_180000_seed_canonical_user_roles_from_config	7
-244	2026_04_10_130000_ensure_activities_logs_crm_columns	8
-245	2026_04_10_140000_ensure_dob_verification_columns_on_admins_table	8
-246	2026_04_12_120000_rename_client_matters_sel_migration_agent_to_sel_legal_practitioner	8
-247	2026_04_12_120001_rename_staff_is_migration_agent_to_is_solicitor	8
-248	2026_04_12_120002_reconcile_form956_is_registered_to_is_legal_practitioner	8
-249	2026_04_12_120003_rename_admins_is_migration_agent_to_is_solicitor_when_present	8
-250	2026_04_12_120004_backfill_empty_user_role_names	9
-251	2026_04_10_210000_add_missing_columns_to_notifications_table_if_missing	10
-252	2026_04_11_100000_add_email_type_to_admins_table	10
-253	2026_04_11_100000_ensure_document_id_on_signers_table	10
-254	2026_04_11_100000_ensure_notifications_columns_pgsql_if_missing	10
-255	2026_04_11_101000_add_contact_type_to_admins_table	10
-256	2026_04_11_110000_ensure_signers_document_id_retry	10
-257	2026_04_11_140000_ensure_signed_at_on_signers_table	10
-258	2026_04_11_200000_create_client_court_hearings_if_missing	10
-259	2026_04_11_210000_create_client_legal_forms_table	10
-260	2026_04_12_100000_create_checkin_history_table_if_missing	10
-261	2026_04_12_130000_replace_dept_fee_with_disbursements	10
-262	2026_04_12_160000_law_practice_crm_cleanup	10
-263	2026_04_13_100000_ensure_phone_country_code_on_admins_if_missing	10
-264	2026_04_13_110000_ensure_user_id_on_admins_if_missing	10
-265	2026_04_14_100000_ensure_signers_recipient_columns_if_missing	10
-266	2026_04_14_110000_drop_client_portal_columns	10
-267	2026_04_13_000000_create_account_all_invoice_receipts_table	11
-268	2026_04_13_000001_create_signature_fields_table	11
-269	2026_04_13_000002_create_signature_activities_table	11
-270	2026_04_13_000003_add_outbound_columns_to_emails_table	11
-271	2026_04_15_120000_client_portal_removal_data_cleanup	11
-272	2026_04_14_120000_drop_form956_feature	12
-273	2026_04_16_120000_add_user_id_to_booking_appointments_if_missing	13
-274	2026_04_16_120000_drop_department_and_other_reference_from_client_matters	13
-275	2026_04_16_140000_add_website_status_code_to_booking_appointments_if_missing	13
-276	2026_04_18_000000_migrate_client_tags_to_json_and_drop_tags_table	14
-277	2026_04_18_100000_add_matter_stream_and_legal_party_fields	14
-278	2026_04_18_120000_create_client_matter_tasks_table	14
-279	2026_04_17_000000_ensure_tagname_on_admins_table	15
-280	2026_04_22_000000_ensure_email_logs_core_columns_if_missing	15
-281	2026_04_22_120000_ensure_source_on_admins_table	15
-282	2026_04_30_000000_fix_booking_appointments_assigned_by_fk_to_staff	16
-283	2026_04_30_150000_remove_booking_appointments_for_emails_on_or_before_2026_04_30	16
-284	2026_04_30_160000_rename_gn_client_unique_matter_no_to_matter_prefix	16
-285	2026_05_01_120000_convert_leads_with_assigned_matters_to_clients	16
-286	2026_05_11_140000_backfill_client_matters_default_assignees	16
-287	2026_05_17_120000_trust_compliance_phase1	16
-288	2026_05_17_130000_trust_sequence_type	16
-289	2026_05_17_140000_trust_compliance_phase2_period_unlock	16
-290	2026_05_17_150000_trust_bank_reconciliation_phase4	16
-291	2026_05_17_170000_trust_rule42_withdrawal_authority	16
-292	2026_05_20_100000_trust_compliance_phase6_gaps	17
+230	2026_04_10_120000_add_incidence_fields_to_client_matters_if_missing	4
+231	2026_04_10_140000_create_personal_document_types_if_missing	4
+232	2026_04_10_160000_add_core_documents_columns_if_missing	4
+233	2026_04_10_170000_create_visa_document_types_if_missing	4
+234	2026_04_11_100000_create_cost_assignment_forms_if_missing	4
+235	2026_04_11_130000_create_portal_document_checklists_if_missing	4
+236	2026_04_11_140000_create_agent_details_if_missing	4
+237	2026_04_11_150000_create_matter_checklists_if_missing	4
+247	2026_04_09_235000_rename_kunal_calendar_consultant_name_to_michael	5
+248	2026_04_10_130000_ensure_activities_logs_crm_columns	6
+249	2026_04_10_140000_ensure_dob_verification_columns_on_admins_table	6
+250	2026_04_10_175000_ensure_user_roles_display_columns	6
+251	2026_04_10_180000_rename_migration_agent_user_role_to_solicitor	6
+252	2026_04_11_160000_seed_melbourne_india_branches	6
+253	2026_04_11_170000_seed_default_teams_for_staff_departments	6
+254	2026_04_11_180000_seed_canonical_user_roles_from_config	7
+255	2026_04_12_120000_rename_client_matters_sel_migration_agent_to_sel_legal_practitioner	7
+256	2026_04_12_120001_rename_staff_is_migration_agent_to_is_solicitor	7
+257	2026_04_12_120002_reconcile_form956_is_registered_to_is_legal_practitioner	7
+258	2026_04_12_120003_rename_admins_is_migration_agent_to_is_solicitor_when_present	7
+259	2026_04_12_120004_backfill_empty_user_role_names	8
+260	2026_04_11_100000_ensure_document_id_on_signers_table	9
+261	2026_04_11_110000_ensure_signers_document_id_retry	9
+262	2026_04_10_210000_add_missing_columns_to_notifications_table_if_missing	10
+263	2026_04_11_100000_ensure_notifications_columns_pgsql_if_missing	10
+264	2026_04_12_100000_create_checkin_history_table_if_missing	10
+265	2026_04_11_200000_create_client_court_hearings_if_missing	11
+266	2026_04_11_210000_create_client_legal_forms_table	11
+267	2026_04_13_100000_ensure_phone_country_code_on_admins_if_missing	11
+268	2026_04_13_110000_ensure_user_id_on_admins_if_missing	11
+269	2026_04_11_100000_add_email_type_to_admins_table	12
+270	2026_04_11_101000_add_contact_type_to_admins_table	12
+271	2026_04_11_140000_ensure_signed_at_on_signers_table	12
+272	2026_04_14_100000_ensure_signers_recipient_columns_if_missing	12
+273	2026_04_12_130000_replace_dept_fee_with_disbursements	13
+274	2026_04_14_110000_drop_client_portal_columns	13
+275	2026_04_12_160000_law_practice_crm_cleanup	14
+276	2026_04_15_120000_client_portal_removal_data_cleanup	15
+277	2026_04_13_000001_create_signature_fields_table	16
+278	2026_04_13_000002_create_signature_activities_table	16
+279	2026_04_13_000003_add_outbound_columns_to_emails_table	16
+280	2026_04_13_000000_create_account_all_invoice_receipts_table	17
+281	2026_04_14_120000_drop_form956_feature	18
+282	2026_04_16_120000_add_user_id_to_booking_appointments_if_missing	19
+283	2026_04_16_140000_add_website_status_code_to_booking_appointments_if_missing	19
+284	2026_04_16_120000_drop_department_and_other_reference_from_client_matters	20
+285	2026_04_18_120000_create_client_matter_tasks_table	21
+286	2026_04_18_100000_add_matter_stream_and_legal_party_fields	22
+287	2026_04_17_000000_ensure_tagname_on_admins_table	23
+288	2026_04_18_000000_migrate_client_tags_to_json_and_drop_tags_table	23
+289	2026_04_22_000000_ensure_email_logs_core_columns_if_missing	24
+290	2026_04_30_000000_fix_booking_appointments_assigned_by_fk_to_staff	25
+291	2026_04_30_150000_remove_booking_appointments_for_emails_on_or_before_2026_04_30	26
+292	2026_04_30_160000_rename_gn_client_unique_matter_no_to_matter_prefix	27
+293	2026_05_01_120000_convert_leads_with_assigned_matters_to_clients	28
+294	2026_05_11_140000_backfill_client_matters_default_assignees	29
+295	2026_05_17_150000_trust_bank_reconciliation_phase4	30
+296	2026_05_17_140000_trust_compliance_phase2_period_unlock	31
+297	2026_05_17_120000_trust_compliance_phase1	32
+298	2026_05_17_130000_trust_sequence_type	33
+299	2026_05_17_170000_trust_rule42_withdrawal_authority	34
+300	2026_05_20_100000_trust_compliance_phase6_gaps	35
+301	2026_06_02_100000_add_note_id_to_client_matter_tasks_table	36
+302	2026_06_02_100000_create_client_conflict_parties_table	37
+303	2026_06_02_100001_create_conflict_party_contacts_table	38
+304	2026_06_02_100002_create_conflict_party_emails_table	39
+305	2026_06_02_100003_create_client_conflict_checks_table	40
+306	2026_06_03_000001_add_mail_provider_and_smtp_to_emails_table	41
+307	2026_06_04_100000_create_staff_calendar_events_table	42
+308	2026_06_04_110000_add_reminder_and_client_display_to_staff_calendar_events	43
+309	2026_06_10_100000_add_pdf_doc_id_to_email_logs	44
+310	2026_06_11_120000_add_reminder_columns_to_client_court_hearings	45
+311	2026_06_11_120001_add_court_hearing_reminder_sms_template	46
+312	2026_06_20_150946_change_message_column_type_in_email_logs_table	47
+313	2026_06_22_170740_add_closed_by_to_client_matters_table	48
+314	2026_06_22_171208_add_discontinue_info_to_client_matters	49
+315	2026_06_22_172452_add_reopen_requested_by_to_client_matters	50
+316	2026_06_22_000000_add_email_signature_to_staff_table	51
+317	2026_06_23_130000_drop_unused_tables	52
+318	2026_06_30_120000_add_can_delete_email_with_attachments_to_staff_table	53
+319	2026_03_02_130000_add_can_close_discontinue_matter_to_staff_table	54
+320	2026_07_09_140000_migrate_email_label_icons_to_fa6	55
+321	2026_07_11_000000_migrate_sendgrid_mail_provider_to_ses	56
+322	2026_07_11_100000_add_other_party_fields	57
+323	2026_07_11_120000_add_is_shared_company_email_to_client_emails	58
+324	2026_07_11_120000_add_opposing_lead_id_to_client_conflict_parties	59
+325	2026_07_17_120000_add_send_status_columns_to_email_logs	60
+326	2026_07_20_100000_add_inbox_sync_columns	61
+327	2026_07_20_110000_add_sent_imap_sync_columns	62
+328	2026_07_20_150000_add_can_sync_inbox_emails_to_staff_table	63
+329	2026_07_23_100000_create_email_calendar_links_table	64
+330	2026_07_24_100000_add_attachment_to_client_legal_forms_table	65
+331	2026_07_25_120000_add_solicitor_fields_to_companies_table	66
+332	2026_07_25_100000_add_is_uploaded_to_client_legal_forms_table	67
+333	2026_07_25_130000_add_matter_completion_checklist_to_client_matters	68
+334	2026_07_27_120000_add_sync_source_to_email_logs	69
+335	2026_07_25_000001_enhance_signature_audit_trail	70
+336	2026_07_28_100000_scope_conflict_parties_to_matters	71
+337	2026_07_28_150000_revoke_super_admin_from_michael_saleh	72
+338	2026_07_30_083000_add_can_edit_final_invoice_to_staff_table	73
+339	2026_07_30_140000_add_can_view_all_synced_inbox_mail_to_staff_table	74
+340	2026_08_01_100000_add_matter_scope_to_client_conflict_checks	75
+341	2026_08_01_110000_add_conflict_party_upsert_unique_indexes	76
+342	2026_08_13_090000_add_due_date_to_client_matter_tasks_table	77
+343	2026_08_14_123000_add_can_pause_mailbox_inbox_sync_to_staff_table	78
+344	2026_08_15_140000_add_noe_scheme_and_remap_legacy_crm_noe	79
+345	2024_01_01_000001_create_personal_access_tokens_table	80
+346	2026_08_14_203000_activities_logs_feed_index_and_type_default	80
+347	2026_08_15_150000_narrow_appointment_consultants_calendar_type_to_ajay_kunal	80
+348	2026_08_15_151000_drop_staff_marn_number	80
+349	2026_08_15_152000_update_appointment_consultant_firm_emails	80
+350	2026_08_15_142200_drop_client_points_table	81
+351	2026_08_15_142500_drop_proficiency_columns_from_client_testscore	82
+352	2026_08_15_143500_drop_unused_client_profile_columns	83
+353	2026_08_15_150000_drop_client_profile_child_tables	83
+354	2026_08_15_160000_drop_company_sponsorships_and_nominations_tables	84
+355	2026_08_15_161000_drop_unused_employer_columns_from_companies	85
+356	2026_08_15_170000_drop_cp_doc_checklists_and_document_workflow_columns	86
+357	2026_08_15_171000_drop_device_tokens_table	87
+358	2026_08_15_171100_drop_refresh_tokens_table	88
+359	2026_08_15_170000_drop_nomination_document_types_table	89
+360	2026_08_15_183000_drop_client_matter_payment_forms_verifications_table	90
+361	2026_08_15_184000_drop_agent_details_table	91
+362	2026_08_15_185000_drop_client_spouse_details_table	92
+363	2026_08_15_190000_drop_dead_email_logs_columns	93
+364	2026_08_15_191000_drop_unused_columns	94
+365	2026_08_21_203500_rename_personal_action_task_group_to_personal_task	95
+366	2026_08_22_120000_drop_trust_compliance_tables_and_columns	96
+367	2026_08_22_180000_add_reversal_of_entry_id_to_account_client_receipts	97
 \.
 
 
@@ -8695,12 +6490,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 292, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 367, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hUY07OBj61Grq4n1GTlEqGdckketfD29ESGmv2kHrvOVTsHuPNri2G9m8x3p5iQ
+\unrestrict a4mgInEvGDG8idjgxNFo10LD5vGWNKA0kRAYXcoV7T0XAo7S3pdsvDGGLj2Scni
 
