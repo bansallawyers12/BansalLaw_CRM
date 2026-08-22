@@ -184,10 +184,10 @@
                 <div class="client-status">
                     <ul class="nav nav-pills" id="client_tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="status-badge nav-link active" href="{{ URL::to('/action') }}">Incomplete</a>
+                            <a class="status-badge nav-link active" href="{{ route('assignee.tasks') }}">Incomplete</a>
                         </li>
                         <li class="nav-item">
-                            <a class="status-badge nav-link" href="{{ URL::to('/action_completed') }}">Completed</a>
+                            <a class="status-badge nav-link" href="{{ route('assignee.tasks.completed') }}">Completed</a>
                         </li>
                     </ul>
                 </div>
@@ -307,7 +307,7 @@
                                         @else
                                             <tr>
                                                 <td colspan="8" style="text-align: center; padding: 20px;">
-                                                    No actions assigned by me.
+                                                    No tasks assigned by me.
                                                 </td>
                                             </tr>
                                         @endif
@@ -658,7 +658,7 @@
             if (row_id != "") {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/update-action-not-completed",
+                    url: "{{ route('tasks.reopen') }}",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
                     success: function() {
@@ -691,7 +691,7 @@
             $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Completing...');
             $.ajax({
                 type: 'post',
-                url: "{{ URL::to('/') }}/update-action-completed",
+                url: "{{ route('tasks.complete') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     id: currentTaskId,
@@ -745,7 +745,7 @@
 
             $.ajax({
                 type: 'post',
-                url: "{{ URL::to('/') }}/clients/action/update",
+                url: "{{ route('clients.tasks.update') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_id: $root.find('#assign_note_id').val(),

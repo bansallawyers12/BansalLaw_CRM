@@ -365,7 +365,7 @@ All routes below require a valid staff session unless noted.
 | GET | `/dashboard` | `dashboard` |
 | GET | `/dashboard/calendar-events` | `dashboard.calendar-events` |
 | POST | `/dashboard/extend-deadline` | `dashboard.extend-deadline` |
-| POST | `/dashboard/update-action-completed` | `dashboard.update-action-completed` |
+| POST | `/dashboard/tasks/complete` | `dashboard.tasks.complete` |
 | GET | `/dashboard/active-staff` | `dashboard.active-staff` |
 | GET | `/dashboard/fetch-notifications` | `dashboard.fetch-notifications` |
 | GET | `/dashboard/fetch-office-visit-notifications` | `dashboard.fetch-office-visit-notifications` |
@@ -515,7 +515,7 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | POST | `/front-desk/checkin/submit` | `front-desk.checkin.submit` |
 | POST | `/front-desk/checkin/create-lead` | `front-desk.checkin.create-lead` |
 
-#### Assignee & actions
+#### Assignee & tasks
 
 | Method | URI | Name |
 |--------|-----|------|
@@ -523,10 +523,15 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | GET | `/assignee-completed` | — |
 | GET | `/assigned_by_me` | `assignee.assigned_by_me` |
 | GET | `/assigned_to_me` | `assignee.assigned_to_me` |
-| GET | `/action` | `assignee.action` |
-| GET | `/action/list` | `action.list` |
-| GET | `/action/counts` | `action.counts` |
-| GET | `/action_completed` | `assignee.action_completed` |
+| GET | `/tasks` | `assignee.tasks` |
+| GET | `/tasks/list` | `tasks.list` |
+| GET | `/tasks/counts` | `tasks.counts` |
+| GET | `/tasks/completed` | `assignee.tasks.completed` |
+| POST | `/tasks/complete` | `tasks.complete` |
+| POST | `/tasks/reopen` | `tasks.reopen` |
+| POST | `/tasks/update` | `tasks.update` |
+
+Legacy GET bookmarks (`/action`, `/action_completed`, `/action/list`, `/action/counts`) redirect with 301 to the `/tasks*` routes above.
 
 #### Cross-access (`/crm/access`)
 
@@ -547,35 +552,6 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | GET | `/crm/access/dashboard/summary` | `crm.access.dashboard.summary` |
 | GET | `/crm/access/dashboard/data` | `crm.access.dashboard.data` |
 | GET | `/crm/access/dashboard/export` | `crm.access.dashboard.export` |
-
-#### Trust accounting (`/trust-accounting`) — 29 routes
-
-| Method | URI | Name |
-|--------|-----|------|
-| GET | `/trust-accounting/periods` | `trust-accounting.periods.index` |
-| POST | `/trust-accounting/periods` | `trust-accounting.periods.store` |
-| POST | `/trust-accounting/periods/{period}/unlock` | `trust-accounting.periods.unlock` |
-| GET | `/trust-accounting/guide` | `trust-accounting.guide` |
-| GET | `/trust-accounting/practice-sequences` | `trust-accounting.practice-sequences.index` |
-| GET | `/trust-accounting/audit-log` | `trust-accounting.audit-log.index` |
-| GET | `/trust-accounting/bank-accounts` | `trust-accounting.bank-accounts.index` |
-| POST | `/trust-accounting/bank-accounts` | `trust-accounting.bank-accounts.store` |
-| GET | `/trust-accounting/reconciliation` | `trust-accounting.reconciliation.index` |
-| POST | `/trust-accounting/reconciliation/lines` | `trust-accounting.reconciliation.lines.store` |
-| POST | `/trust-accounting/reconciliation/match` | `trust-accounting.reconciliation.match` |
-| GET | `/trust-accounting/reports` | `trust-accounting.reports.index` |
-| GET | `/trust-accounting/reports/trial-balance` | `trust-accounting.reports.trial-balance` |
-| GET | `/trust-accounting/reports/receipts-journal` | `trust-accounting.reports.receipts-journal` |
-| GET | `/trust-accounting/reports/payments-journal` | `trust-accounting.reports.payments-journal` |
-| GET | `/trust-accounting/reports/overdrawn-ledger` | `trust-accounting.reports.overdrawn-ledger` |
-| GET | `/trust-accounting/reports/auditors-pack` | `trust-accounting.reports.auditors-pack` |
-| GET | `/trust-accounting/statements` | `trust-accounting.statements.index` |
-| GET | `/trust-accounting/statements/generate` | `trust-accounting.statements.generate` |
-| GET | `/trust-accounting/statements/annual` | `trust-accounting.statements.annual` |
-| POST | `/trust-accounting/statements/mark-sent` | `trust-accounting.statements.mark-sent` |
-| GET | `/trust-accounting/archives` | `trust-accounting.archives.index` |
-| GET | `/trust-accounting/archives/{archive}/download` | `trust-accounting.archives.download` |
-| GET | `/trust-accounting/rule42-withdrawal-authority-types` | `trust-accounting.withdrawal-authority-types.index` |
 
 #### Broadcasts & notifications
 

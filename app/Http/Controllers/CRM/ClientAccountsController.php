@@ -4966,7 +4966,7 @@ class ClientAccountsController extends Controller
   }
 
   /**
-   * Delete receipt by super-admin (hard delete; client funds ledger balances recalculated when receipt_type = 1).
+   * Super-admin: hard-delete a receipt, or post a reversing client-funds entry.
    */
   public function delete_receipt(Request $request)
   {
@@ -5001,9 +5001,61 @@ class ClientAccountsController extends Controller
 
       $this->ensureCrmRecordAccess((int) $receipt->client_id);
 
+      $mode = strtolower(trim((string) $request->input('delete_mode', 'hard')));
+      if (! in_array($mode, ['hard', 'reverse'], true)) {
+          $mode = 'hard';
+      }
+
+      $client_id = $receipt->client_id;
+      $client_matter_id = $receipt->client_matter_id ?? null;
+      $receipt_id = $receipt->id;
+      $receipt_type = (int) $request->receipt_type;
+      $reason = trim((string) $request->input('reverse_reason', ''));
+
+      if ($mode === 'reverse') {
+          if ($receipt_type !== 1) {
+              $response['status'] = false;
+              $response['message'] = 'Reversing entries are only available on the client funds ledger. Use delete for office or journal receipts.';
+
+              return response()->json($response);
+          }
+
+          try {
+              $result = DB::transaction(function () use ($receipt, $reason, $receiptActor) {
+                  return $this->reverseClientFundsLedgerEntry($receipt, $reason, $receiptActor);
+              });
+          } catch (\RuntimeException $e) {
+              $response['status'] = false;
+              $response['message'] = $e->getMessage();
+
+              return response()->json($response);
+          }
+
+          if (! empty($receipt->invoice_no)) {
+              $this->recalculateInvoiceStatusAndBalance((int) $client_id, (string) $receipt->invoice_no);
+          }
+
+          $client_info = \App\Models\Admin::select('client_id')->where('id', $client_id)->first();
+          $objs = new ActivitiesLog;
+          $objs->client_id = $client_id;
+          $objs->created_by = Auth::user()->id;
+          $objs->description = $reason;
+          $objs->subject = 'Reversed client funds entry ' . ($receipt->trans_no ?? $receipt_id) . ' of client-' . ($client_info->client_id ?? 'N/A');
+          $objs->activity_type = 'financial';
+          $objs->task_status = 0;
+          $objs->pin = 0;
+          $objs->save();
+
+          $response['status'] = true;
+          $response['message'] = 'Reversing entry posted. Original line kept for the ledger trail.';
+          $response['reversal_id'] = $result['reversal_id'] ?? null;
+
+          return response()->json($response);
+      }
+
       if ($receipt->client_fund_ledger_type === 'Fee Transfer') {
           $response['status'] = false;
-          $response['message'] = 'This entry is already associated with an Invoice, so it cannot be deleted. Please try another.';
+          $response['message'] = 'Fee transfers cannot be permanently deleted. Use Reverse entry to keep a matching Smokeball-style trail.';
 
           return response()->json($response);
       }
@@ -5012,6 +5064,25 @@ class ClientAccountsController extends Controller
       $client_matter_id = $receipt->client_matter_id ?? null;
       $receipt_id = $receipt->id;
       $receipt_type = (int) $request->receipt_type;
+
+      if ((int) $receipt_type === 1) {
+          $activeFeeTransfer = DB::table('account_client_receipts')
+              ->where('receipt_type', 1)
+              ->where('client_id', $client_id)
+              ->where('receipt_id', $receipt->receipt_id)
+              ->where('client_fund_ledger_type', 'Fee Transfer')
+              ->where(function ($q) {
+                  $q->whereNull('void_fee_transfer')->orWhere('void_fee_transfer', '!=', 1);
+              })
+              ->where('id', '!=', $receipt->id)
+              ->exists();
+          if ($activeFeeTransfer) {
+              $response['status'] = false;
+              $response['message'] = 'Reverse the linked fee transfer first. A deposit with an active fee transfer cannot be permanently deleted.';
+
+              return response()->json($response);
+          }
+      }
 
       $affectedRows = DB::transaction(function () use ($request, $client_id, $client_matter_id, $receipt_type) {
           $deleted = AccountClientReceipt::where('id', $request->receiptId)
@@ -5041,13 +5112,115 @@ class ClientAccountsController extends Controller
           $objs->save();
 
           $response['status'] = true;
-          $response['message'] = 'Receipt deleted successfully.';
+          $response['message'] = 'Receipt deleted permanently.';
       } else {
           $response['status'] = false;
           $response['message'] = 'Failed to delete receipt.';
       }
 
       return response()->json($response);
+  }
+
+  /**
+   * Post an opposite client-funds line (original stays). Fee transfers are marked void so invoice paid totals drop.
+   */
+  protected function reverseClientFundsLedgerEntry(AccountClientReceipt $receipt, string $reason, $actor): array
+  {
+      if ((int) $receipt->void_fee_transfer === 1) {
+          throw new \RuntimeException('This entry is already voided or reversed.');
+      }
+
+      if (Schema::hasColumn('account_client_receipts', 'reversal_of_entry_id') && ! empty($receipt->reversal_of_entry_id)) {
+          throw new \RuntimeException('This line is already a reversing entry.');
+      }
+
+      if (Schema::hasColumn('account_client_receipts', 'reversal_of_entry_id')) {
+          $already = DB::table('account_client_receipts')
+              ->where('reversal_of_entry_id', $receipt->id)
+              ->exists();
+          if ($already) {
+              throw new \RuntimeException('A reversing entry already exists for this line.');
+          }
+      }
+
+      $activeFeeTransfer = DB::table('account_client_receipts')
+          ->where('receipt_type', 1)
+          ->where('client_id', $receipt->client_id)
+          ->where('receipt_id', $receipt->receipt_id)
+          ->where('client_fund_ledger_type', 'Fee Transfer')
+          ->where(function ($q) {
+              $q->whereNull('void_fee_transfer')->orWhere('void_fee_transfer', '!=', 1);
+          })
+          ->where('id', '!=', $receipt->id)
+          ->exists();
+      if ($receipt->client_fund_ledger_type === 'Deposit' && $activeFeeTransfer) {
+          throw new \RuntimeException('Reverse the linked fee transfer first, then reverse this deposit.');
+      }
+
+      $origDeposit = round((float) $receipt->deposit_amount, 2);
+      $origWithdraw = round((float) $receipt->withdraw_amount, 2);
+      if ($origDeposit <= 0 && $origWithdraw <= 0) {
+          throw new \RuntimeException('This entry has no amount to reverse.');
+      }
+
+      $staffUserId = $actor instanceof Staff ? (int) $actor->id : (int) (Auth::guard('admin')->id() ?? 0);
+      $ledgerType = (string) $receipt->client_fund_ledger_type;
+      $isFeeTransfer = $ledgerType === 'Fee Transfer';
+
+      if ($isFeeTransfer) {
+          DB::table('account_client_receipts')->where('id', $receipt->id)->update([
+              'void_fee_transfer' => 1,
+              'voided_at' => now(),
+              'voided_by' => $staffUserId,
+              'updated_at' => now(),
+          ]);
+      } elseif (Schema::hasColumn('account_client_receipts', 'voided_at')) {
+          DB::table('account_client_receipts')->where('id', $receipt->id)->update([
+              'voided_at' => now(),
+              'voided_by' => $staffUserId,
+              'updated_at' => now(),
+          ]);
+      }
+
+      $transNo = $this->createTransactionNumber($ledgerType !== '' ? $ledgerType : 'Deposit');
+      $desc = 'Reversal of ' . ($receipt->trans_no ?: ('#' . $receipt->id));
+      if ($reason !== '') {
+          $desc .= ' — ' . $reason;
+      }
+
+      $insert = [
+          'user_id' => $staffUserId,
+          'client_id' => $receipt->client_id,
+          'client_matter_id' => $receipt->client_matter_id,
+          'receipt_id' => $this->getNextReceiptId(1),
+          'receipt_type' => 1,
+          'trans_date' => $receipt->trans_date,
+          'entry_date' => date('d/m/Y'),
+          'invoice_no' => $isFeeTransfer ? $receipt->invoice_no : null,
+          'trans_no' => $transNo,
+          'client_fund_ledger_type' => $ledgerType !== '' ? $ledgerType : 'Deposit',
+          'description' => $desc,
+          'deposit_amount' => $origWithdraw,
+          'withdraw_amount' => $origDeposit,
+          'payment_method' => $receipt->payment_method,
+          'validate_receipt' => 0,
+          'void_invoice' => 0,
+          'invoice_status' => 0,
+          'save_type' => 'final',
+          'hubdoc_sent' => 0,
+          'void_fee_transfer' => 0,
+          'created_at' => now(),
+          'updated_at' => now(),
+      ];
+      if (Schema::hasColumn('account_client_receipts', 'reversal_of_entry_id')) {
+          $insert['reversal_of_entry_id'] = $receipt->id;
+      }
+
+      $reversalId = DB::table('account_client_receipts')->insertGetId($insert);
+
+      $this->recalculateClientFundBalances((int) $receipt->client_id, $receipt->client_matter_id);
+
+      return ['reversal_id' => $reversalId, 'trans_no' => $transNo];
   }
 
   public function printPreview(Request $request, $id){

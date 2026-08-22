@@ -18,7 +18,7 @@ class ClientMatterTaskSyncService
     /**
      * After a client checklist task is saved, create the linked Action (Note) if missing.
      */
-    public function mirrorClientTaskToAction(ClientMatterTask $task): ?Note
+    public function mirrorClientTaskToTaskNote(ClientMatterTask $task): ?Note
     {
         if ($task->note_id) {
             $existing = Note::find($task->note_id);
@@ -54,7 +54,7 @@ class ClientMatterTaskSyncService
 
             return $note;
         } catch (\Throwable $e) {
-            Log::warning('ClientMatterTaskSync: failed to mirror client task to action', [
+            Log::warning('ClientMatterTaskSync: failed to mirror client task to task note', [
                 'task_id' => $task->id,
                 'error' => $e->getMessage(),
             ]);
@@ -67,7 +67,7 @@ class ClientMatterTaskSyncService
      * After an Action (Note) with a client is saved, create the linked checklist task if missing.
      * Only one checklist row per unique_group_id (multi-assignee actions share one client task).
      */
-    public function mirrorActionToClientTask(Note $note): ?ClientMatterTask
+    public function mirrorTaskNoteToClientTask(Note $note): ?ClientMatterTask
     {
         if ((int) $note->is_action !== 1 || ! $note->client_id) {
             return null;
@@ -120,7 +120,7 @@ class ClientMatterTaskSyncService
 
             return $task;
         } catch (\Throwable $e) {
-            Log::warning('ClientMatterTaskSync: failed to mirror action to client task', [
+            Log::warning('ClientMatterTaskSync: failed to mirror task note to client task', [
                 'note_id' => $note->id,
                 'error' => $e->getMessage(),
             ]);

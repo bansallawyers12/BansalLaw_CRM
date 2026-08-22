@@ -5,7 +5,7 @@ namespace App\Http\Controllers\CRM\Clients;
 use App\Http\Controllers\Controller;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
-use App\Services\ActionTaskTimelineService;
+use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,10 +129,10 @@ class ClientMatterTaskController extends Controller
         $task->created_by       = Auth::user()->id;
         $task->save();
 
-        app(ClientMatterTaskSyncService::class)->mirrorClientTaskToAction($task);
+        app(ClientMatterTaskSyncService::class)->mirrorClientTaskToTaskNote($task);
         $task->refresh();
 
-        app(ActionTaskTimelineService::class)->logTaskCreated($task, $matter);
+        app(TaskTimelineService::class)->logTaskCreated($task, $matter);
 
         return response()->json(['status' => true, 'data' => $task]);
     }
@@ -212,7 +212,7 @@ class ClientMatterTaskController extends Controller
         }
 
         if ($timelineChanges !== []) {
-            app(ActionTaskTimelineService::class)->logTaskUpdated($task, $timelineChanges);
+            app(TaskTimelineService::class)->logTaskUpdated($task, $timelineChanges);
         }
 
         return response()->json(['status' => true, 'data' => $task]);

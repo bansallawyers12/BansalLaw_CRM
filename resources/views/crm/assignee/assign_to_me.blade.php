@@ -82,7 +82,7 @@
 											<th class="sort_col">@sortablelink('first_name','Assignee name')</th>
                                             <th>Assigner name</th>
 											<th>Client Reference</th>
-											<th class="sort_col">@sortablelink('action_date','Action Date')</th>
+											<th class="sort_col">@sortablelink('action_date','Assign Date')</th>
                                             <th class="sort_col">@sortablelink('task_group','Group')</th>
                                             <th>Note</th>
                                             <th width="180px">Action</th>
@@ -272,7 +272,7 @@
 											<th class="sort_col">@sortablelink('first_name','Assignee name')</th>
                                             <th>Assigner name</th>
 											<th>Client Reference</th>
-											<th class="sort_col">@sortablelink('action_date','Action Date')</th>
+											<th class="sort_col">@sortablelink('action_date','Assign Date')</th>
                                             <th class="sort_col">@sortablelink('task_group','Group')</th>
                                             <th>Note</th>
                                             <th width="180px">Action</th>
@@ -515,7 +515,7 @@
         if(row_id !=""){
             $.ajax({
 				type:'post',
-                url:"{{URL::to('/')}}/update-action-not-completed",
+                url:"{{ route('tasks.reopen') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {id:row_id },
                 success: function(response){
@@ -564,7 +564,7 @@
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-action-completed",
+            url: "{{ route('tasks.complete') }}",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -628,7 +628,7 @@
 		if(flag){
 			$.ajax({
 				type:'post',
-					url:"{{URL::to('/')}}/clients/action/store",
+					url:"{{ route('clients.tasks.store') }}",
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 
 					data: {note_type:'follow_up',description:$('#assignnote').val(),client_id:$('#assign_client_id').val(),followup_datetime:$('#popoverdatetime').val(),assignee_name:$('#rem_cat :selected').text(),rem_cat:$('#rem_cat option:selected').val(),task_group:$('#task_group option:selected').val()},

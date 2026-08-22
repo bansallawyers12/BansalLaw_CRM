@@ -471,9 +471,13 @@
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn" style="margin-right: 10px;"><i class="fa-solid fa-filter"></i> Filter</a>
                             
                             @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
-                                <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
+                                <button type="button" class="btn btn-warning Reverse_Receipt" style="margin-right: 10px;" title="Keep the original line and post an opposite reversing entry (Smokeball-style).">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                    Reverse entry
+                                </button>
+                                <button type="button" class="btn btn-danger Delete_Receipt" style="margin-right: 10px;" title="Permanently remove this line (no reversing entry).">
                                     <i class="fa-solid fa-trash"></i>
-                                    Delete receipt
+                                    Delete permanently
                                 </button>
                             @endif
 
@@ -864,7 +868,7 @@ jQuery(document).ready(function($){
             //clickedReceiptIds.push(clicked_receipt_id);
 
             // For deletion, allow only one receipt to be selected
-            if ($('.listing-container .Delete_Receipt').length > 0) {
+            if ($('.listing-container .Delete_Receipt').length > 0 || $('.listing-container .Reverse_Receipt').length > 0) {
                 $('.listing-container .your-checkbox').not(this).prop('checked', false);
                 clickedReceiptIds = [clicked_receipt_id];
             } else {
@@ -969,7 +973,56 @@ jQuery(document).ready(function($){
         }
     });
 
-    // Delete receipt by super admin
+    function postClientFundsDelete(deleteMode, extraData) {
+        var data = $.extend({
+            receiptId: clickedReceiptIds[0],
+            receipt_type: 1,
+            delete_mode: deleteMode
+        }, extraData || {});
+        $.ajax({
+            type: 'post',
+            url: "{{URL::to('/')}}/delete_receipt",
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            data: data,
+            dataType: 'json',
+            success: function(response) {
+                var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                if (obj.status) {
+                    clickedReceiptIds = [];
+                    $('.listing-container .custom-error-msg').text(obj.message);
+                    $('.listing-container .custom-error-msg').show();
+                    $('.listing-container .custom-error-msg').addClass('alert alert-success');
+                    window.location.reload();
+                } else {
+                    $('.listing-container .custom-error-msg').text(obj.message);
+                    $('.listing-container .custom-error-msg').show();
+                    $('.listing-container .custom-error-msg').addClass('alert alert-danger');
+                }
+            },
+            error: function() {
+                $('.listing-container .custom-error-msg').text('An error occurred while updating the receipt.');
+                $('.listing-container .custom-error-msg').show();
+                $('.listing-container .custom-error-msg').addClass('alert alert-danger');
+            }
+        });
+    }
+
+    $(document).delegate('.listing-container .Reverse_Receipt', 'click', function(){
+        if (clickedReceiptIds.length === 0) {
+            alert('Please select a receipt to reverse.');
+            return;
+        }
+        if (clickedReceiptIds.length > 1) {
+            alert('Please select only one receipt to reverse.');
+            return;
+        }
+        if (!confirm('Post a reversing entry and keep the original line (Smokeball-style trail)?')) {
+            return;
+        }
+        var reason = window.prompt('Reason for reversal (optional):', '');
+        postClientFundsDelete('reverse', { reverse_reason: reason ? reason.trim() : '' });
+    });
+
     $(document).delegate('.listing-container .Delete_Receipt', 'click', function(){
         if (clickedReceiptIds.length === 0) {
             alert('Please select a receipt to delete.');
@@ -979,35 +1032,8 @@ jQuery(document).ready(function($){
             alert('Please select only one receipt to delete.');
             return;
         }
-        var mergeStr = "Are you sure you want to delete this receipt?";
-        if (confirm(mergeStr)) {
-            $.ajax({
-                type: 'post',
-                url: "{{URL::to('/')}}/delete_receipt",
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
-                dataType: 'json',
-                success: function(response) {
-                    // Parse response if it's a string (fallback for older jQuery versions)
-                    var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                    if (obj.status) {
-                        clickedReceiptIds = [];
-                        $('.listing-container .custom-error-msg').text(obj.message);
-                        $('.listing-container .custom-error-msg').show();
-                        $('.listing-container .custom-error-msg').addClass('alert alert-success');
-                        window.location.reload();
-                    } else {
-                        $('.listing-container .custom-error-msg').text(obj.message);
-                        $('.listing-container .custom-error-msg').show();
-                        $('.listing-container .custom-error-msg').addClass('alert alert-danger');
-                    }
-                },
-                error: function() {
-                    $('.listing-container .custom-error-msg').text('An error occurred while deleting the receipt.');
-                    $('.listing-container .custom-error-msg').show();
-                    $('.listing-container .custom-error-msg').addClass('alert alert-danger');
-                }
-            });
+        if (confirm('Permanently delete this receipt? This cannot be undone. Use Reverse entry if you need a matching ledger trail.')) {
+            postClientFundsDelete('hard');
         }
     });
 

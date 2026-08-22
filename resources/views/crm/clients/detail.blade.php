@@ -548,7 +548,7 @@ use App\Http\Controllers\Controller;
             
             @include('crm.clients.tabs.activityfeed_tab')
 
-            @include('crm.clients.tabs.client_action_tab')
+            @include('crm.clients.tabs.client_task_tab')
             
             @include('crm.clients.tabs.notes')
             
@@ -1515,7 +1515,7 @@ $(document).ready(function() {
             getCostAssignmentLegalPractitionerLead: '{{ URL::to("/clients/getCostAssignmentLegalPractitionerDetailLead") }}',
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
-            followupStore: '{{ URL::to("/clients/action/store") }}',
+            followupStore: '{{ route("clients.tasks.store") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',
             pinNote: '{{ URL::to("/pinnote") }}',
             pinActivityLog: '{{ URL::to("/pinactivitylog") }}',
@@ -1545,7 +1545,7 @@ $(document).ready(function() {
             matterTaskIndex: '{{ route("clients.matterTask.index") }}',
             matterTaskStore: '{{ route("clients.matterTask.store") }}',
             matterTaskBase: '{{ url("/clients/matter-tasks") }}',
-            assigneeAction: '{{ route("assignee.action") }}',
+            assigneeAction: '{{ route("assignee.tasks") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',

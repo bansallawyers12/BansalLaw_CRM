@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class ActionCompleteReopenAuthorizationTest extends TestCase
+class TaskCompleteReopenAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,7 +25,7 @@ class ActionCompleteReopenAuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function unassigned_and_non_creator_staff_cannot_complete_or_reopen_action(): void
+    public function unassigned_and_non_creator_staff_cannot_complete_or_reopen_task(): void
     {
         $creator = Staff::create([
             'first_name' => 'Creator',
@@ -52,25 +52,23 @@ class ActionCompleteReopenAuthorizationTest extends TestCase
         ]);
 
         $note = Note::create([
-            'description' => 'Target Action',
+            'description' => 'Target task',
             'user_id' => $creator->id,
             'assigned_to' => $assignee->id,
             'status' => 0,
             'is_action' => 1,
         ]);
 
-        // Attempting complete as other staff member (neither creator nor assignee)
         $this->actingAs($otherStaff, 'admin');
-        $response = $this->post('/update-action-completed', ['id' => $note->id]);
+        $response = $this->post('/tasks/complete', ['id' => $note->id]);
         $response->assertStatus(403);
 
-        // Attempting reopen as other staff member
-        $response = $this->post('/update-action-not-completed', ['id' => $note->id]);
+        $response = $this->post('/tasks/reopen', ['id' => $note->id]);
         $response->assertStatus(403);
     }
 
     #[Test]
-    public function assignee_or_creator_can_complete_and_reopen_action(): void
+    public function assignee_or_creator_can_complete_and_reopen_task(): void
     {
         $creator = Staff::create([
             'first_name' => 'Creator2',
@@ -89,22 +87,20 @@ class ActionCompleteReopenAuthorizationTest extends TestCase
         ]);
 
         $note = Note::create([
-            'description' => 'Target Action 2',
+            'description' => 'Target task 2',
             'user_id' => $creator->id,
             'assigned_to' => $assignee->id,
             'status' => 0,
             'is_action' => 1,
         ]);
 
-        // Assignee completes action
         $this->actingAs($assignee, 'admin');
-        $response = $this->post('/update-action-completed', ['id' => $note->id]);
+        $response = $this->post('/tasks/complete', ['id' => $note->id]);
         $response->assertStatus(200);
         $this->assertEquals(1, (int) $note->fresh()->status);
 
-        // Creator reopens action
         $this->actingAs($creator, 'admin');
-        $response = $this->post('/update-action-not-completed', ['id' => $note->id]);
+        $response = $this->post('/tasks/reopen', ['id' => $note->id]);
         $response->assertStatus(200);
         $this->assertEquals(0, (int) $note->fresh()->status);
     }

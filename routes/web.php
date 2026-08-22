@@ -91,7 +91,7 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/calendar-events', [DashboardController::class, 'calendarEvents'])->name('dashboard.calendar-events');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
-    Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed');
+    Route::post('/dashboard/tasks/complete', [DashboardController::class, 'completeTask'])->name('dashboard.tasks.complete');
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
@@ -251,16 +251,18 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::delete('/assignee/{assignee}', [AssigneeController::class, 'destroy'])->name('assignee.destroy');
     Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
 
-    Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed
-    Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); //update action to be not completed
+    Route::post('/tasks/complete', [AssigneeController::class, 'completeTask'])->name('tasks.complete');
+    Route::post('/tasks/reopen', [AssigneeController::class, 'reopenTask'])->name('tasks.reopen');
 
     Route::get('/assigned_by_me', [AssigneeController::class, 'assigned_by_me'])->name('assignee.assigned_by_me'); //assigned by me
     Route::get('/assigned_to_me', [AssigneeController::class, 'assigned_to_me'])->name('assignee.assigned_to_me'); //assigned to me
 
     Route::delete('/destroy_by_me/{note_id}', [AssigneeController::class, 'destroy_by_me'])->name('assignee.destroy_by_me'); //assigned by me
     Route::delete('/destroy_to_me/{note_id}', [AssigneeController::class, 'destroy_to_me'])->name('assignee.destroy_to_me'); //assigned to me
-    Route::get('/action_completed', [AssigneeController::class, 'action_completed'])->name('assignee.action_completed'); //action completed
+    Route::get('/tasks/completed', [AssigneeController::class, 'tasksCompleted'])->name('assignee.tasks.completed');
 
+    Route::redirect('/action', '/tasks', 301);
+    Route::redirect('/action_completed', '/tasks/completed', 301);
 
     Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
     Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
@@ -273,13 +275,14 @@ Route::middleware(['auth:admin'])->group(function () {
     // Get assigne list
     Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
 
-    // Update action
-    Route::post('/update-action', [AssigneeController::class, 'updateAction']);
-    Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts');
+    Route::post('/tasks/update', [AssigneeController::class, 'updateTask'])->name('tasks.update');
+    Route::get('/tasks/counts', [AssigneeController::class, 'getTaskCounts'])->name('tasks.counts');
 
-    // For datatable - Action list routes
-    Route::get('/action', [AssigneeController::class, 'action'])->name('assignee.action');
-    Route::get('/action/list', [AssigneeController::class, 'getAction'])->name('action.list');
+    Route::get('/tasks', [AssigneeController::class, 'tasks'])->name('assignee.tasks');
+    Route::get('/tasks/list', [AssigneeController::class, 'getTasks'])->name('tasks.list');
+
+    Route::redirect('/action/list', '/tasks/list', 301);
+    Route::redirect('/action/counts', '/tasks/counts', 301);
 
     /*---------- Matter Office Management ----------*/
     Route::post('/matters/update-office', [ClientsController::class, 'updateMatterOffice'])->name('matters.update-office');

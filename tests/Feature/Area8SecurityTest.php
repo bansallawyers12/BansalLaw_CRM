@@ -711,7 +711,7 @@ class Area8SecurityTest extends TestCase
         $this->actingAs($unassignedStaff, 'admin');
 
         // 1. Unauthorized action completion attempt
-        $responseComplete = $this->postJson('/dashboard/update-action-completed', [
+        $responseComplete = $this->postJson('/dashboard/tasks/complete', [
             'id' => $note->id,
             'unique_group_id' => 'group_960',
             'completion_notes' => 'Attempted IDOR completion'

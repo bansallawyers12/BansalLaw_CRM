@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\WorkflowStage;
-use App\Services\MatterActionNoteService;
+use App\Services\MatterTaskNoteService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
@@ -515,7 +515,7 @@ class ClientMatterHubController extends Controller
 
 	private function createMatterActionNotes(ClientMatter $clientMatter, string $description): void
 	{
-		MatterActionNoteService::createGroupedForMatter(
+		MatterTaskNoteService::createGroupedForMatter(
 			(int) $clientMatter->client_id,
 			(int) $clientMatter->id,
 			$description,

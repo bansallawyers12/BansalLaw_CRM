@@ -186,7 +186,7 @@
 			  		</div>
 				</div>
 
-				<!-- Trust Account Entry Form (LSBC Uniform Law Compliant) -->
+				<!-- Trust Account Entry Form -->
 				<form class="form-type trust-entry-form" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
@@ -346,7 +346,7 @@
                     </div>
 				</form>
 
-				<!-- Tax Invoice Form (LSBC Compliant) -->
+				<!-- Tax Invoice Form -->
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">

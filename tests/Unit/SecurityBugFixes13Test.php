@@ -23,7 +23,7 @@ class SecurityBugFixes13Test extends TestCase
             'unique_group_id' => ''
         ]);
 
-        $response = $controller->updateActionCompleted($request);
+        $response = $controller->completeTask($request);
         $this->assertNotNull($response);
     }
 

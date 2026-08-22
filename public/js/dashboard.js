@@ -238,7 +238,7 @@ window.openTaskDetail = function(taskId) {
     const rawClientId = (taskItem.attr('data-client-id') || '').trim();
     const isPersonalAction = rawClientId === '';
     const clientDetailUrl = taskItem.attr('data-client-detail-url') || data.clientDetailUrl || '';
-    const personalActionUrl = (window.dashboardRoutes && window.dashboardRoutes.assigneeAction) ? window.dashboardRoutes.assigneeAction : '/action';
+    const personalActionUrl = (window.dashboardRoutes && window.dashboardRoutes.assigneeAction) ? window.dashboardRoutes.assigneeAction : '/tasks';
     
     // Populate panel with task data
     $('#taskDetailTitle').text(stripHtml(data.description));
@@ -303,7 +303,7 @@ window.completeTaskFromDetail = function() {
 // Complete Task Function (called after modal confirm or directly)
 function completeTask(taskId, uniqueGroupId, completionNotes) {
     if (!taskId) {
-        showNotification('Invalid action data', 'error');
+        showNotification('Invalid task data', 'error');
         return;
     }
     
@@ -337,13 +337,13 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                 
                 showNotification('Task completed successfully!', 'success');
             } else {
-                showNotification(response.message || 'Failed to complete action', 'error');
+                showNotification(response.message || 'Failed to complete task', 'error');
             }
         },
         error: function(xhr, status, error) {
             $('.popuploader').hide();
-            console.error('Error completing action:', error);
-            showNotification('An error occurred while completing the action', 'error');
+            console.error('Error completing task:', error);
+            showNotification('An error occurred while completing the task', 'error');
         }
     });
 }

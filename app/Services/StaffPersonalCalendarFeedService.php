@@ -588,7 +588,7 @@ class StaffPersonalCalendarFeedService
                     'notes' => $note->description,
                     'status' => 'action',
                     'status_label' => 'My Task',
-                    'action_url' => url('/action'),
+                    'action_url' => route('assignee.tasks'),
                 ];
             })
             ->values()

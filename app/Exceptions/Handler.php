@@ -77,7 +77,7 @@ class Handler extends ExceptionHandler
 						  str_starts_with($request->header('Authorization', ''), 'Bearer ');
 		
 		// AJAX DataTables loaders must not receive an HTML redirect (invalid JSON → client error).
-		if ($request->is('action/list')) {
+		if ($request->is('tasks/list') || $request->is('action/list')) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Unauthenticated.',
@@ -88,7 +88,7 @@ class Handler extends ExceptionHandler
 			], 401);
 		}
 
-		if ($request->is('action/counts')) {
+		if ($request->is('tasks/counts') || $request->is('action/counts')) {
 			return response()->json([
 				'all' => 0,
 				'call' => 0,

@@ -150,7 +150,7 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
         ]);
 
         $deleteResponse->assertStatus(200);
-        $deleteResponse->assertJson(['status' => true, 'message' => 'Receipt deleted successfully.']);
+        $deleteResponse->assertJson(['status' => true, 'message' => 'Receipt deleted permanently.']);
 
         // Check receipt 2 is gone
         $this->assertNull(DB::table('account_client_receipts')->where('id', $officeReceipt2Id)->first());
@@ -245,7 +245,7 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJson(['status' => true, 'message' => 'Receipt deleted successfully.']);
+        $response->assertJson(['status' => true, 'message' => 'Receipt deleted permanently.']);
         $this->assertNull(DB::table('account_client_receipts')->where('id', $receiptId)->first());
     }
 
@@ -733,5 +733,82 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
         $this->assertEquals(500.00, (float) $invoice->partial_paid_amount, 'Total paid should exclude void_fee_transfer fee transfer');
         $this->assertEquals(500.00, (float) $invoice->balance_amount, 'Balance should be $1000 - $500 = $500');
         $this->assertEquals(2, (int) $invoice->invoice_status, 'Status should be Partial (2)');
+    }
+
+    #[Test]
+    public function reverse_client_funds_deposit_keeps_original_and_posts_opposite_line(): void
+    {
+        $superAdmin = Staff::create([
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
+            'email' => 'superadmin_rev_' . uniqid() . '@bansallawyers.com.au',
+            'password' => bcrypt('password123'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+        $this->actingAs($superAdmin, 'admin');
+
+        $client = Admin::create([
+            'first_name' => 'Rev',
+            'last_name' => 'Client',
+            'email' => 'client_rev_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+        ]);
+
+        $depositId = DB::table('account_client_receipts')->insertGetId([
+            'user_id' => $superAdmin->id,
+            'client_id' => $client->id,
+            'receipt_id' => 7101,
+            'receipt_type' => 1,
+            'client_fund_ledger_type' => 'Deposit',
+            'trans_date' => '22/08/2026',
+            'entry_date' => '22/08/2026',
+            'trans_no' => 'CFL-7101',
+            'description' => 'Trust receipt',
+            'deposit_amount' => 400.00,
+            'withdraw_amount' => 0.00,
+            'balance_amount' => 400.00,
+            'save_type' => 'final',
+            'validate_receipt' => 0,
+            'void_invoice' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->postJson('/delete_receipt', [
+            'receiptId' => $depositId,
+            'receipt_type' => 1,
+            'delete_mode' => 'reverse',
+            'reverse_reason' => 'Match Smokeball reversal',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $this->assertNotNull(DB::table('account_client_receipts')->where('id', $depositId)->first());
+
+        $reversal = DB::table('account_client_receipts')
+            ->where('receipt_type', 1)
+            ->where('client_id', $client->id)
+            ->where('id', '!=', $depositId)
+            ->first();
+
+        $this->assertNotNull($reversal);
+        $this->assertEquals(0.00, (float) $reversal->deposit_amount);
+        $this->assertEquals(400.00, (float) $reversal->withdraw_amount);
+        $this->assertStringContainsString('Reversal of CFL-7101', (string) $reversal->description);
+
+        $held = (float) DB::table('account_client_receipts')
+            ->where('client_id', $client->id)
+            ->where('receipt_type', 1)
+            ->where(function ($q) {
+                $q->whereNull('void_fee_transfer')->orWhere('void_fee_transfer', '!=', 1);
+            })
+            ->get()
+            ->reduce(fn ($sum, $row) => $sum + (float) $row->deposit_amount - (float) $row->withdraw_amount, 0.0);
+
+        $this->assertEquals(0.00, round($held, 2));
     }
 }

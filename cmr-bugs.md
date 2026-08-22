@@ -1,7 +1,8 @@
 # CRM Bugs Audit
 
 **Original audit date:** 2026-07-26  
-**Re-verified:** 2026-08-07 (static code + graphify MCP; no fixes applied in this pass)  
+**Re-verified:** 2026-08-07 (static code + graphify MCP; no fixes applied in that pass)  
+**Trust module cleanup:** 2026-08-22 (VLSB trust compliance removed; doc annotations updated)  
 **Scope:** Full CRM codebase audit  
 **Branch:** master (at re-verify)  
 **Method:** Original static review of controllers, routes, services, JS/views; 2026-08-07 pass re-checked critical/high items against current code
@@ -35,7 +36,7 @@ Status key (2026-08-07):
 | Partial | ~15 |
 | Still open / open\* | ~80+ |
 
-**Do not start from item 1.1.** Many early criticals are fixed. Prioritize remaining ACL, CSRF/XSS, trust races, booking metadata ownership, and leftover public/debug surfaces (see end of file).
+**Do not start from item 1.1.** Many early criticals are fixed. Prioritize remaining ACL, CSRF/XSS, client-funds ledger edge cases, booking metadata ownership, and leftover public/debug surfaces (see end of file).
 
 ---
 
@@ -103,7 +104,7 @@ Status key (2026-08-07):
 - **Files:** `ClientsController.php`; `routes/clients.php`
 - **Now:** `changetype` route restricted to POST with CSRF verification. Method enforces `ensureCrmRecordAccess`, disallows client-to-lead demotion, updates active status (`status = 'active'`), generates missing client reference IDs, and eliminates `user_id` parameter tampering.
 
-### 1.13 High — Trust receipt matter fix is a mutating GET with no access check
+### 1.13 High — Client fund receipt matter fix is a mutating GET with no access check
 - **Status:** Fixed
 - **Files:** `ClientAccountsController.php`; `routes/clients.php`
 - **Now:** `fixClientFundReceiptMatterAndRegenerate` route restricted to POST with CSRF verification. Method checks `$request->isMethod('post')`, uses `$request->input(...)`, and enforces `ensureCrmRecordAccess` on receipt's `client_id`.
@@ -346,57 +347,59 @@ Status key (2026-08-07):
 
 ---
 
-## Area 6 — Trust Accounting & Financial
+## Area 6 — Client funds ledger & financial (formerly “Trust Accounting”)
+
+> **2026-08-22 module removal:** VLSB trust compliance was retired (legal trust accounting is in Smokeball). Removed from CRM: all `trust_*` tables/columns, `TrustAccountingAdminController`, `app/Services/TrustAccounting/*`, trust models/views, and `TrustAccountingSecurityTest`. **Still in CRM:** internal client funds tracking via `account_client_receipts` (`receipt_type = 1`) and `ClientAccountsController`. Items below describe fixes to that ledger unless marked **Obsolete (module removed)**.
 
 ### 6.1 Critical — Fee-transfer “residual deposit” creates phantom trust money
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::saveaccountreport`, `TrustAccountingSecurityTest.php`
-- **Now:** Invoice fee-transfer path posts withdrawals and recalculates invoice paid totals without generating synthetic/phantom residual Deposit rows. Fixed missing method reference `assertInvoiceEligibleForWithdrawal` during fee-transfer authority checks and verified via automated test `fee_transfer_does_not_create_phantom_trust_deposit_rows`.
+- **Files:** `ClientAccountsController::saveaccountreport`
+- **Now:** Invoice fee-transfer path posts withdrawals and recalculates invoice paid totals without generating synthetic/phantom residual Deposit rows. Fixed missing method reference `assertInvoiceEligibleForWithdrawal` during fee-transfer authority checks. (Was verified via `TrustAccountingSecurityTest`, removed 2026-08-22.)
 
 ### 6.2 Critical — Void invoice fallback can void unrelated fee transfers
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::void_invoice`, `TrustAccountingSecurityTest.php`
-- **Now:** Removed unsafe fallback query in `void_invoice` that matched fee transfers by amount and wildcard `LIKE '%%'`. Unified fee transfer lookup to strictly match non-empty `invoice_no` / `trans_no` references on `account_client_receipts` or via `trust_withdrawal_authorities` records. Verified via automated test `void_invoice_does_not_void_unrelated_fee_transfers`.
+- **Files:** `ClientAccountsController::void_invoice`
+- **Now:** Removed unsafe fallback query in `void_invoice` that matched fee transfers by amount and wildcard `LIKE '%%'`. Unified fee transfer lookup to strictly match non-empty `invoice_no` / `trans_no` references on `account_client_receipts`. (Former `trust_withdrawal_authorities` join removed with module.)
 
 ### 6.3 High — Matter-scoped funds check inconsistent (cross-matter withdrawal)
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`, `TrustAccountingSecurityTest.php`
-- **Now:** Enforced strict matter scoping when checking funds held for invoice fee transfers and deposit allocations. Blocked cross-matter fee transfer requests where the invoice matter differs from the selected matter (`422 Cross-matter fee transfer blocked`), ensured funds checks evaluate the target invoice's matter balance, and recorded fee transfer withdrawals under the invoice's matter ID. Verified via automated test `cross_matter_fee_transfer_is_blocked`.
+- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`
+- **Now:** Enforced strict matter scoping when checking funds held for invoice fee transfers and deposit allocations. Blocked cross-matter fee transfer requests where the invoice matter differs from the selected matter (`422 Cross-matter fee transfer blocked`), ensured funds checks evaluate the target invoice's matter balance, and recorded fee transfer withdrawals under the invoice's matter ID.
 
 ### 6.4 High — Concurrent trust posts race (TOCTOU overdraw)
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`, `ClientAccountsController::revertClientFundLedger`, `TrustAccountingSecurityTest.php`
-- **Now:** Wrapped all trust posting, deposit allocation, and ledger reversal operations in database transactions (`DB::transaction`) with pessimistic row locking (`DB::table('admins')->where('id', $clientId)->lockForUpdate()->first()`). Concurrent withdrawal requests targeting the same client now serialize, ensuring available funds check and withdrawal execution occur atomically without TOCTOU overdraw. Verified via automated test `concurrent_trust_withdrawals_are_serialized_via_pessimistic_lock`.
+- **Files:** `ClientAccountsController::saveaccountreport`, `ClientAccountsController::allocateClientFundDepositToInvoice`, `ClientAccountsController::revertClientFundLedger`
+- **Now:** Wrapped all client-funds posting, deposit allocation, and ledger reversal operations in database transactions (`DB::transaction`) with pessimistic row locking (`DB::table('admins')->where('id', $clientId)->lockForUpdate()->first()`). Concurrent withdrawal requests targeting the same client now serialize, ensuring available funds check and withdrawal execution occur atomically without TOCTOU overdraw.
 
 ### 6.5 High — Invoice void has no privilege gate (trust-affecting)
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::void_invoice`, `TrustAccountingSecurityTest.php`
-- **Now:** Corrected boolean operator flaw in `void_invoice` privilege check (`! $receiptOk || (config('app.require_super_admin_email') && ...)`). Non-super-admin staff attempts to void invoices are now strictly rejected with HTTP `403 Unauthorized access`. Verified via automated test `non_super_admin_cannot_void_invoice`.
+- **Files:** `ClientAccountsController::void_invoice`
+- **Now:** Corrected boolean operator flaw in `void_invoice` privilege check (`! $receiptOk || (config('app.require_super_admin_email') && ...)`). Non-super-admin staff attempts to void invoices are now strictly rejected with HTTP `403 Unauthorized access`.
 
 ### 6.6 High — `ensureCrmRecordAccess` allows missing / non-client IDs (trust posts)
 - **Status:** Closed / Fixed
-- **Files:** `EnsuresCrmRecordAccess`, `ClientAccountsController::ensureAccountsClientFromRequest`, `ClientAccountsController::updateClientFundLedger`, `TrustAccountingSecurityTest.php`
-- **Now:** Updated `ensureAccountsClientFromRequest` and trust financial endpoints to enforce `ensureCrmRecordAccessStrict($clientId)`. Required valid, non-zero `client_id` parameter present on all financial requests, throwing HTTP `403` / `400` when missing or when `client_id` does not exist in `admins` table with type `client`/`lead`. Verified via automated test `missing_or_non_client_id_trust_posts_are_blocked`.
+- **Files:** `EnsuresCrmRecordAccess`, `ClientAccountsController::ensureAccountsClientFromRequest`, `ClientAccountsController::updateClientFundLedger`
+- **Now:** Updated `ensureAccountsClientFromRequest` and client-funds financial endpoints to enforce `ensureCrmRecordAccessStrict($clientId)`. Required valid, non-zero `client_id` parameter present on all financial requests, throwing HTTP `403` / `400` when missing or when `client_id` does not exist in `admins` table with type `client`/`lead`.
 
 ### 6.7 Medium — Spoofable actor on trust posts / Rule 42 authority
-- **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController`, `TrustWithdrawalAuthorityService`, `TrustAccountingSecurityTest.php`
-- **Now:** Eliminated all reliance on untrusted request parameters (`loggedin_staffid` / `loggedin_userid`) across all financial creation, editing, voiding, reversing, and Rule 42 authority paths. All actor IDs are now strictly derived from `Auth::guard('admin')->id() ?? Auth::id()`. Verified via automated test `actor_user_id_cannot_be_spoofed_in_request_payload`.
+- **Status:** Closed / Fixed (actor IDs); **Obsolete (module removed)** (Rule 42 authority)
+- **Files:** `ClientAccountsController` (actor IDs); ~~`TrustWithdrawalAuthorityService`~~ (removed 2026-08-22)
+- **Now:** Eliminated all reliance on untrusted request parameters (`loggedin_staffid` / `loggedin_userid`) across financial creation, editing, voiding, and reversing paths in `ClientAccountsController`. All actor IDs are strictly derived from `Auth::guard('admin')->id() ?? Auth::id()`. Rule 42 withdrawal authority UI/service removed with trust compliance module.
 
 ### 6.8 Medium — Receipt ID generation race
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::getNextReceiptId`, `ClientAccountsController`, `TrustAccountingSecurityTest.php`
-- **Now:** Standardized receipt ID generation via `getNextReceiptId($receipt_type)` with pessimistic locking (`lockForUpdate()`) across all trust, invoice adjustment, invoice creation, office receipt, and journal posting paths. Serialized concurrent receipt ID generation to prevent duplicate receipt IDs across concurrent requests. Verified via automated test `receipt_ids_are_generated_without_race_conditions`.
+- **Files:** `ClientAccountsController::getNextReceiptId`, `ClientAccountsController`
+- **Now:** Standardized receipt ID generation via `getNextReceiptId($receipt_type)` with pessimistic locking (`lockForUpdate()`) across client-funds, invoice adjustment, invoice creation, office receipt, and journal posting paths. Serialized concurrent receipt ID generation to prevent duplicate receipt IDs across concurrent requests.
 
 ### 6.9 Medium — Trust sequence first-row race
-- **Status:** Closed / Fixed
-- **Files:** `TrustReceiptSequenceService::nextTransNo`, `TrustAccountingSecurityTest.php`
-- **Now:** Refactored `nextTransNo` in `TrustReceiptSequenceService` to use atomic `insertOrIgnore` with `last_sequence = 0` followed by pessimistic row locking (`lockForUpdate()`). Guaranteed that initial sequence row creation for new trust financial years is race-free under high concurrency. Verified via automated test `trust_sequence_first_row_generation_is_concurrency_safe`.
+- **Status:** Obsolete (module removed)
+- **Files:** ~~`TrustReceiptSequenceService::nextTransNo`~~ (removed 2026-08-22)
+- **Now:** `trust_practice_sequences` table and `TrustReceiptSequenceService` deleted with VLSB trust compliance module. No longer applicable.
 
 ### 6.10 Medium — `getInvoiceAmount` IDOR
 - **Status:** Closed / Fixed
-- **Files:** `ClientAccountsController::getInvoiceAmount`, `TrustAccountingSecurityTest.php`
-- **Now:** Ensured CRM record access control via `$this->ensureCrmRecordAccess((int) $invoice->client_id)` when an invoice record is found. Unauthorized access yields a 403 response. Verified via automated test `get_invoice_amount_requires_crm_record_access`.
+- **Files:** `ClientAccountsController::getInvoiceAmount`
+- **Now:** Ensured CRM record access control via `$this->ensureCrmRecordAccess((int) $invoice->client_id)` when an invoice record is found. Unauthorized access yields a 403 response.
 
 ### 6.11 Suspected / Medium — Disbursement/Refund may overdraw (only logged)
 - **Status:** Fixed
@@ -732,12 +735,14 @@ Status key (2026-08-07):
 
 ---
 
-## Area 14 — Trust / Financial / Booking (supplement)
+## Area 14 — Financial / Booking (supplement)
+
+> **2026-08-22:** Trust-compliance-only items (#14.1, #14.7, #14.8) are **Obsolete (module removed)**. Booking and general financial items (#14.2–#14.6, #14.9–#14.17) remain applicable.
 
 ### 14.1 Critical — Trust void excludes original and also posts a reversing entry (double impact)
-- **Status:** Fixed
-- **Files:** `TrustLedgerBalanceService`, `ClientAccountsController::trustLedgerRowExcludedFromBalance`
-- **Now:** Rows with `trust_voided_at` **or** `trust_reversal_of_entry_id` are excluded from balances/reports → void + reversal no longer double-counts.
+- **Status:** Obsolete (module removed)
+- **Files:** ~~`TrustLedgerBalanceService`~~ (removed 2026-08-22); `ClientAccountsController::trustLedgerRowExcludedFromBalance`
+- **Now:** `trust_voided_at` and `trust_reversal_of_entry_id` columns dropped from `account_client_receipts` with trust module removal. Balance exclusion in `ClientAccountsController` now uses `void_fee_transfer` only.
 
 ### 14.2 High — EFTPOS surcharge added into trust deposit amount
 - **Status:** Fixed
@@ -765,14 +770,14 @@ Status key (2026-08-07):
 - **Now:** `void_invoice` in `ClientAccountsController` unallocates all office receipts (`receipt_type = 2`) and journal receipts (`receipt_type = 4`) linked to the voided invoice by setting `invoice_no = null` for all matching references (`invoice_no` or `trans_no`). This frees the receipts back into the client's unallocated receipt pool while preserving their payment amounts.
 
 ### 14.7 Medium — Office-receipt payment totals ignore `trust_voided_at` on fee transfers
-- **Status:** Fixed
-- **Files:** `ClientAccountsController::recalculateInvoiceStatusAndBalance`, `ClientAccountsController::save_receipt`, `FinancialStatsService`, `InvoiceReceiptRecalculationOnDeleteTest`
-- **Now:** All fee transfer sum calculations across `ClientAccountsController` and `FinancialStatsService` consistently filter out both `void_fee_transfer = 1` and `trust_voided_at IS NOT NULL` when calculating invoice payment totals, balances, and statuses.
+- **Status:** Obsolete (module removed)
+- **Files:** `ClientAccountsController::recalculateInvoiceStatusAndBalance`, `FinancialStatsService`
+- **Now:** `trust_voided_at` column dropped from `account_client_receipts`. Fee transfer totals filter on `void_fee_transfer` only.
 
 ### 14.8 Medium — Period lock uses strict `d/m/Y`; bad dates can bypass lock check
-- **Status:** Fixed
-- **Files:** `TrustPeriodService::assertTransDateUnlocked`, `TrustPeriodService::isLockedForRow`, `SecurityBugFixes14Test`
-- **Now:** `TrustPeriodService::assertTransDateUnlocked` robustly handles both hyphenated formats (`YYYY-MM-DD`, `DD-MM-YYYY`) and slash formats (`DD/MM/YYYY`, `YYYY/MM/DD`). Any malformed or unparseable date strings immediately throw a `RuntimeException` with `'Invalid transaction date format'` instead of silently bypassing period lock validation.
+- **Status:** Obsolete (module removed)
+- **Files:** ~~`TrustPeriodService::assertTransDateUnlocked`~~ (removed 2026-08-22)
+- **Now:** Trust accounting period locks and `TrustPeriodService` deleted with VLSB trust compliance module. No longer applicable.
 
 ### 14.9 Critical — Unauthenticated booking API accepts `is_paid` / `payment_status=completed`
 - **Status:** Fixed
@@ -821,29 +826,29 @@ Status key (2026-08-07):
 
 ---
 
-## Cross-cutting summary (updated 2026-08-07)
+## Cross-cutting summary (updated 2026-08-22)
 
 | Severity | Original count | Current take |
 |----------|----------------|--------------|
 | Critical | ~20+ | ~8–10 Fixed/Partial; remainder Open / Open\* |
 | High | ~55+ | Majority still Open\* (IDOR, CSRF, XSS dominant) |
-| Medium | ~40+ | Mostly Open\*; some Partial trust/booking improvements |
+| Medium | ~40+ | Mostly Open\*; some Partial client-funds/booking improvements |
 | Low / Suspected | ~12 | Unchanged unless product confirms |
 
 ### Dominant remaining themes
 1. Inconsistent CRM ACL (`canAccessClientOrLead` / `ensureCrmRecordAccess` not applied everywhere)
 2. Mutating GETs (CSRF)
 3. Stored XSS
-4. Trust races / money edge cases
+4. Client funds ledger / invoice money edge cases (VLSB trust compliance module removed 2026-08-22)
 5. Booking payment metadata ownership
 6. Leftover public debug routes + over-broad utility deletes
 
 ---
 
-## Suggested fix priority (documentation only — updated for current code)
+## Suggested fix priority (documentation only — updated 2026-08-22)
 
 1. **Booking / payments:** Require PI metadata `appointment_id` (or equivalent) always; close #14.11; audit #14.10 paid-before-charge paths.
-2. **Trust:** Confirm #6.1 closed with QA; fix void-by-amount fallback (#6.2); add locking for posts (#6.4); EFTPOS surcharge (#14.2); spoofable actor fields (#6.7).
+2. **Client funds ledger:** QA remaining `ClientAccountsController` money paths (#6.1–#6.8, #14.2–#14.6); VLSB trust compliance items (#6.9, #14.1, #14.7, #14.8) are obsolete.
 3. **ACL sweep:** Apply `canAccessClientOrLead` / `ensureCrmRecordAccess` to notes/tasks/docs/email preview-delete/dashboard/assignee complete/convert paths; redact locked global search (#12.2).
 4. **Utilities:** Further restrict `/delete_action` / `/update_action` (super-admin only + narrower allowlists) (#9.7–9.9).
 5. **Public surface:** Remove or auth-gate `/debug-pdf-page`; confirm signing token rules on all public doc routes (#4.1–4.5, #4.10).
@@ -858,6 +863,7 @@ Status key (2026-08-07):
 ## Notes
 
 - Original audit was **static** (2026-07-26). Re-verify on 2026-08-07 was also static + graphify orientation; runtime/QA still recommended for money paths and Suspected items.
+- **2026-08-22:** VLSB trust compliance module removed from codebase and live DB (`trust_*` tables/columns, `TrustAccounting/*` services, admin UI, `TrustAccountingSecurityTest`). Internal client funds ledger (`account_client_receipts`, `ClientAccountsController`) remains. Area 6 and trust-only Area 14 items annotated accordingly.
 - **Open\*** means “not re-confirmed line-by-line on 2026-08-07” — assume still present until proven otherwise.
 - Vendor / TinyMCE TODOs in `public/js/tinymce/**` and bundler TODOs in `public/js/app.js` remain excluded as third-party noise.
 - No code fixes were applied in the 2026-08-07 documentation pass — status annotations only.

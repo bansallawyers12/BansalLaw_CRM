@@ -5,7 +5,7 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/action-list.css') }}?v={{ @filemtime(public_path('css/action-list.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('css/task-list.css') }}?v={{ @filemtime(public_path('css/task-list.css')) ?: time() }}">
 @endsection
 
 @section('content')
@@ -31,7 +31,7 @@
                         </div>
                         <div class="card-header-actions">
                             <a class="btn btn-outline-navy" id="assigned_by_me" href="{{ URL::to('/assigned_by_me') }}">Assigned by me</a>
-                            <a class="btn btn-outline-navy" id="archived-tab" href="{{ URL::to('/action_completed') }}">Completed</a>
+                            <a class="btn btn-outline-navy" id="archived-tab" href="{{ route('assignee.tasks.completed') }}">Completed</a>
                     {{-- Popover body from <template> (data-content attribute breaks on staff names with quotes / long HTML) --}}
                     <template id="action-add-task-popover-template">
                         <div class="modern-popover-content add-task-layout">
@@ -1030,7 +1030,7 @@ $(function () {
         var params = getActionAjaxParams(start);
 
         $.ajax({
-            url: "{{ route('action.list') }}",
+            url: "{{ route('tasks.list') }}",
             type: 'GET',
             data: params,
             headers: {
@@ -1103,7 +1103,7 @@ $(function () {
         processing: true,
         serverSide: true,
         ajax: {
-            url: "{{ route('action.list') }}",
+            url: "{{ route('tasks.list') }}",
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 Accept: 'application/json'
@@ -1161,8 +1161,8 @@ $(function () {
         responsive: false,
         autoWidth: false,
         language: {
-            emptyTable: 'No open actions found',
-            zeroRecords: 'No matching actions found'
+            emptyTable: 'No open tasks found',
+            zeroRecords: 'No matching tasks found'
         }
     }) : null;
 
@@ -1446,7 +1446,7 @@ $(function () {
     // Update badge counts
     function updateBadgeCounts() {
         $.ajax({
-            url: "{{ route('action.counts') }}",
+            url: "{{ route('tasks.counts') }}",
             method: "GET",
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1594,7 +1594,7 @@ $(function () {
 
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-action",
+            url: "{{ route('tasks.update') }}",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: taskId,
@@ -1704,7 +1704,7 @@ $(function () {
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-action-completed",
+            url: "{{ route('tasks.complete') }}",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -1780,7 +1780,7 @@ $(function () {
         if (flag) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/action/personal/store",
+                url: "{{ route('clients.tasks.personal.store') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 dataType: 'json',
                 data: {
