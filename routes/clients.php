@@ -271,11 +271,6 @@ Route::post('/clients/fetchClientContactNo', [ClientPersonalDetailsController::c
 Route::get('/get-visa-types', [ClientPersonalDetailsController::class, 'getVisaTypes'])->name('getVisaTypes');
 Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountries'])->name('getCountries');
 
-/*---------- Client Agreements & Forms ----------*/
-Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');
-Route::post('/clients/getVisaAgreementLegalPractitionerDetail', [ClientsController::class, 'getVisaAgreementLegalPractitionerDetail'])->name('clients.getVisaAgreementLegalPractitionerDetail');
-Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
-
 // Legal Forms (Short Costs Disclosure, Long Costs Disclosure, Authority to Act)
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
 Route::post('/legal-forms/upload', [\App\Http\Controllers\CRM\LegalFormsController::class, 'uploadForm'])->name('legal-forms.upload');

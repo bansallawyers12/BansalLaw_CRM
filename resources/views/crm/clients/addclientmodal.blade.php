@@ -22,9 +22,6 @@
 <!-- Document & File Upload Modals moved to resources/views/Admin/clients/modals/documents.blade.php -->
 @include('crm.clients.modals.documents')
 
-<!-- Forms & Agreements Modals moved to resources/views/Admin/clients/modals/forms.blade.php -->
-@include('crm.clients.modals.forms')
-
 <!-- Client & Lead Management Modals moved to resources/views/Admin/clients/modals/client-management.blade.php -->
 @include('crm.clients.modals.client-management')
 
