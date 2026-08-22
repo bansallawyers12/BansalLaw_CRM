@@ -13,7 +13,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        '\App\Console\Commands\CronJob',
         '\App\Console\Commands\ProcessServiceAccountTokens',
         
         // Appointment Sync System Commands
@@ -59,8 +58,6 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')
         //          ->hourly();
-	$schedule->command('CronJob:cronjob')->daily();
-        
 
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')

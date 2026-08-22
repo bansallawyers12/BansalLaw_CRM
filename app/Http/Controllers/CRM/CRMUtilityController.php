@@ -195,34 +195,6 @@ class CRMUtilityController extends Controller
 		return view('crm.change_password');
 	}
 
-
-	public function editapi(Request $request)
-	{
-		//check authorization start
-			$check = $this->checkAuthorizationAction('api_key', $request->route()->getActionMethod(), Auth::user()->role);
-			if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			}
-		//check authorization end
-		if ($request->isMethod('post'))
-		{
-			$obj	= 	\App\Models\Staff::find(Auth::user()->id);
-			$obj->client_id	=	md5(Auth::user()->id.time());
-			$saved				=	$obj->save();
-			if(!$saved)
-			{
-				return redirect()->back()->with('error', config('constants.server_error'));
-			}
-			else
-			{
-				return Redirect::to('/api-key')->with('success', 'Api Key'.config('constants.edited'));
-			}
-		}else{
-			return view('crm.apikey');
-		}
-	}
-
 	public function updateAction(Request $request)
 	{
 		$status = 0;

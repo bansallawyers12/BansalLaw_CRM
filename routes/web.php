@@ -224,10 +224,6 @@ Route::middleware(['auth:admin'])->group(function () {
     // Route::get('/edit_email_template/{id}', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template');
     // Route::post('/edit_email_template', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template.update');
 
-    /*---------- API Settings ----------*/
-    Route::get('/api-key', [CRMUtilityController::class, 'editapi'])->name('api');
-    Route::post('/api-key', [CRMUtilityController::class, 'editapi'])->name('api.update');
-
     /*--------------------------------------------------
 	| SECTION: Client Management Routes
 	|--------------------------------------------------*/
