@@ -16,7 +16,6 @@
 	 <!-- BASE CSS -->
 	@include('components.bootstrap5-assets')
 	<link href="{{asset('css/app.min.css')}}" rel="stylesheet">
-	<link href="{{asset('css/bootstrap-social.css')}}" rel="stylesheet">
 	<link href="{{asset('css/style.css')}}" rel="stylesheet">
 	<link href="{{asset('css/components.css')}}" rel="stylesheet">
 	<link href="{{asset('css/custom.css')}}" rel="stylesheet">

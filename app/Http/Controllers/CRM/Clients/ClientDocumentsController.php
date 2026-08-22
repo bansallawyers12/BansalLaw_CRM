@@ -26,7 +26,6 @@ use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
-use App\Services\PythonConverterService;
 use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Http\JsonResponse;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
@@ -2290,8 +2289,7 @@ class ClientDocumentsController extends Controller
                             ->header('Content-Type', 'text/html; charset=UTF-8');
                     }
 
-                    // Spreadsheets: prefer HTML table preview. Live LibreOffice/Python PDF conversion
-                    // often produces unreadable multi-page dumps instead of a sheet layout.
+                    // Spreadsheets / Office: HTML preview only (no DOC/DOCX→PDF conversion).
                     if ($this->isSpreadsheetDocumentType($displayFilename, (string) ($document->filetype ?? ''))) {
                         $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
                         if ($htmlPreview !== null) {
@@ -2301,28 +2299,8 @@ class ClientDocumentsController extends Controller
                             ]);
                         }
 
-                        $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
-                        if ($pdfBytes !== null) {
-                            $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
-
-                            return response($pdfBytes, 200, [
-                                'Content-Type' => 'application/pdf',
-                                'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
-                            ]);
-                        }
-
-                        return response($this->officePreviewErrorHtml('This spreadsheet could not be converted for preview. Use <strong>Download</strong> to open it in Excel.'), 503)
+                        return response($this->officePreviewErrorHtml('This spreadsheet could not be previewed. Use <strong>Download</strong> to open it in Excel.'), 503)
                             ->header('Content-Type', 'text/html; charset=UTF-8');
-                    }
-
-                    $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
-                    if ($pdfBytes !== null) {
-                        $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
-
-                        return response($pdfBytes, 200, [
-                            'Content-Type' => 'application/pdf',
-                            'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
-                        ]);
                     }
 
                     $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
@@ -2450,7 +2428,8 @@ class ClientDocumentsController extends Controller
 
     private function isOfficeDocumentPreviewType(string $filename, string $fileType = ''): bool
     {
-        $ext = strtolower($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION));
+        $ext = strtolower(trim($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION)));
+        $ext = ltrim($ext, '.');
 
         return in_array($ext, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp', 'csv'], true);
     }
@@ -2461,27 +2440,6 @@ class ClientDocumentsController extends Controller
         $ext = ltrim($ext, '.');
 
         return in_array($ext, ['xls', 'xlsx', 'csv', 'ods'], true);
-    }
-
-    private function convertOfficeDocumentToPdfBytes(string $fileContent, string $filename): ?string
-    {
-        $converter = app(PythonConverterService::class);
-        $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
-        if (! empty($result['success']) && ! empty($result['pdf_data'])) {
-            return $result['pdf_data'];
-        }
-
-        Log::warning('Python office preview conversion failed', [
-            'file' => $filename,
-            'error' => $result['error'] ?? 'unknown',
-        ]);
-
-        $pdfBytes = $this->convertOfficeDocumentToPdfWithMicrosoftOffice($fileContent, $filename);
-        if ($pdfBytes !== null) {
-            return $pdfBytes;
-        }
-
-        return $this->convertOfficeDocumentToPdfWithLibreOffice($fileContent, $filename);
     }
 
     private function convertOfficeDocumentToHtml(string $fileContent, string $filename): ?string
@@ -2517,9 +2475,19 @@ class ClientDocumentsController extends Controller
                 return null;
             }
 
+            $styles = '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222;margin:0;padding:20px;background:#fff;}'
+                . 'table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;}</style>';
+
+            if (stripos($body, '<html') !== false) {
+                if (stripos($body, '</head>') !== false) {
+                    return (string) preg_replace('/<\/head>/i', $styles . '</head>', $body, 1);
+                }
+
+                return $styles . $body;
+            }
+
             return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Document preview</title>'
-                . '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222;margin:0;padding:20px;background:#fff;}'
-                . 'table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;}</style></head><body>'
+                . $styles . '</head><body>'
                 . $body
                 . '</body></html>';
         } catch (\Throwable $e) {
@@ -2538,7 +2506,7 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * Build a table HTML preview for Excel/CSV when PDF conversion is unavailable.
+     * Build a table HTML preview for Excel/CSV.
      */
     private function convertSpreadsheetDocumentToHtml(string $fileContent, string $filename, string $extension): ?string
     {
@@ -2611,153 +2579,9 @@ class ClientDocumentsController extends Controller
         }
     }
 
-    private function convertOfficeDocumentToPdfWithMicrosoftOffice(string $fileContent, string $filename): ?string
-    {
-        if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' || ! class_exists('COM')) {
-            return null;
-        }
-
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        $progid = match (true) {
-            in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true) => 'Word.Application',
-            in_array($extension, ['xls', 'xlsx', 'csv', 'ods'], true) => 'Excel.Application',
-            in_array($extension, ['ppt', 'pptx', 'odp'], true) => 'PowerPoint.Application',
-            default => null,
-        };
-
-        if ($progid === null) {
-            return null;
-        }
-
-        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_preview_' . uniqid('', true);
-
-        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
-            return null;
-        }
-
-        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
-        $pdfPath = $tempDir . DIRECTORY_SEPARATOR . pathinfo($safeFilename, PATHINFO_FILENAME) . '.pdf';
-        file_put_contents($inputPath, $fileContent);
-
-        try {
-            if ($progid === 'Word.Application') {
-                $app = new \COM('Word.Application');
-                $app->Visible = false;
-                $app->DisplayAlerts = 0;
-                $doc = $app->Documents->Open($inputPath, false, true);
-                $doc->ExportAsFixedFormat($pdfPath, 17);
-                $doc->Close(false);
-                $app->Quit(false);
-            } elseif ($progid === 'Excel.Application') {
-                $app = new \COM('Excel.Application');
-                $app->Visible = false;
-                $app->DisplayAlerts = false;
-                $workbook = $app->Workbooks->Open($inputPath, false, true);
-                $workbook->ExportAsFixedFormat(0, $pdfPath);
-                $workbook->Close(false);
-                $app->Quit();
-            } else {
-                $app = new \COM('PowerPoint.Application');
-                $app->Visible = 0;
-                $presentation = $app->Presentations->Open($inputPath, 0, 0, 0);
-                $presentation->SaveAs($pdfPath, 32);
-                $presentation->Close();
-                $app->Quit();
-            }
-
-            $pdfBytes = is_file($pdfPath) ? file_get_contents($pdfPath) : null;
-
-            return ($pdfBytes === false) ? null : $pdfBytes;
-        } catch (\Throwable $e) {
-            Log::warning('Microsoft Office preview conversion failed', [
-                'file' => $filename,
-                'error' => $e->getMessage(),
-            ]);
-
-            return null;
-        } finally {
-            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
-                @unlink($tempFile);
-            }
-            @rmdir($tempDir);
-        }
-    }
-
-    private function convertOfficeDocumentToPdfWithLibreOffice(string $fileContent, string $filename): ?string
-    {
-        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . pathinfo($filename, PATHINFO_EXTENSION));
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_preview_' . uniqid('', true);
-
-        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
-            return null;
-        }
-
-        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
-        file_put_contents($inputPath, $fileContent);
-
-        $libreOfficePath = $this->resolveLibreOfficeExecutablePath();
-        if ($libreOfficePath === null) {
-            return null;
-        }
-
-        $command = escapeshellarg($libreOfficePath) . ' --headless --convert-to pdf --outdir '
-            . escapeshellarg($tempDir) . ' ' . escapeshellarg($inputPath);
-
-        exec($command . ' 2>&1', $output, $resultCode);
-
-        $pdfPath = $tempDir . DIRECTORY_SEPARATOR . pathinfo($safeFilename, PATHINFO_FILENAME) . '.pdf';
-        $pdfBytes = (is_file($pdfPath) && $resultCode === 0) ? file_get_contents($pdfPath) : null;
-
-        if ($pdfBytes === false) {
-            $pdfBytes = null;
-        }
-
-        foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
-            @unlink($tempFile);
-        }
-        @rmdir($tempDir);
-
-        if ($pdfBytes === null) {
-            Log::warning('LibreOffice office preview conversion failed', [
-                'file' => $filename,
-                'output' => implode("\n", $output),
-                'code' => $resultCode,
-            ]);
-        }
-
-        return $pdfBytes;
-    }
-
-    private function resolveLibreOfficeExecutablePath(): ?string
-    {
-        $configured = trim((string) env('LIBREOFFICE_PATH', ''));
-        if ($configured !== '' && is_file($configured)) {
-            return $configured;
-        }
-
-        $candidates = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'
-            ? [
-                'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
-                'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
-            ]
-            : ['libreoffice', 'soffice', '/usr/bin/libreoffice', '/usr/bin/soffice'];
-
-        foreach ($candidates as $candidate) {
-            if ($candidate === 'libreoffice' || $candidate === 'soffice') {
-                return $candidate;
-            }
-            if (is_file($candidate)) {
-                return $candidate;
-            }
-        }
-
-        return null;
-    }
-
     private function officePreviewErrorHtml(?string $detailMessage = null): string
     {
-        $detail = $detailMessage ?? 'Install LibreOffice on this server for PDF preview, or use <strong>Download original</strong> to open the file.';
+        $detail = $detailMessage ?? 'Use <strong>Download original</strong> to open the file in Word, Excel, or PowerPoint.';
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title></head><body style="font-family:Segoe UI,sans-serif;padding:24px;color:#444;">'
             . '<p><strong>Unable to preview this Office file inline.</strong></p>'

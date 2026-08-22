@@ -4,6 +4,8 @@
 @section('content')
 <style>
 /* Front-desk check-in — Powder Blue & Soft Gold (docs/theme.md); vars from public/css/crm-theme.css */
+.front-desk-checkin-page[x-cloak],
+.front-desk-checkin-page [x-cloak] { display: none !important; }
 .front-desk-checkin-page .fd-wizard-wrapper {
     max-width: 700px;
     margin: 0 auto;
@@ -108,9 +110,6 @@
 .front-desk-checkin-page .fd-step.done .fd-step-label {
     color: var(--success);
 }
-
-.front-desk-checkin-page .fd-wizard-step { display: none; }
-.front-desk-checkin-page .fd-wizard-step.active { display: block; }
 
 .front-desk-checkin-page .fd-match-card {
     border: 2px solid var(--border);
@@ -319,16 +318,15 @@ body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-walkin:hover,
     margin-bottom: 8px;
 }
 .front-desk-checkin-page .fd-success p { color: var(--text-muted); }
-.front-desk-checkin-page #fdStepNotClient .fd-success { padding: 30px 20px; }
-.front-desk-checkin-page #fdStepNotClient .fd-success > i.fa-hand-paper {
+.front-desk-checkin-page .fd-step-not-client .fd-success { padding: 30px 20px; }
+.front-desk-checkin-page .fd-step-not-client .fd-success > i.fa-hand-paper {
     font-size: 3rem;
     color: var(--text-muted);
     margin-bottom: 16px;
 }
-.front-desk-checkin-page #fdStepNotClient .fd-success h5 { color: var(--text-dark); }
+.front-desk-checkin-page .fd-step-not-client .fd-success h5 { color: var(--text-dark); }
 
-.front-desk-checkin-page .fd-spinner { display: none; text-align: center; padding: 20px; }
-.front-desk-checkin-page .fd-alert-box { display: none; }
+.front-desk-checkin-page .fd-spinner { text-align: center; padding: 20px; }
 
 .front-desk-checkin-page .form-control {
     border-color: var(--border);
@@ -414,7 +412,15 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 }
 </style>
 
-<div class="front-desk-checkin-page">
+<div
+    class="front-desk-checkin-page"
+    x-data="frontDeskCheckIn({
+        baseUrl: @js(url('/front-desk/checkin')),
+        csrf: @js(csrf_token()),
+        waitingUrl: @js(route('officevisits.waiting')),
+    })"
+    x-cloak
+>
 <div class="fd-wizard-wrapper">
     <div class="fd-card">
         <div class="fd-card-header">
@@ -424,110 +430,152 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
         <div class="fd-card-body">
 
             {{-- Stepper --}}
-            <div class="fd-stepper" id="fdStepper">
-                <div class="fd-step active" data-step="1">
-                    <div class="fd-step-circle">1</div>
-                    <div class="fd-step-label">Contact</div>
-                </div>
-                <div class="fd-step" data-step="2">
-                    <div class="fd-step-circle">2</div>
-                    <div class="fd-step-label">Match</div>
-                </div>
-                <div class="fd-step" data-step="3">
-                    <div class="fd-step-circle">3</div>
-                    <div class="fd-step-label">Confirm</div>
-                </div>
-                <div class="fd-step" data-step="4">
-                    <div class="fd-step-circle">4</div>
-                    <div class="fd-step-label">Appointment</div>
-                </div>
-                <div class="fd-step" data-step="5">
-                    <div class="fd-step-circle">5</div>
-                    <div class="fd-step-label">Reason</div>
-                </div>
+            <div class="fd-stepper" x-show="!isOffPath" x-cloak>
+                <template x-for="n in 5" :key="n">
+                    <div
+                        class="fd-step"
+                        :class="{
+                            active: typeof step === 'number' && step === n,
+                            done: typeof step === 'number' && step > n
+                        }"
+                    >
+                        <div class="fd-step-circle" x-text="n"></div>
+                        <div class="fd-step-label" x-text="stepLabels[n - 1]"></div>
+                    </div>
+                </template>
             </div>
 
-            <div class="fd-alert-box alert alert-danger" id="fdGlobalAlert" role="alert"></div>
+            <div
+                class="alert alert-danger"
+                role="alert"
+                x-show="alert"
+                x-text="alert"
+                x-cloak
+                x-ref="alertBox"
+            ></div>
 
-            {{-- ── STEP 1: Phone + Email ─────────────────────────── --}}
-            <div class="fd-wizard-step active" id="fdStep1">
+            {{-- STEP 1: Phone + Email --}}
+            <div class="fd-wizard-step" x-show="step === 1" x-cloak>
                 <h6 class="fd-step-title mb-3 text-uppercase small">Step 1 — Contact Details</h6>
                 <div class="form-group">
                     <label for="fdPhone" class="font-weight-600">Phone <span class="text-danger">*</span></label>
-                    <input type="tel" class="form-control form-control-lg" id="fdPhone" placeholder="e.g. 0412 345 678" maxlength="20" autocomplete="off">
-                    <div class="invalid-feedback" id="fdPhoneError"></div>
+                    <input
+                        type="tel"
+                        class="form-control form-control-lg"
+                        id="fdPhone"
+                        placeholder="e.g. 0412 345 678"
+                        maxlength="20"
+                        autocomplete="off"
+                        x-model.trim="phone"
+                        :class="{ 'is-invalid': errors.phone }"
+                        @keydown.enter.prevent="lookup()"
+                    >
+                    <div class="invalid-feedback" x-text="errors.phone"></div>
                 </div>
                 <div class="form-group">
                     <label for="fdEmail" class="font-weight-600">Email <span class="text-muted">(optional — narrows results)</span></label>
-                    <input type="email" class="form-control" id="fdEmail" placeholder="e.g. john@example.com" autocomplete="off">
+                    <input
+                        type="email"
+                        class="form-control"
+                        id="fdEmail"
+                        placeholder="e.g. john@example.com"
+                        autocomplete="off"
+                        x-model.trim="email"
+                    >
                 </div>
                 <div class="text-right">
-                    <button type="button" class="btn btn-lg px-5 fd-btn-action" id="fdLookupBtn">
+                    <button type="button" class="btn btn-lg px-5 fd-btn-action" @click="lookup()" :disabled="lookingUp">
                         <i class="fa-solid fa-search me-2"></i>Look Up
                     </button>
                 </div>
-                <div class="fd-spinner mt-3" id="fdLookupSpinner">
+                <div class="fd-spinner mt-3" x-show="lookingUp" x-cloak>
                     <div class="spinner-border text-primary" role="status"><span class="sr-only">Searching…</span></div>
                     <p class="mt-2 text-muted">Searching CRM…</p>
                 </div>
             </div>
 
-            {{-- ── STEP 2: Match selection ───────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStep2">
+            {{-- STEP 2: Match selection --}}
+            <div class="fd-wizard-step" x-show="step === 2" x-cloak>
                 <h6 class="fd-step-title mb-1 text-uppercase small">Step 2 — Select Match</h6>
-                <p class="text-muted small mb-3" id="fdMatchSubtitle"></p>
-                <div id="fdMatchList"></div>
+                <p class="text-muted small mb-3" x-text="matchSubtitle"></p>
+
+                <template x-for="m in matches" :key="m.type + '-' + m.id">
+                    <div
+                        class="fd-match-card"
+                        :class="{ selected: selectedMatchKey === matchKey(m) }"
+                        @click="selectMatch(m)"
+                    >
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong x-text="m.name || 'Unknown'"></strong>
+                                <span class="badge bg-success" x-show="m.type === 'client'">Client</span>
+                                <span class="badge bg-warning text-dark" x-show="m.type !== 'client'">Lead</span>
+                                <span class="text-muted small ms-1" x-show="m.is_company && m.company_name" x-text="'(' + m.company_name + ')'"></span>
+                                <br>
+                                <small class="text-muted">
+                                    <span x-text="m.email || '—'"></span> &bull; <span x-text="m.phone || '—'"></span>
+                                </small>
+                            </div>
+                            <i class="fa-solid fa-circle-check text-primary mt-1" x-show="selectedMatchKey === matchKey(m)" x-cloak></i>
+                        </div>
+                    </div>
+                </template>
 
                 <div class="border-top pt-3 mt-2">
                     <p class="text-muted small mb-2">Not in the list?</p>
-                    <button type="button" class="btn btn-sm fd-btn-walkin" id="fdWalkInBtn">
+                    <button
+                        type="button"
+                        class="btn btn-sm fd-btn-walkin"
+                        :class="{ active: walkInSelected }"
+                        @click="selectWalkIn()"
+                    >
                         <i class="fa-solid fa-user-slash me-1"></i>Continue as Walk-In (no CRM record)
                     </button>
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep2Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
-                    <button type="button" class="btn fd-btn-action" id="fdStep2Next" disabled>
+                    <button type="button" class="btn btn-light me-2" @click="setStep(1)"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn fd-btn-action" @click="goConfirm()" :disabled="!canConfirmMatch">
                         Confirm Selection <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            {{-- ── STEP 2b: New client? (zero-match branch) ─────── --}}
-            <div class="fd-wizard-step" id="fdStepNewClient">
+            {{-- STEP 2b: New client? --}}
+            <div class="fd-wizard-step" x-show="step === 'new-client'" x-cloak>
                 <h6 class="fd-step-title mb-2 text-uppercase small">Not Found in Our System</h6>
                 <p class="fd-lead-question mb-4">Are you visiting as a new client today?</p>
 
                 <div class="fd-appt-choices mb-4">
-                    <button type="button" class="fd-choice-btn fd-choice-yes" id="fdNewClientYes">
+                    <button type="button" class="fd-choice-btn fd-choice-yes" @click="startLeadForm()">
                         <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Yes — I'm a new client
                     </button>
-                    <button type="button" class="fd-choice-btn fd-choice-no" id="fdNewClientNo">
+                    <button type="button" class="fd-choice-btn fd-choice-no" @click="path = 'not_client'; setStep('not-client')">
                         <i class="fa-solid fa-user-check me-2" aria-hidden="true"></i>No — I already have a file
                     </button>
                 </div>
 
                 <div class="text-right mt-2">
-                    <button class="btn btn-light" id="fdStepNewClientBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn btn-light" @click="path = null; setStep(1)"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                 </div>
             </div>
 
-            {{-- ── STEP 2c: Minimal lead form ────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStepLeadForm">
+            {{-- STEP 2c: Lead form --}}
+            <div class="fd-wizard-step" x-show="step === 'lead-form'" x-cloak>
                 <h6 class="fd-step-title mb-3 text-uppercase small">Your Details</h6>
 
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-600">First Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="fdLeadFirstName" maxlength="100" autocomplete="off">
-                            <div class="invalid-feedback" id="fdLeadFirstNameError"></div>
+                            <input type="text" class="form-control" maxlength="100" autocomplete="off" x-model.trim="lead.firstName" :class="{ 'is-invalid': errors.leadFirstName }">
+                            <div class="invalid-feedback" x-text="errors.leadFirstName"></div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-600">Last Name</label>
-                            <input type="text" class="form-control" id="fdLeadLastName" maxlength="100" autocomplete="off">
+                            <input type="text" class="form-control" maxlength="100" autocomplete="off" x-model.trim="lead.lastName">
                         </div>
                     </div>
                 </div>
@@ -536,113 +584,164 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-600">Phone</label>
-                            <input type="text" class="form-control" id="fdLeadPhoneDisplay" readonly>
+                            <input type="text" class="form-control" :value="phone" readonly>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-600">Email</label>
-                            <input type="text" class="form-control" id="fdLeadEmailDisplay" readonly>
+                            <input type="text" class="form-control" :value="email || '—'" readonly>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="font-weight-600">Reason for Visit <span class="text-danger">*</span></label>
-                    <select class="form-control" id="fdLeadVisitReason">
+                    <select class="form-control" x-model="lead.visitReason" :class="{ 'is-invalid': errors.leadVisitReason }">
                         <option value="">— Select reason —</option>
                         @foreach($visitReasons as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
                     </select>
-                    <div class="invalid-feedback" id="fdLeadVisitReasonError"></div>
+                    <div class="invalid-feedback" x-text="errors.leadVisitReason"></div>
                 </div>
 
-                <div class="form-group" id="fdLeadVisitNotesGroup">
+                <div class="form-group">
                     <label class="font-weight-600">
                         Notes
-                        <span id="fdLeadNotesRequired" class="text-danger" style="display:none;">*</span>
+                        <span class="text-danger" x-show="lead.visitReason === 'other'" x-cloak>*</span>
                     </label>
-                    <textarea class="form-control" id="fdLeadVisitNotes" rows="3" placeholder="Additional notes…" maxlength="2000"></textarea>
-                    <div class="invalid-feedback" id="fdLeadVisitNotesError"></div>
+                    <textarea class="form-control" rows="3" placeholder="Additional notes…" maxlength="2000" x-model.trim="lead.visitNotes" :class="{ 'is-invalid': errors.leadVisitNotes }"></textarea>
+                    <div class="invalid-feedback" x-text="errors.leadVisitNotes"></div>
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStepLeadFormBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
-                    <button type="button" class="btn btn-lg px-5 fd-btn-confirm" id="fdLeadSubmitBtn">
+                    <button type="button" class="btn btn-light me-2" @click="setStep('new-client')"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn btn-lg px-5 fd-btn-confirm" @click="submitLead()" :disabled="submittingLead">
                         <i class="fa-solid fa-paper-plane me-2"></i>Submit Check-In
                     </button>
                 </div>
-                <div class="fd-spinner mt-3" id="fdLeadSubmitSpinner">
+                <div class="fd-spinner mt-3" x-show="submittingLead" x-cloak>
                     <div class="spinner-border text-success" role="status"><span class="sr-only">Saving…</span></div>
                     <p class="mt-2 text-muted">Creating record and saving check-in…</p>
                 </div>
             </div>
 
-            {{-- ── STEP 2d: Not a client — dead end ─────────────── --}}
-            <div class="fd-wizard-step" id="fdStepNotClient">
+            {{-- STEP 2d: Not a client --}}
+            <div class="fd-wizard-step fd-step-not-client" x-show="step === 'not-client'" x-cloak>
                 <div class="fd-success">
                     <i class="fa-solid fa-hand-paper" aria-hidden="true"></i>
                     <h5>Please speak with our receptionist</h5>
                     <p class="text-muted mb-4">Our front-desk team will be happy to help you locate your file.</p>
-                    <button type="button" class="btn fd-btn-action" id="fdNotClientStartOver">
+                    <button type="button" class="btn fd-btn-action" @click="resetWizard()">
                         <i class="fa-solid fa-arrow-rotate-right me-2"></i>Start Over
                     </button>
                 </div>
             </div>
 
-            {{-- ── STEP 3: Confirm details ───────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStep3">
+            {{-- STEP 3: Confirm --}}
+            <div class="fd-wizard-step" x-show="step === 3" x-cloak>
                 <h6 class="fd-step-title mb-3 text-uppercase small">Step 3 — Confirm Details</h6>
-                <div id="fdConfirmSummary"></div>
+                <template x-for="row in confirmRows" :key="row[0]">
+                    <div class="fd-summary-row">
+                        <span class="fd-summary-label" x-text="row[0]"></span>
+                        <span class="fd-summary-value" x-text="row[1]"></span>
+                    </div>
+                </template>
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep3Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
-                    <button type="button" class="btn fd-btn-confirm" id="fdStep3Next">
+                    <button type="button" class="btn btn-light me-2" @click="setStep(2)"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn fd-btn-confirm" @click="goAppointments()">
                         Details Correct <i class="fa-solid fa-check ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            {{-- ── STEP 4: Has appointment? ──────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStep4">
+            {{-- STEP 4: Appointment --}}
+            <div class="fd-wizard-step" x-show="step === 4" x-cloak>
                 <h6 class="fd-step-title mb-3 text-uppercase small">Step 4 — Appointment</h6>
                 <p class="fd-lead-question mb-4">Does the visitor have a scheduled appointment today?</p>
 
                 <div class="fd-appt-choices mb-4">
-                    <button type="button" class="fd-choice-btn fd-choice-yes" id="fdHasApptYes">
+                    <button
+                        type="button"
+                        class="fd-choice-btn fd-choice-yes"
+                        :class="{ 'fd-choice--selected': claimedAppointment === true }"
+                        @click="chooseHasAppointment()"
+                    >
                         <i class="fa-solid fa-calendar-check me-2" aria-hidden="true"></i>Yes, has appointment
                     </button>
-                    <button type="button" class="fd-choice-btn fd-choice-no" id="fdHasApptNo">
+                    <button
+                        type="button"
+                        class="fd-choice-btn fd-choice-no"
+                        :class="{ 'fd-choice--selected': claimedAppointment === false }"
+                        @click="chooseNoAppointment()"
+                    >
                         <i class="fa-solid fa-calendar-xmark me-2" aria-hidden="true"></i>No appointment
                     </button>
                 </div>
 
-                {{-- Appointment list (shown when Yes) --}}
-                <div id="fdApptSection" style="display:none;">
-                    <div class="fd-spinner" id="fdApptSpinner">
+                <div x-show="showApptSection" x-cloak>
+                    <div class="fd-spinner" x-show="loadingAppointments" x-cloak>
                         <div class="spinner-border text-info" role="status"><span class="sr-only">Loading…</span></div>
                     </div>
-                    <div id="fdApptList"></div>
-                    <p class="text-muted small mt-2" id="fdApptNoneMsg" style="display:none;">
+
+                    <div x-show="!loadingAppointments && walkInApptNote" x-cloak>
+                        <p class="text-muted">
+                            <i class="fa-solid fa-circle-info me-1"></i>
+                            Walk-in visitor — no CRM record to match an appointment against.
+                            The visit will still be recorded.
+                        </p>
+                    </div>
+
+                    <div x-show="!loadingAppointments && !walkInApptNote && appointments.length" x-cloak>
+                        <p class="font-weight-600 mb-2">Today's appointments:</p>
+                        <template x-for="a in appointments" :key="a.id">
+                            <div
+                                class="fd-appt-card"
+                                :class="{ selected: appointmentId === parseInt(a.id, 10) }"
+                                @click="selectAppointment(a)"
+                            >
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong x-text="a.datetime || '—'"></strong>
+                                        <span class="badge" :class="'bg-' + apptStatusBadge(a.status)" x-text="a.status"></span>
+                                        <br>
+                                        <small class="text-muted">
+                                            Consultant: <span x-text="a.consultant || '—'"></span>
+                                            &bull; <span x-text="a.location || '—'"></span>
+                                        </small>
+                                    </div>
+                                    <i class="fa-solid fa-circle-check text-info" x-show="appointmentId === parseInt(a.id, 10)" x-cloak></i>
+                                </div>
+                            </div>
+                        </template>
+                        <p class="text-muted small mt-2">
+                            Select an appointment above or click <strong>Continue</strong> to proceed without linking one.
+                        </p>
+                    </div>
+
+                    <p class="text-muted small mt-2" x-show="!loadingAppointments && !walkInApptNote && !appointments.length && apptNoneMsg" x-cloak>
                         No appointments found for this visitor today. You can still continue.
                     </p>
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep4Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
-                    <button type="button" class="btn fd-btn-action" id="fdStep4Next" disabled>
+                    <button type="button" class="btn btn-light me-2" @click="appointmentId = null; claimedAppointment = null; setStep(3)">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Back
+                    </button>
+                    <button type="button" class="btn fd-btn-action" @click="setStep(5)" :disabled="!canContinueAppt">
                         Continue <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            {{-- ── STEP 5: Reason ────────────────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStep5">
+            {{-- STEP 5: Reason --}}
+            <div class="fd-wizard-step" x-show="step === 5" x-cloak>
                 <h6 class="fd-step-title mb-3 text-uppercase small">Step 5 — Visit Reason</h6>
 
                 <div class="form-group">
                     <label class="font-weight-600">Reason for Visit <span class="text-muted">(optional)</span></label>
-                    <select class="form-control" id="fdVisitReason">
+                    <select class="form-control" x-model="visitReason">
                         <option value="">— Select reason —</option>
                         @foreach($visitReasons as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
@@ -650,619 +749,440 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     </select>
                 </div>
 
-                <div class="form-group" id="fdVisitNotesGroup">
+                <div class="form-group">
                     <label class="font-weight-600">
                         Notes
-                        <span id="fdNotesRequired" class="text-danger" style="display:none;">*</span>
+                        <span class="text-danger" x-show="visitReason === 'other'" x-cloak>*</span>
                     </label>
-                    <textarea class="form-control" id="fdVisitNotes" rows="3" placeholder="Additional notes…" maxlength="2000"></textarea>
-                    <div class="invalid-feedback" id="fdVisitNotesError"></div>
+                    <textarea class="form-control" rows="3" placeholder="Additional notes…" maxlength="2000" x-model.trim="visitNotes" :class="{ 'is-invalid': errors.visitNotes }"></textarea>
+                    <div class="invalid-feedback" x-text="errors.visitNotes"></div>
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep5Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
-                    <button type="button" class="btn btn-lg px-5 fd-btn-confirm" id="fdSubmitBtn">
+                    <button type="button" class="btn btn-light me-2" @click="setStep(4)"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn btn-lg px-5 fd-btn-confirm" @click="submitCheckIn()" :disabled="submitting">
                         <i class="fa-solid fa-paper-plane me-2"></i>Submit Check-In
                     </button>
                 </div>
-                <div class="fd-spinner mt-3" id="fdSubmitSpinner">
+                <div class="fd-spinner mt-3" x-show="submitting" x-cloak>
                     <div class="spinner-border text-success" role="status"><span class="sr-only">Saving…</span></div>
                     <p class="mt-2 text-muted">Saving check-in…</p>
                 </div>
             </div>
 
-            {{-- ── SUCCESS ───────────────────────────────────────── --}}
-            <div class="fd-wizard-step" id="fdStepSuccess">
+            {{-- SUCCESS --}}
+            <div class="fd-wizard-step" x-show="step === 'success'" x-cloak>
                 <div class="fd-success">
                     <i class="fa-solid fa-circle-check"></i>
                     <h5>Check-In Recorded!</h5>
-                    <p id="fdSuccessMsg" class="mb-4"></p>
-                    <button type="button" class="btn fd-btn-action" id="fdStartOver">
+                    <p class="mb-4" x-text="successMsg"></p>
+                    <button type="button" class="btn fd-btn-action" @click="resetWizard()">
                         <i class="fa-solid fa-arrow-rotate-right me-2"></i>New Check-In
                     </button>
-                    <a href="{{ route('officevisits.waiting') }}" class="btn btn-outline-secondary ms-2">
+                    <a :href="waitingUrl" class="btn btn-outline-secondary ms-2">
                         <i class="fa-solid fa-list me-2"></i>Office Visits
                     </a>
                 </div>
             </div>
 
-        </div>{{-- /fd-card-body --}}
-    </div>{{-- /fd-card --}}
+        </div>
+    </div>
 </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-(function () {
-    'use strict';
+document.addEventListener('alpine:init', function () {
+    Alpine.data('frontDeskCheckIn', function (config) {
+        var OFF_PATH = ['new-client', 'lead-form', 'not-client'];
 
-    var CSRF  = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    var BASE  = '{{ url("/front-desk/checkin") }}';
+        return {
+            baseUrl: config.baseUrl,
+            csrf: config.csrf,
+            waitingUrl: config.waitingUrl,
+            stepLabels: ['Contact', 'Match', 'Confirm', 'Appointment', 'Reason'],
 
-    /* ── State ──────────────────────────────────────────────── */
-    var state = {
-        phone:            '',
-        phoneNormalized:  '',
-        email:            '',
-        adminId:          null,   // matched admin id (or null = walk-in)
-        adminType:        null,   // 'client' | 'lead' | null
-        adminName:        '',
-        adminEmail:       '',
-        adminPhone:       '',
-        appointmentId:    null,
-        claimedAppointment: false,
-        visitReason:      '',
-        visitNotes:       '',
-        currentStep:      1,
-        path:             null,   // null | 'existing_match' | 'new_lead' | 'not_client'
-    };
+            step: 1,
+            phone: '',
+            email: '',
+            path: null,
+            alert: '',
+            successMsg: '',
 
-    /* ── DOM helpers ────────────────────────────────────────── */
-    function $(sel) { return document.querySelector(sel); }
-    // Always set an explicit 'block' so CSS-class-hidden elements (e.g. .fd-spinner) are shown.
-    function show(el, display) { if (el) el.style.display = display || 'block'; }
-    function hide(el) { if (el) el.style.display = 'none'; }
-    function showAlert(msg) {
-        var el = $('#fdGlobalAlert');
-        el.textContent = msg;
-        el.style.display = 'block';
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    function hideAlert() { $('#fdGlobalAlert').style.display = 'none'; }
+            matches: [],
+            selectedMatchKey: null,
+            walkInSelected: false,
+            adminId: null,
+            adminType: null,
+            adminName: '',
+            adminEmail: '',
+            adminPhone: '',
 
-    /* ── Stepper ────────────────────────────────────────────── */
-    var OFF_PATH_STEPS = ['new-client', 'lead-form', 'not-client'];
+            appointmentId: null,
+            claimedAppointment: null,
+            appointments: [],
+            showApptSection: false,
+            loadingAppointments: false,
+            walkInApptNote: false,
+            apptNoneMsg: false,
+            canContinueAppt: false,
 
-    function setStep(n) {
-        state.currentStep = n;
-        // Activate wizard panel
-        document.querySelectorAll('.fd-wizard-step').forEach(function (el) {
-            el.classList.remove('active');
-        });
-        var panelMap = {
-            'success':    '#fdStepSuccess',
-            'new-client': '#fdStepNewClient',
-            'lead-form':  '#fdStepLeadForm',
-            'not-client': '#fdStepNotClient',
-        };
-        var panel = panelMap[n] || ('#fdStep' + n);
-        var el = document.querySelector(panel);
-        if (el) el.classList.add('active');
+            visitReason: '',
+            visitNotes: '',
 
-        // Hide stepper for off-path panels; show for main numbered steps
-        var stepper = document.getElementById('fdStepper');
-        if (stepper) {
-            stepper.style.display = (OFF_PATH_STEPS.indexOf(n) !== -1) ? 'none' : '';
-        }
+            lead: { firstName: '', lastName: '', visitReason: '', visitNotes: '' },
 
-        // Update stepper circles
-        document.querySelectorAll('.fd-step').forEach(function (step) {
-            var sn = parseInt(step.getAttribute('data-step'), 10);
-            step.classList.remove('active', 'done');
-            if (typeof n === 'number') {
-                if (sn < n)  step.classList.add('done');
-                if (sn === n) step.classList.add('active');
-            }
-        });
-        hideAlert();
-    }
+            lookingUp: false,
+            submitting: false,
+            submittingLead: false,
 
-    /* ── AJAX helper ────────────────────────────────────────── */
-    function post(url, data) {
-        return fetch(url, {
-            method:  'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': CSRF,
-                'X-Requested-With': 'XMLHttpRequest',
+            errors: {
+                phone: '',
+                leadFirstName: '',
+                leadVisitReason: '',
+                leadVisitNotes: '',
+                visitNotes: '',
             },
-            body: JSON.stringify(data),
-        }).then(function (r) {
-            return r.text().then(function (text) {
-                var j = {};
-                try {
-                    j = text ? JSON.parse(text) : {};
-                } catch (e) {
-                    return Promise.reject(new Error('Invalid server response.'));
+
+            get isOffPath() {
+                return OFF_PATH.indexOf(this.step) !== -1;
+            },
+
+            get canConfirmMatch() {
+                return this.walkInSelected || this.selectedMatchKey !== null;
+            },
+
+            get matchSubtitle() {
+                var n = this.matches.length;
+                if (!n) return '';
+                return n + ' record' + (n > 1 ? 's' : '') + ' found — select one or continue as walk-in.';
+            },
+
+            get confirmRows() {
+                var rows = [
+                    ['Phone entered', this.phone],
+                    ['Email entered', this.email || '—'],
+                ];
+                if (this.adminId) {
+                    rows.push(['CRM Match', this.adminName + ' (' + this.adminType + ')']);
+                    rows.push(['CRM Email', this.adminEmail || '—']);
+                    rows.push(['CRM Phone', this.adminPhone || '—']);
+                } else {
+                    rows.push(['CRM Match', 'Walk-in (no record)']);
                 }
-                if (!r.ok) {
-                    var msg = j.message || j.error;
-                    if (!msg && j.errors) {
-                        msg = Object.values(j.errors).flat().join(' ');
+                return rows;
+            },
+
+            matchKey(m) {
+                return (m.type || '') + '-' + m.id;
+            },
+
+            setStep(n) {
+                this.step = n;
+                this.alert = '';
+            },
+
+            showAlert(msg) {
+                this.alert = msg || '';
+                this.$nextTick(() => {
+                    if (this.$refs.alertBox) {
+                        this.$refs.alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
-                    if (!msg) {
-                        msg = 'Request failed (' + r.status + ').';
-                    }
-                    var err = new Error(msg);
-                    err.payload = j;
-                    err.status = r.status;
-                    return Promise.reject(err);
-                }
-                return j;
-            });
-        });
-    }
-
-    /* ── Step 1: Lookup ─────────────────────────────────────── */
-    $('#fdLookupBtn').addEventListener('click', function () {
-        var phone = $('#fdPhone').value.trim();
-        if (!phone || phone.length < 6) {
-            $('#fdPhone').classList.add('is-invalid');
-            $('#fdPhoneError').textContent = 'Please enter a valid phone number.';
-            return;
-        }
-        $('#fdPhone').classList.remove('is-invalid');
-        state.phone = phone;
-        state.email = $('#fdEmail').value.trim();
-
-        show($('#fdLookupSpinner'));
-        $('#fdLookupBtn').disabled = true;
-
-        post(BASE + '/lookup', { phone: phone, email: state.email })
-            .then(function (data) {
-                hide($('#fdLookupSpinner'));
-                $('#fdLookupBtn').disabled = false;
-
-                if (data.error) { showAlert(data.error); return; }
-
-                state.phoneNormalized = data.phone_normalized || '';
-                // renderMatches calls setStep itself (either 2 or 'new-client')
-                renderMatches(data.matches || []);
-            })
-            .catch(function (err) {
-                hide($('#fdLookupSpinner'));
-                $('#fdLookupBtn').disabled = false;
-                showAlert(err && err.message ? err.message : 'Network error — please try again.');
-            });
-    });
-
-    $('#fdPhone').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') $('#fdLookupBtn').click();
-    });
-
-    /* ── Step 2: Render matches ─────────────────────────────── */
-    // NOTE: this function is responsible for calling setStep — the lookup
-    // handler must NOT call setStep(2) after this, as the zero-match branch
-    // routes to 'new-client' and an unconditional setStep(2) would override it.
-    function renderMatches(matches) {
-        var container = $('#fdMatchList');
-        container.innerHTML = '';
-
-        var subtitle = $('#fdMatchSubtitle');
-        if (matches.length === 0) {
-            // No CRM record — ask if they are a new client (off-path panel)
-            setStep('new-client');
-            return;
-        }
-        subtitle.textContent = matches.length + ' record' + (matches.length > 1 ? 's' : '') + ' found — select one or continue as walk-in.';
-
-        matches.forEach(function (m) {
-            var div = document.createElement('div');
-            div.className = 'fd-match-card';
-            div.setAttribute('data-id', m.id);
-            div.setAttribute('data-type', m.type);
-            div.setAttribute('data-name', m.name || '');
-            div.setAttribute('data-email', m.email || '');
-            div.setAttribute('data-phone', m.phone || '');
-
-            var badge = m.type === 'client'
-                ? '<span class="badge bg-success">Client</span>'
-                : '<span class="badge bg-warning text-dark">Lead</span>';
-
-            div.innerHTML = '<div class="d-flex justify-content-between align-items-start">' +
-                '<div>' +
-                    '<strong>' + escHtml(m.name || 'Unknown') + '</strong> ' + badge +
-                    (m.is_company && m.company_name ? '<span class="text-muted small ms-1">(' + escHtml(m.company_name) + ')</span>' : '') +
-                    '<br><small class="text-muted">' + escHtml(m.email || '—') + ' &bull; ' + escHtml(m.phone || '—') + '</small>' +
-                '</div>' +
-                '<i class="fa-solid fa-circle-check text-primary mt-1" style="display:none;" data-checkmark></i>' +
-                '</div>';
-
-            div.addEventListener('click', function () {
-                document.querySelectorAll('.fd-match-card').forEach(function (c) {
-                    c.classList.remove('selected');
-                    c.querySelector('[data-checkmark]').style.display = 'none';
                 });
-                div.classList.add('selected');
-                div.querySelector('[data-checkmark]').style.display = '';
-                state.adminId    = parseInt(m.id, 10);
-                state.adminType  = m.type;
-                state.adminName  = m.name || '';
-                state.adminEmail = m.email || '';
-                state.adminPhone = m.phone || '';
-                state.path = 'existing_match';
-                $('#fdStep2Next').disabled = false;
-                $('#fdWalkInBtn').classList.remove('active');
-            });
+            },
 
-            container.appendChild(div);
-        });
+            post(url, data) {
+                return fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify(data),
+                }).then((r) => r.text().then((text) => {
+                    var j = {};
+                    try {
+                        j = text ? JSON.parse(text) : {};
+                    } catch (e) {
+                        return Promise.reject(new Error('Invalid server response.'));
+                    }
+                    if (!r.ok) {
+                        var msg = j.message || j.error;
+                        if (!msg && j.errors) {
+                            msg = Object.values(j.errors).flat().join(' ');
+                        }
+                        if (!msg) {
+                            msg = 'Request failed (' + r.status + ').';
+                        }
+                        return Promise.reject(new Error(msg));
+                    }
+                    return j;
+                }));
+            },
 
-        setStep(2);
-    }
-
-    /* Walk-in selection (when matches exist but visitor is not listed) */
-    $('#fdWalkInBtn').addEventListener('click', function () {
-        document.querySelectorAll('.fd-match-card').forEach(function (c) {
-            c.classList.remove('selected');
-            c.querySelector('[data-checkmark]').style.display = 'none';
-        });
-        state.adminId   = null;
-        state.adminType = null;
-        state.adminName = 'Walk-in';
-        state.adminEmail = '';
-        state.adminPhone = '';
-        state.path = 'existing_match';
-        $('#fdWalkInBtn').classList.toggle('active');
-        $('#fdStep2Next').disabled = false;
-    });
-
-    $('#fdStep2Next').addEventListener('click', function () { buildConfirm(); setStep(3); });
-    $('#fdStep2Back').addEventListener('click', function () { setStep(1); });
-
-    /* ── Step 2b: New client? ───────────────────────────────── */
-    $('#fdNewClientYes').addEventListener('click', function () {
-        state.path = 'new_lead';
-        // Pre-fill the read-only phone/email fields from step-1 state
-        $('#fdLeadPhoneDisplay').value = state.phone;
-        $('#fdLeadEmailDisplay').value = state.email || '—';
-        // Clear any previous lead-form values and validation state
-        $('#fdLeadFirstName').value          = '';
-        $('#fdLeadLastName').value           = '';
-        $('#fdLeadVisitReason').value        = '';
-        $('#fdLeadVisitNotes').value         = '';
-        $('#fdLeadFirstName').classList.remove('is-invalid');
-        $('#fdLeadVisitReason').classList.remove('is-invalid');
-        $('#fdLeadVisitNotes').classList.remove('is-invalid');
-        $('#fdLeadFirstNameError').textContent    = '';
-        $('#fdLeadVisitReasonError').textContent  = '';
-        $('#fdLeadVisitNotesError').textContent   = '';
-        hide($('#fdLeadNotesRequired'));
-        setStep('lead-form');
-    });
-
-    $('#fdNewClientNo').addEventListener('click', function () {
-        state.path = 'not_client';
-        setStep('not-client');
-    });
-
-    $('#fdStepNewClientBack').addEventListener('click', function () {
-        state.path = null;
-        setStep(1);
-    });
-
-    /* ── Step 2c: Lead form ─────────────────────────────────── */
-    $('#fdLeadVisitReason').addEventListener('change', function () {
-        var isOther = this.value === 'other';
-        if (isOther) {
-            show($('#fdLeadNotesRequired'));
-        } else {
-            hide($('#fdLeadNotesRequired'));
-            $('#fdLeadVisitNotes').classList.remove('is-invalid');
-            $('#fdLeadVisitNotesError').textContent = '';
-        }
-    });
-
-    $('#fdStepLeadFormBack').addEventListener('click', function () {
-        setStep('new-client');
-    });
-
-    $('#fdLeadSubmitBtn').addEventListener('click', function () {
-        var firstName = $('#fdLeadFirstName').value.trim();
-        var reason    = $('#fdLeadVisitReason').value;
-        var notes     = $('#fdLeadVisitNotes').value.trim();
-        var valid     = true;
-
-        if (!firstName) {
-            $('#fdLeadFirstName').classList.add('is-invalid');
-            $('#fdLeadFirstNameError').textContent = 'First name is required.';
-            valid = false;
-        } else {
-            $('#fdLeadFirstName').classList.remove('is-invalid');
-        }
-
-        if (!reason) {
-            $('#fdLeadVisitReason').classList.add('is-invalid');
-            $('#fdLeadVisitReasonError').textContent = 'Please select a reason for the visit.';
-            valid = false;
-        } else {
-            $('#fdLeadVisitReason').classList.remove('is-invalid');
-        }
-
-        if (reason === 'other' && !notes) {
-            $('#fdLeadVisitNotes').classList.add('is-invalid');
-            $('#fdLeadVisitNotesError').textContent = 'Notes are required when selecting "Other".';
-            valid = false;
-        } else {
-            $('#fdLeadVisitNotes').classList.remove('is-invalid');
-        }
-
-        if (!valid) { return; }
-
-        show($('#fdLeadSubmitSpinner'));
-        $('#fdLeadSubmitBtn').disabled = true;
-
-        post(BASE + '/create-lead', {
-            first_name:   firstName,
-            last_name:    $('#fdLeadLastName').value.trim() || null,
-            phone:        state.phone,
-            email:        state.email || null,
-            visit_reason: reason || null,
-            visit_notes:  notes  || null,
-        }).then(function (data) {
-            hide($('#fdLeadSubmitSpinner'));
-            $('#fdLeadSubmitBtn').disabled = false;
-
-            if (data.success) {
-                var msg = 'Check-in #' + data.check_in_id + ' saved for ' + (data.lead_name || 'new lead') + '.';
-                if (data.notified_staff) {
-                    msg += ' Notification sent to ' + data.notified_staff + '.';
-                }
-                $('#fdSuccessMsg').textContent = msg;
-                setStep('success');
-            } else {
-                showAlert(data.message || 'Could not save check-in. Please try again.');
-            }
-        }).catch(function (err) {
-            hide($('#fdLeadSubmitSpinner'));
-            $('#fdLeadSubmitBtn').disabled = false;
-            showAlert(err && err.message ? err.message : 'Network error — please try again.');
-        });
-    });
-
-    /* ── Step 2d: Not a client — dead end ───────────────────── */
-    $('#fdNotClientStartOver').addEventListener('click', function () { resetWizard(); });
-
-    /* ── Step 3: Confirm ────────────────────────────────────── */
-    function buildConfirm() {
-        var rows = [
-            ['Phone entered', state.phone],
-            ['Email entered', state.email || '—'],
-        ];
-        if (state.adminId) {
-            rows.push(['CRM Match', state.adminName + ' (' + state.adminType + ')']);
-            rows.push(['CRM Email', state.adminEmail || '—']);
-            rows.push(['CRM Phone', state.adminPhone || '—']);
-        } else {
-            rows.push(['CRM Match', 'Walk-in (no record)']);
-        }
-
-        var html = rows.map(function (r) {
-            return '<div class="fd-summary-row">' +
-                '<span class="fd-summary-label">' + escHtml(r[0]) + '</span>' +
-                '<span class="fd-summary-value">' + escHtml(r[1]) + '</span>' +
-                '</div>';
-        }).join('');
-
-        $('#fdConfirmSummary').innerHTML = html;
-    }
-
-    $('#fdStep3Next').addEventListener('click', function () { setStep(4); loadAppointmentSection(); });
-    $('#fdStep3Back').addEventListener('click', function () { setStep(2); });
-
-    /* ── Step 4: Appointment ────────────────────────────────── */
-    function loadAppointmentSection() {
-        // Reset
-        hide($('#fdApptSection'));
-        $('#fdStep4Next').disabled = true;
-        document.querySelectorAll('.fd-appt-card').forEach(function(c){ c.remove(); });
-        $('#fdHasApptYes').classList.remove('fd-choice--selected');
-        $('#fdHasApptNo').classList.remove('fd-choice--selected');
-        state.appointmentId = null;
-        state.claimedAppointment = false;
-    }
-
-    $('#fdHasApptYes').addEventListener('click', function () {
-        $('#fdHasApptYes').classList.add('fd-choice--selected');
-        $('#fdHasApptNo').classList.remove('fd-choice--selected');
-        state.claimedAppointment = true;
-
-        show($('#fdApptSection'), 'block');
-
-        if (!state.adminId) {
-            $('#fdApptList').innerHTML =
-                '<p class="text-muted"><i class="fa-solid fa-circle-info me-1"></i>' +
-                'Walk-in visitor — no CRM record to match an appointment against. ' +
-                'The visit will still be recorded.</p>';
-            hide($('#fdApptSpinner'));
-            hide($('#fdApptNoneMsg'));
-            $('#fdStep4Next').disabled = false;
-            return;
-        }
-
-        show($('#fdApptSpinner'), 'block');
-        hide($('#fdApptNoneMsg'));
-        $('#fdApptList').innerHTML = '';
-
-        post(BASE + '/appointments', { admin_id: state.adminId })
-            .then(function (data) {
-                hide($('#fdApptSpinner'));
-                var appts = data.appointments || [];
-                if (appts.length === 0) {
-                    show($('#fdApptNoneMsg'));
-                    $('#fdStep4Next').disabled = false;
+            lookup() {
+                this.errors.phone = '';
+                if (!this.phone || this.phone.length < 6) {
+                    this.errors.phone = 'Please enter a valid phone number.';
                     return;
                 }
-                renderAppointments(appts);
-            })
-            .catch(function (err) {
-                hide($('#fdApptSpinner'));
-                showAlert(err && err.message ? err.message : 'Could not load appointments. You may continue.');
-                $('#fdStep4Next').disabled = false;
-            });
-    });
 
-    $('#fdHasApptNo').addEventListener('click', function () {
-        $('#fdHasApptNo').classList.add('fd-choice--selected');
-        $('#fdHasApptYes').classList.remove('fd-choice--selected');
-        state.claimedAppointment = false;
-        state.appointmentId = null;
-        hide($('#fdApptSection'));
-        $('#fdStep4Next').disabled = false;
-    });
-
-    function renderAppointments(appts) {
-        var container = $('#fdApptList');
-        container.innerHTML = '<p class="font-weight-600 mb-2">Today\'s appointments:</p>';
-
-        appts.forEach(function (a) {
-            var div = document.createElement('div');
-            div.className = 'fd-appt-card';
-            div.setAttribute('data-id', a.id);
-
-            var statusBadge = {
-                confirmed: 'success', pending: 'warning', completed: 'info'
-            }[a.status] || 'secondary';
-
-            div.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
-                '<div>' +
-                    '<strong>' + escHtml(a.datetime || '—') + '</strong>' +
-                    ' <span class="badge bg-' + statusBadge + '">' + escHtml(a.status) + '</span>' +
-                    '<br><small class="text-muted">Consultant: ' + escHtml(a.consultant || '—') + ' &bull; ' + escHtml(a.location || '—') + '</small>' +
-                '</div>' +
-                '<i class="fa-solid fa-circle-check text-info" style="display:none;" data-checkmark></i>' +
-                '</div>';
-
-            div.addEventListener('click', function () {
-                document.querySelectorAll('.fd-appt-card').forEach(function (c) {
-                    c.classList.remove('selected');
-                    c.querySelector('[data-checkmark]').style.display = 'none';
+                this.lookingUp = true;
+                this.post(this.baseUrl + '/lookup', {
+                    phone: this.phone,
+                    email: this.email || null,
+                }).then((data) => {
+                    this.lookingUp = false;
+                    var matches = data.matches || [];
+                    if (matches.length === 0) {
+                        this.matches = [];
+                        this.setStep('new-client');
+                        return;
+                    }
+                    this.matches = matches;
+                    this.selectedMatchKey = null;
+                    this.walkInSelected = false;
+                    this.adminId = null;
+                    this.adminType = null;
+                    this.adminName = '';
+                    this.adminEmail = '';
+                    this.adminPhone = '';
+                    this.path = null;
+                    this.setStep(2);
+                }).catch((err) => {
+                    this.lookingUp = false;
+                    this.showAlert(err && err.message ? err.message : 'Lookup failed. Please try again.');
                 });
-                div.classList.add('selected');
-                div.querySelector('[data-checkmark]').style.display = '';
-                state.appointmentId = parseInt(a.id, 10);
-                $('#fdStep4Next').disabled = false;
-            });
+            },
 
-            container.appendChild(div);
-        });
+            selectMatch(m) {
+                this.selectedMatchKey = this.matchKey(m);
+                this.walkInSelected = false;
+                this.adminId = parseInt(m.id, 10);
+                this.adminType = m.type;
+                this.adminName = m.name || '';
+                this.adminEmail = m.email || '';
+                this.adminPhone = m.phone || '';
+                this.path = 'existing_match';
+            },
 
-        // Allow proceeding without selecting one
-        var skipP = document.createElement('p');
-        skipP.className = 'text-muted small mt-2';
-        skipP.innerHTML = 'Select an appointment above or click <strong>Continue</strong> to proceed without linking one.';
-        container.appendChild(skipP);
-        $('#fdStep4Next').disabled = false;
-    }
-
-    $('#fdStep4Next').addEventListener('click', function () { setStep(5); });
-    $('#fdStep4Back').addEventListener('click', function () { state.appointmentId = null; state.claimedAppointment = false; setStep(3); });
-
-    /* ── Step 5: Reason ─────────────────────────────────────── */
-    $('#fdVisitReason').addEventListener('change', function () {
-        var isOther = this.value === 'other';
-        if (isOther) {
-            show($('#fdNotesRequired'));
-        } else {
-            hide($('#fdNotesRequired'));
-            $('#fdVisitNotes').classList.remove('is-invalid');
-        }
-    });
-
-    $('#fdSubmitBtn').addEventListener('click', function () {
-        var reason = $('#fdVisitReason').value;
-        var notes  = $('#fdVisitNotes').value.trim();
-
-        if (reason === 'other' && !notes) {
-            $('#fdVisitNotes').classList.add('is-invalid');
-            $('#fdVisitNotesError').textContent = 'Notes are required when selecting "Other".';
-            return;
-        }
-        $('#fdVisitNotes').classList.remove('is-invalid');
-
-        state.visitReason = reason;
-        state.visitNotes  = notes;
-
-        show($('#fdSubmitSpinner'));
-        $('#fdSubmitBtn').disabled = true;
-
-        post(BASE + '/submit', {
-            phone:               state.phone,
-            email:               state.email || null,
-            admin_id:            state.adminId,
-            admin_type:          state.adminType,
-            appointment_id:      state.appointmentId,
-            claimed_appointment: state.claimedAppointment,
-            visit_reason:        state.visitReason || null,
-            visit_notes:         state.visitNotes  || null,
-        }).then(function (data) {
-            hide($('#fdSubmitSpinner'));
-            $('#fdSubmitBtn').disabled = false;
-
-            if (data.success) {
-                var msg = 'Check-in #' + data.check_in_id + ' saved.';
-                if (data.notified_staff) {
-                    msg += ' Notification sent to ' + data.notified_staff + '.';
+            selectWalkIn() {
+                this.selectedMatchKey = null;
+                this.walkInSelected = !this.walkInSelected;
+                if (this.walkInSelected) {
+                    this.adminId = null;
+                    this.adminType = null;
+                    this.adminName = 'Walk-in';
+                    this.adminEmail = '';
+                    this.adminPhone = '';
+                    this.path = 'existing_match';
+                } else {
+                    this.adminName = '';
+                    this.path = null;
                 }
-                $('#fdSuccessMsg').textContent = msg;
-                setStep('success');
-            } else {
-                showAlert(data.message || 'Could not save check-in. Please try again.');
-            }
-        }).catch(function (err) {
-            hide($('#fdSubmitSpinner'));
-            $('#fdSubmitBtn').disabled = false;
-            showAlert(err && err.message ? err.message : 'Network error — please try again.');
-        });
-    });
+            },
 
-    $('#fdStep5Back').addEventListener('click', function () { setStep(4); });
+            goConfirm() {
+                if (!this.canConfirmMatch) return;
+                this.setStep(3);
+            },
 
-    /* ── Start over ─────────────────────────────────────────── */
-    function resetWizard() {
-        state = {
-            phone: '', phoneNormalized: '', email: '',
-            adminId: null, adminType: null, adminName: '', adminEmail: '', adminPhone: '',
-            appointmentId: null, claimedAppointment: false,
-            visitReason: '', visitNotes: '', currentStep: 1,
-            path: null,
+            startLeadForm() {
+                this.path = 'new_lead';
+                this.lead = { firstName: '', lastName: '', visitReason: '', visitNotes: '' };
+                this.errors.leadFirstName = '';
+                this.errors.leadVisitReason = '';
+                this.errors.leadVisitNotes = '';
+                this.setStep('lead-form');
+            },
+
+            submitLead() {
+                this.errors.leadFirstName = '';
+                this.errors.leadVisitReason = '';
+                this.errors.leadVisitNotes = '';
+                var valid = true;
+
+                if (!this.lead.firstName) {
+                    this.errors.leadFirstName = 'First name is required.';
+                    valid = false;
+                }
+                if (!this.lead.visitReason) {
+                    this.errors.leadVisitReason = 'Please select a reason for the visit.';
+                    valid = false;
+                }
+                if (this.lead.visitReason === 'other' && !this.lead.visitNotes) {
+                    this.errors.leadVisitNotes = 'Notes are required when selecting "Other".';
+                    valid = false;
+                }
+                if (!valid) return;
+
+                this.submittingLead = true;
+                this.post(this.baseUrl + '/create-lead', {
+                    first_name: this.lead.firstName,
+                    last_name: this.lead.lastName || null,
+                    phone: this.phone,
+                    email: this.email || null,
+                    visit_reason: this.lead.visitReason || null,
+                    visit_notes: this.lead.visitNotes || null,
+                }).then((data) => {
+                    this.submittingLead = false;
+                    if (data.success) {
+                        var msg = 'Check-in #' + data.check_in_id + ' saved for ' + (data.lead_name || 'new lead') + '.';
+                        if (data.notified_staff) {
+                            msg += ' Notification sent to ' + data.notified_staff + '.';
+                        }
+                        this.successMsg = msg;
+                        this.setStep('success');
+                    } else {
+                        this.showAlert(data.message || 'Could not save check-in. Please try again.');
+                    }
+                }).catch((err) => {
+                    this.submittingLead = false;
+                    this.showAlert(err && err.message ? err.message : 'Network error — please try again.');
+                });
+            },
+
+            goAppointments() {
+                this.showApptSection = false;
+                this.canContinueAppt = false;
+                this.appointments = [];
+                this.walkInApptNote = false;
+                this.apptNoneMsg = false;
+                this.appointmentId = null;
+                this.claimedAppointment = null;
+                this.setStep(4);
+            },
+
+            chooseHasAppointment() {
+                this.claimedAppointment = true;
+                this.showApptSection = true;
+                this.appointmentId = null;
+                this.appointments = [];
+                this.apptNoneMsg = false;
+
+                if (!this.adminId) {
+                    this.walkInApptNote = true;
+                    this.loadingAppointments = false;
+                    this.canContinueAppt = true;
+                    return;
+                }
+
+                this.walkInApptNote = false;
+                this.loadingAppointments = true;
+                this.canContinueAppt = false;
+
+                this.post(this.baseUrl + '/appointments', { admin_id: this.adminId })
+                    .then((data) => {
+                        this.loadingAppointments = false;
+                        var appts = data.appointments || [];
+                        if (appts.length === 0) {
+                            this.apptNoneMsg = true;
+                            this.canContinueAppt = true;
+                            return;
+                        }
+                        this.appointments = appts;
+                        this.canContinueAppt = true;
+                    })
+                    .catch((err) => {
+                        this.loadingAppointments = false;
+                        this.showAlert(err && err.message ? err.message : 'Could not load appointments. You may continue.');
+                        this.canContinueAppt = true;
+                    });
+            },
+
+            chooseNoAppointment() {
+                this.claimedAppointment = false;
+                this.appointmentId = null;
+                this.showApptSection = false;
+                this.canContinueAppt = true;
+            },
+
+            selectAppointment(a) {
+                this.appointmentId = parseInt(a.id, 10);
+                this.canContinueAppt = true;
+            },
+
+            apptStatusBadge(status) {
+                return ({ confirmed: 'success', pending: 'warning', completed: 'info' })[status] || 'secondary';
+            },
+
+            submitCheckIn() {
+                this.errors.visitNotes = '';
+                if (this.visitReason === 'other' && !this.visitNotes) {
+                    this.errors.visitNotes = 'Notes are required when selecting "Other".';
+                    return;
+                }
+
+                this.submitting = true;
+                this.post(this.baseUrl + '/submit', {
+                    phone: this.phone,
+                    email: this.email || null,
+                    admin_id: this.adminId,
+                    admin_type: this.adminType,
+                    appointment_id: this.appointmentId,
+                    claimed_appointment: this.claimedAppointment,
+                    visit_reason: this.visitReason || null,
+                    visit_notes: this.visitNotes || null,
+                }).then((data) => {
+                    this.submitting = false;
+                    if (data.success) {
+                        var msg = 'Check-in #' + data.check_in_id + ' saved.';
+                        if (data.notified_staff) {
+                            msg += ' Notification sent to ' + data.notified_staff + '.';
+                        }
+                        this.successMsg = msg;
+                        this.setStep('success');
+                    } else {
+                        this.showAlert(data.message || 'Could not save check-in. Please try again.');
+                    }
+                }).catch((err) => {
+                    this.submitting = false;
+                    this.showAlert(err && err.message ? err.message : 'Network error — please try again.');
+                });
+            },
+
+            resetWizard() {
+                this.step = 1;
+                this.phone = '';
+                this.email = '';
+                this.path = null;
+                this.alert = '';
+                this.successMsg = '';
+                this.matches = [];
+                this.selectedMatchKey = null;
+                this.walkInSelected = false;
+                this.adminId = null;
+                this.adminType = null;
+                this.adminName = '';
+                this.adminEmail = '';
+                this.adminPhone = '';
+                this.appointmentId = null;
+                this.claimedAppointment = null;
+                this.appointments = [];
+                this.showApptSection = false;
+                this.loadingAppointments = false;
+                this.walkInApptNote = false;
+                this.apptNoneMsg = false;
+                this.canContinueAppt = false;
+                this.visitReason = '';
+                this.visitNotes = '';
+                this.lead = { firstName: '', lastName: '', visitReason: '', visitNotes: '' };
+                this.lookingUp = false;
+                this.submitting = false;
+                this.submittingLead = false;
+                this.errors = {
+                    phone: '',
+                    leadFirstName: '',
+                    leadVisitReason: '',
+                    leadVisitNotes: '',
+                    visitNotes: '',
+                };
+            },
         };
-        $('#fdPhone').value           = '';
-        $('#fdEmail').value           = '';
-        $('#fdVisitReason').value     = '';
-        $('#fdVisitNotes').value      = '';
-        $('#fdLeadFirstName').value   = '';
-        $('#fdLeadLastName').value    = '';
-        $('#fdLeadVisitReason').value = '';
-        $('#fdLeadVisitNotes').value  = '';
-        $('#fdMatchList').innerHTML   = '';
-        $('#fdApptList').innerHTML    = '';
-        $('#fdStep2Next').disabled    = true;
-        $('#fdStep4Next').disabled    = true;
-        setStep(1);
-    }
-
-    $('#fdStartOver').addEventListener('click', function () { resetWizard(); });
-
-    /* ── XSS helper ─────────────────────────────────────────── */
-    function escHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-})();
+    });
+});
 </script>
-@endsection
+@endpush

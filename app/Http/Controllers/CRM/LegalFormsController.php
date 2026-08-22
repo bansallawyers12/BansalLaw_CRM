@@ -9,7 +9,6 @@ use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Note;
 use App\Services\LegalFormDocxService;
-use App\Services\PythonConverterService;
 use PhpOffice\PhpWord\IOFactory;
 use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 
 class LegalFormsController extends Controller
@@ -458,17 +458,6 @@ class LegalFormsController extends Controller
                         ->header('Content-Type', 'text/html; charset=UTF-8');
                 }
 
-                $converter = app(PythonConverterService::class);
-                $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
-                if (! empty($result['success']) && ! empty($result['pdf_data'])) {
-                    $pdfName = pathinfo($filename, PATHINFO_FILENAME) . '.pdf';
-
-                    return response($result['pdf_data'], 200, [
-                        'Content-Type' => 'application/pdf',
-                        'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
-                    ]);
-                }
-
                 $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
                 if ($htmlPreview !== null) {
                     return response($htmlPreview, 200, [
@@ -568,17 +557,6 @@ class LegalFormsController extends Controller
                     ->header('Content-Type', 'text/html; charset=UTF-8');
             }
 
-            $converter = app(PythonConverterService::class);
-            $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
-            if (! empty($result['success']) && ! empty($result['pdf_data'])) {
-                $pdfName = pathinfo($filename, PATHINFO_FILENAME) . '.pdf';
-
-                return response($result['pdf_data'], 200, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
-                ]);
-            }
-
             $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
             if ($htmlPreview !== null) {
                 return response($htmlPreview, 200, [
@@ -586,9 +564,8 @@ class LegalFormsController extends Controller
                 ]);
             }
 
-            Log::warning('Legal form preview conversion failed', [
+            Log::warning('Legal form HTML preview failed', [
                 'legal_form_id' => $legalForm->id,
-                'error' => $result['error'] ?? 'unknown',
             ]);
 
             return response($this->legalFormPreviewErrorHtml(), 503)
@@ -607,7 +584,7 @@ class LegalFormsController extends Controller
     {
         $body = $message !== ''
             ? htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
-            : 'Unable to convert this form for preview. Use Download to open the Word document.';
+            : 'Unable to preview this form. Use Download to open the Word document.';
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title>'
             . '<style>body{font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#444;background:#fff;}</style></head>'
@@ -642,10 +619,20 @@ class LegalFormsController extends Controller
                 return null;
             }
 
-            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Form preview</title>'
-                . '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.55;color:#1f2937;margin:0;padding:28px 32px;background:#fff;}'
+            $styles = '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.55;color:#1f2937;margin:0;padding:28px 32px;background:#fff;}'
                 . 'table{border-collapse:collapse;width:100%;margin:12px 0;} td,th{border:1px solid #d1d5db;padding:6px 10px;vertical-align:top;}'
-                . 'p{margin:0.5em 0;} h1,h2,h3{color:#1a3a5c;margin:0.75em 0 0.35em;}</style></head><body>'
+                . 'p{margin:0.5em 0;} h1,h2,h3{color:#1a3a5c;margin:0.75em 0 0.35em;}</style>';
+
+            if (stripos($body, '<html') !== false) {
+                if (stripos($body, '</head>') !== false) {
+                    return (string) preg_replace('/<\/head>/i', $styles . '</head>', $body, 1);
+                }
+
+                return $styles . $body;
+            }
+
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Form preview</title>'
+                . $styles . '</head><body>'
                 . $body
                 . '</body></html>';
         } catch (\Throwable $e) {
