@@ -70,18 +70,6 @@ class CRMUtilityController extends Controller
         echo json_encode($data);
     }
 
-    public function fetchmessages(Request $request){
-        $notificalists = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('seen', 0)->first();
-        if($notificalists){
-            $obj = \App\Models\Notification::find($notificalists->id);
-            $obj->seen = 1;
-            $obj->save();
-            return $notificalists->message;
-        }else{
-            return 0;
-        }
-    }
-
     // Moved to DashboardController
 
     // Moved to DashboardController
@@ -205,34 +193,6 @@ class CRMUtilityController extends Controller
 				}
 		}
 		return view('crm.change_password');
-	}
-
-
-	public function editapi(Request $request)
-	{
-		//check authorization start
-			$check = $this->checkAuthorizationAction('api_key', $request->route()->getActionMethod(), Auth::user()->role);
-			if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			}
-		//check authorization end
-		if ($request->isMethod('post'))
-		{
-			$obj	= 	\App\Models\Staff::find(Auth::user()->id);
-			$obj->client_id	=	md5(Auth::user()->id.time());
-			$saved				=	$obj->save();
-			if(!$saved)
-			{
-				return redirect()->back()->with('error', config('constants.server_error'));
-			}
-			else
-			{
-				return Redirect::to('/api-key')->with('success', 'Api Key'.config('constants.edited'));
-			}
-		}else{
-			return view('crm.apikey');
-		}
 	}
 
 	public function updateAction(Request $request)
@@ -1662,61 +1622,6 @@ class CRMUtilityController extends Controller
             return redirect()->back()->with('success', 'Email Sent Successfully');
         }
 	}
-
-	public function getassigneeajax(Request $request){
-	    \Log::info('📋 getassigneeajax called', [
-	        'search' => $request->likevalue,
-	        'user_id' => Auth::id(),
-	    ]);
-	    
-	    try {
-	        $squery = $request->likevalue;
-	        
-	        $query = \App\Models\Staff::query()
-                ->where('status', 1);  // Only active staff
-                
-            // Apply search filter if provided
-            if (!empty($squery)) {
-                $query->where(function($q) use ($squery) {
-                    $squeryLower = strtolower($squery);
-                    $q->whereRaw('LOWER(email) LIKE ?', ['%'.$squeryLower.'%'])
-                      ->orWhereRaw('LOWER(first_name) LIKE ?', ['%'.$squeryLower.'%'])
-                      ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.$squeryLower.'%'])
-                      ->orWhereRaw('LOWER(phone) LIKE ?', ['%'.$squeryLower.'%'])
-                      ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%']);
-                });
-            }
-            
-            $fetchedData = $query->orderBy('first_name')->orderBy('last_name')->get();
-
-    		$agents = array();
-    		foreach($fetchedData as $list){
-    			$agents[] = array(
-    				'id' => $list->id,
-    				'agent_id' => $list->first_name.' '.$list->last_name,
-    				'assignee' => $list->first_name.' '.$list->last_name,
-    			);
-    		}
-    
-    		\Log::info('✅ getassigneeajax success', [
-    		    'count' => count($agents),
-    		    'sample' => array_slice($agents, 0, 3),
-    		]);
-    
-    		return response()->json($agents);
-	    } catch (\Exception $e) {
-	        \Log::error('❌ getassigneeajax failed', [
-	            'error' => $e->getMessage(),
-	            'trace' => $e->getTraceAsString(),
-	        ]);
-	        
-	        return response()->json([
-	            'error' => 'Failed to load staff list',
-	            'message' => $e->getMessage(),
-	        ], 500);
-	    }
-	}
-
 
     public function checkclientexist(Request $request){
         $actor = Auth::guard('admin')->user() ?: Auth::user();
