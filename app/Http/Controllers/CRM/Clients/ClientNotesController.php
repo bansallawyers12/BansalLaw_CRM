@@ -112,6 +112,12 @@ class ClientNotesController extends Controller
         }*/
         $obj->mobile_number = $request->mobileNumber ?? null; // Handle case when mobileNumber is not provided
         $obj->task_group = $request->task_group;
+        if ($request->has('spend_hours')) {
+            $spendHours = trim((string) $request->input('spend_hours'));
+            $obj->spend_hours = ($spendHours !== '' && is_numeric($spendHours))
+                ? round((float) $spendHours, 2)
+                : null;
+        }
 
         $uploadError = NoteAttachmentService::validateUploads($request->file('attachments'));
         if ($uploadError) {
@@ -322,7 +328,7 @@ class ClientNotesController extends Controller
 			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
 		$this->ensureCrmRecordAccess((int) $note->client_id);
-		$data = Note::select('title','description','task_group','mobile_number','matter_id')->where('id',$note_id)->first();
+		$data = Note::select('title','description','task_group','mobile_number','matter_id','spend_hours')->where('id',$note_id)->first();
         $attachments = NoteAttachment::where('note_id', $note_id)->orderBy('id')->get()->map(function (NoteAttachment $a) {
             return [
                 'id' => $a->id,
@@ -474,6 +480,12 @@ class ClientNotesController extends Controller
                 <div class="note-meta-redesign" style="margin-bottom: 10px;">
                     <i class="fa-solid fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
                     <strong style="margin-left: 6px;">Number:</strong> <?php echo htmlspecialchars($notePhone); ?>
+                </div>
+                <?php }
+                if ($list->spend_hours !== null && $list->spend_hours !== '') { ?>
+                <div class="note-spend-hours-badge">
+                    <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                    <?php echo rtrim(rtrim(number_format((float) $list->spend_hours, 2, '.', ''), '0'), '.'); ?> hrs
                 </div>
                 <?php } ?>
 
