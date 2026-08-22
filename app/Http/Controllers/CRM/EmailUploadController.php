@@ -22,6 +22,7 @@ use App\Models\ClientMatter;
 use App\Models\Admin;
 use App\Logging\EmailUploadErrorLogger;
 use App\Services\Email\EmailCalendarMergeService;
+use App\Support\EmailTimelineActivity;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Carbon;
 
@@ -967,20 +968,15 @@ class EmailUploadController extends Controller
                     }
                 }
                 
-                // Format subject with matter reference
+                // Format subject with matter reference — inbox mail linked to a client is "received"
                 $emailSubject = $parsedData['subject'] ?? 'Email';
-                $subject = !empty($matterReference)
-                    ? "uploaded Email: {$emailSubject} - {$matterReference}"
-                    : "uploaded Email: {$emailSubject}";
-                
-                // Truncate long subjects
-                if (strlen($subject) > 100) {
-                    $subject = substr($subject, 0, 97) . '...';
-                }
-                
+                $subject = $mailType === 'inbox'
+                    ? EmailTimelineActivity::subjectReceived($emailSubject, $matterReference ?: null)
+                    : EmailTimelineActivity::subjectUploaded($emailSubject, $matterReference ?: null);
+
                 $from = $parsedData['sender_email'] ?? $parsedData['sender_name'] ?? 'Unknown';
-                $description = "<p>From: {$from}</p>";
-                
+                $description = EmailTimelineActivity::descriptionFrom((string) $from);
+
                 $this->logClientActivity(
                     $clientId,
                     $subject,
