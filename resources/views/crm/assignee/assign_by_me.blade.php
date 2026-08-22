@@ -307,7 +307,7 @@
                                         @else
                                             <tr>
                                                 <td colspan="8" style="text-align: center; padding: 20px;">
-                                                    No actions assigned by me.
+                                                    No tasks assigned by me.
                                                 </td>
                                             </tr>
                                         @endif

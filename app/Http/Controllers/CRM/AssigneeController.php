@@ -165,10 +165,10 @@ class AssigneeController extends Controller
             foreach ($notesToCheck as $checkNote) {
                 $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
                 if (!$isAssigneeOrOwner) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
                 }
                 if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
                 }
             }
         }
@@ -270,10 +270,10 @@ class AssigneeController extends Controller
             foreach ($notesToCheck as $checkNote) {
                 $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
                 if (!$isAssigneeOrOwner) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
                 }
                 if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized action modification.'], 403);
+                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
                 }
             }
         }
@@ -764,7 +764,7 @@ class AssigneeController extends Controller
         $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
 
         if (!$isCreator && !$isAssignee && !$isSuperAdmin) {
-            abort(403, 'Unauthorized access to action task.');
+            abort(403, 'Unauthorized access to task.');
         }
 
         if ($appointment->client_id) {

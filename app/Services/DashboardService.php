@@ -520,10 +520,10 @@ class DashboardService
             foreach ($notesToCheck as $checkNote) {
                 $isOwnerOrAssignee = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
                 if (!$isOwnerOrAssignee) {
-                    return ['success' => false, 'message' => 'Unauthorized action completion.'];
+                    return ['success' => false, 'message' => 'Unauthorized task completion.'];
                 }
                 if ($checkNote->client_id && !StaffClientVisibility::canAccessClientOrLead((int) $checkNote->client_id, $user)) {
-                    return ['success' => false, 'message' => 'Unauthorized action completion.'];
+                    return ['success' => false, 'message' => 'Unauthorized task completion.'];
                 }
             }
         }
@@ -541,7 +541,7 @@ class DashboardService
             $updated = Note::where('id', $noteId)->update(['status' => 1]);
         }
         if (!$updated) {
-            return ['success' => false, 'message' => 'Failed to complete action'];
+            return ['success' => false, 'message' => 'Failed to complete task'];
         }
 
         app(\App\Services\ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteData, true);

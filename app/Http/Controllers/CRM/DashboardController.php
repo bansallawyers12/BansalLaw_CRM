@@ -188,7 +188,7 @@ class DashboardController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating action completion'
+                'message' => 'An error occurred while updating task completion'
             ], 500);
         }
     }

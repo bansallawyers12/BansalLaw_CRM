@@ -110,10 +110,10 @@
                                 </div>
                                 
                                 <div class="row">
-                                    <!-- Action Category Filter -->
+                                    <!-- Task Category Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_group" class="form-label">
-                                            <i class="fa-solid fa-list-check"></i> Action Category
+                                            <i class="fa-solid fa-list-check"></i> Task Category
                                         </label>
                                         <select name="task_group" id="task_group" class="form-control crm-ts-activity-search">
                                             <option value="">All Categories</option>
@@ -126,10 +126,10 @@
                                         </select>
                                     </div>
                                     
-                                    <!-- Action Status Filter -->
+                                    <!-- Task Status Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_status" class="form-label">
-                                            <i class="fa-solid fa-circle-check"></i> Action Status
+                                            <i class="fa-solid fa-circle-check"></i> Task Status
                                         </label>
                                         <select name="task_status" id="task_status" class="form-control crm-ts-activity-search">
                                             <option value="">All Statuses</option>

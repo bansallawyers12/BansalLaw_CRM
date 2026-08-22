@@ -5627,7 +5627,7 @@ class ClientsController extends Controller
                         $formattedDate = date('d/M/Y h:i A');
                     }
                     
-                    $o->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '')
+                    $o->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '')
                         . 'Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
@@ -5643,7 +5643,7 @@ class ClientsController extends Controller
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
-            echo json_encode(array('success' => false, 'message' => 'Error saving action. Please try again.'));
+            echo json_encode(array('success' => false, 'message' => 'Error saving task. Please try again.'));
             exit;
         }
     }
@@ -5943,7 +5943,7 @@ class ClientsController extends Controller
                     $notification->module_id = $clientId;
                     $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? $encodedClientId);
                     
-                    $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
+                    $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                     $notification->seen = 0;
                     $notification->save();
 
@@ -5959,7 +5959,7 @@ class ClientsController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
         }
     }
 
@@ -6021,7 +6021,7 @@ class ClientsController extends Controller
                 $notification->module_id = $clientId;
                 $notification->url = $this->actionClientDetailUrl($clientId, $action->matter_id ? (int) $action->matter_id : $matterId, $requestData['client_id'] ?? null);
                 
-                $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
+                $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
                 $notification->seen = 0;
                 $notification->save();
             }
@@ -6034,7 +6034,7 @@ class ClientsController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Task updated successfully']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating action: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error updating task: ' . $e->getMessage()], 500);
         }
     }
 
@@ -6105,7 +6105,7 @@ class ClientsController extends Controller
                 $notification->module_id = $clientId;
                 $notification->url = $this->actionClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? null);
                 
-                $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
+                $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                 $notification->seen = 0;
                 $notification->save();
 
@@ -6120,7 +6120,7 @@ class ClientsController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
         }
     }
 

@@ -79,7 +79,7 @@
 											<th class="sort_col">@sortablelink('first_name','Assignee name')</th>
                                             <th>Assigner name</th>
 											<th>Client Reference</th>
-											<th class="sort_col">@sortablelink('action_date','Action Date')</th>
+											<th class="sort_col">@sortablelink('action_date','Assign Date')</th>
                                             <th class="sort_col">@sortablelink('task_group','Group')</th>
                                             <th>Note</th>
                                             <th width="280px">Action</th>

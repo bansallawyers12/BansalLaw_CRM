@@ -261,7 +261,7 @@ class ActivitySearchController extends Controller
                 'Client Name',
                 'Client Email',
                 'Activity Type',
-                'Action Category',
+                'Task Category',
                 'Status',
                 'Subject',
                 'Description',

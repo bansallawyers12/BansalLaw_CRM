@@ -337,7 +337,7 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                 
                 showNotification('Task completed successfully!', 'success');
             } else {
-                showNotification(response.message || 'Failed to complete action', 'error');
+                showNotification(response.message || 'Failed to complete task', 'error');
             }
         },
         error: function(xhr, status, error) {

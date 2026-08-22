@@ -1161,8 +1161,8 @@ $(function () {
         responsive: false,
         autoWidth: false,
         language: {
-            emptyTable: 'No open actions found',
-            zeroRecords: 'No matching actions found'
+            emptyTable: 'No open tasks found',
+            zeroRecords: 'No matching tasks found'
         }
     }) : null;
 
