@@ -133,6 +133,7 @@ class ClientNotesController extends Controller
         
         try {
             $saved = $obj->save();
+            $matterDocumentRefresh = null;
 
             if ($saved) {
                 $removeIds = $request->input('remove_attachment_ids', []);
@@ -147,7 +148,7 @@ class ClientNotesController extends Controller
                         NoteAttachmentService::deleteAttachment($attachment);
                     }
                 }
-                NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
+                $matterDocumentRefresh = NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
             }
             
             if($saved){
@@ -246,6 +247,10 @@ class ClientNotesController extends Controller
                     }
                 }
                 $response['status'] 	= 	true;
+                $response['note_id'] = (int) $obj->id;
+                if ($matterDocumentRefresh) {
+                    $response['matter_document_refresh'] = $matterDocumentRefresh;
+                }
                 if($isUpdate){
                     $response['message']	=	'You have successfully updated Note';
                 }else{
@@ -498,7 +503,9 @@ class ClientNotesController extends Controller
             </div>
             <?php
         }
-        return ob_get_clean();
+        $html = ob_get_clean();
+
+        return response($html, 200)->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**

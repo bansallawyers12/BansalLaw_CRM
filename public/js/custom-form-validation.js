@@ -2357,10 +2357,16 @@ function customValidate(formName, savetype = '')
 									window.resetNoteAttachments($('#create_note'));
 								}
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
+								if (typeof window.handleNoteSaveSideEffects === 'function') {
+									window.handleNoteSaveSideEffects(obj);
+								} else if (typeof getallnotes === 'function') {
+									getallnotes();
+								} else {
 									$.ajax({
 										url: site_url+'/get-notes',
 										type:'GET',
-										data:{clientid:client_id,type:'client'},
+										cache: false,
+										data:{clientid:client_id,type:'client',_: Date.now()},
 										success: function(responses){
 											$('.note_term_list').html(responses);
 											if (typeof window.filterNotes === 'function') {
@@ -2368,6 +2374,7 @@ function customValidate(formName, savetype = '')
 											}
 										}
 									});
+								}
 									getallactivities(client_id);
 								} else {
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
@@ -2412,10 +2419,16 @@ function customValidate(formName, savetype = '')
 									$('#create_note_d').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 
+								if (typeof window.handleNoteSaveSideEffects === 'function') {
+									window.handleNoteSaveSideEffects(obj);
+								} else if (typeof getallnotes === 'function') {
+									getallnotes();
+								} else {
 									$.ajax({
 										url: site_url+'/get-notes',
 										type:'GET',
-										data:{clientid:client_id,type:'client'},
+										cache: false,
+										data:{clientid:client_id,type:'client',_: Date.now()},
 										success: function(responses){
 											$('.note_term_list').html(responses);
 											if (typeof window.filterNotes === 'function') {
@@ -2423,6 +2436,7 @@ function customValidate(formName, savetype = '')
 											}
 										}
 									});
+								}
                                     getallactivities(client_id);
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
