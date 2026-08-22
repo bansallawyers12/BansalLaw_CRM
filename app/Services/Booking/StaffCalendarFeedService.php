@@ -34,6 +34,62 @@ class StaffCalendarFeedService
         return array_merge($staffEvents, $courtEvents);
     }
 
+    public function countEventsForCalendarRequest(Request $request): int
+    {
+        if (! config('booking_calendar.include_important_events', true)) {
+            return 0;
+        }
+
+        $type = (string) $request->get('type', '');
+        $startOfToday = Carbon::today(config('app.timezone'));
+        $includePast = (bool) config('booking_calendar.include_past_in_visible_range', false);
+
+        return $this->countStaffEvents($request, $type, $startOfToday, $includePast)
+            + $this->countCourtHearings($request, $startOfToday, $includePast);
+    }
+
+    protected function countStaffEvents(
+        Request $request,
+        string $calendarType,
+        Carbon $startOfToday,
+        bool $includePast
+    ): int {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return 0;
+        }
+
+        $query = StaffCalendarEvent::query();
+
+        if ($calendarType !== '') {
+            $query->where(function (Builder $q) use ($calendarType) {
+                $q->whereNull('calendar_type')
+                    ->orWhere('calendar_type', $calendarType);
+            });
+        }
+
+        $this->restrictStaffCalendarEventQuery($query);
+        $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
+
+        return (int) $query->count();
+    }
+
+    protected function countCourtHearings(
+        Request $request,
+        Carbon $startOfToday,
+        bool $includePast
+    ): int {
+        if (! Schema::hasTable('client_court_hearings')) {
+            return 0;
+        }
+
+        $query = ClientCourtHearing::query();
+
+        StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
+        $this->applyHearingDateWindow($query, $request, $startOfToday, $includePast);
+
+        return (int) $query->count();
+    }
+
     /**
      * @param  Builder<StaffCalendarEvent>  $query
      */

@@ -114,23 +114,26 @@
                                         <label class="dropdown-item"><input type="checkbox" id="select-all" /> <strong>Select All</strong></label>
                                         <div style="border-top: 1px solid #e2e8f0; margin: 5px 0;"></div>
                                         <div class="assignee-list">
-                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                            @foreach(($dashboardAssignableStaff ?? collect()) as $member)
                                                 @php
-                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . (@$branchname->office_name ?? ''));
+                                                    $staffId = (int) ($member['id'] ?? 0);
+                                                    $firstName = (string) ($member['first_name'] ?? '');
+                                                    $lastName = (string) ($member['last_name'] ?? '');
+                                                    $officeName = (string) ($member['office_name'] ?? '');
+                                                    $searchText = strtolower($firstName . $lastName . $officeName);
                                                     $searchText = str_replace(' ', '', $searchText);
                                                 @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $admin->id }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
-                                                    <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
-                                                    {{ e($admin->first_name) }} {{ e($admin->last_name) }} ({{ e(@$branchname->office_name ?? '') }})
+                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $staffId }}" data-staff-name="{{ e(trim($firstName . ' ' . $lastName)) }}">
+                                                    <input type="checkbox" class="checkbox-item" value="{{ $staffId }}">
+                                                    {{ e($firstName) }} {{ e($lastName) }} ({{ e($officeName) }})
                                                 </label>
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
                                 <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
-                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value="{{ $admin->id }}">{{ e($admin->first_name) }} {{ e($admin->last_name) }}</option>
+                                    @foreach(($dashboardAssignableStaff ?? collect()) as $member)
+                                        <option value="{{ (int) ($member['id'] ?? 0) }}">{{ e(($member['first_name'] ?? '') . ' ' . ($member['last_name'] ?? '')) }}</option>
                                     @endforeach
                                 </select>
                                 <div id="assignees-error" class="error-message"></div>

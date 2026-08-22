@@ -17,15 +17,15 @@
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-stats">
                     <div class="dashboard-cal-stat dashboard-cal-stat--today" title="Upcoming items today">
-                        <span class="dashboard-cal-stat-value" id="calStatToday">{{ $stats['today'] ?? 0 }}</span>
+                        <span class="dashboard-cal-stat-value" id="calStatToday">{{ is_array($stats) ? ($stats['today'] ?? 0) : '—' }}</span>
                         <span class="dashboard-cal-stat-label">Today</span>
                     </div>
                     <div class="dashboard-cal-stat dashboard-cal-stat--week" title="Upcoming items this week">
-                        <span class="dashboard-cal-stat-value" id="calStatWeek">{{ $stats['this_week'] ?? 0 }}</span>
+                        <span class="dashboard-cal-stat-value" id="calStatWeek">{{ is_array($stats) ? ($stats['this_week'] ?? 0) : '—' }}</span>
                         <span class="dashboard-cal-stat-label">This week</span>
                     </div>
                     <div class="dashboard-cal-stat dashboard-cal-stat--overdue" title="Overdue tasks">
-                        <span class="dashboard-cal-stat-value" id="calStatOverdue">{{ $stats['overdue_actions'] ?? 0 }}</span>
+                        <span class="dashboard-cal-stat-value" id="calStatOverdue">{{ is_array($stats) ? ($stats['overdue_actions'] ?? 0) : '—' }}</span>
                         <span class="dashboard-cal-stat-label">Overdue</span>
                     </div>
                 </div>

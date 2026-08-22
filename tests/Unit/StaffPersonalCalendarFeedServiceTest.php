@@ -123,6 +123,24 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
     }
 
     #[Test]
+    public function stats_for_staff_uses_count_queries_not_full_event_payloads(): void
+    {
+        $staff = new Staff();
+        $staff->first_name = 'Ajay';
+        $staff->email = '';
+        $staff->id = 1;
+
+        $stats = $this->service()->statsForStaff($staff);
+
+        $this->assertArrayHasKey('today', $stats);
+        $this->assertArrayHasKey('this_week', $stats);
+        $this->assertArrayHasKey('overdue_actions', $stats);
+        $this->assertIsInt($stats['today']);
+        $this->assertIsInt($stats['this_week']);
+        $this->assertIsInt($stats['overdue_actions']);
+    }
+
+    #[Test]
     public function deduplicate_events_removes_same_booking_and_cross_source_slot_duplicates(): void
     {
         $method = new \ReflectionMethod(StaffPersonalCalendarFeedService::class, 'deduplicateEvents');

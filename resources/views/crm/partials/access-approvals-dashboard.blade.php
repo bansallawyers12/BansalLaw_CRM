@@ -109,8 +109,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        if (document.getElementById('crm-access-dashboard-mini-queue')) {
-            renderDashboardMini();
+        if (!document.getElementById('crm-access-dashboard-mini-queue')) return;
+        var start = function () { renderDashboardMini(); };
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(start, { timeout: 2500 });
+        } else {
+            window.setTimeout(start, 400);
         }
     });
 

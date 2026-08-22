@@ -205,44 +205,95 @@ class StaffPersonalCalendarFeedService
         $weekEnd = $today->copy()->endOfWeek();
         $staffId = (int) $staff->id;
 
-        $events = $this->eventsForStaffRequest($staff, new Request([
+        $todayRequest = new Request([
+            'start' => $today->toIso8601String(),
+            'end' => $today->copy()->addDay()->toIso8601String(),
+        ]);
+        $weekRequest = new Request([
             'start' => $today->toIso8601String(),
             'end' => $weekEnd->copy()->addDay()->toIso8601String(),
-        ]));
-
-        $todayCount = 0;
-        $weekCount = 0;
-
-        foreach ($events as $event) {
-            if (empty($event['starts_at'])) {
-                continue;
-            }
-            try {
-                $start = Carbon::parse($event['starts_at'], $tz);
-            } catch (Exception) {
-                continue;
-            }
-            if ($start->isSameDay($today)) {
-                $todayCount++;
-            }
-            if ($start->betweenIncluded($today, $weekEnd)) {
-                $weekCount++;
-            }
-        }
-
-        $overdueActions = Note::query()
-            ->where('assigned_to', $staffId)
-            ->where('is_action', 1)
-            ->where('status', 0)
-            ->whereNotNull('note_deadline')
-            ->whereDate('note_deadline', '<', $today->toDateString())
-            ->count();
+        ]);
 
         return [
-            'today' => $todayCount,
-            'this_week' => $weekCount,
-            'overdue_actions' => $overdueActions,
+            'today' => $this->countEventsForStaffRequest($staff, $todayRequest),
+            'this_week' => $this->countEventsForStaffRequest($staff, $weekRequest),
+            'overdue_actions' => Note::query()
+                ->where('assigned_to', $staffId)
+                ->where('is_action', 1)
+                ->where('status', 0)
+                ->whereNotNull('note_deadline')
+                ->whereDate('note_deadline', '<', $today->toDateString())
+                ->count(),
         ];
+    }
+
+    public function countEventsForStaffRequest(Staff $staff, Request $request): int
+    {
+        $calendarType = $this->bookingCalendarTypeForStaff($staff);
+
+        $bookingCount = $calendarType
+            ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
+            : $this->countWebsiteBookings($staff, $request);
+
+        $importantCount = $this->countBookingCalendarImportantEvents($calendarType ?? '', $request);
+
+        return $bookingCount + $importantCount;
+    }
+
+    protected function countWebsiteBookingsForCalendarType(string $calendarType, Request $request): int
+    {
+        if (! Schema::hasTable('booking_appointments')) {
+            return 0;
+        }
+
+        $consultantId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.' . $calendarType, 0);
+        $query = BookingAppointment::query();
+        if ($consultantId > 0) {
+            $query->where('consultant_id', $consultantId);
+        } else {
+            $query->whereHas('consultant', function (Builder $q) use ($calendarType) {
+                $q->where('calendar_type', $calendarType);
+            });
+        }
+
+        $query->whereNotIn('status', ['cancelled', 'no_show']);
+
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+        $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countWebsiteBookings(Staff $staff, Request $request): int
+    {
+        if (! Schema::hasTable('booking_appointments') || ! Schema::hasTable('appointment_consultants')) {
+            return 0;
+        }
+
+        $consultantIds = $this->consultantIdsForStaff($staff);
+        if ($consultantIds === []) {
+            return 0;
+        }
+
+        $query = BookingAppointment::query()
+            ->whereIn('consultant_id', $consultantIds)
+            ->whereNotIn('status', ['cancelled', 'no_show']);
+
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+        $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countBookingCalendarImportantEvents(string $calendarType, Request $request): int
+    {
+        $feedRequest = Request::create('/', 'GET', array_merge(
+            $request->query(),
+            $request->request->all(),
+            ['type' => $calendarType]
+        ));
+
+        return $this->staffCalendarFeed->countEventsForCalendarRequest($feedRequest);
     }
 
     /**

@@ -35,7 +35,7 @@ class DashboardController extends Controller
         $staff = Auth::guard('admin')->user();
 
         if ($staff instanceof Staff) {
-            $dashboardData['calendarStats'] = $this->personalCalendarFeed->statsForStaff($staff);
+            $dashboardData['calendarStats'] = null;
             $dashboardData['bookingCalendarType'] = $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff);
         } else {
             $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
@@ -61,10 +61,12 @@ class DashboardController extends Controller
             $rows
         );
 
+        $includeStats = $request->boolean('include_stats', true);
+
         return response()->json([
             'success' => true,
             'data' => $events,
-            'stats' => $this->personalCalendarFeed->statsForStaff($staff),
+            'stats' => $includeStats ? $this->personalCalendarFeed->statsForStaff($staff) : null,
         ]);
     }
 

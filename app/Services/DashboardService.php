@@ -38,7 +38,41 @@ class DashboardService
             'count_closed_matter' => $this->getClosedMatterCount($user),
             'count_note_deadline' => $this->getNoteDeadlineCount($user),
             'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
+            'dashboardAssignableStaff' => $this->getAssignableStaffForPopover(),
         ];
+    }
+
+    /**
+     * Active staff for the dashboard "Add task" popover.
+     * Cached as plain arrays — never cache Eloquent models (unserialize breaks).
+     *
+     * @return \Illuminate\Support\Collection<int, array{id: int, first_name: string, last_name: string, office_name: string}>
+     */
+    public function getAssignableStaffForPopover()
+    {
+        $rows = Cache::remember('dashboard_assignable_staff_v3', 300, function () {
+            return Staff::query()
+                ->leftJoin('branches', 'staff.office_id', '=', 'branches.id')
+                ->where('staff.status', 1)
+                ->orderBy('staff.first_name')
+                ->orderBy('staff.last_name')
+                ->get([
+                    'staff.id',
+                    'staff.first_name',
+                    'staff.last_name',
+                    'branches.office_name',
+                ])
+                ->map(fn (Staff $row) => [
+                    'id' => (int) $row->id,
+                    'first_name' => (string) ($row->first_name ?? ''),
+                    'last_name' => (string) ($row->last_name ?? ''),
+                    'office_name' => (string) ($row->office_name ?? ''),
+                ])
+                ->values()
+                ->all();
+        });
+
+        return collect(is_array($rows) ? $rows : []);
     }
 
     /**
@@ -94,86 +128,89 @@ class DashboardService
 
         // Oldest activity first — surfaces matters that have stalled longest
         $cases = $query->orderBy('updated_at', 'asc')
-            ->limit(50) // Limit to 50 cases to avoid timeout
+            ->limit(20)
             ->get();
-        
-        // Enrich only the first 20 cases with activity (those displayed on dashboard)
-        // This prevents timeout when there are thousands of cases
-        foreach ($cases->take(20) as $case) {
-            $case->latest_activity = $this->getLatestActivity($case);
-        }
-        
-        // Set default activity for remaining cases
-        foreach ($cases->slice(20) as $case) {
-            $case->latest_activity = [
-                'type' => 'default',
-                'date' => $case->updated_at
-            ];
-        }
 
+        $this->attachLatestActivities($cases);
+        
         return $cases;
     }
 
     /**
-     * Get the latest activity for a case
-     * Optimized to check only the most relevant activity sources
+     * @param  \Illuminate\Support\Collection<int, ClientMatter>  $cases
      */
-    private function getLatestActivity($case)
+    protected function attachLatestActivities($cases): void
     {
-        $activities = [];
-        $clientId = $case->client_id;
-        
-        try {
-            // Use a single optimized query to get the most recent activity from each source
-            // This is much faster than multiple separate queries
-            
-            // Check activities_log first (most common source)
-            $latestActivityLog = ActivitiesLog::where('client_id', $clientId)
-                ->select('subject', 'created_at')
-                ->latest('created_at')
-                ->first();
-            
-            if ($latestActivityLog) {
-                $subject = strtolower($latestActivityLog->subject ?? '');
-                $type = 'default';
-                
-                if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
-                    $type = 'stage_updated';
-                } elseif (str_contains($subject, 'status')) {
-                    $type = 'status_changed';
-                } elseif (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
-                    $type = 'appointment_scheduled';
-                } elseif (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
-                    $type = 'payment_received';
-                } elseif (str_contains($subject, 'note')) {
-                    $type = 'note_added';
-                } elseif (str_contains($subject, 'email')) {
-                    $type = 'email_sent';
-                } elseif (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
-                    $type = 'document_uploaded';
-                } elseif (str_contains($subject, 'sign')) {
-                    $type = 'signed';
-                }
-                
-                return [
-                    'type' => $type,
-                    'date' => $latestActivityLog->created_at
+        if ($cases->isEmpty()) {
+            return;
+        }
+
+        $clientIds = $cases->pluck('client_id')->filter()->unique()->values();
+        if ($clientIds->isEmpty()) {
+            foreach ($cases as $case) {
+                $case->latest_activity = [
+                    'type' => 'default',
+                    'date' => $case->updated_at,
                 ];
             }
-            
-            // Fallback to case update time
-            return [
-                'type' => 'default',
-                'date' => $case->updated_at
-            ];
-            
-        } catch (\Exception $e) {
-            Log::debug('Error fetching activity: ' . $e->getMessage());
-            return [
-                'type' => 'default',
-                'date' => $case->updated_at
-            ];
+
+            return;
         }
+
+        $latestLogIds = ActivitiesLog::query()
+            ->selectRaw('MAX(id) as id')
+            ->whereIn('client_id', $clientIds)
+            ->groupBy('client_id')
+            ->pluck('id');
+
+        $logsByClient = $latestLogIds->isEmpty()
+            ? collect()
+            : ActivitiesLog::query()
+                ->whereIn('id', $latestLogIds)
+                ->get(['id', 'client_id', 'subject', 'created_at'])
+                ->keyBy('client_id');
+
+        foreach ($cases as $case) {
+            $log = $logsByClient->get($case->client_id);
+            $case->latest_activity = $log
+                ? $this->activityFromLog($log)
+                : [
+                    'type' => 'default',
+                    'date' => $case->updated_at,
+                ];
+        }
+    }
+
+    /**
+     * @return array{type: string, date: mixed}
+     */
+    protected function activityFromLog(ActivitiesLog $log): array
+    {
+        $subject = strtolower($log->subject ?? '');
+        $type = 'default';
+
+        if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
+            $type = 'stage_updated';
+        } elseif (str_contains($subject, 'status')) {
+            $type = 'status_changed';
+        } elseif (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
+            $type = 'appointment_scheduled';
+        } elseif (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
+            $type = 'payment_received';
+        } elseif (str_contains($subject, 'note')) {
+            $type = 'note_added';
+        } elseif (str_contains($subject, 'email')) {
+            $type = 'email_sent';
+        } elseif (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
+            $type = 'document_uploaded';
+        } elseif (str_contains($subject, 'sign')) {
+            $type = 'signed';
+        }
+
+        return [
+            'type' => $type,
+            'date' => $log->created_at,
+        ];
     }
 
     /**
@@ -280,15 +317,20 @@ class DashboardService
      */
     private function getNoteDeadlineCount($user): int
     {
-        $query = Note::where('type', 'client')
-            ->where('is_action', 1)
-            ->where('status', '!=', 1);
+        $userId = $user ? (int) $user->id : 0;
+        $seeAll = $this->viewerSeesAllMattersAndActions($user);
 
-        if (! $this->viewerSeesAllMattersAndActions($user)) {
-            $query->where('assigned_to', $user->id);
-        }
+        return Cache::remember('dashboard_note_deadline_count_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
+            $query = Note::where('type', 'client')
+                ->where('is_action', 1)
+                ->where('status', '!=', 1);
 
-        return $query->count();
+            if (! $seeAll) {
+                $query->where('assigned_to', $user->id);
+            }
+
+            return $query->count();
+        });
     }
 
     /**
@@ -296,17 +338,22 @@ class DashboardService
      */
     private function getCasesRequiringAttentionCount($user): int
     {
-        $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
-            ->where('client_matters.matter_status', 1)
-            ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100));
+        $userId = $user ? (int) $user->id : 0;
+        $seeAll = $this->viewerSeesAllMattersAndActions($user);
 
-        if (! $this->viewerSeesAllMattersAndActions($user)) {
-            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'clients', $user);
-        }
+        return Cache::remember('dashboard_cases_attention_count_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
+            $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
+                ->where('client_matters.matter_status', 1)
+                ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100));
 
-        $this->applyRoleBasedFiltering($query, $user);
+            if (! $seeAll) {
+                StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'clients', $user);
+            }
 
-        return $query->count();
+            $this->applyRoleBasedFiltering($query, $user);
+
+            return $query->count();
+        });
     }
 
     /**

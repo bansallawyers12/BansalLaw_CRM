@@ -488,6 +488,7 @@
             var url = new URL(BOOKING_EVENTS_API, window.location.origin);
             url.searchParams.set('start', chunkStart + 'T00:00:00');
             url.searchParams.set('end', chunkEnd + 'T00:00:00');
+            url.searchParams.set('include_stats', '0');
 
             var response = await fetch(url.toString(), {
                 credentials: 'same-origin',
@@ -1117,6 +1118,7 @@
                         var url = new URL(BOOKING_EVENTS_API, window.location.origin);
                         url.searchParams.set('start', fetchInfo.startStr);
                         url.searchParams.set('end', fetchInfo.endStr);
+                        url.searchParams.set('include_stats', '1');
 
                         var response = await fetch(url.toString(), {
                             credentials: 'same-origin',
