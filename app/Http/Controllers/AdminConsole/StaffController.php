@@ -295,10 +295,6 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
             }
 
-            if (! $isSuperAdminActor && $request->has('trust_rule42_supervisor')) {
-                return $this->respondStaffMessage($request, 'Only Superadmin role user can set Rule 42 supervisor authority.', 422);
-            }
-
             $prevQuickEnabled = (bool) ($staff->quick_access_enabled ?? false);
             $prevStatus = (int) ($staff->status ?? 1);
             $previousEmail = $staff->email;
@@ -510,10 +506,6 @@ class StaffController extends Controller
         $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
         if ($isSuperAdminActor && !$isCreate) {
             $obj->grant_super_admin_access = $request->boolean('grant_super_admin_access') ? 1 : null;
-        }
-
-        if ($isSuperAdminActor && Schema::hasColumn('staff', 'trust_rule42_supervisor')) {
-            $obj->trust_rule42_supervisor = $request->boolean('trust_rule42_supervisor');
         }
 
         $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(

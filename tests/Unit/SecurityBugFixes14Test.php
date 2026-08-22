@@ -3,9 +3,6 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
-use App\Services\TrustAccounting\TrustLedgerBalanceService;
-use App\Services\TrustAccounting\TrustReportQueryService;
-use App\Services\TrustAccounting\TrustPeriodService;
 use App\Http\Controllers\API\LeadBookingApiController;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -13,69 +10,6 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 class SecurityBugFixes14Test extends TestCase
 {
     use DatabaseTransactions;
-    /** @test */
-    public function test_14_1_trust_reversal_entry_excluded_from_balances()
-    {
-        $reversalRow = (object) [
-            'trust_voided_at' => null,
-            'trust_reversal_of_entry_id' => 123,
-            'void_fee_transfer' => 0,
-        ];
-
-        $this->assertTrue(TrustLedgerBalanceService::rowExcludedFromBalance($reversalRow));
-    }
-
-    /** @test */
-    public function test_14_8_period_lock_handles_hyphenated_and_custom_dates()
-    {
-        // 1. Should parse both hyphenated (YYYY-MM-DD) and slash (DD/MM/YYYY) date strings cleanly
-        try {
-            TrustPeriodService::assertTransDateUnlocked('2026-07-31');
-            TrustPeriodService::assertTransDateUnlocked('31/07/2026');
-        } catch (\RuntimeException $e) {
-            if (str_contains($e->getMessage(), 'Invalid transaction date format')) {
-                $this->fail('Failed on valid date string format: ' . $e->getMessage());
-            }
-        }
-
-        // 2. Should throw RuntimeException with invalid format when given arbitrary bad dates
-        $badDateExceptionThrown = false;
-        try {
-            TrustPeriodService::assertTransDateUnlocked('invalid-date-xyz');
-        } catch (\RuntimeException $e) {
-            $badDateExceptionThrown = true;
-            $this->assertStringContainsString('Invalid transaction date format', $e->getMessage());
-        }
-        $this->assertTrue($badDateExceptionThrown, 'Should throw RuntimeException for invalid date');
-
-        // 3. Test locking behavior with an actual locked accounting period in DB
-        \Illuminate\Support\Facades\DB::table('trust_accounting_periods')->insert([
-            'period_start' => '2026-07-01',
-            'period_end' => '2026-07-31',
-            'status' => 'locked',
-            'locked_at' => now(),
-            'notes' => 'July 2026 Audit Period',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // A date inside the locked period (tested in both formats) should be blocked
-        $this->assertTrue(TrustPeriodService::isLockedForRow('15/07/2026'));
-        $this->assertTrue(TrustPeriodService::isLockedForRow('2026-07-15'));
-
-        $lockedExceptionThrown = false;
-        try {
-            TrustPeriodService::assertTransDateUnlocked('15/07/2026');
-        } catch (\RuntimeException $e) {
-            $lockedExceptionThrown = true;
-            $this->assertStringContainsString('locked trust accounting period', $e->getMessage());
-        }
-        $this->assertTrue($lockedExceptionThrown, 'Locked period must throw lock exception for date in period');
-
-        // A date outside the locked period should not be blocked
-        $this->assertFalse(TrustPeriodService::isLockedForRow('01/08/2026'));
-        $this->assertFalse(TrustPeriodService::isLockedForRow('2026-08-01'));
-    }
 
     /** @test */
     public function test_14_9_public_booking_api_forces_unpaid_for_unauthenticated_requests()

@@ -164,7 +164,6 @@
             can_close_discontinue_matter: '_access',
             can_edit_final_invoice: '_access',
             grant_super_admin_access: '_access',
-            trust_rule42_supervisor: '_access',
             is_solicitor: '_solicitor',
             legal_practitioner_number: '_solicitor',
             company_name: '_solicitor',

@@ -64,7 +64,6 @@ class Staff extends Authenticatable
         'can_assign_emails_by_subject',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
-        'trust_rule42_supervisor',
     ];
 
     /**
@@ -91,7 +90,6 @@ class Staff extends Authenticatable
         'can_assign_emails_by_subject' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
-        'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
