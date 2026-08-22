@@ -115,14 +115,6 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::post('/delete_action', [CRMUtilityController::class, 'deleteAction']);
     Route::post('/move_action', [CRMUtilityController::class, 'moveAction']);
 
-    // WARNING: Old appointment calendar routes removed - old appointment system deleted
-    // These methods don't exist in CRMUtilityController
-    // Route::get('/appointments-education', [CRMUtilityController::class, 'appointmentsEducation'])->name('appointments-education'); // REMOVED
-    // Route::get('/appointments-jrp', [CRMUtilityController::class, 'appointmentsJrp'])->name('appointments-jrp'); // REMOVED
-    // Route::get('/appointments-tourist', [CRMUtilityController::class, 'appointmentsTourist'])->name('appointments-tourist'); // REMOVED
-    // Route::get('/appointments-others', [CRMUtilityController::class, 'appointmentsOthers'])->name('appointments-others'); // REMOVED
-
-    Route::get('/getassigneeajax', [CRMUtilityController::class, 'getassigneeajax']);
     Route::get('/checkclientexist', [CRMUtilityController::class, 'checkclientexist']);
 
     /* Legacy broadcast notification links stored as /broadcasts/{uuid} */
@@ -298,7 +290,6 @@ Route::middleware(['auth:admin'])->group(function () {
 
     /*---------- Notifications ----------*/
     Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);
-    Route::get('/fetch-messages', [CRMUtilityController::class, 'fetchmessages']);
     Route::get('/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications']);
     Route::post('/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen']);
     Route::get('/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
@@ -331,9 +322,6 @@ Route::middleware(['auth:admin'])->group(function () {
     // Task routes for email and contact uniqueness
     Route::post('/is_email_unique', [LeadController::class, 'is_email_unique']);
     Route::post('/is_contactno_unique', [LeadController::class, 'is_contactno_unique']);
-
-    // Activity management
-    Route::post('/extenddeadlinedate', [CRMUtilityController::class, 'extenddeadlinedate']);
 
     // Get assigne list
     Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
