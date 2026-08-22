@@ -15,7 +15,7 @@
                 <form id="editLedgerForm">
                     <input type="hidden" name="id">
                     <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                    <p class="text-muted small">Trust amounts and dates are locked after posting. To correct, void the entry (receipt list, super-admin) to create a reversal. Edit narrative and banking references below only.</p>
+                    <p class="text-muted small">Amounts and dates are locked after posting. Super-admin can delete a receipt from the receipt list if a correction is needed. Edit description, payment method, and attachments below.</p>
                     <div class="form-group">
                         <label for="trans_date">Transaction Date</label>
                         <input type="text" class="form-control bg-light" name="trans_date" id="edit_ledger_trans_date" readonly>
@@ -45,40 +45,6 @@
                     <div class="form-group">
                         <label for="description">Description</label>
                         <input type="text" class="form-control" name="description">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_ledger_payer_name">Payer / source (optional)</label>
-                        <input type="text" class="form-control" name="payer_name" id="edit_ledger_payer_name" placeholder="Who paid trust money in">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_ledger_bank_ref">Bank deposit reference (optional)</label>
-                        <input type="text" class="form-control" name="bank_deposit_reference" id="edit_ledger_bank_ref">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_ledger_banking_date">Banking date (optional, d/m/Y)</label>
-                        <input type="text" class="form-control" name="banking_date" id="edit_ledger_banking_date" placeholder="dd/mm/yyyy">
-                    </div>
-                    <div class="form-group" id="edit_ledger_payee_group">
-                        <label for="edit_ledger_payee_name">Payee (optional)</label>
-                        <input type="text" class="form-control" name="payee_name" id="edit_ledger_payee_name" placeholder="Payment recipient">
-                    </div>
-                    <div class="form-group" id="edit_ledger_cheque_group" style="display:none;">
-                        <label for="edit_ledger_cheque_number">Cheque number (optional)</label>
-                        <input type="text" class="form-control" name="cheque_number" id="edit_ledger_cheque_number">
-                    </div>
-                    <div id="edit_ledger_eft_group" style="display:none;">
-                        <div class="form-group">
-                            <label for="edit_ledger_eft_account_name">EFT account name</label>
-                            <input type="text" class="form-control" name="eft_account_name" id="edit_ledger_eft_account_name">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_ledger_eft_bsb">EFT BSB</label>
-                            <input type="text" class="form-control" name="eft_bsb" id="edit_ledger_eft_bsb" maxlength="16">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_ledger_eft_account_number">EFT account number</label>
-                            <input type="text" class="form-control" name="eft_account_number" id="edit_ledger_eft_account_number">
-                        </div>
                     </div>
                     <div class="form-group">
                         <label for="deposit_amount">Funds In (+) <span class="text-muted" style="font-weight:normal;font-size:12px;">(locked)</span></label>

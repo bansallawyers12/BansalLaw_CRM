@@ -62,7 +62,7 @@ class ClientMergeTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $receiptId = DB::table('account_client_receipts')->insertGetId([
+        DB::table('account_client_receipts')->insert([
             'client_id' => $fromId,
             'created_at' => now(),
             'updated_at' => now(),
@@ -70,22 +70,6 @@ class ClientMergeTest extends TestCase
 
         DB::table('account_all_invoice_receipts')->insert([
             'client_id' => $fromId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $authTypeId = DB::table('trust_withdrawal_authority_types')->insertGetId([
-            'label' => 'Payment of Fee',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('trust_withdrawal_authorities')->insert([
-            'account_client_receipt_id' => $receiptId,
-            'client_id' => $fromId,
-            'authority_type_id' => $authTypeId,
-            'authorised_by_staff_id' => $staff->id,
-            'withdrawal_amount' => 100,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -141,9 +125,6 @@ class ClientMergeTest extends TestCase
 
         $this->assertEquals(0, DB::table('account_all_invoice_receipts')->where('client_id', $fromId)->count());
         $this->assertEquals(1, DB::table('account_all_invoice_receipts')->where('client_id', $toId)->count());
-
-        $this->assertEquals(0, DB::table('trust_withdrawal_authorities')->where('client_id', $fromId)->count());
-        $this->assertEquals(1, DB::table('trust_withdrawal_authorities')->where('client_id', $toId)->count());
 
         $this->assertEquals(0, DB::table('notes')->where('client_id', $fromId)->count());
         $this->assertEquals(1, DB::table('notes')->where('client_id', $toId)->count());

@@ -242,15 +242,7 @@
                                             data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-payment-method="<?php echo htmlspecialchars($rec_val->payment_method ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-payer-name="<?php echo htmlspecialchars($rec_val->payer_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-bank-deposit-reference="<?php echo htmlspecialchars($rec_val->bank_deposit_reference ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-banking-date="<?php echo htmlspecialchars($rec_val->banking_date ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-payee-name="<?php echo htmlspecialchars($rec_val->payee_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-cheque-number="<?php echo htmlspecialchars($rec_val->cheque_number ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-account-name="<?php echo htmlspecialchars($rec_val->eft_account_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-bsb="<?php echo htmlspecialchars($rec_val->eft_bsb ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-account-number="<?php echo htmlspecialchars($rec_val->eft_account_number ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <i class="fa-solid fa-pen-to-square"></i> Edit Entry
                                         </a>
                                         <?php } ?>

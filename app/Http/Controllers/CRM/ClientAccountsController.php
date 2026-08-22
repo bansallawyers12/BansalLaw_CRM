@@ -595,7 +595,7 @@ class ClientAccountsController extends Controller
                 return round(max(0, floatval($requestData['eftpos_surcharge_amount'][$index] ?? 0)), 2);
             };
 
-            // Wrap financial trust posts in DB::transaction with pessimistic lock
+            // Wrap client-funds posts in a transaction with a pessimistic lock
             return DB::transaction(function () use (
                 $requestData,
                 $ledgerPaymentMethodAt,
@@ -606,6 +606,18 @@ class ClientAccountsController extends Controller
                 $client_unique_id,
                 $doctype
             ) {
+                $abortLedgerSave = function (string $message, int $status = 422): never {
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
+                        'status' => false,
+                        'message' => $message,
+                        'requestData' => [],
+                        'awsUrl' => '',
+                        'invoices' => [],
+                    ], $status));
+                };
+
+                $response = ['invoices' => []];
+
                 // Acquire pessimistic lock on client row to prevent concurrent overdraws (TOCTOU)
                 DB::table('admins')->where('id', $requestData['client_id'])->lockForUpdate()->first();
 
@@ -660,23 +672,13 @@ class ClientAccountsController extends Controller
                     }
        
                     if (!$invoice) {
-                        $response['status'] = false;
-                        $response['message'] = 'Invoice ' . $invoiceNo . ' not found for this client.';
-                        $response['requestData'] = [];
-                        $response['awsUrl'] = "";
-                        $response['invoices'] = [];
-                        return response()->json($response, 400);
+                        $abortLedgerSave('Invoice ' . $invoiceNo . ' not found for this client.', 400);
                     }
 
                     $targetMatterId = !empty($invoice->client_matter_id) ? $invoice->client_matter_id : ($requestData['client_matter_id'] ?? null);
 
                     if (!empty($requestData['client_matter_id']) && !empty($invoice->client_matter_id) && (string)$requestData['client_matter_id'] !== (string)$invoice->client_matter_id) {
-                        $response['status'] = false;
-                        $response['message'] = 'Cross-matter fee transfer blocked: Invoice ' . $invoiceNo . ' belongs to a different matter than selected.';
-                        $response['requestData'] = [];
-                        $response['awsUrl'] = "";
-                        $response['invoices'] = [];
-                        return response()->json($response, 422);
+                        $abortLedgerSave('Cross-matter fee transfer blocked: Invoice ' . $invoiceNo . ' belongs to a different matter than selected.');
                     }
        
                     // Validate Fee Transfer amount against Current Funds Held for target matter
@@ -687,12 +689,7 @@ class ClientAccountsController extends Controller
                     $totalWithdrawAmount = round($totalWithdrawAmount, 2);
                     
                     if ($totalWithdrawAmount > $currentFundsHeld) {
-                        $response['status'] = false;
-                        $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
-                        $response['requestData'] = [];
-                        $response['awsUrl'] = "";
-                        $response['invoices'] = [];
-                        return response()->json($response, 422);
+                        $abortLedgerSave('You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')');
                     }
 
                     $canonicalInvoiceNo = $invoice->invoice_no;
@@ -844,12 +841,7 @@ class ClientAccountsController extends Controller
                         $withdraw = round($withdraw, 2);
 
                         if ($withdraw > $currentFundsHeld) {
-                            $response['status'] = false;
-                            $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
-                            $response['requestData'] = [];
-                            $response['awsUrl'] = "";
-                            $response['invoices'] = [];
-                            return response()->json($response, 422);
+                            $abortLedgerSave('You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')');
                         }
                     }
 
@@ -861,12 +853,7 @@ class ClientAccountsController extends Controller
                     // Block overdrawn Disbursement or Refund (Item 6.11)
                     if ($withdraw > 0 && in_array($clientFundLedgerType, ['Disbursement', 'Refund'], true)) {
                         if (round($withdraw, 2) > $priorBalance) {
-                            $response['status'] = false;
-                            $response['message'] = 'Insufficient funds held to process ' . $clientFundLedgerType . ' (Available: $' . number_format($priorBalance, 2) . ')';
-                            $response['requestData'] = [];
-                            $response['awsUrl'] = "";
-                            $response['invoices'] = [];
-                            return response()->json($response, 422);
+                            $abortLedgerSave('Insufficient funds held to process ' . $clientFundLedgerType . ' (Available: $' . number_format($priorBalance, 2) . ')');
                         }
                     }
 
@@ -914,6 +901,14 @@ class ClientAccountsController extends Controller
                         'payment_method' => $ledgerPaymentMethodAt($i),
                         'eftpos_surcharge_amount' => ($eftposSurcharge > 0 ? $eftposSurcharge : null),
                     ];
+                }
+
+                if ($saved) {
+                    $recalc = $this->recalculateClientFundBalances(
+                        (int) $requestData['client_id'],
+                        $requestData['client_matter_id'] ?? null
+                    );
+                    $running_balance = $recalc['final_balance'];
                 }
 
                 // Log activity
@@ -2659,10 +2654,10 @@ class ClientAccountsController extends Controller
                   ->first();
           
           if (!$depositEntry) {
-              return response()->json([
+              throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                   'status' => false,
                   'message' => 'Deposit entry not found',
-              ], 404);
+              ], 404));
           }
           
           // Check if this is a re-allocation (deposit already has an invoice_no)
@@ -2786,10 +2781,10 @@ class ClientAccountsController extends Controller
                   ->first();
               
               if (!$invoice) {
-                  return response()->json([
+                  throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                       'status' => false,
                       'message' => 'Invoice ' . $invoiceNo . ' not found for this client.',
-                  ], 404);
+                  ], 404));
               }
 
               $canonicalInvoiceNo = $invoice->invoice_no ?? $invoiceNo;
@@ -2817,10 +2812,10 @@ class ClientAccountsController extends Controller
               $outstandingInvoiceBalance = max(0.0, round($invoiceAmount - ($totalPaidOffice + $totalPaidFeeTransfer), 2));
 
               if ($outstandingInvoiceBalance <= 0) {
-                  return response()->json([
+                  throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                       'status' => false,
                       'message' => 'Invoice ' . $canonicalInvoiceNo . ' is already fully paid.',
-                  ], 400);
+                  ], 400));
               }
 
               // 3. Calculate current balance for this client/matter
@@ -2840,10 +2835,10 @@ class ClientAccountsController extends Controller
               }
               
               if ($running_balance <= 0) {
-                  return response()->json([
+                  throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                       'status' => false,
                       'message' => 'Insufficient funds in client account. Available: $' . number_format($running_balance, 2),
-                  ], 400);
+                  ], 400));
               }
 
               // 4. Cap transfer amount at deposit amount, invoice outstanding balance, and available trust balance
@@ -2851,17 +2846,17 @@ class ClientAccountsController extends Controller
               $transferAmount = round(min($depositAmount, $outstandingInvoiceBalance), 2);
 
               if ($transferAmount > $running_balance) {
-                  return response()->json([
+                  throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                       'status' => false,
                       'message' => 'Insufficient funds in client account for transfer. Required: $' . number_format($transferAmount, 2) . ', Available: $' . number_format($running_balance, 2),
-                  ], 400);
+                  ], 400));
               }
 
               if ($transferAmount <= 0) {
-                  return response()->json([
+                  throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
                       'status' => false,
                       'message' => 'Transfer amount calculated is zero.',
-                  ], 400);
+                  ], 400));
               }
 
               // Generate transaction number for Fee Transfer
@@ -3000,6 +2995,8 @@ class ClientAccountsController extends Controller
           ], 200);
           });
 
+      } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+          throw $e;
       } catch (\RuntimeException $e) {
           return response()->json([
               'status' => false,
@@ -4347,7 +4344,7 @@ class ClientAccountsController extends Controller
       if (! $receiptOk || (config('app.require_super_admin_email') && ($receiptActor ? $receiptActor->email : '') != $authorizedEmail)) {
           return response()->json([
               'status' => false,
-              'message' => 'Unauthorized access. Voiding trust-affecting invoices requires super admin financial privileges.',
+              'message' => 'Unauthorized access. Voiding invoices requires super admin financial privileges.',
           ], 403);
       }
       
@@ -4540,7 +4537,6 @@ class ClientAccountsController extends Controller
                        
                        $totalReversalsCreated++;
 
-                       // Log the reversal activity
                        $reversal_subject = 'Voided Fee Transfer ' . $feeTransfer->trans_no . ' for voided invoice ' . $invoice_info->trans_no . ' - Returned $' . number_format($withdrawAmount, 2) . ' to client funds';
                        $reversal_activity = new ActivitiesLog;
                        $reversal_activity->client_id = $invoice_info->client_id;
@@ -4558,39 +4554,11 @@ class ClientAccountsController extends Controller
                        ]);
                    }
                }
-               
-               // **RECALCULATE ALL BALANCES FOR THIS CLIENT'S LEDGER**
-               // Get all non-voided entries ordered by ID
-               $allEntriesQuery = DB::table('account_client_receipts')
-                   ->where('client_id', $invoice_info->client_id)
-                   ->where('receipt_type', 1)
-                   ->where(function($query) {
-                       $query->whereNull('void_fee_transfer')
-                             ->orWhere('void_fee_transfer', 0);
-                   })
-                   ->orderBy('id', 'asc');
-               
-               if(!empty($invoice_info->client_matter_id)){
-                   $allEntriesQuery->where('client_matter_id', $invoice_info->client_matter_id);
-               }
-               
-               $allEntries = $allEntriesQuery->get();
-               
-               // Recalculate running balance
-               $runningBalance = 0;
-               foreach($allEntries as $entry){
-                   $runningBalance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-                   
-                   DB::table('account_client_receipts')
-                       ->where('id', $entry->id)
-                       ->update(['balance_amount' => $runningBalance]);
-               }
-               
-               Log::info('Client Funds Ledger balances recalculated', [
-                   'client_id' => $invoice_info->client_id,
-                   'final_balance' => $runningBalance,
-                   'entries_processed' => count($allEntries)
-               ]);
+
+               $this->recalculateClientFundBalances(
+                   (int) $invoice_info->client_id,
+                   $invoice_info->client_matter_id
+               );
            }
        }
 

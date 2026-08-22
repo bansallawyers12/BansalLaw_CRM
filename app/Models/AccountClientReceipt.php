@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\SortableTrait;
 
 /**
- * Trust / client accounting row in account_client_receipts.
- * Financial columns must only be changed through ClientAccountsController trust workflows (void + reversal).
+ * Client accounting row in account_client_receipts (internal client funds ledger, office, invoice, journal).
  */
 class AccountClientReceipt extends Model
 {
