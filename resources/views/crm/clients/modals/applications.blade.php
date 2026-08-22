@@ -282,7 +282,5 @@
 </div>
 
 {{-- 4. Add Interested Service Modal - REMOVED --}}
-{{-- Feature deprecated - no UI triggers exist --}}
-{{-- Backend routes still exist (/interested-service, /get-services) but modal never opens --}}
-{{-- Partner/Product/Branch dropdown population routes (getProduct, getBranch) were never implemented --}}
+{{-- Feature deprecated: no UI triggers, routes, or controllers remain. --}}
 

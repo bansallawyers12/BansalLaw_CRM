@@ -254,7 +254,7 @@ Versions below match the current `composer.lock` / `package.json` (Jul 2026). Re
 
 ## Routes
 
-The application defines **649 routes** across 12 route files (verified via `php artisan route:list`).
+The application defines **629 routes** across 12 route files (verified via `php artisan route:list`).
 
 > **Important:** Not every route file inherits `auth:admin` from `web.php`. Middleware depends on how each file is registered — see [Route registration](#route-registration) below.
 
@@ -323,7 +323,6 @@ Within `routes/web.php`:
 | POST | `/logout` | `crm.logout` | End session |
 | GET | `/logout` | `crm.logout.get` | Redirect to login |
 | GET | `/up` | `health.up` | Health check (plain `OK` response) |
-| GET/POST | `/exception` | `exception.index`, `exception.store` | Exception reporting form |
 
 #### Email verification
 
@@ -364,19 +363,26 @@ All routes below require a valid staff session unless noted.
 | Method | URI | Name |
 |--------|-----|------|
 | GET | `/dashboard` | `dashboard` |
-| POST | `/dashboard/column-preferences` | `dashboard.column-preferences` |
-| POST | `/dashboard/update-stage` | `dashboard.update-stage` |
+| GET | `/dashboard/calendar-events` | `dashboard.calendar-events` |
 | POST | `/dashboard/extend-deadline` | `dashboard.extend-deadline` |
+| POST | `/dashboard/update-action-completed` | `dashboard.update-action-completed` |
 | GET | `/dashboard/active-staff` | `dashboard.active-staff` |
+| GET | `/dashboard/fetch-notifications` | `dashboard.fetch-notifications` |
+| GET | `/dashboard/fetch-office-visit-notifications` | `dashboard.fetch-office-visit-notifications` |
+| GET | `/dashboard/fetch-in-person-waiting-count` | `dashboard.fetch-in-person-waiting-count` |
+| GET | `/dashboard/fetch-total-activity-count` | `dashboard.fetch-total-activity-count` |
+| POST | `/dashboard/mark-notification-seen` | `dashboard.mark-notification-seen` |
+| POST | `/dashboard/check-checkin-status` | `dashboard.check-checkin-status` |
+| POST | `/dashboard/update-checkin-status` | `dashboard.update-checkin-status` |
 | GET | `/my_profile` | `my_profile` |
 | POST | `/my_profile` | `my_profile.update` |
 | GET | `/change_password` | `change_password` |
 | POST | `/change_password` | `change_password.update` |
 | POST | `/session/super-admin-mode` | `crm.session.super-admin-mode` |
 | GET | `/audit-logs` | `auditlogs.index` |
-| GET | `/api-key` | `api` |
-| POST | `/api-key` | `api.update` |
 | GET | `/staff-login-analytics` | `staff-login-analytics.index` |
+
+> Matter stage updates use `/clients/matter/update-next-stage` and related matter workflow routes (not dashboard POST endpoints).
 
 #### Leads (`/leads`)
 
@@ -945,7 +951,8 @@ Full behaviour documented in `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
 | [docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md](docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md) | Allocated-only visibility, quick/supervisor access grants |
 | [docs/CLIENT_INTAKE_FORM_INSTRUCTIONS.md](docs/CLIENT_INTAKE_FORM_INSTRUCTIONS.md) | Website lead form JSON → CRM import |
 | [docs/theme.md](docs/theme.md) | UI colour tokens (Powder Blue & Soft Gold) |
-| [docs/FONT_AWESOME_MIGRATION.md](docs/FONT_AWESOME_MIGRATION.md) | Font Awesome local FA7 + class migration (complete) |
+
+Icons use local Font Awesome 7 (`@include('components.font-awesome')`, `public/css/fontawesome.min.css`). After bumping `@fortawesome/fontawesome-free` in `package.json`, run `npm run copy:fontawesome`.
 
 #### Database column guides
 
