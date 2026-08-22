@@ -69,43 +69,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * Save column preferences
-     */
-    public function saveColumnPreferences(Request $request)
-    {
-        $this->dashboardService->saveColumnPreferences($request);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Column preferences saved successfully'
-        ]);
-    }
-
-    /**
-     * Update client matter stage
-     */
-    public function updateStage(Request $request)
-    {
-        $this->validate($request, [
-            'item_id' => 'required|integer',
-            'stage_id' => 'required|integer',
-        ]);
-
-        $user = Auth::guard('admin')->user() ?: Auth::user();
-        $result = $this->dashboardService->updateClientMatterStage(
-            $request->item_id, 
-            $request->stage_id,
-            $user
-        );
-
-        if (isset($result['success']) && $result['success'] === false && str_contains(strtolower($result['message'] ?? ''), 'unauthorized')) {
-            return response()->json($result, 403);
-        }
-
-        return response()->json($result);
-    }
-
-    /**
      * Get dashboard notifications
      */
     public function fetchNotifications(Request $request)

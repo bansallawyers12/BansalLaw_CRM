@@ -98,8 +98,6 @@ Route::middleware(['auth:admin'])->group(function () {
     /*---------- Dashboard Routes ----------*/
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/calendar-events', [DashboardController::class, 'calendarEvents'])->name('dashboard.calendar-events');
-    Route::post('/dashboard/column-preferences', [DashboardController::class, 'saveColumnPreferences'])->name('dashboard.column-preferences');
-    Route::post('/dashboard/update-stage', [DashboardController::class, 'updateStage'])->name('dashboard.update-stage');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
     Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed');
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
@@ -347,7 +345,6 @@ Route::middleware(['auth:admin'])->group(function () {
 
     // Activity management
     Route::post('/extenddeadlinedate', [CRMUtilityController::class, 'extenddeadlinedate']);
-    Route::post('/update-stage', [CRMUtilityController::class, 'updateStage']);
 
     // Get assigne list
     Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);

@@ -7,7 +7,6 @@ use App\Models\Staff;
 use App\Models\Notification;
 use App\Models\CheckinLog;
 use App\Models\ActivitiesLog;
-use App\Models\WorkflowStage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -40,50 +39,6 @@ class DashboardService
             'count_note_deadline' => $this->getNoteDeadlineCount($user),
             'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
         ];
-    }
-
-    /**
-     * Get client matters with proper relationships
-     */
-    private function getClientMatters($request, $user)
-    {
-        // Load all relationships without column restrictions
-        // Column restrictions can prevent relationships from loading if data doesn't match exactly
-        $query = ClientMatter::with([
-            'client',           // Load full client record
-            'legalPractitioner',  // Load full Legal Practitioner (matter assignee) record
-            'personResponsible', // Load full person responsible record
-            'personAssisting',  // Load full person assisting record
-            'workflowStage',    // Load workflow stage
-            'matter'            // Load matter type
-        ]);
-
-        // Apply role-based filtering
-        $this->applyRoleBasedFiltering($query, $user);
-
-        // Exclude discontinued matters (matter_status = 0)
-        $query->where('matter_status', 1);
-
-        // Apply client name filter
-        if ($request->has('client_name') && !empty($request->client_name)) {
-            $clientName = trim($request->client_name);
-            $clientNameLower = strtolower($clientName);
-            $query->whereHas('client', function ($q) use ($clientName, $clientNameLower) {
-                $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $clientNameLower . '%'])
-                  ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $clientNameLower . '%'])
-                  ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%' . $clientNameLower . '%'])
-                  ->orWhereRaw('LOWER(client_id) LIKE ?', ['%' . $clientNameLower . '%']);
-            });
-        }
-
-        // Apply stage filter
-        if ($request->has('client_stage') && !empty($request->client_stage)) {
-            $query->where('workflow_stage_id', $request->client_stage);
-        } else {
-            $query->where('workflow_stage_id', '!=', 14);
-        }
-
-        return $query->orderBy('updated_at', 'DESC')->paginate(10);
     }
 
     /**
@@ -352,149 +307,6 @@ class DashboardService
         $this->applyRoleBasedFiltering($query, $user);
 
         return $query->count();
-    }
-
-    /**
-     * Get visible columns from session
-     */
-    private function getVisibleColumns(): array
-    {
-        $defaultColumns = [
-            'matter', 'client_id', 'client_name',
-            'legal_practitioner', 'person_responsible',
-            'person_assisting', 'stage',
-        ];
-
-        return session('dashboard_column_preferences', $defaultColumns);
-    }
-
-    /**
-     * Workflow stage dropdown options for the dashboard.
-     *
-     * Cached as arrays of scalars only (not objects). PHP unserialize of serialized
-     * objects can yield __PHP_Incomplete_Class rows after deploys or driver changes;
-     * plain arrays avoid that and are validated on read.
-     */
-    private function getWorkflowStages(): array
-    {
-        $cacheKey = 'dashboard_workflow_stage_options_v2';
-        $raw = Cache::get($cacheKey);
-
-        if ($raw !== null) {
-            $normalized = $this->normalizeCachedWorkflowStageRows($raw);
-            if ($normalized !== null) {
-                return $normalized;
-            }
-            Cache::forget($cacheKey);
-        }
-
-        $built = $this->buildWorkflowStageOptionRows();
-        Cache::put($cacheKey, $built, 3600);
-        Cache::forget('dashboard_workflow_stage_options_v1');
-
-        return $built;
-    }
-
-    /**
-     * @return array<int, array{id: int, name: string}>|null null = corrupt cache, should be rebuilt
-     */
-    private function normalizeCachedWorkflowStageRows(mixed $stages): ?array
-    {
-        if (! is_array($stages)) {
-            return null;
-        }
-        if ($stages === []) {
-            return [];
-        }
-
-        $out = [];
-        foreach ($stages as $stage) {
-            if (! is_array($stage) || ! array_key_exists('id', $stage) || ! array_key_exists('name', $stage)) {
-                return null;
-            }
-            $out[] = [
-                'id' => (int) $stage['id'],
-                'name' => (string) $stage['name'],
-            ];
-        }
-
-        return $out;
-    }
-
-    /**
-     * @return array<int, array{id: int, name: string}>
-     */
-    private function buildWorkflowStageOptionRows(): array
-    {
-        return WorkflowStage::query()
-            ->orderByRaw('COALESCE(sort_order, id) ASC')
-            ->get(['id', 'name'])
-            ->map(static fn (WorkflowStage $stage) => [
-                'id' => (int) $stage->id,
-                'name' => (string) $stage->name,
-            ])
-            ->all();
-    }
-
-    /**
-     * Get assignees for action creation
-     */
-    private function getAssignees()
-    {
-        return \App\Models\Staff::select('id', 'first_name', 'email')
-            ->where('role', '!=', 1)
-            ->get();
-    }
-
-    /**
-     * Save column preferences
-     */
-    public function saveColumnPreferences($request): void
-    {
-        $visibleColumns = $request->input('visible_columns', []);
-        
-        $validColumns = [
-            'matter', 'client_id', 'client_name', 'dob', 
-            'legal_practitioner', 'person_responsible', 
-            'person_assisting', 'stage'
-        ];
-        
-        $filteredColumns = array_intersect($visibleColumns, $validColumns);
-        
-        session(['dashboard_column_preferences' => $filteredColumns]);
-    }
-
-    /**
-     * Update client matter stage
-     */
-    public function updateClientMatterStage($itemId, $stageId, $user = null): array
-    {
-        $item = ClientMatter::find($itemId);
-        
-        if (!$item) {
-            return ['success' => false, 'message' => 'Matter not found!'];
-        }
-
-        if (!WorkflowStage::where('id', $stageId)->exists()) {
-            return ['success' => false, 'message' => 'Invalid workflow stage!'];
-        }
-
-        $user = $user ?? Auth::user();
-        if ($user && !$this->viewerSeesAllMattersAndActions($user)) {
-            $uid = (int) $user->id;
-            $isAssigned = ((int)$item->sel_legal_practitioner === $uid
-                || (int)$item->sel_person_responsible === $uid
-                || (int)$item->sel_person_assisting === $uid);
-
-            if (!$isAssigned && !StaffClientVisibility::canAccessClientOrLead($item->client_id, $user)) {
-                return ['success' => false, 'message' => 'Unauthorized matter stage update.'];
-            }
-        }
-
-        $item->workflow_stage_id = $stageId;
-        $item->save();
-
-        return ['success' => true, 'message' => 'Matter stage updated successfully!'];
     }
 
     /**
