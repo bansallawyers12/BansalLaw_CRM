@@ -673,13 +673,13 @@ class Area8SecurityTest extends TestCase
 
         $this->actingAs($unassignedStaff, 'admin');
 
-        // Unassigned staff attempts IDOR stage update on client matter 950
+        // Legacy dashboard stage endpoint removed; ensure IDOR surface is gone.
         $response = $this->postJson('/dashboard/update-stage', [
             'item_id' => 950,
             'stage_id' => 951,
         ]);
 
-        $response->assertStatus(403);
+        $response->assertNotFound();
         $this->assertEquals(950, $matter->fresh()->workflow_stage_id);
     }
 
