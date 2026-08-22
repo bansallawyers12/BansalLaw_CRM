@@ -199,16 +199,6 @@
                         <span>Grant Super Admin access level</span>
                     </label>
                 </div>
-                @if($isSuperAdminActor && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'trust_rule42_supervisor'))
-                <div class="form-group">
-                    <input type="hidden" name="trust_rule42_supervisor" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="trust_rule42_supervisor" value="1"
-                            @checked(old('trust_rule42_supervisor', $fetchedData->trust_rule42_supervisor ?? false))>
-                        <span>Rule 42 trust supervisor</span>
-                    </label>
-                </div>
-                @endif
                 @endif
 
                 @if($canGrantEmailDelete && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_delete_email_with_attachments'))

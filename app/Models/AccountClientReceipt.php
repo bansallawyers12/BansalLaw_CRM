@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\SortableTrait;
 
 /**
- * Trust / client accounting row in account_client_receipts.
- * Financial columns must only be changed through ClientAccountsController trust workflows (void + reversal).
+ * Client accounting row in account_client_receipts (internal client funds ledger, office, invoice, journal).
  */
 class AccountClientReceipt extends Model
 {
@@ -23,7 +22,6 @@ class AccountClientReceipt extends Model
 
     protected $casts = [
         'hubdoc_sent' => 'boolean',
-        'trust_voided_at' => 'datetime',
     ];
 
     /** Trust ledger receipt_type */
@@ -31,13 +29,6 @@ class AccountClientReceipt extends Model
 
     public function isExcludedFromTrustBalance(): bool
     {
-        if ($this->trust_voided_at !== null) {
-            return true;
-        }
-        if ((int) ($this->void_fee_transfer ?? 0) === 1) {
-            return true;
-        }
-
-        return false;
+        return (int) ($this->void_fee_transfer ?? 0) === 1;
     }
 }

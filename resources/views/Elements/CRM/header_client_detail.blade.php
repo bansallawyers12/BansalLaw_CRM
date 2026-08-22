@@ -1,7 +1,6 @@
 @php
     $_staffTop = Auth::user();
     $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff && $_staffTop->canAccessAdminConsole();
-    $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
     $_inboxSyncMasterOn = \App\Services\EmailSync\InboxSyncMasterControl::isEnabled();
     $_canSyncInboxNav = $_inboxSyncMasterOn && $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
     $_canViewSyncedInboxNav = $_inboxSyncMasterOn && $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
@@ -87,12 +86,6 @@
                     <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Invoice Lists</a>
                     <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fa-solid fa-building me-2"></i> Office Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fa-solid fa-book me-2"></i> Journal Receipts</a>
-                    @if($_trustSuperAdmin)
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fa-solid fa-lock me-2"></i> Trust period locks</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fa-solid fa-file-export me-2"></i> Trust reports (exam pack)</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fa-solid fa-clipboard-list me-2"></i> Trust audit log</a>
-                    @endif
                     <div class="dropdown-divider"></div>
                 </div>
             </div>

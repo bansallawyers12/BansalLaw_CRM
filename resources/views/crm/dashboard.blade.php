@@ -83,13 +83,13 @@
 
         {{-- Priority Focus Section --}}
         <section class="priority-focus">
-            {{-- My Actions (Microsoft To Do Style) --}}
+            {{-- My Tasks (Microsoft To Do Style) --}}
             <div class="focus-container todo-container">
                 <div class="todo-header">
                     <div class="todo-header-left">
                         <h3>
                             <i class="fa-solid fa-list-check dashboard-theme-icon-primary"></i> 
-                            My Actions
+                            My Tasks
                         </h3>
                         <span class="todo-count-badge">{{ count($notesData) }}</span>
                     </div>
@@ -158,7 +158,7 @@
                 
                 <div class="todo-task-list-container">
                     @if(count($notesData) > 0)
-                        <div class="todo-filter-tabs" role="toolbar" aria-label="Filter my actions">
+                        <div class="todo-filter-tabs" role="toolbar" aria-label="Filter my tasks">
                             <button type="button" class="todo-filter-tab is-active" data-todo-filter="all">All</button>
                             <button type="button" class="todo-filter-tab" data-todo-filter="overdue">Overdue</button>
                             <button type="button" class="todo-filter-tab" data-todo-filter="today">Due today</button>
@@ -182,10 +182,10 @@
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
                             <h4>All caught up!</h4>
-                            <p>You have no actions at the moment.</p>
+                            <p>You have no tasks at the moment.</p>
                             <button class="todo-empty-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
                                 <i class="fa-solid fa-plus"></i>
-                                Add an action
+                                Add a task
                             </button>
                         </div>
                     @endif

@@ -2812,7 +2812,6 @@ class ClientsController extends Controller
                     'client_matters' => ['client_id'],
                     'account_client_receipts' => ['client_id'],
                     'account_all_invoice_receipts' => ['client_id'],
-                    'trust_withdrawal_authorities' => ['client_id'],
                     'client_emails' => ['client_id', 'admin_id'],
                     'client_contacts' => ['client_id', 'admin_id'],
                     'client_addresses' => ['client_id', 'admin_id'],

@@ -13,11 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Helpers\SortableHelper;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
-use App\Models\Admin;
-use App\Models\ClientMatter;
-use App\Observers\TrustClientFieldObserver;
-use App\Observers\TrustMatterFieldObserver;
-
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -27,8 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Admin::observe(TrustClientFieldObserver::class);
-        ClientMatter::observe(TrustMatterFieldObserver::class);
         // Keep /up available during "php artisan down" so load balancer (ALB/ELB) health checks pass during CodeDeploy.
         PreventRequestsDuringMaintenance::except(['up']);
 

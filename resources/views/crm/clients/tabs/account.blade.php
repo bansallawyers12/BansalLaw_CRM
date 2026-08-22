@@ -25,15 +25,10 @@
         <a class="btn account-action-btn account-action-btn--invoice createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
             <i class="fa-solid fa-file-invoice-dollar"></i> Invoice
         </a>
-        @if(!empty($__account_matter_id))
-        <a class="btn account-action-btn account-action-btn--statement" href="{{ url('/clients/genTrustStatement') }}?client_id={{ $fetchedData->id }}&matter_id={{ $__account_matter_id }}" target="_blank" title="Rule 52 trust account statement for this matter">
-            <i class="fa-solid fa-file-lines"></i> Trust Statement
-        </a>
-        @endif
     </div>
 
     <div class="account-layout">
-        <!-- Trust Account Ledger Section (LSBC Uniform Law Compliant) -->
+        <!-- Trust Account Ledger Section -->
         <section class="account-section client-account">
             <div class="account-section-header">
                 <h2><i class="fa-solid fa-building-columns account-section-icon account-section-icon--trust"></i> Trust Account Ledger</h2>
@@ -63,7 +58,7 @@
                         // Calculate balance from scratch by summing deposits and withdrawals
                         // Exclude voided fee transfers
                         $ledger_entries = DB::table('account_client_receipts')
-                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer', 'trust_voided_at')
+                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
                             ->where('client_id', $fetchedData->id)
                             ->where(function($query) use ($client_selected_matter_id) {
                                 if ($client_selected_matter_id !== null) {
@@ -80,9 +75,6 @@
                             if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
                                 continue;
                             }
-                            if (!empty($entry->trust_voided_at)) {
-                                continue;
-                            }
                             $calculated_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
                         }
                         ?>
@@ -92,24 +84,17 @@
                 </div>
             </div>
             <div class="transaction-table-wrapper">
-                @php
-                    $__ledgerRule42Col = \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authorities')
-                        && \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types');
-                @endphp
-                <table class="transaction-table" id="client-ledger-table" data-rule42-column="{{ $__ledgerRule42Col ? '1' : '0' }}">
+                <table class="transaction-table" id="client-ledger-table">
                     <thead>
                         <tr>
-                            <th style="text-align: left;" title="Date of trust transaction">Trans. Date</th>
-                            <th style="text-align: left;" title="Type of trust transaction (LSBC Uniform Rules r.47)">Transaction Type</th>
-                            <th style="text-align: left;" title="Payment method">Method</th>
-                            <th style="text-align: left;" title="Particulars of transaction">Particulars / Description</th>
-                            <th style="text-align: center;" title="Trust receipt or payment number">Receipt No.</th>
-                            <th style="text-align: right;" title="Trust money received into account">Trust Receipts (+)</th>
-                            <th style="text-align: right;" title="Trust money paid out of account">Trust Payments (−)</th>
-                            @if($__ledgerRule42Col)
-                            <th style="text-align: left; max-width: 140px;" title="Uniform Law Rule 42 withdrawal authority captured for this transfer (if applicable)">Rule 42</th>
-                            @endif
-                            <th style="text-align: right; background: #e8f5e9;" title="Running balance of trust funds held for this client">Balance</th>
+                            <th style="text-align: left;">Trans. Date</th>
+                            <th style="text-align: left;">Transaction Type</th>
+                            <th style="text-align: left;">Method</th>
+                            <th style="text-align: left;">Particulars / Description</th>
+                            <th style="text-align: center;">Receipt No.</th>
+                            <th style="text-align: right;">Trust Receipts (+)</th>
+                            <th style="text-align: right;">Trust Payments (−)</th>
+                            <th style="text-align: right; background: #e8f5e9;">Balance</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList">
@@ -126,29 +111,7 @@
                             ->where('receipt_type',1)
                             ->orderBy('id', 'asc')
                             ->get();
-                        $__rule42ByLedgerRowId = [];
-                        if ($__ledgerRule42Col && $receipts_lists->isNotEmpty()) {
-                            $__ftLedgerIds = $receipts_lists->filter(function ($r) {
-                                return ($r->client_fund_ledger_type ?? '') === 'Fee Transfer';
-                            })->pluck('id')->unique()->values()->all();
-                            if ($__ftLedgerIds !== []) {
-                                $__rule42Rows = DB::table('trust_withdrawal_authorities as twa')
-                                    ->join('trust_withdrawal_authority_types as twat', 'twat.id', '=', 'twa.authority_type_id')
-                                    ->whereIn('twa.account_client_receipt_id', $__ftLedgerIds)
-                                    ->select([
-                                        'twa.account_client_receipt_id',
-                                        'twat.label',
-                                        'twa.notice_given_date',
-                                        'twa.supervisor_override',
-                                        'twa.authority_notes',
-                                    ])
-                                    ->get();
-                                foreach ($__rule42Rows as $__r42) {
-                                    $__rule42ByLedgerRowId[(int) $__r42->account_client_receipt_id] = $__r42;
-                                }
-                            }
-                        }
-                        // Running balance for LSBC trust ledger compliance
+                        // Running balance for client funds ledger
                         $trust_running_balance = 0;
                         if(!empty($receipts_lists) && count($receipts_lists)>0 )
                         {
@@ -157,10 +120,6 @@
                             // Add strikethrough class for voided fee transfers
                             $rowClass = '';
                             if(isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1){
-                                $rowClass = 'strike-through';
-                                $row_deposit = 0;
-                                $row_withdraw = 0;
-                            } elseif (!empty($rec_val->trust_voided_at)) {
                                 $rowClass = 'strike-through';
                                 $row_deposit = 0;
                                 $row_withdraw = 0;
@@ -242,9 +201,6 @@
                                 <div class="dropdown d-inline-block">
                                     <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                         <?php echo $rec_val->trans_no;?>
-                                        <?php if (!preg_match('/^(TR|TJ)-/', (string)$rec_val->trans_no)): ?>
-                                            <span class="badge bg-secondary ms-1" style="font-size:9px;vertical-align:middle;" title="Pre-migration reference number">legacy</span>
-                                        <?php endif; ?>
                                         <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
                                     <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
@@ -286,15 +242,7 @@
                                             data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-payment-method="<?php echo htmlspecialchars($rec_val->payment_method ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-payer-name="<?php echo htmlspecialchars($rec_val->payer_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-bank-deposit-reference="<?php echo htmlspecialchars($rec_val->bank_deposit_reference ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-banking-date="<?php echo htmlspecialchars($rec_val->banking_date ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-payee-name="<?php echo htmlspecialchars($rec_val->payee_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-cheque-number="<?php echo htmlspecialchars($rec_val->cheque_number ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-account-name="<?php echo htmlspecialchars($rec_val->eft_account_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-bsb="<?php echo htmlspecialchars($rec_val->eft_bsb ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eft-account-number="<?php echo htmlspecialchars($rec_val->eft_account_number ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <i class="fa-solid fa-pen-to-square"></i> Edit Entry
                                         </a>
                                         <?php } ?>
@@ -341,44 +289,12 @@
                             <td style="text-align: right; vertical-align: middle; color: #dc3545; font-weight: 500;">
                                 <?php echo !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : ''; ?>
                             </td>
-                            @if($__ledgerRule42Col)
-                            <td style="text-align: left; vertical-align: middle; font-size: 11px; max-width: 150px;">
-                                <?php
-                                $dbLedgerType = $rec_val->client_fund_ledger_type ?? '';
-                                if ($dbLedgerType === 'Fee Transfer') {
-                                    $__r42Row = $__rule42ByLedgerRowId[(int) $rec_val->id] ?? null;
-                                    if ($__r42Row) {
-                                        $__hint = (string) $__r42Row->label;
-                                        if (! empty($__r42Row->notice_given_date)) {
-                                            $__hint .= ' | Notice given: ' . $__r42Row->notice_given_date;
-                                        }
-                                        if (! empty($__r42Row->authority_notes)) {
-                                            $__hint .= ' | Notes: ' . $__r42Row->authority_notes;
-                                        }
-                                        $__ov = $__r42Row->supervisor_override ?? false;
-                                        if ($__ov === true || $__ov === 1 || $__ov === '1' || $__ov === 't' || $__ov === 'T') {
-                                            $__hint .= ' | Supervisor override recorded';
-                                        }
-                                        $__hintEsc = htmlspecialchars($__hint, ENT_QUOTES, 'UTF-8');
-                                        $__labelShort = htmlspecialchars(\Illuminate\Support\Str::limit((string) $__r42Row->label, 48), ENT_QUOTES, 'UTF-8');
-                                        echo '<span class="text-body" title="' . $__hintEsc . '">' . $__labelShort . '</span>';
-                                    } else {
-                                        echo '<span class="text-muted" title="No Rule 42 authority record for this row (e.g. legacy posting before authority capture).">—</span>';
-                                    }
-                                } else {
-                                    echo '<span class="text-muted">—</span>';
-                                }
-                                ?>
-                            </td>
-                            @endif
                             <td style="text-align: right; vertical-align: middle; font-weight: 600; background: #f0fff4; border-left: 2px solid #c3e6cb;">
                                 <?php
                                 $balance_color = $trust_running_balance >= 0 ? '#155724' : '#721c24';
                                 $balance_display = '$ ' . number_format(abs($trust_running_balance), 2);
                                 if ($trust_running_balance < 0) $balance_display = '−' . $balance_display;
                                 if (isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1) {
-                                    echo '<span style="color:#6c757d;font-style:italic;">voided</span>';
-                                } elseif (!empty($rec_val->trust_voided_at)) {
                                     echo '<span style="color:#6c757d;font-style:italic;">voided</span>';
                                 } else {
                                     echo '<span style="color:' . $balance_color . ';">' . $balance_display . '</span>';
@@ -811,22 +727,7 @@
 </div>
 
 <!-- Account Tab JavaScript -->
-@php
-    $__acctTabTrustAuthTypes = [];
-    if (\Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types')) {
-        $__acctTabTrustAuthTypes = \Illuminate\Support\Facades\DB::table('trust_withdrawal_authority_types')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get(['id', 'label'])
-            ->map(fn ($r) => ['id' => (int) $r->id, 'label' => (string) $r->label])
-            ->values()
-            ->all();
-    }
-@endphp
 <script>
-window.TRUST_WITHDRAWAL_AUTHORITY_TYPES = @json($__acctTabTrustAuthTypes);
-
     function resolveAccountMatterId() {
         if ($('.general_matter_checkbox_client_detail').is(':checked')) {
             var generalMatter = $('.general_matter_checkbox_client_detail').val();
@@ -1633,32 +1534,6 @@ document.addEventListener('DOMContentLoaded', function() {
         handleQuickAllocateLedgerClick(target);
     }, true);
 
-    function buildLedgerRule42FieldsHtml() {
-        var types = window.TRUST_WITHDRAWAL_AUTHORITY_TYPES || [];
-        if (!types.length) {
-            return '';
-        }
-        var opts = '<option value="">— Select authority —</option>';
-        types.forEach(function(t) {
-            opts += '<option value="' + t.id + '">' + String(t.label || '').replace(/</g, '') + '</option>';
-        });
-        return '<div class="card border-warning mb-3 mt-2">' +
-            '<div class="card-header py-2"><strong>Rule 42 — withdrawal authority</strong></div>' +
-            '<div class="card-body py-2">' +
-            '<div class="mb-2"><label class="small">Authority type *</label>' +
-            '<select id="ledger-allocate-authority-type" class="form-select form-select-sm">' + opts + '</select></div>' +
-            '<div class="mb-2"><label class="small">Date notice given</label>' +
-            '<input type="date" id="ledger-allocate-notice-date" class="form-control form-control-sm" /></div>' +
-            '<div class="mb-2"><label class="small">Notes</label>' +
-            '<input type="text" id="ledger-allocate-authority-notes" class="form-control form-control-sm" maxlength="5000" /></div>' +
-            '<div class="form-check mb-1">' +
-            '<input type="checkbox" class="form-check-input" id="ledger-allocate-override" value="1">' +
-            '<label class="form-check-label small" for="ledger-allocate-override">Supervisor override</label></div>' +
-            '<label class="small">Override reason</label>' +
-            '<textarea id="ledger-allocate-override-reason" class="form-control form-control-sm" rows="2"></textarea>' +
-            '</div></div>';
-    }
-    
     function showLedgerAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices) {
         let modalHtml = '<div class="modal fade" id="quickAllocateLedgerModal" tabindex="-1" role="dialog">' +
             '<div class="modal-dialog modal-lg" role="document">' +
@@ -1672,8 +1547,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="modal-body">' +
             '<div class="alert alert-info">' +
             '<i class="fa-solid fa-circle-info"></i> Deposit Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
-            '</div>' +
-            buildLedgerRule42FieldsHtml();
+            '</div>';
 
         if (exactMatch) {
             modalHtml += '<div class="alert alert-success" style="border-left: 4px solid #28a745;">' +
@@ -1792,12 +1666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 _token: '{{ csrf_token() }}',
                 id: receiptId,
                 client_id: '{{ $fetchedData->id }}',
-                invoice_no: invoiceNo,
-                trust_withdrawal_authority_type_id: $('#ledger-allocate-authority-type').val() || '',
-                trust_notice_given_date: $('#ledger-allocate-notice-date').val() || '',
-                trust_authority_notes: $('#ledger-allocate-authority-notes').val() || '',
-                trust_rule42_supervisor_override: $('#ledger-allocate-override').is(':checked') ? 1 : '',
-                trust_rule42_override_reason: $('#ledger-allocate-override-reason').val() || ''
+                invoice_no: invoiceNo
             },
             success: function(response) {
                 if (response.status) {

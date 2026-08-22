@@ -472,8 +472,8 @@
                             
                             @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
                                 <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
-                                    <i class="fa-solid fa-ban"></i>
-                                    Void trust receipt
+                                    <i class="fa-solid fa-trash"></i>
+                                    Delete receipt
                                 </button>
                             @endif
 
@@ -979,18 +979,13 @@ jQuery(document).ready(function($){
             alert('Please select only one receipt to delete.');
             return;
         }
-        var mergeStr = "Void this trust receipt? A reversing entry will be posted and the original line will be marked void (audit trail). Continue?";
+        var mergeStr = "Are you sure you want to delete this receipt?";
         if (confirm(mergeStr)) {
-            var voidReason = window.prompt('Void reason (required for auditors):', '');
-            if (!voidReason || !voidReason.trim()) {
-                alert('A void reason is required.');
-                return;
-            }
             $.ajax({
                 type: 'post',
                 url: "{{URL::to('/')}}/delete_receipt",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                data: { receiptId: clickedReceiptIds[0], receipt_type: 1, trust_void_reason: voidReason.trim() },
+                data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
                 dataType: 'json',
                 success: function(response) {
                     // Parse response if it's a string (fallback for older jQuery versions)

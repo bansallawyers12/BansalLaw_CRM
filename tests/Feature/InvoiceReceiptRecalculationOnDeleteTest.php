@@ -596,7 +596,7 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
     }
 
     #[Test]
-    public function fee_transfer_with_trust_voided_at_is_excluded_from_invoice_payment_totals(): void
+    public function void_fee_transfer_is_excluded_from_invoice_payment_totals(): void
     {
         $superAdmin = Staff::create([
             'first_name' => 'Super',
@@ -618,10 +618,9 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'user_type' => 3,
         ]);
 
-        $invoiceNo = 'INV-TRUSTVOID-' . rand(10000, 99999);
+        $invoiceNo = 'INV-VOIDFT-' . rand(10000, 99999);
         $receiptId = 66601;
 
-        // 1. Create invoice in account_client_receipts ($1000)
         DB::table('account_client_receipts')->insertGetId([
             'user_id' => $superAdmin->id,
             'client_id' => $client->id,
@@ -635,7 +634,7 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'withdraw_amount' => 1000.00,
             'balance_amount' => 1000.00,
             'partial_paid_amount' => 0.00,
-            'invoice_status' => 0, // Unpaid
+            'invoice_status' => 0,
             'save_type' => 'final',
             'validate_receipt' => 0,
             'void_invoice' => 0,
@@ -643,7 +642,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // Create line item in account_all_invoice_receipts
         AccountAllInvoiceReceipt::insertGetId([
             'user_id' => $superAdmin->id,
             'client_id' => $client->id,
@@ -662,7 +660,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // 2. Active Office Receipt of $200
         DB::table('account_client_receipts')->insert([
             'user_id' => $superAdmin->id,
             'client_id' => $client->id,
@@ -681,7 +678,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // 3. Trust-voided Fee Transfer of $500 (has trust_voided_at set)
         DB::table('account_client_receipts')->insert([
             'user_id' => $superAdmin->id,
             'client_id' => $client->id,
@@ -692,12 +688,11 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'entry_date' => '19/08/2026',
             'trans_no' => 'FT-9102',
             'invoice_no' => $invoiceNo,
-            'description' => 'Practice-Voided Fee Transfer',
+            'description' => 'Voided Fee Transfer',
             'deposit_amount' => 0.00,
             'withdraw_amount' => 500.00,
             'balance_amount' => null,
-            'void_fee_transfer' => 0,
-            'trust_voided_at' => now(),
+            'void_fee_transfer' => 1,
             'save_type' => 'final',
             'validate_receipt' => 0,
             'void_invoice' => 0,
@@ -705,7 +700,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // 4. Active Fee Transfer of $300 (no void_fee_transfer, no trust_voided_at)
         DB::table('account_client_receipts')->insert([
             'user_id' => $superAdmin->id,
             'client_id' => $client->id,
@@ -721,7 +715,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'withdraw_amount' => 300.00,
             'balance_amount' => 300.00,
             'void_fee_transfer' => 0,
-            'trust_voided_at' => null,
             'save_type' => 'final',
             'validate_receipt' => 0,
             'void_invoice' => 0,
@@ -729,7 +722,6 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // Recalculate invoice status and balance
         app(\App\Http\Controllers\CRM\ClientAccountsController::class)
             ->recalculateInvoiceStatusAndBalance((int) $client->id, $invoiceNo);
 
@@ -738,8 +730,7 @@ class InvoiceReceiptRecalculationOnDeleteTest extends TestCase
             ->where('invoice_no', $invoiceNo)
             ->first();
 
-        // Total paid should be $200 (Office) + $300 (Active FT) = $500. (The $500 trust_voided FT must be ignored)
-        $this->assertEquals(500.00, (float) $invoice->partial_paid_amount, 'Total paid should exclude trust_voided_at fee transfer');
+        $this->assertEquals(500.00, (float) $invoice->partial_paid_amount, 'Total paid should exclude void_fee_transfer fee transfer');
         $this->assertEquals(500.00, (float) $invoice->balance_amount, 'Balance should be $1000 - $500 = $500');
         $this->assertEquals(2, (int) $invoice->invoice_status, 'Status should be Partial (2)');
     }

@@ -67,18 +67,6 @@
         } else {
             $('#edit_ledger_eftpos_surcharge_group').hide();
         }
-        toggleEditLedgerPaymentFields(type, pm);
-    }
-
-    function toggleEditLedgerPaymentFields(type, pm) {
-        var isDeposit = type === 'Deposit';
-        var isWithdraw = type === 'Fee Transfer' || type === 'Disbursement' || type === 'Refund';
-        $('#edit_ledger_payer_name').closest('.form-group').toggle(isDeposit || isWithdraw);
-        $('#edit_ledger_bank_ref').closest('.form-group').toggle(isDeposit);
-        $('#edit_ledger_banking_date').closest('.form-group').toggle(isDeposit);
-        $('#edit_ledger_payee_group').toggle(isWithdraw);
-        $('#edit_ledger_cheque_group').toggle(isWithdraw && pm === 'Cheque');
-        $('#edit_ledger_eft_group').toggle(isWithdraw && pm === 'Bank transfer');
     }
 
     function handleEditLedgerEntry(element) {
@@ -102,18 +90,6 @@
         if (isNaN(sur)) {
             sur = 0;
         }
-        var payerName = $(element).data('payer-name');
-        var bankRef = $(element).data('bank-deposit-reference');
-        var bankingDate = $(element).data('banking-date');
-        if (payerName === undefined || payerName === null) {
-            payerName = '';
-        }
-        if (bankRef === undefined || bankRef === null) {
-            bankRef = '';
-        }
-        if (bankingDate === undefined || bankingDate === null) {
-            bankingDate = '';
-        }
         var principal = (type === 'Deposit' && sur > 0) ? Math.max(0, totalDep - sur) : totalDep;
         $('#editLedgerModal input[name="id"]').val(id);
         $('#editLedgerModal input[name="trans_date"]').val(transDate);
@@ -121,15 +97,6 @@
         $('#editLedgerModal input[name="client_fund_ledger_type"]').val(type).prop('readonly', true);
         $('#editLedgerModal select[name="payment_method"]').val(String(paymentMethod));
         $('#editLedgerModal input[name="description"]').val(description);
-        $('#edit_ledger_payer_name').val(payerName);
-        $('#edit_ledger_bank_ref').val(bankRef);
-        $('#edit_ledger_banking_date').val(bankingDate);
-        $('#edit_ledger_payee_name').val($(element).data('payee-name') || '');
-        $('#edit_ledger_cheque_number').val($(element).data('cheque-number') || '');
-        $('#edit_ledger_eft_account_name').val($(element).data('eft-account-name') || '');
-        $('#edit_ledger_eft_bsb').val($(element).data('eft-bsb') || '');
-        $('#edit_ledger_eft_account_number').val($(element).data('eft-account-number') || '');
-        toggleEditLedgerPaymentFields(type, String(paymentMethod));
         $('#edit_ledger_eftpos_surcharge').val(sur > 0 ? sur.toFixed(2) : '');
         if (parseFloat(deposit) === 0) {
             $('#editLedgerModal input[name="deposit_amount"]').val(deposit).prop('readonly', true);

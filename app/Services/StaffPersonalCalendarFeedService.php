@@ -587,7 +587,7 @@ class StaffPersonalCalendarFeedService
                     'client_email' => $this->clientEmail($note->client),
                     'notes' => $note->description,
                     'status' => 'action',
-                    'status_label' => 'My Action',
+                    'status_label' => 'My Task',
                     'action_url' => url('/action'),
                 ];
             })

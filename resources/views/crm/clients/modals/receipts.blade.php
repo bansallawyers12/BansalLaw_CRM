@@ -5,14 +5,6 @@
     ======================================== --}}
 @php
     $__receiptModalSolicitors = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
-    $__trustWithdrawalAuthorityTypes = collect();
-    if (\Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types')) {
-        $__trustWithdrawalAuthorityTypes = \Illuminate\Support\Facades\DB::table('trust_withdrawal_authority_types')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
-    }
 @endphp
 
 <style>
@@ -223,18 +215,14 @@
                                 <table class="table trust-entry-lines-table text_wrap vertical_align">
                                     <thead>
                                         <tr>
-                                            <th class="trust-entry-col-date" title="Date trust money was received or paid">Trans. Date</th>
-                                            <th class="trust-entry-col-date" title="Date entry was recorded in the ledger">Entry Date</th>
-                                            <th class="trust-entry-col-type" title="LSBC Uniform Law trust transaction type">Transaction Type</th>
+                                            <th class="trust-entry-col-date">Trans. Date</th>
+                                            <th class="trust-entry-col-date">Entry Date</th>
+                                            <th class="trust-entry-col-type">Transaction Type</th>
                                             <th class="trust-entry-col-invoice" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
-                                            <th class="trust-entry-col-method" title="How trust money was received or paid">Payment Method</th>
-                                            <th class="trust-entry-col-party" title="Payer (deposit) or payee (payment)">Payer / Payee</th>
-                                            <th class="trust-entry-col-bank" title="Bank deposit ref or cheque number">Bank / Cheque ref</th>
-                                            <th class="trust-entry-col-bsb" title="Banking date (deposit) or EFT BSB">Date / BSB</th>
-                                            <th class="trust-entry-col-eft" title="EFT account name and number">EFT details</th>
-                                            <th class="trust-entry-col-desc" title="Particulars of the trust transaction">Particulars / Description</th>
-                                            <th class="trust-entry-amount-col" title="Trust money received into trust account">Trust Receipts (+)</th>
-											<th class="trust-entry-amount-col" title="Trust money paid from trust account">Trust Payments (−)</th>
+                                            <th class="trust-entry-col-method">Payment Method</th>
+                                            <th class="trust-entry-col-desc">Particulars / Description</th>
+                                            <th class="trust-entry-amount-col">Trust Receipts (+)</th>
+											<th class="trust-entry-amount-col">Trust Payments (−)</th>
                                             <th class="trust-entry-action-col"></th>
                                         </tr>
                                     </thead>
@@ -276,30 +264,6 @@
                                                 </div>
                                                 </div>
                                             </td>
-                                            <td class="ledger-payer-cell" data-label="Payer / Payee">
-                                                <div class="trust-entry-cell-stack">
-                                                <input class="form-control trust-entry-control ledger-payer-name" name="payer_name[]" type="text" placeholder="Payer name" />
-                                                <input class="form-control trust-entry-control ledger-payee-name" name="payee_name[]" type="text" placeholder="Payee name" style="display:none;" />
-                                                </div>
-                                            </td>
-                                            <td class="ledger-bankref-cell" data-label="Bank / Cheque ref">
-                                                <div class="trust-entry-cell-stack">
-                                                <input class="form-control trust-entry-control ledger-bank-ref" name="bank_deposit_reference[]" type="text" placeholder="Bank ref / cheque #" />
-                                                <input class="form-control trust-entry-control ledger-cheque-no" name="cheque_number[]" type="text" placeholder="Cheque no." style="display:none;" />
-                                                </div>
-                                            </td>
-                                            <td class="ledger-banking-cell" data-label="Date / BSB">
-                                                <div class="trust-entry-cell-stack">
-                                                <input class="form-control trust-entry-control ledger-banking-date report_date_fields" name="banking_date[]" type="text" placeholder="Banking date" />
-                                                <input class="form-control trust-entry-control ledger-eft-bsb" name="eft_bsb[]" type="text" placeholder="BSB" style="display:none;" maxlength="16" />
-                                                </div>
-                                            </td>
-                                            <td class="ledger-eft-cell" data-label="EFT details">
-                                                <div class="trust-entry-cell-stack">
-                                                <input class="form-control trust-entry-control ledger-eft-acct-name" name="eft_account_name[]" type="text" placeholder="EFT account name" style="display:none;" />
-                                                <input class="form-control trust-entry-control ledger-eft-acct-no" name="eft_account_number[]" type="text" placeholder="Account no." style="display:none;" />
-                                                </div>
-                                            </td>
                                             <td data-label="Particulars">
                                                 <input data-valid="required" class="form-control trust-entry-control" name="description[]" type="text" value="" />
                                             </td>
@@ -325,7 +289,7 @@
                                     </tbody>
                                     <tfoot class="trust-entry-tfoot">
                                         <tr>
-                                            <td colspan="10" class="trust-entry-totals-label">Totals</td>
+                                            <td colspan="5" class="trust-entry-totals-label">Totals</td>
                                             <td class="trust-entry-amount-col trust-entry-totals-deposit">
                                                 <span class="total_deposit_amount_all_rows">$0.00</span>
                                             </td>
@@ -343,45 +307,6 @@
                                     <span class="trust-entry-totals-withdraw"><span class="total_withdraw_amount_all_rows">$0.00</span></span>
                                 </div>
 
-                                @if($__trustWithdrawalAuthorityTypes->isNotEmpty())
-                                <div class="mt-3 w-100 trust-rule42-panel" id="ledger-rule42-block" style="display: none;">
-                                    <div class="card border-warning mb-0">
-                                        <div class="card-header py-2 trust-rule42-panel__header">
-                                            <strong><i class="fa-solid fa-gavel"></i> Rule 42 — withdrawal authority</strong>
-                                            <span class="text-muted small ms-1">(required for Fee Transfer lines)</span>
-                                        </div>
-                                        <div class="card-body py-3">
-                                            <div class="row g-2">
-                                                <div class="col-md-4">
-                                                    <label class="small mb-1">Authority type <span class="text-danger">*</span></label>
-                                                    <select name="trust_withdrawal_authority_type_id" class="form-select form-select-sm">
-                                                        <option value="">— Select —</option>
-                                                        @foreach($__trustWithdrawalAuthorityTypes as $t)
-                                                            <option value="{{ $t->id }}">{{ $t->label }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <label class="small mb-1">Date notice given</label>
-                                                    <input type="date" name="trust_notice_given_date" class="form-control form-control-sm" />
-                                                </div>
-                                                <div class="col-md-5">
-                                                    <label class="small mb-1">Notes / clause / reference</label>
-                                                    <input type="text" name="trust_authority_notes" class="form-control form-control-sm" maxlength="5000" placeholder="Extra detail if transferring without invoice" />
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="form-check">
-                                                        <input type="checkbox" class="form-check-input" name="trust_rule42_supervisor_override" id="trust_rule42_supervisor_override" value="1">
-                                                        <label class="form-check-label small" for="trust_rule42_supervisor_override">Supervisor override (draft invoice, date, or voided invoice)</label>
-                                                    </div>
-                                                    <label class="small mb-1">Override reason (min 10 characters if override checked)</label>
-                                                    <textarea name="trust_rule42_override_reason" class="form-control form-control-sm" rows="2" maxlength="5000"></textarea>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
                             </div>
 						</div>
 
