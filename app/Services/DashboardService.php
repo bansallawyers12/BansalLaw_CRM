@@ -33,20 +33,12 @@ class DashboardService
         $user = Auth::guard('admin')->user() ?: Auth::user();
         
         return [
-            'data' => $this->getClientMatters($request, $user),
             'notesData' => $this->getNotesData($user),
             'cases_requiring_attention_data' => $this->getCasesRequiringAttention($user),
             'count_active_matter' => $this->getActiveMatterCount($user),
             'count_closed_matter' => $this->getClosedMatterCount($user),
             'count_note_deadline' => $this->getNoteDeadlineCount($user),
             'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
-            'filters' => [
-                'client_name' => $request->client_name ?? '',
-                'client_stage' => $request->client_stage ?? ''
-            ],
-            'visibleColumns' => $this->getVisibleColumns(),
-            'workflowStages' => $this->getWorkflowStages(),
-            'assignee' => $this->getAssignees()
         ];
     }
 

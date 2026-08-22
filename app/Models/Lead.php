@@ -6,11 +6,10 @@ use App\Models\Staff;
 use Database\Factories\LeadFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Schema;
-use Kyslik\ColumnSortable\Sortable;
 
 class Lead extends Admin
 {
-    use Notifiable, Sortable;
+    use Notifiable;
 
     protected static function newFactory(): LeadFactory
     {

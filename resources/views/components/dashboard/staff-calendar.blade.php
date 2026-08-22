@@ -1,6 +1,7 @@
 @props([
     'stats' => ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0],
     'timezone' => config('app.timezone'),
+    'bookingCalendarType' => null,
 ])
 
 <section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
@@ -11,7 +12,7 @@
                     <i class="fa-solid fa-calendar-days"></i>
                     Calendar
                 </h2>
-                <p class="dashboard-calendar-subtitle">Today and upcoming only. Hover a coloured bar to see the full title and time.</p>
+                <p class="dashboard-calendar-subtitle">Click a day to jump to that date in the agenda. Hover a coloured bar for full details.</p>
             </div>
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-stats">
@@ -35,6 +36,10 @@
         </div>
 
         <div class="dashboard-calendar-legend" aria-label="Event colours">
+            <span class="dashboard-cal-legend-group-label">Bookings</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--pending"></span> Pending</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--paid"></span> Paid</span>
+            <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--confirmed"></span> Confirmed</span>
             <span class="dashboard-cal-legend-group-label">Important Events</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--court"></span> Court / Hearing</span>
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--meeting"></span> Meeting</span>
@@ -43,21 +48,23 @@
             <span class="dashboard-cal-legend-item"><span class="dashboard-cal-dot dashboard-cal-dot--other"></span> Other</span>
         </div>
 
-        <div class="dashboard-calendar-wrapper">
-            <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}"></div>
-        </div>
-
-        <div class="dashboard-upcoming-panel" id="dashboardUpcomingPanel">
-            <div class="dashboard-upcoming-header">
-                <h3>
-                    <i class="fa-solid fa-list"></i>
-                    Upcoming schedule
-                </h3>
-                <span class="dashboard-upcoming-count" id="dashboardUpcomingCount">0</span>
+        <div class="dashboard-calendar-body">
+            <div class="dashboard-calendar-wrapper">
+                <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $bookingCalendarType }}"></div>
             </div>
-            <p class="dashboard-upcoming-help">Every hearing, meeting, deadline, reminder and event from today onwards.</p>
-            <div class="dashboard-upcoming-list" id="dashboardUpcomingList" aria-live="polite">
-                <div class="dashboard-upcoming-empty">Loading upcoming items…</div>
+
+            <div class="dashboard-upcoming-panel" id="dashboardUpcomingPanel">
+                <div class="dashboard-upcoming-header">
+                    <h3>
+                        <i class="fa-solid fa-list"></i>
+                        Schedule by date
+                    </h3>
+                    <span class="dashboard-upcoming-count" id="dashboardUpcomingCount">0</span>
+                </div>
+                <p class="dashboard-upcoming-help">Hearings, meetings, deadlines and events from today onwards, grouped by date.</p>
+                <div class="dashboard-upcoming-list" id="dashboardUpcomingList" aria-live="polite">
+                    <div class="dashboard-upcoming-empty">Loading upcoming items…</div>
+                </div>
             </div>
         </div>
     </div>

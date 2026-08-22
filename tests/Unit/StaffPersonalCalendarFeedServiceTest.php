@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Staff;
 use App\Services\Booking\StaffCalendarFeedService;
 use App\Services\StaffPersonalCalendarFeedService;
 use Carbon\Carbon;
@@ -74,13 +75,34 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
     {
         $event = $this->service()->toFullCalendarEvent([
             'id' => 'booking-9',
-            'title' => 'Jane Doe — Confirmed',
+            'title' => 'Jane Doe (In Person)',
             'event_type' => 'meeting',
             'event_kind' => 'website_booking',
+            'status' => 'confirmed',
             'starts_at' => '2026-08-21T11:00:00+10:00',
         ]);
 
-        $this->assertSame('#0d6efd', $event['backgroundColor']);
+        $this->assertSame('#1E7A52', $event['backgroundColor']);
         $this->assertContains('event-kind-website_booking', $event['classNames']);
+    }
+
+    #[Test]
+    public function booking_calendar_type_falls_back_to_first_name(): void
+    {
+        $staff = new Staff();
+        $staff->first_name = 'Ajay';
+        $staff->email = '';
+
+        $this->assertSame('ajay', $this->service()->bookingCalendarTypeForStaff($staff));
+    }
+
+    #[Test]
+    public function booking_calendar_type_maps_michael_to_kunal(): void
+    {
+        $staff = new Staff();
+        $staff->first_name = 'Michael';
+        $staff->email = '';
+
+        $this->assertSame('kunal', $this->service()->bookingCalendarTypeForStaff($staff));
     }
 }

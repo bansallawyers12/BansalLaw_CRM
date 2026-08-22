@@ -14,6 +14,12 @@
         return (el && el.getAttribute('data-timezone')) || 'Australia/Melbourne';
     }
 
+    function calendarElTzBookingType() {
+        var el = document.getElementById(CALENDAR_EL_ID);
+        var type = el && el.getAttribute('data-booking-calendar-type');
+        return type === 'ajay' || type === 'kunal' ? type : null;
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
@@ -81,6 +87,7 @@
         if (kind === 'court_hearing') return 'court';
         if (kind === 'action' || kind === 'matter_deadline') return 'deadline';
         var type = String((props && props.event_type) || 'other');
+        if (kind === 'website_booking') return 'meeting';
         if (type === 'court' || type === 'meeting' || type === 'deadline' || type === 'reminder') {
             return type;
         }
@@ -179,17 +186,52 @@
         el.setAttribute('title', text);
     }
 
-    function formatEventDate(iso, tz) {
+    function eventDateKey(iso, tz) {
         if (!iso) return '';
         var date = new Date(iso);
         if (isNaN(date.getTime())) return '';
-        return date.toLocaleDateString('en-AU', {
-            timeZone: tz || 'Australia/Melbourne',
+        try {
+            return date.toLocaleDateString('en-CA', { timeZone: tz || 'Australia/Melbourne' });
+        } catch (e) {
+            return date.toISOString().slice(0, 10);
+        }
+    }
+
+    function tomorrowDateStr(tz) {
+        var parts = todayDateStr(tz).split('-');
+        var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])));
+        d.setUTCDate(d.getUTCDate() + 1);
+        return d.toISOString().slice(0, 10);
+    }
+
+    function formatDayGroupLabel(dateKey, tz) {
+        if (!dateKey) return '';
+        if (dateKey === todayDateStr(tz)) return 'Today';
+        if (dateKey === tomorrowDateStr(tz)) return 'Tomorrow';
+        var d = new Date(dateKey + 'T12:00:00');
+        if (isNaN(d.getTime())) return dateKey;
+        return d.toLocaleDateString('en-AU', {
             weekday: 'short',
             day: 'numeric',
             month: 'short',
             year: 'numeric',
         });
+    }
+
+    function focusUpcomingDate(dateStr) {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl || !dateStr) return;
+
+        var key = String(dateStr).slice(0, 10);
+        listEl.querySelectorAll('.dashboard-upcoming-day.is-focused').forEach(function (el) {
+            el.classList.remove('is-focused');
+        });
+
+        var dayEl = listEl.querySelector('.dashboard-upcoming-day[data-date="' + key.replace(/"/g, '') + '"]');
+        if (!dayEl) return;
+
+        dayEl.classList.add('is-focused');
+        listEl.scrollTop += dayEl.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
     }
 
     function renderUpcomingList(events, tz) {
@@ -208,37 +250,70 @@
             return;
         }
 
-        var html = '<table class="dashboard-upcoming-table"><thead><tr>' +
-            '<th>Date</th><th>Time</th><th>Type</th><th>Title</th>' +
-            '</tr></thead><tbody>';
+        var groups = {};
+        var groupOrder = [];
+        var flatIndex = 0;
 
-        rows.forEach(function (event, index) {
+        rows.forEach(function (event) {
             var props = event.extendedProps || {};
-            var typeKey = eventTypeKey(props);
-            var title = event.title || props.title || 'Event';
             var start = event.start || props.starts_at || props.appointment_datetime;
-            var tip = title;
-            var email = String(props.client_email || '').trim();
-            if (email) tip += '\n<' + email + '>';
-            var when = formatEventTime(start, tz, event.allDay || props.is_all_day);
-            if (when) tip += '\n' + when;
-            html += '<tr class="dashboard-upcoming-row" data-upcoming-index="' + index + '" title="' + escapeHtml(tip).replace(/\n/g, ' — ') + '">' +
-                '<td>' + escapeHtml(formatEventDate(start, tz)) + '</td>' +
-                '<td>' + escapeHtml(formatEventTime(start, tz, event.allDay || props.is_all_day)) + '</td>' +
-                '<td><span class="dashboard-upcoming-type dashboard-upcoming-type--' + typeKey + '">' +
-                escapeHtml(eventTypeLabel(props)) + '</span></td>' +
-                '<td class="dashboard-upcoming-title">' + escapeHtml(title) + '</td>' +
-                '</tr>';
+            var dateKey = eventDateKey(start, tz) || 'unknown';
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+                groupOrder.push(dateKey);
+            }
+            groups[dateKey].push({ event: event, index: flatIndex++ });
         });
 
-        html += '</tbody></table>';
+        var html = '<div class="dashboard-upcoming-agenda">';
+        groupOrder.forEach(function (dateKey) {
+            var items = groups[dateKey];
+            html += '<div class="dashboard-upcoming-day" data-date="' + escapeHtml(dateKey) + '" id="upcoming-day-' + escapeHtml(dateKey) + '">' +
+                '<div class="dashboard-upcoming-day-header">' +
+                '<span>' + escapeHtml(formatDayGroupLabel(dateKey, tz)) + '</span>' +
+                '<span class="dashboard-upcoming-day-count">' + items.length + '</span>' +
+                '</div><ul class="dashboard-upcoming-day-items">';
+
+            items.forEach(function (entry) {
+                var event = entry.event;
+                var props = event.extendedProps || {};
+                var typeKey = eventTypeKey(props);
+                var title = event.title || props.title || 'Event';
+                var start = event.start || props.starts_at || props.appointment_datetime;
+                var tip = title;
+                var email = String(props.client_email || '').trim();
+                if (email) tip += '\n<' + email + '>';
+                var when = formatEventTime(start, tz, event.allDay || props.is_all_day);
+                if (when) tip += '\n' + when;
+
+                html += '<li class="dashboard-upcoming-item" data-upcoming-index="' + entry.index + '" title="' +
+                    escapeHtml(tip).replace(/\n/g, ' — ') + '">' +
+                    '<span class="dashboard-upcoming-item-time">' +
+                    escapeHtml(formatEventTime(start, tz, event.allDay || props.is_all_day)) +
+                    '</span>' +
+                    '<div class="dashboard-upcoming-item-body">' +
+                    '<div class="dashboard-upcoming-item-meta">' +
+                    '<span class="dashboard-upcoming-type dashboard-upcoming-type--' + typeKey + '">' +
+                    escapeHtml(eventTypeLabel(props)) + '</span>' +
+                    '</div>' +
+                    '<div class="dashboard-upcoming-title">' + escapeHtml(title) + '</div>' +
+                    '</div></li>';
+            });
+
+            html += '</ul></div>';
+        });
+        html += '</div>';
         listEl.innerHTML = html;
 
-        listEl.querySelectorAll('.dashboard-upcoming-row').forEach(function (row) {
+        listEl.querySelectorAll('.dashboard-upcoming-item').forEach(function (row) {
             row.addEventListener('click', function () {
                 var event = rows[Number(row.getAttribute('data-upcoming-index'))];
                 if (!event) return;
-                var props = Object.assign({ title: event.title }, event.extendedProps || {});
+                var props = Object.assign({
+                    title: event.title,
+                    starts_at: event.start,
+                    is_all_day: event.allDay,
+                }, event.extendedProps || {});
                 showEventDetail(props);
             });
         });
@@ -268,7 +343,13 @@
                 throw new Error(payload.message || 'Failed to load upcoming items');
             }
             updateStats(payload.stats);
-            renderUpcomingList(payload.data || [], tz);
+            var horizon = endDate.getTime();
+            var upcoming = (payload.data || []).filter(function (event) {
+                var start = event.start || (event.extendedProps && (event.extendedProps.starts_at || event.extendedProps.appointment_datetime));
+                var ts = start ? new Date(start).getTime() : NaN;
+                return !isNaN(ts) && ts <= horizon;
+            });
+            renderUpcomingList(upcoming, tz);
         } catch (err) {
             console.error('Dashboard upcoming list error:', err);
             listEl.innerHTML = '<div class="dashboard-upcoming-empty">Could not load the upcoming schedule.</div>';
@@ -411,7 +492,7 @@
                         is_all_day: allDay,
                         location: document.getElementById('personalEventLocation').value.trim() || null,
                         notes: document.getElementById('personalEventNotes').value.trim() || null,
-                        calendar_type: null,
+                        calendar_type: calendarElTzBookingType(),
                     }),
                 });
 
@@ -470,7 +551,7 @@
                     list: 'list',
                 },
                 height: 'auto',
-                contentHeight: 620,
+                contentHeight: 560,
                 timeZone: tz,
                 firstDay: 1,
                 nowIndicator: true,
@@ -530,16 +611,22 @@
                     info.jsEvent.preventDefault();
                     hideEventTooltip();
                     var props = info.event.extendedProps || {};
-                    showEventDetail(Object.assign({ title: info.event.title }, props));
+                    var startStr = info.event.startStr || (info.event.start ? info.event.start.toISOString() : '');
+                    focusUpcomingDate(startStr);
+                    showEventDetail(Object.assign({
+                        title: info.event.title,
+                        starts_at: startStr,
+                        is_all_day: info.event.allDay,
+                    }, props));
                 },
                 dateClick: function (info) {
+                    focusUpcomingDate(info.dateStr);
                     if (isPastDateStr(info.dateStr, tz)) {
                         return;
                     }
-                    var addBtn = document.getElementById('btnAddPersonalEvent');
-                    if (addBtn) {
-                        addBtn.click();
-                        document.getElementById('personalEventDate').value = info.dateStr;
+                    var dateInput = document.getElementById('personalEventDate');
+                    if (dateInput) {
+                        dateInput.value = info.dateStr;
                     }
                 },
                 datesSet: function () {

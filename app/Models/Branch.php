@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Staff;
@@ -12,7 +12,9 @@ use App\Models\Staff;
 class Branch extends Authenticatable
 {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
+
+	public $sortable = ['id', 'office_name', 'email', 'created_at', 'updated_at'];
 	
     /**
      * The attributes that are mass assignable.

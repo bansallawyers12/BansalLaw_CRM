@@ -2,13 +2,13 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Team extends Authenticatable
 { 
     use Notifiable;
-	use Sortable;  
+	use SortableTrait;  
 	
     /**
      * The attributes that are mass assignable.

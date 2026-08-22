@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class Notification extends Model
 {
-	use Sortable;
+	use SortableTrait;
 	
 	protected $fillable = ['sender_id', 'receiver_id', 'module_id', 'url', 'notification_type', 'message', 'receiver_status', 'sender_status', 'seen'];
  

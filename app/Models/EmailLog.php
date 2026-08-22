@@ -2,7 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmailLog extends Authenticatable
 {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
 
     public const SEND_STATUS_PENDING = 'pending';
 

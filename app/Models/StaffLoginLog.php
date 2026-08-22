@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Database\Eloquent\Model;
 
 class StaffLoginLog extends Model
 {
     use Notifiable;
-    use Sortable;
+    use SortableTrait;
 
     /**
      * The table associated with the model.

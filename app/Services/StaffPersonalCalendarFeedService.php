@@ -30,15 +30,13 @@ class StaffPersonalCalendarFeedService
      */
     public function eventsForStaffRequest(Staff $staff, Request $request): array
     {
-        $tz = config('app.timezone');
-        $staffId = (int) $staff->id;
+        $calendarType = $this->bookingCalendarTypeForStaff($staff);
 
         $events = array_merge(
-            $this->staffCalendarEvents($staffId, $request),
-            $this->websiteBookings($staff, $request),
-            $this->courtHearings($staffId, $request),
-            $this->actionDeadlines($staffId, $request, $tz),
-            $this->matterDeadlines($staffId, $request, $tz)
+            $calendarType
+                ? $this->websiteBookingsForCalendarType($calendarType, $request)
+                : $this->websiteBookings($staff, $request),
+            $this->bookingCalendarImportantEvents($calendarType ?? '', $request)
         );
 
         usort($events, fn (array $a, array $b) => strcmp(
@@ -47,6 +45,35 @@ class StaffPersonalCalendarFeedService
         ));
 
         return $events;
+    }
+
+    /**
+     * Booking calendar tab this staff member owns (ajay / kunal), if any.
+     */
+    public function bookingCalendarTypeForStaff(Staff $staff): ?string
+    {
+        if (Schema::hasTable('appointment_consultants')) {
+            $consultantIds = $this->consultantIdsForStaff($staff);
+            if ($consultantIds !== []) {
+                $type = AppointmentConsultant::query()
+                    ->whereIn('id', $consultantIds)
+                    ->whereIn('calendar_type', ['ajay', 'kunal'])
+                    ->value('calendar_type');
+                if (is_string($type) && $type !== '') {
+                    return $type;
+                }
+            }
+        }
+
+        $firstName = strtolower(trim((string) ($staff->first_name ?? '')));
+        if ($firstName === 'ajay') {
+            return 'ajay';
+        }
+        if (in_array($firstName, ['michael', 'kunal'], true)) {
+            return 'kunal';
+        }
+
+        return null;
     }
 
     /**
@@ -170,6 +197,57 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
+     * Website bookings + important events using the same consultant scope as /booking/calendar/{type}.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function websiteBookingsForCalendarType(string $calendarType, Request $request): array
+    {
+        if (! Schema::hasTable('booking_appointments')) {
+            return [];
+        }
+
+        $consultantId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.' . $calendarType, 0);
+        $query = BookingAppointment::query()->with(['client', 'consultant']);
+        if ($consultantId > 0) {
+            $query->where('consultant_id', $consultantId);
+        } else {
+            $query->whereHas('consultant', function (Builder $q) use ($calendarType) {
+                $q->where('calendar_type', $calendarType);
+            });
+        }
+
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+        $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
+
+        return $query->orderBy('appointment_datetime')->get()
+            ->map(fn (BookingAppointment $appointment) => $this->payloadFromBookingAppointment($appointment))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function bookingCalendarImportantEvents(string $calendarType, Request $request): array
+    {
+        $feedRequest = Request::create($request->url(), 'GET', array_merge(
+            $request->query(),
+            $request->request->all(),
+            ['type' => $calendarType]
+        ));
+
+        return array_values(array_map(
+            function (array $row) {
+                $row['client_email'] = $row['client_email'] ?? null;
+
+                return $row;
+            },
+            $this->staffCalendarFeed->eventsForCalendarRequest($feedRequest)
+        ));
+    }
+
+    /**
      * Website bookings for consultants that match this staff member (email / first name).
      *
      * @return list<array<string, mixed>>
@@ -228,12 +306,12 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $firstName);
+        $safeName = str_replace(['%', '_'], '', $firstName);
 
         return AppointmentConsultant::query()
-            ->where(function (Builder $q) use ($firstName, $escaped) {
+            ->where(function (Builder $q) use ($firstName, $safeName) {
                 $q->whereRaw('LOWER(name) = ?', [$firstName])
-                    ->orWhereRaw("LOWER(name) LIKE ? ESCAPE '\\\\'", [$escaped . ' %']);
+                    ->orWhereRaw('LOWER(name) LIKE ?', [$safeName . ' %']);
             })
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -251,7 +329,10 @@ class StaffPersonalCalendarFeedService
         $start = $appointment->appointment_datetime
             ? $appointment->appointment_datetime->copy()->timezone($tz)
             : Carbon::now($tz);
-        $duration = max(15, (int) ($appointment->duration_minutes ?: 60));
+        $duration = (int) ($appointment->duration_minutes ?: 15);
+        if ($duration < 15) {
+            $duration = 15;
+        }
         $end = $start->copy()->addMinutes($duration);
 
         $clientName = $this->clientDisplayName($appointment->client)
@@ -259,7 +340,11 @@ class StaffPersonalCalendarFeedService
             ?: 'Client';
         $status = (string) ($appointment->status ?? 'pending');
         $statusLabel = BookingCalendarExternalFeed::crmCalendarLegendStatusLabel($status);
-        $title = trim($clientName . ' — ' . ($statusLabel ?: 'Appointment'));
+        $meetingType = trim((string) ($appointment->meeting_type ?? ''));
+        $meetingTypeDisplay = $meetingType !== ''
+            ? ucwords(str_replace('_', ' ', $meetingType))
+            : 'Appointment';
+        $title = $clientName . ' (' . $meetingTypeDisplay . ')';
 
         return [
             'id' => 'booking-' . $appointment->id,
@@ -280,6 +365,7 @@ class StaffPersonalCalendarFeedService
             'client_name' => $clientName,
             'client_email' => $appointment->client_email ?: $this->clientEmail($appointment->client),
             'location' => $appointment->location,
+            'meeting_type' => $appointment->meeting_type,
             'notes' => $appointment->enquiry_details,
             'status' => $status,
             'status_label' => $statusLabel,
@@ -537,6 +623,20 @@ class StaffPersonalCalendarFeedService
         return $email !== '' ? $email : null;
     }
 
+    protected function colorForBookingStatus(string $status): string
+    {
+        return match ($status) {
+            'pending' => '#D4A84A',
+            'paid' => '#1E3D60',
+            'confirmed' => '#1E7A52',
+            'completed' => '#3A6FA8',
+            'cancelled' => '#A83020',
+            'no_show' => '#5E7A90',
+            'rescheduled' => '#1E3D60',
+            default => '#5E7A90',
+        };
+    }
+
     /**
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
@@ -555,13 +655,15 @@ class StaffPersonalCalendarFeedService
         $color = match ($kind) {
             'action', 'matter_deadline' => StaffCalendarFeedService::colorForEventType('deadline'),
             'court_hearing' => StaffCalendarFeedService::colorForEventType('court'),
-            'website_booking' => StaffCalendarFeedService::colorForEventType('meeting'),
+            'website_booking' => $this->colorForBookingStatus((string) ($row['status'] ?? '')),
             default => StaffCalendarFeedService::colorForEventType($type),
         };
 
-        $textColor = StaffCalendarFeedService::textColorForEventType(
-            in_array($kind, ['action', 'matter_deadline'], true) ? 'deadline' : $type
-        );
+        $textColor = $kind === 'website_booking'
+            ? (((string) ($row['status'] ?? '')) === 'pending' ? '#1A2C40' : '#fff')
+            : StaffCalendarFeedService::textColorForEventType(
+                in_array($kind, ['action', 'matter_deadline'], true) ? 'deadline' : $type
+            );
 
         return [
             'id' => (string) ($row['id'] ?? uniqid('evt-', true)),

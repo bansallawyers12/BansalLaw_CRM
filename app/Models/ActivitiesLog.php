@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Schema;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 /**
@@ -24,7 +24,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class ActivitiesLog extends Authenticatable
 {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
 
     protected static function boot()
     {

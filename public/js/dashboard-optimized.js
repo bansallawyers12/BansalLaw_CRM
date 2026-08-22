@@ -11,7 +11,9 @@ $(document).ready(function() {
     }
     
     initializeDashboard();
-    applyInitialColumnVisibility();
+    if (document.getElementById('columnToggleBtn')) {
+        applyInitialColumnVisibility();
+    }
     initializeEventHandlers();
 });
 

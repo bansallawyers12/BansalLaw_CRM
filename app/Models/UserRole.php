@@ -5,12 +5,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class UserRole extends Authenticatable
 {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
 
 	protected $fillable = [
         'id', 'name', 'description', 'module_access', 'created_at', 'updated_at'

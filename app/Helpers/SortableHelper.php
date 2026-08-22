@@ -7,102 +7,39 @@ use Illuminate\Http\Request;
 class SortableHelper
 {
     /**
-     * Generate a sortable link
+     * Generate a sortable link (Spatie / Query Builder: sort=col or sort=-col).
      *
-     * @param string $column
-     * @param string $title
-     * @param array $attributes
-     * @return string
+     * @param  array<string, string>  $attributes
      */
-    public static function link(string $column, string $title = null, array $attributes = []): string
+    public static function link(string $column, ?string $title = null, array $attributes = []): string
     {
-        $request = request();
-        $currentSort = $request->get('sort', '');
-        $currentDirection = '';
-        
-        // Check if this column is currently being sorted
-        if (str_starts_with($currentSort, $column)) {
-            $currentDirection = str_starts_with($currentSort, '-') ? 'desc' : 'asc';
-        }
-        
-        // Determine next sort direction
-        $nextDirection = $currentDirection === 'asc' ? '-' . $column : $column;
-        
-        // Build query parameters
-        $queryParams = $request->query();
-        $queryParams['sort'] = $nextDirection;
-        
-        // Remove page parameter when sorting
-        unset($queryParams['page']);
-        
-        // Build URL
-        $url = $request->url() . '?' . http_build_query($queryParams);
-        
-        // Build HTML attributes
-        $htmlAttributes = '';
-        foreach ($attributes as $key => $value) {
-            $htmlAttributes .= ' ' . $key . '="' . htmlspecialchars($value) . '"';
-        }
-        
-        // Add sort indicator class
+        [$url, $currentDirection, $htmlAttributes] = self::buildLinkParts($column, $attributes);
+
         $class = $attributes['class'] ?? '';
         if ($currentDirection) {
-            $class .= ' sort-' . $currentDirection;
+            $class .= ' sort-'.$currentDirection;
         }
-        if ($class) {
-            $htmlAttributes = ' class="' . trim($class) . '"' . $htmlAttributes;
+        if ($class !== '') {
+            $htmlAttributes = ' class="'.trim($class).'"'.$htmlAttributes;
         }
-        
-        // Use column name as title if not provided
-        $displayTitle = $title ?: ucfirst(str_replace('_', ' ', $column));
-        
-        return '<a href="' . $url . '"' . $htmlAttributes . '>' . $displayTitle . '</a>';
+
+        $displayTitle = htmlspecialchars($title ?: ucfirst(str_replace('_', ' ', $column)), ENT_QUOTES, 'UTF-8');
+
+        return '<a href="'.$url.'"'.$htmlAttributes.'>'.$displayTitle.'</a>';
     }
 
     /**
-     * Generate sortable link with icon
+     * Generate sortable link with icon.
      *
-     * @param string $column
-     * @param string $title
-     * @param array $attributes
-     * @return string
+     * @param  array<string, string>  $attributes
      */
-    public static function linkWithIcon(string $column, string $title = null, array $attributes = []): string
+    public static function linkWithIcon(string $column, ?string $title = null, array $attributes = []): string
     {
-        $request = request();
-        $currentSort = $request->get('sort', '');
-        $currentDirection = '';
-        
-        // Check if this column is currently being sorted
-        if (str_starts_with($currentSort, $column)) {
-            $currentDirection = str_starts_with($currentSort, '-') ? 'desc' : 'asc';
-        }
-        
-        // Determine next sort direction
-        $nextDirection = $currentDirection === 'asc' ? '-' . $column : $column;
-        
-        // Build query parameters
-        $queryParams = $request->query();
-        $queryParams['sort'] = $nextDirection;
-        
-        // Remove page parameter when sorting
-        unset($queryParams['page']);
-        
-        // Build URL
-        $url = $request->url() . '?' . http_build_query($queryParams);
-        
-        // Build HTML attributes
-        $htmlAttributes = '';
-        foreach ($attributes as $key => $value) {
-            if ($key !== 'class') {
-                $htmlAttributes .= ' ' . $key . '="' . htmlspecialchars($value) . '"';
-            }
-        }
-        
-        // Add sort indicator class and icon
+        [$url, $currentDirection, $htmlAttributes] = self::buildLinkParts($column, $attributes, skipClass: true);
+
         $class = $attributes['class'] ?? '';
         $icon = 'fa-solid fa-sort';
-        
+
         if ($currentDirection === 'asc') {
             $icon = 'fa-solid fa-sort-up';
             $class .= ' sort-asc';
@@ -110,14 +47,93 @@ class SortableHelper
             $icon = 'fa-solid fa-sort-down';
             $class .= ' sort-desc';
         }
-        
-        if ($class) {
-            $htmlAttributes = ' class="' . trim($class) . '"' . $htmlAttributes;
+
+        if ($class !== '') {
+            $htmlAttributes = ' class="'.trim($class).'"'.$htmlAttributes;
         }
-        
-        // Use column name as title if not provided
-        $displayTitle = $title ?: ucfirst(str_replace('_', ' ', $column));
-        
-        return '<a href="' . $url . '"' . $htmlAttributes . '>' . $displayTitle . ' <i class="' . $icon . '"></i></a>';
+
+        $displayTitle = htmlspecialchars($title ?: ucfirst(str_replace('_', ' ', $column)), ENT_QUOTES, 'UTF-8');
+
+        return '<a href="'.$url.'"'.$htmlAttributes.'>'.$displayTitle.' <i class="'.$icon.'"></i></a>';
     }
-} 
+
+    /**
+     * @param  array<string, string>  $attributes
+     * @return array{0: string, 1: string, 2: string}  [url, currentDirection, htmlAttributes]
+     */
+    private static function buildLinkParts(string $column, array $attributes, bool $skipClass = false): array
+    {
+        $request = request();
+        $currentSort = (string) $request->get('sort', '');
+        $currentDirection = '';
+
+        $activeColumn = ltrim($currentSort, '-');
+        if ($activeColumn === $column && $currentSort !== '') {
+            $currentDirection = str_starts_with($currentSort, '-') ? 'desc' : 'asc';
+        }
+
+        $nextSort = $currentDirection === 'asc' ? '-'.$column : $column;
+
+        $queryParams = $request->query();
+        $queryParams['sort'] = $nextSort;
+        unset($queryParams['page']);
+
+        $url = $request->url().'?'.http_build_query($queryParams);
+
+        $htmlAttributes = '';
+        foreach ($attributes as $key => $value) {
+            if ($skipClass && $key === 'class') {
+                continue;
+            }
+            if ($key === 'class') {
+                continue;
+            }
+            $htmlAttributes .= ' '.$key.'="'.htmlspecialchars((string) $value).'"';
+        }
+
+        return [$url, $currentDirection, $htmlAttributes];
+    }
+
+    /**
+     * Keep only allow-listed Spatie sort names so invalid ?sort= does not 400
+     * and defaultSort still applies.
+     *
+     * @param  list<string>  $allowedSorts
+     */
+    public static function requestWithAllowedSortsOnly(array $allowedSorts, ?Request $request = null): Request
+    {
+        $request ??= request();
+        $raw = $request->query('sort', $request->input('sort'));
+        if ($raw === null || $raw === '') {
+            return $request;
+        }
+
+        $parts = is_array($raw) ? $raw : explode(',', (string) $raw);
+        $valid = [];
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+            if ($part === '') {
+                continue;
+            }
+            $name = ltrim($part, '-');
+            if (in_array($name, $allowedSorts, true)) {
+                $valid[] = $part;
+            }
+        }
+
+        $normalized = implode(',', $valid);
+        $original = is_array($raw) ? implode(',', $raw) : (string) $raw;
+        if ($normalized === $original) {
+            return $request;
+        }
+
+        $query = $request->query();
+        if ($normalized === '') {
+            unset($query['sort']);
+        } else {
+            $query['sort'] = $normalized;
+        }
+
+        return $request->duplicate($query);
+    }
+}

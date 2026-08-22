@@ -2,7 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Admin extends Authenticatable
 {
-    use Notifiable, Sortable, HasFactory, HasApiTokens; // Add HasApiTokens
+    use Notifiable, SortableTrait, HasFactory, HasApiTokens; // Add HasApiTokens
 
     /** Staff reminder on client/lead detail — never show modal again */
     public const GOOGLE_REVIEW_REMINDER_NOT_INTERESTED = 'not_interested';
@@ -92,8 +92,9 @@ class Admin extends Authenticatable
         'last_name',
         'email',
         'status',
+        'lead_status',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
 	public function countryData()
