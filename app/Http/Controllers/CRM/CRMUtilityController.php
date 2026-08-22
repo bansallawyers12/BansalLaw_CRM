@@ -21,6 +21,7 @@ use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
 use Carbon\Carbon;
+use App\Services\ComposeMatterDocumentService;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
 use App\Support\WorkflowStageFreeze;
@@ -41,12 +42,17 @@ class CRMUtilityController extends Controller
 
     protected $emailService;
     protected $crmSentEmailS3Service;
+    protected $composeMatterDocumentService;
 
-    public function __construct(EmailService $emailService, CrmSentEmailS3Service $crmSentEmailS3Service)
-    {
+    public function __construct(
+        EmailService $emailService,
+        CrmSentEmailS3Service $crmSentEmailS3Service,
+        ComposeMatterDocumentService $composeMatterDocumentService
+    ) {
         $this->middleware('auth:admin');
         $this->emailService = $emailService;
         $this->crmSentEmailS3Service = $crmSentEmailS3Service;
+        $this->composeMatterDocumentService = $composeMatterDocumentService;
     }
     // Dashboard functionality moved to DashboardController
 
@@ -839,11 +845,37 @@ class CRMUtilityController extends Controller
 	public function getComposeDefaults(Request $request){
 		$clientMatterId = $request->client_matter_id;
 		if (!$clientMatterId) {
-			return response()->json(['template' => null, 'checklist_ids' => [], 'macro_values' => null]);
+			return response()->json([
+				'template' => null,
+				'checklist_ids' => [],
+				'matter_documents' => [],
+				'macro_values' => null,
+			]);
 		}
 		$clientMatter = ClientMatter::find($clientMatterId);
-		if (!$clientMatter || !$clientMatter->sel_matter_id) {
-			return response()->json(['template' => null, 'checklist_ids' => [], 'macro_values' => null]);
+		if (! $clientMatter) {
+			return response()->json([
+				'template' => null,
+				'checklist_ids' => [],
+				'matter_documents' => [],
+				'macro_values' => null,
+			]);
+		}
+
+		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
+		$matterDocuments = $this->composeMatterDocumentService->listForMatter(
+			(int) $clientMatter->client_id,
+			(int) $clientMatterId
+		);
+
+		if (! $clientMatter->sel_matter_id) {
+			return response()->json([
+				'template' => null,
+				'checklist_ids' => [],
+				'matter_documents' => $matterDocuments,
+				'macro_values' => $this->getComposeMacroValues((int) $clientMatter->client_id, (int) $clientMatterId),
+			]);
 		}
 		$matterId = $clientMatter->sel_matter_id;
 		$clientId = $clientMatter->client_id;
@@ -872,6 +904,7 @@ class CRMUtilityController extends Controller
 			'template' => $firstTemplate ? ['id' => $firstTemplate->id, 'name' => $firstTemplate->name, 'subject' => $firstTemplate->subject, 'description' => $firstTemplate->description] : null,
 			'matter_templates' => $allTemplates,
 			'checklist_ids' => $checklistIds,
+			'matter_documents' => $matterDocuments,
 			'macro_values' => $macroValues,
 		]);
 	}
@@ -1340,6 +1373,11 @@ class CRMUtilityController extends Controller
 		// Convert plain URLs to clickable links (open in new tab, copyable)
 		$message = $this->linkifyUrlsInHtml($message);
 
+		$matterDocumentPaths = $this->resolveComposeMatterDocumentAttachments(
+			$requestData,
+			(int) ($requestData['client_id'] ?? $activityClientId ?? 0)
+		);
+
 		foreach($emailToList as $l){
 			if (filter_var($l, FILTER_VALIDATE_EMAIL)) {
 				$client = new \stdClass();
@@ -1363,6 +1401,8 @@ class CRMUtilityController extends Controller
 
 			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
 
+			$array['files'] = $matterDocumentPaths;
+
 			if(isset($requestData['checklistfile'])){
     		    if(!empty($requestData['checklistfile'])){
     		       $checklistfiles = $requestData['checklistfile'];
@@ -1378,94 +1418,6 @@ class CRMUtilityController extends Controller
     		        }
     		    }
 		    }
-
-            if(isset($requestData['checklistfile_document'])){
-                if(!empty($requestData['checklistfile_document'])){
-                    $checklistfiles_documents = $requestData['checklistfile_document'];
-                    foreach($checklistfiles_documents as $checklistfile1){
-                        $filechecklist_doc =  \App\Models\Document::where('id', $checklistfile1)->first();
-                        if($filechecklist_doc){
-                            // Check CRM record access permission for client document
-                            if (!empty($filechecklist_doc->client_id)) {
-                                $this->ensureCrmRecordAccess((int) $filechecklist_doc->client_id);
-                            }
-
-                            if( $filechecklist_doc->doc_type == "education" || $filechecklist_doc->doc_type == "migration" ){
-                                $safeDocPath = realpath(public_path('img/documents/' . basename($filechecklist_doc->myfile)));
-                                $allowedPublicDocDir = realpath(public_path('img/documents'));
-                                if ($safeDocPath && $allowedPublicDocDir && str_starts_with($safeDocPath, $allowedPublicDocDir)) {
-                                    $array['files'][] = $safeDocPath;
-                                }
-                            }
-                            else if( $filechecklist_doc->doc_type == "documents") {
-                                $fileUrl = $filechecklist_doc->myfile; // AWS S3 link or local path
-
-                                // Check if it's a URL and validate scheme, host, and IP to prevent SSRF
-                                if (filter_var($fileUrl, FILTER_VALIDATE_URL)) {
-                                    $parsedScheme = strtolower((string) parse_url($fileUrl, PHP_URL_SCHEME));
-                                    $parsedHost = strtolower((string) parse_url($fileUrl, PHP_URL_HOST));
-
-                                    if (in_array($parsedScheme, ['http', 'https'], true) && !empty($parsedHost)) {
-                                        $ip = gethostbyname($parsedHost);
-                                        // Block private/loopback/reserved IP ranges
-                                        $isPublicIp = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
-
-                                        $isAllowedDomain = (
-                                            str_ends_with($parsedHost, 'amazonaws.com') ||
-                                            str_ends_with($parsedHost, 'bansallawyers.com.au')
-                                        );
-
-                                        if ($isAllowedDomain && $isPublicIp) {
-                                            $tempPath = sys_get_temp_dir() . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', basename(parse_url($fileUrl, PHP_URL_PATH) ?? 'doc.pdf'));
-                                            $fileContent = @file_get_contents($fileUrl);
-                                            if ($fileContent !== false) {
-                                                file_put_contents($tempPath, $fileContent);
-                                                $array['files'][] = $tempPath; // Attach the temp file
-                                            }
-                                        } else {
-                                            \Illuminate\Support\Facades\Log::warning('Compose email SSRF attempt blocked', [
-                                                'doc_id' => $checklistfile1,
-                                                'url' => $fileUrl,
-                                                'host' => $parsedHost,
-                                                'ip' => $ip,
-                                            ]);
-                                        }
-                                    }
-                                } else {
-                                    // Local file path validation (prevent arbitrary local file inclusion)
-                                    $baseName = basename($fileUrl);
-                                    $candidatePublic = realpath(public_path('img/documents/' . $baseName));
-                                    $candidateStorage = realpath(storage_path('app/' . ltrim($fileUrl, '/\\')));
-                                    $candidateStoragePublic = realpath(storage_path('app/public/' . ltrim($fileUrl, '/\\')));
-
-                                    $validPath = null;
-                                    $allowedRootStorage = realpath(storage_path('app'));
-                                    $allowedRootPublic = realpath(public_path());
-
-                                    foreach ([$candidatePublic, $candidateStorage, $candidateStoragePublic] as $cand) {
-                                        if ($cand && file_exists($cand) && is_file($cand)) {
-                                            if (($allowedRootStorage && str_starts_with($cand, $allowedRootStorage)) || 
-                                                ($allowedRootPublic && str_starts_with($cand, $allowedRootPublic))) {
-                                                $validPath = $cand;
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    if ($validPath) {
-                                        $array['files'][] = $validPath;
-                                    } else {
-                                        \Illuminate\Support\Facades\Log::warning('Compose email arbitrary local file attachment path blocked', [
-                                            'doc_id' => $checklistfile1,
-                                            'path' => $fileUrl,
-                                        ]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             //echo "<pre>array=";print_r($array);die;
 
 		    /*if($request->hasfile('attach'))
@@ -1808,5 +1760,50 @@ class CRMUtilityController extends Controller
         $notification->save();
 
         return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Resolve ticked Matter documents tab files for compose send.
+     *
+     * @param  array<string, mixed>  $requestData
+     * @return list<string>
+     */
+    protected function resolveComposeMatterDocumentAttachments(array $requestData, int $composeClientId): array
+    {
+        $ids = $requestData['checklistfile_document'] ?? [];
+        if (! is_array($ids) || $ids === [] || $composeClientId <= 0) {
+            return [];
+        }
+
+        $composeClientMatterId = ! empty($requestData['compose_client_matter_id'])
+            ? (int) $requestData['compose_client_matter_id']
+            : 0;
+        if ($composeClientMatterId <= 0) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($ids as $documentId) {
+            $document = \App\Models\Document::find($documentId);
+            if (! $document) {
+                continue;
+            }
+            if ((int) $document->client_id !== $composeClientId) {
+                continue;
+            }
+            if ((int) $document->client_matter_id !== $composeClientMatterId) {
+                continue;
+            }
+            if (! in_array((string) $document->doc_type, ['matter', 'visa'], true)) {
+                continue;
+            }
+
+            $attachment = $this->composeMatterDocumentService->attachmentForEmail($document);
+            if ($attachment && ! empty($attachment['path']) && is_readable($attachment['path'])) {
+                $paths[] = $attachment['path'];
+            }
+        }
+
+        return $paths;
     }
 }
