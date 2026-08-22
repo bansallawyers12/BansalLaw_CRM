@@ -289,6 +289,33 @@
             : 'Total upcoming items';
     }
 
+    function agendaDisplayKey(event, tz) {
+        var props = event.extendedProps || {};
+        var start = event.start || props.starts_at || props.appointment_datetime;
+        var allDay = !!(event.allDay || props.is_all_day);
+        var timeKey = allDay ? 'all-day' : formatEventTime(start, tz, false);
+        var typeKey = eventTypeKey(props);
+        var title = String(event.title || props.title || 'Event').trim().toLowerCase();
+
+        return typeKey + '|' + timeKey + '|' + title;
+    }
+
+    function clusterAgendaEntries(items, tz) {
+        var clusters = [];
+        var map = {};
+
+        items.forEach(function (entry) {
+            var key = agendaDisplayKey(entry.event, tz);
+            if (!map[key]) {
+                map[key] = { entries: [] };
+                clusters.push(map[key]);
+            }
+            map[key].entries.push(entry);
+        });
+
+        return clusters;
+    }
+
     function renderUpcomingList(events, tz) {
         var listEl = document.getElementById('dashboardUpcomingList');
         if (!listEl) return;
@@ -326,25 +353,32 @@
         var html = '<div class="dashboard-upcoming-agenda">';
         groupOrder.forEach(function (dateKey) {
             var items = groups[dateKey];
+            var clusters = clusterAgendaEntries(items, tz);
             html += '<div class="dashboard-upcoming-day" data-date="' + escapeHtml(dateKey) + '" id="upcoming-day-' + escapeHtml(dateKey) + '">' +
                 '<div class="dashboard-upcoming-day-header">' +
                 '<span>' + escapeHtml(formatDayGroupLabel(dateKey, tz)) + '</span>' +
-                '<span class="dashboard-upcoming-day-count">' + items.length + '</span>' +
+                '<span class="dashboard-upcoming-day-count">' + clusters.length + '</span>' +
                 '</div><ul class="dashboard-upcoming-day-items">';
 
-            items.forEach(function (entry) {
+            clusters.forEach(function (cluster) {
+                var entry = cluster.entries[0];
                 var event = entry.event;
                 var props = event.extendedProps || {};
                 var typeKey = eventTypeKey(props);
                 var title = event.title || props.title || 'Event';
                 var start = event.start || props.starts_at || props.appointment_datetime;
+                var groupCount = cluster.entries.length;
                 var tip = title;
                 var email = String(props.client_email || '').trim();
                 if (email) tip += '\n<' + email + '>';
                 var when = formatEventTime(start, tz, event.allDay || props.is_all_day);
                 if (when) tip += '\n' + when;
+                if (groupCount > 1) {
+                    tip += '\n' + groupCount + ' similar items';
+                }
 
-                html += '<li class="dashboard-upcoming-item" data-upcoming-index="' + entry.index + '" title="' +
+                html += '<li class="dashboard-upcoming-item' + (groupCount > 1 ? ' is-grouped' : '') +
+                    '" data-upcoming-index="' + entry.index + '" title="' +
                     escapeHtml(tip).replace(/\n/g, ' — ') + '">' +
                     '<span class="dashboard-upcoming-item-time">' +
                     escapeHtml(formatEventTime(start, tz, event.allDay || props.is_all_day)) +
@@ -353,6 +387,10 @@
                     '<div class="dashboard-upcoming-item-meta">' +
                     '<span class="dashboard-upcoming-type dashboard-upcoming-type--' + typeKey + '">' +
                     escapeHtml(eventTypeLabel(props)) + '</span>' +
+                    (groupCount > 1
+                        ? '<span class="dashboard-upcoming-group-count" title="' + groupCount + ' similar items">' +
+                            escapeHtml(String(groupCount)) + '+</span>'
+                        : '') +
                     '</div>' +
                     '<div class="dashboard-upcoming-title">' + escapeHtml(title) + '</div>' +
                     '</div></li>';
@@ -387,8 +425,19 @@
 
     function eventDedupKey(event) {
         if (!event) return '';
-        if (event.id) return String(event.id);
         var props = event.extendedProps || {};
+        if (props.booking_appointment_id) {
+            return 'booking:' + props.booking_appointment_id;
+        }
+        if (props.staff_calendar_event_id) {
+            return 'staff:' + props.staff_calendar_event_id;
+        }
+        if (props.court_hearing_id) {
+            return 'court:' + props.court_hearing_id;
+        }
+        if (event.id !== undefined && event.id !== null && event.id !== '') {
+            return String(event.id);
+        }
         return [
             event.title || props.title || '',
             event.start || props.starts_at || props.appointment_datetime || '',
@@ -452,11 +501,10 @@
                 throw new Error(payload.message || 'Failed to load upcoming items');
             }
 
-            var chunkEndTs = new Date(chunkEnd + 'T00:00:00').getTime();
             var incoming = (payload.data || []).filter(function (event) {
                 var start = event.start || (event.extendedProps && (event.extendedProps.starts_at || event.extendedProps.appointment_datetime));
-                var ts = start ? new Date(start).getTime() : NaN;
-                return !isNaN(ts) && ts < chunkEndTs;
+                var dateKey = eventDateKey(start, tz);
+                return dateKey && dateKey >= chunkStart && dateKey < chunkEnd;
             });
 
             upcomingLazy.events = mergeUpcomingEvents(upcomingLazy.events, incoming);
