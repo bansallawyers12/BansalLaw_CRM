@@ -7,11 +7,17 @@ use Illuminate\Support\Str;
 
 class EmailVerification extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_VERIFIED = 'verified';
+    public const STATUS_SUPERSEDED = 'superseded';
+    public const STATUS_EXPIRED = 'expired';
+
     protected $fillable = [
         'client_email_id',
         'client_id',
         'email',
         'verification_token',
+        'status',
         'is_verified',
         'verified_at',
         'verified_by',
@@ -28,7 +34,6 @@ class EmailVerification extends Model
         'token_expires_at' => 'datetime',
     ];
 
-    // Relationships
     public function clientEmail()
     {
         return $this->belongsTo(ClientEmail::class, 'client_email_id');
@@ -44,11 +49,15 @@ class EmailVerification extends Model
         return $this->belongsTo(Staff::class, 'verified_by');
     }
 
-    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
     public function scopeActive($query)
     {
-        return $query->where('is_verified', false)
-                     ->where('token_expires_at', '>', now());
+        return $query->pending()
+            ->where('token_expires_at', '>', now());
     }
 
     public function scopeExpired($query)
@@ -61,7 +70,6 @@ class EmailVerification extends Model
         return $query->where('email', $email);
     }
 
-    // Helper methods
     public function isExpired()
     {
         return $this->token_expires_at && $this->token_expires_at->isPast();

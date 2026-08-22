@@ -912,51 +912,42 @@ class CRMUtilityController extends Controller
 			'PDF_url_for_sign' => '',
 		];
 
-		// Get matter/cost assignment info
 		$matterInfo = null;
-		$costAssignment = \App\Models\CostAssignmentForm::where('client_id', $clientId)->where('client_matter_id', $clientMatterId)->first();
-		if ($costAssignment) {
-			$matterInfo = DB::table('cost_assignment_forms')->where('client_id', $clientId)->where('client_matter_id', $clientMatterId)->first();
-		}
-		if (!$matterInfo && $clientMatter->sel_matter_id) {
-			$clientMatterInfo = DB::table('client_matters')->select('sel_matter_id')->where('id', $clientMatterId)->first();
-			if ($clientMatterInfo) {
-				$matterInfo = DB::table('matters')->where('id', $clientMatterInfo->sel_matter_id)->first();
-			}
-		}
-
-		// visa_apply must always come from matter title (matters table), not cost_assignment_forms
 		if ($clientMatter->sel_matter_id) {
-			$matterTitleRow = DB::table('matters')->select('title')->where('id', $clientMatter->sel_matter_id)->first();
-			$values['visa_apply'] = $matterTitleRow->title ?? '';
+			$matterInfo = DB::table('matters')->where('id', $clientMatter->sel_matter_id)->first();
 		}
 
-	if ($matterInfo) {
+		if ($matterInfo) {
+			$values['visa_apply'] = $matterInfo->title ?? '';
 
-		$block1 = floatval($matterInfo->Block_1_Ex_Tax ?? 0);
-		$block2 = floatval($matterInfo->Block_2_Ex_Tax ?? 0);
-		$block3 = floatval($matterInfo->Block_3_Ex_Tax ?? 0);
-		$blockTotal = $block1 + $block2 + $block3;
-		$totalOther = floatval($matterInfo->additional_fee_1 ?? 0);
-		$totalDisbursements = floatval($matterInfo->TotalDisbursements ?? 0);
-		$grandTotal = $blockTotal + $totalDisbursements + $totalOther;
+			$matterCol = static function ($row, string $column, $default = 0) {
+				return property_exists($row, $column) ? ($row->{$column} ?? $default) : $default;
+			};
 
-		$formattedBlockTotal = number_format($blockTotal, 2, '.', '');
-		$b1 = number_format($block1, 2, '.', '');
-		$b2 = number_format($block2, 2, '.', '');
-		$b3 = number_format($block3, 2, '.', '');
-		$values['Blocktotalfeesincltax'] = $formattedBlockTotal;
-		$values['Blocktotalfeesinclgst'] = $formattedBlockTotal;
-		$values['Block1feesincltax'] = $b1;
-		$values['Block1feesinclgst'] = $b1;
-		$values['Block2feesincltax'] = $b2;
-		$values['Block2feesinclgst'] = $b2;
-		$values['Block3feesincltax'] = $b3;
-		$values['Block3feesinclgst'] = $b3;
-		$values['TotalDisbursements'] = number_format($totalDisbursements, 2, '.', '');
-		$values['TotalEstimatedOthCosts'] = number_format($totalOther, 2, '.', '');
-		$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
-	}
+			$block1 = floatval($matterCol($matterInfo, 'Block_1_Ex_Tax', 0));
+			$block2 = floatval($matterCol($matterInfo, 'Block_2_Ex_Tax', 0));
+			$block3 = floatval($matterCol($matterInfo, 'Block_3_Ex_Tax', 0));
+			$blockTotal = $block1 + $block2 + $block3;
+			$totalOther = floatval($matterCol($matterInfo, 'additional_fee_1', 0));
+			$totalDisbursements = floatval($matterCol($matterInfo, 'TotalDisbursements', 0));
+			$grandTotal = $blockTotal + $totalDisbursements + $totalOther;
+
+			$formattedBlockTotal = number_format($blockTotal, 2, '.', '');
+			$b1 = number_format($block1, 2, '.', '');
+			$b2 = number_format($block2, 2, '.', '');
+			$b3 = number_format($block3, 2, '.', '');
+			$values['Blocktotalfeesincltax'] = $formattedBlockTotal;
+			$values['Blocktotalfeesinclgst'] = $formattedBlockTotal;
+			$values['Block1feesincltax'] = $b1;
+			$values['Block1feesinclgst'] = $b1;
+			$values['Block2feesincltax'] = $b2;
+			$values['Block2feesinclgst'] = $b2;
+			$values['Block3feesincltax'] = $b3;
+			$values['Block3feesinclgst'] = $b3;
+			$values['TotalDisbursements'] = number_format($totalDisbursements, 2, '.', '');
+			$values['TotalEstimatedOthCosts'] = number_format($totalOther, 2, '.', '');
+			$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
+		}
 
 		return $values;
 	}

@@ -771,42 +771,7 @@ function customValidate(formName, savetype = '')
                         });
                     }
 
-					else if(formName == 'costAssignmentformlead'){
-						var client_id = $('#costAssignmentformlead input[name="client_id"]').val();
-						var myform = document.getElementById('costAssignmentformlead');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							dataType: 'json',
-							success: function(response){
-								var obj = (typeof response === 'string' ? JSON.parse(response) : response) || {};
-								var msg = (obj.message != null && obj.message !== '') ? obj.message : (obj.status ? 'Cost assignment saved successfully.' : 'An error occurred. Please try again.');
-								$('#costAssignmentCreateFormModelLead').modal('hide');
-								$('.popuploader').hide();
-								localStorage.setItem('activeTab', 'account');
-								if(obj.status){
-									$('.custom-error-msg').html('<span class="alert alert-success">'+msg+'</span>');
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
-								}
-								location.reload();
-							},
-							error: function(xhr){
-								$('#costAssignmentCreateFormModelLead').modal('hide');
-								$('.popuploader').hide();
-								var errMsg = 'An error occurred while saving. Please try again.';
-								if (xhr.responseJSON && xhr.responseJSON.message) errMsg = xhr.responseJSON.message;
-								else if (xhr.responseJSON && xhr.responseJSON.errors) errMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
-								$('.custom-error-msg').html('<span class="alert alert-danger">'+errMsg+'</span>');
-							}
-						});
-					}
-
-                    else if(formName == 'add_pers_doc_cat_form'){
+					else if(formName == 'add_pers_doc_cat_form'){
                         var myform = document.getElementById('add_pers_doc_cat_form');
                         var fd = new FormData(myform);
                         $.ajax({

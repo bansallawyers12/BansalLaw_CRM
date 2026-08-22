@@ -4,6 +4,7 @@ namespace App\Services\Sms;
 
 use App\Models\PhoneVerification;
 use App\Models\ClientContact;
+use App\Services\ContactVerificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -15,8 +16,10 @@ class PhoneVerificationService
     protected $resendCooldownSeconds = 30;
     protected $maxAttemptsPerHour = 3;
 
-    public function __construct(UnifiedSmsManager $smsManager)
-    {
+    public function __construct(
+        UnifiedSmsManager $smsManager,
+        protected ContactVerificationService $contactVerification
+    ) {
         $this->smsManager = $smsManager;
     }
 
@@ -27,46 +30,39 @@ class PhoneVerificationService
     {
         $contact = ClientContact::findOrFail($contactId);
 
-        // Check if it's a placeholder number
         if ($this->isPlaceholderNumber($contact->phone)) {
             return [
                 'success' => false,
-                'message' => 'Cannot verify placeholder phone numbers'
+                'message' => 'Cannot verify placeholder phone numbers',
             ];
         }
 
-        // Validate it's an Australian number
-        if (!$contact->isAustralianNumber()) {
+        if (! $contact->isAustralianNumber()) {
             return [
                 'success' => false,
-                'message' => 'Phone verification is only available for Australian numbers'
+                'message' => 'Phone verification is only available for Australian numbers',
             ];
         }
 
-        // Check rate limiting
-        if (!$this->canSendOTP($contact)) {
+        if (! $this->canSendOTP($contact)) {
             return [
                 'success' => false,
-                'message' => 'Too many OTP requests. Please try again later.'
+                'message' => 'Too many OTP requests. Please try again later.',
             ];
         }
 
-        // Generate OTP
         $otpCode = PhoneVerification::generateOTP();
         $expiresAt = Carbon::now()->addMinutes($this->otpValidMinutes);
 
-        // Invalidate previous OTPs
-        PhoneVerification::where('client_contact_id', $contactId)
-                        ->where('is_verified', false)
-                        ->delete();
+        $this->contactVerification->supersedePendingPhoneVerifications($contactId);
 
-        // Create new verification record
         $verification = PhoneVerification::create([
             'client_contact_id' => $contactId,
             'client_id' => $contact->client_id,
             'phone' => $contact->phone,
             'country_code' => $contact->country_code,
             'otp_code' => $otpCode,
+            'status' => PhoneVerification::STATUS_PENDING,
             'otp_sent_at' => now(),
             'otp_expires_at' => $expiresAt,
             'is_verified' => false,
@@ -91,25 +87,29 @@ class PhoneVerificationService
             $smsResult = $this->smsManager->sendSms($fullNumber, $message, 'verification', $smsContext);
         }
 
-        if (!$smsResult['success']) {
-            $verification->delete();
+        if (! $smsResult['success']) {
+            $verification->update([
+                'status' => PhoneVerification::STATUS_SUPERSEDED,
+                'otp_sent_at' => null,
+            ]);
+
             return [
                 'success' => false,
-                'message' => 'Failed to send SMS. Please try again.'
+                'message' => 'Failed to send SMS. Please try again.',
             ];
         }
 
         Log::info('OTP sent', [
             'contact_id' => $contactId,
             'phone' => $fullNumber,
-            'expires_at' => $expiresAt
+            'expires_at' => $expiresAt,
         ]);
 
         return [
             'success' => true,
             'message' => 'Verification code sent successfully',
             'expires_at' => $expiresAt->toIso8601String(),
-            'expires_in_seconds' => $this->otpValidMinutes * 60
+            'expires_in_seconds' => $this->otpValidMinutes * 60,
         ];
     }
 
@@ -119,66 +119,78 @@ class PhoneVerificationService
     public function verifyOTP($contactId, $otpCode)
     {
         $verification = PhoneVerification::where('client_contact_id', $contactId)
-                                        ->where('is_verified', false)
-                                        ->latest()
-                                        ->first();
+            ->pending()
+            ->latest()
+            ->first();
 
-        if (!$verification) {
+        if (! $verification) {
             return [
                 'success' => false,
-                'message' => 'No verification request found'
+                'message' => 'No verification request found',
             ];
         }
 
-        // Check if expired
         if ($verification->isExpired()) {
+            $verification->update(['status' => PhoneVerification::STATUS_EXPIRED]);
+
             return [
                 'success' => false,
-                'message' => 'Verification code has expired'
+                'message' => 'Verification code has expired',
             ];
         }
 
-        // Check attempts
-        if (!$verification->canAttempt()) {
+        if (! $verification->canAttempt()) {
+            if ($verification->status === PhoneVerification::STATUS_PENDING) {
+                $verification->update(['status' => PhoneVerification::STATUS_MAX_ATTEMPTS]);
+            }
+
             return [
                 'success' => false,
-                'message' => 'Maximum verification attempts exceeded'
+                'message' => 'Maximum verification attempts exceeded',
             ];
         }
 
-        // Verify OTP
-        if ($verification->otp_code !== $otpCode) {
+        if ((string) $verification->otp_code !== (string) $otpCode) {
             $verification->incrementAttempts();
+
             return [
                 'success' => false,
                 'message' => 'Invalid verification code',
-                'attempts_remaining' => $verification->max_attempts - $verification->attempts
+                'attempts_remaining' => max(0, $verification->max_attempts - $verification->attempts),
             ];
         }
 
-        // Mark as verified
+        $contact = ClientContact::find($contactId);
+        if (! $contact) {
+            return [
+                'success' => false,
+                'message' => 'Contact not found',
+            ];
+        }
+
+        $verifiedBy = Auth::guard('admin')->id() ?? Auth::id();
+
         $verification->update([
+            'status' => PhoneVerification::STATUS_VERIFIED,
             'is_verified' => true,
             'verified_at' => now(),
-            'verified_by' => Auth::id()
+            'verified_by' => $verifiedBy,
         ]);
 
-        // Update contact
-        $contact = ClientContact::find($contactId);
         $contact->update([
             'is_verified' => true,
             'verified_at' => now(),
-            'verified_by' => Auth::id()
+            'verified_by' => $verifiedBy,
         ]);
 
         Log::info('Phone verified', [
             'contact_id' => $contactId,
-            'verified_by' => Auth::id()
+            'verified_by' => $verifiedBy,
         ]);
 
         return [
             'success' => true,
-            'message' => 'Phone number verified successfully'
+            'message' => 'Phone number verified successfully',
         ];
     }
 
@@ -188,8 +200,8 @@ class PhoneVerificationService
     protected function canSendOTP($contact)
     {
         $recentAttempts = PhoneVerification::forPhone($contact->phone, $contact->country_code)
-                                          ->where('otp_sent_at', '>', Carbon::now()->subHour())
-                                          ->count();
+            ->where('otp_sent_at', '>', Carbon::now()->subHour())
+            ->count();
 
         return $recentAttempts < $this->maxAttemptsPerHour;
     }
@@ -200,14 +212,16 @@ class PhoneVerificationService
     public function canResendOTP($contactId)
     {
         $lastVerification = PhoneVerification::where('client_contact_id', $contactId)
-                                            ->latest('otp_sent_at')
-                                            ->first();
+            ->whereNotNull('otp_sent_at')
+            ->latest('otp_sent_at')
+            ->first();
 
-        if (!$lastVerification) {
+        if (! $lastVerification) {
             return true;
         }
 
         $timeSinceLastSend = Carbon::now()->diffInSeconds($lastVerification->otp_sent_at);
+
         return $timeSinceLastSend >= $this->resendCooldownSeconds;
     }
 
@@ -216,11 +230,8 @@ class PhoneVerificationService
      */
     protected function isPlaceholderNumber($phone)
     {
-        // Remove any non-digit characters
         $cleaned = preg_replace('/[^\d]/', '', $phone);
-        
-        // Check if it starts with 4444444444 (placeholder pattern)
+
         return strpos($cleaned, '4444444444') === 0;
     }
 }
-

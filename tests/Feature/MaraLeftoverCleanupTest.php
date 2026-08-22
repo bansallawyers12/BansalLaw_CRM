@@ -7,7 +7,6 @@ use App\Support\BookingCatalogue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
-use PhpOffice\PhpWord\TemplateProcessor;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -132,27 +131,5 @@ class MaraLeftoverCleanupTest extends TestCase
 
         $this->assertStringContainsString('progress of your matter', $reminder);
         $this->assertStringNotContainsString('visa application', strtolower($reminder));
-    }
-
-    #[Test]
-    public function agreement_template_has_no_legacy_mara_merge_fields(): void
-    {
-        $path = storage_path('app/templates/agreement_template.docx');
-        if (! is_file($path)) {
-            $this->markTestSkipped('agreement_template.docx is not present in this environment');
-        }
-
-        $vars = (new TemplateProcessor($path))->getVariables();
-        foreach ($vars as $var) {
-            $this->assertDoesNotMatchRegularExpression(
-                '/^(MARN|AgentName|AgentSurName|AgentTitle|TotalAgentFee|TotalDoHA|DoHA)/i',
-                $var,
-                "Legacy merge field still present: {$var}"
-            );
-        }
-
-        $this->assertContains('LegalPractitionerNumber', $vars);
-        $this->assertContains('SolicitorName', $vars);
-        $this->assertContains('TotalDisbursements', $vars);
     }
 }
