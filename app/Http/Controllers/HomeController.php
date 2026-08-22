@@ -3,30 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\RequestException;
-
-// use App\Models\WebsiteSetting; // removed website settings dependency
-// Website content models removed - tables dropped in migration 2025_12_23_180714
-// Models deleted: Slider, OurService, Testimonial, HomeContent
-// Tables dropped: sliders, our_services, testimonials, home_contents
-use App\Mail\CommonMail;
-
-use Illuminate\Support\Facades\Session;
-use Cookie;
-
-use Mail;
-use Swift_SmtpTransport;
-use Swift_Mailer;
-use Helper;
-
-use Stripe;
 
 use App\Support\BansalDatetimeBackendHelper;
 use App\Support\BookingCatalogue;
@@ -48,54 +27,6 @@ class HomeController extends Controller
         ];
         \View::share('siteData', $siteData);
 	}
-
-
-	public function sicaptcha(Request $request)
-    {
-		 $code=$request->code;
-
-		$im = imagecreatetruecolor(50, 24);
-		$bg = imagecolorallocate($im, 37, 37, 37); //background color blue
-		$fg = imagecolorallocate($im, 255, 241, 70);//text color white
-		imagefill($im, 0, 0, $bg);
-		imagestring($im, 5, 5, 5,  $code, $fg);
-		header("Cache-Control: no-cache, must-revalidate");
-		header('Content-type: image/png');
-		imagepng($im);
-		imagedestroy($im);
-
-    }
-
-	public static function hextorgb ($hexstring){
-		$integar = hexdec($hexstring);
-					return array( "red" => 0xFF & ($integar >> 0x10),
-		"green" => 0xFF & ($integar >> 0x8),
-		"blue" => 0xFF & $integar
-		);
-	}
-
-
-
-
-	public function refresh_captcha() {
-		$vals = array(
-			'img_path' => public_path().'/captcha/',
-			'img_url' => asset('public/captcha'),
-			'expiration' => 7200,
-			'word_lenght' => 6,
-			'font_size' => 15,
-			'img_width'	=> '110',
-			'img_height' => '40',
-			'colors'	=> array('background' => array(255,175,2),'border' => array(255,175,2),	'text' => array(255,255,255),	'grid' => array(255,255,255))
-		);
-
-		$cap = $this->create_captcha($vals);
-		$captcha = $cap['image'];
-		session()->put('captchaWord', $cap['word']);
-		echo $cap['image'];
-	}
-
-	
 
 
     /**
