@@ -105,4 +105,20 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
 
         $this->assertSame('kunal', $this->service()->bookingCalendarTypeForStaff($staff));
     }
+
+    #[Test]
+    public function important_events_accept_synthetic_request_without_url(): void
+    {
+        $request = new \Illuminate\Http\Request([
+            'start' => '2026-08-22T00:00:00+10:00',
+            'end' => '2026-08-30T00:00:00+10:00',
+        ]);
+
+        $method = new \ReflectionMethod(StaffPersonalCalendarFeedService::class, 'bookingCalendarImportantEvents');
+        $method->setAccessible(true);
+
+        $rows = $method->invoke($this->service(), 'ajay', $request);
+
+        $this->assertIsArray($rows);
+    }
 }
