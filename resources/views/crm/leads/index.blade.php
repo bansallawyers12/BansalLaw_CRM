@@ -1249,6 +1249,12 @@
 			<div class="modal-body">
 				<form method="post" name="sendmail" action="{{URL::to('/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
 				@csrf
+                    <input type="hidden" name="type" id="compose_record_type" value="lead">
+                    <input type="hidden" name="client_id" id="compose_client_id" value="">
+                    <input type="hidden" name="lead_id" id="compose_lead_id" value="">
+                    <input type="hidden" name="mail_type" value="2">
+                    <input type="hidden" name="mail_body_type" value="sent">
+                    <input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
 					<div class="row">
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
@@ -1312,7 +1318,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="tinymce-editor selectedmessage" name="message"></textarea>
+								<textarea class="tinymce-editor selectedmessage" id="compose_email_message" name="message" data-valid="required"></textarea>
 								@if ($errors->has('message'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('message') }}</strong>
@@ -1320,8 +1326,9 @@
 								@endif
 							</div>
 						</div>
+						@include('crm.partials.compose-email-attachments')
 						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('sendmail')" type="button" class="btn btn-primary">Send</button>
+							<button onclick="saveComposeEmail()" type="button" class="btn btn-primary">Send</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
@@ -1333,8 +1340,15 @@
 
 @endsection
 @push('scripts')
+<script src="{{ asset('js/crm/compose-matter-documents.js') }}"></script>
 <script src="{{ asset('js/crm/clients/clients-listing-spa.js') }}"></script>
 <script>
+window.saveComposeEmail = function() {
+    if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+        tinymce.get('compose_email_message').save();
+    }
+    customValidate('sendmail');
+};
 window.ClientsListingSpaConfig = {
     csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
     routes: {
@@ -1344,7 +1358,8 @@ window.ClientsListingSpaConfig = {
         unarchive: @json(url('/unarchive')),
         mergeRecords: @json(url('/merge_records')),
         getRecipients: @json(url('/clients/get-recipients')),
-        getTemplates: @json(url('/get-templates'))
+        getTemplates: @json(url('/get-templates')),
+        getComposeDefaults: @json(url('/get-compose-defaults'))
     }
 };
 

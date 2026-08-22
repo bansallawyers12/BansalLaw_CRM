@@ -569,6 +569,25 @@
     }
 
     function showEmailModal(array, data) {
+        var isLead = window.location.pathname.indexOf('/leads') === 0;
+        if (isLead) {
+            $('#emailmodal input[name="type"]').val('lead');
+            if (array && array.length === 1) {
+                $('#emailmodal input[name="client_id"]').val(array[0]);
+                $('#emailmodal input[name="lead_id"]').val(array[0]);
+                $('#emailmodal input[name="compose_client_matter_id"]').val('');
+                if (typeof window.loadComposeMatterDocuments === 'function') {
+                    window.loadComposeMatterDocuments({ client_id: array[0] });
+                }
+            } else {
+                $('#emailmodal input[name="client_id"]').val('');
+                $('#emailmodal input[name="lead_id"]').val('');
+                $('#emailmodal input[name="compose_client_matter_id"]').val('');
+                if (typeof window.renderComposeMatterDocuments === 'function') {
+                    window.renderComposeMatterDocuments([]);
+                }
+            }
+        }
         $('#emailmodal').modal('show');
         var $to = $('#emailmodal .js-data-example-ajax');
         if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {

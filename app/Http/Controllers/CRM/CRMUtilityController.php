@@ -844,11 +844,24 @@ class CRMUtilityController extends Controller
 	 */
 	public function getComposeDefaults(Request $request){
 		$clientMatterId = $request->client_matter_id;
+		$ownerId = (int) ($request->client_id ?? 0);
+
 		if (!$clientMatterId) {
+			if ($ownerId <= 0) {
+				return response()->json([
+					'template' => null,
+					'checklist_ids' => [],
+					'matter_documents' => [],
+					'macro_values' => null,
+				]);
+			}
+
+			$this->ensureCrmRecordAccess($ownerId);
+
 			return response()->json([
 				'template' => null,
 				'checklist_ids' => [],
-				'matter_documents' => [],
+				'matter_documents' => $this->composeMatterDocumentService->listForMatter($ownerId, 0),
 				'macro_values' => null,
 			]);
 		}
@@ -1112,6 +1125,12 @@ class CRMUtilityController extends Controller
 		}
 
 		$client = Admin::find((int) $clientId);
+		if (! $client) {
+			return null;
+		}
+		if (($client->type ?? '') === 'lead' || strcasecmp((string) request()->input('type', ''), 'lead') === 0) {
+			return null;
+		}
 		$clientRef = trim((string) ($client->client_id ?? ''));
 		if ($clientRef === '') {
 			return null;
@@ -1778,9 +1797,7 @@ class CRMUtilityController extends Controller
         $composeClientMatterId = ! empty($requestData['compose_client_matter_id'])
             ? (int) $requestData['compose_client_matter_id']
             : 0;
-        if ($composeClientMatterId <= 0) {
-            return [];
-        }
+        $isLeadCompose = strcasecmp((string) ($requestData['type'] ?? ''), 'lead') === 0;
 
         $paths = [];
         foreach ($ids as $documentId) {
@@ -1788,10 +1805,14 @@ class CRMUtilityController extends Controller
             if (! $document) {
                 continue;
             }
-            if ((int) $document->client_id !== $composeClientId) {
+            $docOwnerId = (int) ($document->client_id ?: $document->lead_id);
+            if ($docOwnerId !== $composeClientId) {
                 continue;
             }
-            if ((int) $document->client_matter_id !== $composeClientMatterId) {
+            if ($composeClientMatterId > 0 && (int) $document->client_matter_id !== $composeClientMatterId) {
+                continue;
+            }
+            if (! $isLeadCompose && $composeClientMatterId <= 0) {
                 continue;
             }
             if (! in_array((string) $document->doc_type, ['matter', 'visa'], true)) {

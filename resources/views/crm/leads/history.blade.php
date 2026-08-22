@@ -249,13 +249,24 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form action="{{ route('clients.sendmail') }}" method="POST" name="add-compose" autocomplete="off" enctype="multipart/form-data" id="lead_history_email_compose">
+				<form method="post" name="sendmail" action="{{ route('clients.sendmail') }}" autocomplete="off" enctype="multipart/form-data" id="lead_history_email_compose">
 					@csrf
 				<input name="type" type="hidden" value="lead">
-				<input name="mail_type" type="hidden" value="1">
+				<input name="mail_type" type="hidden" value="2">
+				<input name="mail_body_type" type="hidden" value="sent">
 				<input name="client_id" type="hidden" value="{{ @$fetchedData->id }}">
 				<input name="lead_id" type="hidden" value="{{ @$fetchedData->id }}">
 				<input name="email_to[]" type="hidden" value="{{ @$fetchedData->id }}">
+				@php
+				    $leadComposeMatters = \Illuminate\Support\Facades\Schema::hasTable('client_matters')
+				        ? \App\Models\ClientMatter::where('client_id', $fetchedData->id)
+				            ->where('matter_status', 1)
+				            ->orderByDesc('id')
+				            ->get()
+				        : collect();
+				    $leadDefaultMatterId = optional($leadComposeMatters->first())->id;
+				@endphp
+				<input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="{{ $leadDefaultMatterId ?? '' }}">
 					<div class="row">
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
@@ -265,11 +276,13 @@
 						</div>
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
-								<label for="compose_matter_id_lead">Matter type (for checklist sheet)</label>
-								<select name="compose_matter_id" id="compose_matter_id_lead" class="form-control">
-									<option value="">Select matter type</option>
-									@foreach(\App\Models\Matter::where('status',1)->orderBy('title')->get() as $m)
-									<option value="{{ $m->id }}">{{ $m->title }} ({{ $m->nick_name ?? '' }})</option>
+								<label for="compose_client_matter_select_lead">Matter</label>
+								<select id="compose_client_matter_select_lead" class="form-control">
+									<option value="">All matters</option>
+									@foreach($leadComposeMatters as $leadMatter)
+									<option value="{{ $leadMatter->id }}" @selected((int) $leadDefaultMatterId === (int) $leadMatter->id)>
+										{{ $leadMatter->client_unique_matter_no ?: ('Matter #'.$leadMatter->id) }}
+									</option>
 									@endforeach
 								</select>
 							</div>
@@ -307,8 +320,8 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="subject">Subject <span class="span_req">*</span></label>
-								<input type="text" name="subject" value="" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject">
+								<label for="compose_email_subject">Subject <span class="span_req">*</span></label>
+								<input type="text" name="subject" id="compose_email_subject" value="" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject">
 								@if ($errors->has('subject'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('subject') }}</strong>
@@ -318,8 +331,8 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="tinymce-editor selectedmessage" name="message"></textarea>
+								<label for="compose_email_message">Message <span class="span_req">*</span></label>
+								<textarea class="tinymce-editor selectedmessage" id="compose_email_message" name="message" data-valid="required"></textarea>
 								@if ($errors->has('message'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('message') }}</strong>
@@ -327,26 +340,9 @@
 								@endif
 							</div>
 						</div>
+						@include('crm.partials.compose-email-attachments')
 						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label>Checklist attachments</label>
-								<div class="table-responsive"><table class="table table-sm table-bordered">
-									<thead><tr><th></th><th>File name</th></tr></thead>
-									<tbody>
-									@php
-									    $__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
-									        ? \App\Models\UploadChecklist::orderBy('id')->get()
-									        : collect();
-									@endphp
-									@foreach($__matterChecklistRows as $uclist)
-									<tr><td><input type="checkbox" name="checklistfile[]" value="{{ $uclist->id }}"></td><td><a href="{{ url('checklists/'.$uclist->file) }}" target="_blank">{{ $uclist->name }}</a></td></tr>
-									@endforeach
-									</tbody>
-								</table></div>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('add-compose')" type="button" class="btn btn-primary">Send</button>
+							<button onclick="saveComposeEmail()" type="button" class="btn btn-primary">Send</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
@@ -357,10 +353,22 @@
 </div>
 @endsection
 @push('scripts')
+<script src="{{ asset('js/crm/compose-matter-documents.js') }}"></script>
 <script> 
 
 var lead_id = '{{base64_encode(convert_uuencode(@$fetchedData->id))}}';
 window.crmLeadHistoryNoteEncodedId = lead_id;
+window.ClientDetailConfig = window.ClientDetailConfig || {};
+window.ClientDetailConfig.urls = Object.assign({}, window.ClientDetailConfig.urls || {}, {
+    getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',
+    getTemplates: '{{ URL::to("/get-templates") }}'
+});
+window.saveComposeEmail = function() {
+    if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+        tinymce.get('compose_email_message').save();
+    }
+    customValidate('sendmail');
+};
 jQuery(document).ready(function($){
 	
 	$('.attach_more').on('click', function(){
@@ -430,7 +438,7 @@ $(function () {
 		datatype:'json',
 		data:{id:v},
 		success: function(response){
-			var res = JSON.parse(response);
+			var res = typeof response === 'string' ? JSON.parse(response) : response;
 			$('.selectedsubject').val(res.subject);
 			 // Clear and set TinyMCE editor content
                     $("#emailmodal .tinymce-editor").each(function() {
@@ -445,6 +453,20 @@ $(function () {
 		}
 	});
 });
+
+	function refreshLeadComposeAttachments() {
+		var matterId = $('#compose_client_matter_select_lead').val() || $('#compose_client_matter_id').val();
+		$('#compose_client_matter_id').val(matterId || '');
+		var params = { client_id: {{ (int) $fetchedData->id }} };
+		if (matterId) {
+			params.client_matter_id = matterId;
+		}
+		if (typeof window.loadComposeMatterDocuments === 'function') {
+			window.loadComposeMatterDocuments(params);
+		}
+	}
+	$('#compose_client_matter_select_lead').on('change', refreshLeadComposeAttachments);
+	$('#emailmodal').on('shown.bs.modal', refreshLeadComposeAttachments);
 
 $(document).delegate('.opennotepopup', 'click', function(){
 		var notename = $.trim($(this).attr('data-notename'));

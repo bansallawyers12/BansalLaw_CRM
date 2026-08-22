@@ -65,5 +65,8 @@ class ComposeMatterDocumentServiceTest extends TestCase
         $this->assertSame($withFile->id, $rows[0]['id']);
         $this->assertSame('Passport', $rows[0]['checklist']);
         $this->assertStringContainsString('passport.pdf', $rows[0]['file_name']);
+
+        $allForOwner = $service->listForMatter(10, 0);
+        $this->assertCount(2, $allForOwner);
     }
 }

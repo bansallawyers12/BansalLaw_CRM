@@ -15,17 +15,17 @@ use Illuminate\Support\Facades\Storage;
 class ComposeMatterDocumentService
 {
     /**
-     * Documents uploaded for a client matter that can be attached in compose email.
+     * Documents uploaded for a client or lead that can be attached in compose email.
      *
      * @return array<int, array{id: int, checklist: string, file_name: string, preview_url: string}>
      */
-    public function listForMatter(int $clientId, int $clientMatterId): array
+    public function listForMatter(int $clientId, int $clientMatterId = 0): array
     {
-        if ($clientId <= 0 || $clientMatterId <= 0 || ! Schema::hasTable('documents')) {
+        if ($clientId <= 0 || ! Schema::hasTable('documents')) {
             return [];
         }
 
-        foreach (['client_id', 'client_matter_id', 'doc_type', 'type'] as $column) {
+        foreach (['client_id', 'doc_type'] as $column) {
             if (! Schema::hasColumn('documents', $column)) {
                 return [];
             }
@@ -33,10 +33,13 @@ class ComposeMatterDocumentService
 
         try {
             $query = Document::query()
-                ->where('client_id', $clientId)
-                ->where('client_matter_id', $clientMatterId)
+                ->where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId);
+                    if (Schema::hasColumn('documents', 'lead_id')) {
+                        $q->orWhere('lead_id', $clientId);
+                    }
+                })
                 ->whereIn('doc_type', ['matter', 'visa'])
-                ->where('type', 'client')
                 ->where(function ($q) {
                     $q->where(function ($inner) {
                         $inner->whereNotNull('myfile_key')->where('myfile_key', '!=', '');
@@ -44,6 +47,16 @@ class ComposeMatterDocumentService
                         $inner->whereNotNull('myfile')->where('myfile', '!=', '');
                     });
                 });
+
+            if (Schema::hasColumn('documents', 'type')) {
+                $query->where(function ($q) {
+                    $q->whereIn('type', ['client', 'lead'])->orWhereNull('type');
+                });
+            }
+
+            if ($clientMatterId > 0 && Schema::hasColumn('documents', 'client_matter_id')) {
+                $query->where('client_matter_id', $clientMatterId);
+            }
 
             if (Schema::hasColumn('documents', 'not_used_doc')) {
                 $query->whereNull('not_used_doc');
