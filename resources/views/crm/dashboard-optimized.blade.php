@@ -14,12 +14,14 @@
             <div class="dashboard-welcome-content">
                 <div class="dashboard-welcome-text">
                     <p class="dashboard-welcome-label">Dashboard</p>
-                    <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
-                    <p class="dashboard-header-meta">
-                        <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
-                            {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
-                        </time>
-                    </p>
+                    <div class="dashboard-welcome-heading">
+                        <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
+                        <p class="dashboard-header-meta">
+                            <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
+                                {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
+                            </time>
+                        </p>
+                    </div>
                 </div>
                 <div class="header-actions">
                     <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
@@ -243,19 +245,8 @@
     color: var(--primary-color);
 }
 
-.dashboard-header-meta {
-    margin: 6px 0 0 0;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text-muted-color);
-}
-
 .dashboard-header-meta time {
     font-variant-numeric: tabular-nums;
-}
-
-.dashboard-welcome-banner .dashboard-header-meta time {
-    color: inherit;
 }
 .todo-filter-tabs {
     display: flex;
@@ -496,8 +487,8 @@
 
 .header-actions {
     display: flex;
-    gap: 10px;
-    align-self: flex-start;
+    gap: 8px;
+    align-self: center;
     flex-wrap: wrap;
 }
 

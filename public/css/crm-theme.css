@@ -4598,6 +4598,35 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
   color: var(--text-muted) !important;
 }
 
+/* Dashboard welcome banner — navy gradient; beat global h1 / main-content navy text */
+body.sidebar-mini .main-content .dashboard-welcome-banner,
+body.sidebar-mini .dashboard-welcome-banner {
+  color: #fff !important;
+}
+
+body.sidebar-mini .main-content .dashboard-welcome-banner h1,
+body.sidebar-mini .dashboard-welcome-banner h1,
+body.sidebar-mini .dashboard-welcome-banner #dashboardGreeting {
+  color: #fff !important;
+}
+
+body.sidebar-mini .dashboard-welcome-banner .dashboard-welcome-label,
+body.sidebar-mini .dashboard-welcome-banner .dashboard-header-meta,
+body.sidebar-mini .dashboard-welcome-banner .dashboard-header-meta time {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.sidebar-mini .dashboard-welcome-banner .action-btn-primary {
+  background: #fff !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .dashboard-welcome-banner .action-btn-secondary {
+  background: transparent !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+}
+
 /* KPI dashboard cards (theme.md) */
 body.sidebar-mini .kpi-cards .card,
 body.sidebar-mini .main-content > .kpi-cards .card {
