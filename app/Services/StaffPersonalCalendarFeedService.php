@@ -234,7 +234,10 @@ class StaffPersonalCalendarFeedService
      */
     protected function bookingCalendarImportantEvents(string $calendarType, Request $request): array
     {
-        $feedRequest = Request::create($request->url(), 'GET', array_merge(
+        // Do not use $request->url() here: statsForStaff builds a synthetic Request without
+        // server vars, so url() becomes "http://:" and Request::create() throws BadRequestException
+        // (surfaced as BadRequestHttpException "Bad request." on /dashboard).
+        $feedRequest = Request::create('/', 'GET', array_merge(
             $request->query(),
             $request->request->all(),
             ['type' => $calendarType]
