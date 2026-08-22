@@ -1,4 +1,4 @@
-// Dashboard Optimized JavaScript
+// Dashboard JavaScript
 $(document).ready(function() {
     // Check if required objects are defined
     if (typeof window.dashboardRoutes === 'undefined') {
@@ -11,9 +11,6 @@ $(document).ready(function() {
     }
     
     initializeDashboard();
-    if (document.getElementById('columnToggleBtn')) {
-        applyInitialColumnVisibility();
-    }
     initializeEventHandlers();
 });
 
@@ -92,37 +89,9 @@ function initDashboardClock() {
 }
 
 function initializeEventHandlers() {
-    // Stage change handler
-    $(document).on('change', '.stageCls', function () {
-        let stageId = $(this).val();
-        let itemId = $(this).attr('id').split('_')[1];
-        if (stageId) {
-            updateStage(itemId, stageId);
-        }
-    });
-
     // Extend deadline
     $(document).on('click', '#extend_deadline', extendDeadline);
     $(document).delegate('.btn-extend_note_deadline', 'click', openExtendDeadlineModal);
-    
-    // Filter form
-    $('#filterForm').on('submit', submitFilterForm);
-    $('.stage-select').on('change', function() {
-        $('#filterForm').submit();
-    });
-
-    // Column toggle
-    $('#columnToggleBtn').on('click', toggleColumnDropdown);
-    $('input[name="column"]').on('change', function() {
-        toggleColumn($(this));
-    });
-    $('#toggleAllColumns').on('change', function() {
-        toggleAllColumns($(this));
-    });
-
-    // Search and actions
-    $('input[name="client_name"]').on('blur keypress', handleSearchInput);
-    $(document).on('click', '.action-button', handleActionClick);
 
     // Completion notes modal - confirm task completion
     $(document).on('click', '#dashboardConfirmTaskCompletion', function() {
@@ -139,28 +108,6 @@ function initializeEventHandlers() {
     $(document).on('hidden.bs.modal', '#dashboardCompletionNotesModal', function() {
         dashboardPendingTaskId = null;
         dashboardPendingUniqueGroupId = null;
-    });
-}
-
-function updateStage(itemId, stageId) {
-    if (!window.dashboardRoutes || !window.dashboardRoutes.updateStage) {
-        console.error('Update stage route not defined');
-        showNotification('Configuration error: Update route not available.', 'error');
-        return;
-    }
-    
-    $.ajax({
-        url: window.dashboardRoutes.updateStage,
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        method: 'POST',
-        data: { item_id: itemId, stage_id: stageId },
-        success: function (response) {
-            showNotification(response.success ? 'Stage updated successfully!' : 'Failed to update stage.', response.success ? 'success' : 'error');
-            if (response.success) setTimeout(() => location.reload(), 1000);
-        },
-        error: function (xhr, status, error) {
-            showNotification('An error occurred while updating status.', 'error');
-        }
     });
 }
 
@@ -219,124 +166,6 @@ function openExtendDeadlineModal() {
     $('#assignnote').val($button.attr("data-assignnote"));
     $('#note_deadline').val($button.attr("data-deadlinedate"));
     $('#extend_note_popup').modal('show');
-}
-
-function submitFilterForm(e) {
-    e.preventDefault();
-    const formData = $('#filterForm').serialize();
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams(formData);
-    params.delete('page');
-    url.search = params.toString();
-    window.location.href = url.toString();
-}
-
-function toggleColumnDropdown() {
-    $('#columnDropdown').toggleClass('show');
-}
-
-function toggleColumn($checkbox) {
-    const columnValue = $checkbox.val();
-    const isChecked = $checkbox.is(':checked');
-    
-    if (isChecked) {
-        $('.col-' + columnValue).removeClass('col-hidden');
-    } else {
-        $('.col-' + columnValue).addClass('col-hidden');
-    }
-    
-    updateVisibleCount();
-    updateToggleAllState();
-    saveColumnPreferences();
-}
-
-function toggleAllColumns($checkbox) {
-    const isChecked = $checkbox.is(':checked');
-    $('input[name="column"]').prop('checked', isChecked);
-    
-    if (isChecked) {
-        $('[class*="col-"]').removeClass('col-hidden');
-    } else {
-        $('[class*="col-"]').addClass('col-hidden');
-    }
-    
-    updateVisibleCount();
-    saveColumnPreferences();
-}
-
-function updateVisibleCount() {
-    const visibleCount = $('input[name="column"]:checked').length;
-    $('.visible-count').text(visibleCount);
-}
-
-function updateToggleAllState() {
-    const totalColumns = $('input[name="column"]').length;
-    const checkedColumns = $('input[name="column"]:checked').length;
-    
-    if (checkedColumns === 0) {
-        $('#toggleAllColumns').prop('indeterminate', false).prop('checked', false);
-    } else if (checkedColumns === totalColumns) {
-        $('#toggleAllColumns').prop('indeterminate', false).prop('checked', true);
-    } else {
-        $('#toggleAllColumns').prop('indeterminate', true);
-    }
-}
-
-function saveColumnPreferences() {
-    const visibleColumns = [];
-    $('input[name="column"]:checked').each(function() {
-        visibleColumns.push($(this).val());
-    });
-
-    $.ajax({
-        url: window.dashboardRoutes.columnPreferences,
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        data: { visible_columns: visibleColumns },
-        success: function() {
-        },
-        error: function() {
-            console.error('Failed to save column preferences');
-        }
-    });
-}
-
-function applyInitialColumnVisibility() {
-    const visibleColumns = window.dashboardData.visibleColumns || [];
-    const allColumns = ['matter', 'client_id', 'client_name', 'dob', 'legal_practitioner', 'person_responsible', 'person_assisting', 'stage'];
-    
-    allColumns.forEach(function(column) {
-        if (!visibleColumns.includes(column)) {
-            $('.col-' + column).addClass('col-hidden');
-            $('input[name="column"][value="' + column + '"]').prop('checked', false);
-        }
-    });
-    
-    updateVisibleCount();
-    updateToggleAllState();
-}
-
-function handleSearchInput(e) {
-    if (e.type === 'blur' && $(this).val().trim() !== '') {
-        $('#filterForm').submit();
-    }
-    if (e.which === 13) {
-        e.preventDefault();
-        $('#filterForm').submit();
-    }
-}
-
-function handleActionClick() {
-    window.location.href = $(this).data('href');
-}
-
-window.clearFiltersAndReset = function() {
-    if (!window.dashboardRoutes || !window.dashboardRoutes.dashboard) {
-        console.error('Dashboard route not defined');
-        showNotification('Configuration error: Dashboard route not available.', 'error');
-        return;
-    }
-    window.location.href = window.dashboardRoutes.dashboard;
 }
 
 window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {

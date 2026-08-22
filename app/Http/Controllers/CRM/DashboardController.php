@@ -42,7 +42,7 @@ class DashboardController extends Controller
             $dashboardData['bookingCalendarType'] = null;
         }
 
-        return view('crm.dashboard-optimized', $dashboardData);
+        return view('crm.dashboard', $dashboardData);
     }
 
     /**

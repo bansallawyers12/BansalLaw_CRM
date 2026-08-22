@@ -1133,8 +1133,6 @@ body > .ts-dropdown {
         dashboard: "{{ route('dashboard') }}",
         calendarEvents: "{{ route('dashboard.calendar-events') }}",
         storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
-        updateStage: "{{ route('dashboard.update-stage') }}",
-        columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateActionCompleted: "{{ route('dashboard.update-action-completed') }}",
         updateTaskCompleted: "{{ route('dashboard.update-action-completed') }}",
@@ -1148,7 +1146,7 @@ body > .ts-dropdown {
         console.error('Dashboard routes not defined');
     }
 </script>
-<script src="{{ asset('js/dashboard-optimized.js') }}"></script>
+<script src="{{ asset('js/dashboard.js') }}"></script>
 <script src="{{ asset('js/dashboard-calendar.js') }}?v={{ @filemtime(public_path('js/dashboard-calendar.js')) ?: time() }}"></script>
 <script>
 $(function () {
@@ -1439,11 +1437,6 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         document.getElementById('refreshDashboard').click();
     }
-    
-    // Escape to close dropdowns
-    if (e.key === 'Escape') {
-        document.getElementById('columnDropdown')?.classList.remove('show');
-    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1463,14 +1456,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-});
-
-// Debounced search (override from original script)
-let searchTimeout;
-document.querySelector('input[name="client_name"]')?.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-    }, 500);
 });
 
 // Add animation to KPI cards on load
