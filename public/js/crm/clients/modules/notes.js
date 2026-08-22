@@ -161,6 +161,79 @@
         });
     }
 
+    function bindNotePageDropOverlay($modal) {
+        if (!$modal.length || $modal.data('pageDropBound')) return;
+        $modal.data('pageDropBound', true);
+
+        var $content = $modal.find('.modal-content').first();
+        var $overlay = $content.find('.note-page-drop-overlay');
+        if (!$overlay.length) return;
+
+        var dragDepth = 0;
+
+        function hasFiles(e) {
+            var dt = e.originalEvent && e.originalEvent.dataTransfer;
+            if (!dt || !dt.types) return false;
+            return Array.prototype.indexOf.call(dt.types, 'Files') !== -1;
+        }
+
+        function resetDragState() {
+            dragDepth = 0;
+            $overlay.removeClass('is-active');
+            $content.removeClass('note-modal-drag-active');
+        }
+
+        function onDragEnter(e) {
+            if (!$modal.hasClass('show') || !hasFiles(e)) return;
+            e.preventDefault();
+            dragDepth++;
+            $overlay.addClass('is-active');
+            $content.addClass('note-modal-drag-active');
+        }
+
+        function onDragLeave(e) {
+            if (!$modal.hasClass('show') || !hasFiles(e)) return;
+            e.preventDefault();
+            dragDepth = Math.max(0, dragDepth - 1);
+            if (dragDepth === 0) {
+                resetDragState();
+            }
+        }
+
+        function onDragOver(e) {
+            if (!$modal.hasClass('show') || !hasFiles(e)) return;
+            e.preventDefault();
+            if (e.originalEvent && e.originalEvent.dataTransfer) {
+                e.originalEvent.dataTransfer.dropEffect = 'copy';
+            }
+        }
+
+        function onDrop(e) {
+            if (!$modal.hasClass('show') || !hasFiles(e)) return;
+            e.preventDefault();
+            resetDragState();
+            var $form = $modal.find('form').first();
+            var $field = noteAttachmentField($form);
+            var dt = e.originalEvent && e.originalEvent.dataTransfer;
+            if ($field.length && dt && dt.files && dt.files.length) {
+                addNoteFiles($field, dt.files);
+            }
+        }
+
+        $modal.on('shown.bs.modal.notePageDrop', function() {
+            $(document)
+                .on('dragenter.notePageDropDoc', onDragEnter)
+                .on('dragleave.notePageDropDoc', onDragLeave)
+                .on('dragover.notePageDropDoc', onDragOver)
+                .on('drop.notePageDropDoc', onDrop);
+        });
+
+        $modal.on('hidden.bs.modal.notePageDrop', function() {
+            $(document).off('.notePageDropDoc');
+            resetDragState();
+        });
+    }
+
     function bindNoteAttachmentUi($form) {
         var $field = noteAttachmentField($form);
         if (!$field.length || $field.data('bound')) return;
@@ -196,11 +269,14 @@
     $(document).ready(function() {
         bindNoteAttachmentUi($('#create_note'));
         bindNoteAttachmentUi($('#create_note_d'));
+        bindNotePageDropOverlay($('#create_note'));
+        bindNotePageDropOverlay($('#create_note_d'));
 
         $(document).delegate('.create_note_d', 'click', function() {
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note_d select[name="task_group"]').val('');
             $('#create_note_d .additional-fields-container').html('');
+            $('#create_note_d input[name="spend_hours"]').val('');
 
             $('#create_note_d').modal('show');
             $('#create_note_d input[name="mailid"]').val(0);
@@ -228,6 +304,7 @@
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note select[name="task_group"]').val('');
             $('#create_note .additional-fields-container').html('');
+            $('#create_note input[name="spend_hours"]').val('');
 
             $('#create_note').modal('show');
             $('#create_note input[name="mailid"]').val(0);
@@ -292,6 +369,11 @@
 
                     $('#create_note select[name="task_group"]').val(taskGroup);
                     $("#create_note .tinymce-editor").val(res.data.description);
+                    if (res.data.spend_hours != null && res.data.spend_hours !== '') {
+                        $('#create_note input[name="spend_hours"]').val(res.data.spend_hours);
+                    } else {
+                        $('#create_note input[name="spend_hours"]').val('');
+                    }
                     if (typeof setEditorContent === 'function') {
                         setEditorContent("#create_note .tinymce-editor", res.data.description);
                     }

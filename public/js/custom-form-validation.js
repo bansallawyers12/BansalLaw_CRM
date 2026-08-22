@@ -2352,6 +2352,7 @@ function customValidate(formName, savetype = '')
 							var obj = typeof response === 'string' ? $.parseJSON(response) : response;
 							if(obj.status){
 								$('#create_note').modal('hide');
+								$('#create_note input[name="spend_hours"]').val('');
 								if (typeof window.resetNoteAttachments === 'function') {
 									window.resetNoteAttachments($('#create_note'));
 								}
@@ -2395,6 +2396,7 @@ function customValidate(formName, savetype = '')
 								    $('#create_note_d input[name="title"]').val('');
 								$("#create_note_d .tinymce-editor").val('');
 								$('#create_note_d input[name="noteid"]').val('');
+								$('#create_note_d input[name="spend_hours"]').val('');
 								if (typeof window.resetNoteAttachments === 'function') {
 									window.resetNoteAttachments($('#create_note_d'));
 								}

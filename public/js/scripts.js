@@ -429,7 +429,7 @@ $(function () {
       }
     };
 
-    var editorsToInit = '.tinymce-editor';
+    var editorsToInit = '.tinymce-editor:not(.tinymce-editor-note-lg)';
     
     // Check if editors exist and initialize them
     $(editorsToInit).each(function() {
@@ -442,6 +442,22 @@ $(function () {
       if (tinymce.get(editorId) === null) {
         tinymce.init({
           ...tinymceSimpleConfig,
+          selector: '#' + editorId
+        });
+      }
+    });
+
+    $('.tinymce-editor-note-lg').each(function() {
+      var editorId = $(this).attr('id') || 'tinymce_note_lg_' + Math.random().toString(36).substr(2, 9);
+      if (!$(this).attr('id')) {
+        $(this).attr('id', editorId);
+      }
+      if (tinymce.get(editorId) === null) {
+        tinymce.init({
+          ...tinymceSimpleConfig,
+          height: 280,
+          min_height: 280,
+          max_height: 600,
           selector: '#' + editorId
         });
       }

@@ -7,7 +7,7 @@
 <!-- Update note Modal -->
 <div class="modal fade custom_modal" id="create_note" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
-		<div class="modal-content">
+		<div class="modal-content note-modal-with-drop">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Create Note</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
@@ -42,6 +42,19 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
+								<label for="spend_hours_simple">Spend Hours</label>
+								<input type="number"
+								       name="spend_hours"
+								       id="spend_hours_simple"
+								       class="form-control"
+								       min="0"
+								       max="999"
+								       step="0.25"
+								       placeholder="0.00">
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
 								<label for="description">Description <span class="span_req">*</span></label>
 								<textarea  class="tinymce-editor" name="description" data-valid="required"></textarea>
 								<span class="custom-error title_error" role="alert">
@@ -70,6 +83,12 @@
 					</div>
 				</form>
 			</div>
+			<div class="note-page-drop-overlay" aria-hidden="true">
+				<div class="note-page-drop-overlay__inner">
+					<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+					<p>Drop files to attach</p>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -77,14 +96,17 @@
 {{-- 2. Create Note with Matter Selection --}}
 <!-- Enhanced Create note Modal -->
 <div class="modal fade" id="create_note_d" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content create-note-modal">
+	<div class="modal-dialog modal-lg modal-dialog-scrollable">
+		<div class="modal-content create-note-modal note-modal-with-drop">
 			<div class="modal-header create-note-header">
 				<div class="modal-title-section">
 					<div class="icon-wrapper">
 						<i class="fa-solid fa-note-sticky create-note-header__icon" aria-hidden="true"></i>
 					</div>
-					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
+					<div>
+						<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
+						<p class="create-note-header__subtitle mb-0">Add notes, time spent and files for this matter</p>
+					</div>
 				</div>
 				<div class="modal-actions">
 					<button type="button" class="btn-close-modern" data-bs-dismiss="modal" aria-label="Close">
@@ -99,19 +121,16 @@
                     <input type="hidden" name="noteid" value="">
                     <input type="hidden" name="mailid" value="0">
                     <input type="hidden" name="vtype" value="client">
-					<div class="row">
-                        <div class="col-12 col-md-6">
-							<div class="form-group enhanced-form-group">
-								<label for="matter_id" class="form-label">
-									Select Matter
-								</label>
+					<div class="row g-3">
+                        <div class="col-12 col-md-5">
+							<div class="form-group enhanced-form-group mb-0">
+								<label for="matter_id" class="form-label">Select Matter</label>
 								<div class="input-wrapper">
 									<i class="fa-solid fa-folder-open text-muted input-icon"></i>
 									<select name="matter_id" id="matter_id" class="form-control enhanced-select">
 								    <option value="">Select Client Matters</option>
                                     <?php
-	                                    // Get all active matters for the client (including sel_matter_id=1 as General Matter)
-                                    $matter_list_arr = DB::table('client_matters')
+	                                    $matter_list_arr = DB::table('client_matters')
                                     ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
 	                                    ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title','client_matters.sel_matter_id')
                                     ->where('client_matters.matter_status',1)
@@ -122,8 +141,6 @@
 								    @foreach($matter_list_arr as $matterlist)
 	                                        @php
 	                                            $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
-	                                            
-	                                            // Concatenate matter name with client_unique_matter_no if it exists
 	                                            if (!empty($matterlist->client_unique_matter_no)) {
 	                                                $matterName .= ' (' . $matterlist->client_unique_matter_no . ')';
 	                                            }
@@ -132,50 +149,55 @@
                                     @endforeach
 								</select>
 								</div>
-								<span class="custom-error matter_id_error" role="alert">
-									<strong></strong>
-								</span>
+								<span class="custom-error matter_id_error" role="alert"><strong></strong></span>
 							</div>
 						</div>
 
                         <input type="hidden" name="title" value="Matter Discussion">
 
-                        <div class="col-12 col-md-6">
-							<div class="form-group enhanced-form-group">
-								<label for="task_group" class="form-label">
-									Type <span class="text-danger">*</span>
-								</label>
+                        <div class="col-12 col-md-4">
+							<div class="form-group enhanced-form-group mb-0">
+								<label for="noteTypeEnhanced" class="form-label">Type <span class="text-danger">*</span></label>
 								<div class="input-wrapper">
 									<i class="fa-solid fa-tag text-muted input-icon"></i>
 									<select name="task_group" class="form-control enhanced-select" data-valid="required" id="noteTypeEnhanced">
                                     <option value="">Please Select</option>
-	                                    <option value="Call">📞 Call</option>
-	                                    <option value="Email">📧 Email</option>
-	                                    <option value="In-Person">👤 In-Person</option>
-	                                    <option value="Others">📝 Others</option>
-	                                    <option value="Attention">⚠️ Attention</option>
+	                                    <option value="Call">Call</option>
+	                                    <option value="Email">Email</option>
+	                                    <option value="In-Person">In-Person</option>
+	                                    <option value="Others">Others</option>
+	                                    <option value="Attention">Attention</option>
                                 </select>
 								</div>
-                                <!-- Container for additional inputs -->
 						        <div id="additionalFieldsEnhanced" class="additional-fields-container"></div>
+								<span class="custom-error title_error" role="alert"><strong></strong></span>
+							</div>
+						</div>
 
-								<span class="custom-error title_error" role="alert">
-									<strong></strong>
-								</span>
+						<div class="col-12 col-md-3">
+							<div class="form-group enhanced-form-group mb-0">
+								<label for="spend_hours" class="form-label">Spend Hours</label>
+								<div class="input-wrapper">
+									<i class="fa-solid fa-clock text-muted input-icon"></i>
+									<input type="number"
+									       name="spend_hours"
+									       id="spend_hours"
+									       class="form-control enhanced-select note-spend-hours-input"
+									       min="0"
+									       max="999"
+									       step="0.25"
+									       placeholder="0.00">
+								</div>
 							</div>
 						</div>
 
 						<div class="col-12">
-							<div class="form-group enhanced-form-group">
-								<label for="description" class="form-label">
-									Description <span class="text-danger">*</span>
-								</label>
-								<div class="rich-text-container">
-									<textarea class="tinymce-editor enhanced-textarea" id="note_description" name="description" data-valid="required"></textarea>
+							<div class="form-group enhanced-form-group mb-0">
+								<label for="note_description" class="form-label">Description <span class="text-danger">*</span></label>
+								<div class="rich-text-container rich-text-container--tall">
+									<textarea class="tinymce-editor enhanced-textarea tinymce-editor-note-lg" id="note_description" name="description" data-valid="required"></textarea>
 								</div>
-								<span class="custom-error title_error" role="alert">
-									<strong></strong>
-								</span>
+								<span class="custom-error title_error" role="alert"><strong></strong></span>
 							</div>
 						</div>
 
@@ -198,6 +220,12 @@
                         </div>
 					</div>
 				</form>
+			</div>
+			<div class="note-page-drop-overlay" aria-hidden="true">
+				<div class="note-page-drop-overlay__inner">
+					<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+					<p>Drop files to attach</p>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -289,12 +317,23 @@
 {{-- Enhanced CSS Styles for Create Note Modal --}}
 <style>
 /* Premium Create Note Modal Styles */
+.create-note-modal,
+.note-modal-with-drop {
+    position: relative;
+}
+
 .create-note-modal {
     border-radius: 24px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0,0,0,0.05);
     border: none;
     overflow: hidden;
     background: #ffffff;
+}
+
+.create-note-header__subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 2px;
 }
 
 .create-note-header {
@@ -367,7 +406,12 @@
 }
 
 .enhanced-form-group {
-    margin-bottom: 28px;
+    margin-bottom: 20px;
+}
+
+.note-spend-hours-input {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .form-label {
@@ -446,6 +490,15 @@
     border-radius: 12px !important;
 }
 
+.rich-text-container--tall .tox-tinymce,
+.rich-text-container--tall .tox .tox-edit-area__iframe {
+    min-height: 280px !important;
+}
+
+.rich-text-container--tall .tox .tox-edit-area {
+    min-height: 280px;
+}
+
 .enhanced-textarea {
     border: none;
     min-height: 120px;
@@ -455,9 +508,9 @@
 .modal-footer-buttons {
     display: flex;
     justify-content: flex-end;
-    gap: 16px;
-    margin-top: 36px;
-    padding-top: 24px;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 20px;
     border-top: 1px solid #f1f5f9;
 }
 
@@ -558,12 +611,86 @@
     display: block;
     margin: 0;
     border: 2px dashed #cbd5e1;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #f8fafc;
-    padding: 18px 16px;
-    text-align: center;
+    padding: 10px 14px;
     transition: border-color 0.2s ease, background 0.2s ease;
     cursor: pointer;
+}
+.note-dropzone--compact .note-dropzone-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+.note-dropzone--compact .note-dropzone-inner i {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+.note-dropzone--compact .note-dropzone-inner p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+.note-dropzone--compact .note-dropzone-inner small {
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+.note-attachments-optional {
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+.note-page-drop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, 0.12);
+    border: 3px dashed #3b82f6;
+    border-radius: inherit;
+    pointer-events: none;
+}
+.note-page-drop-overlay.is-active {
+    display: flex;
+}
+.note-page-drop-overlay__inner {
+    text-align: center;
+    color: #1d4ed8;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 28px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(37, 99, 235, 0.2);
+}
+.note-page-drop-overlay__inner i {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+.note-page-drop-overlay__inner p {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.create-note-modal.note-modal-drag-active,
+.note-modal-with-drop.note-modal-drag-active {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+}
+.note-spend-hours-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 10px;
 }
 .note-dropzone.is-dragover {
     border-color: #3b82f6;
