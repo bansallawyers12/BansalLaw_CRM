@@ -728,6 +728,9 @@ use App\Http\Controllers\Controller;
 						     </div>
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
+						    <div class="form-group">
+						        <label>Standard checklist templates</label>
+						        <small class="text-muted d-block mb-1">Admin-uploaded PDF packs for this matter type.</small>
 						    <div class="table-responsive uploadchecklists">
 							<table id="mychecklist-datatable" class="table text_wrap table-2">
 							    <thead>
@@ -753,7 +756,26 @@ use App\Http\Controllers\Controller;
 							    </tbody>
 							</table>
 						</div>
-							</div>
+						    </div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12" id="compose-matter-documents-section" style="display: none;">
+						    <div class="form-group">
+						        <label>Matter documents</label>
+						        <small class="text-muted d-block mb-1">Files already uploaded for this client matter (Matter documents tab).</small>
+						        <div class="table-responsive">
+						            <table id="my-matter-documents-datatable" class="table text_wrap table-2">
+						                <thead>
+						                    <tr>
+						                        <th></th>
+						                        <th>Checklist</th>
+						                        <th>File</th>
+						                    </tr>
+						                </thead>
+						                <tbody id="compose-matter-documents-tbody"></tbody>
+						            </table>
+						        </div>
+						    </div>
+						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="saveComposeEmail()" type="button" class="btn btn-primary">Send</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -1374,6 +1396,41 @@ $(document).ready(function() {
     
     // Auto-select matter first email and dedicated checklists when compose modal opens
     // When matter is selected: filter checklist table by matter (DataTables API); otherwise show all
+    function escapeComposeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderComposeMatterDocuments(docs) {
+        var $section = $('#compose-matter-documents-section');
+        var $tbody = $('#compose-matter-documents-tbody');
+        $tbody.empty();
+        if (!docs || !docs.length) {
+            $section.hide();
+            return;
+        }
+        docs.forEach(function (doc) {
+            var checklist = escapeComposeHtml(doc.checklist || doc.file_name || 'Document');
+            var fileName = escapeComposeHtml(doc.file_name || 'View');
+            var previewUrl = doc.preview_url ? escapeComposeHtml(doc.preview_url) : '';
+            var fileCell = previewUrl
+                ? '<a target="_blank" rel="noopener" href="' + previewUrl + '">' + fileName + '</a>'
+                : fileName;
+            $tbody.append(
+                '<tr data-document-id="' + escapeComposeHtml(doc.id) + '">' +
+                '<td><input type="checkbox" name="checklistfile_document[]" value="' + escapeComposeHtml(doc.id) + '" class="checklistfile-document-cb"></td>' +
+                '<td>' + checklist + '</td>' +
+                '<td>' + fileCell + '</td>' +
+                '</tr>'
+            );
+        });
+        $section.show();
+    }
+
     $('#emailmodal').on('shown.bs.modal', function() {
         if (typeof window.prefillComposeSubjectWithReference === 'function') {
             window.prefillComposeSubjectWithReference(true);
@@ -1392,6 +1449,7 @@ $(document).ready(function() {
         var clientMatterId = $('#compose_client_matter_id').val();
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
             window.composeChecklistFilterIds = null;
+            renderComposeMatterDocuments([]);
             if ($('#mychecklist-datatable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#mychecklist-datatable')) {
                 $('#mychecklist-datatable').DataTable().draw();
             }
@@ -1436,9 +1494,12 @@ $(document).ready(function() {
                         $('#emailmodal input.checklistfile-cb[value="' + id + '"]').prop('checked', true);
                     });
                 }
+                renderComposeMatterDocuments(res.matter_documents || []);
+                $('#emailmodal .checklistfile-document-cb').prop('checked', false);
             })
             .fail(function() {
                 window.composeChecklistFilterIds = null;
+                renderComposeMatterDocuments([]);
                 if ($('#mychecklist-datatable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#mychecklist-datatable')) {
                     $('#mychecklist-datatable').DataTable().draw();
                 }
