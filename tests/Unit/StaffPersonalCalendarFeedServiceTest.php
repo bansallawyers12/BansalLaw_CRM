@@ -121,4 +121,50 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
 
         $this->assertIsArray($rows);
     }
+
+    #[Test]
+    public function deduplicate_events_removes_same_booking_and_cross_source_slot_duplicates(): void
+    {
+        $method = new \ReflectionMethod(StaffPersonalCalendarFeedService::class, 'deduplicateEvents');
+        $method->setAccessible(true);
+
+        $rows = $method->invoke($this->service(), [
+            [
+                'id' => 'booking-12',
+                'event_kind' => 'website_booking',
+                'booking_appointment_id' => 12,
+                'event_type' => 'meeting',
+                'client_id' => 44,
+                'starts_at' => '2026-12-02T10:00:00+11:00',
+            ],
+            [
+                'id' => 'booking-12',
+                'event_kind' => 'website_booking',
+                'booking_appointment_id' => 12,
+                'event_type' => 'meeting',
+                'client_id' => 44,
+                'starts_at' => '2026-12-02T10:00:00+11:00',
+            ],
+            [
+                'id' => 'staff-cal-88',
+                'event_kind' => 'staff_event',
+                'staff_calendar_event_id' => 88,
+                'event_type' => 'meeting',
+                'client_id' => 44,
+                'starts_at' => '2026-12-02T10:00:00+11:00',
+            ],
+            [
+                'id' => 'court-5',
+                'event_kind' => 'court_hearing',
+                'court_hearing_id' => 5,
+                'event_type' => 'court',
+                'client_id' => 99,
+                'starts_at' => '2026-12-02T14:00:00+11:00',
+            ],
+        ]);
+
+        $this->assertCount(2, $rows);
+        $this->assertSame('booking-12', $rows[0]['id']);
+        $this->assertSame('court-5', $rows[1]['id']);
+    }
 }

@@ -634,6 +634,21 @@
 .dashboard-upcoming-type--reminder { background: #d97706; color: #1a2c40; }
 .dashboard-upcoming-type--other { background: #111; }
 
+.dashboard-upcoming-group-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--primary-color);
+    background: rgba(30, 61, 96, 0.1);
+    border: 1px solid rgba(30, 61, 96, 0.16);
+}
+
 .dashboard-event-detail-list {
     display: grid;
     grid-template-columns: auto 1fr;
