@@ -20,7 +20,12 @@
         $.ajax({
             url: notesUrl,
             type: 'GET',
-            data: { clientid: window.ClientDetailConfig.clientId, type: 'client' },
+            cache: false,
+            data: {
+                clientid: window.ClientDetailConfig.clientId,
+                type: 'client',
+                _: Date.now()
+            },
             success: function(responses) {
                 $('.popuploader').hide();
                 $('.note_term_list').html(responses);
@@ -76,6 +81,75 @@
     }
 
     window.getallnotes = getallnotes;
+
+    function refreshMatterNotesDocumentFolder(refreshInfo) {
+        if (!refreshInfo || !refreshInfo.folder_id) {
+            return;
+        }
+
+        var folderId = String(refreshInfo.folder_id);
+        var matterId = refreshInfo.client_matter_id || $('#sel_matter_id_client_detail').val();
+        var $folderList = $('.migdocumnetlist_' + folderId);
+
+        if (!$folderList.length) {
+            if (refreshInfo.folder_created) {
+                window.location.reload();
+            }
+            return;
+        }
+
+        if (typeof window.refreshMatterDocumentFolder === 'function') {
+            window.refreshMatterDocumentFolder(folderId, matterId);
+            return;
+        }
+
+        var reloadUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.reloadFolderList)
+            ? window.ClientDetailConfig.urls.reloadFolderList
+            : (baseUrl + '/documents/reload-folder-list');
+
+        $.ajax({
+            url: reloadUrl,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                clientid: window.ClientDetailConfig && window.ClientDetailConfig.clientId,
+                folder_name: folderId,
+                doctype: 'matter',
+                type: 'client',
+                client_matter_id: matterId
+            }
+        }).done(function(result) {
+            if (!result || !result.status) {
+                return;
+            }
+            $('.migdocumnetlist_' + folderId).html(result.data || '');
+            if (result.griddata !== undefined) {
+                $('#' + folderId + '-subtab6 .miggriddata').html(result.griddata);
+            }
+            if (typeof initVisaDocDragDrop === 'function') {
+                initVisaDocDragDrop();
+            }
+            var activeMatterId = $('#sel_matter_id_client_detail').val();
+            if (window.SidebarTabs) {
+                window.SidebarTabs.selectedMatter = activeMatterId;
+            }
+            if (window.SidebarTabs && typeof window.SidebarTabs.filtermatterdocumentsByMatter === 'function') {
+                window.SidebarTabs.filtermatterdocumentsByMatter(activeMatterId);
+            }
+        });
+    }
+
+    function handleNoteSaveSideEffects(obj) {
+        if (typeof getallnotes === 'function') {
+            getallnotes();
+        }
+        if (obj && obj.matter_document_refresh) {
+            refreshMatterNotesDocumentFolder(obj.matter_document_refresh);
+        }
+    }
+
+    window.handleNoteSaveSideEffects = handleNoteSaveSideEffects;
+    window.refreshMatterNotesDocumentFolder = refreshMatterNotesDocumentFolder;
 
     var MAX_NOTE_FILES = 10;
 

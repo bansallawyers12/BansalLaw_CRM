@@ -67,16 +67,18 @@ class NoteAttachmentService
 
     /**
      * @param  UploadedFile[]|UploadedFile|null  $files
+     * @return array{folder_id: string, client_matter_id: int, folder_created: bool}|null
      */
-    public static function storeForNote(Note $note, $files): void
+    public static function storeForNote(Note $note, $files): ?array
     {
         $files = self::normalizeFiles($files);
         if ($files === []) {
-            return;
+            return null;
         }
 
         $disk = self::disk();
         $dir = 'note_attachments/' . (int) $note->client_id . '/' . (int) $note->id;
+        $matterDocumentRefresh = null;
 
         foreach ($files as $file) {
             $ext = strtolower((string) $file->getClientOriginalExtension());
@@ -103,7 +105,10 @@ class NoteAttachmentService
             ]);
 
             try {
-                app(NoteMatterDocumentSyncService::class)->syncAttachment($note, $attachment, $file);
+                $syncResult = app(NoteMatterDocumentSyncService::class)->syncAttachment($note, $attachment, $file);
+                if ($syncResult) {
+                    $matterDocumentRefresh = $syncResult;
+                }
             } catch (\Throwable $e) {
                 Log::warning('Note attachment could not sync to matter documents', [
                     'note_id' => $note->id,
@@ -112,6 +117,8 @@ class NoteAttachmentService
                 ]);
             }
         }
+
+        return $matterDocumentRefresh;
     }
 
     public static function deleteAttachment(NoteAttachment $attachment): void

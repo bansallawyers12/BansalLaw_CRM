@@ -18,26 +18,27 @@ class NoteMatterDocumentSyncService
 {
     public const FOLDER_TITLE = 'Notes';
 
-    public function syncAttachment(Note $note, NoteAttachment $attachment, UploadedFile $file): void
+    public function syncAttachment(Note $note, NoteAttachment $attachment, UploadedFile $file): ?array
     {
         if ((string) $note->type !== 'client') {
-            return;
+            return null;
         }
 
         $matterId = (int) ($note->matter_id ?? 0);
         $clientId = (int) ($note->client_id ?? 0);
 
         if ($matterId <= 0 || $clientId <= 0) {
-            return;
+            return null;
         }
 
         if (! ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists()) {
-            return;
+            return null;
         }
 
-        $folder = $this->ensureNotesFolder($clientId, $matterId);
+        $folderResult = $this->ensureNotesFolder($clientId, $matterId);
+        $folder = $folderResult['folder'] ?? null;
         if (! $folder) {
-            return;
+            return null;
         }
 
         $admin = Admin::select('client_id', 'first_name')->where('id', $clientId)->first();
@@ -47,7 +48,7 @@ class NoteMatterDocumentSyncService
                 'note_id' => $note->id,
             ]);
 
-            return;
+            return null;
         }
 
         $clientUniqueId = (string) $admin->client_id;
@@ -75,7 +76,7 @@ class NoteMatterDocumentSyncService
                 'path' => $filePath,
             ]);
 
-            return;
+            return null;
         }
 
         $userId = Auth::guard('admin')->id() ?: Auth::id();
@@ -97,9 +98,18 @@ class NoteMatterDocumentSyncService
         $document->save();
 
         ClientMatter::where('id', $matterId)->update(['updated_at' => now()]);
+
+        return [
+            'folder_id' => (string) $folder->id,
+            'client_matter_id' => $matterId,
+            'folder_created' => (bool) ($folderResult['created'] ?? false),
+        ];
     }
 
-    private function ensureNotesFolder(int $clientId, int $matterId): ?VisaDocumentType
+    /**
+     * @return array{folder: ?VisaDocumentType, created: bool}
+     */
+    private function ensureNotesFolder(int $clientId, int $matterId): array
     {
         $existing = VisaDocumentType::where('status', 1)
             ->where('client_matter_id', $matterId)
@@ -107,7 +117,7 @@ class NoteMatterDocumentSyncService
             ->first();
 
         if ($existing) {
-            return $existing;
+            return ['folder' => $existing, 'created' => false];
         }
 
         $duplicate = VisaDocumentType::where('title', self::FOLDER_TITLE)
@@ -116,7 +126,7 @@ class NoteMatterDocumentSyncService
             ->first();
 
         if ($duplicate) {
-            return $duplicate;
+            return ['folder' => $duplicate, 'created' => false];
         }
 
         try {
@@ -127,7 +137,7 @@ class NoteMatterDocumentSyncService
             $folder->client_matter_id = $matterId;
             $folder->save();
 
-            return $folder;
+            return ['folder' => $folder, 'created' => true];
         } catch (\Throwable $e) {
             Log::warning('Could not create Notes matter document folder', [
                 'client_id' => $clientId,
@@ -135,10 +145,12 @@ class NoteMatterDocumentSyncService
                 'error' => $e->getMessage(),
             ]);
 
-            return VisaDocumentType::where('status', 1)
+            $fallback = VisaDocumentType::where('status', 1)
                 ->where('client_matter_id', $matterId)
                 ->whereRaw('LOWER(title) = ?', [strtolower(self::FOLDER_TITLE)])
                 ->first();
+
+            return ['folder' => $fallback, 'created' => false];
         }
     }
 }
