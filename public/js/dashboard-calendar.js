@@ -228,25 +228,83 @@
         });
 
         var dayEl = listEl.querySelector('.dashboard-upcoming-day[data-date="' + key.replace(/"/g, '') + '"]');
-        if (!dayEl) return;
+        if (!dayEl) {
+            ensureUpcomingCoversDate(key);
+            return;
+        }
 
         dayEl.classList.add('is-focused');
         listEl.scrollTop += dayEl.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
     }
 
+    var upcomingLazy = {
+        tz: null,
+        loading: false,
+        started: false,
+        nextStart: null,
+        horizonEnd: null,
+        events: [],
+        scrollBound: false,
+        ensureDate: null,
+    };
+
+    function addMonthsToDateStr(dateStr, months) {
+        var parts = String(dateStr).split('-');
+        var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])));
+        d.setUTCMonth(d.getUTCMonth() + months);
+        return d.toISOString().slice(0, 10);
+    }
+
+    function setUpcomingStatus(message, isError) {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl) return;
+        listEl.innerHTML = '<div class="dashboard-upcoming-empty' + (isError ? ' is-error' : '') + '">' +
+            escapeHtml(message) + '</div>';
+    }
+
+    function setUpcomingLoadingFooter(visible) {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl) return;
+        var existing = listEl.querySelector('.dashboard-upcoming-lazy-footer');
+        if (!visible) {
+            if (existing) existing.remove();
+            return;
+        }
+        if (existing) return;
+        var footer = document.createElement('div');
+        footer.className = 'dashboard-upcoming-lazy-footer';
+        footer.innerHTML = '<span class="dashboard-upcoming-lazy-spinner" aria-hidden="true"></span> Loading more…';
+        listEl.appendChild(footer);
+    }
+
+    function updateUpcomingCount() {
+        var countEl = document.getElementById('dashboardUpcomingCount');
+        if (!countEl) return;
+        var loaded = upcomingLazy.events.length;
+        var hasMore = !!(upcomingLazy.nextStart && upcomingLazy.horizonEnd &&
+            upcomingLazy.nextStart < upcomingLazy.horizonEnd);
+        countEl.textContent = hasMore ? (loaded + '+') : String(loaded);
+        countEl.title = hasMore
+            ? 'Loaded so far — scroll the schedule to load more'
+            : 'Total upcoming items';
+    }
+
     function renderUpcomingList(events, tz) {
         var listEl = document.getElementById('dashboardUpcomingList');
-        var countEl = document.getElementById('dashboardUpcomingCount');
         if (!listEl) return;
 
         var rows = (events || []).slice().sort(function (a, b) {
             return String(a.start || '').localeCompare(String(b.start || ''));
         });
 
-        if (countEl) countEl.textContent = String(rows.length);
+        updateUpcomingCount();
 
         if (!rows.length) {
-            listEl.innerHTML = '<div class="dashboard-upcoming-empty">No upcoming hearings or events.</div>';
+            var waiting = !!(upcomingLazy.nextStart && upcomingLazy.horizonEnd &&
+                upcomingLazy.nextStart < upcomingLazy.horizonEnd);
+            listEl.innerHTML = waiting
+                ? '<div class="dashboard-upcoming-empty">No items in this period. Scroll or wait for more dates…</div>'
+                : '<div class="dashboard-upcoming-empty">No upcoming hearings or events.</div>';
             return;
         }
 
@@ -317,19 +375,70 @@
                 showEventDetail(props);
             });
         });
+
+        if (upcomingLazy.ensureDate) {
+            var target = upcomingLazy.ensureDate;
+            upcomingLazy.ensureDate = null;
+            window.requestAnimationFrame(function () {
+                focusUpcomingDate(target);
+            });
+        }
     }
 
-    async function loadUpcomingList(tz) {
+    function eventDedupKey(event) {
+        if (!event) return '';
+        if (event.id) return String(event.id);
+        var props = event.extendedProps || {};
+        return [
+            event.title || props.title || '',
+            event.start || props.starts_at || props.appointment_datetime || '',
+            props.event_kind || props.event_type || '',
+        ].join('|');
+    }
+
+    function mergeUpcomingEvents(existing, incoming) {
+        var map = {};
+        existing.forEach(function (event) {
+            map[eventDedupKey(event)] = event;
+        });
+        incoming.forEach(function (event) {
+            map[eventDedupKey(event)] = event;
+        });
+        return Object.keys(map).map(function (key) { return map[key]; });
+    }
+
+    function hasMoreUpcomingChunks() {
+        return !!(upcomingLazy.nextStart && upcomingLazy.horizonEnd &&
+            upcomingLazy.nextStart < upcomingLazy.horizonEnd);
+    }
+
+    async function loadUpcomingChunk() {
+        if (upcomingLazy.loading || !hasMoreUpcomingChunks()) {
+            setUpcomingLoadingFooter(false);
+            return;
+        }
+
+        var tz = upcomingLazy.tz || calendarElTz();
         var listEl = document.getElementById('dashboardUpcomingList');
-        if (!listEl) return;
+        var chunkStart = upcomingLazy.nextStart;
+        var chunkEnd = addMonthsToDateStr(chunkStart, 1);
+        if (chunkEnd > upcomingLazy.horizonEnd) {
+            chunkEnd = upcomingLazy.horizonEnd;
+        }
+        if (chunkStart >= chunkEnd) {
+            upcomingLazy.nextStart = upcomingLazy.horizonEnd;
+            updateUpcomingCount();
+            setUpcomingLoadingFooter(false);
+            return;
+        }
+
+        upcomingLazy.loading = true;
+        setUpcomingLoadingFooter(true);
 
         try {
-            var start = todayDateStr(tz) + 'T00:00:00';
-            var endDate = new Date();
-            endDate.setMonth(endDate.getMonth() + 12);
             var url = new URL(BOOKING_EVENTS_API, window.location.origin);
-            url.searchParams.set('start', start);
-            url.searchParams.set('end', endDate.toISOString());
+            url.searchParams.set('start', chunkStart + 'T00:00:00');
+            url.searchParams.set('end', chunkEnd + 'T00:00:00');
 
             var response = await fetch(url.toString(), {
                 credentials: 'same-origin',
@@ -342,18 +451,102 @@
             if (!response.ok || !payload.success) {
                 throw new Error(payload.message || 'Failed to load upcoming items');
             }
-            updateStats(payload.stats);
-            var horizon = endDate.getTime();
-            var upcoming = (payload.data || []).filter(function (event) {
+
+            var chunkEndTs = new Date(chunkEnd + 'T00:00:00').getTime();
+            var incoming = (payload.data || []).filter(function (event) {
                 var start = event.start || (event.extendedProps && (event.extendedProps.starts_at || event.extendedProps.appointment_datetime));
                 var ts = start ? new Date(start).getTime() : NaN;
-                return !isNaN(ts) && ts <= horizon;
+                return !isNaN(ts) && ts < chunkEndTs;
             });
-            renderUpcomingList(upcoming, tz);
+
+            upcomingLazy.events = mergeUpcomingEvents(upcomingLazy.events, incoming);
+            upcomingLazy.nextStart = chunkEnd;
+            renderUpcomingList(upcomingLazy.events, tz);
+
+            if (upcomingLazy.ensureDate && upcomingLazy.ensureDate >= chunkEnd && hasMoreUpcomingChunks()) {
+                upcomingLazy.loading = false;
+                setUpcomingLoadingFooter(false);
+                return loadUpcomingChunk();
+            }
         } catch (err) {
             console.error('Dashboard upcoming list error:', err);
-            listEl.innerHTML = '<div class="dashboard-upcoming-empty">Could not load the upcoming schedule.</div>';
+            if (!upcomingLazy.events.length) {
+                setUpcomingStatus('Could not load the upcoming schedule.', true);
+            }
+        } finally {
+            upcomingLazy.loading = false;
+            setUpcomingLoadingFooter(false);
+            updateUpcomingCount();
         }
+    }
+
+    function onUpcomingListScroll() {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl || upcomingLazy.loading || !hasMoreUpcomingChunks()) return;
+        if (listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 140) {
+            loadUpcomingChunk();
+        }
+    }
+
+    function ensureUpcomingCoversDate(dateKey) {
+        if (!dateKey || dateKey === 'unknown') return;
+        // Already fetched through this date — no day group means nothing scheduled then.
+        if (upcomingLazy.nextStart && dateKey < upcomingLazy.nextStart) {
+            return;
+        }
+        upcomingLazy.ensureDate = dateKey;
+        if (!upcomingLazy.started) {
+            initUpcomingLazyLoad(upcomingLazy.tz || calendarElTz(), true);
+            return;
+        }
+        if (!upcomingLazy.loading && hasMoreUpcomingChunks()) {
+            loadUpcomingChunk();
+        }
+    }
+
+    function resetUpcomingLazyState(tz) {
+        var horizon = new Date();
+        horizon.setMonth(horizon.getMonth() + 12);
+        upcomingLazy.tz = tz || calendarElTz();
+        upcomingLazy.loading = false;
+        upcomingLazy.started = true;
+        upcomingLazy.nextStart = todayDateStr(upcomingLazy.tz);
+        upcomingLazy.horizonEnd = horizon.toISOString().slice(0, 10);
+        upcomingLazy.events = [];
+    }
+
+    function bindUpcomingLazyScroll() {
+        var listEl = document.getElementById('dashboardUpcomingList');
+        if (!listEl || upcomingLazy.scrollBound) return;
+        listEl.addEventListener('scroll', onUpcomingListScroll, { passive: true });
+        upcomingLazy.scrollBound = true;
+    }
+
+    function initUpcomingLazyLoad(tz, immediate) {
+        resetUpcomingLazyState(tz);
+        bindUpcomingLazyScroll();
+        setUpcomingStatus('Loading schedule…');
+        updateUpcomingCount();
+
+        var start = function () {
+            loadUpcomingChunk();
+        };
+
+        if (immediate) {
+            start();
+            return;
+        }
+
+        // Let the calendar request win first so schedule never blocks dashboard paint.
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(start, { timeout: 1800 });
+        } else {
+            window.setTimeout(start, 350);
+        }
+    }
+
+    function refreshUpcomingList(tz) {
+        initUpcomingLazyLoad(tz || calendarElTz(), true);
     }
 
     function showEventDetail(props) {
@@ -795,7 +988,7 @@
                 }
 
                 calendar.refetchEvents();
-                loadUpcomingList(calendarElTz());
+                refreshUpcomingList(calendarElTz());
 
                 if (typeof window.showToast === 'function') {
                     window.showToast('Event saved to your calendar.', 'success');
@@ -836,8 +1029,9 @@
                     day: 'day',
                     list: 'list',
                 },
-                height: 'auto',
-                contentHeight: 560,
+                height: '100%',
+                contentHeight: 'auto',
+                expandRows: true,
                 timeZone: tz,
                 firstDay: 1,
                 slotMinTime: '09:00:00',
@@ -928,10 +1122,16 @@
 
             calendar.render();
             initPersonalEventModal(calendar);
-            loadUpcomingList(tz);
+            initUpcomingLazyLoad(tz);
             window.staffDashboardCalendar = calendar;
+            window.requestAnimationFrame(function () {
+                calendar.updateSize();
+            });
             document.addEventListener('scroll', hideEventTooltip, true);
-            window.addEventListener('resize', hideEventTooltip);
+            window.addEventListener('resize', function () {
+                hideEventTooltip();
+                calendar.updateSize();
+            });
 
             calendarEl.addEventListener('mouseover', function (e) {
                 var eventEl = e.target.closest('.fc-event');
