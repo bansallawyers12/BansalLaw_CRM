@@ -42,15 +42,15 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="spend_hours_simple">Spend Hours</label>
+								<label for="spend_mins_simple">Spend Mins</label>
 								<input type="number"
-								       name="spend_hours"
-								       id="spend_hours_simple"
+								       name="spend_mins"
+								       id="spend_mins_simple"
 								       class="form-control"
 								       min="0"
-								       max="999"
-								       step="0.25"
-								       placeholder="0.00">
+								       max="99999"
+								       step="1"
+								       placeholder="0">
 							</div>
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
@@ -105,7 +105,7 @@
 					</div>
 					<div>
 						<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
-						<p class="create-note-header__subtitle mb-0">Add notes, time spent and files for this matter</p>
+						<p class="create-note-header__subtitle mb-0">Add notes, minutes spent and files for this matter</p>
 					</div>
 				</div>
 				<div class="modal-actions">
@@ -176,17 +176,17 @@
 
 						<div class="col-12 col-md-3">
 							<div class="form-group enhanced-form-group mb-0">
-								<label for="spend_hours" class="form-label">Spend Hours</label>
+								<label for="spend_mins" class="form-label">Spend Mins</label>
 								<div class="input-wrapper">
 									<i class="fa-solid fa-clock text-muted input-icon"></i>
 									<input type="number"
-									       name="spend_hours"
-									       id="spend_hours"
-									       class="form-control enhanced-select note-spend-hours-input"
+									       name="spend_mins"
+									       id="spend_mins"
+									       class="form-control enhanced-select note-spend-mins-input"
 									       min="0"
-									       max="999"
-									       step="0.25"
-									       placeholder="0.00">
+									       max="99999"
+									       step="1"
+									       placeholder="0">
 								</div>
 							</div>
 						</div>
@@ -409,7 +409,7 @@
     margin-bottom: 20px;
 }
 
-.note-spend-hours-input {
+.note-spend-mins-input {
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
@@ -680,7 +680,7 @@
     outline: 2px solid #3b82f6;
     outline-offset: -2px;
 }
-.note-spend-hours-badge {
+.note-spend-mins-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;

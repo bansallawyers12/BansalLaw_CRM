@@ -350,7 +350,7 @@
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note_d select[name="task_group"]').val('');
             $('#create_note_d .additional-fields-container').html('');
-            $('#create_note_d input[name="spend_hours"]').val('');
+            $('#create_note_d input[name="spend_mins"]').val('');
 
             $('#create_note_d').modal('show');
             $('#create_note_d input[name="mailid"]').val(0);
@@ -378,7 +378,7 @@
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note select[name="task_group"]').val('');
             $('#create_note .additional-fields-container').html('');
-            $('#create_note input[name="spend_hours"]').val('');
+            $('#create_note input[name="spend_mins"]').val('');
 
             $('#create_note').modal('show');
             $('#create_note input[name="mailid"]').val(0);
@@ -443,10 +443,10 @@
 
                     $('#create_note select[name="task_group"]').val(taskGroup);
                     $("#create_note .tinymce-editor").val(res.data.description);
-                    if (res.data.spend_hours != null && res.data.spend_hours !== '') {
-                        $('#create_note input[name="spend_hours"]').val(res.data.spend_hours);
+                    if (res.data.spend_mins != null && res.data.spend_mins !== '') {
+                        $('#create_note input[name="spend_mins"]').val(res.data.spend_mins);
                     } else {
-                        $('#create_note input[name="spend_hours"]').val('');
+                        $('#create_note input[name="spend_mins"]').val('');
                     }
                     if (typeof setEditorContent === 'function') {
                         setEditorContent("#create_note .tinymce-editor", res.data.description);
