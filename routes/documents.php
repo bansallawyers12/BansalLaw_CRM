@@ -186,10 +186,6 @@ Route::get('/documents/{id}/signature-placement-data', [AdminDocumentController:
     ->name('documents.signature-placement-data');
 
 /*---------- Admin Signing & Reminder Operations ----------*/
-// Removed duplicate admin submitSignatures route - using public route instead
-// Route::post('/documents/{document}/sign', [AdminDocumentController::class, 'submitSignatures'])
-//     ->name('documents.submitSignatures');
-
 Route::post('/documents/{document}/send-reminder', [AdminDocumentController::class, 'sendReminder'])
     ->name('documents.sendReminder');
 
@@ -199,15 +195,7 @@ Route::post('/documents/{document}/send-signing-link', [AdminDocumentController:
 Route::get('/documents/{document}/sign', [AdminDocumentController::class, 'showSignForm'])
     ->name('documents.showSignForm');
 
-// Removed duplicate admin sign route - public route handles signing via email links
-// Route::get('/sign/{id}/{token}', [AdminDocumentController::class, 'sign'])
-//     ->name('documents.sign');
-
 /*---------- Admin Document Viewing & Download ----------*/
-// Removed duplicate admin page route - using public route instead
-// Route::get('/documents/{id}/page/{page}', [AdminDocumentController::class, 'getPage'])
-//     ->name('documents.page');
-
 Route::get('/documents/{id}/preview-signed', [AdminDocumentController::class, 'previewSigned'])
     ->name('documents.preview.signed');
 
@@ -216,10 +204,6 @@ Route::get('/documents/{id}/download-signed', [AdminDocumentController::class, '
 
 Route::get('/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
     ->name('documents.download_and_thankyou');
-
-// Removed duplicate admin thankyou route - using public route instead
-// Route::get('/documents/thankyou/{id?}', [AdminDocumentController::class, 'thankyou'])
-//     ->name('documents.thankyou');
 
 /*---------- Signature Dashboard Routes ----------*/
 Route::prefix('signatures')->group(function () {

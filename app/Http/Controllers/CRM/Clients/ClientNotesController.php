@@ -622,28 +622,5 @@ class ClientNotesController extends Controller
             'Content-Disposition' => $disposition . '; filename="' . str_replace('"', '', $name) . '"',
         ]);
     }
-
-    /**
-     * Save previous visa information - DEPRECATED Phase 4
-     * prev_visa column has been dropped from admins table.
-     */
-    public function saveprevvisa(Request $request)
-    {
-        return redirect()->back()->with('error', 'Previous visa functionality has been deprecated (prev_visa column removed).');
-    }
-
-    /**
-     * Save online form data
-     * 
-     * @param Request $request
-     * @return redirect
-     * 
-     * REMOVED: OnlineForm model has been deleted - this method is disabled
-     */
-    public function saveonlineform(Request $request)
-    {
-    	// Online form functionality disabled - OnlineForm model has been removed
-    	return redirect()->back()->with('error', 'Online form functionality has been disabled - OnlineForm model has been removed');
-    	}
 }
 
