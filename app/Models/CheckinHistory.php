@@ -2,11 +2,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class CheckinHistory extends Model
 {
-	use Sortable;
+	use SortableTrait;
 
 	/** Legacy singular table name (not Laravel's default checkin_histories). */
 	protected $table = 'checkin_history';

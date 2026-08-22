@@ -3,12 +3,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class ClientMatter extends Model
 {
     use Notifiable;
-    use Sortable;
+    use SortableTrait;
+
+    public $sortable = ['id', 'created_at', 'updated_at', 'deadline'];
 
     /**
      * The table associated with the model.

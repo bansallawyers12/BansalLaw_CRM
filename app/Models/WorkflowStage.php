@@ -3,13 +3,15 @@ namespace App\Models;
 
 use App\Support\WorkflowStageFreeze;
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class WorkflowStage extends Model
 {
-	use Sortable;
+	use SortableTrait;
 	
 	protected $table = 'workflow_stages';
+
+	public $sortable = ['id', 'name', 'sort_order', 'created_at', 'updated_at'];
 	
 	protected $fillable = [
         'id', 'name', 'workflow_id', 'sort_order', 'created_at', 'updated_at'

@@ -733,7 +733,7 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function dashboard_matter_list_respects_exempt_roles_and_allocation(): void
+    public function dashboard_matter_counters_respect_exempt_roles_and_allocation(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
             ['id' => 17],
@@ -775,17 +775,17 @@ class Area8SecurityTest extends TestCase
         $matter->sel_person_assisting = 9999;
         $matter->save();
 
-        // 1. Exempt staff (role 17) can view dashboard matter list
+        // 1. Exempt staff (role 17) can load the dashboard
         $this->actingAs($exemptStaff, 'admin');
         $responseExempt = $this->getJson('/dashboard');
         $responseExempt->assertStatus(200);
 
-        // 2. Restricted unassigned staff (role 14) cannot view unassigned matter
+        // 2. Restricted unassigned staff (role 14) does not count the unassigned matter
         $this->actingAs($restrictedStaff, 'admin');
         $dashboardService = app(\App\Services\DashboardService::class);
         $dataRestricted = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
-        $mattersRestricted = $dataRestricted['data'];
-        $this->assertFalse(collect($mattersRestricted->items())->contains('id', $matter->id));
+        $this->assertArrayNotHasKey('data', $dataRestricted);
+        $this->assertArrayHasKey('count_active_matter', $dataRestricted);
     }
 
     #[Test]

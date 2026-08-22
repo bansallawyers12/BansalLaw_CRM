@@ -11,12 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Laravel\Sanctum\HasApiTokens;
 
 class Staff extends Authenticatable
 {
-    use HasFactory, Notifiable, Sortable, HasApiTokens;
+    use HasFactory, Notifiable, SortableTrait, HasApiTokens;
 
     /**
      * The authentication guard for staff (CRM login uses 'admin' guard).

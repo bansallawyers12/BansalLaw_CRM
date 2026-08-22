@@ -8,8 +8,6 @@
         $dashboardNow = now()->timezone($dashboardTz);
         $hour = (int) $dashboardNow->format('G');
         $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
-        $dashboardFiltersActive = ! empty(trim((string) ($filters['client_name'] ?? '')))
-            || ! empty((string) ($filters['client_stage'] ?? ''));
     @endphp
     <main class="main-content">
         <header class="dashboard-welcome-banner">
@@ -215,191 +213,6 @@
                 </div>
             </div>
         </section>
-
-        {{-- Client Matters Overview Section --}}
-        <section class="cases-overview">
-            <div class="cases-overview-header">
-                <div class="header-left">
-                    <h3>
-                        <i class="fa-solid fa-table"></i> 
-                        Client Matters 
-                        <span class="total-count">({{ $data->total() }} total)</span>
-                    </h3>
-                </div>
-                <div class="header-right">
-                    <x-dashboard.column-toggle :visibleColumns="$visibleColumns" />
-                </div>
-            </div>
-
-            {{-- Filter Controls --}}
-            <x-dashboard.filter-form :filters="$filters" :workflowStages="$workflowStages" />
-
-            {{-- Data Table --}}
-            <div class="table-responsive">
-                <table class="data-table data-table-enhanced" role="grid">
-                    <thead>
-                        <tr role="row">
-                            <th class="col-matter" role="columnheader">Matter</th>
-                            <th class="col-client_id" role="columnheader">Client ID</th>
-                            <th class="col-client_name" role="columnheader">Client Name</th>
-                            <th class="col-dob" role="columnheader">DOB</th>
-                            <th class="col-legal_practitioner" role="columnheader">Legal Practitioner</th>
-                            <th class="col-person_responsible" role="columnheader">Person Responsible</th>
-                            <th class="col-person_assisting" role="columnheader">Person Assisting</th>
-                            <th class="col-stage" role="columnheader">Stage</th>
-                            <th class="matter-row-action" scope="col"><span class="visually-hidden">Open matter</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($data as $matter)
-                            @if($matter && $matter->client_id)
-                            <tr role="row" data-matter-id="{{ $matter->id ?? '' }}">
-                                <td class="col-matter" style="white-space: initial;">
-                                    <a href="{{ route('clients.detail', [base64_encode(convert_uuencode($matter->client_id)), $matter->client_unique_matter_no ?? '']) }}" class="matter-link">
-                                        {{ \App\Models\Matter::displayTitleFromJoinedRow(optional($matter->matter)->title) }}
-                                        ({{ $matter->client_unique_matter_no ?? 'N/A' }})
-                                    </a>
-                                    @php
-                                        $emailCount = 0;
-                                        if($matter && $matter->client_id) {
-                                            try {
-                                                $emailCount = $matter->mailReports()
-                                                    ->where('client_id', $matter->client_id)
-                                                    ->where('conversion_type', 'conversion_email_fetch')
-                                                    ->whereNull('mail_is_read')
-                                                    ->where(function($query) {
-                                                        $query->orWhere('mail_body_type', 'inbox')
-                                                              ->orWhere('mail_body_type', 'sent');
-                                                    })->count();
-                                            } catch (\Exception $e) {
-                                                $emailCount = 0;
-                                            }
-                                        }
-                                    @endphp
-                                    @if($emailCount > 0)
-                                        <span class="badge badge-email" title="{{ $emailCount }} unread emails">
-                                            <i class="fa-solid fa-envelope"></i> {{ $emailCount }}
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="col-client_id">
-                                    @php
-                                        $clientDetailParams = [];
-                                        if($matter && $matter->client_id) {
-                                            $clientDetailParams = [base64_encode(convert_uuencode($matter->client_id))];
-                                            if(!empty($matter->client_unique_matter_no)) {
-                                                $clientDetailParams[] = $matter->client_unique_matter_no;
-                                            }
-                                        }
-                                    @endphp
-                                    @if(!empty($clientDetailParams))
-                                        <a href="{{ route('clients.detail', $clientDetailParams) }}" class="client-id-link">
-                                            {{ ($matter->client && $matter->client->client_id) ? $matter->client->client_id : config('constants.empty') }}
-                                        </a>
-                                    @else
-                                        <span class="text-muted">{{ config('constants.empty') }}</span>
-                                    @endif
-                                </td>
-                                <td class="col-client_name">
-                                    @if($matter->client)
-                                        {{ ($matter->client->first_name ?? '') ?: config('constants.empty') }} {{ ($matter->client->last_name ?? '') ?: config('constants.empty') }}
-                                    @else
-                                        {{ config('constants.empty') }}
-                                    @endif
-                                </td>
-                                <td class="col-dob">
-                                    @if($matter->client && $matter->client->dob)
-                                        {{ \Carbon\Carbon::parse($matter->client->dob)->format('d/m/Y') }}
-                                    @else
-                                        {{ config('constants.empty') }}
-                                    @endif
-                                </td>
-                                <td class="col-legal_practitioner">
-                                    @if($matter->legalPractitioner)
-                                        <div class="user-avatar-cell">
-                                            <div class="avatar-sm">
-                                                {{ substr($matter->legalPractitioner->first_name, 0, 1) }}{{ substr($matter->legalPractitioner->last_name, 0, 1) }}
-                                            </div>
-                                            {{ $matter->legalPractitioner->first_name }} {{ $matter->legalPractitioner->last_name }}
-                                        </div>
-                                    @else
-                                        {{ config('constants.empty') }}
-                                    @endif
-                                </td>
-                                <td class="col-person_responsible">
-                                    @if($matter->personResponsible)
-                                        <div class="user-avatar-cell">
-                                            <div class="avatar-sm">
-                                                {{ substr($matter->personResponsible->first_name, 0, 1) }}{{ substr($matter->personResponsible->last_name, 0, 1) }}
-                                            </div>
-                                            {{ $matter->personResponsible->first_name }} {{ $matter->personResponsible->last_name }}
-                                        </div>
-                                    @else
-                                        {{ config('constants.empty') }}
-                                    @endif
-                                </td>
-                                <td class="col-person_assisting">
-                                    @if($matter->personAssisting)
-                                        <div class="user-avatar-cell">
-                                            <div class="avatar-sm">
-                                                {{ substr($matter->personAssisting->first_name, 0, 1) }}{{ substr($matter->personAssisting->last_name, 0, 1) }}
-                                            </div>
-                                            {{ $matter->personAssisting->first_name }} {{ $matter->personAssisting->last_name }}
-                                        </div>
-                                    @else
-                                        {{ config('constants.empty') }}
-                                    @endif
-                                </td>
-                                <td class="col-stage">
-                                    <select class="form-select stageCls stage-select-enhanced" id="stage_{{ $matter->id }}" aria-label="Change stage for matter {{ $matter->client_unique_matter_no }}">
-                                        @foreach($workflowStages as $stage)
-                                            <option value="{{ $stage['id'] }}" {{ $matter->workflow_stage_id == $stage['id'] ? 'selected' : '' }}>
-                                                {{ $stage['name'] }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="matter-row-action">
-                                    @if(!empty($clientDetailParams))
-                                        <a href="{{ route('clients.detail', $clientDetailParams) }}" class="matter-row-open" title="Open matter">
-                                            <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
-                                        </a>
-                                    @endif
-                                </td>
-                            </tr>
-                            @endif
-                        @empty
-                            <tr>
-                                <td colspan="9" class="empty-state">
-                                    <div class="empty-state-modern">
-                                        <i class="fa-solid fa-inbox fa-3x"></i>
-                                        <h4>No Records Found</h4>
-                                        <p>Try adjusting your filters or search criteria.</p>
-                                        @if($dashboardFiltersActive)
-                                            <a href="{{ route('dashboard') }}" class="btn btn-primary mt-3">
-                                                <i class="fa-solid fa-xmark"></i> Clear All Filters
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            {{-- Pagination (shared CRM listing styles) --}}
-            @if($data->hasPages())
-                <div class="listing-container">
-                    <div class="card-footer">
-                        <div class="showing-text">
-                            Showing {{ $data->firstItem() ?? 0 }}&ndash;{{ $data->lastItem() ?? 0 }} of {{ $data->total() }} results
-                        </div>
-                        {!! $data->appends(request()->except('page'))->render() !!}
-                    </div>
-                </div>
-            @endif
-        </section>
     </main>
 
     {{-- Loading Overlay --}}
@@ -424,7 +237,6 @@
 @once
 @vite(['resources/css/fullcalendar-v6.css'])
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ @filemtime(public_path('css/dashboard.css')) ?: time() }}">
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}?v={{ @filemtime(public_path('css/task-popover-modern.css')) ?: time() }}">
 <style>
 .dashboard-theme-icon-primary {
@@ -665,7 +477,7 @@
 /* Ensure all sections take full width */
 .kpi-cards,
 .priority-focus,
-.cases-overview,
+.dashboard-calendar-section,
 .quick-stats-banner {
     width: 100% !important;
     max-width: 100% !important;
@@ -1338,9 +1150,7 @@ body > .ts-dropdown {
         assigneeAction: "{{ route('assignee.action') }}"
     };
     
-    window.dashboardData = {
-        visibleColumns: {!! json_encode($visibleColumns, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
-    };
+    window.dashboardData = {};
     
     // Error handling for missing routes
     if (typeof window.dashboardRoutes === 'undefined') {

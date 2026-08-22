@@ -2,13 +2,13 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class DocumentChecklist extends Authenticatable
 {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
 
 	protected $table = 'document_checklists';
 

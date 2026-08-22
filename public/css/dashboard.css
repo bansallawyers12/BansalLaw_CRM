@@ -215,8 +215,17 @@
 .dashboard-cal-dot--paid { background: #1E3D60; }
 .dashboard-cal-dot--confirmed { background: #1E7A52; }
 
+.dashboard-calendar-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 560px;
+}
+
 .dashboard-calendar-wrapper {
     padding: 16px 20px 24px;
+    border-right: 1px solid var(--border-color);
+    min-width: 0;
 }
 
 .dashboard-calendar-container .fc {
@@ -373,8 +382,11 @@
 }
 
 .dashboard-upcoming-panel {
-    border-top: 1px solid var(--border-color);
-    padding: 18px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 18px 20px 20px;
     background: var(--card-bg-color);
 }
 
@@ -383,6 +395,7 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 4px;
+    flex-shrink: 0;
 }
 
 .dashboard-upcoming-header h3 {
@@ -411,10 +424,12 @@
     margin: 0 0 12px 0;
     font-size: 0.85rem;
     color: var(--text-muted-color);
+    flex-shrink: 0;
 }
 
 .dashboard-upcoming-list {
-    max-height: 420px;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -428,50 +443,111 @@
     font-size: 0.9rem;
 }
 
-.dashboard-upcoming-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+.dashboard-upcoming-agenda {
+    padding: 4px 0 8px;
 }
 
-.dashboard-upcoming-table th,
-.dashboard-upcoming-table td {
-    padding: 10px 12px;
-    text-align: left;
-    vertical-align: top;
+.dashboard-upcoming-day {
     border-bottom: 1px solid var(--border-color);
+    scroll-margin-top: 8px;
 }
 
-.dashboard-upcoming-table th {
+.dashboard-upcoming-day:last-child {
+    border-bottom: none;
+}
+
+.dashboard-upcoming-day.is-focused {
+    background: rgba(30, 61, 96, 0.06);
+    box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
+.dashboard-upcoming-day-header {
     position: sticky;
     top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
     background: var(--card-bg-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 0.02em;
+}
+
+.dashboard-upcoming-day-count {
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     color: var(--text-muted-color);
-    z-index: 1;
+    text-align: center;
 }
 
-.dashboard-upcoming-row {
+.dashboard-upcoming-day-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-upcoming-item {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 4px 10px;
+    padding: 10px 14px;
     cursor: pointer;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.dashboard-upcoming-row:hover {
+.dashboard-upcoming-item:last-child {
+    border-bottom: none;
+}
+
+.dashboard-upcoming-item:hover {
     background: rgba(30, 61, 96, 0.06);
+}
+
+.dashboard-upcoming-item-time {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted-color);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+}
+
+.dashboard-upcoming-item-body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dashboard-upcoming-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
 }
 
 .dashboard-upcoming-title {
     font-weight: 600;
+    font-size: 0.875rem;
     color: var(--text-color);
+    line-height: 1.35;
+    word-break: break-word;
 }
 
 .dashboard-upcoming-type {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -1213,6 +1289,26 @@
 
     .priority-focus {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-calendar-body {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .dashboard-calendar-body {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .dashboard-calendar-wrapper {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .dashboard-upcoming-list {
+        max-height: 420px;
     }
 }
 

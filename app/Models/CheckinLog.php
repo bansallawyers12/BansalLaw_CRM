@@ -3,11 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class CheckinLog extends Model
 {
-	use Sortable;
+	use SortableTrait;
 
 	protected $fillable = [
         'id',

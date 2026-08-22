@@ -52,14 +52,16 @@ class StaffPersonalCalendarFeedService
      */
     public function bookingCalendarTypeForStaff(Staff $staff): ?string
     {
-        $consultantIds = $this->consultantIdsForStaff($staff);
-        if ($consultantIds !== []) {
-            $type = AppointmentConsultant::query()
-                ->whereIn('id', $consultantIds)
-                ->whereIn('calendar_type', ['ajay', 'kunal'])
-                ->value('calendar_type');
-            if (is_string($type) && $type !== '') {
-                return $type;
+        if (Schema::hasTable('appointment_consultants')) {
+            $consultantIds = $this->consultantIdsForStaff($staff);
+            if ($consultantIds !== []) {
+                $type = AppointmentConsultant::query()
+                    ->whereIn('id', $consultantIds)
+                    ->whereIn('calendar_type', ['ajay', 'kunal'])
+                    ->value('calendar_type');
+                if (is_string($type) && $type !== '') {
+                    return $type;
+                }
             }
         }
 
@@ -327,7 +329,10 @@ class StaffPersonalCalendarFeedService
         $start = $appointment->appointment_datetime
             ? $appointment->appointment_datetime->copy()->timezone($tz)
             : Carbon::now($tz);
-        $duration = max(15, (int) ($appointment->duration_minutes ?: 60));
+        $duration = (int) ($appointment->duration_minutes ?: 15);
+        if ($duration < 15) {
+            $duration = 15;
+        }
         $end = $start->copy()->addMinutes($duration);
 
         $clientName = $this->clientDisplayName($appointment->client)

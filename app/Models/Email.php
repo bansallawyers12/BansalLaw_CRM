@@ -5,13 +5,13 @@ use App\Support\EmailSignatureHtml;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Email extends Authenticatable
 {
     use HasFactory, Notifiable;
-	use Sortable; 
+	use SortableTrait; 
 
     /** @var list<string> Mail providers routed through AWS SES. */
     public const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];

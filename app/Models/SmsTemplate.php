@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 class SmsTemplate extends Model
 {
-    use Sortable;
+    use SortableTrait;
 
     protected static function booted(): void
     {

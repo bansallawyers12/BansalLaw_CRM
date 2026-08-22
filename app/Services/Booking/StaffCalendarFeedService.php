@@ -208,6 +208,7 @@ class StaffCalendarFeedService
             'client_id' => $event->client_id,
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
+            'client_email' => $this->clientEmail($event->client),
             'client_matter_id' => $event->client_matter_id,
             'location' => $location,
             'notes' => $event->notes,
@@ -260,6 +261,7 @@ class StaffCalendarFeedService
             'client_id' => $hearing->client_id,
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
+            'client_email' => $this->clientEmail($hearing->client),
             'client_matter_id' => $hearing->client_matter_id,
             'court_name' => $courtName,
             'case_number' => $hearing->case_number,
@@ -286,6 +288,17 @@ class StaffCalendarFeedService
         $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
 
         return $name !== '' ? $name : ($client->client_id ?? 'Client #' . $client->id);
+    }
+
+    protected function clientEmail(?Admin $client): ?string
+    {
+        if (! $client) {
+            return null;
+        }
+
+        $email = trim((string) ($client->email ?? ''));
+
+        return $email !== '' ? $email : null;
     }
 
     public static function colorForEventType(string $type): string

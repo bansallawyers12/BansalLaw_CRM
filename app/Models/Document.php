@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Admin;
 use App\Models\Lead;
@@ -15,7 +15,7 @@ use Symfony\Component\Mime\MimeTypes;
 
 class Document extends Model
 {
-    use Sortable, HasFactory;
+    use SortableTrait, HasFactory;
 
     protected $table = 'documents';
 

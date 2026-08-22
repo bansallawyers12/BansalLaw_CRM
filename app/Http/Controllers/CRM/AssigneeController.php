@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 // WARNING: Appointment and AppointmentLog models have been removed - old appointment system deleted
@@ -23,6 +24,7 @@ use App\Services\ActionTaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
+use App\Helpers\SortableHelper;
 use Illuminate\Support\Facades\URL;
 
 class AssigneeController extends Controller
@@ -57,21 +59,58 @@ class AssigneeController extends Controller
         };
     }
 
+    /**
+     * @return list<AllowedSort>
+     */
+    private function noteListAllowedSorts(): array
+    {
+        return [
+            AllowedSort::callback('first_name', function ($query, bool $descending): void {
+                $joinAlias = 'sort_assignee';
+                $alreadyJoined = collect($query->getQuery()->joins ?? [])
+                    ->contains(function ($join) use ($joinAlias) {
+                        return $join->table === 'staff as '.$joinAlias || $join->table === $joinAlias;
+                    });
+                if (! $alreadyJoined) {
+                    $query->leftJoin('staff as '.$joinAlias, $joinAlias.'.id', '=', 'notes.assigned_to')
+                        ->select('notes.*');
+                }
+                $query->orderBy($joinAlias.'.first_name', $descending ? 'desc' : 'asc');
+            }),
+            AllowedSort::field('action_date', 'notes.action_date'),
+            AllowedSort::field('task_group', 'notes.task_group'),
+            AllowedSort::field('created_at', 'notes.created_at'),
+        ];
+    }
+
+    /**
+     * Apply Spatie sorts used by assignee Blade @sortablelink headers.
+     */
+    private function sortNotesList($query, string $defaultSort = '-created_at')
+    {
+        $allowedNames = ['first_name', 'action_date', 'task_group', 'created_at'];
+
+        return QueryBuilder::for($query, SortableHelper::requestWithAllowedSortsOnly($allowedNames))
+            ->allowedSorts(...$this->noteListAllowedSorts())
+            ->defaultSort($defaultSort);
+    }
+
     //All action lists except completed = Closed
     public function index(Request $request)
     {
-        $query = QueryBuilder::for(Note::class)
-            ->allowedSorts('first_name', 'action_date', 'task_group', 'created_at')
+        $query = Note::query()
             ->with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
             ->where('type','client')
             ->where('is_action', 1)
             ->where('status','<>','1');
 
         if ($this->viewerSeesAllActions()) {
-            $assignees = $query->whereNotNull('client_id')->paginate(20);
+            $query->whereNotNull('client_id');
         } else {
-            $assignees = $query->where('assigned_to', Auth::user()->id)->paginate(20);
+            $query->where('assigned_to', Auth::user()->id);
         }
+
+        $assignees = $this->sortNotesList($query)->paginate(20);
 
         return view('crm.assignee.index',compact('assignees'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -80,11 +119,19 @@ class AssigneeController extends Controller
     //All completed action lists
     public function completed(Request $request)
     {
+        $query = Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
+            ->where('type','client')
+            ->where('is_action', 1)
+            ->where('status','1');
+
         if ($this->viewerSeesAllActions()) {
-            $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
+            $query->whereNotNull('client_id');
         } else {
-            $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
-        }  //dd( $assignees);
+            $query->where('assigned_to', Auth::user()->id);
+        }
+
+        $assignees = $this->sortNotesList($query)->paginate(20);
+
         return view('crm.assignee.completed',compact('assignees'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
@@ -260,12 +307,19 @@ class AssigneeController extends Controller
      //All assigned by me action list which r incomplete
      public function assigned_by_me(Request $request)
      {
+        $query = Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])
+            ->where('status','<>',1)
+            ->where('type','client')
+            ->where('is_action', 1);
+
         if ($this->viewerSeesAllActions()) {
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $query->whereNotNull('client_id');
         } else {
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $query->where('user_id', Auth::user()->id);
         }
-         #dd($assignees_notCompleted);
+
+        $assignees_notCompleted = $this->sortNotesList($query)->paginate(20);
+
          return view('crm.assignee.assign_by_me',compact('assignees_notCompleted'))
           ->with('i', (request()->input('page', 1) - 1) * 20);
      }
@@ -273,15 +327,18 @@ class AssigneeController extends Controller
     //All assigned to me action list
     public function assigned_to_me(Request $request)
     {
+        $base = Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])
+            ->where('type','client')
+            ->where('is_action', 1)
+            ->where('assigned_to', Auth::user()->id);
+
         if ($this->viewerSeesAllActions()) {
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
-
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
-        } else {
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
-
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $base->whereNotNull('client_id');
         }
+
+        $assignees_notCompleted = $this->sortNotesList((clone $base)->where('status','<>','1'))->paginate(20);
+        $assignees_completed = $this->sortNotesList((clone $base)->where('status','1'))->paginate(20);
+
         return view('crm.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
@@ -319,15 +376,7 @@ class AssigneeController extends Controller
                 return $query->where('task_group', 'like', $task_group);
             });
 
-        // Apply sorting - match Tasks page: default action_date desc; respect sortable links
-        $sortParam = $request->get('sort', '-action_date');
-        $sortColumn = ltrim($sortParam, '-');
-        $sortDirection = str_starts_with($sortParam, '-') ? 'desc' : 'asc';
-        if (in_array($sortColumn, ['action_date', 'task_group', 'created_at'])) {
-            $assignees_completed = $assignees_completed->orderBy('notes.' . $sortColumn, $sortDirection)->paginate(20);
-        } else {
-            $assignees_completed = $assignees_completed->orderBy('notes.action_date', 'desc')->paginate(20);
-        }
+        $assignees_completed = $this->sortNotesList($assignees_completed, '-action_date')->paginate(20);
 
         // Get action group counts with single optimized query
         $taskGroupCounts = $this->getCompletedActionGroupCounts($staff);

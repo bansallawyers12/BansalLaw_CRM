@@ -125,8 +125,11 @@ class EmailCalendarMergeService
             try {
                 $startsAt = $pendingLink->starts_at;
                 $endsAt = $pendingLink->ends_at;
-                $isAllDay = $startsAt instanceof Carbon
-                    && $startsAt->format('H:i:s') === '00:00:00'
+                if (! $startsAt instanceof Carbon) {
+                    continue;
+                }
+
+                $isAllDay = $startsAt->format('H:i:s') === '00:00:00'
                     && ($endsAt === null || ($endsAt instanceof Carbon && $endsAt->format('H:i:s') === '00:00:00'));
 
                 $event = [
@@ -360,7 +363,10 @@ class EmailCalendarMergeService
 
         $location = CalendarEventText::sanitizeLocation($event['location'] ?? null);
         $isAllDay = (bool) ($event['is_all_day'] ?? false);
-        $startsAt = $event['starts_at'];
+        $startsAt = $event['starts_at'] ?? null;
+        if (! $startsAt instanceof Carbon) {
+            throw new \InvalidArgumentException('Calendar event is missing a start time.');
+        }
 
         if ($this->calendarTypeForEvent($event['event_type']) === EmailCalendarLink::TYPE_COURT_HEARING) {
             $hearingType = CalendarEventText::sanitizeHearingType(

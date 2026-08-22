@@ -2,12 +2,12 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class VisaDocumentType extends Authenticatable {
     use Notifiable;
-	use Sortable;
+	use SortableTrait;
 
 	protected $fillable = ['id', 'title', 'status','client_id','client_matter_id','created_at', 'updated_at'];
 

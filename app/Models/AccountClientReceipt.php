@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Kyslik\ColumnSortable\Sortable;
+use App\Traits\SortableTrait;
 
 /**
  * Trust / client accounting row in account_client_receipts.
@@ -11,7 +11,9 @@ use Kyslik\ColumnSortable\Sortable;
  */
 class AccountClientReceipt extends Model
 {
-    use Sortable;
+    use SortableTrait;
+
+    public $sortable = ['id', 'created_at', 'updated_at'];
 
     protected $table = 'account_client_receipts';
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\SortableTrait;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,13 +23,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Note extends Model
 {
-    use Notifiable;
+    use Notifiable, SortableTrait;
 
     protected $fillable = [
         'id','user_id','client_id','lead_id','unique_group_id','title','description','note_deadline','mail_id','type','pin','action_date','is_action','assigned_to','status','task_group','matter_id','mobile_number','created_at', 'updated_at'
     ];
 
-	public $sortable = ['id', 'created_at', 'updated_at','task_group','action_date'];
+	public $sortable = ['id', 'created_at', 'updated_at', 'task_group', 'action_date'];
 
 
     /**
