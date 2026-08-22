@@ -196,6 +196,9 @@ class BookingAppointmentsController extends Controller
         $currentDateTime = Carbon::now(config('app.timezone'));
         $includePast = $this->calendarIncludePastInVisibleRange();
 
+        // Calendar grids never show cancelled / no-show (lists still do).
+        $query->whereNotIn('status', ['cancelled', 'no_show']);
+
         if ($source === 'local') {
             if ($includePast) {
                 $this->applyCalendarVisibleDatetimeWindow($query, $request, $startOfToday);
@@ -227,7 +230,9 @@ class BookingAppointmentsController extends Controller
             try {
                 return $this->mergeImportantEventsIntoCalendarFeed([
                     'success' => true,
-                    'data' => $this->mergeCalendarLocalAndExternal($request, $query, $startOfToday),
+                    'data' => $this->excludeCancelledFromCalendarRows(
+                        $this->mergeCalendarLocalAndExternal($request, $query, $startOfToday)
+                    ),
                 ], $request);
             } catch (Exception $e) {
                 Log::error('Calendar merge (external) failed; using local only', ['error' => $e->getMessage()]);
@@ -297,6 +302,7 @@ class BookingAppointmentsController extends Controller
         }
 
         $data = $this->calendarExternalFeed->resolveWithLocalCrmRows($normalized);
+        $data = $this->excludeCancelledFromCalendarRows($data);
 
         Log::info('Calendar API Request - external Bansal appointment API', [
             'type' => $type,
@@ -305,6 +311,19 @@ class BookingAppointmentsController extends Controller
         ]);
 
         return $this->mergeImportantEventsIntoCalendarFeed(['success' => true, 'data' => $data], $request);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    protected function excludeCancelledFromCalendarRows(array $rows): array
+    {
+        return array_values(array_filter($rows, function (array $row) {
+            $status = strtolower((string) ($row['status'] ?? ''));
+
+            return ! in_array($status, ['cancelled', 'canceled', 'no_show'], true);
+        }));
     }
 
     /**

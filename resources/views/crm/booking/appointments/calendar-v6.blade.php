@@ -607,6 +607,8 @@ document.addEventListener('DOMContentLoaded', function() {
         height: 'auto',
         timeZone: 'Australia/Melbourne',
         firstDay: 1, // Monday
+        slotMinTime: '09:00:00',
+        slotMaxTime: '18:00:00',
         
         // Event display
         eventDisplay: 'block',
@@ -627,11 +629,18 @@ document.addEventListener('DOMContentLoaded', function() {
             meridiem: 'short'
         },
         
-        // Business hours (optional)
+        // Business hours highlight (Melbourne working day)
         businessHours: {
             daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
             startTime: '09:00',
-            endTime: '17:00',
+            endTime: '18:00',
+        },
+
+        // Calendar grids: today onwards (lists still show past / cancelled)
+        validRange: function (nowDate) {
+            var start = new Date(nowDate.valueOf());
+            start.setHours(0, 0, 0, 0);
+            return { start: start };
         },
         
         // Event source - fetch from API

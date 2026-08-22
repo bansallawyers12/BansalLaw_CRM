@@ -554,6 +554,13 @@
                 contentHeight: 560,
                 timeZone: tz,
                 firstDay: 1,
+                slotMinTime: '09:00:00',
+                slotMaxTime: '18:00:00',
+                businessHours: {
+                    daysOfWeek: [1, 2, 3, 4, 5],
+                    startTime: '09:00',
+                    endTime: '18:00',
+                },
                 nowIndicator: true,
                 navLinks: true,
                 eventDisplay: 'block',
@@ -568,7 +575,6 @@
                 },
                 validRange: function (nowDate) {
                     var start = new Date(nowDate.valueOf());
-                    start.setDate(1);
                     start.setHours(0, 0, 0, 0);
                     return { start: start };
                 },

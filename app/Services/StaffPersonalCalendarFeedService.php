@@ -217,6 +217,9 @@ class StaffPersonalCalendarFeedService
             });
         }
 
+        // Calendars never show cancelled / no-show; lists still do.
+        $query->whereNotIn('status', ['cancelled', 'no_show']);
+
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
         $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
 
