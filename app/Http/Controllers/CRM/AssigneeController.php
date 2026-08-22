@@ -906,7 +906,7 @@ class AssigneeController extends Controller
             $objs->pin = 0;
             $objs->activity_type = 'activity';
             $objs->save();
-            return redirect()->route('assignee.action_completed')->with('success','Task deleted successfully');
+            return redirect()->route('assignee.tasks.completed')->with('success','Task deleted successfully');
         }
     }
 

@@ -53,7 +53,7 @@
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
             <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fa-solid fa-clipboard-check"></i></a>
             @endif
-            <a href="{{route('assignee.action')}}" class="icon-btn" title="Tasks"><i class="fa-solid fa-list-check"></i></a>
+            <a href="{{ route('assignee.tasks') }}" class="icon-btn" title="Tasks"><i class="fa-solid fa-list-check"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fa-solid fa-users"></i></a>
                 <div class="icon-dropdown-menu">

@@ -91,7 +91,8 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/calendar-events', [DashboardController::class, 'calendarEvents'])->name('dashboard.calendar-events');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
-    Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed');
+    Route::post('/dashboard/tasks/complete', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.tasks.complete');
+    Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed'); // deprecated alias
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
@@ -251,15 +252,18 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::delete('/assignee/{assignee}', [AssigneeController::class, 'destroy'])->name('assignee.destroy');
     Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
 
-    Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed
-    Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); //update action to be not completed
+    Route::post('/tasks/complete', [AssigneeController::class, 'updateActionCompleted'])->name('tasks.complete');
+    Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); // deprecated alias
+    Route::post('/tasks/reopen', [AssigneeController::class, 'updateActionNotCompleted'])->name('tasks.reopen');
+    Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); // deprecated alias
 
     Route::get('/assigned_by_me', [AssigneeController::class, 'assigned_by_me'])->name('assignee.assigned_by_me'); //assigned by me
     Route::get('/assigned_to_me', [AssigneeController::class, 'assigned_to_me'])->name('assignee.assigned_to_me'); //assigned to me
 
     Route::delete('/destroy_by_me/{note_id}', [AssigneeController::class, 'destroy_by_me'])->name('assignee.destroy_by_me'); //assigned by me
     Route::delete('/destroy_to_me/{note_id}', [AssigneeController::class, 'destroy_to_me'])->name('assignee.destroy_to_me'); //assigned to me
-    Route::get('/action_completed', [AssigneeController::class, 'action_completed'])->name('assignee.action_completed'); //action completed
+    Route::get('/tasks/completed', [AssigneeController::class, 'action_completed'])->name('assignee.tasks.completed');
+    Route::get('/action_completed', [AssigneeController::class, 'action_completed'])->name('assignee.action_completed'); // deprecated alias
 
 
     Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
@@ -273,13 +277,15 @@ Route::middleware(['auth:admin'])->group(function () {
     // Get assigne list
     Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
 
-    // Update action
-    Route::post('/update-action', [AssigneeController::class, 'updateAction']);
-    Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts');
+    Route::post('/tasks/update', [AssigneeController::class, 'updateAction'])->name('tasks.update');
+    Route::post('/update-action', [AssigneeController::class, 'updateAction']); // deprecated alias
+    Route::get('/tasks/counts', [AssigneeController::class, 'getActionCounts'])->name('tasks.counts');
+    Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts'); // deprecated alias
 
-    // For datatable - Action list routes
-    Route::get('/action', [AssigneeController::class, 'action'])->name('assignee.action');
-    Route::get('/action/list', [AssigneeController::class, 'getAction'])->name('action.list');
+    Route::get('/tasks', [AssigneeController::class, 'action'])->name('assignee.tasks');
+    Route::get('/tasks/list', [AssigneeController::class, 'getAction'])->name('tasks.list');
+    Route::get('/action', [AssigneeController::class, 'action'])->name('assignee.action'); // deprecated alias
+    Route::get('/action/list', [AssigneeController::class, 'getAction'])->name('action.list'); // deprecated alias
 
     /*---------- Matter Office Management ----------*/
     Route::post('/matters/update-office', [ClientsController::class, 'updateMatterOffice'])->name('matters.update-office');

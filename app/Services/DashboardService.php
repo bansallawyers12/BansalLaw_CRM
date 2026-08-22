@@ -597,7 +597,7 @@ class DashboardService
             if ($note->assigned_to) {
                 $notificationUrl = $note->client_id
                     ? url('/clients/detail/' . base64_encode(convert_uuencode($note->client_id)))
-                    : url('/action');
+                    : route('assignee.tasks');
                 Notification::create([
                     'sender_id' => Auth::id(),
                     'receiver_id' => $note->assigned_to,

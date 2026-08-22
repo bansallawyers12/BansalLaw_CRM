@@ -365,7 +365,8 @@ All routes below require a valid staff session unless noted.
 | GET | `/dashboard` | `dashboard` |
 | GET | `/dashboard/calendar-events` | `dashboard.calendar-events` |
 | POST | `/dashboard/extend-deadline` | `dashboard.extend-deadline` |
-| POST | `/dashboard/update-action-completed` | `dashboard.update-action-completed` |
+| POST | `/dashboard/tasks/complete` | `dashboard.tasks.complete` |
+| POST | `/dashboard/update-action-completed` | `dashboard.update-action-completed` (deprecated alias) |
 | GET | `/dashboard/active-staff` | `dashboard.active-staff` |
 | GET | `/dashboard/fetch-notifications` | `dashboard.fetch-notifications` |
 | GET | `/dashboard/fetch-office-visit-notifications` | `dashboard.fetch-office-visit-notifications` |
@@ -515,7 +516,7 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | POST | `/front-desk/checkin/submit` | `front-desk.checkin.submit` |
 | POST | `/front-desk/checkin/create-lead` | `front-desk.checkin.create-lead` |
 
-#### Assignee & actions
+#### Assignee & tasks
 
 | Method | URI | Name |
 |--------|-----|------|
@@ -523,10 +524,17 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | GET | `/assignee-completed` | — |
 | GET | `/assigned_by_me` | `assignee.assigned_by_me` |
 | GET | `/assigned_to_me` | `assignee.assigned_to_me` |
-| GET | `/action` | `assignee.action` |
-| GET | `/action/list` | `action.list` |
-| GET | `/action/counts` | `action.counts` |
-| GET | `/action_completed` | `assignee.action_completed` |
+| GET | `/tasks` | `assignee.tasks` |
+| GET | `/tasks/list` | `tasks.list` |
+| GET | `/tasks/counts` | `tasks.counts` |
+| GET | `/tasks/completed` | `assignee.tasks.completed` |
+| POST | `/tasks/complete` | `tasks.complete` |
+| POST | `/tasks/reopen` | `tasks.reopen` |
+| POST | `/tasks/update` | `tasks.update` |
+| GET | `/action` | `assignee.action` (deprecated alias) |
+| GET | `/action/list` | `action.list` (deprecated alias) |
+| GET | `/action/counts` | `action.counts` (deprecated alias) |
+| GET | `/action_completed` | `assignee.action_completed` (deprecated alias) |
 
 #### Cross-access (`/crm/access`)
 

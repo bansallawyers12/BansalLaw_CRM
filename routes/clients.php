@@ -60,7 +60,8 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
 });
 
 /*---------- Client Actions & Activities ----------*/
-Route::post('/clients/action/store', [ClientsController::class, 'actionStore']);
+Route::post('/clients/tasks/store', [ClientsController::class, 'actionStore'])->name('clients.tasks.store');
+Route::post('/clients/action/store', [ClientsController::class, 'actionStore']); // deprecated alias
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
 Route::post('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLeadOnly'])->name('clients.convertLeadOnly');
@@ -316,9 +317,12 @@ Route::get('/upload-checklists/matter/{matterId}', [UploadChecklistController::c
 Route::post('/upload-checklists/store', [UploadChecklistController::class, 'store'])->name('upload_checklistsupload');
 
 /*---------- Client Sessions & Actions ----------*/
-Route::post('/clients/action/personal/store', [ClientsController::class, 'storePersonalAction']);
-Route::post('/clients/action/update', [ClientsController::class, 'updateAction']);
-Route::post('/clients/action/reassign', [ClientsController::class, 'reassignAction']);
+Route::post('/clients/tasks/personal/store', [ClientsController::class, 'storePersonalAction'])->name('clients.tasks.personal.store');
+Route::post('/clients/tasks/update', [ClientsController::class, 'updateAction'])->name('clients.tasks.update');
+Route::post('/clients/tasks/reassign', [ClientsController::class, 'reassignAction'])->name('clients.tasks.reassign');
+Route::post('/clients/action/personal/store', [ClientsController::class, 'storePersonalAction']); // deprecated alias
+Route::post('/clients/action/update', [ClientsController::class, 'updateAction']); // deprecated alias
+Route::post('/clients/action/reassign', [ClientsController::class, 'reassignAction']); // deprecated alias
 Route::post('/clients/update-session-completed', [ClientsController::class, 'updatesessioncompleted'])->name('clients.updatesessioncompleted');
 Route::post('/clients/getAllStaff', [ClientsController::class, 'getAllStaff'])->name('clients.getAllStaff');
 

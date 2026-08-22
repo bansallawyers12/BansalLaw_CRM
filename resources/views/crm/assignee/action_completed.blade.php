@@ -292,10 +292,10 @@
                         <h4>Completed Tasks</h4>
                         <ul class="nav nav-pills" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link" id="incomplete-tab" href="{{ URL::to('/action') }}">Incomplete</a>
+                                <a class="nav-link" id="incomplete-tab" href="{{ route('assignee.tasks') }}">Incomplete</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link active" id="completed-tab" href="{{ URL::to('/action_completed') }}">Completed</a>
+                                <a class="nav-link active" id="completed-tab" href="{{ route('assignee.tasks.completed') }}">Completed</a>
                             </li>
                         </ul>
                     </div>
@@ -303,30 +303,30 @@
                 
                 <div class="card-body">
                     <div class="tab-content" id="quotationContent">
-                        <form action="{{ route('assignee.action_completed') }}" method="get" class="action-completed-filter-form">
+                        <form action="{{ route('assignee.tasks.completed') }}" method="get" class="action-completed-filter-form">
                             <div class="row mb-3">
                                 <div class="col-md-12 filter-buttons">
-                                    <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
+                                    <a href="{{ route('assignee.tasks.completed', ['group_type' => 'All']) }}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa-solid fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Call']) }}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa-solid fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa-solid fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Checklist']) }}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa-solid fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa-solid fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Review']) }}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa-solid fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa-solid fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Query']) }}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa-solid fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Urgent']) }}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' || $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] ?? 0 }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Personal Task']) }}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' || $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] ?? 0 }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
+                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Follow Up']) }}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
                                     </button>
                                 </div>
                             </div>
@@ -558,7 +558,7 @@ jQuery(document).ready(function($){
         if(row_id != ""){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/update-action-not-completed",
+                url: "{{ route('tasks.reopen') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: { id: row_id, unique_group_id: row_unique_group_id },
                 success: function(response){
@@ -602,7 +602,7 @@ jQuery(document).ready(function($){
         if (flag) {
             $.ajax({
                 type: 'post',
-                url: "{{ URL::to('/') }}/clients/action/reassign",
+                url: "{{ route('clients.tasks.reassign') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_type: 'follow_up',

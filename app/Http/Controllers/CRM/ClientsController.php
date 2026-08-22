@@ -5790,7 +5790,7 @@ class ClientsController extends Controller
             return URL::to('/clients/detail/' . $encoded);
         }
 
-        return URL::to('/action');
+        return route('assignee.tasks');
     }
 
     /**

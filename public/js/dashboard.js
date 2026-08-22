@@ -238,7 +238,7 @@ window.openTaskDetail = function(taskId) {
     const rawClientId = (taskItem.attr('data-client-id') || '').trim();
     const isPersonalAction = rawClientId === '';
     const clientDetailUrl = taskItem.attr('data-client-detail-url') || data.clientDetailUrl || '';
-    const personalActionUrl = (window.dashboardRoutes && window.dashboardRoutes.assigneeAction) ? window.dashboardRoutes.assigneeAction : '/action';
+    const personalActionUrl = (window.dashboardRoutes && window.dashboardRoutes.assigneeAction) ? window.dashboardRoutes.assigneeAction : '/tasks';
     
     // Populate panel with task data
     $('#taskDetailTitle').text(stripHtml(data.description));

@@ -128,8 +128,8 @@
                                 $row_withdraw = floatval($rec_val->withdraw_amount ?? 0);
                                 $trust_running_balance += $row_deposit - $row_withdraw;
                             }
-                            // Map DB type to LSBC-compliant label
-                            $lsbc_type_map = [
+                            // Display labels (internal ledger; legal trust is in Smokeball)
+                            $type_label_map = [
                                 'Deposit'      => 'Trust Receipt',
                                 'Fee Transfer' => 'Transfer to Office Account',
                                 'Disbursement' => 'Disbursement (Trust Payment)',
@@ -152,7 +152,7 @@
                             <td class="type-cell" style="text-align: left; vertical-align: middle;">
                                 <?php
                                 $dbType = $rec_val->client_fund_ledger_type;
-                                $lsbc_label = $lsbc_type_map[$dbType] ?? $dbType;
+                                $type_label = $type_label_map[$dbType] ?? $dbType;
                                 if($dbType == 'Deposit' ){
                                     $type_icon = 'fa-arrow-circle-down';
                                     $type_color = '#28a745';
@@ -169,9 +169,14 @@
                                     $type_icon = 'fa-arrow-circle-up';
                                     $type_color = '#6c757d';
                                 }?>
-                                <i class="fa-solid {{$type_icon}} type-icon" title="{{$lsbc_label}}" style="color: {{$type_color}};"></i>
+                                <i class="fa-solid {{$type_icon}} type-icon" title="{{$type_label}}" style="color: {{$type_color}};"></i>
                                 <span>
-                                    <strong style="font-size: 0.9em;">{{$lsbc_label}}</strong>
+                                    <strong style="font-size: 0.9em;">{{$type_label}}</strong>
+                                    <?php if (!empty($rec_val->reversal_of_entry_id)) { ?>
+                                        <br/><small class="text-muted">Reversal</small>
+                                    <?php } elseif (!empty($rec_val->voided_at) || (int) ($rec_val->void_fee_transfer ?? 0) === 1) { ?>
+                                        <br/><small class="text-muted">Reversed</small>
+                                    <?php } ?>
                                     <br/>
                                     {!! !empty($rec_val->invoice_no) ? '<small style="color:#6c757d;">('.$rec_val->invoice_no.')</small>' : '' !!}
                                 </span>
@@ -310,7 +315,7 @@
             </div>
         </section>
 
-        <!-- Office Account Section (LSBC Compliant) -->
+        <!-- Office Account Section -->
         <section class="account-section office-account">
             <div class="account-section-header">
                 <h2><i class="fa-solid fa-building" style="color: #007bff;"></i> Office Account</h2>
@@ -831,7 +836,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update modal title based on receipt type
         const modalTitles = {
-            '1': '<i class="fa-solid fa-building-columns" style="color: #28a745;"></i> Trust Account Entry &mdash; <small style="font-size:0.75em;color:#6c757d;">General Trust Account (LSBC Compliant)</small>',
+            '1': '<i class="fa-solid fa-building-columns" style="color: #28a745;"></i> Trust Account Entry',
             '2': '<i class="fa-solid fa-hand-holding-dollar" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
             '3': '<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Tax Invoice'
         };

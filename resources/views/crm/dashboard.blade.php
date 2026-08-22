@@ -57,7 +57,7 @@
             <x-dashboard.kpi-card 
                 :title="'Urgent Notes Deadlines'" 
                 :count="$count_note_deadline"
-                :route="route('assignee.action')"
+                :route="route('assignee.tasks')"
                 :subtitle="count($notesData) . ' shown below'"
                 icon="fa-solid fa-hourglass-half"
                 icon-class="icon-pending" 
@@ -173,7 +173,7 @@
                         @if($count_note_deadline > 6)
                             <div class="todo-load-more">
                                 <p>Showing 6 of {{ $count_note_deadline }} tasks</p>
-                                <a href="{{ route('assignee.action') }}" class="todo-view-all-link">View all tasks →</a>
+                                <a href="{{ route('assignee.tasks') }}" class="todo-view-all-link">View all tasks →</a>
                             </div>
                         @endif
                     @else
@@ -1137,9 +1137,9 @@ body > .ts-dropdown {
         calendarEvents: "{{ route('dashboard.calendar-events') }}",
         storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
-        updateActionCompleted: "{{ route('dashboard.update-action-completed') }}",
-        updateTaskCompleted: "{{ route('dashboard.update-action-completed') }}",
-        assigneeAction: "{{ route('assignee.action') }}"
+        updateActionCompleted: "{{ route('dashboard.tasks.complete') }}",
+        updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
+        assigneeAction: "{{ route('assignee.tasks') }}"
     };
     
     window.dashboardData = {};
@@ -1322,7 +1322,7 @@ $(function () {
             
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/action/personal/store",
+                url: "{{ route('clients.tasks.personal.store') }}",
                 headers: { 
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
