@@ -43,12 +43,12 @@
 .kpi-card-modern {
     position: relative;
     background: white;
-    border-radius: 12px;
-    padding: 20px 18px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border, #c8dcef);
     cursor: default;
     display: block;
     text-decoration: none;
@@ -60,20 +60,16 @@
 }
 
 .kpi-card-modern--link:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    border-color: rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(30, 61, 96, 0.12);
+    border-color: var(--sidebar-active, #3a6fa8);
     color: inherit;
     text-decoration: none;
 }
 
 .kpi-card-modern:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-.kpi-card-modern--link:hover {
-    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 4px 14px rgba(30, 61, 96, 0.12);
+    border-color: var(--sidebar-active, #3a6fa8);
 }
 
 .kpi-card-modern::before {
@@ -82,7 +78,7 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 3px;
     background: linear-gradient(90deg, var(--navy, #1e3d60), var(--sidebar-active, #3a6fa8));
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -114,23 +110,23 @@
 }
 
 .kpi-icon-wrapper {
-    width: 60px;
-    height: 60px;
-    border-radius: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
-    transition: all 0.3s ease;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
 }
 
 .kpi-card-modern--link:hover .kpi-icon-wrapper {
-    transform: scale(1.1) rotate(5deg);
+    transform: none;
 }
 
 .kpi-icon-wrapper i {
-    font-size: 1.8em;
-    transition: all 0.3s ease;
+    font-size: 1rem;
+    transition: all 0.2s ease;
 }
 
 /* theme.md — Icon Dot Colours */
@@ -167,12 +163,12 @@
 }
 
 .kpi-title {
-    margin: 0 0 10px 0;
-    font-size: 0.8em;
+    margin: 0 0 2px 0;
+    font-size: 0.7em;
     color: var(--text-muted, #5e7a90);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
 }
 
 .kpi-count {
@@ -180,12 +176,12 @@
 }
 
 .kpi-count-number {
-    font-size: 2.2em;
-    font-weight: 800;
+    font-size: 1.55em;
+    font-weight: 700;
     color: var(--text-dark, #1a2c40);
-    line-height: 1;
+    line-height: 1.1;
     display: inline-block;
-    transition: all 0.3s ease;
+    transition: color 0.2s ease;
 }
 
 .kpi-card-modern--link:hover .kpi-count-number {
@@ -193,11 +189,11 @@
 }
 
 .kpi-subtitle {
-    margin: 10px 0 0 0;
-    font-size: 0.75rem;
+    margin: 4px 0 0 0;
+    font-size: 0.68rem;
     font-weight: 500;
     color: var(--text-muted, #5e7a90);
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
 /* Shine effect on hover */
@@ -223,20 +219,20 @@
 
 @media (max-width: 768px) {
     .kpi-card-modern {
-        padding: 18px 15px;
+        padding: 10px 12px;
     }
-    
+
     .kpi-icon-wrapper {
-        width: 50px;
-        height: 50px;
+        width: 32px;
+        height: 32px;
     }
-    
+
     .kpi-icon-wrapper i {
-        font-size: 1.5em;
+        font-size: 0.9rem;
     }
-    
+
     .kpi-count-number {
-        font-size: 1.8em;
+        font-size: 1.35em;
     }
 }
 </style>

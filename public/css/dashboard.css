@@ -16,48 +16,64 @@
     --dashboard-gradient-end: #3a6fa8;
 }
 
-/* Welcome banner */
+/* Welcome banner — compact toolbar so KPI cards sit higher in the viewport */
 .dashboard-welcome-banner {
     background: linear-gradient(135deg, var(--dashboard-gradient-start) 0%, var(--dashboard-gradient-end) 100%);
-    border-radius: 16px;
-    padding: 28px 32px;
-    margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(30, 61, 96, 0.18);
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.12);
     color: #fff;
 }
 
 .dashboard-welcome-content {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px;
+    align-items: center;
+    gap: 12px 20px;
     flex-wrap: wrap;
 }
 
 .dashboard-welcome-label {
-    margin: 0 0 4px 0;
-    font-size: 0.75rem;
+    margin: 0 0 2px 0;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    opacity: 0.85;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.dashboard-welcome-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 12px;
 }
 
 .dashboard-welcome-text h1 {
     margin: 0;
-    font-size: 1.85rem;
+    font-size: 1.2rem;
+    line-height: 1.25;
     font-weight: 700;
     color: #fff;
 }
 
 .dashboard-welcome-banner .dashboard-header-meta {
-    margin: 8px 0 0 0;
+    margin: 0;
     color: rgba(255, 255, 255, 0.88);
-    font-size: 0.95rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .dashboard-welcome-banner .header-actions {
     align-self: center;
+}
+
+.dashboard-welcome-banner .action-btn {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+    box-shadow: none;
 }
 
 .dashboard-welcome-banner .action-btn-primary {
@@ -68,12 +84,13 @@
 .dashboard-welcome-banner .action-btn-primary:hover {
     background: var(--sidebar-hover);
     color: var(--primary-color);
+    transform: none;
 }
 
 .dashboard-welcome-banner .action-btn-secondary {
     background: transparent;
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 .dashboard-welcome-banner .action-btn-secondary:hover {
@@ -616,8 +633,8 @@
 .kpi-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    margin-bottom: 28px;
+    gap: 12px;
+    margin-bottom: 16px;
     width: 100%;
 }
 
@@ -1314,11 +1331,12 @@
 
 @media (max-width: 768px) {
     .dashboard-welcome-banner {
-        padding: 20px;
+        padding: 10px 14px;
     }
 
     .dashboard-welcome-content {
         flex-direction: column;
+        align-items: stretch;
     }
 
     .dashboard-welcome-banner .header-actions {
