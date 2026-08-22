@@ -402,30 +402,6 @@ function customValidate(formName, savetype = '')
 							}
 						});
 						return false;
-					}else if(formName == 'edit-note')
-					{
-						var myform = document.getElementById('editnoteform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								if(obj.success){
-									$('#myeditnotes .modal-title').html('');
-									$('#myeditnotes #note_type').html('');
-									$('#myeditnotes').modal('hide');
-									myfollowuplist(obj.leadid);
-								}else{
-									$('#myeditnotes .customerror').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
 					}else if(formName == 'appnotetermform')
 					{
 				var noteid = $('#appnotetermform input[name="noteid"]').val();

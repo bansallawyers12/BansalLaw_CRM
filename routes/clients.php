@@ -136,8 +136,6 @@ Route::post('/deletenote', [ClientNotesController::class, 'deletenote'])->name('
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
 Route::get('/viewmatternote', [ClientNotesController::class, 'viewapplicationnote'])->name('clients.viewmatternote');
 Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']); // backward compat
-// REMOVED Phase 4: prev_visa column dropped - Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
-// REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
 Route::post('/pinnote', [ClientNotesController::class, 'pinnote']);
 Route::get('/note-attachments/{id}/download', [ClientNotesController::class, 'downloadAttachment'])->name('clients.noteAttachment.download');
@@ -160,15 +158,6 @@ Route::post('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
 Route::post('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
 
-/*---------- Client Services ----------*/
-// Interested Services routes REMOVED - feature deprecated (no UI access, modals deleted, controllers don't exist)
-// Routes removed: interested-service, edit-interested-service, get-services, getintrestedservice, getintrestedserviceedit
-// servicesavefee, deleteservices, savetoapplication REMOVED - controller methods never existed in ClientsController; servicefeeform modal no longer in any view
-
-// Service Taken routes REMOVED - client_service_takens table does not exist
-// Model clientServiceTaken.php deleted, controller methods removed
-// Routes were: createservicetaken, removeservicetaken, getservicetaken
-
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');
 Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])
@@ -188,7 +177,6 @@ Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs']
 Route::post('/documents/move', [ClientDocumentsController::class, 'moveDocument'])->name('clients.documents.moveDocument');
 // BUGFIX #3: Get visa categories for a specific matter
 Route::get('/get-visa-categories', [ClientDocumentsController::class, 'getVisaCategories'])->name('clients.documents.getVisaCategories');
-// REMOVED: get-visa-checklist route - VisaDocChecklist model deleted, no frontend calls this route
 Route::post('/documents/not-used', [ClientDocumentsController::class, 'notuseddoc'])->name('clients.documents.notuseddoc');
 Route::post('/documents/rename-checklist', [ClientDocumentsController::class, 'renamechecklistdoc'])->name('clients.documents.renamechecklistdoc');
 Route::post('/documents/delete-checklist', [ClientDocumentsController::class, 'deleteChecklist'])->name('clients.documents.deleteChecklist');
@@ -334,7 +322,6 @@ Route::post('/clients/action/update', [ClientsController::class, 'updateAction']
 Route::post('/clients/action/reassign', [ClientsController::class, 'reassignAction']);
 Route::post('/clients/update-session-completed', [ClientsController::class, 'updatesessioncompleted'])->name('clients.updatesessioncompleted');
 Route::post('/clients/getAllStaff', [ClientsController::class, 'getAllStaff'])->name('clients.getAllStaff');
-Route::post('/clients/getAllUser', [ClientsController::class, 'getAllStaff'])->name('clients.getAllUser'); // deprecated, use getAllStaff
 
 /*---------- Appointments ----------*/
 Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);

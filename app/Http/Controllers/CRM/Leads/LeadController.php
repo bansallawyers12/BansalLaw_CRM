@@ -2090,33 +2090,6 @@ class LeadController extends Controller
     }
 
     /**
-     * Legacy method - Lead pin functionality (deprecated)
-     */
-    public function leadPin(Request $request, $id)
-    {
-        return redirect()->back()->with('error', 'Followup functionality has been removed');
-    }
-
-    /**
-     * Legacy method - Delete lead notes (deprecated)
-     */
-    public function leaddeleteNotes(Request $request, $id = null)
-    {
-        return redirect()->back()->with('error', 'Followup functionality has been removed');
-    }
-
-    /**
-     * Legacy method - Get note detail (deprecated)
-     */
-    public function getnotedetail(Request $request)
-    {
-        return response()->json([
-            'status' => 0,
-            'message' => 'Followup functionality has been removed'
-        ]);
-    }
-
-    /**
      * Decode string helper method - consistent with parent behavior
      * 
      * @param string|null $string

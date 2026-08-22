@@ -156,83 +156,6 @@
 								<ul class="navbar-nav" style="display: block;">
 									<li class="nav-item d-sm-inline-block update_stage">
 										<a style="background: #f59a0e;border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;" class="nav-link opennotepopup" data-notename="Others" data-notetype="others" href="javascript:;">Add Note</a>
-									</li> 
-									<li class="nav-item d-sm-inline-block add_note">
-										<button type="button" class="btn btn-secondary btn-block" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id=&quot;popover-content&quot;>
-							    <div class=&quot;box-header with-border&quot;>
-								    <div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
-										<label for=&quot;inputSub3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Subject</label>
-										<div class=&quot;col-sm-9&quot;>
-										    <input id=&quot;remindersubject&quot; class=&quot;form-control f13&quot; placeholder=&quot;Enter an Subject....&quot; type=&quot;text&quot;>
-										</div>
-										<div class=&quot;clearfix&quot;></div>
-								    </div>
-
-							    </div><div id=&quot;popover-content&quot;>
-							    <div class=&quot;box-header with-border&quot;>
-								    <div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
-										<label for=&quot;inputEmail3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Note</label>
-										<div class=&quot;col-sm-9&quot;>
-										    <textarea id=&quot;remindernote&quot; class=&quot;form-control tinymce-editor f13&quot; placeholder=&quot;Enter an note....&quot; type=&quot;text&quot;></textarea>
-										</div>
-										<div class=&quot;clearfix&quot;></div>
-								    </div>
-
-							    </div> 
-							    <div class=&quot;box-body&quot; style=&quot;padding-bottom:0&quot;>
-								    <div class=&quot;c6 f13 text-bold&quot;>Set Date &amp; Time</div>
-									<div class=&quot;row&quot;>
-										<div class=&quot;col-sm-5 form-group mt2 f13&quot; id=&quot;timegroup&quot; style=&quot;line-height:28px&quot;>
-											<label class=&quot;c6 f12&quot;>Presets</label><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this); return false;&quot; id=&quot;hrs2&quot; data-bs-toggle=&quot;tooltip&quot;>In 2 hours</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;hrs4&quot;  data-bs-toggle=&quot;tooltip&quot;>In 4 hours</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_mor&quot; data-bs-toggle=&quot;tooltip&quot;>Tomorrow morning</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_eve&quot; data-bs-toggle=&quot;tooltip&quot;>Tomorrow evening</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tow_day&quot; data-bs-toggle=&quot;tooltip&quot;>In 2 Days</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;in_week&quot;  data-bs-toggle=&quot;tooltip&quot;>In 1 Week</a><br/>
-										</div>
-										<div class=&quot;col-sm-1 no-margin&quot;></div>
-										<div class=&quot;col-sm-6 form-group no-margin&quot;>
-											<div class=&quot;&quot;>
-												<div id=&quot;embeddingDatePicker&quot; class=&quot;f13&quot;></div>
-											</div>
-										</div>
-								    </div>
-							    </div>
-							    <div class=&quot;box-footer&quot; style=&quot;padding:10px 0&quot;>
-							    <div class=&quot;row&quot;>
-							    <div class=&quot;col-sm-4 form-group&quot;>
-							    <select class=&quot;form-control selec_reg&quot; id=&quot;rem_cat&quot; name=&quot;rem_cat&quot; onchange=&quot;&quot;>
-								    <option value=&quot;1&quot; >Regardless</option>
-								    <option value=&quot;2&quot;>If no reply</option>
-							    </select>
-
-							    </div> 
-
-							    <div class=&quot;col-sm-5 form-group&quot;>
-								    <div class=&quot;input-group date&quot; >
-									<input type=&quot;text&quot; class=&quot;form-control f13&quot; placeholder=&quot;yyyy-mm-dd&quot;  onkeyup=&quot;changDatepickerDate(this)&quot; id=&quot;popoverdate&quot; name=&quot;popoverdate&quot;>
-								    </div>
-							    </div>
-							    <div class=&quot;col-sm-3 form-group&quot;>
-								    <div class=&quot;input-group time&quot;>
-									<input type=&quot;text&quot; class=&quot;form-control f13&quot; placeholder=&quot;hh:mm am&quot; onkeyup=&quot;changDatepickerDate(this)&quot;  id=&quot;popovertime&quot; name=&quot;popovertime&quot;>
-									<input id=&quot;leadid&quot;  type=&quot;hidden&quot; value=&quot;{{base64_encode(convert_uuencode(@$fetchedData->id))}}&quot;>
-								    </div>
-							    </div>
-<input type=&quot;hidden&quot; value=&quot;&quot; id=&quot;popoverrealdate&quot; name=&quot;popoverrealdate&quot; />
-							    </div>
-
-							    <div class=&quot;row text-center&quot;>
-									<div class=&quot;col-md-12 text-center&quot;>
-									<button  class=&quot;btn btn-danger&quot; id=&quot;setreminder&quot;>Set Reminder</button>
-									</div>
-
-							    </div>
-
-
-					    </div>" data-original-title="" title=""> Followup</button>
-										
 									</li>
 								@if($fetchedData->converted == 0)
 								@php
@@ -312,20 +235,6 @@
 				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa-solid fa-floppy-disk"></i> Save</button>
 			</div>
 			</form>
-		</div>
-	</div>
-</div>
-<div id="myeditnotes" class="modal fade" role="dialog">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header"> 
-			<h4 class="modal-title">Modal Header</h4>
-				<button type="button" class="close" data-bs-dismiss="modal">&times;</button>
-				
-			</div>
-				<div class="modal-body showeditform">
-				    <h4>Please Wait...</h4>
-			    </div>
 		</div>
 	</div>
 </div>
@@ -475,22 +384,14 @@ jQuery(document).ready(function($){
 	$('.composermodel').on('click', function(){
 		$('#composermodel').modal('show');
 	});
-	setInterval(function(){
-           myfollowuplist(lead_id);
-            },
-            1*60*1000);
-	myfollowuplist(lead_id);
+	$('.followuphistory').html('<div class="alert alert-info">Followup timeline has been retired. Use Add Note or view activity from the client record after conversion.</div>');
 
 });
-function myfollowuplist(lead_id) {
-	$('.followuphistory').html('<div class="alert alert-info">Followup functionality has been removed.</div>');
-}
 $(function () {
 	$(document).delegate('.clientemail', 'click', function(){
 		$('#emailmodal').modal('show');
 	});
   $('[data-bs-toggle="tooltip"]').tooltip();
-   $('[data-bs-toggle="popover"]').popover();
    
    // Initialize Flatpickr for datepickers
    if (typeof flatpickr !== 'undefined') {
@@ -545,47 +446,6 @@ $(function () {
 	});
 });
 
-$(document).delegate('.editnote', 'click', function(){
-	var v = $(this).attr('data-id');
-	$('#myeditnotes').modal('show');
-	$.ajax({
-		url: '{{URL::to('/get-notedetail')}}',
-		type:'GET',
-		data:{id:v},
-		success: function(response){
-		    $('.showeditform').html(response);
-		 // Initialize TinyMCE editor
-            if (typeof tinymce !== 'undefined') {
-                $("#myeditnotes .tinymce-editor").each(function() {
-                    var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);
-                    if (!$(this).attr('id')) {
-                        $(this).attr('id', editorId);
-                    }
-                    if (!tinymce.get(editorId)) {
-                        tinymce.init({
-                            license_key: 'gpl',
-                            selector: '#' + editorId,
-                            license_key: 'gpl',
-                            height: 150,
-                            menubar: false,
-                            plugins: ['lists', 'link', 'autolink'],
-                            toolbar: 'bold italic underline strikethrough | bullist numlist | link',
-                            branding: false,
-                            promotion: false,
-                            setup: function(editor) {
-                                editor.on('change', function() {
-                                    editor.save();
-                                });
-                            }
-                        });
-                    }
-                });
-            } 
-		}
-	});
-});
-
-
 $(document).delegate('.opennotepopup', 'click', function(){
 		var notename = $.trim($(this).attr('data-notename'));
 			var notetype = $.trim($(this).attr('data-notetype'));
@@ -596,41 +456,6 @@ $(document).delegate('.opennotepopup', 'click', function(){
 			: 'Others';
 		$('#myAddnotes #task_group').val(taskGroup);
 		$('#myAddnotes').modal('show');
-	});
-$(document).delegate('#setreminder','click', function(){
-		$(".popuploader").show(); 
-		var flag = true;
-		$(".custom-error").remove();
-		if($('#popoverdate').val() == ''){
-			$('#popoverdate').parent().after("<span class='custom-error' role='alert'>"+error+"</span>");
-			flag = false;
-		}
-		if(flag){
-			$.ajax({
-				type:'post',
-					url:"#",
-					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-					
-					data: {note_type:'follow_up',description:$('#remindernote').val(),remindersubject:$('#remindersubject').val(),lead_id:$('#leadid').val(),followup_date:$('#popoverdate').val(),followup_time:$('#popovertime').val(),rem_cat:$('#rem_cat option:selected').val()},
-					success: function(response){
-						$('.popuploader').hide(); 
-						var obj = $.parseJSON(response);
-						if(obj.success){
-							$("[data-role=popover]").each(function(){
-           
-                (($(this).popover('hide').data('bs.popover')||{}).inState||{}).click = false  // fix for BS 3.3.6
-            
-        });
-							myfollowuplist(obj.leadid);
-						}else{
-							
-							
-						}
-					}
-			});
-		}else{
-			$("#loader").hide();
-		}
 	});
 });
 </script>
