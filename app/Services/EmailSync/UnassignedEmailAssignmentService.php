@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
 use App\Services\Email\EmailCalendarMergeService;
+use App\Support\EmailTimelineActivity;
 use App\Support\StaffClientVisibility;
 use App\Traits\LogsClientActivity;
 use Illuminate\Database\Eloquent\Collection;
@@ -118,14 +119,16 @@ class UnassignedEmailAssignmentService
                 try {
                     $matterRef = $matter->client_unique_matter_no ?: '';
                     $subjectLine = $emailLog->subject ?: 'Email';
-                    $activitySubject = $matterRef !== ''
-                        ? "assigned Email: {$subjectLine} - {$matterRef}"
-                        : "assigned Email: {$subjectLine}";
-                    if (strlen($activitySubject) > 100) {
-                        $activitySubject = substr($activitySubject, 0, 97) . '...';
-                    }
                     $from = $emailLog->from_mail ?: 'Unknown';
-                    $this->logClientActivity($clientId, $activitySubject, "<p>From: {$from}</p>", 'email');
+                    $activitySubject = $mailType === 'inbox'
+                        ? EmailTimelineActivity::subjectReceived($subjectLine, $matterRef !== '' ? $matterRef : null)
+                        : EmailTimelineActivity::subjectAssigned($subjectLine, $matterRef !== '' ? $matterRef : null);
+                    $this->logClientActivity(
+                        $clientId,
+                        $activitySubject,
+                        EmailTimelineActivity::descriptionFrom((string) $from),
+                        'email'
+                    );
                 } catch (Throwable $activityException) {
                     Log::warning('Email was assigned but client activity logging failed', [
                         'email_log_id' => $emailLogId,

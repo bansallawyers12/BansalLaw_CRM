@@ -91,7 +91,7 @@ class NoteAttachmentService
                 continue;
             }
 
-            NoteAttachment::create([
+            $attachment = NoteAttachment::create([
                 'note_id' => $note->id,
                 'client_id' => $note->client_id,
                 'uploaded_by' => Auth::guard('admin')->id() ?: Auth::id(),
@@ -101,6 +101,16 @@ class NoteAttachmentService
                 'extension' => $ext,
                 'file_size' => (int) $file->getSize(),
             ]);
+
+            try {
+                app(NoteMatterDocumentSyncService::class)->syncAttachment($note, $attachment, $file);
+            } catch (\Throwable $e) {
+                Log::warning('Note attachment could not sync to matter documents', [
+                    'note_id' => $note->id,
+                    'attachment_id' => $attachment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
