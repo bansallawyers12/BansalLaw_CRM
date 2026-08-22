@@ -14,9 +14,6 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         '\App\Console\Commands\CronJob',
-        //'\App\Console\Commands\CompleteTaskRemoval',
-
-        '\App\Console\Commands\InPersonCompleteTaskRemoval',
         '\App\Console\Commands\ProcessServiceAccountTokens',
         
         // Appointment Sync System Commands
@@ -48,9 +45,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\PurgeUnassignedSyncedEmails',
         '\App\Console\Commands\PruneEmailOpsLogs',
 
-        // Database Comparison (command file not present in this tree)
-        // '\App\Console\Commands\CompareDatabaseTables',
-
         // Migration Management
         '\App\Console\Commands\MarkMigrationsAsRun',
     ];
@@ -67,9 +61,6 @@ class Kernel extends ConsoleKernel
         //          ->hourly();
 	$schedule->command('CronJob:cronjob')->daily();
         
-
-        //InPerson Complete Task Removal daily 1 time
-        /*$schedule->command('InPersonCompleteTaskRemoval:daily')->daily();*/
 
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')

@@ -34,9 +34,6 @@ const layoutFiles = [
     'resources/views/layouts/crm_client_detail.blade.php',
     'resources/views/layouts/crm_client_detail_dashboard.blade.php',
     'resources/views/layouts/crm-login.blade.php',
-    'resources/views/exception.blade.php',
-    'resources/views/documents/index.blade.php',
-    'resources/views/crm/documents/index.blade.php',
 ];
 
 layoutFiles.forEach((relPath) => {

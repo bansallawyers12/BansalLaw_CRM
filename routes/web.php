@@ -61,12 +61,6 @@ Route::get('/clear-cache', function () {
 })->middleware('auth');
 
 /*--------------------------------------------------
-| SECTION: Exception Handling
-|--------------------------------------------------*/
-Route::get('/exception', [\App\Http\Controllers\ExceptionController::class, 'index'])->name('exception.index');
-Route::post('/exception', [\App\Http\Controllers\ExceptionController::class, 'index'])->name('exception.store');
-
-/*--------------------------------------------------
 | SECTION: Authentication Routes
 |--------------------------------------------------*/
 // Auth::routes(); // Disabled — staff login is GET/POST /login (AdminLoginController)

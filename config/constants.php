@@ -44,7 +44,6 @@ return [
 	//error response
 	'server_error' =>'There are some error into server end, so please try again later.',	
 	'unauthorized' =>'You are not authorized person to access this page directly.',	
-	'exception' =>'There are some exception issue into your request, so please write the comment below, what you did face.',	
 	'post_method' =>'Method should be POST.',	
 	'decode_string' =>'Encode String can not be converted, We think, you did pass the value manually, so please do not this.',
 	'not_exist' => ' does not exist in our system, so please check it once again.',	
