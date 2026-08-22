@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Redirect;
 use App\Models\Lead;
 use App\Models\Admin;
 use App\Models\Staff;
-use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // use App\Models\State; // REMOVED: State model has been deleted
 use PDF;
@@ -94,9 +93,6 @@ class CRMUtilityController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-	public function returnsetting(Request $request){
-		return view('crm.settings.returnsetting');
-	}
 	public function myProfile(Request $request)
 	{
 		/* Get all Select Data */
@@ -211,54 +207,6 @@ class CRMUtilityController extends Controller
 		return view('crm.change_password');
 	}
 
-
-	public function websiteSetting(Request $request)
-	{
-		//check authorization start
-			$check = $this->checkAuthorizationAction('Admin', $request->route()->getActionMethod(), Auth::user()->role);
-			if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			}
-		//check authorization end
-
-		if ($request->isMethod('post'))
-		{
-			$requestData 		= 	$request->all();
-
-			$this->validate($request, [
-										'phone' => 'required|max:20',
-										'ofc_timing' => 'nullable|max:255',
-										'email' => 'required|max:255'
-									  ]);
-
-			/* Logo Upload Function Start */
-				if($request->hasfile('logo'))
-				{
-					/* Unlink File Function Start */
-						if(@$requestData['logo'] != '')
-							{
-								$this->unlinkFile(@$requestData['old_logo'], config('constants.logo'));
-							}
-					/* Unlink File Function End */
-
-					$logo = $this->uploadFile($request->file('logo'), config('constants.logo'));
-				}
-				else
-				{
-					$logo = @$requestData['old_logo'];
-				}
-			/* Logoe Upload Function End */
-
-		// Website settings functionality disabled - WebsiteSetting model has been removed
-		return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
-		}
-	else
-	{
-		// Website settings functionality disabled - WebsiteSetting model has been removed
-		return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
-	}
-	}
 
 	public function editapi(Request $request)
 	{
@@ -912,139 +860,6 @@ class CRMUtilityController extends Controller
 		}
 		return response()->json(['status' => $status, 'message' => $message]);
 	}
-
-	public function getStates(Request $request)
-	{
-		$status 			= 	0;
-		$data				=	array();
-		$method 			= 	$request->method();
-
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			if(isset($requestData['id']) && !empty($requestData['id']))
-			{
-				$recordExist = Country::where('id', $requestData['id'])->exists();
-
-			if($recordExist)
-			{
-				// State functionality disabled - State model has been removed
-				$data = [];
-				$status = 0;
-				$message = 'State functionality has been disabled - State model has been removed';
-			}
-			else
-			{
-				$message = 'ID does not exist, please check it once again.';
-			}
-		}
-		else
-		{
-			$message = 'ID does not exist, please check it once again.';
-		}
-	}
-	else
-	{
-		$message = config('constants.post_method');
-	}
-	echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-	die;
-}
-
-public function getChapters(Request $request)
-	{
-		$status 			= 	0;
-		$data				=	array();
-		$method 			= 	$request->method();
-
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			if(isset($requestData['id']) && !empty($requestData['id']))
-			{
-				$recordExist = McqSubject::where('id', $requestData['id'])->exists();
-
-				if($recordExist)
-				{
-					$data 	= 	McqChapter::where('subject_id', '=', $requestData['id'])->get();
-
-					if($data)
-					{
-						$status = 1;
-						$message = 'Record has been fetched successfully.';
-					}
-					else
-					{
-						$message = config('constants.server_error');
-					}
-				}
-				else
-				{
-					$message = 'ID does not exist, please check it once again.';
-				}
-			}
-			else
-			{
-				$message = 'ID does not exist, please check it once again.';
-			}
-		}
-		else
-		{
-			$message = config('constants.post_method');
-		}
-		echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-		die;
-	}
-
-	public function addCkeditiorImage(Request $request)
-	{
-		echo "<pre>";
-		print_r($_FILES);die;
-
-		$status 			= 	0;
-		$method 			= 	$request->method();
-
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			echo "<pre>";
-			print_r($requestData);die;
-
-			if(isset($requestData['id']) && !empty($requestData['id']))
-			{
-			$recordExist = Country::where('id', $requestData['id'])->exists();
-
-			if($recordExist)
-			{
-				// State functionality disabled - State model has been removed
-				$data = [];
-				$status = 0;
-				$message = 'State functionality has been disabled - State model has been removed';
-			}
-			else
-			{
-				$message = 'ID does not exist, please check it once again.';
-			}
-		}
-		else
-		{
-			$message = 'ID does not exist, please check it once again.';
-		}
-	}
-	else
-	{
-		$message = config('constants.post_method');
-	}
-	echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-	die;
-}
 
 	public function gettemplates(Request $request){
 		$id = $request->id;

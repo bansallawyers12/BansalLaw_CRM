@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CRM\DocumentController as AdminDocumentController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\CRM\SignatureDashboardController;
-use App\Http\Controllers\CRM\DocToPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,13 +37,6 @@ use App\Http\Controllers\CRM\DocToPdfController;
 
 // Admin routes group begins
 Route::middleware('auth:admin')->group(function () {
-
-// DOC/DOCX to PDF Converter Routes
-Route::get('/doc-to-pdf', [DocToPdfController::class, 'showForm'])->name('doc-to-pdf.form');
-Route::post('/doc-to-pdf/convert', [DocToPdfController::class, 'convertLocal'])->name('doc-to-pdf.convert');
-Route::get('/doc-to-pdf/test', [DocToPdfController::class, 'testLocalConversion'])->name('doc-to-pdf.test');
-Route::get('/doc-to-pdf/test-python', [DocToPdfController::class, 'testPythonConversion'])->name('doc-to-pdf.test-python');
-Route::get('/doc-to-pdf/debug', [DocToPdfController::class, 'debugConfig'])->name('doc-to-pdf.debug');
 
 // Debug route for PDF page generation (protected by auth:admin)
 Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {

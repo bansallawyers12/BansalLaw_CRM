@@ -128,11 +128,6 @@ Route::middleware(['auth:admin'])->group(function () {
     // Route::get('/appointments-tourist', [CRMUtilityController::class, 'appointmentsTourist'])->name('appointments-tourist'); // REMOVED
     // Route::get('/appointments-others', [CRMUtilityController::class, 'appointmentsOthers'])->name('appointments-others'); // REMOVED
 
-    Route::post('/add_ckeditior_image', [CRMUtilityController::class, 'addCkeditiorImage'])->name('add_ckeditior_image');
-    Route::post('/get_chapters', [CRMUtilityController::class, 'getChapters'])->name('get_chapters');
-    // REMOVED: get_states route - State model deleted, no frontend calls this route
-    Route::get('/settings/taxes/returnsetting', [CRMUtilityController::class, 'returnsetting'])->name('returnsetting');
-    Route::post('/settings/taxes/savereturnsetting', [CRMUtilityController::class, 'returnsetting'])->name('savereturnsetting');
     Route::get('/getassigneeajax', [CRMUtilityController::class, 'getassigneeajax']);
     Route::get('/checkclientexist', [CRMUtilityController::class, 'checkclientexist']);
 

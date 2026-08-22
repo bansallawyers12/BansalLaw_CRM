@@ -603,7 +603,6 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 | Admin document CRUD | `auth:admin` | `/documents/create`, `POST /documents`, `/documents/{id}/edit`, `PATCH /documents/{id}` |
 | Admin signing ops | `auth:admin` | `POST /documents/{document}/send-signing-link`, `GET /documents/{document}/sign` |
 | Admin signed PDF | `auth:admin` | `/documents/{id}/preview-signed`, `/documents/{id}/download-signed` |
-| Doc→PDF utilities | `auth:admin` | `/doc-to-pdf`, `/doc-to-pdf/convert` |
 
 ---
 
@@ -898,7 +897,6 @@ SESSION_DRIVER=file
 
 # Python services (default port 5002)
 PYTHON_SERVICE_URL=http://localhost:5002
-PYTHON_CONVERTER_URL=http://localhost:5002
 MAIL_PYTHON_EXECUTABLE=
 MAIL_AUTO_DETECT_PYTHON=true
 

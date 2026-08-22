@@ -558,7 +558,7 @@ class IncomingEmailSyncService
             'available' => false,
             'url' => $url,
             'message' => 'Cannot connect to the email processing service at ' . $url
-                . '. Start the Python parser (python_services/start_services.py) or update PYTHON_SERVICE_URL / PYTHON_CONVERTER_URL.',
+                . '. Start the Python parser (python_services/start_services.py) or update PYTHON_SERVICE_URL.',
         ];
     }
 

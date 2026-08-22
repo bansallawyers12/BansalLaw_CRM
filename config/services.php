@@ -42,6 +42,7 @@ return [
     */
 
     'python' => [
+        // PYTHON_CONVERTER_URL is a legacy alias for the same python_services process.
         'url' => env('PYTHON_SERVICE_URL')
             ?: env('PYTHON_CONVERTER_URL', 'http://localhost:5002'),
         'timeout' => env('PYTHON_SERVICE_TIMEOUT', env('PYTHON_CONVERTER_TIMEOUT', 180)),
@@ -54,21 +55,13 @@ return [
     | PDF Converter Services
     |--------------------------------------------------------------------------
     |
-    | Configuration for PDF conversion services (legacy support)
+    | Configuration for PDF page/image services (signatures, etc.)
     |
     */
 
     'python_pdf' => [
         'url' => env('PYTHON_PDF_SERVICE_URL', 'http://127.0.0.1:5002'),
         'timeout' => env('PYTHON_PDF_SERVICE_TIMEOUT', 60),
-    ],
-
-    'python_converter' => [
-        // On local dev, prefer the unified python_services process (PYTHON_SERVICE_URL).
-        'url' => env('APP_ENV') === 'local'
-            ? (env('PYTHON_SERVICE_URL') ?: env('PYTHON_CONVERTER_URL', 'http://127.0.0.1:5002'))
-            : (env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5002')),
-        'timeout' => env('PYTHON_CONVERTER_TIMEOUT', 120),
     ],
 
     /*

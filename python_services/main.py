@@ -6,7 +6,6 @@ This service provides:
 - PDF processing and conversion
 - Email parsing (.msg files)
 - Email analysis and categorization
-- Document conversion (DOCX/DOC to PDF)
 - Email rendering and enhancement
 
 Author: Migration Manager Team
@@ -32,7 +31,6 @@ from services.pdf_service import PDFService
 from services.email_parser_service import EmailParserService
 from services.email_analyzer_service import EmailAnalyzerService
 from services.email_renderer_service import EmailRendererService
-from services.docx_converter_service import DocxConverterService
 from utils.logger import setup_logger
 from utils.weasyprint_env import configure_weasyprint_dll_paths
 from utils.datetime_format import DEFAULT_TIMEZONE, format_laravel_datetime
@@ -50,7 +48,6 @@ pdf_service = None
 email_parser = None
 email_analyzer = None
 email_renderer = None
-docx_converter = None
 
 
 def create_app() -> FastAPI:
@@ -58,12 +55,12 @@ def create_app() -> FastAPI:
     Factory function to create and configure the FastAPI application.
     This prevents double initialization when uvicorn reloads the module.
     """
-    global pdf_service, email_parser, email_analyzer, email_renderer, docx_converter
+    global pdf_service, email_parser, email_analyzer, email_renderer
     
     # Initialize FastAPI app
     app = FastAPI(
         title="Migration Manager Python Services",
-        description="Unified Python services for PDF processing, email parsing, and document conversion",
+        description="Unified Python services for PDF processing and email parsing",
         version="1.0.0"
     )
 
@@ -81,7 +78,6 @@ def create_app() -> FastAPI:
     email_parser = EmailParserService()
     email_analyzer = EmailAnalyzerService()
     email_renderer = EmailRendererService()
-    docx_converter = DocxConverterService()
     
     return app
 
@@ -113,42 +109,6 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    # Check if LibreOffice is available for DOCX conversion
-    libreoffice_available = docx_converter.is_libreoffice_available()
-    
-    # Determine converter status and method
-    converter_status = "unavailable"
-    converter_method = None
-    converter_message = None
-    
-    if docx_converter.conversion_method == 'disabled':
-        converter_status = "disabled"
-        converter_message = "DOCX conversion is disabled"
-    elif libreoffice_available:
-        converter_status = "ready"
-        converter_method = "libreoffice"
-    elif docx_converter.conversion_method == 'libreoffice':
-        converter_status = "unavailable"
-        converter_message = "LibreOffice not found"
-    elif docx_converter.conversion_method == 'docx2pdf':
-        from services.docx_converter_service import DOCX2PDF_AVAILABLE
-        if DOCX2PDF_AVAILABLE:
-            converter_status = "ready"
-            converter_method = "docx2pdf"
-            converter_message = "Using docx2pdf (requires Microsoft Word)"
-        else:
-            converter_status = "unavailable"
-            converter_message = "docx2pdf not available"
-    else:  # auto mode
-        from services.docx_converter_service import DOCX2PDF_AVAILABLE
-        if DOCX2PDF_AVAILABLE:
-            converter_status = "limited"
-            converter_method = "docx2pdf"
-            converter_message = "LibreOffice not found, using docx2pdf fallback"
-        else:
-            converter_status = "unavailable"
-            converter_message = "No conversion method available"
-    
     try:
         import weasyprint  # noqa: F401
         weasyprint_status = "ready"
@@ -163,15 +123,7 @@ async def health_check():
             "email_analyzer": "ready",
             "email_renderer": "ready",
             "weasyprint": weasyprint_status,
-            "docx_converter": converter_status
         },
-        "docx_converter_details": {
-            "status": converter_status,
-            "method": converter_method,
-            "message": converter_message,
-            "libreoffice_path": docx_converter.libreoffice_path,
-            "configured_method": docx_converter.conversion_method
-        }
     }
 
 
@@ -382,54 +334,6 @@ async def batch_convert_pages(request: Request):
     except Exception as e:
         logger.error(f"Error batch converting: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================================================
-# DOCX Converter Endpoints
-# ============================================================================
-
-# Supported office formats for LibreOffice conversion to PDF
-OFFICE_TO_PDF_EXTENSIONS = [
-    '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.rtf', '.odt', '.ods', '.odp', '.csv',
-]
-
-
-@app.post("/convert")
-async def convert_docx_to_pdf(file: UploadFile = File(...)):
-    """Convert office document to PDF."""
-    try:
-        logger.info(f"Converting document: {file.filename}")
-        
-        # Validate file
-        if not validate_file_type(file.filename, OFFICE_TO_PDF_EXTENSIONS):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid file type. Supported: DOC, DOCX, XLS, XLSX, PPT, PPTX, RTF, ODT, ODS, ODP, CSV.",
-            )
-        
-        # Read file content
-        content = await file.read()
-        
-        # Convert to PDF
-        result = docx_converter.convert_to_pdf(content, file.filename)
-        
-        if not result.get('success'):
-            raise HTTPException(status_code=500, detail=result.get('error', 'Conversion failed'))
-        
-        return JSONResponse(content=result)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error converting DOCX to PDF: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/convert-json")
-async def convert_docx_to_pdf_json(file: UploadFile = File(...)):
-    """Convert DOCX/DOC file to PDF (JSON endpoint - alias for /convert)."""
-    return await convert_docx_to_pdf(file)
 
 
 # ============================================================================
