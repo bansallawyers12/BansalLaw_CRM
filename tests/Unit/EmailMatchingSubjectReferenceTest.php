@@ -60,4 +60,60 @@ class EmailMatchingSubjectReferenceTest extends TestCase
         $this->assertSame([], $service->extractClientReferences('Re: Hearing tomorrow at Sunshine Magistrates Court'));
         $this->assertSame([], $service->extractClientMatterPairs('Re: Hearing tomorrow at Sunshine Magistrates Court'));
     }
+
+    #[Test]
+    public function it_resolves_unique_matter_when_only_one_is_active(): void
+    {
+        $service = new EmailMatchingService();
+        $matters = [
+            ['id' => 10, 'matter_no' => 'CRM_2', 'matter_title' => 'Criminal Law', 'matter_active' => true],
+            ['id' => 11, 'matter_no' => 'CRM_3', 'matter_title' => 'Criminal Law', 'matter_active' => false],
+            ['id' => 12, 'matter_no' => 'CRM_1', 'matter_title' => 'Criminal Law', 'matter_active' => false],
+        ];
+
+        $resolved = $service->resolveUniqueAssignableMatter($matters);
+
+        $this->assertNotNull($resolved);
+        $this->assertSame(10, $resolved['id']);
+        $this->assertNull($service->resolveUniqueAssignableMatter([
+            ['id' => 1, 'matter_active' => true],
+            ['id' => 2, 'matter_active' => true],
+        ]));
+    }
+
+    #[Test]
+    public function it_resolves_unique_matter_when_client_has_only_one_matter(): void
+    {
+        $service = new EmailMatchingService();
+        $matters = [
+            ['id' => 99, 'matter_no' => 'CIV_1', 'matter_title' => 'Civil', 'matter_active' => false],
+        ];
+
+        $resolved = $service->resolveUniqueAssignableMatter($matters);
+
+        $this->assertNotNull($resolved);
+        $this->assertSame(99, $resolved['id']);
+    }
+
+    #[Test]
+    public function it_offers_only_active_matters_when_staff_must_choose(): void
+    {
+        $service = new EmailMatchingService();
+        $matters = [
+            ['id' => 1, 'matter_active' => true],
+            ['id' => 2, 'matter_active' => true],
+            ['id' => 3, 'matter_active' => false],
+        ];
+
+        $choice = $service->mattersForStaffChoice($matters);
+
+        $this->assertCount(2, $choice);
+        $this->assertSame([1, 2], array_column($choice, 'id'));
+
+        $allInactive = [
+            ['id' => 4, 'matter_active' => false],
+            ['id' => 5, 'matter_active' => false],
+        ];
+        $this->assertSame($allInactive, $service->mattersForStaffChoice($allInactive));
+    }
 }

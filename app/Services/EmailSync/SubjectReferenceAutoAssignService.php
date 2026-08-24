@@ -242,13 +242,65 @@ class SubjectReferenceAutoAssignService
                     continue;
                 }
 
+                // One active matter (or only one matter total) → treat like a ready pair;
+                // staff still confirms checkboxes, but does not pick a matter.
+                $uniqueMatter = $this->matchingService->resolveUniqueAssignableMatter($matters);
+                if ($uniqueMatter !== null) {
+                    $matterId = (int) ($uniqueMatter['id'] ?? 0);
+                    if ($matterId < 1) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if ($previewOnly) {
+                        $readyPairs[] = array_merge(
+                            $this->assignedRow(
+                                $emailLog,
+                                array_merge($client, [
+                                    'matter_no' => (string) ($uniqueMatter['matter_no'] ?? ''),
+                                    'matter_title' => (string) ($uniqueMatter['matter_title'] ?? ''),
+                                ]),
+                                $matterId,
+                                $matchedBy
+                            ),
+                            [
+                                'client_matter_id' => $matterId,
+                            ]
+                        );
+                        continue;
+                    }
+
+                    $result = $this->tryAssign(
+                        $emailLog,
+                        $clientId,
+                        $matterId,
+                        'auto_assigned',
+                        $enforceStaffAccess
+                    );
+                    if ($result) {
+                        $assigned[] = $this->assignedRow(
+                            $emailLog->fresh() ?: $emailLog,
+                            array_merge($client, [
+                                'matter_no' => (string) ($uniqueMatter['matter_no'] ?? ''),
+                                'matter_title' => (string) ($uniqueMatter['matter_title'] ?? ''),
+                            ]),
+                            $matterId,
+                            $matchedBy
+                        );
+                    } else {
+                        $skipped++;
+                    }
+                    continue;
+                }
+
+                $mattersForChoice = $this->matchingService->mattersForStaffChoice($matters);
                 if (! isset($needsMatterByClient[$clientId])) {
                     $needsMatterByClient[$clientId] = [
                         'client_id' => $clientId,
                         'client_ref' => $client['client_ref'] ?? '',
                         'client_name' => $client['client_name'] ?? '',
                         'matched_by' => $matchedBy,
-                        'matters' => $matters,
+                        'matters' => $mattersForChoice,
                         'emails' => [],
                     ];
                 }

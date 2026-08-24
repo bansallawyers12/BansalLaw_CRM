@@ -188,13 +188,13 @@ class SyncedEmailController extends Controller
         $parts = [];
         if ($ready > 0) {
             $parts[] = $ready === 1
-                ? '1 email matched client ID + matter — select to assign.'
-                : $ready . ' emails matched client ID + matter — select to assign.';
+                ? '1 email is ready to assign (matter already known) — select to assign.'
+                : $ready . ' emails are ready to assign (matter already known) — select to assign.';
         }
         if ($needs > 0) {
             $parts[] = $needs === 1
-                ? '1 client needs a matter chosen.'
-                : $needs . ' clients need a matter chosen.';
+                ? '1 client has multiple active matters — choose one.'
+                : $needs . ' clients have multiple active matters — choose one.';
         }
         if ($parts === []) {
             return 'No unassigned emails had a matching client ID and matter, or a unique client name.';

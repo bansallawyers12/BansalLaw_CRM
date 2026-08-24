@@ -668,6 +668,54 @@ class EmailMatchingService
     }
 
     /**
+     * Pick a matter without staff choice when the target is unambiguous:
+     * - exactly one active matter (inactive siblings ignored), or
+     * - exactly one matter on the client at all.
+     * Multiple active matters (or multiple inactive with none active) require a choice.
+     *
+     * @param  list<array{id: int, matter_no?: string, matter_title?: string, matter_active?: bool}>  $matters
+     * @return array{id: int, matter_no?: string, matter_title?: string, matter_active?: bool}|null
+     */
+    public function resolveUniqueAssignableMatter(array $matters): ?array
+    {
+        if ($matters === []) {
+            return null;
+        }
+
+        $active = array_values(array_filter(
+            $matters,
+            static fn (array $matter): bool => ! empty($matter['matter_active'])
+        ));
+
+        if (count($active) === 1) {
+            return $active[0];
+        }
+
+        if (count($matters) === 1) {
+            return $matters[0];
+        }
+
+        return null;
+    }
+
+    /**
+     * Matters offered when staff must choose: only active ones if more than one is active;
+     * otherwise the full list (e.g. all inactive).
+     *
+     * @param  list<array{id: int, matter_no?: string, matter_title?: string, matter_active?: bool}>  $matters
+     * @return list<array{id: int, matter_no?: string, matter_title?: string, matter_active?: bool}>
+     */
+    public function mattersForStaffChoice(array $matters): array
+    {
+        $active = array_values(array_filter(
+            $matters,
+            static fn (array $matter): bool => ! empty($matter['matter_active'])
+        ));
+
+        return count($active) > 1 ? $active : array_values($matters);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function clientSummary(object $client): array

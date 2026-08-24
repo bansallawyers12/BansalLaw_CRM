@@ -6680,8 +6680,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return '<section class="assign-subject-group assign-subject-group--ready" data-group-type="ready">'
             + '<div class="assign-subject-group__header">'
-            + '<strong>Matched client ID + matter</strong>'
-            + '<div class="assign-subject-group__reason">Select the emails you want to assign.</div>'
+            + '<strong>Ready to assign</strong>'
+            + '<div class="assign-subject-group__reason">Matter is already known (subject pair, only one matter, or only one active matter). Select the emails you want to assign.</div>'
             + '</div>'
             + '<label class="assign-subject-select-all">'
             + '<input type="checkbox" class="assign-subject-select-all__input" checked>'
