@@ -17,13 +17,14 @@ use App\Models\Staff;
 // use App\Models\State; // REMOVED: State model has been deleted
 use PDF;
 use Auth;
-use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
 use Carbon\Carbon;
 use App\Services\ComposeMatterDocumentService;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
+use App\Support\ClientActivity;
+use App\Support\EmailTimelineActivity;
 use App\Support\WorkflowStageFreeze;
 
 class CRMUtilityController extends Controller
@@ -1349,25 +1350,21 @@ class CRMUtilityController extends Controller
         }
         if (isset($requestData['checklistfile'])) {
             if (! empty($requestData['checklistfile']) && $activityClientId) {
-                $objs = new \App\Models\ActivitiesLog;
-                $objs->client_id = $activityClientId;
-                $objs->created_by = Auth::user()->id;
-                $objs->subject = 'Checklist sent to client';
-                $objs->task_status = 0;
-                $objs->pin = 0;
-                $objs->save();
+                ClientActivity::log(
+                    (int) $activityClientId,
+                    'Checklist sent to client',
+                    ClientActivity::TYPE_DOCUMENT
+                );
             }
         }
 
         if (isset($requestData['checklistfile_document'])) {
             if (! empty($requestData['checklistfile_document']) && $activityClientId) {
-                $objs = new \App\Models\ActivitiesLog;
-                $objs->client_id = $activityClientId;
-                $objs->created_by = Auth::user()->id;
-                $objs->subject = 'Document Checklist sent to client';
-                $objs->task_status = 0;
-                $objs->pin = 0;
-                $objs->save();
+                ClientActivity::log(
+                    (int) $activityClientId,
+                    'Document Checklist sent to client',
+                    ClientActivity::TYPE_DOCUMENT
+                );
             }
         }
 
@@ -1520,6 +1517,26 @@ class CRMUtilityController extends Controller
                 $obj->failed_at = null;
                 $obj->fetch_mail_sent_time = now();
                 $obj->save();
+
+                // Timeline: every CRM-sent email for a client/lead
+                $timelineClientId = (int) ($obj->client_id ?: $activityClientId ?: 0);
+                if ($timelineClientId > 0) {
+                    $matterRef = null;
+                    if (! empty($obj->client_matter_id)) {
+                        $matterRef = ClientMatter::where('id', (int) $obj->client_matter_id)
+                            ->value('client_unique_matter_no');
+                    }
+                    ClientActivity::log(
+                        $timelineClientId,
+                        EmailTimelineActivity::subjectSent((string) ($obj->subject ?? $subject), $matterRef ?: null),
+                        ClientActivity::TYPE_EMAIL,
+                        EmailTimelineActivity::descriptionTo((string) ($obj->to_mail ?? $client->email ?? '')),
+                        [
+                            'source' => 'crm_compose',
+                            'use_for' => ! empty($obj->client_matter_id) ? 'matter' : null,
+                        ]
+                    );
+                }
 
                 // Return JSON response for AJAX requests, redirect for regular form submissions
                 if ($request->ajax() || $request->wantsJson()) {

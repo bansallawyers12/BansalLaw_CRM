@@ -116,10 +116,8 @@
             return;
         }
         $toggle.attr('aria-expanded', collapsed ? 'false' : 'true');
-        $toggle.attr('title', collapsed ? 'Show filters' : 'Hide filters');
-        $toggle.find('i')
-            .toggleClass('fa-chevron-up', !collapsed)
-            .toggleClass('fa-chevron-down', collapsed);
+        $toggle.attr('title', collapsed ? 'Show search' : 'Hide search');
+        $toggle.toggleClass('is-active', !collapsed);
     }
 
     function setFilterBarVisible(visible, animate) {
@@ -161,7 +159,7 @@
     }
 
     /**
-     * Timeline tab: show filter toggle; other tabs: hide bar unless expand-width is checked.
+     * Timeline tab: show filter toggle (bar closed by default); other tabs: hide bar unless expand-width is checked.
      */
     function ensureTimelineFiltersVisible() {
         var $toggle = $('#activity-feed-filter-toggle');
@@ -173,6 +171,10 @@
             return;
         }
         $toggle.removeAttr('hidden');
+        // First visit: keep search/date bar closed (type filters stay visible).
+        if ($('#activity-feed').data('filtersCollapsed') === undefined) {
+            setFilterBarCollapsed(true);
+        }
         if (isFilterBarCollapsed()) {
             $('#activity-feed-filter-bar').hide().addClass('activity-feed-filter-bar--collapsed');
             updateFilterToggleUi(true);
@@ -763,18 +765,25 @@
             }
 
             var noExpandClass = isExpandable ? '' : ' feed-item--no-expand';
-            var summaryLine;
+            var summaryTitle;
+            var summaryMeta;
             if (isStage) {
-                summaryLine = 'Stage' + ' · ' + fullName + ' · ' + date;
+                summaryTitle = 'Stage updated';
+                summaryMeta = fullName + ' · ' + date;
+            } else if (subjectOnly) {
+                summaryTitle = subject;
+                summaryMeta = fullName + ' · ' + date;
             } else {
-                if (subjectOnly) {
-                    summaryLine = (subject + ' · ' + fullName + ' · ' + date).trim();
-                } else {
-                    summaryLine = (fullName + ' ' + subject + ' · ' + date).trim();
-                }
+                summaryTitle = subject;
+                summaryMeta = fullName + ' · ' + date;
             }
             var detailId = 'feed-detail-js-' + id;
             var headline = subjectOnly ? escapeHtml(subject) : (escapeHtml(fullName) + '  ' + escapeHtml(subject));
+
+            var summaryInner = '<span class="feed-item-summary-main">' +
+                '<span class="feed-item-summary-text">' + escapeHtml(summaryTitle) + '</span>' +
+                '<span class="feed-item-summary-meta">' + escapeHtml(summaryMeta) + '</span>' +
+                '</span>';
 
             var liOpen = '<li class="feed-item ' + feedItemClass + ' activity' + activityTypeClass + noExpandClass + '" id="activity_' + id + '" data-created-at="' + escapeAttr(createdAtYmd) + '">' +
                 '<span class="feed-icon ' + (icon.cls || '') + '">' + icon.html + '</span>' +
@@ -783,7 +792,7 @@
             if (isExpandable) {
                 if (isStage) {
                     liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
-                        '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
+                        summaryInner +
                         '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span></button>' +
                         '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
                         '<div class="feed-item-body-outer" data-clampable="1">' +
@@ -791,7 +800,7 @@
                         '<button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button></div></div>';
                 } else {
                     liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
-                        '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
+                        summaryInner +
                         '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span></button>' +
                         '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
                         '<p class="feed-item-full-headline mb-0"><strong>' + headline + '</strong>' +
@@ -813,7 +822,7 @@
                 }
             } else {
                 liOpen += '<div class="feed-item-summary feed-item-summary--static" role="none">' +
-                    '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span></div>';
+                    summaryInner + '</div>';
             }
 
             liOpen += '</div></li>';

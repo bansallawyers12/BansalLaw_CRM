@@ -30,6 +30,8 @@ use App\Models\Branch;
 use App\Support\CrmListingTextSearch;
 use App\Support\MatterStreamHelper;
 use App\Support\ClientTagStorage;
+use App\Support\ClientActivity;
+use App\Support\EmailTimelineActivity;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -3164,18 +3166,19 @@ class ClientsController extends Controller
         $saved = $email_log_info->save();
 
         if ($saved) {
-            $dest_admin = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
-            $dest_unique_id = $dest_admin['client_id'] ?? '';
             $client_matter_info = $target_matter_id ? \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $target_matter_id)->first() : null;
 
-            $objs = new \App\Models\ActivitiesLog;
-            $objs->client_id = $dest_assign_client_id;
-            $objs->created_by = Auth::user()->id;
-            $objs->description = $dest_unique_id.'-'.($client_matter_info['client_unique_matter_no'] ?? '');
-            $objs->subject = 'Sent Email Re-assign';
-            $objs->task_status = 0;
-            $objs->pin = 0;
-            $objs->save();
+            $matterRef = $client_matter_info['client_unique_matter_no'] ?? '';
+            ClientActivity::log(
+                $dest_assign_client_id,
+                EmailTimelineActivity::subjectAssigned(
+                    (string) ($email_log_info->subject ?: 'Email'),
+                    $matterRef !== '' ? $matterRef : null
+                ),
+                ClientActivity::TYPE_EMAIL,
+                EmailTimelineActivity::descriptionFrom((string) ($email_log_info->from_mail ?: 'Unknown')),
+                ['source' => 'crm_emails', 'use_for' => $target_matter_id ? 'matter' : null]
+            );
 
             if ($target_matter_id) {
                 $obj1 = \App\Models\ClientMatter::find($target_matter_id);
@@ -3661,19 +3664,18 @@ class ClientsController extends Controller
                 );
 
                 $activityAttrs = [
-                    'client_id' => $logClientId,
-                    'created_by' => $staffId,
-                    'subject' => 'Deleted email message',
-                    'description' => $description,
-                    'activity_type' => 'activity',
-                    'task_status' => 0,
-                    'pin' => 0,
                     'source' => 'crm_emails',
                 ];
                 if (!empty($logMatterId)) {
                     $activityAttrs['use_for'] = 'matter';
                 }
-                ActivitiesLog::create($activityAttrs);
+                ClientActivity::log(
+                    $logClientId,
+                    'Deleted email message',
+                    ClientActivity::TYPE_EMAIL,
+                    $description,
+                    array_merge($activityAttrs, ['created_by' => $staffId])
+                );
             });
 
             return response()->json([

@@ -2,11 +2,8 @@
     <section class="cdn-timeline-tab" aria-labelledby="cdn-timeline-heading">
         <header class="cdn-timeline-tab__header">
             <div class="cdn-timeline-tab__title-block">
-                <h3 id="cdn-timeline-heading" class="cdn-timeline-tab__title">
-                    <i class="fa-solid fa-timeline" aria-hidden="true"></i>
-                    Timeline
-                </h3>
-                <p class="cdn-timeline-tab__subtitle">Chronological activity, notes, documents, and account events for this record.</p>
+                <h3 id="cdn-timeline-heading" class="cdn-timeline-tab__title">Timeline</h3>
+                <p class="cdn-timeline-tab__subtitle">Everything staff does on this file — notes, emails, documents, tasks, and more.</p>
             </div>
         </header>
 

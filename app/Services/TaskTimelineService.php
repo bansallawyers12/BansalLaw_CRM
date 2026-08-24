@@ -7,6 +7,7 @@ use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
 use App\Models\Note;
 use App\Models\Staff;
+use App\Support\ClientActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -39,20 +40,19 @@ class TaskTimelineService
                 return null;
             }
 
-            $log = new ActivitiesLog;
-            $log->client_id = $clientId;
-            $log->created_by = $createdBy;
-            $log->subject = $subject;
-            $log->description = $this->buildTaskNoteDescription($taskNote, $assigneeName);
-            $log->task_status = ((string) $taskNote->status === '1') ? 1 : 0;
-            $log->pin = 0;
-            $log->use_for = $this->useForAssignee($taskNote->assigned_to);
-            $log->followup_date = $taskNote->action_date ?: null;
-            $log->task_group = $taskNote->task_group ?? null;
-            $log->activity_type = 'activity';
-            $log->save();
-
-            return $log;
+            return ClientActivity::log(
+                $clientId,
+                $subject,
+                ClientActivity::TYPE_ACTIVITY,
+                $this->buildTaskNoteDescription($taskNote, $assigneeName),
+                [
+                    'created_by' => $createdBy,
+                    'task_status' => ((string) $taskNote->status === '1') ? 1 : 0,
+                    'use_for' => $this->useForAssignee($taskNote->assigned_to),
+                    'followup_date' => $taskNote->action_date ?: null,
+                    'task_group' => $taskNote->task_group ?? null,
+                ]
+            );
         } catch (\Throwable $e) {
             Log::warning('TaskTimeline: failed to log task note created', [
                 'note_id' => $taskNote->id ?? null,
@@ -98,20 +98,18 @@ class TaskTimelineService
                 return null;
             }
 
-            $log = new ActivitiesLog;
-            $log->client_id = $clientId;
-            $log->created_by = $createdBy;
-            $log->subject = $subject;
-            $log->description = $this->buildTaskDescription($task, $matterRef, $creatorName);
-            $log->task_status = $task->is_done ? 1 : 0;
-            $log->pin = 0;
-            $log->use_for = null;
-            $log->followup_date = $task->due_date?->toDateString();
-            $log->task_group = ClientMatterTaskSyncService::DEFAULT_TASK_GROUP;
-            $log->activity_type = 'activity';
-            $log->save();
-
-            return $log;
+            return ClientActivity::log(
+                $clientId,
+                $subject,
+                ClientActivity::TYPE_ACTIVITY,
+                $this->buildTaskDescription($task, $matterRef, $creatorName),
+                [
+                    'created_by' => $createdBy,
+                    'task_status' => $task->is_done ? 1 : 0,
+                    'followup_date' => $task->due_date?->toDateString(),
+                    'task_group' => ClientMatterTaskSyncService::DEFAULT_TASK_GROUP,
+                ]
+            );
         } catch (\Throwable $e) {
             Log::warning('TaskTimeline: failed to log checklist task created', [
                 'task_id' => $task->id ?? null,
@@ -172,20 +170,18 @@ class TaskTimelineService
                 return null;
             }
 
-            $log = new ActivitiesLog;
-            $log->client_id = $clientId;
-            $log->created_by = $createdBy;
-            $log->subject = $subject;
-            $log->description = $description;
-            $log->task_status = $task->is_done ? 1 : 0;
-            $log->pin = 0;
-            $log->use_for = null;
-            $log->followup_date = $task->due_date?->toDateString();
-            $log->task_group = ClientMatterTaskSyncService::DEFAULT_TASK_GROUP;
-            $log->activity_type = 'activity';
-            $log->save();
-
-            return $log;
+            return ClientActivity::log(
+                $clientId,
+                $subject,
+                ClientActivity::TYPE_ACTIVITY,
+                $description,
+                [
+                    'created_by' => $createdBy,
+                    'task_status' => $task->is_done ? 1 : 0,
+                    'followup_date' => $task->due_date?->toDateString(),
+                    'task_group' => ClientMatterTaskSyncService::DEFAULT_TASK_GROUP,
+                ]
+            );
         } catch (\Throwable $e) {
             Log::warning('TaskTimeline: failed to log checklist task updated', [
                 'task_id' => $task->id ?? null,

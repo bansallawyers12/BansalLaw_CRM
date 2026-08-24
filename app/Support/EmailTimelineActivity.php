@@ -35,10 +35,22 @@ final class EmailTimelineActivity
         return self::subject('assigned', $emailSubject, $matterReference);
     }
 
+    public static function subjectSent(string $emailSubject, ?string $matterReference = null): string
+    {
+        return self::subject('sent', $emailSubject, $matterReference);
+    }
+
     public static function descriptionFrom(string $from): string
     {
         $from = trim($from) !== '' ? trim($from) : 'Unknown';
 
         return '<p>From: ' . htmlspecialchars($from, ENT_QUOTES, 'UTF-8') . '</p>';
+    }
+
+    public static function descriptionTo(string $to): string
+    {
+        $to = trim($to) !== '' ? trim($to) : 'Unknown';
+
+        return '<p>To: ' . htmlspecialchars($to, ENT_QUOTES, 'UTF-8') . '</p>';
     }
 }
