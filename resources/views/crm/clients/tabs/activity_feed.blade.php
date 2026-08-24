@@ -10,6 +10,15 @@
             <button type="button" class="activity-filter-btn" data-filter="accounting">Accounting</button>
         </div>
         <div class="activity-feed-header-actions">
+            <button type="button"
+                    class="btn btn-sm btn-link p-0 activity-feed-expand-all"
+                    id="activity-feed-expand-all"
+                    title="Expand all details"
+                    aria-pressed="false"
+                    aria-label="Expand all activity details">
+                <i class="fa-solid fa-angles-down" aria-hidden="true"></i>
+                <span class="activity-feed-expand-all__label">Expand all</span>
+            </button>
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-filter-toggle" id="activity-feed-filter-toggle" title="Show search" aria-expanded="false" aria-controls="activity-feed-filter-bar" hidden>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             </button>

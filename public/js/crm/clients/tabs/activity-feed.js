@@ -84,9 +84,80 @@
         setupExtendedFilters();
         setupRefreshButton();
         setupFilterBarToggle();
+        setupExpandAllToggle();
         ensureTimelineFiltersVisible();
         bindFeedScroll();
         loadActivities({ reset: true });
+    }
+
+    function isExpandAllActive() {
+        return $('#activity-feed').data('expandAll') === true;
+    }
+
+    function setExpandAllActive(active) {
+        $('#activity-feed').data('expandAll', !!active);
+        updateExpandAllUi(!!active);
+    }
+
+    function updateExpandAllUi(expanded) {
+        var $btn = $('#activity-feed-expand-all');
+        if (!$btn.length) {
+            return;
+        }
+        $btn.attr('aria-pressed', expanded ? 'true' : 'false');
+        $btn.attr('title', expanded ? 'Collapse all details' : 'Expand all details');
+        $btn.attr('aria-label', expanded ? 'Collapse all activity details' : 'Expand all activity details');
+        $btn.toggleClass('is-active', expanded);
+        $btn.find('i')
+            .toggleClass('fa-angles-down', !expanded)
+            .toggleClass('fa-angles-up', expanded);
+        $btn.find('.activity-feed-expand-all__label').text(expanded ? 'Collapse all' : 'Expand all');
+    }
+
+    function setFeedItemExpanded($li, expand) {
+        if (!$li || !$li.length || $li.hasClass('feed-item--no-expand')) {
+            return;
+        }
+        var $btn = $li.find('.feed-item-summary[aria-controls]').first();
+        var $detail = $li.find('.feed-item-detail').first();
+        if (!$btn.length || !$detail.length) {
+            return;
+        }
+        if (expand) {
+            $btn.attr('aria-expanded', 'true');
+            $detail.removeAttr('hidden');
+            $li.addClass('feed-item--expanded');
+        } else {
+            $btn.attr('aria-expanded', 'false');
+            $detail.attr('hidden', 'hidden');
+            $li.removeClass('feed-item--expanded');
+        }
+    }
+
+    function setAllFeedItemsExpanded(expand) {
+        var $items = $('#activity-feed .feed-list > .feed-item.activity').not('.feed-item--filter-hidden');
+        $items.each(function() {
+            setFeedItemExpanded($(this), expand);
+        });
+        if (expand) {
+            requestAnimationFrame(function() {
+                if (typeof window.initActivityFeedClamps === 'function') {
+                    window.initActivityFeedClamps();
+                }
+            });
+        }
+        if (typeof adjustActivityFeedHeight === 'function') {
+            adjustActivityFeedHeight();
+        }
+    }
+
+    function setupExpandAllToggle() {
+        $('#activity-feed-expand-all').on('click', function() {
+            var next = !isExpandAllActive();
+            setExpandAllActive(next);
+            setAllFeedItemsExpanded(next);
+        });
+        updateExpandAllUi(false);
     }
 
     function isOnActivityTab() {
@@ -615,6 +686,9 @@
     }
 
     function afterFeedRender() {
+        if (isExpandAllActive()) {
+            setAllFeedItemsExpanded(true);
+        }
         if (typeof window.initActivityFeedClamps === 'function') {
             window.initActivityFeedClamps();
         }
@@ -887,6 +961,9 @@
                     $detail.attr('hidden', 'hidden');
                 }
                 $li.removeClass('feed-item--expanded');
+                if (isExpandAllActive()) {
+                    setExpandAllActive(false);
+                }
             } else {
                 $btn.attr('aria-expanded', 'true');
                 if ($detail.length) {
@@ -935,7 +1012,15 @@
         filterActivities: filterActivities,
         reapplyFilters: reapplyFilters,
         ensureTimelineFiltersVisible: ensureTimelineFiltersVisible,
-        loadActivities: loadActivities
+        loadActivities: loadActivities,
+        expandAll: function() {
+            setExpandAllActive(true);
+            setAllFeedItemsExpanded(true);
+        },
+        collapseAll: function() {
+            setExpandAllActive(false);
+            setAllFeedItemsExpanded(false);
+        }
     };
 
 })(jQuery);
