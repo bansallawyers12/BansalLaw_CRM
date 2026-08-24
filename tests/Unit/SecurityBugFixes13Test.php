@@ -36,11 +36,11 @@ class SecurityBugFixes13Test extends TestCase
 
         $controller = new SmsWebhookController();
         $request = new Request([
-            'MessageSid' => 'test_sid_123',
-            'MessageStatus' => 'sent'
+            'message_id' => 'test_sid_123',
+            'status' => 'SENT',
         ]);
 
-        $response = $controller->twilioStatus($request);
+        $response = $controller->cellcastStatus($request);
         $this->assertEquals(200, $response->getStatusCode());
     }
 }

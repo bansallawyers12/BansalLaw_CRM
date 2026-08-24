@@ -6,7 +6,7 @@ namespace App\Services\Sms\Contracts;
  * SmsProviderInterface
  * 
  * Contract that all SMS providers must implement
- * Ensures consistent API across different providers (Twilio, Cellcast, etc.)
+ * Ensures consistent API across SMS providers (Cellcast).
  */
 interface SmsProviderInterface
 {
@@ -30,7 +30,7 @@ interface SmsProviderInterface
     /**
      * Get provider name/identifier
      * 
-     * @return string Provider name (e.g., 'twilio', 'cellcast')
+     * @return string Provider name (e.g., 'cellcast')
      */
     public function getProviderName(): string;
 

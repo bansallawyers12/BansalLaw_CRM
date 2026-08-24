@@ -853,7 +853,7 @@ use App\Http\Controllers\Controller;
 								</select>
 								<small class="form-text text-muted">
 									<i class="fa-solid fa-circle-info"></i> 
-									Australian numbers will use Cellcast, international numbers will use Twilio
+									Australian numbers and international numbers use Cellcast
 								</small>
 							</div>
 						</div>

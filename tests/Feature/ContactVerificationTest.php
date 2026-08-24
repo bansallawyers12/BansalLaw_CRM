@@ -12,7 +12,6 @@ use App\Services\ContactVerificationService;
 use App\Services\EmailVerificationService;
 use App\Services\Sms\CellcastProvider;
 use App\Services\Sms\PhoneVerificationService;
-use App\Services\Sms\TwilioProvider;
 use App\Services\Sms\UnifiedSmsManager;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -352,10 +351,7 @@ class ContactVerificationTest extends TestCase
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('sendSms')->willReturnOnConsecutiveCalls($failPayload, $successPayload);
 
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('sendSms')->willReturnOnConsecutiveCalls($failPayload, $successPayload);
-
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
         $service = new PhoneVerificationService($smsManager, app(ContactVerificationService::class));
 
         $failed = $service->sendOTP($contact->id);
@@ -435,9 +431,6 @@ class ContactVerificationTest extends TestCase
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('sendSms')->willReturn($successPayload);
 
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('sendSms')->willReturn($successPayload);
-
-        return new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        return new UnifiedSmsManager($mockCellcast);
     }
 }

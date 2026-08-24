@@ -37,8 +37,6 @@ class SmsController extends Controller
             'total_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])->count(),
             'cellcast_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
                                       ->where('provider', 'cellcast')->count(),
-            'twilio_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
-                                    ->where('provider', 'twilio')->count(),
             'failed_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
                                     ->where('status', 'failed')->count(),
         ];

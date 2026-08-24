@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\SmsLog;
 use App\Services\Sms\CellcastProvider;
-use App\Services\Sms\TwilioProvider;
 use App\Services\Sms\UnifiedSmsManager;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +24,7 @@ class SmsDeliveredAtPreservationTest extends TestCase
             'formatted_phone' => '+61412345678',
             'message_content' => 'Test message',
             'message_type' => 'manual',
-            'provider' => 'twilio',
+            'provider' => 'cellcast',
             'provider_message_id' => 'MSG123456',
             'status' => 'delivered',
             'delivered_at' => $originalDeliveredAt,
@@ -37,10 +36,8 @@ class SmsDeliveredAtPreservationTest extends TestCase
         ];
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('getSmsStatus')->willReturn($mockStatus);
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('getSmsStatus')->willReturn($mockStatus);
 
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
 
         $result = $smsManager->getDeliveryStatus($smsLog->id);
 
@@ -74,10 +71,8 @@ class SmsDeliveredAtPreservationTest extends TestCase
         ];
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('getSmsStatus')->willReturn($deliveredStatus);
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('getSmsStatus')->willReturn($deliveredStatus);
 
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
 
         $result = $smsManager->getDeliveryStatus($smsLog->id);
 

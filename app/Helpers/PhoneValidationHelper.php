@@ -268,19 +268,18 @@ class PhoneValidationHelper
     }
     
     /**
-     * Determine SMS provider based on phone number
-     * Australian numbers (+61) → Cellcast
-     * Other countries → Twilio
+     * Determine SMS provider based on phone number.
+     * Cellcast is the sole SMS provider.
      */
     public static function getProviderForNumber($phone)
     {
         $formatted = self::formatForSMS($phone);
-        
-        if (!$formatted) {
+
+        if (! $formatted) {
             return null; // Placeholder numbers
         }
-        
-        return str_starts_with($formatted, '+61') ? 'cellcast' : 'twilio';
+
+        return 'cellcast';
     }
 
     /**

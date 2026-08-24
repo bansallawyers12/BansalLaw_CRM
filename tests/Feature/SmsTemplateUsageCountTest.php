@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\SmsTemplate;
 use App\Services\Sms\CellcastProvider;
-use App\Services\Sms\TwilioProvider;
 use App\Services\Sms\UnifiedSmsManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,16 +29,12 @@ class SmsTemplateUsageCountTest extends TestCase
             'success' => true,
             'message' => 'SMS sent successfully',
             'data' => ['messages' => [['message_id' => '12345']]],
-            'results' => [['sid' => '12345']],
         ];
 
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('sendSms')->willReturn($successPayload);
 
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('sendSms')->willReturn($successPayload);
-
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
 
         $result = $smsManager->sendFromTemplate('0412345678', $template->id, ['name' => 'John']);
 
@@ -69,10 +64,7 @@ class SmsTemplateUsageCountTest extends TestCase
         $mockCellcast = $this->createMock(CellcastProvider::class);
         $mockCellcast->method('sendSms')->willReturn($failPayload);
 
-        $mockTwilio = $this->createMock(TwilioProvider::class);
-        $mockTwilio->method('sendSms')->willReturn($failPayload);
-
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
 
         $result = $smsManager->sendFromTemplate('0412345678', $template->id, ['name' => 'Jane']);
 
@@ -95,9 +87,8 @@ class SmsTemplateUsageCountTest extends TestCase
         ]);
 
         $mockCellcast = $this->createMock(CellcastProvider::class);
-        $mockTwilio = $this->createMock(TwilioProvider::class);
 
-        $smsManager = new UnifiedSmsManager($mockCellcast, $mockTwilio);
+        $smsManager = new UnifiedSmsManager($mockCellcast);
         $rendered = $smsManager->renderTemplateByAlias('render_only', ['name' => 'Bob']);
 
         $this->assertEquals('Hello Bob', $rendered);

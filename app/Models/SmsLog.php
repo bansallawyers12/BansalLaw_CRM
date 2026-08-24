@@ -203,7 +203,6 @@ class SmsLog extends Model
     {
         return match($this->provider) {
             'cellcast' => 'primary',
-            'twilio' => 'info',
             default => 'secondary',
         };
     }

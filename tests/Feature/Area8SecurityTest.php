@@ -94,23 +94,23 @@ class Area8SecurityTest extends TestCase
         $contact->phone = '0412345678';
         $contact->save();
 
-        // 1. With invalid signature, when TWILIO_TOKEN set, fails 401
-        config(['services.twilio.auth_token' => 'secret_token_123']);
-        $unauthResponse = $this->postJson('/webhooks/sms/twilio/incoming', [
-            'From' => '+61412345678',
-            'Body' => 'Hello from client',
-            'MessageSid' => 'SM1234567890',
+        // 1. With invalid signature, when Cellcast secret set, fails 401
+        config(['services.cellcast.api_key' => 'secret_token_123']);
+        $unauthResponse = $this->postJson('/webhooks/sms/cellcast/incoming', [
+            'from' => '+61412345678',
+            'message' => 'Hello from client',
+            'message_id' => 'SM1234567890',
         ], [
-            'X-Twilio-Signature' => 'invalid_signature_hash'
+            'X-Cellcast-Signature' => 'invalid_signature_hash',
         ]);
         $unauthResponse->assertStatus(401);
 
-        // 2. Unset secret token allows fallback mode / valid signature mode
-        config(['services.twilio.auth_token' => null]);
-        $response = $this->postJson('/webhooks/sms/twilio/incoming', [
-            'From' => '+61412345678',
-            'Body' => 'Hello from client',
-            'MessageSid' => 'SM1234567890',
+        // 2. Unset secret token allows fallback mode
+        config(['services.cellcast.api_key' => null, 'services.cellcast.webhook_secret' => null]);
+        $response = $this->postJson('/webhooks/sms/cellcast/incoming', [
+            'from' => '+61412345678',
+            'message' => 'Hello from client',
+            'message_id' => 'SM1234567890',
         ]);
 
         $response->assertStatus(200);

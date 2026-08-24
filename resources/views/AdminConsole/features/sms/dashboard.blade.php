@@ -212,7 +212,7 @@
                                     <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i>Online
                                 </span>
                             </div>
-                            <p class="text-white-50 m-0 small">Unified SMS Engine & Routing Gateway (Cellcast AU & Twilio International)</p>
+                            <p class="text-white-50 m-0 small">Unified SMS Engine (Cellcast)</p>
                         </div>
                         <div class="d-flex gap-2">
                             <button onclick="refreshCurrentTab()" class="btn btn-light btn-sm font-weight-bold text-indigo shadow-sm">
@@ -247,7 +247,7 @@
                     <div id="tab-overview" class="spa-tab-content">
                         <!-- Stat Counters -->
                         <div class="row g-3 mb-4">
-                            <div class="col-md-3 col-sm-6">
+                            <div class="col-md-4 col-sm-6">
                                 <div class="sms-stat-card d-flex align-items-center gap-3">
                                     <div class="sms-stat-icon bg-primary text-white">
                                         <i class="fa-solid fa-paper-plane"></i>
@@ -258,29 +258,18 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6">
+                            <div class="col-md-4 col-sm-6">
                                 <div class="sms-stat-card d-flex align-items-center gap-3">
                                     <div class="sms-stat-icon bg-danger text-white">
                                         <i class="fa-solid fa-flag"></i>
                                     </div>
                                     <div>
-                                        <div class="text-muted small font-weight-bold">Cellcast (AU)</div>
+                                        <div class="text-muted small font-weight-bold">Cellcast</div>
                                         <h3 class="m-0 font-weight-bold text-dark" id="stat-cellcast">{{ $stats['cellcast_today'] ?? 0 }}</h3>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="sms-stat-card d-flex align-items-center gap-3">
-                                    <div class="sms-stat-icon bg-info text-white">
-                                        <i class="fa-solid fa-globe"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-muted small font-weight-bold">Twilio (Intl)</div>
-                                        <h3 class="m-0 font-weight-bold text-dark" id="stat-twilio">{{ $stats['twilio_today'] ?? 0 }}</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
+                            <div class="col-md-4 col-sm-6">
                                 <div class="sms-stat-card d-flex align-items-center gap-3">
                                     <div class="sms-stat-icon bg-warning text-white">
                                         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -463,8 +452,7 @@
                                         </select>
                                         <select class="form-select form-control form-control-sm" id="historyProviderFilter" onchange="loadHistoryData(1)" style="width: 130px;">
                                             <option value="">All Providers</option>
-                                            <option value="cellcast">Cellcast (AU)</option>
-                                            <option value="twilio">Twilio (Intl)</option>
+                                            <option value="cellcast">Cellcast</option>
                                         </select>
                                     </div>
                                 </div>
@@ -530,18 +518,11 @@
                                     <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-pie me-2 text-indigo"></i>Gateway Distribution</h6>
                                     <div class="p-3 bg-light rounded-3">
                                         <div class="d-flex justify-content-between mb-2">
-                                            <span class="font-weight-bold text-danger"><i class="fa-solid fa-flag me-1"></i>Cellcast (AU)</span>
+                                            <span class="font-weight-bold text-danger"><i class="fa-solid fa-flag me-1"></i>Cellcast</span>
                                             <strong id="analyticsCellcastPct">0%</strong>
                                         </div>
                                         <div class="progress mb-3" style="height: 10px;">
                                             <div id="analyticsCellcastBar" class="progress-bar bg-danger" style="width: 0%;"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="font-weight-bold text-info"><i class="fa-solid fa-globe me-1"></i>Twilio (Intl)</span>
-                                            <strong id="analyticsTwilioPct">0%</strong>
-                                        </div>
-                                        <div class="progress" style="height: 10px;">
-                                            <div id="analyticsTwilioBar" class="progress-bar bg-info" style="width: 0%;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -879,7 +860,6 @@ function loadDashboardStats() {
             if (res.success) {
                 $('#stat-total').text(res.stats.total_today || 0);
                 $('#stat-cellcast').text(res.stats.cellcast_today || 0);
-                $('#stat-twilio').text(res.stats.twilio_today || 0);
                 $('#stat-failed').text(res.stats.failed_today || 0);
 
                 // Update Overview Table
@@ -891,7 +871,7 @@ function loadDashboardStats() {
                             <td class="small text-muted">${new Date(sms.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
                             <td><span class="font-weight-bold font-monospace text-dark">${sms.formatted_phone || sms.recipient_phone}</span></td>
                             <td><div class="text-truncate" style="max-width: 280px;">${sms.message_content}</div></td>
-                            <td><span class="badge bg-${sms.provider === 'cellcast' ? 'danger' : 'info'} text-white text-uppercase">${sms.provider}</span></td>
+                            <td><span class="badge bg-danger text-white text-uppercase">${sms.provider || 'cellcast'}</span></td>
                             <td><span class="badge bg-${sms.status === 'sent' ? 'success' : (sms.status === 'failed' ? 'danger' : 'warning')} text-white">${sms.status}</span></td>
                             <td class="text-end">
                                 <button onclick="viewSmsDetails(${sms.id})" class="btn btn-outline-secondary btn-sm rounded-pill py-1 px-3">Details</button>
@@ -904,17 +884,13 @@ function loadDashboardStats() {
                 // Update Analytics tab
                 const total = res.stats.total_today || 0;
                 const cellcast = res.stats.cellcast_today || 0;
-                const twilio = res.stats.twilio_today || 0;
                 const failed = res.stats.failed_today || 0;
 
                 const cellPct = total > 0 ? Math.round((cellcast / total) * 100) : 0;
-                const twilioPct = total > 0 ? Math.round((twilio / total) * 100) : 0;
                 const successRate = total > 0 ? Math.round(((total - failed) / total) * 100) : 100;
 
                 $('#analyticsCellcastPct').text(cellPct + '%');
                 $('#analyticsCellcastBar').css('width', cellPct + '%');
-                $('#analyticsTwilioPct').text(twilioPct + '%');
-                $('#analyticsTwilioBar').css('width', twilioPct + '%');
                 $('#analyticsSuccessRate').text(successRate + '%');
             }
         }
