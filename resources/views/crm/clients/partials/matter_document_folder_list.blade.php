@@ -31,7 +31,7 @@
                         $matterFileIcon = 'fa-file-word';
                     } elseif ($matterFileExt === 'pdf') {
                         $matterFileIcon = 'fa-file-pdf';
-                    } elseif (in_array($matterFileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                    } elseif (in_array($matterFileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true)) {
                         $matterFileIcon = 'fa-file-video';
                     } else {
                         $matterFileIcon = 'fa-file-image';
@@ -66,7 +66,7 @@
                                data-doccategory="{{ $fetch->folder_name }}"
                                type="file"
                                name="document_upload"
-                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*"
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*"
                                style="display: none;">
                     </form>
                 </div>

@@ -1276,8 +1276,11 @@ $(document).ready(function() {
 
     function documentFileIconClass(fileType) {
         const normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
-        if (/^(mp4|webm|mov|m4v|avi|mkv|ogv)$/.test(normalizedType)) {
+        if (/^(mp4|webm|mov|m4v|avi|mkv|ogv|vob)$/.test(normalizedType)) {
             return 'fa-file-video';
+        }
+        if (/^(mp3|m4a|wav|ogg|aac)$/.test(normalizedType)) {
+            return 'fa-file-audio';
         }
         if (/^(jpg|jpeg|png|gif|webp|bmp|tif|tiff)$/.test(normalizedType)) {
             return 'fa-file-image';
@@ -1306,7 +1309,8 @@ $(document).ready(function() {
             m4v: 'video/x-m4v',
             avi: 'video/x-msvideo',
             mkv: 'video/x-matroska',
-            ogv: 'video/ogg'
+            ogv: 'video/ogg',
+            vob: 'video/mpeg'
         };
         return mimeMap[normalizedType] || 'video/mp4';
     }
@@ -1505,7 +1509,7 @@ $(document).ready(function() {
                     `);
                 })
                 .catch(showPreviewError);
-        } else if (normalizedType.match(/^(mp4|webm|mov|m4v|avi|mkv|ogv)$/)) {
+        } else if (normalizedType.match(/^(mp4|webm|mov|m4v|avi|mkv|ogv|vob)$/)) {
             const videoMimeType = previewVideoMimeType(normalizedType);
             container.html(`
                 <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
@@ -1521,6 +1525,30 @@ $(document).ready(function() {
             const videoEl = container.find('video')[0];
             if (videoEl) {
                 videoEl.addEventListener('error', showPreviewError);
+            }
+        } else if (normalizedType === 'mp3' || normalizedType === 'm4a' || normalizedType === 'wav' || normalizedType === 'ogg' || normalizedType === 'aac') {
+            const audioMimeMap = {
+                mp3: 'audio/mpeg',
+                m4a: 'audio/mp4',
+                wav: 'audio/wav',
+                ogg: 'audio/ogg',
+                aac: 'audio/aac'
+            };
+            const audioMimeType = audioMimeMap[normalizedType] || 'audio/mpeg';
+            container.html(`
+                <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                    ${previewHeaderHtml}
+                    <div class="preview-media-body" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; min-height: 0; padding: 24px;">
+                        <audio controls preload="metadata" style="width: 100%; max-width: 560px;">
+                            <source src="${embeddedPreviewUrl}" type="${audioMimeType}">
+                            Your browser does not support audio playback.
+                        </audio>
+                    </div>
+                </div>
+            `);
+            const audioEl = container.find('audio')[0];
+            if (audioEl) {
+                audioEl.addEventListener('error', showPreviewError);
             }
         } else {
             container.html(`
@@ -6383,7 +6411,7 @@ success: function(response) {
                 return false;
             }
             var ext = (file.name && file.name.split('.').pop() || '').toLowerCase();
-            if (/^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext)) {
+            if (/^(mp4|webm|mov|m4v|avi|mkv|vob)$/.test(ext)) {
                 return true;
             }
             var mime = (file.type || '').toLowerCase();
@@ -7075,7 +7103,7 @@ success: function(response) {
                 return false;
             }
             var ext = (file.name.split('.').pop() || '').toLowerCase();
-            return /^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext);
+            return /^(mp4|webm|mov|m4v|avi|mkv|vob)$/.test(ext);
         }
 
         function validateMatterDocFile(file) {
@@ -7085,9 +7113,9 @@ success: function(response) {
             }
             var ext = (file.name.split('.').pop() || '').toLowerCase();
             var isVideo = isMatterDocVideoFile(file);
-            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
             if (!isVideo && !allowedExtensions.includes(ext)) {
-                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.).');
+                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), MP3 audio, videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings.');
                 return false;
             }
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;

@@ -38,7 +38,7 @@
 
                     $notUsedFileIcon = function ($filetype) {
                         $ext = strtolower((string) $filetype);
-                        if (in_array($ext, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                        if (in_array($ext, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true)) {
                             return 'fa-file-video';
                         }
                         if (in_array($ext, ['pdf'], true)) {

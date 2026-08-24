@@ -817,7 +817,7 @@ class ClientDocumentsController extends Controller
                                                    data-doccategory="<?php echo $fetch->folder_name;?>" 
                                                    type="file" 
                                                    name="document_upload"
-                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*"
                                                    style="display: none;"/>
                                         </form>
                                     </div>
@@ -2761,6 +2761,12 @@ class ClientDocumentsController extends Controller
             'avi' => 'video/x-msvideo',
             'mkv' => 'video/x-matroska',
             'ogv' => 'video/ogg',
+            'vob' => 'video/mpeg',
+            'mp3' => 'audio/mpeg',
+            'm4a' => 'audio/mp4',
+            'wav' => 'audio/wav',
+            'ogg' => 'audio/ogg',
+            'aac' => 'audio/aac',
             default => 'application/octet-stream',
         };
     }

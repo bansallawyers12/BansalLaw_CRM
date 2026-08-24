@@ -3,7 +3,7 @@
         $admin = $fetch->staff;
         $previewUrl = url('/documents/preview/' . $fetch->id);
         $downloadFilename = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
-        $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
+        $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true) ? 'fa-file-video' : 'fa-file-image';
     @endphp
     <tr class="drow" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
@@ -46,7 +46,7 @@
                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                             </div>
                         </div>
-                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*" style="display: none;">
+                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*" style="display: none;">
                     </form>
                 </div>
             @endif

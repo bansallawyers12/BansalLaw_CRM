@@ -19,7 +19,7 @@ class PersonalDocumentVideoUploadService
 {
     use ClientHelpers, LogsClientActivity;
 
-    public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+    public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
 
     public const VIDEO_MIME_TYPES = [
         'video/mp4',

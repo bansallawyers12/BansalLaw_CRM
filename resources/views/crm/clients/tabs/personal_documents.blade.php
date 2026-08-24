@@ -98,8 +98,8 @@
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), videos, and MS Teams recordings (MP4, WebM, MOV, etc.) — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 300) }}MB for videos)</p>
-                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*">
+                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), audio (MP3), videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 300) }}MB for videos)</p>
+                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count">0</span></h5>
@@ -135,7 +135,7 @@
                                                     // Private S3: use app preview route (presigned redirect), not a direct bucket URL
                                                     $previewUrl = url('/documents/preview/' . $fetch->id);
                                                     $fileExt = strtolower((string) ($fetch->filetype ?? ''));
-                                                    if (in_array($fileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                                                    if (in_array($fileExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true)) {
                                                         $fileIcon = 'fa-file-video';
                                                     } elseif (in_array($fileExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
                                                         $fileIcon = 'fa-file-excel';
@@ -197,7 +197,7 @@
                                                                                data-doccategory="<?= $id ?>" 
                                                                                type="file" 
                                                                                name="document_upload"
-                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp4,.webm,.mov,.m4v,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/*"
+                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*"
                                                                                style="display: none;"/>
                                                                     </form>
                                                                 </div>
@@ -226,7 +226,7 @@
                                                 $previewUrlGrid = url('/documents/preview/' . $fetch->id);
                                                 $dlFilenameGrid = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
                                                 $gridExt = strtolower((string) ($fetch->filetype ?? ''));
-                                                if (in_array($gridExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true)) {
+                                                if (in_array($gridExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true)) {
                                                     $gridFileIcon = 'fa-file-video';
                                                 } elseif (in_array($gridExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
                                                     $gridFileIcon = 'fa-file-excel';
@@ -1817,8 +1817,8 @@
                     const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
                     const maxSize = maxFileMb * 1024 * 1024;
                     const maxVideoSize = maxVideoMb * 1024 * 1024;
-                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
-                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv'].concat(videoExtensions);
+                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3'].concat(videoExtensions);
                     
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
@@ -1858,7 +1858,7 @@
                     }
                     
                     if (bulkUploadFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, videos, or MS Teams recordings (MP4, WebM, MOV, etc.) under the size limit.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, MP3, videos (MP4, WebM, MOV, VOB, etc.), or MS Teams recordings under the size limit.');
                         return;
                     }
                     
