@@ -1092,12 +1092,20 @@ $(document).ready(function() {
         var safeLabel = $('<div/>').text(label).html();
         var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
         var showToggleList = options.showToggleList !== false;
+        var uploadedAt = String(options.uploadedAt || '').trim();
+        var safeUploadedAt = uploadedAt ? $('<div/>').text(uploadedAt).html() : '';
         var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/);
         var typeBadge = isOfficePreview
             ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
             : '';
         var toggleBtn = showToggleList
             ? '<button type="button" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-toggle-list-btn" title="Toggle document list" aria-label="Toggle document list" onclick="var $pane=$(this).closest(\'.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane\'); $pane.toggleClass(\'hide-list-view\'); $(this).toggleClass(\'is-active\');"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>'
+            : '';
+        var uploadedMeta = safeUploadedAt
+            ? '<div class="client-doc-preview-header-meta" title="Uploaded ' + safeUploadedAt + '">'
+                + '<i class="fa-solid fa-clock" aria-hidden="true"></i>'
+                + '<span class="client-doc-preview-uploaded-date">Uploaded ' + safeUploadedAt + '</span>'
+                + '</div>'
             : '';
 
         return ''
@@ -1108,11 +1116,36 @@ $(document).ready(function() {
             + '<span class="client-doc-preview-filename" title="' + safeLabel + '">' + safeLabel + '</span>'
             + typeBadge
             + '</div>'
+            + uploadedMeta
             + '<div class="client-doc-preview-header-actions">'
             + '<a href="' + fileUrl + '" target="_blank" rel="noopener" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-open-btn" title="Open in new tab" aria-label="Open in new tab"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>'
             + '<a href="' + downloadUrl + '" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-download-btn" title="Download file" aria-label="Download file"><i class="fa-solid fa-download" aria-hidden="true"></i></a>'
             + '</div>'
             + '</div>';
+    }
+
+    function resolveClientDocUploadedAt(fileUrl, docId) {
+        var id = docId || extractDocumentIdFromPreviewUrl(fileUrl);
+        if (!id) {
+            return '';
+        }
+
+        var $row = $('#id_' + id + ' .doc-row').first();
+        if (!$row.length) {
+            $row = $('.doc-row[data-id="' + id + '"]').first();
+        }
+        if (!$row.length) {
+            return '';
+        }
+
+        var fromData = String($row.attr('data-uploaded-at') || '').trim();
+        if (fromData) {
+            return fromData;
+        }
+
+        var title = String($row.attr('title') || '');
+        var match = title.match(/\bon\s+(\d{1,2}\/\d{1,2}\/\d{4}(?:\s+\d{1,2}:\d{2})?)/i);
+        return match ? match[1] : '';
     }
 
     function mountIframePreview(container, options) {
@@ -1352,8 +1385,10 @@ $(document).ready(function() {
         // Excel/Word/etc. use the shared office→PDF/HTML embed preview.
         const isOfficePreview = !!(normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp|csv)$/) || isSpreadsheet);
         const inDocPane = isClientDocPreviewPane(container);
+        const uploadedAt = resolveClientDocUploadedAt(fileUrl, docId);
         const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, {
-            showToggleList: true
+            showToggleList: true,
+            uploadedAt: uploadedAt
         });
         const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
 
@@ -4911,7 +4946,7 @@ success: function(response) {
                     '</div>' +
                 '</td>' +
                 '<td style="white-space: initial;">' +
-                    '<div data-id="' + doc.id + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="' + uploadTitle + '" oncontextmenu="showFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + categoryId + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
+                    '<div data-id="' + doc.id + '" data-name="' + docNameWithoutExt + '" data-uploaded-at="' + escapeHtmlAttribute(uploadedDate) + '" class="doc-row" title="' + uploadTitle + '" oncontextmenu="showFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + categoryId + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
                         '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-' + categoryId + '\')">' +
                             '<i class="fa-solid ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
                         '</a>' +
@@ -5042,7 +5077,7 @@ success: function(response) {
 
             var fileCell = '<span class="text-muted">N/A</span>';
             if (fileName) {
-                fileCell = '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row not-used-file-link" title="' + uploadTitle + '" ' +
+                fileCell = '<div data-id="' + doc.id + '" data-name="' + fileName + '" data-uploaded-at="' + escapeHtmlAttribute(uploadedDate) + '" class="doc-row not-used-file-link" title="' + uploadTitle + '" ' +
                     'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
                     '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')">' +
                         '<i class="fa-solid ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
@@ -6142,7 +6177,7 @@ success: function(response) {
 
                         uploadTd.html(
 
-                            '<div data-id="' + fileidL + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileidL + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + doccategoryL + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                            '<div data-id="' + fileidL + '" data-name="' + docNameWithoutExt + '" data-uploaded-at="' + escapeHtmlAttribute(ress.uploaded_at ? formatClientDocDateTime(ress.uploaded_at) : '') + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileidL + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + doccategoryL + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
 
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategoryL + '\')">' +
 
@@ -6893,7 +6928,7 @@ success: function(response) {
                     var uploadTd = row.find('td').eq(1);
 
                     uploadTd.html(
-                        '<div data-id="' + targetFileId + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + targetFileId + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + targetCategoryId + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                        '<div data-id="' + targetFileId + '" data-name="' + docNameWithoutExt + '" data-uploaded-at="' + escapeHtmlAttribute(ress.uploaded_at ? formatClientDocDateTime(ress.uploaded_at) : '') + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + targetFileId + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + targetCategoryId + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
                             '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + targetCategoryId + '\')">' +
                                 '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
                             '</a>' +
@@ -7075,7 +7110,7 @@ success: function(response) {
             var documentId = ress.document_id || fileid;
 
             row.find('td').eq(1).html(
-                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" data-uploaded-at="' + escapeHtmlAttribute(ress.uploaded_at ? formatClientDocDateTime(ress.uploaded_at) : '') + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
                     '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
                         '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
                     '</a>' +

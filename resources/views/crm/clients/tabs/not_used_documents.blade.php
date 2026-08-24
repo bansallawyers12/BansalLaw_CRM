@@ -139,7 +139,7 @@
                                                         </td>
                                                         <td>
                                                             @if (!empty($fetch->file_name))
-                                                                <div data-id="{{ $fetch->id }}" data-name="{{ $fetch->file_name }}" class="doc-row not-used-file-link" title="{{ $uploadMeta }}" oncontextmenu="showNotUsedFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode($fetch->doc_type) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
+                                                                <div data-id="{{ $fetch->id }}" data-name="{{ $fetch->file_name }}" data-uploaded-at="{{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" class="doc-row not-used-file-link" title="{{ $uploadMeta }}" oncontextmenu="showNotUsedFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode($fetch->doc_type) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                                                                     <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-notuseddocumnetlist') }})">
                                                                         <i class="fa-solid {{ $fileIcon }}"></i>
                                                                         <span>{{ $fetch->file_name . '.' . $fetch->filetype }}</span>

@@ -6616,7 +6616,42 @@ class ClientsController extends Controller
             return '';
         }
 
+        if (! $this->documentFileExistsInStorage($pdfDoc)) {
+            return '';
+        }
+
         return $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, embed: true);
+    }
+
+    /**
+     * True when the document's stored object exists on the configured S3 disk.
+     */
+    protected function documentFileExistsInStorage(?\App\Models\Document $document): bool
+    {
+        if (! $document) {
+            return false;
+        }
+
+        $myfile = (string) ($document->myfile ?? '');
+        if ($myfile === '' || ! str_starts_with($myfile, 'http')) {
+            return false;
+        }
+
+        $path = ltrim(urldecode((string) parse_url($myfile, PHP_URL_PATH)), '/');
+        if ($path === '') {
+            return false;
+        }
+
+        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+        if ($bucket !== '' && str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
+        }
+
+        try {
+            return Storage::disk('s3')->exists($path);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
