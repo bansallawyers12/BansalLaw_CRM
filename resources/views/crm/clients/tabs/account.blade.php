@@ -1,7 +1,7 @@
            <!-- Account Tab -->
            <div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'account' ? ' active' : '' }}" id="account-tab">
 @php
-    $accountTabIsLoaded = ! empty($accountTabData['loaded']);
+    $accountTabIsLoaded = ! empty(($accountTabData ?? [])['loaded']);
 @endphp
             <div id="account-tab-body" data-loaded="{{ $accountTabIsLoaded ? '1' : '0' }}">
                 @if($accountTabIsLoaded)
@@ -2146,9 +2146,13 @@ $(document).ready(function() {
         });
     }
     
-    // Attach handlers on page load
+    // Attach handlers on page load and after lazy-loaded ledger HTML
     attachUploadHandlers();
     attachEditOfficeReceiptHandlers();
+    $(document).on('accountTabContentLoaded', function() {
+        attachUploadHandlers();
+        attachEditOfficeReceiptHandlers();
+    });
     
     $(document).on('change', '#edit_office_payment_method', function() {
         var pm = $(this).val();

@@ -204,4 +204,39 @@
         });
     });
 
+    window.ClientAccountsTab = window.ClientAccountsTab || {};
+    window.ClientAccountsTab.loadIfNeeded = function() {
+        var $body = $('#account-tab-body');
+        if (!$body.length || $body.attr('data-loaded') === '1' || $body.data('loading')) {
+            return;
+        }
+
+        var cfg = window.ClientDetailConfig || {};
+        var url = (cfg.urls && cfg.urls.accountTabHtml) ? cfg.urls.accountTabHtml : '';
+        if (!url) {
+            return;
+        }
+
+        $body.data('loading', true);
+        $.ajax({
+            url: url,
+            type: 'GET',
+            data: {
+                client_matter_id: cfg.clientMatterId || '',
+                matter_ref: cfg.matterId || ''
+            },
+            success: function(html) {
+                $body.html(html);
+                $body.attr('data-loaded', '1');
+                $(document).trigger('accountTabContentLoaded');
+            },
+            error: function() {
+                $body.html('<div class="text-center py-5 text-danger">Failed to load account ledger. Please try again.</div>');
+            },
+            complete: function() {
+                $body.data('loading', false);
+            }
+        });
+    };
+
 })(typeof jQuery !== 'undefined' ? jQuery : null);

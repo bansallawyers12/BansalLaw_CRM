@@ -211,6 +211,10 @@
         } else {
             console.error('[SidebarTabs] Tab pane not found:', `#${tabId}-tab`);
         }
+
+        if (tabId === 'account' && window.ClientAccountsTab && typeof window.ClientAccountsTab.loadIfNeeded === 'function') {
+            window.ClientAccountsTab.loadIfNeeded();
+        }
         
         // Update URL
         updateUrl(tabId);
