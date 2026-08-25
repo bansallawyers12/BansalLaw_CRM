@@ -792,6 +792,16 @@ class EmailUploadController extends Controller
                     ? \App\Models\EmailLog::plainTextPreview($preview, 200)
                     : $preview;
             }
+
+            // If HTML/text body was empty (e.g. image-only shell) but the parser still
+            // extracted a readable preview, persist that as the message so the reading
+            // pane does not fall back to an attachment photo gallery.
+            if (($mailReport->message === null || trim((string) $mailReport->message) === '')
+                && ! empty($mailReport->text_preview)
+                && ! \App\Models\EmailLog::isCalendarPayload($mailReport->text_preview)
+            ) {
+                $mailReport->message = $this->sanitizeEmailBodyForStorage($mailReport->text_preview);
+            }
             
             // Sent time: store a real datetime for PostgreSQL — never locale strings like d/m/Y (DateStyle-dependent)
             if (!empty($parsedData['sent_date'])) {
@@ -1795,11 +1805,17 @@ class EmailUploadController extends Controller
             $text = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);
         }
 
-        if ($this->emailBodyHasVisibleText($html)) {
+        // Prefer HTML only when it has readable text (not merely signature <img> tags).
+        // Image-only HTML shells would blank the body text and push the UI into a photo gallery.
+        if ($this->emailBodyHasReadableText($html)) {
             return $html;
         }
-        if ($this->emailBodyHasVisibleText($text) || trim(strip_tags($text)) !== '') {
+        if ($this->emailBodyHasReadableText($text) || trim(strip_tags($text)) !== '') {
             return $text;
+        }
+        // Last resort: keep HTML that at least has images (cid signatures, etc.).
+        if ($html !== '' && preg_match('/<img\b/i', $html)) {
+            return $html;
         }
 
         // Keep empty rather than storing an &nbsp;-only shell so the UI can fall back to PDF.
@@ -1809,6 +1825,29 @@ class EmailUploadController extends Controller
     protected function isCalendarPayload(?string $content): bool
     {
         return \App\Models\EmailLog::isCalendarPayload($content);
+    }
+
+    /**
+     * True when content has readable characters after stripping tags/entities
+     * (does not treat lone <img> tags as text).
+     */
+    protected function emailBodyHasReadableText(?string $content): bool
+    {
+        if ($content === null || trim($content) === '') {
+            return false;
+        }
+
+        if ($this->isCalendarPayload($content)) {
+            return false;
+        }
+
+        $text = preg_replace('#<(script|style|head|noscript)\b[^>]*>.*?</\1>#is', ' ', $content) ?? $content;
+        $text = preg_replace('#<[^>]+>#', ' ', $text) ?? $text;
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace("\xc2\xa0", ' ', $text);
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+
+        return trim($text) !== '';
     }
 
     protected function emailBodyHasVisibleText(?string $content): bool

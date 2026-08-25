@@ -7153,6 +7153,13 @@ class ClientsController extends Controller
                 $email->message = $inviteSummary;
                 $email->text_preview = \App\Models\EmailLog::plainTextPreview($inviteSummary, 100);
             } else {
+                // Older uploads sometimes stored the parsed body only in text_preview
+                // (empty message). Surface that as message so the reading pane shows
+                // text instead of falling back to an image-attachment "N photos" gallery.
+                if ($storedMessage === '' && $storedPreview !== '') {
+                    $email->message = $storedPreview;
+                    $storedMessage = $storedPreview;
+                }
                 $email->text_preview = \App\Models\EmailLog::plainTextPreview(
                     $storedMessage !== '' ? $storedMessage : $storedPreview,
                     100

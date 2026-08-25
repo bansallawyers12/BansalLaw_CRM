@@ -4039,6 +4039,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return text.length > 0;
     }
 
+    // True HTML markup — not Outlook plain-text URL markers like <https://example.com/>.
+    function emailContentLooksLikeHtml(content) {
+        if (!content) {
+            return false;
+        }
+        return /<(?:!DOCTYPE|html|head|body|div|p|br|span|table|tr|td|th|ul|ol|li|a\s|img|font|center|h[1-6]|blockquote|pre|hr|style|meta|strong|em|b\b|i\b)\b/i.test(String(content));
+    }
+
+    function formatPlainTextEmailBody(text) {
+        let escaped = escapeHtml(String(text || ''))
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n');
+        // Turn Outlook-style <https://...> markers into clickable links.
+        escaped = escaped.replace(/&lt;(https?:\/\/[^&]+)&gt;/gi, function (_match, url) {
+            return '<a href="' + url + '" rel="noopener noreferrer">' + url + '</a>';
+        });
+        escaped = escaped.replace(/\n/g, '<br>');
+        return '<div class="email-plain-body" style="line-height:1.55;max-width:42em;">' + escaped + '</div>';
+    }
+
     function extractRenderableEmailHtml(html) {
         if (!html) return '';
         const raw = String(html);
@@ -4559,25 +4579,40 @@ document.addEventListener('DOMContentLoaded', function() {
             contentStr = summarizeCalendarPayload(contentStr);
         }
         contentStr = extractRenderableEmailHtml(contentStr);
-        const hasVisibleBody = emailHtmlHasVisibleContent(contentStr);
+        let hasVisibleBody = emailHtmlHasVisibleContent(contentStr);
+        // When the stored HTML/text body is empty but text_preview has readable content
+        // (common for older manual uploads), use the preview instead of an image gallery.
+        if (!hasVisibleBody) {
+            const previewFallback = String(email.text_preview || '').trim();
+            if (previewFallback && !isCalendarPayload(previewFallback) && emailHtmlHasVisibleText(previewFallback)) {
+                contentStr = previewFallback;
+                hasVisibleBody = true;
+            }
+        }
+        const isHtmlBody = hasVisibleBody && emailContentLooksLikeHtml(contentStr);
         const hasCalendarInviteBody = isCalendarInvite || (!!calendarSource && !hasVisibleBody);
         const imageBodyHtml = (!hasVisibleBody && !hasCalendarInviteBody)
             ? buildImageAttachmentBodyHtml(email)
             : '';
 
-        // Never auto-embed Parsed email.pdf for calendar invites or image-only mail —
-        // those PDFs are often an empty/black Chrome viewer over a header-only page.
+        // Prefer the rendered PDF when we only have plain text (no real HTML body) —
+        // that matches a normal email view. Never auto-embed PDF for calendar invites
+        // or image-only mail (those PDFs are often empty/black).
         let pdfToPreview = null;
-        if (!hasVisibleBody && !hasCalendarInviteBody && !imageBodyHtml) {
-            if (email.pdf_preview_url) {
+        if (!hasCalendarInviteBody && !imageBodyHtml) {
+            if (!isHtmlBody && email.pdf_preview_url) {
                 pdfToPreview = email.pdf_preview_url;
-            } else if (email.attachments && email.attachments.length > 0) {
-                const pdfAtt = email.attachments.find(function(a) {
-                    const name = resolveAttachmentDisplayName(a).toLowerCase();
-                    return name.endsWith('.pdf') && name !== 'parsed email.pdf';
-                });
-                if (pdfAtt) {
-                    pdfToPreview = getAttachmentPreviewUrl(pdfAtt);
+            } else if (!hasVisibleBody) {
+                if (email.pdf_preview_url) {
+                    pdfToPreview = email.pdf_preview_url;
+                } else if (email.attachments && email.attachments.length > 0) {
+                    const pdfAtt = email.attachments.find(function(a) {
+                        const name = resolveAttachmentDisplayName(a).toLowerCase();
+                        return name.endsWith('.pdf') && name !== 'parsed email.pdf';
+                    });
+                    if (pdfAtt) {
+                        pdfToPreview = getAttachmentPreviewUrl(pdfAtt);
+                    }
                 }
             }
         }
@@ -4596,10 +4631,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     html += '<p style="margin:0 0 8px;">No content available.</p>';
                 }
-                const preview = String(email.text_preview || '').trim();
+                const preview = String(contentStr || email.message || email.text_preview || '').trim();
                 if (preview && !isCalendarPayload(preview)) {
-                    html += '<p style="margin:12px 0 0;white-space:pre-wrap;color:#6b7280;">'
-                        + escapeHtml(preview) + '</p>';
+                    html += formatPlainTextEmailBody(preview);
                 }
                 html += '</div>';
                 return html;
@@ -4667,10 +4701,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 bodyHtml = buildCalendarInviteBodyHtml(calendarSource || contentStr, email);
             } else if (imageBodyHtml) {
                 bodyHtml = imageBodyHtml;
-            } else if (bodyHtml && bodyHtml.includes('<')) {
+            } else if (bodyHtml && emailContentLooksLikeHtml(bodyHtml)) {
                 bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
             } else if (bodyHtml) {
-                bodyHtml = escapeHtml(bodyHtml).replace(/\n/g, '<br>');
+                bodyHtml = formatPlainTextEmailBody(bodyHtml);
             }
             renderHtmlIframe(iframe, bodyHtml || '<p>No content available.</p>');
             resetReadBodyIframeSizing(iframe);
@@ -5036,12 +5070,12 @@ document.addEventListener('DOMContentLoaded', function() {
         let emailHtml = '';
         if (email.html_content) {
             emailHtml = email.html_content;
-        } else if (email.message && email.message.includes('<')) {
+        } else if (email.message && emailContentLooksLikeHtml(email.message)) {
             emailHtml = email.message;
         } else if (email.text_content) {
-            emailHtml = escapeHtml(email.text_content).replace(/\n/g, '<br>');
+            emailHtml = formatPlainTextEmailBody(email.text_content);
         } else if (email.message) {
-            emailHtml = escapeHtml(email.message).replace(/\n/g, '<br>');
+            emailHtml = formatPlainTextEmailBody(email.message);
         }
 
         if (action === 'reply') {
@@ -5117,7 +5151,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const messageHtml = email.message || email.html_content || email.text_content || '';
         if (composeReplyInput) {
-            composeReplyInput.innerHTML = messageHtml.includes('<') ? messageHtml : escapeHtml(messageHtml).replace(/\n/g, '<br>');
+            composeReplyInput.innerHTML = emailContentLooksLikeHtml(messageHtml)
+                ? messageHtml
+                : formatPlainTextEmailBody(messageHtml);
         }
 
         focusComposeReply();

@@ -121,6 +121,19 @@ class EmailPdfBackfillService
             if (! empty($parsedData['text_preview']) && empty($email->text_preview)) {
                 $email->text_preview = $parsedData['text_preview'];
             }
+            // Older uploads left message empty while text_preview held the body.
+            if (($email->message === null || trim((string) $email->message) === '')) {
+                $bodyFallback = (string) ($parsedData['html_content'] ?? '');
+                if ($bodyFallback === '' || ! preg_match('/\S/u', strip_tags(html_entity_decode($bodyFallback)))) {
+                    $bodyFallback = (string) ($parsedData['text_content'] ?? '');
+                }
+                if ($bodyFallback === '') {
+                    $bodyFallback = (string) ($parsedData['text_preview'] ?? $email->text_preview ?? '');
+                }
+                if ($bodyFallback !== '' && ! EmailLog::isCalendarPayload($bodyFallback)) {
+                    $email->message = $bodyFallback;
+                }
+            }
             $email->save();
 
             Log::info('Email PDF backfill succeeded', [
