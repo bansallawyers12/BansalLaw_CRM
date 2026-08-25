@@ -91,7 +91,7 @@
                             <i class="fa-solid fa-list-check dashboard-theme-icon-primary"></i> 
                             My Tasks
                         </h3>
-                        <span class="todo-count-badge">{{ count($notesData) }}</span>
+                        <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
                     {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
                     <div id="add-task-popover-template" style="display:none;">
@@ -156,7 +156,14 @@
                     </button>
                 </div>
                 
-                <div class="todo-task-list-container">
+                <div class="todo-task-list-container"
+                     id="todo-task-list-root"
+                     data-infinite-scroll="1"
+                     data-tasks-url="{{ route('dashboard.tasks') }}"
+                     data-current-page="{{ $notes_current_page ?? 1 }}"
+                     data-last-page="{{ $notes_last_page ?? 1 }}"
+                     data-per-page="{{ $notes_per_page ?? 10 }}"
+                     data-total="{{ $count_note_deadline }}">
                     @if(count($notesData) > 0)
                         <div class="todo-filter-tabs" role="toolbar" aria-label="Filter my tasks">
                             <button type="button" class="todo-filter-tab is-active" data-todo-filter="all">All</button>
@@ -165,17 +172,14 @@
                             <button type="button" class="todo-filter-tab" data-todo-filter="upcoming">Upcoming</button>
                             <button type="button" class="todo-filter-tab" data-todo-filter="no-deadline">No deadline</button>
                         </div>
-                        <ul class="todo-task-list">
+                        <ul class="todo-task-list" id="todo-task-list">
                             @foreach($notesData as $note)
                                 <x-dashboard.task-item :note="$note" />
                             @endforeach
                         </ul>
-                        @if($count_note_deadline > 6)
-                            <div class="todo-load-more">
-                                <p>Showing 6 of {{ $count_note_deadline }} tasks</p>
-                                <a href="{{ route('assignee.tasks') }}" class="todo-view-all-link">View all tasks →</a>
-                            </div>
-                        @endif
+                        <div class="todo-infinite-loader" id="todoInfiniteLoader" hidden>
+                            <i class="fa-solid fa-spinner fa-spin"></i> Loading more…
+                        </div>
                     @else
                         <div class="todo-empty-state">
                             <div class="todo-empty-icon">
@@ -390,6 +394,17 @@
     font-size: 13px;
     color: var(--text-muted-color);
     background: var(--background-color);
+}
+
+.todo-infinite-loader {
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted-color);
+}
+
+.todo-infinite-loader[hidden] {
+    display: none !important;
 }
 
 .todo-load-more p {
@@ -1138,6 +1153,7 @@ body > .ts-dropdown {
         storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
+        dashboardTasks: "{{ route('dashboard.tasks') }}",
         assigneeAction: "{{ route('assignee.tasks') }}"
     };
     
@@ -1442,6 +1458,16 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    function applyTodoFilter(filter) {
+        document.querySelectorAll('.todo-task-item').forEach(function(li) {
+            var u = li.getAttribute('data-urgency') || '';
+            var show = filter === 'all'
+                || (filter === 'upcoming' && ['tomorrow', 'this-week', 'upcoming'].indexOf(u) !== -1)
+                || (filter !== 'upcoming' && filter !== 'all' && u === filter);
+            li.style.display = show ? '' : 'none';
+        });
+    }
+
     document.querySelectorAll('.todo-filter-tab').forEach(function(tab) {
         tab.addEventListener('click', function() {
             var clicked = this;
@@ -1449,15 +1475,112 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.todo-filter-tab').forEach(function(b) {
                 b.classList.toggle('is-active', b === clicked);
             });
-            document.querySelectorAll('.todo-task-item').forEach(function(li) {
-                var u = li.getAttribute('data-urgency') || '';
-                var show = filter === 'all'
-                    || (filter === 'upcoming' && ['tomorrow', 'this-week', 'upcoming'].indexOf(u) !== -1)
-                    || (filter !== 'upcoming' && filter !== 'all' && u === filter);
-                li.style.display = show ? '' : 'none';
-            });
+            applyTodoFilter(filter);
         });
     });
+
+    // My Tasks infinite scroll (container scroll — UI unchanged)
+    (function initTodoInfiniteScroll() {
+        var root = document.getElementById('todo-task-list-root');
+        if (!root || root.getAttribute('data-infinite-scroll') !== '1') {
+            return;
+        }
+        var list = document.getElementById('todo-task-list');
+        var loader = document.getElementById('todoInfiniteLoader');
+        if (!list) {
+            return;
+        }
+
+        var isLoading = false;
+
+        function currentFilter() {
+            var active = document.querySelector('.todo-filter-tab.is-active');
+            return active ? active.getAttribute('data-todo-filter') : 'all';
+        }
+
+        function hasMore() {
+            var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+            var last = parseInt(root.getAttribute('data-last-page'), 10) || 1;
+            return current < last;
+        }
+
+        function loadMore() {
+            if (isLoading || !hasMore()) {
+                return;
+            }
+            var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+            var nextPage = current + 1;
+            var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 10;
+            var url = root.getAttribute('data-tasks-url')
+                || (window.dashboardRoutes && window.dashboardRoutes.dashboardTasks);
+            if (!url) {
+                return;
+            }
+
+            isLoading = true;
+            if (loader) {
+                loader.hidden = false;
+            }
+
+            fetch(url + '?page=' + nextPage + '&per_page=' + perPage, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (!data || !data.success) {
+                        return;
+                    }
+                    if (data.html) {
+                        list.insertAdjacentHTML('beforeend', data.html);
+                        applyTodoFilter(currentFilter());
+                    }
+                    root.setAttribute('data-current-page', String(data.current_page || nextPage));
+                    root.setAttribute('data-last-page', String(data.last_page || nextPage));
+                    if (typeof data.total !== 'undefined') {
+                        root.setAttribute('data-total', String(data.total));
+                        var badge = document.querySelector('.todo-count-badge');
+                        if (badge) {
+                            badge.textContent = String(data.total);
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    console.error('My Tasks load more failed', err);
+                })
+                .finally(function() {
+                    isLoading = false;
+                    if (loader) {
+                        loader.hidden = true;
+                    }
+                    // Keep filling if first pages still don't overflow the container
+                    if (hasMore() && root.scrollHeight <= root.clientHeight + 4) {
+                        loadMore();
+                    }
+                });
+        }
+
+        function maybeLoadMore() {
+            if (!hasMore() || isLoading) {
+                return;
+            }
+            var remaining = root.scrollHeight - root.scrollTop - root.clientHeight;
+            if (remaining < 80) {
+                loadMore();
+            }
+        }
+
+        root.addEventListener('scroll', maybeLoadMore, { passive: true });
+        // If first page does not fill the container, load until it does or no more pages
+        setTimeout(function() {
+            if (hasMore() && root.scrollHeight <= root.clientHeight + 4) {
+                loadMore();
+            }
+        }, 0);
+    })();
 });
 
 // Add animation to KPI cards on load
