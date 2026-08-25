@@ -63,6 +63,30 @@
     $currentPage = method_exists($lists, 'currentPage') ? $lists->currentPage() : 1;
     $lastPage = method_exists($lists, 'lastPage') ? $lists->lastPage() : 1;
     $loadedCount = method_exists($lists, 'count') ? $lists->count() : 0;
+
+    $staffName = function ($staff) {
+        if (! $staff) {
+            return '—';
+        }
+        $name = trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
+        return $name !== '' ? $name : '—';
+    };
+
+    $staffIds = collect($lists->items())->flatMap(function ($row) {
+        return [
+            $row->sel_legal_practitioner ?? null,
+            $row->sel_person_responsible ?? null,
+            $row->sel_person_assisting ?? null,
+            $row->closed_by ?? null,
+        ];
+    })->filter()->unique()->values()->all();
+    $staffById = $staffIds
+        ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
+        : collect();
+    $officeIds = collect($lists->items())->pluck('office_id')->filter()->unique()->values()->all();
+    $officesById = $officeIds
+        ? \App\Models\Branch::query()->whereIn('id', $officeIds)->get()->keyBy('id')
+        : collect();
 @endphp
 <div id="matters-listing-root"
      class="listing-container matters-listing"
@@ -279,63 +303,86 @@
                         <table class="table matters-table">
                             <thead>
                                 <tr>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a></th>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ad.client_id') }}">Client ID {!! $sortIcon('ad.client_id') !!}</a></th>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ad.first_name') }}">Client Name {!! $sortIcon('ad.first_name') !!}</a></th>
-                                    <th class="thCls">Legal Practitioner</th>
-                                    <th class="thCls">Person Responsible</th>
-                                    <th class="thCls">Person Assisting</th>
-                                    <th class="thCls">Status</th>
-                                    <th class="thCls">Closed By</th>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed At {!! $sortIcon('cm.updated_at') !!}</a></th>
-                                    <th class="thCls">Reason / Notes</th>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
-                                    <th class="thCls">Office</th>
-                                    <th class="thCls">Reopen</th>
+                                    <th class="sortable-header"><a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a></th>
+                                    <th class="sortable-header"><a href="{{ $buildSortUrl('ad.first_name') }}">Client {!! $sortIcon('ad.first_name') !!}</a></th>
+                                    <th>Team</th>
+                                    <th>Status</th>
+                                    <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed {!! $sortIcon('cm.updated_at') !!}</a></th>
+                                    <th>Reason</th>
+                                    <th>Office</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="tdata">
-                                @if(@$totalData !== 0)
-                                    <?php $i=0; ?>
-                                    @foreach (@$lists as $list)
-                                        <?php
-                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
-                                        $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
-                                        $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
-                                        $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
-                                        $closed_by_info = $list->closed_by ? \App\Models\Staff::select('first_name','last_name')->where('id', $list->closed_by)->first() : null;
-                                        $statusLabel = \App\Support\MatterCompletionChecklist::closureStatusLabel($list);
-                                        $statusClass = \App\Support\MatterCompletionChecklist::closureStatusBadgeClass($list);
-                                        $isDiscontinued = ($list->matter_status ?? 1) == 0;
-                                        $isComplete = $isDiscontinued && \App\Support\MatterCompletionChecklist::isCompleteReason($list->discontinue_reason ?? null);
-                                        $checklist = \App\Support\MatterCompletionChecklist::parseStored($list->matter_completion_checklist ?? null);
-                                        $checklistChecked = \App\Support\MatterCompletionChecklist::checkedLabels($checklist);
-                                        $checklistTotal = \App\Support\MatterCompletionChecklist::totalCount();
-                                        $displayReason = \App\Support\MatterCompletionChecklist::displayReason($list);
-                                        $closedAt = ($isDiscontinued && !empty($list->updated_at)) ? date('d/m/Y H:i', strtotime($list->updated_at)) : '—';
-                                        ?>
-                                        <tr class="matter-data-row" id="id_{{@$list->id}}">
-                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
-                                            <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
-                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
-                                            <td class="tdCls">{{ @$legal_practitioner_info->first_name ?? '' }} {{ @$legal_practitioner_info->last_name ?? '' }}</td>
-                                            <td class="tdCls">{{ @$person_responsible->first_name ?? '' }} {{ @$person_responsible->last_name ?? '' }}</td>
-                                            <td class="tdCls">{{ @$person_assisting->first_name ?? '' }} {{ @$person_assisting->last_name ?? '' }}</td>
-                                            <td class="tdCls"><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                            <td class="tdCls">
-                                                @if($list->closed_by && $closed_by_info)
-                                                    {{ trim($closed_by_info->first_name . ' ' . $closed_by_info->last_name) }}
-                                                @elseif($isDiscontinued)
-                                                    <span class="text-muted">Unknown</span>
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
+                                @if($totalCount !== 0)
+                                    @foreach($lists as $list)
+                                        @php
+                                            $legal_practitioner_info = $staffById->get($list->sel_legal_practitioner);
+                                            $person_responsible = $staffById->get($list->sel_person_responsible);
+                                            $person_assisting = $staffById->get($list->sel_person_assisting);
+                                            $closed_by_info = $list->closed_by ? $staffById->get($list->closed_by) : null;
+                                            $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
+                                            $statusLabel = \App\Support\MatterCompletionChecklist::closureStatusLabel($list);
+                                            $statusClass = \App\Support\MatterCompletionChecklist::closureStatusBadgeClass($list);
+                                            $isDiscontinued = ($list->matter_status ?? 1) == 0;
+                                            $isComplete = $isDiscontinued && \App\Support\MatterCompletionChecklist::isCompleteReason($list->discontinue_reason ?? null);
+                                            $checklist = \App\Support\MatterCompletionChecklist::parseStored($list->matter_completion_checklist ?? null);
+                                            $checklistChecked = \App\Support\MatterCompletionChecklist::checkedLabels($checklist);
+                                            $checklistTotal = \App\Support\MatterCompletionChecklist::totalCount();
+                                            $displayReason = \App\Support\MatterCompletionChecklist::displayReason($list);
+                                            $closedAt = ($isDiscontinued && ! empty($list->updated_at))
+                                                ? date('d/m/Y H:i', strtotime($list->updated_at))
+                                                : '—';
+                                            $closedByName = $closed_by_info
+                                                ? $staffName($closed_by_info)
+                                                : ($isDiscontinued ? 'Unknown' : '—');
+                                            $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
+                                            $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
+                                            $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                                            if ($clientName === '') {
+                                                $clientName = '—';
+                                            }
+                                        @endphp
+                                        <tr class="matter-data-row" id="id_{{ $list->id }}">
+                                            <td>
+                                                <a class="matter-cell-primary" href="{{ $matterDetailUrl }}" title="Open matter">
+                                                    {{ $list->title ?: 'Untitled matter' }}
+                                                </a>
+                                                <span class="matter-cell-meta matter-cell-meta--chip">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
                                             </td>
-                                            <td class="tdCls">{{ $closedAt }}</td>
-                                            <td class="tdCls">
-                                                <strong>{{ $displayReason }}</strong>
-                                                @if(!empty($list->discontinue_notes))
-                                                    <br><small class="text-muted" title="{{ $list->discontinue_notes }}">{{ Str::limit($list->discontinue_notes, 80) }}</small>
+                                            <td>
+                                                <a class="matter-cell-primary" href="{{ $clientDetailUrl }}" title="Open client">
+                                                    {{ $clientName }}
+                                                </a>
+                                                <span class="matter-cell-meta">{{ $list->client_unique_id ?: ('#' . $list->client_id) }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="matter-team">
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Legal practitioner">LP</span>
+                                                        <span class="name">{{ $staffName($legal_practitioner_info) }}</span>
+                                                    </div>
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Person responsible">PR</span>
+                                                        <span class="name">{{ $staffName($person_responsible) }}</span>
+                                                    </div>
+                                                    <div class="matter-team-row">
+                                                        <span class="role" title="Person assisting">PA</span>
+                                                        <span class="name">{{ $staffName($person_assisting) }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="matter-date">{{ $closedAt }}</span>
+                                                <span class="matter-cell-meta">{{ $closedByName }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="matter-cell-primary" style="font-weight:600;">{{ $displayReason }}</span>
+                                                @if(! empty($list->discontinue_notes))
+                                                    <span class="matter-cell-meta" title="{{ $list->discontinue_notes }}">{{ Str::limit($list->discontinue_notes, 80) }}</span>
                                                 @endif
                                                 @if($isComplete && count($checklistChecked) > 0)
                                                     <span class="closed-matter-checklist-summary" title="{{ e(implode(', ', $checklistChecked)) }}">
@@ -343,38 +390,60 @@
                                                         Checklist {{ count($checklistChecked) }}/{{ $checklistTotal }}
                                                     </span>
                                                 @elseif($isComplete)
-                                                    <br><small class="text-muted">Checklist not recorded</small>
+                                                    <span class="matter-cell-meta">Checklist not recorded</span>
                                                 @endif
                                             </td>
-                                            <td class="tdCls">{{ date('d/m/Y', strtotime($list->created_at)) }}</td>
-                                            <td class="tdCls">
-                                                @if($matter_office)
-                                                    <span class="badge bg-info text-dark" style="font-size: 12px;"><i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}</span>
-                                                @else
-                                                    <span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> Not Assigned</span>
-                                                @endif
-                                            </td>
-                                            <td class="tdCls">
-                                                @if($isDiscontinued)
-                                                    @if($_cmCanReopen)
-                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fa-solid fa-arrow-rotate-right"></i> Reopen</button>
+                                            <td>
+                                                <div class="matter-office">
+                                                    @if($matter_office)
+                                                        <span class="matter-office-badge is-set">
+                                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
+                                                        </span>
                                                     @else
-                                                        @if($list->reopen_requested_by)
-                                                            <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested"><i class="fa-solid fa-clock"></i> Requested</button>
+                                                        <span class="matter-office-badge is-unset">
+                                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="matter-actions">
+                                                    <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
+                                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                                    </a>
+                                                    @if($isDiscontinued)
+                                                        @if($_cmCanReopen)
+                                                            <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}">
+                                                                <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
+                                                            </button>
+                                                        @elseif($list->reopen_requested_by)
+                                                            <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested">
+                                                                <i class="fa-solid fa-clock"></i> Requested
+                                                            </button>
                                                         @else
-                                                            <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter"><i class="fa-solid fa-hand-paper"></i> Request</button>
+                                                            <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter">
+                                                                <i class="fa-solid fa-hand-paper"></i> Request
+                                                            </button>
                                                         @endif
                                                     @endif
-                                                @else
-                                                <span class="text-muted">—</span>
-                                                @endif
+                                                </div>
                                             </td>
                                         </tr>
-                                        <?php $i++; ?>
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="12" style="text-align: center; padding: 20px;">No Record Found</td>
+                                        <td colspan="8">
+                                            <div class="matters-empty">
+                                                <i class="fa-regular fa-folder-open"></i>
+                                                <p>No closed matters found</p>
+                                                <span>Try clearing filters or searching with a different client name.</span>
+                                                @if($activeMatterFilters > 0)
+                                                    <div class="mt-3">
+                                                        <a href="{{ route('clients.closedmatterslist') }}" class="btn btn-theme btn-theme-sm">Clear filters</a>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endif
                             </tbody>
