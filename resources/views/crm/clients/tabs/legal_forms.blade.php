@@ -976,33 +976,38 @@
     };
 
     function formatLegalFormListAmount(form) {
-        var amount = null;
-
-        if (form.estimated_total != null && parseFloat(form.estimated_total) > 0) {
-            amount = parseFloat(form.estimated_total);
-        } else if (form.fixed_fee_amount != null && parseFloat(form.fixed_fee_amount) > 0) {
-            amount = parseFloat(form.fixed_fee_amount);
-        } else if (form.retainer_amount != null && parseFloat(form.retainer_amount) > 0) {
-            amount = parseFloat(form.retainer_amount);
-        } else {
-            var fees = parseFloat(form.estimated_legal_fees) || 0;
-            var disb = parseFloat(form.estimated_disbursements) || 0;
-            var barr = parseFloat(form.estimated_barrister_fees) || 0;
-            var gst = parseFloat(form.gst_amount);
-            if (isNaN(gst)) {
-                gst = fees * 0.10;
-            }
-            var total = fees + disb + barr + gst;
-            if (total > 0) {
-                amount = total;
-            }
-        }
-
-        if (amount === null || isNaN(amount)) {
+        if (form.form_type !== 'short_costs_disclosure' && form.form_type !== 'cost_agreement') {
             return null;
         }
 
-        return '$' + amount.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (form.estimated_total != null && parseFloat(form.estimated_total) > 0) {
+            return '$' + parseFloat(form.estimated_total).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        var fees = parseFloat(form.estimated_legal_fees) || 0;
+        var disb = parseFloat(form.estimated_disbursements) || 0;
+        var barr = parseFloat(form.estimated_barrister_fees) || 0;
+        if (fees <= 0 && disb <= 0 && barr <= 0) {
+            return null;
+        }
+
+        var gst = parseFloat(form.gst_amount);
+        if (isNaN(gst)) {
+            gst = fees * 0.10;
+        }
+        var total = fees + disb + barr + gst;
+        if (total <= 0) {
+            return null;
+        }
+
+        return '$' + total.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatLegalFormRetainer(form) {
+        if (form.retainer_amount != null && parseFloat(form.retainer_amount) > 0) {
+            return '$' + parseFloat(form.retainer_amount).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return null;
     }
 
     function renderLegalFormsList(forms) {
@@ -1029,6 +1034,7 @@
             var previewLabel = label + (matterRef ? ' (' + matterRef + ')' : '');
             var safePreviewLabel = previewLabel.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             var amountText = formatLegalFormListAmount(form);
+            var retainerText = formatLegalFormRetainer(form);
             var attachTitle = form.attachment_original_name ? String(form.attachment_original_name).replace(/"/g, '&quot;') : '';
             var attachName = form.attachment_original_name || '';
             attachName = attachName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1053,7 +1059,10 @@
             html += '<div class="legal-form-list-item__title">' + label + (form.is_uploaded ? ' <span class="legal-form-uploaded-badge">Uploaded</span>' : '') + '</div>';
             html += '<dl class="legal-form-list-item__meta">';
             if (amountText) {
-                html += '<div class="legal-form-meta-item legal-form-meta-item--amount"><dt>Amount</dt><dd>' + amountText + '</dd></div>';
+                html += '<div class="legal-form-meta-item legal-form-meta-item--amount"><dt>Estimated total</dt><dd>' + amountText + '</dd></div>';
+            }
+            if (retainerText) {
+                html += '<div class="legal-form-meta-item"><dt>Retainer</dt><dd>' + retainerText + '</dd></div>';
             }
             html += '<div class="legal-form-meta-item"><dt>Date</dt><dd>' + date + '</dd></div>';
             if (matterRef) {

@@ -89,4 +89,30 @@ class ClientLegalForm extends Model
     {
         return self::FORM_TYPES[$this->form_type] ?? $this->form_type;
     }
+
+    /**
+     * Latest generated costs disclosure for billing comparison (not uploads).
+     */
+    public static function latestCostsDisclosureForMatter(int $clientId, ?int $clientMatterId): ?self
+    {
+        $query = self::query()
+            ->where('client_id', $clientId)
+            ->whereIn('form_type', ['short_costs_disclosure', 'cost_agreement'])
+            ->where(function ($q) {
+                $q->where('is_uploaded', false)->orWhereNull('is_uploaded');
+            })
+            ->where('estimated_total', '>', 0);
+
+        if ($clientMatterId !== null) {
+            $query->where('client_matter_id', $clientMatterId);
+        } else {
+            $query->whereNull('client_matter_id');
+        }
+
+        return $query
+            ->orderByRaw('CASE WHEN form_date IS NULL THEN 1 ELSE 0 END')
+            ->orderByDesc('form_date')
+            ->orderByDesc('id')
+            ->first();
+    }
 }

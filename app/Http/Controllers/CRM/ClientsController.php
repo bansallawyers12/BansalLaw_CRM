@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
+use App\Services\ClientAccountTabService;
 use App\Services\MatterAssigneeDefaults;
 use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
@@ -1527,6 +1528,34 @@ class ClientsController extends Controller
                 $partiesUpdatedAt = app(\App\Services\ConflictCheckStalenessService::class)
                     ->partiesUpdatedAtForMatter((int) $id, $activeClientMatterId);
 
+                // Account tab is included client-side for matter / converted-client views; preload so the Blade stays thin.
+                $accountMatterExists = ClientMatter::query()
+                    ->where('client_id', (int) $id)
+                    ->where(function ($q) {
+                        $q->where('matter_status', 1)->orWhere('matter_status', '1');
+                    })
+                    ->exists();
+                $accountNavIsLead = (($fetchedData->type ?? null) === 1)
+                    || in_array(strtolower(trim((string) ($fetchedData->type ?? ''))), ['lead', 'l', '1'], true);
+                $accountShowForConvertedClient = ! $accountNavIsLead
+                    && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
+                $accountTabData = [
+                    'clientMatterId' => $activeClientMatterId,
+                    'trustBalance' => 0.0,
+                    'outstandingBalance' => 0.0,
+                    'invoicedTotal' => 0.0,
+                    'costsDisclosure' => null,
+                    'exceedsDisclosure' => false,
+                    'trustRows' => collect(),
+                    'invoiceRows' => collect(),
+                    'officeRows' => collect(),
+                    'documentsById' => collect(),
+                ];
+                if (($id1 !== null && $id1 !== '') || $accountMatterExists || $accountShowForConvertedClient) {
+                    $accountTabData = app(ClientAccountTabService::class)
+                        ->build((int) $id, $activeClientMatterId);
+                }
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
@@ -1537,7 +1566,8 @@ class ClientsController extends Controller
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
                     'conflictParties', 'latestConflictCheck', 'conflictCheckHistory',
-                    'activeClientMatterId', 'conflictCheckStaleness', 'partiesUpdatedAt'
+                    'activeClientMatterId', 'conflictCheckStaleness', 'partiesUpdatedAt',
+                    'accountTabData'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');

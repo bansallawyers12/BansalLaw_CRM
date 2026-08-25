@@ -189,7 +189,8 @@
                             renderClientFundsLedger(response.updatedEntries);
                         }
                         if (response.currentFundsHeld !== undefined) {
-                            $('.current-funds-held').text('$ ' + parseFloat(response.currentFundsHeld).toFixed(2));
+                            var formatted = '$ ' + parseFloat(response.currentFundsHeld).toFixed(2);
+                            $('.current-funds-held, .funds-held').text(formatted);
                         }
                     } else {
                         $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
