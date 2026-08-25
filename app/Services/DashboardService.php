@@ -32,17 +32,21 @@ class DashboardService
         $user = Auth::guard('admin')->user() ?: Auth::user();
         
         $notesPage = $this->getNotesPage($user, 1, 10);
+        $casesPage = $this->getCasesRequiringAttentionPage($user, 1, 10);
 
         return [
             'notesData' => $notesPage['items'],
             'notes_current_page' => $notesPage['current_page'],
             'notes_last_page' => $notesPage['last_page'],
             'notes_per_page' => $notesPage['per_page'],
-            'cases_requiring_attention_data' => $this->getCasesRequiringAttention($user),
+            'cases_requiring_attention_data' => $casesPage['items'],
+            'cases_current_page' => $casesPage['current_page'],
+            'cases_last_page' => $casesPage['last_page'],
+            'cases_per_page' => $casesPage['per_page'],
             'count_active_matter' => $this->getActiveMatterCount($user),
             'count_closed_matter' => $this->getClosedMatterCount($user),
             'count_note_deadline' => $notesPage['total'],
-            'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
+            'count_cases_requiring_attention_data' => $casesPage['total'],
             'dashboardAssignableStaff' => $this->getAssignableStaffForPopover(),
         ];
     }
@@ -133,9 +137,38 @@ class DashboardService
     }
 
     /**
-     * Get cases requiring attention
+     * Paginated cases requiring attention for dashboard infinite scroll.
+     *
+     * @return array{items: \Illuminate\Support\Collection, current_page: int, last_page: int, per_page: int, total: int}
      */
-    private function getCasesRequiringAttention($user)
+    public function getCasesRequiringAttentionPage($user, int $page = 1, int $perPage = 10): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(50, $perPage));
+        $total = $this->getCasesRequiringAttentionCount($user);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+
+        $cases = $this->casesRequiringAttentionQuery($user)
+            ->orderBy('updated_at', 'asc')
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        $this->attachLatestActivities($cases);
+
+        return [
+            'items' => $cases,
+            'current_page' => $page,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * Base query for cases requiring attention (same scope as getCasesRequiringAttentionCount).
+     */
+    private function casesRequiringAttentionQuery($user)
     {
         $query = ClientMatter::with([
                 'client:id,first_name,last_name,client_id',
@@ -151,17 +184,9 @@ class DashboardService
             });
         }
 
-        // Apply role-based filtering
         $this->applyRoleBasedFiltering($query, $user);
 
-        // Oldest activity first — surfaces matters that have stalled longest
-        $cases = $query->orderBy('updated_at', 'asc')
-            ->limit(20)
-            ->get();
-
-        $this->attachLatestActivities($cases);
-        
-        return $cases;
+        return $query;
     }
 
     /**

@@ -98,6 +98,33 @@ class DashboardController extends Controller
     }
 
     /**
+     * Paginated Cases Requiring Attention HTML for dashboard infinite scroll.
+     */
+    public function casesRequiringAttention(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = max(1, min(50, (int) $request->input('per_page', 10)));
+
+        $casesPage = $this->dashboardService->getCasesRequiringAttentionPage($user, $page, $perPage);
+
+        $html = '';
+        foreach ($casesPage['items'] as $case) {
+            $html .= view('components.dashboard.case-item', ['case' => $case])->render();
+        }
+
+        return response()->json([
+            'success' => true,
+            'html' => $html,
+            'current_page' => $casesPage['current_page'],
+            'last_page' => $casesPage['last_page'],
+            'per_page' => $casesPage['per_page'],
+            'total' => $casesPage['total'],
+            'has_more' => $casesPage['current_page'] < $casesPage['last_page'],
+        ]);
+    }
+
+    /**
      * Get dashboard notifications
      */
     public function fetchNotifications(Request $request)

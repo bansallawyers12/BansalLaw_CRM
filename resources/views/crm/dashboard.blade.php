@@ -203,15 +203,25 @@
                         <i class="fa-solid fa-circle-exclamation" style="color: var(--warning-color);"></i> 
                         Cases Requiring Attention
                     </h3>
-                    <span class="badge-count">{{ count($cases_requiring_attention_data) }}</span>
+                    <span class="badge-count" id="cases-attention-badge">{{ $count_cases_requiring_attention_data }}</span>
                 </div>
-                <div class="case-list-container">
+                <div class="case-list-container"
+                     id="cases-attention-list-root"
+                     data-infinite-scroll="1"
+                     data-cases-url="{{ route('dashboard.cases-requiring-attention') }}"
+                     data-current-page="{{ $cases_current_page ?? 1 }}"
+                     data-last-page="{{ $cases_last_page ?? 1 }}"
+                     data-per-page="{{ $cases_per_page ?? 10 }}"
+                     data-total="{{ $count_cases_requiring_attention_data }}">
                     @if(count($cases_requiring_attention_data) > 0)
-                        <ul class="case-list">
+                        <ul class="case-list" id="cases-attention-list">
                             @foreach($cases_requiring_attention_data as $case)
                                 <x-dashboard.case-item :case="$case" />
                             @endforeach
                         </ul>
+                        <div class="todo-infinite-loader" id="casesInfiniteLoader" hidden>
+                            <i class="fa-solid fa-spinner fa-spin"></i> Loading more…
+                        </div>
                     @else
                         <div class="empty-state-modern empty-state-modern--compact">
                             <i class="fa-solid fa-thumbs-up fa-2x"></i>
@@ -1154,6 +1164,7 @@ body > .ts-dropdown {
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
         dashboardTasks: "{{ route('dashboard.tasks') }}",
+        dashboardCases: "{{ route('dashboard.cases-requiring-attention') }}",
         assigneeAction: "{{ route('assignee.tasks') }}"
     };
     
@@ -1575,6 +1586,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
         root.addEventListener('scroll', maybeLoadMore, { passive: true });
         // If first page does not fill the container, load until it does or no more pages
+        setTimeout(function() {
+            if (hasMore() && root.scrollHeight <= root.clientHeight + 4) {
+                loadMore();
+            }
+        }, 0);
+    })();
+
+    // Cases Requiring Attention infinite scroll (container scroll — UI unchanged)
+    (function initCasesInfiniteScroll() {
+        var root = document.getElementById('cases-attention-list-root');
+        if (!root || root.getAttribute('data-infinite-scroll') !== '1') {
+            return;
+        }
+        var list = document.getElementById('cases-attention-list');
+        var loader = document.getElementById('casesInfiniteLoader');
+        if (!list) {
+            return;
+        }
+
+        var isLoading = false;
+
+        function hasMore() {
+            var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+            var last = parseInt(root.getAttribute('data-last-page'), 10) || 1;
+            return current < last;
+        }
+
+        function loadMore() {
+            if (isLoading || !hasMore()) {
+                return;
+            }
+            var current = parseInt(root.getAttribute('data-current-page'), 10) || 1;
+            var nextPage = current + 1;
+            var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 10;
+            var url = root.getAttribute('data-cases-url')
+                || (window.dashboardRoutes && window.dashboardRoutes.dashboardCases);
+            if (!url) {
+                return;
+            }
+
+            isLoading = true;
+            if (loader) {
+                loader.hidden = false;
+            }
+
+            fetch(url + '?page=' + nextPage + '&per_page=' + perPage, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (!data || !data.success) {
+                        return;
+                    }
+                    if (data.html) {
+                        list.insertAdjacentHTML('beforeend', data.html);
+                    }
+                    root.setAttribute('data-current-page', String(data.current_page || nextPage));
+                    root.setAttribute('data-last-page', String(data.last_page || nextPage));
+                    if (typeof data.total !== 'undefined') {
+                        root.setAttribute('data-total', String(data.total));
+                        var badge = document.getElementById('cases-attention-badge');
+                        if (badge) {
+                            badge.textContent = String(data.total);
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Cases requiring attention load more failed', err);
+                })
+                .finally(function() {
+                    isLoading = false;
+                    if (loader) {
+                        loader.hidden = true;
+                    }
+                    if (hasMore() && root.scrollHeight <= root.clientHeight + 4) {
+                        loadMore();
+                    }
+                });
+        }
+
+        function maybeLoadMore() {
+            if (!hasMore() || isLoading) {
+                return;
+            }
+            var remaining = root.scrollHeight - root.scrollTop - root.clientHeight;
+            if (remaining < 80) {
+                loadMore();
+            }
+        }
+
+        root.addEventListener('scroll', maybeLoadMore, { passive: true });
         setTimeout(function() {
             if (hasMore() && root.scrollHeight <= root.clientHeight + 4) {
                 loadMore();
