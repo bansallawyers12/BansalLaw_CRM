@@ -214,6 +214,7 @@
         var cfg = window.ClientDetailConfig || {};
         var url = (cfg.urls && cfg.urls.accountTabHtml) ? cfg.urls.accountTabHtml : '';
         if (!url) {
+            $body.html('<div class="text-center py-5 text-danger">Failed to load account ledger. Please refresh the page.</div>');
             return;
         }
 
@@ -238,5 +239,11 @@
             }
         });
     };
+
+    $(document).ready(function() {
+        if ($('#account-tab').hasClass('active')) {
+            window.ClientAccountsTab.loadIfNeeded();
+        }
+    });
 
 })(typeof jQuery !== 'undefined' ? jQuery : null);

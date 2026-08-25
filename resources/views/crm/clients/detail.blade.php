@@ -1607,6 +1607,7 @@ $(document).ready(function() {
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
             sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',
+            accountTabHtml: '{{ url("/clients/account-tab/" . ($encodeId ?? "")) }}',
         }
     };
     

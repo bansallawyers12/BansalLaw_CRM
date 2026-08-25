@@ -1536,10 +1536,12 @@ class ClientsController extends Controller
                     'invoiceRows' => collect(),
                     'officeRows' => collect(),
                     'documentsById' => collect(),
+                    'loaded' => true,
                 ];
                 if (($id1 !== null && $id1 !== '') || $accountMatterExists || $accountShowForConvertedClient) {
                     $accountTabData = app(ClientAccountTabService::class)
                         ->build((int) $id, $activeClientMatterId);
+                    $accountTabData['loaded'] = true;
                 }
 
                 //Return the view with all data
@@ -1561,6 +1563,38 @@ class ClientsController extends Controller
         } else {
             return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
         }
+    }
+
+    public function accountTabHtml(Request $request, $client_id)
+    {
+        $id = $this->decodeString($client_id);
+        if (! $id) {
+            abort(404);
+        }
+
+        $this->ensureCrmRecordAccess((int) $id);
+
+        $fetchedData = Admin::query()
+            ->where('id', (int) $id)
+            ->whereIn('type', ['client', 'lead'])
+            ->first();
+
+        if (! $fetchedData) {
+            abort(404);
+        }
+
+        $matterId = $request->query('client_matter_id');
+        $matterId = ($matterId !== null && $matterId !== '') ? (int) $matterId : null;
+
+        $accountTabData = app(ClientAccountTabService::class)->build((int) $id, $matterId);
+        $accountTabData['loaded'] = true;
+        $activeClientMatterId = $matterId;
+
+        return view('crm.clients.tabs.account_content', compact(
+            'accountTabData',
+            'fetchedData',
+            'activeClientMatterId'
+        ));
     }
 
     protected function googleReviewCrmTemplateExists(): bool
