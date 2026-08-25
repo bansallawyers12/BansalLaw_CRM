@@ -71,6 +71,60 @@ class DashboardController extends Controller
     }
 
     /**
+     * Paginated My Tasks HTML for dashboard infinite scroll.
+     */
+    public function tasks(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = max(1, min(50, (int) $request->input('per_page', 10)));
+
+        $notesPage = $this->dashboardService->getNotesPage($user, $page, $perPage);
+
+        $html = '';
+        foreach ($notesPage['items'] as $note) {
+            $html .= view('components.dashboard.task-item', ['note' => $note])->render();
+        }
+
+        return response()->json([
+            'success' => true,
+            'html' => $html,
+            'current_page' => $notesPage['current_page'],
+            'last_page' => $notesPage['last_page'],
+            'per_page' => $notesPage['per_page'],
+            'total' => $notesPage['total'],
+            'has_more' => $notesPage['current_page'] < $notesPage['last_page'],
+        ]);
+    }
+
+    /**
+     * Paginated Cases Requiring Attention HTML for dashboard infinite scroll.
+     */
+    public function casesRequiringAttention(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = max(1, min(50, (int) $request->input('per_page', 10)));
+
+        $casesPage = $this->dashboardService->getCasesRequiringAttentionPage($user, $page, $perPage);
+
+        $html = '';
+        foreach ($casesPage['items'] as $case) {
+            $html .= view('components.dashboard.case-item', ['case' => $case])->render();
+        }
+
+        return response()->json([
+            'success' => true,
+            'html' => $html,
+            'current_page' => $casesPage['current_page'],
+            'last_page' => $casesPage['last_page'],
+            'per_page' => $casesPage['per_page'],
+            'total' => $casesPage['total'],
+            'has_more' => $casesPage['current_page'] < $casesPage['last_page'],
+        ]);
+    }
+
+    /**
      * Get dashboard notifications
      */
     public function fetchNotifications(Request $request)

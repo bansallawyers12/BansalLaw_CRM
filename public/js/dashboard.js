@@ -408,12 +408,22 @@ window.openExtendModal = function(taskId) {
 
 // Update Task Count
 function updateTaskCount() {
-    const count = $('.todo-task-item').length;
-    $('.todo-count-badge').text(count);
-    
-    // Show empty state if no tasks
-    if (count === 0) {
+    const $root = $('#todo-task-list-root');
+    let total = parseInt($root.attr('data-total'), 10);
+    if (!isNaN(total)) {
+        total = Math.max(0, total - 1);
+        $root.attr('data-total', total);
+        $('.todo-count-badge').text(total);
+    } else {
+        const count = $('.todo-task-item').length;
+        $('.todo-count-badge').text(count);
+        total = count;
+    }
+
+    const remainingInDom = $('.todo-task-item').length;
+    if (remainingInDom === 0 && total === 0) {
         $('.todo-task-list').hide();
+        $('#todoInfiniteLoader').remove();
         if ($('.todo-empty-state').length === 0) {
             $('.todo-task-list-container').html(`
                 <div class="todo-empty-state">

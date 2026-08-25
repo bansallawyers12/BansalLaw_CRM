@@ -91,7 +91,9 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/calendar-events', [DashboardController::class, 'calendarEvents'])->name('dashboard.calendar-events');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
+    Route::get('/dashboard/tasks', [DashboardController::class, 'tasks'])->name('dashboard.tasks');
     Route::post('/dashboard/tasks/complete', [DashboardController::class, 'completeTask'])->name('dashboard.tasks.complete');
+    Route::get('/dashboard/cases-requiring-attention', [DashboardController::class, 'casesRequiringAttention'])->name('dashboard.cases-requiring-attention');
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');

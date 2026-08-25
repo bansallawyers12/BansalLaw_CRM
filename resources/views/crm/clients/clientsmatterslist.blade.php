@@ -2,7 +2,6 @@
 @section('title', 'Clients Matters List')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <link rel="stylesheet" href="{{ asset('css/matters-list.css') }}">
@@ -58,9 +57,32 @@
     };
 
     $totalCount = method_exists($lists, 'total') ? $lists->total() : (int) ($totalData ?? 0);
+    $currentPage = method_exists($lists, 'currentPage') ? $lists->currentPage() : 1;
+    $lastPage = method_exists($lists, 'lastPage') ? $lists->lastPage() : 1;
+    $loadedCount = method_exists($lists, 'count') ? $lists->count() : 0;
+
+    $staffIds = collect($lists->items())->flatMap(function ($row) {
+        return [
+            $row->sel_legal_practitioner ?? null,
+            $row->sel_person_responsible ?? null,
+            $row->sel_person_assisting ?? null,
+        ];
+    })->filter()->unique()->values()->all();
+    $staffById = $staffIds
+        ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
+        : collect();
+    $officeIds = collect($lists->items())->pluck('office_id')->filter()->unique()->values()->all();
+    $officesById = $officeIds
+        ? \App\Models\Branch::query()->whereIn('id', $officeIds)->get()->keyBy('id')
+        : collect();
 @endphp
 
-<div class="listing-container matters-listing">
+<div id="matters-listing-root"
+     class="listing-container matters-listing"
+     data-infinite-scroll="1"
+     data-current-page="{{ $currentPage }}"
+     data-last-page="{{ $lastPage }}"
+     data-per-page="20">
     <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
@@ -89,14 +111,6 @@
                                 <i class="fa-solid fa-chart-line"></i> Insights
                             </a>
                             @endif
-                            <div class="per-page-wrap">
-                                <label for="per_page">Show</label>
-                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
-                                    @foreach([10, 20, 50, 100, 200] as $option)
-                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeMatterFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
                                 <i class="fa-solid fa-filter"></i> Filter
                                 @if($activeMatterFilters > 0)
@@ -259,18 +273,23 @@
                         </form>
                     </div>
 
-                    @if($totalCount > 0 && method_exists($lists, 'firstItem'))
+                    @if($totalCount > 0)
                     <div class="matters-results-bar">
-                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }}
-                        of {{ number_format($totalCount) }} matters
+                        <span>
+                            Loaded <strong data-loaded-count>{{ number_format($loadedCount) }}</strong>
+                            of <strong>{{ number_format($totalCount) }}</strong> matters
+                        </span>
                         @if($activeMatterFilters > 0)
                             <span class="matters-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
+                        @endif
+                        @if($lastPage > 1)
+                            <span class="matters-results-bar__hint"><i class="fa-solid fa-arrow-down"></i> Scroll for more</span>
                         @endif
                     </div>
                     @endif
 
-                    <div class="table-responsive">
-                        <table class="table">
+                    <div class="table-responsive matters-table-wrap">
+                        <table class="table matters-table">
                             <thead>
                                 <tr>
                                     <th class="sortable-header">
@@ -294,10 +313,10 @@
                                 @if($totalCount !== 0)
                                     @foreach($lists as $list)
                                         @php
-                                            $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
-                                            $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
-                                            $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
-                                            $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
+                                            $legal_practitioner_info = $staffById->get($list->sel_legal_practitioner);
+                                            $person_responsible = $staffById->get($list->sel_person_responsible);
+                                            $person_assisting = $staffById->get($list->sel_person_assisting);
+                                            $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
                                             $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                                             $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
                                             $dobDisplay = ! empty($list->dob) && strtotime($list->dob)
@@ -311,12 +330,12 @@
                                                 $clientName = '—';
                                             }
                                         @endphp
-                                        <tr id="id_{{ $list->id }}">
+                                        <tr class="matter-data-row" id="id_{{ $list->id }}">
                                             <td>
                                                 <a class="matter-cell-primary" href="{{ $matterDetailUrl }}" title="Open matter">
                                                     {{ $list->title ?: 'Untitled matter' }}
                                                 </a>
-                                                <span class="matter-cell-meta">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
+                                                <span class="matter-cell-meta matter-cell-meta--chip">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
                                             </td>
                                             <td>
                                                 <a class="matter-cell-primary" href="{{ $clientDetailUrl }}" title="Open client">
@@ -415,8 +434,9 @@
                         </table>
                     </div>
 
-                    <div class="card-footer">
-                        {!! $lists->appends(\Request::except('page'))->render() !!}
+                    <div class="matters-infinite-loader" id="mattersInfiniteLoader" hidden aria-live="polite">
+                        <span class="matters-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Loading more matters...</span>
                     </div>
                 </div>
             </div>
@@ -428,15 +448,9 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/crm/clients/matters-listing-infinite.js') }}?v={{ filemtime(public_path('js/crm/clients/matters-listing-infinite.js')) }}"></script>
 <script>
 jQuery(document).ready(function($){
-    $('#per_page').on('change', function(){
-        var currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('per_page', $(this).val());
-        currentUrl.searchParams.delete('page');
-        window.location.href = currentUrl.toString();
-    });
-
     $('.matter-quick-filter').on('click', function(){
         var filter = $(this).data('filter');
         $('#matter_quick_date_range').val(filter);
