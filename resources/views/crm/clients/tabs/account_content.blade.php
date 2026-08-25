@@ -342,7 +342,7 @@
                 </div>
             </div>
             <div class="transaction-table-wrapper">
-                <h4 style="margin-top:0; margin-bottom: 10px; font-weight: 600;"><i class="fa-solid fa-file-invoice-dollar" style="color: #007bff;"></i> Tax Invoices Issued</h4>
+                <h4 style="margin-top:0; margin-bottom: 6px; font-weight: 600;"><i class="fa-solid fa-file-invoice-dollar" style="color: #007bff;"></i> Tax Invoices Issued</h4>
                 <table class="transaction-table">
                     <thead>
                         <tr>
@@ -506,7 +506,7 @@
                     </tbody>
                 </table>
 
-                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;"><i class="fa-solid fa-hand-holding-dollar" style="color: #28a745;"></i> Office Receipts</h4>
+                <h4 style="margin-top:14px; margin-bottom: 6px; font-weight: 600;"><i class="fa-solid fa-hand-holding-dollar" style="color: #28a745;"></i> Office Receipts</h4>
                 <table class="transaction-table">
                     <thead>
                         <tr>
