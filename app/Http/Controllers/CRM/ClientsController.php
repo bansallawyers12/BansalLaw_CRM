@@ -272,11 +272,8 @@ class ClientsController extends Controller
             // Apply orderBy AFTER count for pagination
             $query->orderBy($sortField, $sortDirection);
 
-            $allowedPerPage = [10, 20, 50, 100, 200];
-            $perPage = (int) $request->get('per_page', 20);
-            if (!in_array($perPage, $allowedPerPage, true)) {
-                $perPage = 20;
-            }
+            // Matters listing uses infinite scroll in fixed batches of 20.
+            $perPage = 20;
 
             $teamMembers = \App\Models\Staff::query()
                 ->orderBy('first_name', 'asc')
@@ -304,11 +301,7 @@ class ClientsController extends Controller
             });
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
             $query->orderBy($sortField, $sortDirection);
-            $allowedPerPage = [10, 20, 50, 100, 200];
-            $perPage = (int) $request->get('per_page', 20);
-            if (!in_array($perPage, $allowedPerPage, true)) {
-                $perPage = 20;
-            }
+            $perPage = 20;
             $totalData = 0;
             $lists = $query->paginate($perPage);
         }
@@ -409,11 +402,8 @@ class ClientsController extends Controller
             $totalData = $query->count();
             $query->orderBy($sortField, $sortDirection);
 
-            $allowedPerPage = [10, 20, 50, 100, 200];
-            $perPage = (int) $request->get('per_page', 20);
-            if (!in_array($perPage, $allowedPerPage, true)) {
-                $perPage = 20;
-            }
+            // Closed matters listing uses infinite scroll in fixed batches of 20.
+            $perPage = 20;
 
             $teamMembers = \App\Models\Staff::query()
                 ->orderBy('first_name', 'asc')
@@ -439,11 +429,7 @@ class ClientsController extends Controller
                 });
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
             $query->orderBy($sortField, $sortDirection);
-            $allowedPerPage = [10, 20, 50, 100, 200];
-            $perPage = (int) $request->get('per_page', 20);
-            if (!in_array($perPage, $allowedPerPage, true)) {
-                $perPage = 20;
-            }
+            $perPage = 20;
             $totalData = 0;
             $lists = $query->paginate($perPage);
         }

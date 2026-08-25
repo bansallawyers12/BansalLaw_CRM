@@ -2,7 +2,6 @@
 @section('title', 'Clients Closed Matters')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <link rel="stylesheet" href="{{ asset('css/matters-list.css') }}">
@@ -61,8 +60,16 @@
     ]);
     $activeMatterFilters = $matterFilters->filter(fn($v) => $v !== null && $v !== '')->count();
     $totalCount = method_exists($lists, 'total') ? $lists->total() : (int) ($totalData ?? 0);
+    $currentPage = method_exists($lists, 'currentPage') ? $lists->currentPage() : 1;
+    $lastPage = method_exists($lists, 'lastPage') ? $lists->lastPage() : 1;
+    $loadedCount = method_exists($lists, 'count') ? $lists->count() : 0;
 @endphp
-<div class="listing-container matters-listing">
+<div id="matters-listing-root"
+     class="listing-container matters-listing"
+     data-infinite-scroll="1"
+     data-current-page="{{ $currentPage }}"
+     data-last-page="{{ $lastPage }}"
+     data-per-page="20">
     <section class="listing-section">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
@@ -89,14 +96,6 @@
                                 <i class="fa-solid fa-chart-line"></i> Insights
                             </a>
                             @endif
-                            <div class="per-page-wrap">
-                                <label for="per_page">Show</label>
-                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
-                                    @foreach([10, 20, 50, 100, 200] as $option)
-                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeMatterFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
                                 <i class="fa-solid fa-filter"></i> Filter
                                 @if($activeMatterFilters > 0)
@@ -262,8 +261,22 @@
                             return $currentDirection === 'asc' ? '<i class="fa-solid fa-sort-up"></i>' : '<i class="fa-solid fa-sort-down"></i>';
                         };
                     @endphp
-                    <div class="table-responsive">
-                        <table class="table">
+                    @if($totalCount > 0)
+                    <div class="matters-results-bar">
+                        <span>
+                            Loaded <strong data-loaded-count>{{ number_format($loadedCount) }}</strong>
+                            of <strong>{{ number_format($totalCount) }}</strong> matters
+                        </span>
+                        @if($activeMatterFilters > 0)
+                            <span class="matters-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
+                        @endif
+                        @if($lastPage > 1)
+                            <span class="matters-results-bar__hint"><i class="fa-solid fa-arrow-down"></i> Scroll for more</span>
+                        @endif
+                    </div>
+                    @endif
+                    <div class="table-responsive matters-table-wrap">
+                        <table class="table matters-table">
                             <thead>
                                 <tr>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a></th>
@@ -301,7 +314,7 @@
                                         $displayReason = \App\Support\MatterCompletionChecklist::displayReason($list);
                                         $closedAt = ($isDiscontinued && !empty($list->updated_at)) ? date('d/m/Y H:i', strtotime($list->updated_at)) : '—';
                                         ?>
-                                        <tr id="id_{{@$list->id}}">
+                                        <tr class="matter-data-row" id="id_{{@$list->id}}">
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
                                             <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
@@ -367,8 +380,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="card-footer">
-                        {!! $lists->appends(\Request::except('page'))->render() !!}
+                    <div class="matters-infinite-loader" id="mattersInfiniteLoader" hidden aria-live="polite">
+                        <span class="matters-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Loading more matters...</span>
                     </div>
                 </div>
             </div>
@@ -378,14 +392,9 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/crm/clients/matters-listing-infinite.js') }}?v={{ filemtime(public_path('js/crm/clients/matters-listing-infinite.js')) }}"></script>
 <script>
 jQuery(document).ready(function($){
-    $('#per_page').on('change', function(){
-        var currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('per_page', $(this).val());
-        currentUrl.searchParams.delete('page');
-        window.location.href = currentUrl.toString();
-    });
     $('.matter-quick-filter').on('click', function(){
         var filter = $(this).data('filter');
         $('#matter_quick_date_range').val(filter);

@@ -512,6 +512,83 @@
     color: var(--navy, #1e3d60);
 }
 
+.matters-listing .matters-results-bar__hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sidebar-active, #3a6fa8);
+}
+
+.matters-listing .matter-cell-meta--chip {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(58, 111, 168, 0.1);
+    border: 1px solid rgba(58, 111, 168, 0.18);
+    color: var(--navy, #1e3d60);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.matters-listing .matters-table-wrap {
+    border-radius: 12px;
+    border: 1px solid var(--border, #c8dcef);
+    background: var(--card-bg, #fff);
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.matters-listing .matters-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: 0 1px 0 var(--border, #c8dcef);
+}
+
+.matters-listing .matter-data-row td {
+    transition: background-color 0.15s ease;
+}
+
+.matters-listing .matters-infinite-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    padding: 16px 24px;
+    color: var(--text-muted, #5e7a90);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
+    border-radius: 0 0 10px 10px;
+}
+
+.matters-listing .matters-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.matters-listing .matters-infinite-loader__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(30, 61, 96, 0.15);
+    border-top-color: var(--navy, #1e3d60);
+    border-radius: 50%;
+    animation: mattersInfiniteSpin 0.75s linear infinite;
+}
+
+@keyframes mattersInfiniteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .matters-listing .card-footer {
     background: transparent;
     border-top: 1px solid var(--border, #c8dcef);
@@ -527,5 +604,9 @@
     .matters-listing .card-header-actions {
         width: 100%;
         justify-content: flex-start;
+    }
+
+    .matters-listing .matters-results-bar__hint {
+        margin-left: 0;
     }
 }
