@@ -244,6 +244,8 @@ class LegalFormDocxService
     /**
      * Replace FORMTEXT field values in a .docx by sequential field index (1-based).
      * The SCD template has 26 form fields in a fixed order.
+     * After filling, unwrap fields to plain text and turn off Word form shading
+     * so downloads do not show gray backgrounds behind filled values.
      */
     private function replaceAllFormFields(string $docxPath, array $fieldValuesByIndex): void
     {
@@ -261,24 +263,100 @@ class LegalFormDocxService
         $fldChars = $xpath->query('//w:fldChar');
         $current = null;
         $fieldIndex = 0;
+        $fieldsToUnwrap = [];
 
         foreach ($fldChars as $fc) {
             $type = $fc->getAttribute('w:fldCharType');
             if ($type === 'begin') {
                 $fieldIndex++;
-                $current = ['index' => $fieldIndex];
+                $current = [
+                    'index' => $fieldIndex,
+                    'beginRun' => $fc->parentNode,
+                ];
             } elseif ($type === 'separate' && $current) {
                 $current['separateRun'] = $fc->parentNode;
             } elseif ($type === 'end' && $current) {
+                $current['endRun'] = $fc->parentNode;
                 if (isset($current['separateRun']) && isset($fieldValuesByIndex[$current['index']])) {
                     $this->setFormFieldValue($dom, $current['separateRun'], $fc->parentNode, $fieldValuesByIndex[$current['index']]);
+                }
+                if (isset($current['beginRun'], $current['separateRun'], $current['endRun'])) {
+                    $fieldsToUnwrap[] = $current;
                 }
                 $current = null;
             }
         }
 
+        foreach ($fieldsToUnwrap as $field) {
+            $this->unwrapFormField($field['beginRun'], $field['separateRun'], $field['endRun']);
+        }
+
         $zip->addFromString('word/document.xml', $dom->saveXML());
+
+        $settingsXml = $zip->getFromName('word/settings.xml');
+        if ($settingsXml !== false) {
+            $zip->addFromString('word/settings.xml', $this->disableFormFieldShading($settingsXml));
+        }
+
         $zip->close();
+    }
+
+    /**
+     * Convert a filled FORMTEXT field into plain runs so Word no longer shades it.
+     * Removes begin/instrText/separate/end chrome; keeps the value text run(s).
+     */
+    private function unwrapFormField(\DOMElement $beginRun, \DOMElement $sepRun, \DOMElement $endRun): void
+    {
+        if ($beginRun->parentNode === $sepRun->parentNode) {
+            $para = $beginRun->parentNode;
+            $node = $beginRun;
+            while ($node && $node !== $sepRun) {
+                $next = $node->nextSibling;
+                $para->removeChild($node);
+                $node = $next;
+            }
+            if ($sepRun->parentNode) {
+                $sepRun->parentNode->removeChild($sepRun);
+            }
+        } else {
+            if ($beginRun->parentNode) {
+                $beginRun->parentNode->removeChild($beginRun);
+            }
+            if ($sepRun->parentNode) {
+                $sepRun->parentNode->removeChild($sepRun);
+            }
+        }
+
+        if ($endRun->parentNode) {
+            $endRun->parentNode->removeChild($endRun);
+        }
+    }
+
+    /**
+     * Stop Word from painting gray form-field shading; drop forms protection on export.
+     */
+    private function disableFormFieldShading(string $settingsXml): string
+    {
+        $dom = new \DOMDocument;
+        $dom->loadXML($settingsXml);
+        $xpath = new \DOMXPath($dom);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+        $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+
+        $settings = $xpath->query('/w:settings')->item(0);
+        if (! $settings) {
+            return $settingsXml;
+        }
+
+        foreach ($xpath->query('//w:documentProtection') as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        if ($xpath->query('//w:doNotShadeFormData')->length === 0) {
+            $settings->appendChild($dom->createElementNS($ns, 'w:doNotShadeFormData'));
+        }
+
+        return $dom->saveXML();
     }
 
     private function setFormFieldValue(\DOMDocument $dom, \DOMElement $sepRun, \DOMElement $endRun, string $value): void
