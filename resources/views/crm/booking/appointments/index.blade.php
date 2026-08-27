@@ -4,260 +4,63 @@
 @section('content')
 
 <style>
-/* Website Bookings — Powder Blue & Soft Gold (docs/theme.md) */
+/* Bookings list — Powder Blue & Soft Gold (docs/theme.md), page-scoped only */
 .booking-appointments-page {
     overflow-x: hidden !important;
     max-width: 100% !important;
 }
 
-/* Main panel header — white card, navy title (overrides Stisla / legacy blue bars) */
+.booking-appointments-page > .row > .col-12 > .card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(30, 61, 96, 0.06);
+    overflow: hidden;
+}
+
 .booking-appointments-page > .row > .col-12 > .card > .card-header {
     background: var(--card-bg) !important;
     background-color: var(--card-bg) !important;
     border-bottom: 1px solid var(--border) !important;
     color: var(--navy) !important;
+    padding: 1rem 1.25rem !important;
+    align-items: center;
 }
 
 .booking-appointments-page > .row > .col-12 > .card > .card-header h4 {
     color: var(--navy) !important;
     font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.65rem;
 }
 
-.booking-appointments-page > .row > .col-12 > .card > .card-header h4 .text-muted {
+.booking-appointments-page > .row > .col-12 > .card > .card-header h4 .text-muted,
+.booking-appointments-page > .row > .col-12 > .card > .card-header h4 small {
     color: var(--text-muted) !important;
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 0.82rem;
 }
 
 .booking-appointments-page > .row > .col-12 > .card > .card-body {
-    background: var(--page-bg) !important;
-}
-
-/* KPI stat cards — Stisla uses blue .card-header + white icons; reset to theme.md */
-.booking-appointments-page .card.card-statistic-1 {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-    overflow: hidden;
     background: var(--card-bg) !important;
+    padding: 1.25rem !important;
 }
 
-.booking-appointments-page .card.card-statistic-1 .card-icon {
-    border-radius: 0 !important;
+.booking-appointments-page .card-header-action {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-.booking-appointments-page .card.card-statistic-1 .card-icon i {
-    color: inherit !important;
-    opacity: 1 !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-warning {
-    background: rgba(200, 153, 42, 0.2) !important;
-    background-color: rgba(200, 153, 42, 0.2) !important;
-    color: var(--accent-gold) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-warning i {
-    color: var(--accent-gold) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-primary {
-    background: rgba(30, 61, 96, 0.1) !important;
-    background-color: rgba(30, 61, 96, 0.1) !important;
-    color: var(--navy) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-primary i {
-    color: var(--navy) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-success {
-    background: rgba(30, 122, 82, 0.14) !important;
-    background-color: rgba(30, 122, 82, 0.14) !important;
-    color: var(--success) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-success i {
-    color: var(--success) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-info {
-    background: rgba(58, 111, 168, 0.14) !important;
-    background-color: rgba(58, 111, 168, 0.14) !important;
-    color: var(--sidebar-active) !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-icon.bg-info i {
-    color: var(--sidebar-active) !important;
-}
-
-/* Inner label row — must not use theme’s blue header strip */
-.booking-appointments-page .card.card-statistic-1 .card-wrap .card-header {
-    background: var(--card-bg) !important;
-    background-color: var(--card-bg) !important;
-    border-bottom: 1px solid var(--border) !important;
-    color: var(--text-muted) !important;
-    padding: 0.65rem 1rem !important;
-}
-
-.booking-appointments-page .card.card-statistic-1 .card-wrap .card-header h4 {
-    font-size: 11.5px;
+.booking-appointments-page .card-header-action .btn {
+    border-radius: 8px !important;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted) !important;
-    margin: 0 !important;
+    padding: 0.4rem 0.85rem;
 }
 
-.booking-appointments-page .card.card-statistic-1 .card-wrap .card-body {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--navy) !important;
-    background: var(--card-bg) !important;
-    background-color: var(--card-bg) !important;
-    padding: 0.75rem 1rem !important;
-    line-height: 1.2;
-}
-
-/* Filter strip */
-.booking-appointments-page .filter-section {
-    background: var(--page-bg);
-    border: 1px solid var(--border);
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.booking-appointments-page .filter-section label {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.booking-appointments-page .filter-section .form-control {
-    border-color: var(--border);
-    border-radius: 8px;
-    color: var(--text-dark);
-}
-
-.booking-appointments-page .filter-section .form-control:focus {
-    border-color: var(--sidebar-active);
-    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
-}
-
-/* Table — theme.md tables */
-.booking-appointments-page .table-responsive table.table {
-    --bs-table-bg: transparent;
-    --bs-table-color: var(--text-dark);
-    --bs-table-striped-bg: rgba(221, 234, 248, 0.35);
-    --bs-table-hover-bg: #ebf3ff;
-    border-color: var(--border);
-}
-
-.booking-appointments-page .table-responsive table.table thead th {
-    background: var(--page-bg) !important;
-    color: var(--text-muted) !important;
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-color: var(--border) !important;
-}
-
-.booking-appointments-page .table-responsive table.table tbody td {
-    color: var(--text-dark) !important;
-    border-color: var(--border) !important;
-    vertical-align: middle;
-}
-
-.booking-appointments-page .table-responsive table.table tbody td .text-muted {
-    color: var(--text-muted) !important;
-}
-
-.booking-appointments-page .table-responsive table.table tbody td small.text-muted {
-    color: var(--text-muted) !important;
-}
-
-.booking-appointments-page .table-responsive table.table tbody td small[style*="color"] {
-    color: var(--text-muted) !important;
-    display: block !important;
-    visibility: visible !important;
-}
-
-/* Status / payment badges — theme status colours */
-.booking-appointments-page .table .badge {
-    font-weight: 600;
-    border-radius: 999px;
-    padding: 0.35em 0.65em;
-}
-
-.booking-appointments-page .table .badge.badge-warning {
-    background: rgba(200, 153, 42, 0.15) !important;
-    color: #7a5800 !important;
-}
-
-.booking-appointments-page .table .badge.badge-primary {
-    background: rgba(30, 61, 96, 0.12) !important;
-    color: var(--navy) !important;
-}
-
-.booking-appointments-page .table .badge.badge-success {
-    background: rgba(30, 122, 82, 0.12) !important;
-    color: var(--success) !important;
-}
-
-.booking-appointments-page .table .badge.badge-info {
-    background: rgba(58, 111, 168, 0.12) !important;
-    color: var(--sidebar-active) !important;
-}
-
-.booking-appointments-page .table .badge.badge-danger {
-    background: rgba(168, 48, 32, 0.12) !important;
-    color: var(--danger) !important;
-}
-
-.booking-appointments-page .table .badge.badge-secondary {
-    background: rgba(94, 122, 144, 0.12) !important;
-    color: var(--text-muted) !important;
-}
-
-.booking-appointments-page .table .badge.badge-dark {
-    background: rgba(94, 122, 144, 0.18) !important;
-    color: var(--text-dark) !important;
-}
-
-.booking-appointments-page .table tbody td .badge {
-    color: inherit !important;
-}
-
-/* Action buttons — keep icon contrast */
-.booking-appointments-page .btn-sm.btn-primary {
-    background: var(--navy);
-    border-color: var(--navy);
-}
-
-.booking-appointments-page .btn-sm.btn-primary:hover {
-    background: var(--sidebar-active);
-    border-color: var(--sidebar-active);
-}
-
-.booking-appointments-page .btn-sm.btn-warning {
-    background: var(--accent-gold);
-    border-color: var(--accent-gold);
-    color: #fff;
-}
-
-.booking-appointments-page .btn-sm.btn-info {
-    background: var(--sidebar-active);
-    border-color: var(--sidebar-active);
-    color: #fff;
-}
-
-/*
- * custom.css targets .card-header-action .btn-primary for legacy purple gradient headers
- * (rgba white fill + white text). On our light theme header that reads as invisible on hover.
- */
 .booking-appointments-page .card-header-action .btn.btn-primary {
     background: var(--navy) !important;
     border: 1px solid var(--navy) !important;
@@ -288,6 +91,470 @@
     filter: none !important;
 }
 
+/* KPI strip */
+.booking-appointments-page .ba-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 991px) {
+    .booking-appointments-page .ba-kpi-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575px) {
+    .booking-appointments-page .ba-kpi-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.booking-appointments-page .ba-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    padding: 14px 16px;
+    min-height: 76px;
+}
+
+.booking-appointments-page .ba-kpi__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.booking-appointments-page .ba-kpi__icon--gold {
+    background: rgba(200, 153, 42, 0.15);
+    color: var(--accent-gold);
+}
+
+.booking-appointments-page .ba-kpi__icon--navy {
+    background: rgba(30, 61, 96, 0.1);
+    color: var(--navy);
+}
+
+.booking-appointments-page .ba-kpi__icon--success {
+    background: rgba(30, 122, 82, 0.12);
+    color: var(--success);
+}
+
+.booking-appointments-page .ba-kpi__icon--blue {
+    background: rgba(58, 111, 168, 0.14);
+    color: var(--sidebar-active);
+}
+
+.booking-appointments-page .ba-kpi__meta {
+    min-width: 0;
+}
+
+.booking-appointments-page .ba-kpi__label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    line-height: 1.2;
+}
+
+.booking-appointments-page .ba-kpi__value {
+    margin: 2px 0 0;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.15;
+}
+
+/* Filter toolbar */
+.booking-appointments-page .filter-section {
+    background: linear-gradient(180deg, #f5f9ff 0%, var(--page-bg) 100%);
+    border: 1px solid var(--border);
+    padding: 18px 18px 14px;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.booking-appointments-page .filter-section .ba-filter-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 0.9fr 0.9fr auto;
+    gap: 12px 14px;
+    align-items: end;
+}
+
+@media (max-width: 1199px) {
+    .booking-appointments-page .filter-section .ba-filter-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .booking-appointments-page .filter-section .ba-filter-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 575px) {
+    .booking-appointments-page .filter-section .ba-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.booking-appointments-page .filter-section .ba-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.booking-appointments-page .filter-section .ba-search-wrap {
+    position: relative;
+}
+
+.booking-appointments-page .filter-section .ba-search-wrap > i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-size: 0.9rem;
+}
+
+.booking-appointments-page .filter-section .ba-search-wrap .form-control {
+    padding-left: 36px;
+}
+
+.booking-appointments-page .filter-section .form-control {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
+    background: var(--card-bg);
+    min-height: 40px;
+    font-size: 0.9rem;
+}
+
+.booking-appointments-page .filter-section .form-control:focus {
+    border-color: var(--sidebar-active);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+}
+
+.booking-appointments-page .ba-filter-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.booking-appointments-page .ba-filter-actions .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    min-height: 40px;
+    padding: 0.45rem 1rem;
+    white-space: nowrap;
+}
+
+.booking-appointments-page .ba-filter-actions .btn-primary {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+}
+
+.booking-appointments-page .ba-filter-actions .btn-primary:hover {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
+}
+
+.booking-appointments-page .ba-filter-actions .btn-secondary {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--navy);
+}
+
+.booking-appointments-page .ba-filter-actions .btn-secondary:hover {
+    background: var(--sidebar-bg);
+    border-color: var(--border);
+    color: var(--navy);
+}
+
+/* Table panel */
+.booking-appointments-page .ba-table-panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+}
+
+.booking-appointments-page .ba-table-panel .table-responsive {
+    margin: 0;
+}
+
+.booking-appointments-page .table-responsive table.table {
+    --bs-table-bg: var(--card-bg);
+    --bs-table-color: var(--text-dark);
+    --bs-table-striped-bg: rgba(221, 234, 248, 0.28);
+    --bs-table-hover-bg: #ebf3ff;
+    border-color: var(--border);
+    margin-bottom: 0;
+}
+
+.booking-appointments-page .table-responsive table.table thead th {
+    background: var(--page-bg) !important;
+    color: var(--text-muted) !important;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-color: var(--border) !important;
+    border-bottom-width: 1px;
+    padding: 12px 14px;
+    white-space: nowrap;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td {
+    color: var(--text-dark) !important;
+    border-color: var(--border) !important;
+    vertical-align: middle;
+    padding: 14px;
+}
+
+.booking-appointments-page .table-responsive table.table tbody tr.appointment-data-row {
+    transition: background-color 0.15s ease;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td .text-muted,
+.booking-appointments-page .table-responsive table.table tbody td small.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page .ba-row-num {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.booking-appointments-page .ba-client__name {
+    display: block;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 2px;
+}
+
+.booking-appointments-page .ba-client__name a {
+    color: var(--navy);
+    text-decoration: none;
+}
+
+.booking-appointments-page .ba-client__name a:hover {
+    color: var(--sidebar-active);
+}
+
+.booking-appointments-page .ba-client__line {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.booking-appointments-page .ba-client__line a {
+    color: var(--sidebar-active);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.booking-appointments-page .ba-client__line a:hover {
+    color: var(--navy);
+}
+
+.booking-appointments-page .ba-client__ref {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(30, 61, 96, 0.06);
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.booking-appointments-page .ba-when__date {
+    display: block;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 2px;
+}
+
+.booking-appointments-page .ba-when__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.booking-appointments-page .ba-when__meta i {
+    width: 12px;
+    text-align: center;
+    opacity: 0.85;
+}
+
+.booking-appointments-page .ba-service__main {
+    display: block;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.booking-appointments-page .ba-service__sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+.booking-appointments-page .ba-consultant {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.booking-appointments-page .ba-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    max-width: 220px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.booking-appointments-page .table .badge,
+.booking-appointments-page .table .ba-badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 11px;
+    border-radius: 999px;
+    padding: 0.35em 0.7em;
+    letter-spacing: 0.02em;
+    border: 0;
+}
+
+.booking-appointments-page .table .badge.bg-warning,
+.booking-appointments-page .table .badge.badge-warning {
+    background: rgba(200, 153, 42, 0.15) !important;
+    color: #7a5800 !important;
+}
+
+.booking-appointments-page .table .badge.bg-primary,
+.booking-appointments-page .table .badge.badge-primary {
+    background: rgba(30, 61, 96, 0.12) !important;
+    color: var(--navy) !important;
+}
+
+.booking-appointments-page .table .badge.bg-success,
+.booking-appointments-page .table .badge.badge-success {
+    background: rgba(30, 122, 82, 0.12) !important;
+    color: var(--success) !important;
+}
+
+.booking-appointments-page .table .badge.bg-info,
+.booking-appointments-page .table .badge.badge-info {
+    background: rgba(58, 111, 168, 0.12) !important;
+    color: var(--sidebar-active) !important;
+}
+
+.booking-appointments-page .table .badge.bg-danger,
+.booking-appointments-page .table .badge.badge-danger {
+    background: rgba(168, 48, 32, 0.12) !important;
+    color: var(--danger) !important;
+}
+
+.booking-appointments-page .table .badge.bg-secondary,
+.booking-appointments-page .table .badge.badge-secondary,
+.booking-appointments-page .table .badge.bg-dark,
+.booking-appointments-page .table .badge.badge-dark {
+    background: rgba(94, 122, 144, 0.12) !important;
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page .ba-pay {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.booking-appointments-page .ba-pay__amt {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.booking-appointments-page .ba-actions {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.booking-appointments-page .ba-actions .ba-action {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--navy);
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.booking-appointments-page .ba-actions .ba-action:hover:not(:disabled) {
+    background: var(--page-bg);
+    border-color: var(--sidebar-active);
+    color: var(--sidebar-active);
+}
+
+.booking-appointments-page .ba-actions .ba-action--view:hover:not(:disabled) {
+    background: rgba(30, 61, 96, 0.08);
+    border-color: var(--navy);
+    color: var(--navy);
+}
+
+.booking-appointments-page .ba-actions .ba-action--edit:hover:not(:disabled) {
+    background: rgba(200, 153, 42, 0.12);
+    border-color: var(--accent-gold);
+    color: #7a5800;
+}
+
+.booking-appointments-page .ba-actions .ba-action--quick:hover:not(:disabled) {
+    background: rgba(58, 111, 168, 0.12);
+    border-color: var(--sidebar-active);
+    color: var(--sidebar-active);
+}
+
+.booking-appointments-page .ba-actions .ba-action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .booking-appointments-page .table-responsive table.table tbody td a {
     color: var(--sidebar-active);
     font-weight: 600;
@@ -302,7 +569,7 @@
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    padding: 12px 0 4px;
+    padding: 16px 0 4px;
 }
 
 .booking-appointments-page .appointments-loaded-count {
@@ -337,7 +604,6 @@
 @keyframes appointments-infinite-spin {
     to { transform: rotate(360deg); }
 }
-
 </style>
 
 <div class="section-body booking-appointments-page">
@@ -362,99 +628,58 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Statistics Cards -->
-                    <div class="row mb-4">
-                        <div class="col-lg col-md-6 col-sm-6 col-12">
-                            <div class="card card-statistic-1">
-                                <div class="card-icon bg-warning">
-                                    <i class="fa-solid fa-clock"></i>
-                                </div>
-                                <div class="card-wrap">
-                                    <div class="card-header">
-                                        <h4>Payment Pending</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        {{ $stats['pending'] ?? 0 }}
-                                    </div>
-                                </div>
+                    <div class="ba-kpi-row">
+                        <div class="ba-kpi">
+                            <span class="ba-kpi__icon ba-kpi__icon--gold"><i class="fa-solid fa-clock"></i></span>
+                            <div class="ba-kpi__meta">
+                                <p class="ba-kpi__label">Payment Pending</p>
+                                <p class="ba-kpi__value">{{ $stats['pending'] ?? 0 }}</p>
                             </div>
                         </div>
-                        <div class="col-lg col-md-6 col-sm-6 col-12">
-                            <div class="card card-statistic-1">
-                                <div class="card-icon bg-primary">
-                                    <i class="fa-solid fa-dollar-sign"></i>
-                                </div>
-                                <div class="card-wrap">
-                                    <div class="card-header">
-                                        <h4>Paid</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        {{ $stats['paid'] ?? 0 }}
-                                    </div>
-                                </div>
+                        <div class="ba-kpi">
+                            <span class="ba-kpi__icon ba-kpi__icon--navy"><i class="fa-solid fa-dollar-sign"></i></span>
+                            <div class="ba-kpi__meta">
+                                <p class="ba-kpi__label">Paid</p>
+                                <p class="ba-kpi__value">{{ $stats['paid'] ?? 0 }}</p>
                             </div>
                         </div>
-                        <div class="col-lg col-md-6 col-sm-6 col-12">
-                            <div class="card card-statistic-1">
-                                <div class="card-icon bg-success">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                </div>
-                                <div class="card-wrap">
-                                    <div class="card-header">
-                                        <h4>Confirmed</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        {{ $stats['confirmed'] ?? 0 }}
-                                    </div>
-                                </div>
+                        <div class="ba-kpi">
+                            <span class="ba-kpi__icon ba-kpi__icon--success"><i class="fa-solid fa-circle-check"></i></span>
+                            <div class="ba-kpi__meta">
+                                <p class="ba-kpi__label">Confirmed</p>
+                                <p class="ba-kpi__value">{{ $stats['confirmed'] ?? 0 }}</p>
                             </div>
                         </div>
-                        <div class="col-lg col-md-6 col-sm-6 col-12">
-                            <div class="card card-statistic-1">
-                                <div class="card-icon bg-info">
-                                    <i class="fa-solid fa-calendar-check"></i>
-                                </div>
-                                <div class="card-wrap">
-                                    <div class="card-header">
-                                        <h4>Today</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        {{ $stats['today'] ?? 0 }}
-                                    </div>
-                                </div>
+                        <div class="ba-kpi">
+                            <span class="ba-kpi__icon ba-kpi__icon--blue"><i class="fa-solid fa-calendar-check"></i></span>
+                            <div class="ba-kpi__meta">
+                                <p class="ba-kpi__label">Today</p>
+                                <p class="ba-kpi__value">{{ $stats['today'] ?? 0 }}</p>
                             </div>
                         </div>
-                        <div class="col-lg col-md-6 col-sm-6 col-12">
-                            <div class="card card-statistic-1">
-                                <div class="card-icon bg-primary">
-                                    <i class="fa-solid fa-list"></i>
-                                </div>
-                                <div class="card-wrap">
-                                    <div class="card-header">
-                                        <h4>Total</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        {{ $stats['total'] ?? 0 }}
-                                    </div>
-                                </div>
+                        <div class="ba-kpi">
+                            <span class="ba-kpi__icon ba-kpi__icon--navy"><i class="fa-solid fa-list"></i></span>
+                            <div class="ba-kpi__meta">
+                                <p class="ba-kpi__label">Total</p>
+                                <p class="ba-kpi__value">{{ $stats['total'] ?? 0 }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Filters -->
                     <div class="filter-section">
                         <form method="GET" action="{{ route('booking.appointments.index') }}" id="filter-form" autocomplete="off">
-                            <div class="row mb-3">
-                                <div class="col-md-12">
-                                    <label>Search (client name, email, phone, reference, description)</label>
-                                    <input type="text" class="form-control" name="search" id="filter-search"
-                                           value=""
-                                           placeholder="e.g. name, email, matter ref, or keywords in notes">
+                            <div class="ba-filter-grid">
+                                <div class="ba-field">
+                                    <label for="filter-search">Search</label>
+                                    <div class="ba-search-wrap">
+                                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                        <input type="text" class="form-control" name="search" id="filter-search"
+                                               value=""
+                                               placeholder="Name, email, phone, matter ref, or notes">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <label>Status</label>
+                                <div class="ba-field">
+                                    <label for="filter-status">Status</label>
                                     <select class="form-control" name="status" id="filter-status">
                                         <option value="" {{ ($bookingListStatusForSelect ?? '') === '' ? 'selected' : '' }}>All Status</option>
                                         <option value="pending" {{ ($bookingListStatusForSelect ?? '') === 'pending' ? 'selected' : '' }}>Payment Pending</option>
@@ -465,8 +690,8 @@
                                         <option value="no_show" {{ ($bookingListStatusForSelect ?? '') === 'no_show' ? 'selected' : '' }}>No Show</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <label>Consultant</label>
+                                <div class="ba-field">
+                                    <label for="filter-consultant">Consultant</label>
                                     <select class="form-control" name="consultant_id" id="filter-consultant">
                                         <option value="">All Consultants</option>
                                         @foreach($consultants as $consultant)
@@ -477,52 +702,51 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label>From Date</label>
+                                <div class="ba-field">
+                                    <label for="filter-date-from">From</label>
                                     <input type="date" class="form-control" name="date_from" id="filter-date-from" value="">
                                 </div>
-                                <div class="col-md-2">
-                                    <label>To Date</label>
+                                <div class="ba-field">
+                                    <label for="filter-date-to">To</label>
                                     <input type="date" class="form-control" name="date_to" id="filter-date-to" value="">
                                 </div>
-                                <div class="col-md-2">
-                                    <label>&nbsp;</label>
-                                    <div>
-                                        <button type="submit" class="btn btn-primary" style="width: calc(50% - 5px); margin-right: 5px;">
-                                            <i class="fa-solid fa-filter"></i> Filter
-                                        </button>
-                                        <a href="{{ route('booking.appointments.index') }}" class="btn btn-secondary" style="width: calc(50% - 5px);">
-                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset
-                                        </a>
-                                    </div>
+                                <div class="ba-field ba-filter-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-filter"></i> Filter
+                                    </button>
+                                    <a href="{{ !empty($isAjayAppointmentsView) ? route('booking.appointments.index', ['view' => 'ajay']) : route('booking.appointments.index') }}" class="btn btn-secondary">
+                                        <i class="fa-solid fa-arrow-rotate-right"></i> Reset
+                                    </a>
                                 </div>
                             </div>
                         </form>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="appointments-table">
-                            <thead>
-                                <tr>
-                                    <th width="60">#</th>
-                                    <th>Client</th>
-                                    <th>Appointment</th>
-                                    <th>Service</th>
-                                    <th>Consultant</th>
-                                    <th>Description</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th width="150">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="appointments-table-body">
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
-                                        <i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="ba-table-panel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="appointments-table">
+                                <thead>
+                                    <tr>
+                                        <th width="52">#</th>
+                                        <th>Client</th>
+                                        <th>Appointment</th>
+                                        <th>Service</th>
+                                        <th>Consultant</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                        <th width="124">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointments-table-body">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="appointments-infinite-footer" id="appointments-infinite-footer" hidden>
@@ -641,36 +865,54 @@ function syncAppointmentsCleanUrl() {
 }
 
 function buildAppointmentRowHtml(row, rowNumber) {
-    let clientCell = '';
     const name = escapeHtml(row.client_name || '');
     const email = escapeHtml(row.client_email || '');
     const phone = escapeHtml(row.client_phone || '');
+    let clientCell = '<div class="ba-client">';
     if (row.client_id && row.client_detail_url) {
-        const href = row.client_detail_url;
-        clientCell += '<strong><a href="' + escapeHtml(href) + '" target="_blank">' + name + '</a></strong><br>';
-        clientCell += '<small><a href="' + escapeHtml(href) + '" target="_blank">' + email + '</a></small><br>';
-        clientCell += '<small>' + phone + '</small>';
+        const href = escapeHtml(row.client_detail_url);
+        clientCell += '<span class="ba-client__name"><a href="' + href + '" target="_blank">' + name + '</a></span>';
+        clientCell += '<span class="ba-client__line"><a href="' + href + '" target="_blank">' + email + '</a></span>';
+        clientCell += '<span class="ba-client__line">' + phone + '</span>';
         if (row.client_reference) {
-            clientCell += '<div class="mt-1"><small class="text-muted">' + escapeHtml(row.client_reference) + '</small></div>';
+            clientCell += '<span class="ba-client__ref">' + escapeHtml(row.client_reference) + '</span>';
         }
     } else {
-        clientCell += '<strong>' + name + '</strong><br><small>' + email + '</small><br><small>' + phone + '</small>';
+        clientCell += '<span class="ba-client__name">' + name + '</span>';
+        clientCell += '<span class="ba-client__line">' + email + '</span>';
+        clientCell += '<span class="ba-client__line">' + phone + '</span>';
     }
+    clientCell += '</div>';
 
     const timeLine = escapeHtml(row.appointment_time_label || appointmentStartTimeLabel(row.timeslot_full) || '');
     const locRaw = row.location ? String(row.location) : '';
     const locLabel = locRaw
         ? escapeHtml(locRaw.charAt(0).toUpperCase() + locRaw.slice(1))
         : '';
+    let whenCell = '<div class="ba-when">';
+    whenCell += '<span class="ba-when__date">' + escapeHtml(row.appointment_date_label || '') + '</span>';
+    if (timeLine) {
+        whenCell += '<span class="ba-when__meta"><i class="fa-regular fa-clock"></i> ' + timeLine + '</span>';
+    }
+    if (locLabel) {
+        whenCell += '<span class="ba-when__meta"><i class="fa-solid fa-location-dot"></i> ' + locLabel + '</span>';
+    }
+    whenCell += '</div>';
+
     const serviceMain = row.service_type ? escapeHtml(row.service_type) : 'N/A';
     const serviceSub = row.enquiry_type ? escapeHtml(row.enquiry_type) : '';
-    const consultantCell = row.consultant_name
-        ? escapeHtml(row.consultant_name)
-        : '<span class="text-muted">Not Assigned</span>';
-    let descCell = '<span class="text-muted">N/A</span>';
-    if (row.enquiry_details_short) {
-        descCell = '<small>' + escapeHtml(row.enquiry_details_short) + '</small>';
+    let serviceCell = '<div class="ba-service"><span class="ba-service__main">' + serviceMain + '</span>';
+    if (serviceSub) {
+        serviceCell += '<span class="ba-service__sub">' + serviceSub + '</span>';
     }
+    serviceCell += '</div>';
+
+    const consultantCell = row.consultant_name
+        ? ('<span class="ba-consultant">' + escapeHtml(row.consultant_name) + '</span>')
+        : '<span class="text-muted">Not Assigned</span>';
+    const descCell = row.enquiry_details_short
+        ? ('<div class="ba-desc" title="' + escapeHtml(row.enquiry_details_short) + '">' + escapeHtml(row.enquiry_details_short) + '</div>')
+        : '<span class="text-muted">—</span>';
 
     const badgeClass = escapeHtml(row.status_badge_class || 'secondary');
     const statusLabel = escapeHtml(row.status_label || '');
@@ -679,37 +921,36 @@ function buildAppointmentRowHtml(row, rowNumber) {
     const payText = escapeHtml(row.payment_status != null && String(row.payment_status).trim() !== ''
         ? String(row.payment_status)
         : (row.is_paid ? 'Paid' : 'Free'));
-    let paymentCell = '<span class="badge bg-' + payBadge + '">' + payText + '</span>';
+    let paymentCell = '<div class="ba-pay"><span class="badge bg-' + payBadge + '">' + payText + '</span>';
     if (row.is_paid && amt > 0) {
-        paymentCell += '<br><small><strong>Amount:</strong> $' + escapeHtml(amt.toFixed(2)) + '</small>';
+        paymentCell += '<span class="ba-pay__amt">$' + escapeHtml(amt.toFixed(2)) + '</span>';
     }
+    paymentCell += '</div>';
 
     const showUrl = row.show_url || '';
     const editUrl = row.edit_url || '';
     const viewBtn = showUrl
-        ? ('<a href="' + escapeHtml(showUrl) + '" class="btn btn-sm btn-primary" title="View in CRM"><i class="fa-solid fa-eye"></i></a>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-eye"></i></button>');
+        ? ('<a href="' + escapeHtml(showUrl) + '" class="ba-action ba-action--view" title="View in CRM"><i class="fa-solid fa-eye"></i></a>')
+        : ('<button type="button" class="ba-action" disabled title="Not synced to CRM yet"><i class="fa-solid fa-eye"></i></button>');
     const editBtn = editUrl
-        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fa-solid fa-pen-to-square"></i></a>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-pen-to-square"></i></button>');
+        ? ('<a href="' + escapeHtml(editUrl) + '" class="ba-action ba-action--edit" title="Edit in CRM"><i class="fa-solid fa-pen-to-square"></i></a>')
+        : ('<button type="button" class="ba-action" disabled title="Not synced to CRM yet"><i class="fa-solid fa-pen-to-square"></i></button>');
     const crmId = row.crm_appointment_id;
     const quickBtn = crmId
-        ? ('<button type="button" class="btn btn-sm btn-info quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fa-solid fa-bolt"></i></button>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Requires synced CRM record"><i class="fa-solid fa-bolt"></i></button>');
+        ? ('<button type="button" class="ba-action ba-action--quick quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fa-solid fa-bolt"></i></button>')
+        : ('<button type="button" class="ba-action" disabled title="Requires synced CRM record"><i class="fa-solid fa-bolt"></i></button>');
 
     return (
         '<tr class="appointment-data-row">' +
-        '<td>' + escapeHtml(String(rowNumber)) + '</td>' +
+        '<td><span class="ba-row-num">' + escapeHtml(String(rowNumber)) + '</span></td>' +
         '<td>' + clientCell + '</td>' +
-        '<td><strong>' + escapeHtml(row.appointment_date_label || '') + '</strong><br>' +
-        '<small>' + timeLine + '</small><br>' +
-        '<small><i class="fa-solid fa-location-dot"></i> ' + locLabel + '</small></td>' +
-        '<td>' + serviceMain + '<br><small>' + serviceSub + '</small></td>' +
+        '<td>' + whenCell + '</td>' +
+        '<td>' + serviceCell + '</td>' +
         '<td>' + consultantCell + '</td>' +
         '<td>' + descCell + '</td>' +
         '<td><span class="badge bg-' + badgeClass + '">' + statusLabel + '</span></td>' +
         '<td>' + paymentCell + '</td>' +
-        '<td>' + viewBtn + ' ' + editBtn + ' ' + quickBtn + '</td>' +
+        '<td><div class="ba-actions">' + viewBtn + editBtn + quickBtn + '</div></td>' +
         '</tr>'
     );
 }
