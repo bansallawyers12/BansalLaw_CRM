@@ -1,14 +1,20 @@
 <!-- Appointment Modal -->
-<div class="modal fade add_appointment custom_modal" id="create_appoint" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
+<div class="modal fade add_appointment custom_modal sa-appoint-modal" id="create_appoint" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered">
 		<div class="modal-content">
-			<div class="modal-header appointment-schedule-modal-header">
-				<h5 class="modal-title" id="interestModalLabel">
-					<i class="fa-solid fa-calendar-plus me-2"></i>Schedule Appointment
-				</h5>
+			<div class="modal-header appointment-schedule-modal-header sa-appoint-modal__header">
+				<div class="sa-appoint-modal__heading">
+					<span class="sa-appoint-modal__icon" aria-hidden="true">
+						<i class="fa-solid fa-calendar-plus"></i>
+					</span>
+					<div>
+						<h5 class="modal-title mb-0" id="interestModalLabel">Schedule Appointment</h5>
+						<p class="sa-appoint-modal__subtitle mb-0">Book a consultation for this client</p>
+					</div>
+				</div>
 				<x-crm.modal-close />
 			</div>
-			<div class="modal-body">
+			<div class="modal-body sa-appoint-modal__body">
 				@php
 					$__crmAppointmentConsultants = \App\Models\AppointmentConsultant::query()
 						->where('is_active', true)
@@ -20,265 +26,214 @@
 				    @csrf
 				    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                     <input type="hidden" name="client_unique_id" value="{{$fetchedData->client_id}}">
-					<div class="row">
-						<div class="col-12">
-							<div class="form-group row align-items-center">
-								<label for="client_name" class="col-sm-3 col-form-label">Client Reference No<span class="span_req">*</span></label>
-                                <div class="col-sm-9">
-                                    <input type="text" name="client_name" value="{{ @$fetchedData->client_id }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Client Reference" readonly>
-                                </div>
-                            </div>
+					<input type="hidden" name="timezone" value="Australia/Melbourne">
+
+					<div class="row g-2 mb-2">
+						<div class="col-md-6">
+							<label for="client_name" class="sa-label">Client Reference <span class="span_req">*</span></label>
+							<input type="text" name="client_name" id="client_name" value="{{ @$fetchedData->client_id }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Client reference" readonly>
+						</div>
+						<div class="col-md-6 nature_of_enquiry_row" id="nature_of_enquiry">
+							<label for="noe_id" class="sa-label">Nature of Enquiry <span class="span_req">*</span></label>
+							<select class="form-control enquiry_item modern-select" name="noe_id" id="noe_id" data-valid="required">
+								<option value="">Select Nature of Enquiry</option>
+								@foreach (config('booking_nature_of_enquiry.crm') as $noe)
+									<option value="{{ $noe['id'] }}">{{ $noe['label'] }}</option>
+								@endforeach
+							</select>
+						</div>
+					</div>
+
+					<div class="services_row mb-2" id="services" style="display: none;">
+						<label class="sa-label mb-2">Services <span class="span_req">*</span></label>
+						<div class="sa-service-grid">
+							<label class="sa-service-card service-card-compact service-promo-free" data-service-id="promo_free">
+								<input type="radio" class="services_item sa-service-card__input" name="radioGroup" value="promo_free" id="service_promo_free">
+								<span class="sa-service-card__radio" aria-hidden="true"></span>
+								<span class="sa-service-card__meta">
+									<span class="sa-service-card__title">Free consultation</span>
+									<span class="sa-service-card__time">10 minutes</span>
+								</span>
+								<span class="sa-service-card__price">Free</span>
+							</label>
+							<label class="sa-service-card service-card-compact" data-service-id="paid">
+								<input type="radio" class="services_item sa-service-card__input" name="radioGroup" value="paid" id="service_paid">
+								<span class="sa-service-card__radio" aria-hidden="true"></span>
+								<span class="sa-service-card__meta">
+									<span class="sa-service-card__title">Standard</span>
+									<span class="sa-service-card__time">30 minutes</span>
+								</span>
+								<span class="sa-service-card__price">$150</span>
+							</label>
+							<label class="sa-service-card service-card-compact" data-service-id="paid_extended">
+								<input type="radio" class="services_item sa-service-card__input" name="radioGroup" value="paid_extended" id="service_paid_extended">
+								<span class="sa-service-card__radio" aria-hidden="true"></span>
+								<span class="sa-service-card__meta">
+									<span class="sa-service-card__title">Extended</span>
+									<span class="sa-service-card__time">1 hour</span>
+								</span>
+								<span class="sa-service-card__price">$220</span>
+							</label>
+						</div>
+						<input type="hidden" id="service_id" name="service_id" value="">
+					</div>
+
+					<div class="appointment_row" id="appointment_details" style="display: none;">
+						<div class="consultant-select-cls mb-2">
+							<label for="add_appointment_consultant_id" class="sa-label">Consultant <span class="text-muted fw-normal">(optional)</span></label>
+							<select class="form-control" name="consultant_id" id="add_appointment_consultant_id">
+								<option value="">Select consultant…</option>
+								@foreach ($__crmAppointmentConsultants as $consultant)
+									<option value="{{ $consultant->id }}">{{ $consultant->name }} ({{ $consultant->calendar_type }})</option>
+								@endforeach
+							</select>
+							<small class="sa-hint">Leave empty to assign automatically.</small>
+						</div>
+						{{-- Location fixed to Melbourne (2); hidden so booking/slot APIs and validation stay unchanged --}}
+						<input type="hidden" name="inperson_address" class="inperson_address" value="2" data-val="2" id="crm_appointment_inperson_address" autocomplete="off">
+
+						<div class="row g-2 mb-2 appointment_details_cls">
+							<div class="col-md-6">
+								<label for="appointment_details_select" class="sa-label">Appointment details <span class="span_req">*</span></label>
+								<select class="form-control appointment_item" name="appointment_details" id="appointment_details_select" data-valid="required">
+									<option value="">Select</option>
+									<option value="phone">Phone Call</option>
+									<option value="in_person">In person</option>
+									<option value="video_call" id="video_call_option" style="display: none;">Video Call/Zoom</option>
+								</select>
+							</div>
+							<div class="col-md-6">
+								<label for="preferred_language" class="sa-label">Preferred Language <span class="span_req">*</span></label>
+								<select class="form-control preferred_language" name="preferred_language" id="preferred_language" data-valid="required">
+									<option value="">Select</option>
+									<option value="Hindi">Hindi</option>
+									<option value="English">English</option>
+									<option value="Punjabi">Punjabi</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div class="info_row" id="info" style="display: none;">
+						<div class="mb-2">
+							<label for="description" class="sa-label">Details of Enquiry <span class="span_req">*</span></label>
+							<textarea class="form-control description" id="description" rows="2" placeholder="Enter details of enquiry" name="description" data-valid="required"></textarea>
 						</div>
 
-                        <input type="hidden" name="timezone" value="Australia/Melbourne">
+						<div class="mb-2">
+							<label class="sa-label mb-2">
+								<i class="fa-solid fa-calendar-clock me-1"></i>
+								Date &amp; Time <span class="span_req">*</span>
+							</label>
 
-                        <div class="col-12 col-md-12 col-lg-12 nature_of_enquiry_row" id="nature_of_enquiry">
-							<div class="form-group row align-items-center">
-								<label for="noe_id" class="col-sm-3 col-form-label">Nature of Enquiry<span class="span_req">*</span></label>
-                                <div class="col-sm-9">
-                                    <select class="form-control enquiry_item modern-select" name="noe_id" data-valid="required">
-                                        <option value="">Select Nature of Enquiry</option>
-                                        @foreach (config('booking_nature_of_enquiry.crm') as $noe)
-                                            <option value="{{ $noe['id'] }}">{{ $noe['label'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-						</div>
-
-                        <div class="col-12 col-md-12 col-lg-12 services_row" id="services" style="display: none;">
-							<div class="form-group">
-								<label for="service_id" class="font-weight-bold text-dark mb-3">Services <span class="text-danger">*</span></label>
-								<div class="row">
-									<div class="col-md-4 mb-3 service-promo-free">
-										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="promo_free">
-											<div class="d-flex align-items-center">
-												<input type="radio" class="services_item mt-1" name="radioGroup" value="promo_free" id="service_promo_free">
-												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
-													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Free consultation</h6>
-														<small style="color: #6c757d; font-size: 13px;">10 minutes</small>
-													</div>
-													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
-												</div>
+							<div class="modern-datetime-container-wrapper">
+								<div class="modern-datetime-container">
+									<div class="datetime-content">
+										<div class="calendar-section">
+											<div class="section-header">
+												<i class="fa-solid fa-calendar-check"></i>
+												<span>Select Date</span>
+											</div>
+											<div class="calendar-wrapper">
+												<div id="datetimepicker" class="datePickerCls"></div>
 											</div>
 										</div>
-									</div>
-									<div class="col-md-4 mb-3">
-										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid">
-											<div class="d-flex align-items-center">
-												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid" id="service_paid">
-												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
-													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Standard consultation</h6>
-														<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
-													</div>
-													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
-												</div>
+
+										<div class="timeslot-section">
+											<div class="section-header">
+												<i class="fa-solid fa-clock"></i>
+												<span>Available Slots</span>
 											</div>
-										</div>
-									</div>
-									<div class="col-md-4 mb-3">
-										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid_extended">
-											<div class="d-flex align-items-center">
-												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid_extended" id="service_paid_extended">
-												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
-													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Extended consultation</h6>
-														<small style="color: #6c757d; font-size: 13px;">1 hour</small>
+											<div class="timeslot-wrapper">
+												<div class="showselecteddate" style="display: none;"></div>
+												<div class="timeslots" style="display: none;"></div>
+
+												<div class="selected-date-display">
+													<div class="date-icon">
+														<i class="fa-solid fa-calendar-day"></i>
 													</div>
-													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$220</span>
+													<div class="date-info">
+														<div class="modern-selected-date">Select a date</div>
+														<div class="modern-selected-day">from the calendar</div>
+													</div>
+												</div>
+
+												<div class="timeslots-grid"></div>
+
+												<div class="no-slots-message" style="display: none;">
+													<div class="no-slots-icon">
+														<i class="fa-solid fa-calendar-xmark"></i>
+													</div>
+													<div class="no-slots-text">
+														<h6>No Available Slots</h6>
+														<p>Please select another date</p>
+													</div>
 												</div>
 											</div>
 										</div>
 									</div>
 								</div>
-                                <input type="hidden" id="service_id" name="service_id" value="">
-                            </div>
+							</div>
+
+							<div class="slot-overwrite-section sa-toggle-row mt-2">
+								<label class="sa-switch" for="slot_overwrite">
+									<input type="checkbox" class="form-check-input sa-switch__input" name="slot_overwrite" id="slot_overwrite" value="0">
+									<span class="sa-switch__track" aria-hidden="true"><span class="sa-switch__knob"></span></span>
+									<span class="sa-switch__copy">
+										<span class="sa-switch__title">Slot overwrite</span>
+										<span class="sa-switch__hint">Allow booking outside open slots</span>
+									</span>
+								</label>
+								<input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
+
+								{{-- Hidden 0 so unchecked state is submitted; checked box overrides with 1 --}}
+								<input type="hidden" name="send_confirmation_email" value="0">
+								<label class="sa-switch" for="send_confirmation_email">
+									<input type="checkbox" class="form-check-input sa-switch__input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
+									<span class="sa-switch__track" aria-hidden="true"><span class="sa-switch__knob"></span></span>
+									<span class="sa-switch__copy">
+										<span class="sa-switch__title">Send confirmation email</span>
+										<span class="sa-switch__hint">Notify the client by email</span>
+									</span>
+								</label>
+							</div>
+
+							<div class="slotTimeOverwriteDivCls" style="display: none;">
+								<?php
+								if (!function_exists('generateTimeDropdown')) {
+									function generateTimeDropdown($interval = 15) {
+										$start = new DateTime('00:00');
+										$end = new DateTime('23:45');
+										$intervalDuration = new DateInterval('PT' . $interval . 'M');
+										$times = new DatePeriod($start, $intervalDuration, $end);
+
+										echo '<select class="slot_overwrite_time_dropdown form-control mt-2">';
+										echo '<option value="">Select Time</option>';
+										foreach ($times as $time) {
+											$endTime = clone $time;
+											$endTime->add($intervalDuration);
+											echo '<option value="' . $time->format('g:i A') . ' - ' . $endTime->format('g:i A') . '">';
+											echo $time->format('g:i A') . ' - ' . $endTime->format('g:i A');
+											echo '</option>';
+										}
+										echo '</select>';
+									}
+								}
+								generateTimeDropdown(10);
+								?>
+							</div>
+
+							<input type="hidden" id="timeslot_col_date" name="appoint_date" value="">
+							<input type="hidden" id="timeslot_col_time" name="appoint_time" value="">
+							<span class="timeslot_col_date_time" role="alert" style="display: none;color:#f00;">Date and Time is required.</span>
 						</div>
+					</div>
 
-                        <div class="col-12 col-md-12 col-lg-12 appointment_row" id="appointment_details" style="display: none;">
-                            <div class="form-group consultant-select-cls mb-3">
-                                <label for="add_appointment_consultant_id" class="heading_title">Consultant</label>
-                                <select class="form-control" name="consultant_id" id="add_appointment_consultant_id">
-                                    <option value="">Select Consultant...</option>
-                                    @foreach ($__crmAppointmentConsultants as $consultant)
-                                        <option value="{{ $consultant->id }}">{{ $consultant->name }} ({{ $consultant->calendar_type }})</option>
-                                    @endforeach
-                                </select>
-                                <small class="form-text text-muted d-block mt-2">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                    Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically.
-                                </small>
-                            </div>
-                            {{-- Location fixed to Melbourne (2); hidden so booking/slot APIs and validation stay unchanged --}}
-                            <input type="hidden" name="inperson_address" class="inperson_address" value="2" data-val="2" id="crm_appointment_inperson_address" autocomplete="off">
-
-                            <div class="form-group row align-items-center appointment_details_cls">
-                                <div class="col-12 col-md-6 col-lg-6">
-                                    <label for="appointment_details" class="heading_title">Appointment details <span class="span_req">*</span></label>
-                                    <select class="form-control appointment_item" name="appointment_details" data-valid="required">
-                                        <option value="">Select</option>
-                                        <option value="phone"> Phone Call</option>
-                                        <option value="in_person">In person</option>
-                                        <option value="video_call" id="video_call_option" style="display: none;">Video Call/Zoom</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-12 col-md-6 col-lg-6">
-                                    <label for="preferred_language" class="heading_title">Preferred Language <span class="span_req">*</span></label>
-                                    <select class="form-control preferred_language" name="preferred_language" data-valid="required">
-                                        <option value="">Select</option>
-                                        <option value="Hindi"> Hindi</option>
-                                        <option value="English">English</option>
-                                        <option value="Punjabi">Punjabi</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-12 col-lg-12 row info_row" id="info" style="display: none;">
-							<div class="tab_body">
-                                <div class="row">
-									<div class="col-12 col-md-12 col-lg-12">
-                                        <div class="form-group row align-items-center">
-                                            <label for="description" class="col-sm-3 col-form-label">Details Of Enquiry <span class="span_req">*</span></label>
-                                            <div class="col-sm-9">
-                                                <textarea class="form-control description" placeholder="Enter Details Of Enquiry" name="description" data-valid="required"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-md-12 col-lg-12">
-                                        <!-- Date & Time Label at Top -->
-                                        <div class="form-group">
-                                            <label for="description" class="font-weight-bold text-dark mb-3" style="font-size: 16px;">
-                                                <i class="fa-solid fa-calendar-clock me-2" style="color: var(--navy);"></i>
-                                                Date & Time <span class="span_req">*</span>
-                                            </label>
-
-                                            <!-- Modern DateTime Container (Wider) -->
-                                            <div class="modern-datetime-container-wrapper">
-                                                <div class="modern-datetime-container">
-                                                    <div class="datetime-content">
-                                                        <div class="calendar-section">
-                                                            <div class="section-header">
-                                                                <i class="fa-solid fa-calendar-check"></i>
-                                                                <span>Select Date</span>
-                                                            </div>
-                                                            <div class="calendar-wrapper">
-                                                                <div id='datetimepicker' class="datePickerCls"></div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="timeslot-section">
-                                                            <div class="section-header">
-                                                                <i class="fa-solid fa-clock"></i>
-                                                                <span>Available Time Slots</span>
-                                                            </div>
-                                                            <div class="timeslot-wrapper">
-                                                                <!-- Hidden old container for existing JS -->
-                                                                <div class="showselecteddate" style="display: none;"></div>
-                                                                <div class="timeslots" style="display: none;"></div>
-                                                                
-                                                                <!-- New Modern UI -->
-                                                                <div class="selected-date-display">
-                                                                    <div class="date-icon">
-                                                                        <i class="fa-solid fa-calendar-day"></i>
-                                                                    </div>
-                                                                    <div class="date-info">
-                                                                        <div class="modern-selected-date">Select a date</div>
-                                                                        <div class="modern-selected-day">from the calendar</div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div class="timeslots-grid">
-                                                                    <!-- Time slots will be populated here -->
-                                                                </div>
-                                                                
-                                                                <div class="no-slots-message" style="display: none;">
-                                                                    <div class="no-slots-icon">
-                                                                        <i class="fa-solid fa-calendar-xmark"></i>
-                                                                    </div>
-                                                                    <div class="no-slots-text">
-                                                                        <h6>No Available Slots</h6>
-                                                                        <p>Please select another date</p>
-                                                                    </div>
-                                                    </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Slot Overwrite at Bottom -->
-                                            <div class="slot-overwrite-section mt-3">
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" name="slot_overwrite" id="slot_overwrite" value="0">
-                                                    <label class="form-check-label" for="slot_overwrite">
-                                                        <i class="fa-solid fa-unlock-alt me-2"></i>Slot Overwrite
-                                                    </label>
-                                                    <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
-                                                </div>
-                                                <div class="form-check mt-2">
-                                                    {{-- Hidden 0 so unchecked state is submitted; checked box overrides with 1 --}}
-                                                    <input type="hidden" name="send_confirmation_email" value="0">
-                                                    <input type="checkbox" class="form-check-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
-                                                    <label class="form-check-label" for="send_confirmation_email">
-                                                        <i class="fa-solid fa-envelope me-2"></i>Send confirmation email to client
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                                    <div class="slotTimeOverwriteDivCls" style="display: none;">
-														<?php
-                                                        if (!function_exists('generateTimeDropdown')) {
-                                                            function generateTimeDropdown($interval = 15) {
-                                                                $start = new DateTime('00:00');
-                                                                $end = new DateTime('23:45'); // Set the end time to 11:45 PM
-
-                                                                $intervalDuration = new DateInterval('PT' . $interval . 'M');
-                                                                $times = new DatePeriod($start, $intervalDuration, $end);
-
-                                                                echo '<select class="slot_overwrite_time_dropdown" style="margin-left: 50px;margin-top: 50px;">';
-                                                                echo '<option value="">Select Time</option>';
-                                                                foreach ($times as $time) {
-                                                                    // Calculate the end time for each option
-                                                                    $endTime = clone $time;
-                                                                    $endTime->add($intervalDuration);
-
-                                                                    // Format both start and end times for display
-                                                                    echo '<option value="' . $time->format('g:i A') . ' - ' . $endTime->format('g:i A') . '">';
-                                                                    echo $time->format('g:i A') . ' - ' . $endTime->format('g:i A');
-                                                                    echo '</option>';
-
-                                                                    //echo '<option value="' . $time->format('g:i A') . '">' . $time->format('g:i A') . '</option>';
-                                                                }
-                                                                echo '</select>';
-                                                            }
-                                                        }
-
-                                                        generateTimeDropdown(10); // 10-minute interval (free consult)
-                                                        ?>
-                                                    </div>
-
-                                                <input type="hidden"  id="timeslot_col_date" name="appoint_date" value=""  >
-                                                <input type="hidden"  id="timeslot_col_time" name="appoint_time" value=""  >
-                                                <span class="timeslot_col_date_time" role="alert" style="display: none;color:#f00;">Date and Time is required.</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12 appointment-modal-actions-row">
-							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-								Cancel
-							</button>
-							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary" id="appointform_save">
-								<i class="fa-solid fa-calendar-check me-2"></i>Schedule Appointment
-							</button>
-						</div>
+					<div class="appointment-modal-actions-row sa-appoint-modal__footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+						<button onclick="customValidate('appointform')" type="button" class="btn btn-primary" id="appointform_save">
+							Schedule Appointment
+						</button>
 					</div>
 				</form>
 			</div>
@@ -287,133 +242,393 @@
 </div>
 
 <style>
-/* Appointment Modal - Enhanced Design */
-.add_appointment .modal-content {
-	border-radius: 8px;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Schedule Appointment modal — simple modern (scoped) */
+#create_appoint.sa-appoint-modal .modal-content {
+	font-family: 'Segoe UI', sans-serif;
+	border: 1px solid var(--border, #c8dcef);
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16);
 }
 
-.add_appointment .modal-body {
-	padding: 24px;
-	background-color: #ffffff;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header,
+#create_appoint.sa-appoint-modal .appointment-schedule-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: var(--card-bg, #fff) !important;
+	background-image: none !important;
+	border-bottom: 1px solid var(--border, #c8dcef) !important;
+	padding: 14px 18px !important;
+	color: var(--navy, #1e3d60) !important;
 }
 
-.add_appointment .form-group {
-	margin-bottom: 18px;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__heading {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
 }
 
-.add_appointment .form-control {
-	border: 1.5px solid #ced4da;
-	border-radius: 6px;
-	padding: 10px 14px;
-	color: #212529;
-	background-color: #ffffff;
-	transition: all 0.2s ease;
-}
-
-.add_appointment .form-control:focus {
-	border-color: #0056b3;
-	box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
-	outline: none;
-}
-
-.add_appointment .form-control::placeholder {
-	color: #6c757d;
-}
-
-/* Service Cards */
-.service-card-compact {
-	min-height: 65px;
-	transition: all 0.2s ease;
-}
-
-.service-card-compact:hover {
-	border-color: #0056b3 !important;
-	box-shadow: 0 2px 8px rgba(0, 86, 179, 0.15);
-	transform: translateY(-1px);
-}
-
-.service-card-compact.selected {
-	border-color: #0056b3 !important;
-	border-width: 2px;
-	background-color: #e7f3ff;
-	box-shadow: 0 2px 6px rgba(0, 86, 179, 0.2);
-}
-
-/* Form Labels */
-.add_appointment .col-form-label {
-	font-weight: 600;
-	color: #343a40;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__icon {
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(58, 111, 168, 0.12);
+	color: var(--sidebar-active, #3a6fa8);
 	font-size: 14px;
 }
 
-.add_appointment .heading_title {
-	font-weight: 700;
-	color: #212529;
-	font-size: 15px;
-	margin-bottom: 10px;
+#create_appoint.sa-appoint-modal .modal-title,
+#create_appoint.sa-appoint-modal .modal-header h5 {
+	color: var(--navy, #1e3d60) !important;
+	font-size: 1.05rem !important;
+	font-weight: 700 !important;
+}
+
+#create_appoint.sa-appoint-modal .sa-appoint-modal__subtitle {
+	font-size: 12px;
+	color: var(--text-muted, #5e7a90);
+	font-weight: 500;
+	margin-top: 1px;
+}
+
+#create_appoint.sa-appoint-modal .sa-appoint-modal__body {
+	padding: 14px 18px 8px !important;
+	background: var(--card-bg, #fff) !important;
+	max-height: min(78vh, 820px);
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+#create_appoint.sa-appoint-modal .sa-label {
 	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text-muted, #5e7a90);
+	margin-bottom: 4px;
 }
 
-.add_appointment .span_req {
-	color: #dc3545;
+#create_appoint.sa-appoint-modal .span_req {
+	color: var(--danger, #a83020);
 	font-weight: 700;
 }
 
-/* DateTime Container */
-.modern-datetime-container {
-	border: 1.5px solid #dee2e6;
-	border-radius: 8px;
-	background: #ffffff;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+#create_appoint.sa-appoint-modal .form-control,
+#create_appoint.sa-appoint-modal .form-select {
+	min-height: 38px;
+	border-radius: 8px !important;
+	border: 1px solid var(--border, #c8dcef) !important;
+	color: var(--text-dark, #1a2c40) !important;
+	background: var(--card-bg, #fff) !important;
+	font-size: 0.9rem;
+	box-shadow: none !important;
 }
 
-.datetime-content {
-	display: flex;
-	min-height: 320px;
+#create_appoint.sa-appoint-modal .form-control:focus,
+#create_appoint.sa-appoint-modal .form-select:focus {
+	border-color: var(--sidebar-active, #3a6fa8) !important;
+	box-shadow: none !important;
+	outline: none;
 }
 
-.calendar-section {
-	flex: 0 0 45%;
-	padding: 18px;
-	border-right: 1.5px solid #e9ecef;
-	background-color: #fafbfc;
+#create_appoint.sa-appoint-modal textarea.form-control {
+	min-height: 64px;
+	resize: vertical;
 }
 
-.timeslot-section {
-	flex: 0 0 55%;
-	padding: 18px;
-	background-color: #ffffff;
+#create_appoint.sa-appoint-modal .sa-hint {
+	display: block;
+	margin-top: 4px;
+	font-size: 11.5px;
+	color: var(--text-muted, #5e7a90);
 }
 
-.section-header {
+/* Service cards + modern radio */
+#create_appoint.sa-appoint-modal .sa-service-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card,
+#create_appoint.sa-appoint-modal .service-card-compact {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	margin-bottom: 14px;
-	padding-bottom: 10px;
-	border-bottom: 2px solid #e9ecef;
+	margin: 0;
+	padding: 10px 12px;
+	min-height: 56px;
+	border: 1px solid var(--border, #c8dcef);
+	border-radius: 10px;
+	background: var(--card-bg, #fff);
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+	box-shadow: none !important;
+	transform: none !important;
 }
 
-.section-header i {
-	color: #0056b3;
-	font-size: 16px;
+#create_appoint.sa-appoint-modal .sa-service-card:hover {
+	border-color: var(--sidebar-active, #3a6fa8);
 }
 
-.section-header span {
+#create_appoint.sa-appoint-modal .sa-service-card.selected,
+#create_appoint.sa-appoint-modal .service-card-compact.selected,
+#create_appoint.sa-appoint-modal .sa-service-card:has(.sa-service-card__input:checked) {
+	border-color: var(--sidebar-active, #3a6fa8);
+	background: rgba(58, 111, 168, 0.08);
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	pointer-events: none;
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__radio {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 2px solid #a8bdd0;
+	background: #fff;
+	position: relative;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__radio::after {
+	content: '';
+	position: absolute;
+	inset: 3px;
+	border-radius: 50%;
+	background: var(--sidebar-active, #3a6fa8);
+	transform: scale(0);
+	transition: transform 0.15s ease;
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card.selected .sa-service-card__radio,
+#create_appoint.sa-appoint-modal .sa-service-card:has(.sa-service-card__input:checked) .sa-service-card__radio {
+	border-color: var(--sidebar-active, #3a6fa8);
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card.selected .sa-service-card__radio::after,
+#create_appoint.sa-appoint-modal .sa-service-card:has(.sa-service-card__input:checked) .sa-service-card__radio::after {
+	transform: scale(1);
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__meta {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__title {
+	font-size: 13px;
 	font-weight: 700;
-	font-size: 15px;
-	color: #212529;
-	letter-spacing: 0.3px;
+	color: var(--navy, #1e3d60);
+	line-height: 1.2;
 }
 
-.calendar-wrapper {
+#create_appoint.sa-appoint-modal .sa-service-card__time {
+	font-size: 11.5px;
+	color: var(--text-muted, #5e7a90);
+}
+
+#create_appoint.sa-appoint-modal .sa-service-card__price {
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--success, #1e7a52);
+	background: rgba(30, 122, 82, 0.1);
+	border-radius: 999px;
+	padding: 3px 8px;
+	white-space: nowrap;
+}
+
+/* Consultant Tom Select — no shadow */
+#create_appoint.sa-appoint-modal .ts-wrapper,
+#create_appoint.sa-appoint-modal .ts-wrapper.single,
+#create_appoint.sa-appoint-modal .ts-wrapper.form-control {
+	width: 100% !important;
+	padding: 0 !important;
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+#create_appoint.sa-appoint-modal .ts-wrapper .ts-control,
+#create_appoint.sa-appoint-modal .ts-wrapper.focus .ts-control,
+#create_appoint.sa-appoint-modal .ts-wrapper.input-active .ts-control,
+#create_appoint.sa-appoint-modal .ts-wrapper.dropdown-active .ts-control {
+	min-height: 38px;
+	border-radius: 8px !important;
+	border: 1px solid var(--border, #c8dcef) !important;
+	background: var(--card-bg, #fff) !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+#create_appoint.sa-appoint-modal .ts-wrapper.focus .ts-control,
+#create_appoint.sa-appoint-modal .ts-wrapper.input-active .ts-control {
+	border-color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+#create_appoint.sa-appoint-modal .ts-wrapper .ts-control > input {
+	box-shadow: none !important;
+	outline: none !important;
+	width: 100% !important;
+	min-width: 10rem !important;
+	opacity: 1 !important;
+}
+
+/* Toggle switches */
+#create_appoint.sa-appoint-modal .sa-toggle-row {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 0;
+	background: transparent;
+	border: 0;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--border, #c8dcef);
+	border-radius: 10px;
+	background: var(--page-bg, #f0f6ff);
+	cursor: pointer;
+	user-select: none;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch:has(.sa-switch__input:checked) {
+	background: rgba(58, 111, 168, 0.1);
+	border-color: var(--sidebar-active, #3a6fa8);
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	pointer-events: none;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__track {
+	position: relative;
+	flex-shrink: 0;
+	width: 42px;
+	height: 24px;
+	border-radius: 999px;
+	background: #c5d4e4;
+	border: 1px solid #a8bdd0;
+	transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__knob {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(26, 44, 64, 0.28);
+	transition: transform 0.18s ease;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__input:checked + .sa-switch__track {
+	background: var(--sidebar-active, #3a6fa8);
+	border-color: var(--sidebar-active, #3a6fa8);
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__input:checked + .sa-switch__track .sa-switch__knob {
+	transform: translateX(18px);
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--navy, #1e3d60);
+}
+
+#create_appoint.sa-appoint-modal .sa-switch__hint {
+	font-size: 11.5px;
+	color: var(--text-muted, #5e7a90);
+}
+
+/* Date/time panel */
+#create_appoint.sa-appoint-modal .modern-datetime-container {
+	border: 1px solid var(--border, #c8dcef);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: none;
+	overflow: hidden;
+}
+
+#create_appoint.sa-appoint-modal .datetime-content {
+	display: flex;
+	min-height: 280px;
+}
+
+#create_appoint.sa-appoint-modal .calendar-section {
+	flex: 0 0 45%;
 	padding: 12px;
-	min-height: 260px;
+	border-right: 1px solid var(--border, #c8dcef);
+	background: var(--page-bg, #f0f6ff);
 }
 
-/* Calendar Styling — Flatpickr inline */
-.calendar-wrapper .flatpickr-calendar {
+#create_appoint.sa-appoint-modal .timeslot-section {
+	flex: 0 0 55%;
+	padding: 12px;
+	background: #fff;
+}
+
+#create_appoint.sa-appoint-modal .section-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--border, #c8dcef);
+}
+
+#create_appoint.sa-appoint-modal .section-header i {
+	color: var(--sidebar-active, #3a6fa8);
+	font-size: 14px;
+}
+
+#create_appoint.sa-appoint-modal .section-header span {
+	font-weight: 700;
+	font-size: 13px;
+	color: var(--navy, #1e3d60);
+}
+
+#create_appoint.sa-appoint-modal .calendar-wrapper {
+	padding: 4px;
+	min-height: 240px;
+}
+
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-calendar {
 	border: none;
 	background: transparent;
 	padding: 0;
@@ -421,293 +636,213 @@
 	width: 100%;
 }
 
-.calendar-wrapper .flatpickr-month {
-	background: #0056b3;
-	color: #ffffff;
-	border-radius: 6px 6px 0 0;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-month {
+	background: var(--navy, #1e3d60);
+	color: #fff;
+	border-radius: 8px 8px 0 0;
 	padding: 6px 0;
 }
 
-.calendar-wrapper .flatpickr-current-month,
-.calendar-wrapper .flatpickr-current-month .cur-month,
-.calendar-wrapper .flatpickr-current-month .cur-year,
-.calendar-wrapper .flatpickr-current-month .numInputWrapper {
-	color: #ffffff;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-current-month,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-current-month .cur-month,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-current-month .cur-year,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-current-month .numInputWrapper {
+	color: #fff;
 	font-weight: 700;
 	font-size: 13px;
 }
 
-.calendar-wrapper .flatpickr-prev-month,
-.calendar-wrapper .flatpickr-next-month {
-	color: #ffffff !important;
-	fill: #ffffff !important;
-	cursor: pointer;
-	border-radius: 4px;
-	transition: all 0.2s ease;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-prev-month,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-next-month {
+	color: #fff !important;
+	fill: #fff !important;
 }
 
-.calendar-wrapper .flatpickr-prev-month:hover,
-.calendar-wrapper .flatpickr-next-month:hover {
-	background: #e7f3ff !important;
-	color: #004085 !important;
-	fill: #004085 !important;
-}
-
-.calendar-wrapper .flatpickr-weekdays {
-	background: transparent;
-}
-
-.calendar-wrapper .flatpickr-weekday {
-	background: transparent;
-	color: #004085;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-weekday {
+	color: var(--navy, #1e3d60);
 	font-weight: 700;
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	font-size: 11px;
 }
 
-.calendar-wrapper .flatpickr-day {
-	padding: 8px 5px;
-	text-align: center;
-	cursor: pointer;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day {
 	border-radius: 6px;
-	color: #212529;
-	font-weight: 500;
-	transition: all 0.2s ease;
 	border: none;
-	max-width: none;
+	font-weight: 500;
 }
 
-.calendar-wrapper .flatpickr-day:hover,
-.calendar-wrapper .flatpickr-day.inRange {
-	background: #cfe2ff;
-	color: #004085;
-	font-weight: 600;
-	border-color: #cfe2ff;
-}
-
-.calendar-wrapper .flatpickr-day.selected,
-.calendar-wrapper .flatpickr-day.selected:hover {
-	background: #0056b3;
-	border-color: #0056b3;
-	color: #ffffff;
-	font-weight: 700;
-	box-shadow: 0 2px 4px rgba(0, 86, 179, 0.3);
-}
-
-.calendar-wrapper .flatpickr-day.today {
-	border-color: #0056b3;
-	font-weight: 700;
-}
-
-.calendar-wrapper .flatpickr-day.today:not(.selected) {
-	color: #0056b3;
-}
-
-.calendar-wrapper .flatpickr-day.flatpickr-disabled,
-.calendar-wrapper .flatpickr-day.flatpickr-disabled:hover {
-	color: #adb5bd;
-	background-color: #f8f9fa;
-	cursor: not-allowed;
-	opacity: 0.6;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day:hover,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day.inRange {
+	background: rgba(58, 111, 168, 0.15);
+	color: var(--navy, #1e3d60);
 	border-color: transparent;
 }
 
-.calendar-wrapper .flatpickr-day.prevMonthDay,
-.calendar-wrapper .flatpickr-day.nextMonthDay {
-	color: #adb5bd;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day.selected,
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day.selected:hover {
+	background: var(--sidebar-active, #3a6fa8);
+	border-color: var(--sidebar-active, #3a6fa8);
+	color: #fff;
+	box-shadow: none;
 }
 
-/* Timeslots */
-.timeslot-wrapper {
-	min-height: 260px;
+#create_appoint.sa-appoint-modal .calendar-wrapper .flatpickr-day.today:not(.selected) {
+	color: var(--sidebar-active, #3a6fa8);
+	font-weight: 700;
+}
+
+#create_appoint.sa-appoint-modal .timeslot-wrapper {
+	min-height: 240px;
 	position: relative;
 }
 
-.selected-date-display {
-	background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-	color: #ffffff;
-	padding: 12px 16px;
-	border-radius: 6px;
-	margin-bottom: 14px;
+#create_appoint.sa-appoint-modal .selected-date-display {
+	background: var(--navy, #1e3d60);
+	color: #fff;
+	padding: 10px 12px;
+	border-radius: 8px;
+	margin-bottom: 10px;
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	box-shadow: 0 2px 4px rgba(0, 86, 179, 0.2);
+	box-shadow: none;
 }
 
-.date-icon {
+#create_appoint.sa-appoint-modal .date-icon {
 	width: 28px;
 	height: 28px;
-	font-size: 14px;
-	background: rgba(255, 255, 255, 0.2);
-	border-radius: 4px;
+	font-size: 13px;
+	background: rgba(255, 255, 255, 0.18);
+	border-radius: 6px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
-.date-info .modern-selected-date {
+#create_appoint.sa-appoint-modal .date-info .modern-selected-date {
 	font-weight: 700;
-	font-size: 15px;
-	color: #ffffff;
+	font-size: 14px;
+	color: #fff;
 }
 
-.date-info .modern-selected-day {
-	font-size: 13px;
-	color: rgba(255, 255, 255, 0.9);
+#create_appoint.sa-appoint-modal .date-info .modern-selected-day {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.85);
 }
 
-.timeslots-grid {
+#create_appoint.sa-appoint-modal .timeslots-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
-	gap: 10px;
-	max-height: 220px;
+	gap: 8px;
+	max-height: 200px;
 	overflow-y: auto;
-	padding: 4px;
+	padding: 2px;
 }
 
-.timeslots-grid::-webkit-scrollbar {
-	width: 6px;
-}
-
-.timeslots-grid::-webkit-scrollbar-track {
-	background: #f1f3f5;
-	border-radius: 3px;
-}
-
-.timeslots-grid::-webkit-scrollbar-thumb {
-	background: #adb5bd;
-	border-radius: 3px;
-}
-
-.timeslots-grid::-webkit-scrollbar-thumb:hover {
-	background: #868e96;
-}
-
-.timeslots-grid .timeslot {
-	border: 1.5px solid #dee2e6;
-	border-radius: 6px;
-	padding: 10px 12px;
+#create_appoint.sa-appoint-modal .timeslots-grid .timeslot {
+	border: 1px solid var(--border, #c8dcef);
+	border-radius: 8px;
+	padding: 8px 10px;
 	text-align: center;
 	cursor: pointer;
-	font-size: 13px;
-	font-weight: 500;
-	color: #212529;
-	background-color: #ffffff;
-	transition: all 0.2s ease;
-}
-
-.timeslots-grid .timeslot:hover {
-	border-color: #0056b3;
-	background: #e7f3ff;
-	color: #004085;
+	font-size: 12.5px;
 	font-weight: 600;
-	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 86, 179, 0.15);
+	color: var(--text-dark, #1a2c40);
+	background: #fff;
+	box-shadow: none;
+	transform: none;
 }
 
-.timeslots-grid .timeslot.selected {
-	border-color: #0056b3;
-	background: #0056b3;
-	color: #ffffff;
-	font-weight: 700;
-	box-shadow: 0 2px 6px rgba(0, 86, 179, 0.3);
+#create_appoint.sa-appoint-modal .timeslots-grid .timeslot:hover {
+	border-color: var(--sidebar-active, #3a6fa8);
+	background: rgba(58, 111, 168, 0.08);
+	color: var(--navy, #1e3d60);
 }
 
-.timeslots-grid .timeslot.disabled {
+#create_appoint.sa-appoint-modal .timeslots-grid .timeslot.selected {
+	border-color: var(--sidebar-active, #3a6fa8);
+	background: var(--sidebar-active, #3a6fa8);
+	color: #fff;
+	box-shadow: none;
+}
+
+#create_appoint.sa-appoint-modal .timeslots-grid .timeslot.disabled {
 	color: #adb5bd;
-	background-color: #f8f9fa;
+	background: #f8f9fa;
 	border-color: #e9ecef;
 	cursor: not-allowed;
-	opacity: 0.6;
+	opacity: 0.7;
 }
 
-.timeslots-grid .timeslot.disabled:hover {
-	transform: none;
-	box-shadow: none;
-	border-color: #e9ecef;
-	background-color: #f8f9fa;
-	color: #adb5bd;
-}
-
-.no-slots-message {
+#create_appoint.sa-appoint-modal .no-slots-message {
 	text-align: center;
-	padding: 40px 24px;
-	display: none;
-	border: 2px dashed #dee2e6;
+	padding: 28px 16px;
+	border: 1px dashed var(--border, #c8dcef);
 	border-radius: 8px;
-	background-color: #f8f9fa;
+	background: var(--page-bg, #f0f6ff);
 }
 
-.no-slots-icon {
-	color: #868e96;
-	font-size: 40px;
-	margin-bottom: 12px;
+#create_appoint.sa-appoint-modal .no-slots-icon {
+	color: var(--text-muted, #5e7a90);
+	font-size: 28px;
+	margin-bottom: 8px;
 }
 
-.no-slots-text h6 {
-	color: #495057;
+#create_appoint.sa-appoint-modal .no-slots-text h6 {
+	color: var(--navy, #1e3d60);
 	font-weight: 700;
-	margin-bottom: 6px;
-	font-size: 16px;
-}
-
-.no-slots-text p {
-	color: #6c757d;
+	margin-bottom: 4px;
 	font-size: 14px;
 }
 
-.timeslot-wrapper .no-slots-message {
+#create_appoint.sa-appoint-modal .no-slots-text p {
+	color: var(--text-muted, #5e7a90);
+	font-size: 12.5px;
+	margin: 0;
+}
+
+#create_appoint.sa-appoint-modal .timeslot-wrapper .no-slots-message {
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: calc(100% - 24px);
+	width: calc(100% - 16px);
 }
 
-/* Slot Overwrite */
-.slot-overwrite-section {
-	padding: 12px 14px;
-	background: #f8f9fa;
-	border: 1.5px solid #dee2e6;
-	border-radius: 6px;
-	margin-top: 14px;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__footer,
+#create_appoint.sa-appoint-modal .appointment-modal-actions-row {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 8px;
+	margin-top: 10px;
+	padding: 12px 0 4px;
+	border-top: 1px solid var(--border, #c8dcef);
 }
 
-.slot-overwrite-section .form-check-label {
-	cursor: pointer;
-	color: #495057;
-	font-weight: 500;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__footer .btn {
+	border-radius: 8px;
+	font-weight: 600;
+	min-height: 36px;
+	padding: 0.4rem 0.95rem;
 }
 
-.slot-overwrite-section .form-check-label i {
-	color: #0056b3;
-	margin-right: 6px;
-}
-
-.slot-overwrite-section .form-check-input:checked ~ .form-check-label {
-	color: #0056b3;
-	font-weight: 700;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-	.datetime-content {
+	#create_appoint.sa-appoint-modal .sa-service-grid {
+		grid-template-columns: 1fr;
+	}
+
+	#create_appoint.sa-appoint-modal .datetime-content {
 		flex-direction: column;
 	}
-	
-	.calendar-section {
+
+	#create_appoint.sa-appoint-modal .calendar-section {
+		flex: none;
 		border-right: none;
-		border-bottom: 1.5px solid #e9ecef;
+		border-bottom: 1px solid var(--border, #c8dcef);
 	}
-	
-	.timeslots-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
-	
-	.add_appointment .modal-body {
-		padding: 18px;
+
+	#create_appoint.sa-appoint-modal .timeslot-section {
+		flex: none;
 	}
 }
 </style>
@@ -779,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		// Show Free Consultation service by default when modal opens
 		const promoFreeService = document.querySelector('.service-promo-free');
 		if (promoFreeService) {
-			promoFreeService.style.display = 'block';
+			promoFreeService.style.display = '';
 		}
 		// Reset service selection
 		document.querySelectorAll('.services_item').forEach(radio => {
@@ -806,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		// Show Free Consultation service by default when modal is closed (for next open)
 		const promoFreeService = document.querySelector('.service-promo-free');
 		if (promoFreeService) {
-			promoFreeService.style.display = 'block';
+			promoFreeService.style.display = '';
 		}
 	});
 	
@@ -860,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				
 				const promoFreeService = document.querySelector('.service-promo-free');
 				if (promoFreeService) {
-					promoFreeService.style.display = 'block';
+					promoFreeService.style.display = '';
 				}
 			} else {
 				document.getElementById('services').style.display = 'none';

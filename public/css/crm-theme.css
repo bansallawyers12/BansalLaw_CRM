@@ -5342,36 +5342,36 @@ body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-danger {
   color: var(--danger) !important;
 }
 
-/* ---------- Schedule Appointment modal (#create_appoint) — docs/theme.md ----------
-   Global body.sidebar-mini h1–h5 { navy } was forcing an illegible title on the blue header. */
+/* ---------- Schedule Appointment modal (#create_appoint) — light simple header ---------- */
 body.sidebar-mini #create_appoint.add_appointment .modal-content {
   border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+  box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16) !important;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .appointment-schedule-modal-header,
-body.sidebar-mini #create_appoint.add_appointment .modal-header {
-  background: var(--navy) !important;
+body.sidebar-mini #create_appoint.add_appointment .modal-header,
+body.sidebar-mini #create_appoint.add_appointment .sa-appoint-modal__header {
+  background: var(--card-bg) !important;
   background-image: none !important;
-  border-bottom: 3px solid var(--accent-gold) !important;
-  color: #fff !important;
-  padding: 18px 24px !important;
-  overflow: hidden;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+  padding: 14px 18px !important;
+  overflow: visible;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title i,
 body.sidebar-mini #create_appoint.add_appointment .modal-header h5 {
-  color: #fff !important;
+  color: var(--navy) !important;
   font-weight: 700 !important;
-  font-size: 18px !important;
+  font-size: 1.05rem !important;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close {
-  color: #fff !important;
-  opacity: 0.92 !important;
+  color: var(--text-muted) !important;
+  opacity: 0.75 !important;
   text-shadow: none !important;
   font-weight: 400 !important;
   overflow: hidden;
@@ -5400,7 +5400,7 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:hover,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:focus {
   opacity: 1 !important;
-  color: #fff !important;
+  color: var(--navy) !important;
 }
 
 /* Create Note (enhanced) #create_note_d — same as appointment modal: global h5 { navy } made title illegible on gradient header
@@ -5617,11 +5617,11 @@ body.sidebar-mini #create_appoint.add_appointment .appointment-modal-actions-row
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-body {
-  padding: 20px 24px 18px;
+  padding: 14px 18px 8px;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-body .form-group {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 /* Signature dashboard — “Send New Document” CTA is an <a>; global link styling must not wash out label */
