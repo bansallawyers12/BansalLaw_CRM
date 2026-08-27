@@ -189,9 +189,9 @@
 
 <!-- Important event create / edit -->
 <div class="modal fade booking-calendar-modal important-event-modal" id="importantEventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header important-event-modal__header">
                 <div class="important-event-modal__heading">
                     <span class="important-event-modal__icon" id="importantEventTypeSwatch" aria-hidden="true">
                         <i class="fa-solid fa-calendar-plus"></i>
@@ -206,115 +206,96 @@
             <div class="modal-body">
                 <input type="hidden" id="importantEventId" value="">
 
-                <section class="important-event-section">
-                    <h6 class="important-event-section__title">
-                        <i class="fa-solid fa-pen-to-square"></i> Event details
-                    </h6>
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label" for="importantEventTitle">Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="importantEventTitle" maxlength="255"
-                                   placeholder="e.g. Federal Court mention, team meeting">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="importantEventType">Type <span class="text-danger">*</span></label>
-                            <select class="form-select" id="importantEventType">
-                                <option value="court">Court / Hearing</option>
-                                <option value="meeting">Meeting</option>
-                                <option value="deadline">Deadline</option>
-                                <option value="reminder">Reminder</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-8">
+                        <label class="form-label" for="importantEventTitle">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="importantEventTitle" maxlength="255"
+                               placeholder="e.g. Federal Court mention">
                     </div>
-                </section>
-
-                <section class="important-event-section">
-                    <h6 class="important-event-section__title">
-                        <i class="fa-solid fa-clock"></i> Schedule
-                    </h6>
-                    <div class="row g-3 align-items-end">
-                        <div class="col-sm-6 col-lg-4">
-                            <label class="form-label" for="importantEventDate">Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="importantEventDate">
-                        </div>
-                        <div class="col-6 col-lg-3">
-                            <label class="form-label" for="importantEventStartTime">Start time</label>
-                            <input type="time" class="form-control" id="importantEventStartTime">
-                        </div>
-                        <div class="col-6 col-lg-3">
-                            <label class="form-label" for="importantEventEndTime">End time</label>
-                            <input type="time" class="form-control" id="importantEventEndTime">
-                        </div>
-                        <div class="col-sm-12 col-lg-2">
-                            <div class="form-check important-event-all-day">
-                                <input type="checkbox" class="form-check-input" id="importantEventAllDay">
-                                <label class="form-check-label" for="importantEventAllDay">All day</label>
-                            </div>
-                        </div>
+                    <div class="col-4">
+                        <label class="form-label" for="importantEventType">Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="importantEventType">
+                            <option value="court">Court</option>
+                            <option value="meeting" selected>Meeting</option>
+                            <option value="deadline">Deadline</option>
+                            <option value="reminder">Reminder</option>
+                            <option value="other">Other</option>
+                        </select>
                     </div>
-                </section>
+                </div>
 
-                <section class="important-event-section">
-                    <h6 class="important-event-section__title">
-                        <i class="fa-solid fa-location-dot"></i> People &amp; place
-                    </h6>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label" for="importantEventClientSelect">
-                                Link to client <span class="text-muted fw-normal">(optional)</span>
-                            </label>
-                            <input type="hidden" id="importantEventClientId" value="">
-                            <input type="hidden" id="importantEventClientEncoded" value="">
-                            <select id="importantEventClientSelect" class="form-control important-event-client-select"></select>
-                            <div class="form-text">Type name, email, phone or ref to search</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="importantEventLocation">Location</label>
-                            <input type="text" class="form-control" id="importantEventLocation" maxlength="255"
-                                   placeholder="Court name, room, or address">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="importantEventCalendarScope">Show on calendar</label>
-                            <select class="form-select" id="importantEventCalendarScope">
-                                <option value="{{ $type }}">This calendar only ({{ $calendarTitle }})</option>
-                                <option value="">Both Ajay &amp; Michael calendars</option>
-                            </select>
-                        </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-4">
+                        <label class="form-label" for="importantEventDate">Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="importantEventDate">
                     </div>
-                </section>
-
-                <section class="important-event-section important-event-section--last">
-                    <h6 class="important-event-section__title">
-                        <i class="fa-solid fa-bell"></i> Reminder &amp; notes
-                    </h6>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="importantEventReminder">Pop-up reminder</label>
-                            <select class="form-select" id="importantEventReminder">
-                                <option value="">No reminder</option>
-                                <option value="10">10 minutes before</option>
-                                <option value="15">15 minutes before</option>
-                                <option value="30">30 minutes before</option>
-                                <option value="60">1 hour before</option>
-                                <option value="120">2 hours before</option>
-                                <option value="1440">1 day before</option>
-                                <option value="2880">2 days before</option>
-                                <option value="10080">1 week before</option>
-                            </select>
-                            <div class="form-text">A banner will pop up on screen when the reminder is due</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="importantEventNotes">Notes</label>
-                            <textarea class="form-control" id="importantEventNotes" rows="3" maxlength="5000"
-                                      placeholder="Optional details"></textarea>
-                        </div>
+                    <div class="col-4">
+                        <label class="form-label" for="importantEventStartTime">Start</label>
+                        <input type="time" class="form-control" id="importantEventStartTime"
+                               min="09:00" max="18:00" step="60">
                     </div>
-                </section>
+                    <div class="col-4">
+                        <label class="form-label" for="importantEventEndTime">End</label>
+                        <input type="time" class="form-control" id="importantEventEndTime"
+                               min="09:00" max="18:00" step="60">
+                    </div>
+                </div>
 
-                <div class="important-event-tip">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>Court dates added on a <strong>client profile → Court Dates tab</strong> also appear here automatically.</span>
+                <label class="important-event-switch mb-3" for="importantEventAllDay">
+                    <input type="checkbox" id="importantEventAllDay" class="important-event-switch__input">
+                    <span class="important-event-switch__track" aria-hidden="true">
+                        <span class="important-event-switch__knob"></span>
+                    </span>
+                    <span class="important-event-switch__copy">
+                        <span class="important-event-switch__title">All day</span>
+                        <span class="important-event-switch__hint">9:00 AM – 6:00 PM when timed</span>
+                    </span>
+                </label>
+
+                <div class="mb-2">
+                    <label class="form-label" for="importantEventClientSelect">
+                        Client <span class="text-muted fw-normal">(optional)</span>
+                    </label>
+                    <input type="hidden" id="importantEventClientId" value="">
+                    <input type="hidden" id="importantEventClientEncoded" value="">
+                    <select id="importantEventClientSelect" class="form-control important-event-client-select"></select>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label" for="importantEventLocation">Location</label>
+                        <input type="text" class="form-control" id="importantEventLocation" maxlength="255"
+                               placeholder="Court, room, or address">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="importantEventCalendarScope">Calendar</label>
+                        <select class="form-select" id="importantEventCalendarScope">
+                            <option value="{{ $type }}">This calendar ({{ $calendarTitle }})</option>
+                            <option value="">Ajay &amp; Michael</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label" for="importantEventReminder">Reminder</label>
+                        <select class="form-select" id="importantEventReminder">
+                            <option value="">No reminder</option>
+                            <option value="10">10 minutes before</option>
+                            <option value="15">15 minutes before</option>
+                            <option value="30">30 minutes before</option>
+                            <option value="60">1 hour before</option>
+                            <option value="120">2 hours before</option>
+                            <option value="1440">1 day before</option>
+                            <option value="2880">2 days before</option>
+                            <option value="10080">1 week before</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="importantEventNotes">Notes</label>
+                        <input type="text" class="form-control" id="importantEventNotes" maxlength="5000"
+                               placeholder="Optional notes">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer important-event-modal__footer">
@@ -323,9 +304,7 @@
                 </button>
                 <div class="important-event-modal__footer-actions ms-auto">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="importantEventSaveBtn">
-                        <i class="fa-solid fa-floppy-disk"></i> Save Event
-                    </button>
+                    <button type="button" class="btn btn-primary" id="importantEventSaveBtn">Save Event</button>
                 </div>
             </div>
         </div>
@@ -1805,7 +1784,7 @@ document.addEventListener('DOMContentLoaded', function() {
         _impEventTsInstance = initTS(el, buildGetAllClientsTomSelectConfig({
             url: IMP_CLIENT_URL,
             dropdownParent: 'body',
-            placeholder: 'Search client by name, email or ref…',
+            placeholder: 'Search by name, email, phone or ref',
             onChange: function (value) {
                 if (!value) {
                     document.getElementById('importantEventClientId').value = '';
@@ -1847,12 +1826,90 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* ─── Form helpers ─────────────────────────────────────────────────── */
+    var IMPORTANT_EVENT_TIME_MIN = '09:00';
+    var IMPORTANT_EVENT_TIME_MAX = '18:00';
+
+    function importantEventTimeToMinutes(timeStr) {
+        if (!timeStr || typeof timeStr !== 'string') {
+            return null;
+        }
+        var parts = timeStr.split(':');
+        if (parts.length < 2) {
+            return null;
+        }
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) {
+            return null;
+        }
+        return (h * 60) + m;
+    }
+
+    function importantEventMinutesToTime(totalMinutes) {
+        var mins = Math.max(0, Math.min(23 * 60 + 59, totalMinutes));
+        var h = Math.floor(mins / 60);
+        var m = mins % 60;
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    function clampImportantEventTime(timeStr, fallback) {
+        var mins = importantEventTimeToMinutes(timeStr);
+        var minMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MIN);
+        var maxMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MAX);
+        if (mins === null) {
+            return fallback || IMPORTANT_EVENT_TIME_MIN;
+        }
+        if (mins < minMins) {
+            return IMPORTANT_EVENT_TIME_MIN;
+        }
+        if (mins > maxMins) {
+            return IMPORTANT_EVENT_TIME_MAX;
+        }
+        return importantEventMinutesToTime(mins);
+    }
+
+    function normalizeImportantEventTimeInputs() {
+        var startEl = document.getElementById('importantEventStartTime');
+        var endEl = document.getElementById('importantEventEndTime');
+        if (!startEl || !endEl || startEl.disabled) {
+            return;
+        }
+        startEl.value = clampImportantEventTime(startEl.value, IMPORTANT_EVENT_TIME_MIN);
+        endEl.value = clampImportantEventTime(endEl.value, IMPORTANT_EVENT_TIME_MAX);
+        var startMins = importantEventTimeToMinutes(startEl.value);
+        var endMins = importantEventTimeToMinutes(endEl.value);
+        var maxMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MAX);
+        if (startMins !== null && endMins !== null && endMins <= startMins) {
+            var nextEnd = Math.min(maxMins, startMins + 60);
+            if (nextEnd <= startMins) {
+                startEl.value = importantEventMinutesToTime(Math.max(
+                    importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MIN),
+                    maxMins - 60
+                ));
+                startMins = importantEventTimeToMinutes(startEl.value);
+                nextEnd = Math.min(maxMins, startMins + 60);
+            }
+            endEl.value = importantEventMinutesToTime(nextEnd);
+        }
+    }
+
+    function importantEventTimesWithinBusinessHours(startTime, endTime) {
+        var startMins = importantEventTimeToMinutes(startTime);
+        var endMins = importantEventTimeToMinutes(endTime);
+        var minMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MIN);
+        var maxMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MAX);
+        if (startMins === null || endMins === null) {
+            return false;
+        }
+        return startMins >= minMins && endMins <= maxMins && endMins > startMins;
+    }
+
     function resetImportantEventForm() {
         document.getElementById('importantEventId').value = '';
         document.getElementById('importantEventTitle').value = '';
         document.getElementById('importantEventType').value = 'meeting';
         document.getElementById('importantEventDate').value = '';
-        document.getElementById('importantEventStartTime').value = '09:00';
+        document.getElementById('importantEventStartTime').value = IMPORTANT_EVENT_TIME_MIN;
         document.getElementById('importantEventEndTime').value = '10:00';
         document.getElementById('importantEventAllDay').checked = false;
         document.getElementById('importantEventStartTime').disabled = false;
@@ -1872,13 +1929,18 @@ document.addEventListener('DOMContentLoaded', function() {
         resetImportantEventForm();
         if (dateStr) document.getElementById('importantEventDate').value = dateStr;
         if (timeStr && timeStr !== '00:00') {
-            document.getElementById('importantEventStartTime').value = timeStr;
-            const parts = timeStr.split(':');
-            let h = parseInt(parts[0], 10) + 1;
-            if (h > 23) h = 23;
-            document.getElementById('importantEventEndTime').value =
-                String(h).padStart(2, '0') + ':' + (parts[1] || '00');
+            var startClamped = clampImportantEventTime(timeStr, IMPORTANT_EVENT_TIME_MIN);
+            document.getElementById('importantEventStartTime').value = startClamped;
+            var startMins = importantEventTimeToMinutes(startClamped);
+            var maxMins = importantEventTimeToMinutes(IMPORTANT_EVENT_TIME_MAX);
+            var endMins = Math.min(maxMins, startMins + 60);
+            if (endMins <= startMins) {
+                document.getElementById('importantEventStartTime').value = importantEventMinutesToTime(maxMins - 60);
+                endMins = maxMins;
+            }
+            document.getElementById('importantEventEndTime').value = importantEventMinutesToTime(endMins);
         }
+        normalizeImportantEventTimeInputs();
         $('#importantEventModal').modal('show');
     }
 
@@ -1898,13 +1960,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('importantEventStartTime').disabled = allDay;
         document.getElementById('importantEventEndTime').disabled = allDay;
         if (!allDay) {
-            document.getElementById('importantEventStartTime').value = start.toLocaleTimeString('en-US', {
-                timeZone: 'Australia/Melbourne', hour12: false, hour: '2-digit', minute: '2-digit'
-            });
+            document.getElementById('importantEventStartTime').value = clampImportantEventTime(
+                start.toLocaleTimeString('en-US', {
+                    timeZone: 'Australia/Melbourne', hour12: false, hour: '2-digit', minute: '2-digit'
+                }),
+                IMPORTANT_EVENT_TIME_MIN
+            );
             const end = new Date(props.ends_at || props.appointment_datetime);
-            document.getElementById('importantEventEndTime').value = end.toLocaleTimeString('en-US', {
-                timeZone: 'Australia/Melbourne', hour12: false, hour: '2-digit', minute: '2-digit'
-            });
+            document.getElementById('importantEventEndTime').value = clampImportantEventTime(
+                end.toLocaleTimeString('en-US', {
+                    timeZone: 'Australia/Melbourne', hour12: false, hour: '2-digit', minute: '2-digit'
+                }),
+                IMPORTANT_EVENT_TIME_MAX
+            );
+            normalizeImportantEventTimeInputs();
         }
         document.getElementById('importantEventLocation').value = props.location || '';
         document.getElementById('importantEventNotes').value = props.notes || '';
@@ -1940,8 +2009,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         const allDay   = document.getElementById('importantEventAllDay').checked;
+        normalizeImportantEventTimeInputs();
         const startTime = document.getElementById('importantEventStartTime').value;
         const endTime  = document.getElementById('importantEventEndTime').value;
+        if (!allDay && !importantEventTimesWithinBusinessHours(startTime, endTime)) {
+            const msg = 'Events can only be booked between 9:00 AM and 6:00 PM.';
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Invalid time', message: msg, position: 'topRight' });
+            } else {
+                alert(msg);
+            }
+            return;
+        }
         const startsAt = melbourneIsoFromDateAndTime(dateStr, startTime, allDay);
         const endsAt   = (!allDay && endTime)
             ? melbourneIsoFromDateAndTime(dateStr, endTime, false)
@@ -2142,7 +2221,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const disabled = this.checked;
         document.getElementById('importantEventStartTime').disabled = disabled;
         document.getElementById('importantEventEndTime').disabled = disabled;
+        if (!disabled) {
+            normalizeImportantEventTimeInputs();
+        }
     });
+    document.getElementById('importantEventStartTime').addEventListener('change', normalizeImportantEventTimeInputs);
+    document.getElementById('importantEventEndTime').addEventListener('change', normalizeImportantEventTimeInputs);
+    document.getElementById('importantEventStartTime').addEventListener('blur', normalizeImportantEventTimeInputs);
+    document.getElementById('importantEventEndTime').addEventListener('blur', normalizeImportantEventTimeInputs);
 
     function updateImportantEventTypeSwatch() {
         const swatch = document.getElementById('importantEventTypeSwatch');
@@ -3185,95 +3271,200 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 14px 20px;
 }
 
-/* Important event modal */
+/* Important event modal — compact, no double scroll, clear All-day switch */
+.important-event-modal .modal-dialog {
+    max-width: 520px;
+    margin: 1.25rem auto;
+}
+
+.important-event-modal .modal-content {
+    font-family: 'Segoe UI', sans-serif;
+    border: 1px solid var(--border, #c8dcef);
+    border-radius: 12px;
+    overflow: visible;
+    max-height: none;
+    box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16);
+}
+
+.important-event-modal .modal-dialog-scrollable .modal-content,
+.important-event-modal.modal-dialog-scrollable .modal-content {
+    max-height: none;
+    overflow: visible;
+}
+
+.important-event-modal .important-event-modal__header {
+    background: var(--card-bg, #fff) !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
+    padding: 14px 18px !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.important-event-modal .important-event-modal__header .btn-close {
+    filter: none;
+    opacity: 0.55;
+}
+
+.important-event-modal .important-event-modal__header .btn-close:hover {
+    opacity: 0.85;
+}
+
+.important-event-modal .important-event-modal__header .modal-title,
+.important-event-modal .important-event-modal__header h5 {
+    color: var(--navy, #1e3d60) !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+}
+
+.important-event-modal .modal-body {
+    padding: 14px 18px !important;
+    background: var(--card-bg, #fff) !important;
+    overflow: visible !important;
+    max-height: none !important;
+}
+
 .important-event-modal__heading {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
+    align-items: center;
+    gap: 12px;
 }
 
 .important-event-modal__icon {
     flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    background: #0d6efd;
-    color: #fff;
-    border: 2px solid transparent;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 14px;
+    background: rgba(58, 111, 168, 0.12);
+    color: var(--sidebar-active, #3a6fa8);
+    border: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .important-event-modal__subtitle {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-muted, #5e7a90) !important;
+    margin-top: 1px;
     font-weight: 500;
 }
 
-.important-event-section {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
+.important-event-modal .form-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-muted, #5e7a90) !important;
+    margin-bottom: 4px !important;
 }
 
-.important-event-section--last {
-    margin-bottom: 16px;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.important-event-section__title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-}
-
-.important-event-section__title i {
-    color: var(--sidebar-active);
-    font-size: 13px;
-}
-
-.important-event-all-day {
+.important-event-modal .form-control,
+.important-event-modal .form-select,
+.important-event-modal .ts-wrapper .ts-control {
     min-height: 38px;
+    border-radius: 8px !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--text-dark, #1a2c40) !important;
+    background: var(--card-bg, #fff) !important;
+    font-size: 0.9rem;
+}
+
+.important-event-modal .form-control:focus,
+.important-event-modal .form-select:focus {
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.12) !important;
+}
+
+/* All-day toggle — custom switch (not Bootstrap checkbox) */
+.important-event-switch {
     display: flex;
     align-items: center;
-    padding: 0 4px;
-    margin-bottom: 0;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #c8dcef);
+    border-radius: 10px;
+    background: var(--page-bg, #f0f6ff);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.important-event-all-day .form-check-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dark);
+.important-event-switch:hover {
+    border-color: var(--sidebar-active, #3a6fa8);
 }
 
-.important-event-tip {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
-    background: rgba(58, 111, 168, 0.08);
-    border: 1px solid rgba(58, 111, 168, 0.18);
-    border-radius: 8px;
-    font-size: 13px;
-    color: var(--text-dark);
-    line-height: 1.45;
+.important-event-switch:has(.important-event-switch__input:checked) {
+    background: rgba(58, 111, 168, 0.1);
+    border-color: var(--sidebar-active, #3a6fa8);
 }
 
-.important-event-tip i {
-    color: var(--sidebar-active);
-    margin-top: 2px;
+.important-event-switch__input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    pointer-events: none;
+}
+
+.important-event-switch__track {
+    position: relative;
     flex-shrink: 0;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: #c5d4e4;
+    border: 1px solid #a8bdd0;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.important-event-switch__knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(26, 44, 64, 0.28);
+    transition: transform 0.18s ease;
+}
+
+.important-event-switch__input:checked + .important-event-switch__track {
+    background: var(--sidebar-active, #3a6fa8);
+    border-color: var(--sidebar-active, #3a6fa8);
+}
+
+.important-event-switch__input:checked + .important-event-switch__track .important-event-switch__knob {
+    transform: translateX(18px);
+}
+
+.important-event-switch__input:focus-visible + .important-event-switch__track {
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.25);
+}
+
+.important-event-switch__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.important-event-switch__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy, #1e3d60);
+    line-height: 1.2;
+}
+
+.important-event-switch__hint {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted, #5e7a90);
+    line-height: 1.25;
 }
 
 .important-event-modal__footer {
@@ -3281,6 +3472,9 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+    padding: 12px 18px !important;
+    background: var(--card-bg, #fff) !important;
+    border-top: 1px solid var(--border, #c8dcef) !important;
 }
 
 .important-event-modal__footer-actions {
@@ -3288,12 +3482,103 @@ document.addEventListener('DOMContentLoaded', function() {
     gap: 8px;
 }
 
-.important-event-client-select + .ts-wrapper,
-.important-event-client-select + .ts-wrapper .ts-control {
+.important-event-modal__footer .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    min-height: 36px;
+    padding: 0.4rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.important-event-modal__footer .btn-primary {
+    background: var(--navy, #1e3d60) !important;
+    border-color: var(--navy, #1e3d60) !important;
+    color: #fff !important;
+}
+
+.important-event-modal__footer .btn-primary:hover {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.important-event-modal__footer .btn-secondary {
+    background: var(--card-bg, #fff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.important-event-modal__footer .btn-secondary:hover {
+    background: var(--page-bg, #f0f6ff) !important;
+}
+
+.important-event-modal__footer .btn-danger {
+    background: var(--danger, #a83020) !important;
+    border-color: var(--danger, #a83020) !important;
+}
+
+.important-event-modal .important-event-client-select + .ts-wrapper,
+.important-event-modal .ts-wrapper.single {
     width: 100% !important;
+    display: block;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.important-event-modal .ts-wrapper .ts-control,
+.important-event-modal .ts-wrapper.focus .ts-control,
+.important-event-modal .ts-wrapper.input-active .ts-control,
+.important-event-modal .ts-wrapper.dropdown-active .ts-control {
+    width: 100% !important;
+    min-height: 38px;
+    display: flex !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 8px !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    background: var(--card-bg, #fff) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.important-event-modal .ts-wrapper.focus .ts-control,
+.important-event-modal .ts-wrapper.input-active .ts-control,
+.important-event-modal .ts-wrapper.dropdown-active .ts-control {
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    box-shadow: none !important;
+}
+
+.important-event-modal .ts-wrapper .ts-control > input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 12rem !important;
+    max-width: none !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: transparent !important;
+}
+
+.important-event-modal .ts-wrapper .ts-control > input:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.important-event-modal .ts-wrapper .ts-control .item {
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 @media (max-width: 576px) {
+    .important-event-modal .modal-dialog {
+        max-width: calc(100% - 1.5rem);
+        margin: 0.75rem auto;
+    }
+
     .calendar-legend-group {
         flex-direction: column;
         align-items: flex-start;
@@ -3305,11 +3590,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .important-event-modal__footer-actions {
         width: 100%;
-        justify-content: stretch;
     }
 
     .important-event-modal__footer-actions .btn {
         flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .important-event-modal .col-8,
+    .important-event-modal .col-4,
+    .important-event-modal .col-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
 }
 
