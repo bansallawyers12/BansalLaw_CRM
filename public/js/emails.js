@@ -1675,6 +1675,46 @@
         emailContentPlaceholder.style.display = 'none';
         emailContentView.style.display = 'block';
 
+        const needsBody = email.body_deferred || (!email.message && email.id);
+        if (needsBody && !email._bodyFetchStarted) {
+            email._bodyFetchStarted = true;
+            emailContentView.innerHTML = '<div class="gmail-body-empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading email…</p></div>';
+            fetch('/email-logs/' + encodeURIComponent(email.id) + '/body', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.success) {
+                        email.message = data.message || '';
+                        if (data.text_preview) {
+                            email.text_preview = data.text_preview;
+                        }
+                    }
+                    email.body_deferred = false;
+                    renderEmailDetail(email);
+                })
+                .catch(function() {
+                    email.body_deferred = false;
+                    renderEmailDetail(email);
+                });
+            return;
+        }
+
+        renderEmailDetail(email);
+    }
+
+    function renderEmailDetail(email) {
+        const emailContentView = document.getElementById('emailContentView');
+        const emailContentPlaceholder = document.getElementById('emailContentPlaceholder');
+
+        if (!emailContentView || !emailContentPlaceholder) {
+            return;
+        }
+
+        emailContentPlaceholder.style.display = 'none';
+        emailContentView.style.display = 'block';
+
         const subject = email.subject || '(No subject)';
         const from = email.from_mail || 'Unknown';
         const to = resolveToDisplay(email) || 'Unknown';

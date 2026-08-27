@@ -16,6 +16,8 @@ use App\Models\Staff;
 
 use App\Services\EmailSync\IncomingEmailSyncService;
 
+use App\Jobs\SyncInboxEmailsJob;
+use App\Services\EmailSync\InboxSyncStatusStore;
 use App\Services\EmailSync\ManualInboxSyncRunner;
 
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
@@ -120,9 +122,9 @@ class SyncedEmailController extends Controller
             ], 403);
         }
 
-        @set_time_limit(120);
+        @set_time_limit(60);
 
-        $result = $autoAssignService->scanAndAssignForStaff($staff);
+        $result = $autoAssignService->scanAndAssignForStaff($staff, 150);
 
         return response()->json([
             'success' => true,
@@ -475,217 +477,126 @@ class SyncedEmailController extends Controller
 
 
 
-    public function syncNow(
-
+        public function syncNow(
         Request $request,
-
         ManualInboxSyncRunner $runner,
-
+        InboxSyncStatusStore $statusStore,
     ) {
-
         if (! $this->staffCanSyncInbox()) {
-
             InboxSyncLogger::warning('Manual inbox sync denied', [
-
                 'staff_id' => Auth::id(),
-
                 'reason' => 'permission',
-
             ]);
 
-
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'You do not have permission to sync inbox emails.',
-
             ], 403);
-
         }
-
-
 
         $staff = Auth::guard('admin')->user();
-
         if (! $staff instanceof Staff) {
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'Staff account required to sync inbox emails.',
-
             ], 403);
-
         }
-
-
-
-        @set_time_limit(600);
-
-        @ignore_user_abort(true);
-
-
 
         $email = trim((string) $request->input('email', ''));
-
         $syncRange = strtolower(trim((string) $request->input('sync_range', '')));
 
-
-
         if ($syncRange === '' && $request->boolean('today', false)) {
-
             $syncRange = 'today';
-
         }
-
         if ($syncRange === '') {
-
             $syncRange = 'today';
-
         }
-
-
 
         $prepared = $runner->prepare($staff, $syncRange, $email);
-
         if (($prepared['success'] ?? true) === false) {
-
             InboxSyncLogger::warning('Manual inbox sync prepare failed', [
-
                 'staff_id' => (int) $staff->id,
-
                 'sync_range' => $syncRange,
-
                 'email' => $email,
-
                 'message' => $prepared['message'] ?? null,
-
             ]);
-
-
 
             return response()->json($prepared, 422);
-
         }
 
+        $activeSyncId = $statusStore->getActiveSyncId((int) $staff->id);
+        if ($activeSyncId) {
+            $active = $statusStore->get($activeSyncId, (int) $staff->id);
+            if (is_array($active) && in_array(($active['status'] ?? ''), ['pending', 'running'], true)) {
+                return response()->json([
+                    'success' => true,
+                    'background' => true,
+                    'sync_id' => $activeSyncId,
+                    'sync_range' => $syncRange,
+                    'message' => 'Inbox sync is already running. Waiting for it to finish…',
+                ]);
+            }
+        }
 
-
-        InboxSyncLogger::info('Manual inbox sync started (inline)', [
-
-            'staff_id' => (int) $staff->id,
-
-            'staff_email' => $staff->email,
-
+        $syncId = $statusStore->create((int) $staff->id, [
             'sync_range' => $syncRange,
-
             'email' => $email !== '' ? $email : ($prepared['email'] ?? ''),
-
-            'addresses' => $prepared['addresses'] ?? [],
-
-            'source' => 'manual',
-
         ]);
 
-
-
-        $summary = $runner->execute($prepared);
-
-
-
-        if (($summary['success'] ?? true) === false) {
-
-            InboxSyncLogger::error('Manual inbox sync failed', [
-
-                'staff_id' => (int) $staff->id,
-
-                'sync_range' => $syncRange,
-
-                'email' => $email,
-
-                'message' => $summary['message'] ?? 'Inbox sync failed.',
-
-                'summary' => $summary,
-
-            ]);
-
-
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' => $summary['message'] ?? 'Inbox sync failed.',
-
-                'sync_range' => $syncRange,
-
-                'total_imported' => (int) ($summary['total_imported'] ?? 0),
-
-                'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
-
-                'total_failed' => (int) ($summary['total_failed'] ?? 0),
-
-                'mailboxes' => $summary['mailboxes'] ?? [],
-
-            ], 422);
-
-        }
-
-
-
-        $response = [
-
-            'success' => true,
-
-            'background' => false,
-
+        InboxSyncLogger::info('Manual inbox sync queued', [
+            'sync_id' => $syncId,
+            'staff_id' => (int) $staff->id,
+            'staff_email' => $staff->email,
             'sync_range' => $syncRange,
+            'email' => $email !== '' ? $email : ($prepared['email'] ?? ''),
+            'addresses' => $prepared['addresses'] ?? [],
+            'source' => 'manual',
+        ]);
 
-            'message' => \App\Services\EmailSync\InboxSyncStatusStore::buildResultMessage($summary),
-
-            'summary' => $summary,
-
-            'total_imported' => (int) ($summary['total_imported'] ?? 0),
-
-            'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
-
-            'total_failed' => (int) ($summary['total_failed'] ?? 0),
-
-            'mailboxes' => $summary['mailboxes'] ?? [],
-
-        ];
-
-
-
-        $statusCode = ((int) ($summary['total_failed'] ?? 0)) > 0 ? 422 : 200;
-
-
-
-        return response()->json($response, $statusCode);
-
-    }
-
-
-
-    public function syncStatus(string $syncId)
-
-    {
+        SyncInboxEmailsJob::dispatch($syncId, (int) $staff->id, $prepared);
 
         return response()->json([
-
-            'success' => false,
-
-            'message' => 'Background inbox sync is no longer used. Sync runs inline when you click Sync.',
-
-        ], 410);
-
+            'success' => true,
+            'background' => true,
+            'sync_id' => $syncId,
+            'sync_range' => $syncRange,
+            'message' => 'Inbox sync started in the background.',
+        ]);
     }
 
+    public function syncStatus(string $syncId)
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff account required.',
+            ], 403);
+        }
 
+        $status = app(InboxSyncStatusStore::class)->get($syncId, (int) $staff->id);
+        if (! $status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sync job not found or expired.',
+            ], 404);
+        }
 
-    protected function staffCanSyncInbox(): bool
+        return response()->json([
+            'success' => true,
+            'sync_id' => $syncId,
+            'status' => $status['status'] ?? 'unknown',
+            'message' => $status['message'] ?? null,
+            'summary' => $status['summary'] ?? null,
+            'total_imported' => (int) (($status['summary']['total_imported'] ?? 0)),
+            'total_skipped' => (int) (($status['summary']['total_skipped'] ?? 0)),
+            'total_failed' => (int) (($status['summary']['total_failed'] ?? 0)),
+            'mailboxes' => $status['summary']['mailboxes'] ?? [],
+            'sync_range' => $status['sync_range'] ?? ($status['summary']['sync_range'] ?? null),
+        ]);
+    }
+
+protected function staffCanSyncInbox(): bool
 
     {
 

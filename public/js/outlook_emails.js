@@ -4569,6 +4569,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const iframe = document.getElementById('readBody');
+        if ((email.body_deferred || (!email.message && email.id)) && !email._bodyLoaded) {
+            if (!email._bodyFetchStarted) {
+                email._bodyFetchStarted = true;
+                if (iframe) {
+                    iframe.srcdoc = '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:16px;color:#5f6368;">Loading email…</body></html>';
+                }
+                fetch('/email-logs/' + encodeURIComponent(email.id) + '/body', {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data && data.success) {
+                            email.message = data.message || '';
+                            if (data.text_preview) {
+                                email.text_preview = data.text_preview;
+                            }
+                        }
+                        email.body_deferred = false;
+                        email._bodyLoaded = true;
+                        if (selectedEmailId === email.id) {
+                            showEmail(email, listElement);
+                        }
+                    })
+                    .catch(function() {
+                        email.body_deferred = false;
+                        email._bodyLoaded = true;
+                        if (selectedEmailId === email.id) {
+                            showEmail(email, listElement);
+                        }
+                    });
+            }
+            return;
+        }
+
         let contentStr = (email.message || email.html_content || email.text_content || '').trim();
         const isCalendarInvite = !!email.is_calendar_invite;
         const calendarSource = isCalendarPayload(contentStr)

@@ -3316,133 +3316,6 @@ class ClientsController extends Controller
     }
 
     // Filter Inbox emails
-    public function filterEmails(Request $request)
-    {
-        try {
-            $client_id = $request->input('client_id');
-            $client_matter_id = $request->input('client_matter_id');
-            $status = $request->input('status');
-            $search = $request->input('search');
-            $label_id = $request->input('label_id');
-            $sender_filter = $request->input('sender_filter');
-
-            if (!$client_matter_id) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Matter ID is required'
-                ], 400);
-            }
-
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'client_matter_id')) {
-                return response()->json([
-                    'status' => 'success',
-                    'emails' => [],
-                    'message' => 'Email integration not configured yet'
-                ]);
-            }
-
-            $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
-                ->where('type', 'client')
-                ->where('mail_type', 1)
-                ->where('conversion_type', 'conversion_email_fetch')
-                ->where('mail_body_type', 'inbox')
-                ->with(['labels', 'attachments', 'pdfDocument'])
-                ->orderBy('created_at', 'DESC');
-
-            if ($status !== null && $status !== '') {
-                if ($status == 1) {
-                    $query->where('mail_is_read', 1);
-                } elseif ($status == 2) {
-                    $query->where(function ($q) {
-                        $q->where('mail_is_read', 0)
-                          ->orWhereNull('mail_is_read');
-                    });
-                }
-            }
-
-            if ($search !== null && $search !== '') {
-                $query->where(function ($q) use ($search) {
-                    $q->where('subject', 'LIKE', "%{$search}%")
-                      ->orWhere('text_preview', 'LIKE', "%{$search}%")
-                      ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('cc', 'LIKE', "%{$search}%");
-                });
-            }
-
-            if (!empty($label_id)) {
-                $query->whereHas('labels', function ($q) use ($label_id) {
-                    $q->where('email_labels.id', $label_id);
-                });
-            }
-
-            if (!empty($sender_filter)) {
-                $query->where('from_mail', $sender_filter);
-            }
-
-            $paginator = $query->paginate(5);
-
-            $emails = collect($paginator->items())->map(function ($email) use ($client_id) {
-                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
-
-                // Ensure attachments and labels relationships are loaded
-                if (!$email->relationLoaded('attachments')) {
-                    $email->load('attachments');
-                }
-                if (!$email->relationLoaded('labels')) {
-                    $email->load('labels');
-                }
-
-                // Convert to array to ensure all relationships are properly serialized
-                $emailArray = $email->toArray();
-                
-                // Explicitly fetch attachments - try relationship first, then direct query as fallback
-                $attachments = $email->attachments;
-                
-                // If relationship is empty, try direct query (fallback for relationship issues)
-                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
-                    $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
-                }
-                
-                // Format attachments as array with all required fields
-                if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
-                    $emailArray['attachments'] = $attachments->map(function ($attachment) {
-                        return $this->formatEmailLogAttachmentForApi($attachment);
-                    })->values()->toArray(); // values() re-indexes the array
-                } else {
-                    // Ensure attachments key exists even if empty
-                    $emailArray['attachments'] = [];
-                }
-                
-                // Add preview_url to the array
-                $emailArray['preview_url'] = $previewUrl;
-                $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
-                $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
-                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? null);
-                $emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? null);
-                
-                return $emailArray;
-            });
-
-            return response()->json([
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'emails' => $emails->values()->toArray(),
-            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        } catch (\Exception $e) {
-            Log::error('Error in filterEmails: ' . $e->getMessage());
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'An error occurred while fetching emails: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
     /**
      * Delete an email log (email) and its attachments.
      * Allowed when staff has {@see Staff::canDeleteEmailWithAttachments()} (granted by Admin/Super Admin).
@@ -3579,317 +3452,6 @@ class ClientsController extends Controller
         }
     }
 
-        //Filter Sent emails
-    public function filterSentEmails(Request $request)
-    {
-        try
-		{
-            $client_id = $request->input('client_id');
-            $client_matter_id = $request->input('client_matter_id'); // NEW: Filter by matter
-            $type = $request->input('type');
-            $status = $request->input('status');
-            $search = $request->input('search');
-            $sender_filter = $request->input('sender_filter');
-
-            // Validate input
-            if (!$client_matter_id) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Matter ID is required'
-                ], 400);
-            }
-
-            // Base query for sent mail - CRM compose/reply (mail_type 2) + uploaded sent items
-            $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
-            $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
-                ->where('type', 'client')
-                ->where(function ($q) use ($hasSendStatus) {
-                    $q->where(function ($crm) use ($hasSendStatus) {
-                        $crm->where('mail_type', 2);
-                        if ($hasSendStatus) {
-                            $crm->where(function ($status) {
-                                $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
-                                    ->orWhereNull('send_status')
-                                    ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
-                            });
-                        }
-                    })->orWhere(function ($uploaded) {
-                        $uploaded->where('mail_type', 1)
-                            ->where(function ($query) {
-                                $query->whereNull('conversion_type')
-                                    ->orWhere(function ($subQuery) {
-                                        $subQuery->where('conversion_type', 'conversion_email_fetch')
-                                            ->where('mail_body_type', 'sent');
-                                    });
-                            });
-                    });
-                })
-                ->with(['labels', 'attachments', 'pdfDocument'])
-                ->orderByRaw('COALESCE(sent_at, fetch_mail_sent_time, created_at) DESC');
-
-            // Filter by type
-            if ($type !== '') {
-                if ($type == 1) {
-                    $query->whereNotNull('conversion_type');
-                } elseif ($type == 2) {
-                    $query->whereNull('conversion_type');
-                }
-            }
-
-            // Filter by status
-            if ($status !== '') {
-                if ($status == 1) {
-                    $query->where('mail_is_read', 1);
-                } elseif ($status == 2) {
-                    $query->where(function ($q) {
-                        $q->where('mail_is_read', 0)
-                          ->orWhereNull('mail_is_read');
-                    });
-                }
-            }
-
-            // Search filter
-            if ($search !== '') {
-                $query->where(function ($q) use ($search) {
-                    $q->where('subject', 'LIKE', "%{$search}%")
-                      ->orWhere('text_preview', 'LIKE', "%{$search}%")
-                      ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('cc', 'LIKE', "%{$search}%");
-                });
-            }
-
-            if (!empty($sender_filter)) {
-                $query->where('from_mail', $sender_filter);
-            }
-
-            // Fetch emails
-            $paginator = $query->paginate(5);
-
-            // Map emails with additional data (matches filterEmails logic)
-            $emails = collect($paginator->items())->map(function ($email) use ($client_id) {
-                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
-
-				// Ensure attachments and labels relationships are loaded
-				if (!$email->relationLoaded('attachments')) {
-					$email->load('attachments');
-				}
-				if (!$email->relationLoaded('labels')) {
-					$email->load('labels');
-				}
-
-				// Convert to array to ensure all relationships are properly serialized
-				$emailArray = $email->toArray();
-				
-				// Explicitly fetch attachments - try relationship first, then direct query as fallback
-				$attachments = $email->attachments;
-				
-				// If relationship is empty, try direct query (fallback for relationship issues)
-				if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
-					$attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
-				}
-				
-				// Format attachments as array with all required fields
-				if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
-					$emailArray['attachments'] = $attachments->map(function ($attachment) {
-						return $this->formatEmailLogAttachmentForApi($attachment);
-					})->values()->toArray(); // values() re-indexes the array
-				} else {
-					// Ensure attachments key exists even if empty
-					$emailArray['attachments'] = [];
-				}
-				
-				// Add preview_url and ensure required fields have defaults
-				$emailArray['preview_url'] = $previewUrl;
-				$emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
-				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
-				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
-				$emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? null);
-				$emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? null);
-				$emailArray['subject'] = $emailArray['subject'] ?? '';
-				$emailArray['message'] = $emailArray['message'] ?? '';
-				
-				return $emailArray;
-			});
-
-			return response()->json([
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'emails' => $emails->values()->toArray(),
-            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-		} catch (\Exception $e) {
-			Log::error('Error in filterSentEmails: ' . $e->getMessage(), [
-				'request' => $request->all(),
-				'trace' => $e->getTraceAsString()
-			]);
-
-			return response()->json([
-				'status' => 'error',
-				'message' => 'An error occurred while fetching emails'
-			], 500);
-		}
-	}
-
-    /**
-     * Filter emails for a lead (no matter context).
-     * Returns CRM-sent emails to the lead.
-     */
-    public function filterLeadEmails(Request $request)
-    {
-        try {
-            $client_id = $request->input('client_id'); // lead id
-            $status = $request->input('status');
-            $search = $request->input('search');
-            $label_id = $request->input('label_id');
-            $sender_filter = $request->input('sender_filter');
-
-            if (!$client_id) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Lead ID is required'
-                ], 400);
-            }
-
-            $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
-            $query = \App\Models\EmailLog::where('client_id', $client_id)
-                ->where('type', 'lead')
-                ->where(function ($q) use ($hasSendStatus) {
-                    $q->where(function ($crm) use ($hasSendStatus) {
-                        $crm->where('mail_type', 2);
-                        if ($hasSendStatus) {
-                            $crm->where(function ($status) {
-                                $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
-                                    ->orWhereNull('send_status')
-                                    ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
-                            });
-                        }
-                    })->orWhere(function ($uploaded) {
-                        $uploaded->where('mail_type', 1)
-                            ->where(function ($q) {
-                                $q->whereNull('conversion_type')
-                                    ->orWhere(function ($subQuery) {
-                                        $subQuery->where('conversion_type', 'conversion_email_fetch')
-                                            ->where('mail_body_type', 'sent');
-                                    });
-                            });
-                    });
-                })
-                ->with(['labels', 'attachments', 'pdfDocument'])
-                ->orderByRaw('COALESCE(sent_at, fetch_mail_sent_time, created_at) DESC');
-
-            if ($status !== null && $status !== '') {
-                if ($status == 1) {
-                    $query->where('mail_is_read', 1);
-                } elseif ($status == 2) {
-                    $query->where(function ($q) {
-                        $q->where('mail_is_read', 0)->orWhereNull('mail_is_read');
-                    });
-                }
-            }
-
-            if ($search !== null && $search !== '') {
-                $query->where(function ($q) use ($search) {
-                    $q->where('subject', 'LIKE', "%{$search}%")
-                      ->orWhere('text_preview', 'LIKE', "%{$search}%")
-                      ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('cc', 'LIKE', "%{$search}%");
-                });
-            }
-
-            if (!empty($label_id)) {
-                $query->whereHas('labels', function ($q) use ($label_id) {
-                    $q->where('email_labels.id', $label_id);
-                });
-            }
-
-            if (!empty($sender_filter)) {
-                $query->where('from_mail', $sender_filter);
-            }
-
-            $paginator = $query->paginate(5);
-
-            $emails = collect($paginator->items())->map(function ($email) {
-                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
-
-                if (!$email->relationLoaded('attachments')) {
-                    $email->load('attachments');
-                }
-                if (!$email->relationLoaded('labels')) {
-                    $email->load('labels');
-                }
-
-                $emailArray = $email->toArray();
-                $attachments = $email->attachments;
-                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
-                    $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
-                }
-                $emailArray['attachments'] = ($attachments && $attachments->count() > 0)
-                    ? $attachments->map(function ($attachment) {
-                        return $this->formatEmailLogAttachmentForApi($attachment);
-                    })->values()->toArray()
-                    : [];
-                $emailArray['preview_url'] = $previewUrl;
-                $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
-                $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
-                $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? 'lead');
-                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? 'lead');
-                $emailArray['bcc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['bcc'] ?? '', $email->type ?? 'lead');
-                $emailArray['subject'] = $emailArray['subject'] ?? '';
-                $emailArray['message'] = $emailArray['message'] ?? '';
-                return $emailArray;
-            });
-
-            return response()->json([
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'emails' => $emails->values()->toArray(),
-            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        } catch (\Exception $e) {
-            Log::error('Error in filterLeadEmails: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'An error occurred while fetching lead emails',
-            ], 500);
-        }
-    }
-
-     //Seach Client Relationship
-
-    // OLD HTTP DOWNLOAD METHOD - COMMENTED OUT
-    // public function download_document(Request $request)
-    // {
-    //     $fileUrl = $request->input('filelink');
-    //     $filename = $request->input('filename', 'downloaded.pdf');
-
-    //     if (!$fileUrl) {
-    //         return abort(400, 'Missing file URL');
-    //     }
-      
-    //     // Increase execution time for large files
-    //     set_time_limit(900);
-
-    //     // Increase HTTP client timeout
-    //     $response = Http::timeout(120)->get($fileUrl);
-
-    //     if (!$response->successful()) {
-    //         return abort(404, 'File not found');
-    //     }
-
-    //     return response($response->body())
-    //         ->header('Content-Type', 'application/pdf')
-    //         ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-    // }
-
-    //Check star client
     public function checkStarClient(Request $request)
     {
         $admin = \App\Models\Admin::find($request->admin_id);
@@ -6293,6 +5855,7 @@ class ClientsController extends Controller
             $withRelations[] = 'calendarLinks';
         }
         $query = \App\Models\EmailLog::with($withRelations);
+        app(\App\Services\Email\ClientEmailListService::class)->applyLeanSelect($query, includeMessage: false);
 
         // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
         if (! empty($clientId) && ! $isSyncedInboxFolder) {
@@ -6436,7 +5999,7 @@ class ClientsController extends Controller
                 $q->where('subject', 'like', "%{$search}%")
                   ->orWhere('from_mail', 'like', "%{$search}%")
                   ->orWhere('to_mail', 'like', "%{$search}%")
-                  ->orWhere('message', 'like', "%{$search}%");
+                  ->orWhere('text_preview', 'like', "%{$search}%");
             });
         }
 
@@ -6463,32 +6026,22 @@ class ClientsController extends Controller
             $staff,
             $canSyncInbox
         ) {
-            $storedMessage = (string) ($email->message ?? '');
+            $storedMessage = '';
             $storedPreview = (string) ($email->getAttributes()['text_preview'] ?? $email->text_preview ?? '');
             $calendarSource = '';
-            if (\App\Models\EmailLog::isCalendarPayload($storedMessage)) {
-                $calendarSource = $storedMessage;
-            } elseif (\App\Models\EmailLog::isCalendarPayload($storedPreview)) {
+            if (\App\Models\EmailLog::isCalendarPayload($storedPreview)) {
                 $calendarSource = $storedPreview;
             }
 
             $email->is_calendar_invite = $calendarSource !== '';
+            $email->body_deferred = true;
             if ($email->is_calendar_invite) {
                 $inviteSummary = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);
                 $email->message = $inviteSummary;
                 $email->text_preview = \App\Models\EmailLog::plainTextPreview($inviteSummary, 100);
             } else {
-                // Older uploads sometimes stored the parsed body only in text_preview
-                // (empty message). Surface that as message so the reading pane shows
-                // text instead of falling back to an image-attachment "N photos" gallery.
-                if ($storedMessage === '' && $storedPreview !== '') {
-                    $email->message = $storedPreview;
-                    $storedMessage = $storedPreview;
-                }
-                $email->text_preview = \App\Models\EmailLog::plainTextPreview(
-                    $storedMessage !== '' ? $storedMessage : $storedPreview,
-                    100
-                );
+                $email->message = '';
+                $email->text_preview = \App\Models\EmailLog::plainTextPreview($storedPreview, 100);
             }
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);

@@ -14,7 +14,7 @@
 | Dashboard | Optimized | Service split, eager load, infinite scroll, cache |
 | Auth / Access grants | Partially → Optimized (grants) | Paginate, chunk, cached counts |
 | Clients / Matters | Partially optimized | Tab-aware detail service; task routes split out |
-| Emails (CRM) | Mixed | Paginated lists + queues; heavy sync/controller |
+| Emails (CRM) | Optimized | Lean list JSON; queued inbox sync; filter controller |
 | Legal Forms | Partially optimized | Eager load + indexes; unbounded list; sync DOCX/AI |
 | Accounts / Billing | Partially optimized | Service extraction started; mega-controller remains |
 | Documents | Not / Partially | Video upload queued; lists often unbounded |
@@ -81,17 +81,18 @@
 
 ## 4. Emails (backend)
 
-**Verdict:** Mixed
+**Verdict:** Optimized
 
 **What is working**
-- Inbox/sent filters: `with([...])` + `paginate`
+- Inbox/sent filters: `with([...])` + `paginate` via `ClientEmailFilterController` + `ClientEmailListService`
+- List JSON uses lean column select (excludes `message` / analysis blobs); body loaded on demand via `GET /email-logs/{id}/body`
+- Manual inbox sync runs on `SyncInboxEmailsJob` (queued); UI polls `sync-status` (no 600s request timeout)
 - Queues: `SendCrmEmailJob`, `SyncInboxEmailsJob`; sync status via Cache
 - Indexes on `email_logs` (`client_id`, `mail_type`, `sync_source`, etc.)
 
 **Gaps**
-- Long request timeouts on sync/assign paths (`set_time_limit`)
-- List JSON may still pull heavy body columns
-- Logic concentrated in `ClientsController` + large sync services
+- Assign-by-subject still runs in-request (capped scan); upload path may still raise `set_time_limit` for large batches
+- Outlook compose/send helpers remain partly on `ClientsController`
 
 ---
 

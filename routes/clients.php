@@ -6,6 +6,7 @@ use App\Http\Controllers\CRM\ClientAccountsController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
 use App\Http\Controllers\CRM\Clients\ClientMatterTaskController;
 use App\Http\Controllers\CRM\Clients\ClientTaskController;
+use App\Http\Controllers\CRM\Clients\ClientEmailFilterController;
 use App\Http\Controllers\CRM\Clients\ClientDocumentsController;
 use App\Http\Controllers\CRM\ClientPersonalDetailsController;
 use App\Http\Controllers\CRM\PhoneVerificationController;
@@ -106,9 +107,10 @@ Route::post('/updatemailreadbit', [ClientsController::class, 'updatemailreadbit'
 Route::post('/mark-all-emails-read', [ClientsController::class, 'markAllEmailsRead'])->name('clients.markAllEmailsRead');
 Route::post('/mark-bulk-clients-emails-read', [ClientsController::class, 'markBulkClientsEmailsRead'])->name('clients.markBulkClientsEmailsRead');
 
-Route::post('/clients/filter-emails', [ClientsController::class, 'filterEmails'])->name('clients.filter.emails');
-Route::post('/clients/filter-sentemails', [ClientsController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
-Route::post('/clients/filter-lead-emails', [ClientsController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
+Route::post('/clients/filter-emails', [ClientEmailFilterController::class, 'filterEmails'])->name('clients.filter.emails');
+Route::post('/clients/filter-sentemails', [ClientEmailFilterController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
+Route::post('/clients/filter-lead-emails', [ClientEmailFilterController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
+Route::get('/email-logs/{id}/body', [ClientEmailFilterController::class, 'body'])->name('email-logs.body');
 Route::post('/clients/email-senders', [ClientsController::class, 'getEmailSenders'])->name('clients.email.senders');
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');
 // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
