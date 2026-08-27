@@ -2043,41 +2043,44 @@ class LeadController extends Controller
         $matchedPerson = null;
 
         if ($phone) {
-            $matchedPerson = Admin::where('phone', $phone)
+            $phoneQuery = Admin::where('phone', $phone)
                 ->whereIn('type', ['client', 'lead'])
                 ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
-                ->where('is_company', false)
-                ->first();
+                ->where('is_company', false);
+            StaffClientVisibility::restrictAdminEloquentQuery($phoneQuery);
+            $matchedPerson = $phoneQuery->first();
             if (!$matchedPerson) {
                 $contact = ClientContact::where('phone', $phone)->first();
                 if ($contact) {
-                    $person = Admin::find($contact->client_id);
-                    if ($person && !($person->is_company ?? false) && in_array($person->type ?? '', ['client', 'lead'])) {
-                        $matchedPerson = $person;
-                    }
+                    $personQuery = Admin::where('id', $contact->client_id)
+                        ->whereIn('type', ['client', 'lead'])
+                        ->where('is_company', false);
+                    StaffClientVisibility::restrictAdminEloquentQuery($personQuery);
+                    $matchedPerson = $personQuery->first();
                 }
             }
         }
 
         if (!$matchedPerson && $email) {
-            $matchedPerson = Admin::where('email', $email)
+            $emailQuery = Admin::where('email', $email)
                 ->whereIn('type', ['client', 'lead'])
                 ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
-                ->where('is_company', false)
-                ->first();
+                ->where('is_company', false);
+            StaffClientVisibility::restrictAdminEloquentQuery($emailQuery);
+            $matchedPerson = $emailQuery->first();
             if (!$matchedPerson) {
                 $clientEmail = ClientEmail::where('email', $email)->first();
                 if ($clientEmail) {
-                    $person = Admin::find($clientEmail->client_id);
-                    if ($person && !($person->is_company ?? false) && in_array($person->type ?? '', ['client', 'lead'])) {
-                        $matchedPerson = $person;
-                    }
+                    $personQuery = Admin::where('id', $clientEmail->client_id)
+                        ->whereIn('type', ['client', 'lead'])
+                        ->where('is_company', false);
+                    StaffClientVisibility::restrictAdminEloquentQuery($personQuery);
+                    $matchedPerson = $personQuery->first();
                 }
             }
         }
 
-        $actor = Auth::guard('admin')->user() ?: Auth::user();
-        if (!$actor || !$matchedPerson || !StaffClientVisibility::canAccessClientOrLead((int) $matchedPerson->id, $actor)) {
+        if (!$matchedPerson) {
             return response()->json(['found' => false, 'person' => null]);
         }
 

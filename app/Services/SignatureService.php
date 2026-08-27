@@ -607,16 +607,13 @@ class SignatureService
     public function suggestAssociation(string $email): ?array
     {
         // Try to find matching client or lead (both are in admins table with type = 'client' or 'lead')
-        $entity = Admin::where('email', $email)
+        $query = Admin::where('email', $email)
             ->whereIn('type', ['client', 'lead'])
-            ->whereNull('is_deleted')
-            ->first();
+            ->whereNull('is_deleted');
+        \App\Support\StaffClientVisibility::restrictAdminEloquentQuery($query);
+        $entity = $query->first();
 
         if ($entity) {
-            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $entity->id, \Illuminate\Support\Facades\Auth::user())) {
-                return null;
-            }
-
             // Determine if it's a client or lead based on type field
             $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
             

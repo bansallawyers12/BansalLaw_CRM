@@ -3,6 +3,7 @@
 namespace App\Services\FrontDesk;
 
 use App\Models\Admin;
+use App\Support\StaffClientVisibility;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -60,6 +61,8 @@ class CheckInLookupService
         if (!empty($email)) {
             $query->where('email', 'like', '%' . trim($email) . '%');
         }
+
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
 
         return $query
             ->with('company')

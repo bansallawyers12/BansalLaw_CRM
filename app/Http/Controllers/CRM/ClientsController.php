@@ -40,6 +40,7 @@ use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\ClientAccountTabService;
+use App\Services\ClientDetailService;
 use App\Services\MatterAssigneeDefaults;
 use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
@@ -1366,62 +1367,20 @@ class ClientsController extends Controller
             }
 
             // Set default tab if not provided
-            $activeTab = $tab ?? 'personaldetails';
-            if (strtolower((string) $activeTab) === 'client_portal') {
-                $activeTab = 'workflow';
-            }
-            // URL tab aliases (legacy bookmarks / shorter slugs)
-            $atn = strtolower((string) $activeTab);
-            if ($atn === 'overview') {
-                $activeTab = 'personaldetails';
-            } elseif ($atn === 'documents') {
-                $activeTab = 'personaldocuments';
-            } elseif (in_array($atn, ['workflow', 'checklists'], true)) {
-                $activeTab = 'clientaction';
-            }
-            if (strtolower((string) $activeTab) === 'matterdocuments') {
-                $mcMatterDoc = \App\Models\ClientMatter::query()
-                    ->where('client_id', (int) $id)
-                    ->where('matter_status', 1)
-                    ->count();
-                if ($mcMatterDoc < 1) {
-                    // Lead converted to client keeps lead_status=converted — still allow Matter documents tab
-                    // so UI matches full client (may show empty state until a matter exists).
-                    $convertedClientKeepsMatterDocsTab = Admin::query()
-                        ->where('id', (int) $id)
-                        ->where('type', 'client')
-                        ->where('lead_status', 'converted')
-                        ->exists();
-                    if (! $convertedClientKeepsMatterDocsTab) {
-                        $activeTab = 'personaldetails';
-                    }
-                }
-            }
-
-            // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /matterdocuments URLs.
-            if ($id1 !== null && $id1 !== '' && preg_match('/^bank_/i', (string) $id1) === 1
-                && strtolower((string) $activeTab) === 'matterdocuments') {
-                $activeTab = 'personaldetails';
-            }
+            $detailService = app(ClientDetailService::class);
+            $resolved = $detailService->resolveActiveTab($tab, $id1, (int) $id);
+            $activeTab = $resolved['activeTab'];
+            $id1 = $resolved['matterRef'];
 
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
-                $fetchedData = Admin::with([
-                    'company.contactPerson',
-                    'company.tradingNames',
-                    'company.directors.directorClient',
-                ])->find($id); //dd($fetchedData);
+                $fetchedData = $detailService->loadClientRecord((int) $id);
 
-                if ($fetchedData && $fetchedData->is_company && strtolower((string) $activeTab) === 'companydetails') {
-                    $activeTab = 'personaldetails';
+                if (! $fetchedData) {
+                    return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
                 }
 
-                //Fetch other client-related data
-                $currentAddress = ClientAddress::where('client_id', $id)
-                    ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
-                    ->first();
-                $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
-                $clientContacts = ClientContact::where('client_id', $id)->get();
-                $emails = ClientEmail::where('client_id', $id)->get() ?? [];
+                $payload = $detailService->buildViewPayload((int) $id, $id1, $activeTab, $fetchedData);
+                extract($payload);
 
                 // Get current admin user data for SMS templates
                 $currentAdmin = Auth::user();
@@ -1431,122 +1390,10 @@ class ClientsController extends Controller
                 $officeCountryCode = '+61';
                 $notPickedCallSmsDefault = $this->notPickedCallSmsDefaultForClient($fetchedData);
 
-                $assignableStaff = collect();
-                $leadStageLabels = [];
-                if (($fetchedData->type ?? '') === 'lead') {
-                    $assignableStaff = Staff::where('status', 1)
-                        ->orderBy('first_name')
-                        ->orderBy('last_name')
-                        ->get();
-                    $leadStageLabels = [
-                        'new' => 'New Enquiry',
-                        'initial_consultation' => 'Initial Consultation',
-                        'conflict_check' => 'Conflict Check',
-                        'engaged' => 'Engaged',
-                        'retained' => 'Retained',
-                        'follow_up' => 'Follow Up',
-                        'not_proceeding' => 'Not Proceeding',
-                        'declined' => 'Declined',
-                    ];
-                }
-
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
-                $matterFormForLead = app(\App\Services\ClientEditService::class)->getMatterFormForAddMatter((int) $id);
-                $__crmEditLeadType = (($fetchedData->type ?? null) === 1
-                    || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
-
-                $selectedClientMatter = null;
-                $isClosedMatterView = false;
-                if ($id1 !== null && $id1 !== '') {
-                    $selectedClientMatter = ClientMatter::query()
-                        ->where('client_id', (int) $id)
-                        ->where('client_unique_matter_no', (string) $id1)
-                        ->with(['matter', 'workflowStage'])
-                        ->first();
-                    if ($selectedClientMatter) {
-                        $isClosedMatterView = ClientMatter::isClosed($selectedClientMatter);
-                    }
-                }
-
-                // Prefer URL-selected matter; fall back to latest active only when no matter ref is in the URL.
-                // If a matter ref was provided but not found, leave null (do not show another matter's parties).
-                $activeClientMatterId = null;
-                if ($selectedClientMatter) {
-                    $activeClientMatterId = (int) $selectedClientMatter->id;
-                } elseif ($id1 === null || $id1 === '') {
-                    $activeClientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null);
-                }
-
-                $conflictParties = \App\Support\MatterOtherPartiesHelper::loadDisplayParties((int) $id, $activeClientMatterId);
-
-                $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
-                    ->forActiveMatter($activeClientMatterId)
-                    ->with('clientMatter')
-                    ->orderByDesc('checked_at')
-                    ->orderByDesc('id')
-                    ->first();
-
-                $conflictCheckHistory = \App\Models\ClientConflictCheck::where('client_id', $id)
-                    ->forActiveMatter($activeClientMatterId)
-                    ->with('clientMatter')
-                    ->orderByDesc('checked_at')
-                    ->orderByDesc('id')
-                    ->limit(5)
-                    ->get();
-
-                $referenceClear = $latestConflictCheck
-                    && in_array($latestConflictCheck->outcome, ['clear', 'waived'], true)
-                    ? $latestConflictCheck
-                    : \App\Models\ClientConflictCheck::where('client_id', $id)
-                        ->forActiveMatter($activeClientMatterId)
-                        ->whereIn('outcome', ['clear', 'waived'])
-                        ->orderByDesc('checked_at')
-                        ->orderByDesc('id')
-                        ->first();
-
-                $conflictCheckStaleness = ['is_stale' => false, 'reason' => null];
-                if ($referenceClear) {
-                    $conflictCheckStaleness = app(\App\Services\ConflictCheckStalenessService::class)
-                        ->evaluateStaleness($fetchedData, $activeClientMatterId, $referenceClear);
-                }
-
-                $partiesUpdatedAt = app(\App\Services\ConflictCheckStalenessService::class)
-                    ->partiesUpdatedAtForMatter((int) $id, $activeClientMatterId);
-
-                // Account tab is included client-side for matter / converted-client views; preload so the Blade stays thin.
-                $accountMatterExists = ClientMatter::query()
-                    ->where('client_id', (int) $id)
-                    ->where(function ($q) {
-                        $q->where('matter_status', 1)->orWhere('matter_status', '1');
-                    })
-                    ->exists();
-                $accountNavIsLead = (($fetchedData->type ?? null) === 1)
-                    || in_array(strtolower(trim((string) ($fetchedData->type ?? ''))), ['lead', 'l', '1'], true);
-                $accountShowForConvertedClient = ! $accountNavIsLead
-                    && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
-                $accountTabData = [
-                    'clientMatterId' => $activeClientMatterId,
-                    'trustBalance' => 0.0,
-                    'outstandingBalance' => 0.0,
-                    'invoicedTotal' => 0.0,
-                    'costsDisclosure' => null,
-                    'exceedsDisclosure' => false,
-                    'trustRows' => collect(),
-                    'invoiceRows' => collect(),
-                    'officeRows' => collect(),
-                    'documentsById' => collect(),
-                    'loaded' => true,
-                ];
-                if (($id1 !== null && $id1 !== '') || $accountMatterExists || $accountShowForConvertedClient) {
-                    $accountTabData = app(ClientAccountTabService::class)
-                        ->build((int) $id, $activeClientMatterId);
-                    $accountTabData['loaded'] = true;
-                }
-
-                //Return the view with all data
                 return view('crm.clients.detail', compact(
-                    'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
+                    'fetchedData',
                     'encodeId', 'id1', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'notPickedCallSmsDefault',
@@ -1555,7 +1402,7 @@ class ClientsController extends Controller
                     'selectedClientMatter', 'isClosedMatterView',
                     'conflictParties', 'latestConflictCheck', 'conflictCheckHistory',
                     'activeClientMatterId', 'conflictCheckStaleness', 'partiesUpdatedAt',
-                    'accountTabData'
+                    'accountTabData', 'clientAddresses', 'clientContacts', 'emails'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -3282,20 +3129,15 @@ class ClientsController extends Controller
             return response()->json(['status' => 'available']);
         }
 
-        // Get matching client IDs
-        $clientIds = DB::table('client_emails')->where('email', $email)->pluck('client_id')
-            ->merge(DB::table('admins')->where('email', $email)->whereIn('type', ['client', 'lead'])->pluck('id'))
-            ->unique();
+        $query = Admin::query()
+            ->whereIn('type', ['client', 'lead'])
+            ->where(function ($q) use ($email) {
+                $q->where('email', $email)
+                    ->orWhereIn('id', DB::table('client_emails')->where('email', $email)->select('client_id'));
+            });
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
 
-        $hasAccessibleMatch = false;
-        foreach ($clientIds as $clientId) {
-            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
-                $hasAccessibleMatch = true;
-                break;
-            }
-        }
-
-        if ($hasAccessibleMatch) {
+        if ($query->exists()) {
             return response()->json(['status' => 'exists']);
         } else {
             return response()->json(['status' => 'available']);
@@ -3314,19 +3156,15 @@ class ClientsController extends Controller
             return response()->json(['status' => 'available']);
         }
 
-        $clientIds = DB::table('client_contacts')->where('phone', $contact)->pluck('client_id')
-            ->merge(DB::table('admins')->where('phone', $contact)->whereIn('type', ['client', 'lead'])->pluck('id'))
-            ->unique();
+        $query = Admin::query()
+            ->whereIn('type', ['client', 'lead'])
+            ->where(function ($q) use ($contact) {
+                $q->where('phone', $contact)
+                    ->orWhereIn('id', DB::table('client_contacts')->where('phone', $contact)->select('client_id'));
+            });
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
 
-        $hasAccessibleMatch = false;
-        foreach ($clientIds as $clientId) {
-            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $actor)) {
-                $hasAccessibleMatch = true;
-                break;
-            }
-        }
-
-        if ($hasAccessibleMatch) {
+        if ($query->exists()) {
             return response()->json(['status' => 'exists']);
         } else {
             return response()->json(['status' => 'available']);
@@ -4760,304 +4598,6 @@ class ClientsController extends Controller
     }
 
     /**
-     * Store action with assignee information
-     * Handles the "Assign Staff" popup functionality
-     * Supports both single and multiple assignees
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function taskStore(Request $request)
-    {
-        try {
-            $requestData = $request->all();
-            
-            // Validate required fields
-            if (empty($requestData['client_id'])) {
-                echo json_encode(array('success' => false, 'message' => 'Client ID is required'));
-                exit;
-            }
-            
-            // Decode the client ID
-            $clientId = $this->decodeString($requestData['client_id']);
-            
-            // Validate decoded client ID
-            if ($clientId === false || empty($clientId)) {
-                echo json_encode(array('success' => false, 'message' => 'Invalid client ID'));
-                exit;
-            }
-            
-            // Handle rem_cat - ensure it exists and is an array (PostgreSQL migration pattern)
-            $remCat = $requestData['rem_cat'] ?? [];
-            if (!is_array($remCat)) {
-                // If it's a single value, convert to array
-                $remCat = !empty($remCat) ? [$remCat] : [];
-            }
-            
-            // Validate that at least one assignee is selected
-            if (empty($remCat)) {
-                echo json_encode(array('success' => false, 'message' => 'At least one assignee must be selected'));
-                exit;
-            }
-
-            $targetClient = $this->findClientOrLeadForAction((int) $clientId);
-            if (! $targetClient) {
-                echo json_encode(array('success' => false, 'message' => 'Client or lead not found'));
-                exit;
-            }
-            if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
-                echo json_encode(array('success' => false, 'message' => config('constants.unauthorized')));
-                exit;
-            }
-            $clientLabel = $this->taskClientDisplayName($targetClient);
-            
-            // Get the next unique ID for this action
-            $actionUniqueId = 'group_' . uniqid('', true);
-            $matterId = $this->resolveTaskMatterId($requestData, (int) $clientId);
-
-            // Loop through each assignee and create an action
-            $mirroredToClientTask = false;
-            $taskSync = app(ClientMatterTaskSyncService::class);
-            foreach ($remCat as $assigneeId) {
-                // Create a new action for each assignee
-                $action = new \App\Models\Note;
-                $action->client_id = $clientId;
-                $action->user_id = Auth::user()->id;
-                $action->matter_id = $matterId;
-                $action->description = $requestData['description'] ?? '';
-                $action->unique_group_id = $actionUniqueId;
-
-                // Set the title for the current assignee
-                $assigneeName = $this->getAssigneeName($assigneeId);
-                $defaultTitle = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
-                $action->title = ! empty($requestData['remindersubject']) ? $requestData['remindersubject'] : $defaultTitle;
-
-                // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
-                $action->is_action = 1; // This is an action
-                $action->pin = 0; // Default to not pinned
-                $action->status = '0'; // Default status (string '0' = active, '1' = completed)
-                $action->type = 'client';
-                $action->task_group = $requestData['task_group'] ?? null;
-                $action->assigned_to = $assigneeId;
-
-                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $action->action_date = $requestData['followup_datetime'];
-                }
-
-                //add note deadline
-                if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
-                    if($requestData['note_deadline_checkbox'] == 1){
-                        $action->note_deadline = $requestData['note_deadline'] ?? null;
-                    } else {
-                        $action->note_deadline = NULL;
-                    }
-                } else {
-                    $action->note_deadline = NULL;
-                }
-
-                $saved = $action->save();
-
-                if ($saved) {
-                    if (! $mirroredToClientTask) {
-                        $taskSync->mirrorTaskNoteToClientTask($action);
-                        $mirroredToClientTask = true;
-                    }
-
-                    // Update lead action date
-                    if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                        $targetClient->followup_date = $requestData['followup_datetime'];
-                        $targetClient->save();
-                    }
-
-                    // Create a notification for the current assignee
-                    $o = new \App\Models\Notification;
-                    $o->sender_id = Auth::user()->id;
-                    $o->receiver_id = $assigneeId;
-                    $o->module_id = $clientId;
-                    $o->url = $this->taskClientDetailUrl((int) $clientId, $matterId, $requestData['client_id'] ?? null);
-                    $o->notification_type = 'client';
-                    $o->receiver_status = 0; // Unread
-                    $o->seen = 0; // Not seen
-                    
-                    $actionDateTime = $requestData['followup_datetime'] ?? now();
-                    try {
-                        if (is_numeric($actionDateTime)) {
-                            $formattedDate = date('d/M/Y h:i A', $actionDateTime);
-                        } else {
-                            $timestamp = strtotime($actionDateTime);
-                            $formattedDate = $timestamp !== false ? date('d/M/Y h:i A', $timestamp) : date('d/M/Y h:i A');
-                        }
-                    } catch (\Exception $dateEx) {
-                        $formattedDate = date('d/M/Y h:i A');
-                    }
-                    
-                    $o->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '')
-                        . 'Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
-                    $o->save();
-
-                    app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
-                }
-            }
-            
-            echo json_encode(array('success' => true, 'message' => 'successfully saved', 'clientID' => $requestData['client_id']));
-            exit;
-            
-        } catch (\Exception $e) {
-            Log::error('Error in taskStore: ' . $e->getMessage(), [
-                'request_data' => $request->all(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            echo json_encode(array('success' => false, 'message' => 'Error saving task. Please try again.'));
-            exit;
-        }
-    }
-
-    // Helper function to get assignee name
-    protected function getAssigneeName($assigneeId)
-    {
-        $staff = \App\Models\Staff::find($assigneeId);
-        return $staff ? $staff->first_name . ' ' . $staff->last_name : 'Unknown Assignee';
-    }
-
-    /**
-     * Client/lead row for action APIs (with company for display name).
-     */
-    protected function findClientOrLeadForAction(int $id): ?Admin
-    {
-        return Admin::with('company')->whereIn('type', ['client', 'lead'])->find($id);
-    }
-
-    /**
-     * Human label for actions/notifications: company name when is_company, else person name.
-     */
-    protected function taskClientDisplayName(Admin $client): string
-    {
-        $label = trim($client->company_name_or_personal_name);
-        if ($label === '') {
-            $label = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        }
-
-        return $label;
-    }
-
-    /**
-     * Parse action client picker values:
-     * - "ENCODED"
-     * - "ENCODED/Matter/CLIENT_UNIQUE_MATTER_NO"
-     * - "ENCODED/Client"
-     *
-     * @return array{encoded: ?string, client_id: ?int, matter_ref: ?string, matter_id: ?int}
-     */
-    protected function parseTaskClientMatterPath(?string $clientPath): array
-    {
-        $result = [
-            'encoded' => null,
-            'client_id' => null,
-            'matter_ref' => null,
-            'matter_id' => null,
-        ];
-
-        $clientPath = trim((string) $clientPath);
-        if ($clientPath === '') {
-            return $result;
-        }
-
-        $parts = explode('/', $clientPath);
-        $encoded = $parts[0] ?? '';
-        $result['encoded'] = $encoded !== '' ? $encoded : null;
-
-        if ($encoded !== '') {
-            $decoded = $this->decodeString($encoded);
-            if ($decoded !== false && $decoded !== '' && $decoded !== null) {
-                $result['client_id'] = (int) $decoded;
-            }
-        }
-
-        if (isset($parts[1]) && strcasecmp((string) $parts[1], 'Matter') === 0 && ! empty($parts[2])) {
-            $result['matter_ref'] = (string) $parts[2];
-        }
-
-        if ($result['client_id'] && $result['matter_ref']) {
-            $matterId = ClientMatter::where('client_id', $result['client_id'])
-                ->where('client_unique_matter_no', $result['matter_ref'])
-                ->value('id');
-            if ($matterId) {
-                $result['matter_id'] = (int) $matterId;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Resolve matter_id for an action from explicit request field and/or client picker path.
-     */
-    protected function resolveTaskMatterId(array $requestData, ?int $clientId): ?int
-    {
-        if (! empty($requestData['matter_id']) && is_numeric($requestData['matter_id'])) {
-            $matterId = (int) $requestData['matter_id'];
-            if ($matterId > 0 && $clientId) {
-                $owns = ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
-                if ($owns) {
-                    return $matterId;
-                }
-            } elseif ($matterId > 0 && ! $clientId) {
-                return $matterId;
-            }
-        }
-
-        if (! empty($requestData['client_matter_id']) && is_numeric($requestData['client_matter_id'])) {
-            $matterId = (int) $requestData['client_matter_id'];
-            if ($matterId > 0 && $clientId) {
-                $owns = ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
-                if ($owns) {
-                    return $matterId;
-                }
-            }
-        }
-
-        if (! empty($requestData['client_id'])) {
-            $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
-            if (! empty($parsed['matter_id'])) {
-                return (int) $parsed['matter_id'];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Build client detail URL for action notifications (includes matter when available).
-     */
-    protected function taskClientDetailUrl(?int $clientId, ?int $matterId = null, ?string $encodedOrPath = null): string
-    {
-        $encoded = null;
-        if ($encodedOrPath) {
-            $parsed = $this->parseTaskClientMatterPath($encodedOrPath);
-            if (! empty($parsed['encoded']) && ! empty($parsed['matter_ref'])) {
-                return URL::to('/clients/detail/' . $parsed['encoded'] . '/' . $parsed['matter_ref']);
-            }
-            if (! empty($parsed['encoded'])) {
-                $encoded = $parsed['encoded'];
-            }
-        }
-
-        if ($clientId) {
-            $encoded = $encoded ?? base64_encode(convert_uuencode($clientId));
-            if ($matterId) {
-                $matterRef = ClientMatter::where('id', $matterId)->value('client_unique_matter_no');
-                if ($matterRef) {
-                    return URL::to('/clients/detail/' . $encoded . '/' . $matterRef);
-                }
-            }
-
-            return URL::to('/clients/detail/' . $encoded);
-        }
-
-        return route('assignee.tasks');
-    }
-
-    /**
      * Save tags for a client
      * Handles the tag assignment functionality from the client detail modal
      *
@@ -5122,269 +4662,6 @@ class ClientsController extends Controller
             }
 
             return redirect()->back()->with('error', 'An error occurred while saving tags');
-        }
-    }
-
-    /**
-     * Store personal action (Add My Action functionality)
-     * Used by: tasks.blade.php
-     */
-    public function storePersonalTask(Request $request)
-    {
-        try {
-            $requestData = $request->all();
-            
-            // Decode the client ID - handle empty/null for personal actions
-            $clientId = null;
-            $encodedClientId = null;
-            $matterId = null;
-            
-            if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
-                $encodedClientId = $parsed['encoded'];
-                if (empty($parsed['client_id'])) {
-                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
-                }
-                $clientId = (int) $parsed['client_id'];
-                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
-            }
-
-            // Generate unique action ID
-            $actionUniqueId = 'group_' . uniqid('', true);
-
-            $clientLabel = '';
-            $targetClient = null;
-            if ($clientId !== null) {
-                $targetClient = $this->findClientOrLeadForAction((int) $clientId);
-                if (! $targetClient) {
-                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
-                }
-                if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
-                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
-                }
-                $clientLabel = $this->taskClientDisplayName($targetClient);
-            }
-
-            // Handle single or multiple assignees
-            $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
-
-            // Loop through each assignee and create an action
-            $mirroredToClientTask = false;
-            $taskSync = app(ClientMatterTaskSyncService::class);
-            foreach ($assignees as $assigneeId) {
-                // Create a new action for each assignee
-                $action = new \App\Models\Note;
-                $action->client_id = $clientId;
-                $action->user_id = Auth::user()->id;
-                $action->matter_id = $matterId;
-                $action->description = @$requestData['description'];
-                $action->unique_group_id = $actionUniqueId;
-                $action->is_action = 1;
-                $action->type = 'client';
-                $action->task_group = @$requestData['task_group'];
-                $action->assigned_to = $assigneeId;
-                $action->status = '0'; // Not completed
-                $action->pin = 0; // Required field - default to not pinned
-                $assigneeName = $this->getAssigneeName($assigneeId);
-                $action->title = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
-                
-                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $action->action_date = @$requestData['followup_datetime'];
-                }
-
-                $saved = $action->save();
-
-                if ($saved) {
-                    if ($clientId && ! $mirroredToClientTask) {
-                        $taskSync->mirrorTaskNoteToClientTask($action);
-                        $mirroredToClientTask = true;
-                    }
-
-                    // Create a notification for the assignee
-                    $notification = new \App\Models\Notification;
-                    $notification->sender_id = Auth::user()->id;
-                    $notification->receiver_id = $assigneeId;
-                    $notification->module_id = $clientId;
-                    $notification->url = $this->taskClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? $encodedClientId);
-                    
-                    $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
-                    $notification->seen = 0;
-                    $notification->save();
-
-                    if ($clientId) {
-                        app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
-                    }
-                }
-            }
-
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
-        } catch (\Exception $e) {
-            Log::error('Error in storePersonalTask: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Update existing action
-     * Used by: assign_by_me.blade.php
-     */
-    public function updateTask(Request $request)
-    {
-        $requestData = $request->all();
-        
-        try {
-            // Find the existing action
-            $action = \App\Models\Note::findOrFail($requestData['note_id']);
-            
-            // Decode the client ID - handle empty/null for personal actions
-            $clientId = null;
-            $clientLabel = '';
-            $matterId = null;
-            if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
-                if (empty($parsed['client_id'])) {
-                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
-                }
-                $clientId = (int) $parsed['client_id'];
-                $targetForAction = $this->findClientOrLeadForAction($clientId);
-                if (! $targetForAction) {
-                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
-                }
-                if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
-                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
-                }
-                $clientLabel = $this->taskClientDisplayName($targetForAction);
-                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
-            }
-            
-            // Update action fields
-            $action->description = @$requestData['description'];
-            $action->client_id = $clientId;
-            if ($matterId) {
-                $action->matter_id = $matterId;
-            } elseif ($clientId === null) {
-                $action->matter_id = null;
-            }
-            $action->task_group = @$requestData['task_group'];
-            $action->assigned_to = @$requestData['rem_cat'];
-            
-            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $action->action_date = @$requestData['followup_datetime'];
-            }
-            
-            $action->save();
-
-            // Create notification for the assignee if changed
-            if ($action->assigned_to != $action->getOriginal('assigned_to')) {
-                $notification = new \App\Models\Notification;
-                $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $action->assigned_to;
-                $notification->module_id = $clientId;
-                $notification->url = $this->taskClientDetailUrl($clientId, $action->matter_id ? (int) $action->matter_id : $matterId, $requestData['client_id'] ?? null);
-                
-                $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
-                $notification->seen = 0;
-                $notification->save();
-            }
-
-            // Log to Activity Feed when action is updated (only for client-linked actions)
-            if ($clientId !== null) {
-                $assigneeName = $this->getAssigneeName($action->assigned_to);
-                app(TaskTimelineService::class)->logTaskNoteUpdated($action, $clientLabel, $assigneeName);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Task updated successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating task: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Reassign action (for completed actions)
-     * Used by: tasks/completed.blade.php
-     */
-    public function reassignTask(Request $request)
-    {
-        try {
-            $requestData = $request->all();
-            
-            // Decode the client ID - handle empty/null for personal actions
-            $clientId = null;
-            $clientLabel = '';
-            $matterId = null;
-            if (!empty($requestData['client_id'])) {
-                $parsed = $this->parseTaskClientMatterPath((string) $requestData['client_id']);
-                if (empty($parsed['client_id'])) {
-                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
-                }
-                $clientId = (int) $parsed['client_id'];
-                $targetForAction = $this->findClientOrLeadForAction($clientId);
-                if (! $targetForAction) {
-                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
-                }
-                if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
-                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
-                }
-                $clientLabel = $this->taskClientDisplayName($targetForAction);
-                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
-            }
-
-            // Generate unique action ID
-            $actionUniqueId = 'group_' . uniqid('', true);
-
-            // Create a new action
-            $action = new \App\Models\Note;
-            $action->client_id = $clientId;
-            $action->user_id = Auth::user()->id;
-            $action->matter_id = $matterId;
-            $action->description = @$requestData['description'];
-            $action->unique_group_id = $actionUniqueId;
-            $action->is_action = 1;
-            $action->type = 'client';
-            $action->task_group = @$requestData['task_group'];
-            $action->assigned_to = @$requestData['rem_cat'];
-            $action->status = '0'; // Not completed
-            $action->pin = 0; // Required field - default to not pinned
-            $assigneeName = $this->getAssigneeName($action->assigned_to);
-            $action->title = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
-            
-            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $action->action_date = @$requestData['followup_datetime'];
-            }
-
-            $saved = $action->save();
-
-            if ($saved) {
-                if ($clientId) {
-                    app(ClientMatterTaskSyncService::class)->mirrorTaskNoteToClientTask($action);
-                }
-
-                // Create a notification for the assignee
-                $notification = new \App\Models\Notification;
-                $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $action->assigned_to;
-                $notification->module_id = $clientId;
-                $notification->url = $this->taskClientDetailUrl($clientId, $matterId, $requestData['client_id'] ?? null);
-                
-                $notification->message = ($clientLabel !== '' ? 'Task for ' . $clientLabel . '. ' : '') . 'Assigned to you';
-                $notification->seen = 0;
-                $notification->save();
-
-                if ($clientId) {
-                    app(TaskTimelineService::class)->logTaskNoteCreated($action, $clientLabel, $assigneeName);
-                }
-            }
-
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
-        } catch (\Exception $e) {
-            Log::error('Error in reassignTask: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
         }
     }
 
@@ -6508,13 +5785,11 @@ class ClientsController extends Controller
                 $q->where('id', '!=', $excludeId);
             })
             ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
-            ->limit(50)
-            ->get()
-            ->filter(function($person) {
-                $actor = Auth::guard('admin')->user() ?: Auth::user();
-                return $actor && \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $person->id, $actor);
+            ->tap(function ($q) {
+                StaffClientVisibility::restrictAdminEloquentQuery($q);
             })
-            ->take(20)
+            ->limit(20)
+            ->get()
             ->map(function($person) {
                 $fullName = trim($person->first_name . ' ' . $person->last_name);
                 // Show phone and email in display text

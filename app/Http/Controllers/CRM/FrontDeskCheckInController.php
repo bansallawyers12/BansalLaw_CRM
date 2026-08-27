@@ -14,7 +14,6 @@ use App\Services\ClientReferenceService;
 use App\Services\FrontDesk\CheckInAppointmentService;
 use App\Services\FrontDesk\CheckInLookupService;
 use App\Services\FrontDesk\CheckInNotificationService;
-use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -72,13 +71,7 @@ class FrontDeskCheckInController extends Controller
             $request->input('email')
         );
 
-        /** @var Staff $user */
-        $user = Auth::guard('admin')->user();
-        $visible = $matches->filter(function (Admin $a) use ($user) {
-            return StaffClientVisibility::canAccessClientOrLead((int) $a->id, $user);
-        })->values();
-
-        $data = $visible->map(fn (Admin $a) => $this->lookup->formatForWizard($a))->values();
+        $data = $matches->map(fn (Admin $a) => $this->lookup->formatForWizard($a))->values();
 
         return response()->json([
             'matches'          => $data,

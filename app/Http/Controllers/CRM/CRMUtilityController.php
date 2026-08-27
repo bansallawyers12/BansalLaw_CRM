@@ -1616,26 +1616,20 @@ class CRMUtilityController extends Controller
         }
 
         if ($request->type == 'email') {
-            $matchingIds = \App\Models\Admin::where('email', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+            $query = \App\Models\Admin::where('email', $val)->whereIn('type', ['client', 'lead']);
         } else if ($request->type == 'clientid') {
-            $matchingIds = \App\Models\Admin::where('client_id', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+            $query = \App\Models\Admin::where('client_id', $val)->whereIn('type', ['client', 'lead']);
         } else {
-            $matchingIds = \App\Models\Admin::where('phone', $val)->whereIn('type', ['client', 'lead'])->pluck('id');
+            $query = \App\Models\Admin::where('phone', $val)->whereIn('type', ['client', 'lead']);
         }
 
-        $hasAccess = false;
-        foreach ($matchingIds as $cId) {
-            if (\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $cId, $actor)) {
-                $hasAccess = true;
-                break;
-            }
-        }
+        \App\Support\StaffClientVisibility::restrictAdminEloquentQuery($query);
 
-        if ($hasAccess) {
+        if ($query->exists()) {
             return response('1');
-        } else {
-            return response('0');
         }
+
+        return response('0');
     }
 
 	public function allnotification(Request $request){

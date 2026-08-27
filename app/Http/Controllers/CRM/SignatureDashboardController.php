@@ -803,12 +803,12 @@ class SignatureDashboardController extends Controller
         $entities = Admin::where('email', $request->email)
             ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
+            ->tap(function ($q) {
+                \App\Support\StaffClientVisibility::restrictAdminEloquentQuery($q);
+            })
             ->get();
-            
+
         foreach ($entities as $entity) {
-            if (!\App\Support\StaffClientVisibility::canAccessClientOrLead((int) $entity->id, Auth::user())) {
-                continue;
-            }
             // Determine if it's a client or lead based on type field
             $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
             
