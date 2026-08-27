@@ -1,10 +1,6 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Bookings')
 
-@section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
-@endsection
-
 @section('content')
 
 <style>
@@ -301,6 +297,47 @@
     color: var(--navy);
 }
 
+.booking-appointments-page .appointments-infinite-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0 4px;
+}
+
+.booking-appointments-page .appointments-loaded-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.booking-appointments-page .appointments-infinite-loader {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.booking-appointments-page .appointments-infinite-loader[hidden] {
+    display: none !important;
+}
+
+.booking-appointments-page .appointments-infinite-loader__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(58, 111, 168, 0.25);
+    border-top-color: var(--sidebar-active, #3a6fa8);
+    border-radius: 50%;
+    animation: appointments-infinite-spin 0.7s linear infinite;
+}
+
+@keyframes appointments-infinite-spin {
+    to { transform: rotate(360deg); }
+}
+
 </style>
 
 <div class="section-body booking-appointments-page">
@@ -467,7 +504,7 @@
                         <table class="table table-striped table-hover" id="appointments-table">
                             <thead>
                                 <tr>
-                                    <th width="120">CRM ID</th>
+                                    <th width="60">#</th>
                                     <th>Client</th>
                                     <th>Appointment</th>
                                     <th>Service</th>
@@ -488,7 +525,13 @@
                         </table>
                     </div>
 
-                    <div id="appointments-pagination" class="listing-container"></div>
+                    <div class="appointments-infinite-footer" id="appointments-infinite-footer" hidden>
+                        <div class="appointments-loaded-count" id="appointments-loaded-count" aria-live="polite"></div>
+                        <div class="appointments-infinite-loader" id="appointments-infinite-loader" hidden aria-live="polite">
+                            <span class="appointments-infinite-loader__spinner" aria-hidden="true"></span>
+                            <span>Loading more appointments…</span>
+                        </div>
+                    </div>
 
                     <!-- Edit Date & Time Modal -->
                     <div class="modal fade" id="editDatetimeModal" tabindex="-1" role="dialog" aria-labelledby="editDatetimeModalLabel" aria-hidden="true">
@@ -537,6 +580,10 @@ const appointmentsListCsrfToken = @json(csrf_token());
 const appointmentsListPerPage = 20;
 const appointmentsListSource = @json($bookingsListSource ?? 'crm');
 let appointmentsListCurrentPage = 1;
+let appointmentsListLastPage = 1;
+let appointmentsListTotal = 0;
+let appointmentsListLoading = false;
+let appointmentsListLoadingMore = false;
 
 function escapeHtml(text) {
     if (text === null || text === undefined) {
@@ -593,7 +640,7 @@ function syncAppointmentsCleanUrl() {
     window.history.replaceState({}, '', window.location.pathname);
 }
 
-function buildAppointmentRowHtml(row) {
+function buildAppointmentRowHtml(row, rowNumber) {
     let clientCell = '';
     const name = escapeHtml(row.client_name || '');
     const email = escapeHtml(row.client_email || '');
@@ -637,7 +684,6 @@ function buildAppointmentRowHtml(row) {
         paymentCell += '<br><small><strong>Amount:</strong> $' + escapeHtml(amt.toFixed(2)) + '</small>';
     }
 
-    const idDisp = escapeHtml(String(row.id != null ? row.id : ''));
     const showUrl = row.show_url || '';
     const editUrl = row.edit_url || '';
     const viewBtn = showUrl
@@ -652,8 +698,8 @@ function buildAppointmentRowHtml(row) {
         : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Requires synced CRM record"><i class="fa-solid fa-bolt"></i></button>');
 
     return (
-        '<tr>' +
-        '<td>' + idDisp + '</td>' +
+        '<tr class="appointment-data-row">' +
+        '<td>' + escapeHtml(String(rowNumber)) + '</td>' +
         '<td>' + clientCell + '</td>' +
         '<td><strong>' + escapeHtml(row.appointment_date_label || '') + '</strong><br>' +
         '<small>' + timeLine + '</small><br>' +
@@ -668,74 +714,67 @@ function buildAppointmentRowHtml(row) {
     );
 }
 
-function buildCompactAppointmentPageItems(lastPage) {
-    if (lastPage <= 5) {
-        const items = [];
-        for (let page = 1; page <= lastPage; page++) {
-            items.push({ type: 'page', page: page });
-        }
-        return items;
+function setAppointmentsInfiniteLoader(visible) {
+    const $loader = $('#appointments-infinite-loader');
+    if ($loader.length) {
+        $loader.prop('hidden', !visible);
     }
-    return [
-        { type: 'page', page: 1 },
-        { type: 'page', page: 2 },
-        { type: 'page', page: 3 },
-        { type: 'dots' },
-        { type: 'page', page: lastPage - 1 },
-        { type: 'page', page: lastPage },
-    ];
 }
 
-function renderAppointmentsPagination(meta) {
-    const $wrap = $('#appointments-pagination');
-    $wrap.empty();
-    if (!meta || meta.last_page <= 1) {
+function updateAppointmentsLoadedCount() {
+    const loaded = $('#appointments-table-body tr.appointment-data-row').length;
+    const $footer = $('#appointments-infinite-footer');
+    const $count = $('#appointments-loaded-count');
+    if (!loaded || !appointmentsListTotal) {
+        $footer.prop('hidden', true);
+        $count.text('');
         return;
     }
-    const cur = meta.current_page;
-    const last = meta.last_page;
-    const from = meta.from != null ? meta.from : 0;
-    const to = meta.to != null ? meta.to : 0;
-    const total = meta.total != null ? meta.total : 0;
-    const pageItems = buildCompactAppointmentPageItems(last);
-
-    let html = '<div class="card-footer">';
-    html += '<div class="showing-text">Showing ' + from + '&ndash;' + to + ' of ' + total + ' results</div>';
-    html += '<nav><ul class="pagination">';
-
-    if (cur <= 1) {
-        html += '<li class="disabled" aria-disabled="true"><span>&laquo;</span></li>';
-    } else {
-        html += '<li><a href="#" class="appointments-page-link" data-page="' + (cur - 1) + '" rel="prev">&laquo;</a></li>';
-    }
-
-    pageItems.forEach(function (item) {
-        if (item.type === 'dots') {
-            html += '<li class="disabled" aria-disabled="true"><span>&hellip;</span></li>';
-        } else if (item.page === cur) {
-            html += '<li class="active" aria-current="page"><span>' + item.page + '</span></li>';
-        } else {
-            html += '<li><a href="#" class="appointments-page-link" data-page="' + item.page + '">' + item.page + '</a></li>';
-        }
-    });
-
-    if (cur >= last) {
-        html += '<li class="disabled" aria-disabled="true"><span>&raquo;</span></li>';
-    } else {
-        html += '<li><a href="#" class="appointments-page-link" data-page="' + (cur + 1) + '" rel="next">&raquo;</a></li>';
-    }
-
-    html += '</ul></nav></div>';
-    $wrap.html(html);
+    $footer.prop('hidden', false);
+    $count.text('Showing ' + loaded + ' of ' + appointmentsListTotal + ' appointments');
 }
 
-function loadAppointmentsList(page) {
-    appointmentsListCurrentPage = page;
+function hasMoreAppointments() {
+    return appointmentsListCurrentPage < appointmentsListLastPage;
+}
+
+function applyAppointmentsMeta(meta) {
+    if (!meta) {
+        appointmentsListCurrentPage = 1;
+        appointmentsListLastPage = 1;
+        appointmentsListTotal = 0;
+        return;
+    }
+    appointmentsListCurrentPage = parseInt(meta.current_page, 10) || 1;
+    appointmentsListLastPage = parseInt(meta.last_page, 10) || 1;
+    appointmentsListTotal = parseInt(meta.total, 10) || 0;
+}
+
+function loadAppointmentsList(page, append) {
+    const replace = !append;
+    if (replace) {
+        if (appointmentsListLoading) {
+            return;
+        }
+        appointmentsListLoading = true;
+        appointmentsListLoadingMore = false;
+    } else {
+        if (appointmentsListLoading || appointmentsListLoadingMore || !hasMoreAppointments()) {
+            return;
+        }
+        appointmentsListLoadingMore = true;
+        setAppointmentsInfiniteLoader(true);
+    }
+
     const $tbody = $('#appointments-table-body');
-    $tbody.html(
-        '<tr><td colspan="9" class="text-center text-muted py-4">' +
-        '<i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…</td></tr>'
-    );
+    if (replace) {
+        $tbody.html(
+            '<tr><td colspan="9" class="text-center text-muted py-4">' +
+            '<i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…</td></tr>'
+        );
+        $('#appointments-infinite-footer').prop('hidden', true);
+        setAppointmentsInfiniteLoader(false);
+    }
 
     $.ajax({
         url: appointmentsListRequestUrl(),
@@ -744,49 +783,82 @@ function loadAppointmentsList(page) {
         dataType: 'json'
     }).done(function (res) {
         if (res.message && !res.data) {
-            $tbody.html(
-                '<tr><td colspan="9" class="text-center text-danger py-4">' + escapeHtml(res.message) + '</td></tr>'
-            );
-            $('#appointments-pagination').empty();
+            if (replace) {
+                $tbody.html(
+                    '<tr><td colspan="9" class="text-center text-danger py-4">' + escapeHtml(res.message) + '</td></tr>'
+                );
+                applyAppointmentsMeta(null);
+                updateAppointmentsLoadedCount();
+            }
             return;
         }
         const rows = res.data || [];
-        if (!rows.length) {
-            $tbody.html(
-                '<tr><td colspan="9" class="text-center text-muted py-4">' +
-                '<i class="fa-solid fa-circle-info"></i> No appointments found.</td></tr>'
-            );
-        } else {
-            $tbody.html(rows.map(buildAppointmentRowHtml).join(''));
+        applyAppointmentsMeta(res.meta);
+        const startNumber = ((page - 1) * appointmentsListPerPage) + 1;
+
+        if (replace) {
+            if (!rows.length) {
+                $tbody.html(
+                    '<tr><td colspan="9" class="text-center text-muted py-4">' +
+                    '<i class="fa-solid fa-circle-info"></i> No appointments found.</td></tr>'
+                );
+            } else {
+                $tbody.html(rows.map(function (row, i) {
+                    return buildAppointmentRowHtml(row, startNumber + i);
+                }).join(''));
+            }
+        } else if (rows.length) {
+            $tbody.append(rows.map(function (row, i) {
+                return buildAppointmentRowHtml(row, startNumber + i);
+            }).join(''));
         }
-        renderAppointmentsPagination(res.meta);
+
+        updateAppointmentsLoadedCount();
         syncAppointmentsCleanUrl();
     }).fail(function (xhr) {
+        if (!replace) {
+            return;
+        }
         const msg = (xhr.responseJSON && xhr.responseJSON.message)
             ? xhr.responseJSON.message
             : 'Could not load appointments.';
         $tbody.html(
             '<tr><td colspan="9" class="text-center text-danger py-4">' + escapeHtml(msg) + '</td></tr>'
         );
-        $('#appointments-pagination').empty();
+        applyAppointmentsMeta(null);
+        updateAppointmentsLoadedCount();
+    }).always(function () {
+        if (replace) {
+            appointmentsListLoading = false;
+        } else {
+            appointmentsListLoadingMore = false;
+            setAppointmentsInfiniteLoader(false);
+        }
+        window.requestAnimationFrame(maybeLoadMoreAppointments);
     });
+}
+
+function loadMoreAppointments() {
+    if (appointmentsListLoading || appointmentsListLoadingMore || !hasMoreAppointments()) {
+        return;
+    }
+    loadAppointmentsList(appointmentsListCurrentPage + 1, true);
+}
+
+function maybeLoadMoreAppointments() {
+    if (appointmentsListLoading || appointmentsListLoadingMore || !hasMoreAppointments()) {
+        return;
+    }
+    const scrollBottom = window.innerHeight + window.scrollY;
+    const triggerLine = document.documentElement.scrollHeight - 280;
+    if (scrollBottom >= triggerLine) {
+        loadMoreAppointments();
+    }
 }
 
 $('#filter-form').on('submit', function (e) {
     e.preventDefault();
-    loadAppointmentsList(1);
-});
-
-$(document).on('click', '.appointments-page-link', function (e) {
-    e.preventDefault();
-    const $li = $(this).closest('li');
-    if ($li.hasClass('disabled')) {
-        return;
-    }
-    const p = parseInt($(this).data('page'), 10);
-    if (!isNaN(p) && p >= 1) {
-        loadAppointmentsList(p);
-    }
+    loadAppointmentsList(1, false);
 });
 
 $(document).on('click', '.quick-action-btn', function () {
@@ -796,9 +868,13 @@ $(document).on('click', '.quick-action-btn', function () {
     }
 });
 
+$(window).on('scroll.appointmentsInfinite resize.appointmentsInfinite', function () {
+    maybeLoadMoreAppointments();
+});
+
 $(function () {
     syncAppointmentsCleanUrl();
-    loadAppointmentsList(appointmentsListCurrentPage);
+    loadAppointmentsList(1, false);
 });
 
 function manualSync() {
