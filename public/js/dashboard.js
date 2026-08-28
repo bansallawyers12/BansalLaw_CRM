@@ -192,6 +192,9 @@ window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
             success: function(response) {
                 $('.popuploader').hide();
                 showNotification('Task completed successfully!', 'success');
+                if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
+                    window.refreshCrmNavPendingTaskCount();
+                }
                 setTimeout(() => location.reload(), 1000);
             },
             error: function(xhr, status, error) {
@@ -336,6 +339,9 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                 }, 200);
                 
                 showNotification('Task completed successfully!', 'success');
+                if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
+                    window.refreshCrmNavPendingTaskCount();
+                }
             } else {
                 showNotification(response.message || 'Failed to complete task', 'error');
             }

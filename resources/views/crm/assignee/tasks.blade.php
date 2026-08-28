@@ -1462,6 +1462,9 @@ $(function () {
                     $('#urgent-count').text(data.urgent || 0);
                     $('#personal-task-count').text(data.personal_action || 0);
                     $('#follow-up-count').text(data.follow_up || 0);
+                    if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
+                        window.refreshCrmNavPendingTaskCount();
+                    }
                 } else {
                     console.warn('Invalid badge count data received');
                 }
@@ -1724,6 +1727,11 @@ $(function () {
                 
                 // Reload table
                 if (table) { table.draw(false); }
+                if (typeof updateBadgeCounts === 'function') {
+                    updateBadgeCounts();
+                } else if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
+                    window.refreshCrmNavPendingTaskCount();
+                }
                 
                 // Show success notification
                 if (typeof iziToast !== 'undefined') {

@@ -231,6 +231,16 @@ class AssigneeController extends Controller
 
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($note_data, true);
             }
+            $dashboardService = app(\App\Services\DashboardService::class);
+            if ($user) {
+                $dashboardService->forgetPendingOpenTaskCountCache($user);
+            }
+            if (! empty($note_data['assigned_to'])) {
+                $assigneeStaff = Staff::find($note_data['assigned_to']);
+                if ($assigneeStaff) {
+                    $dashboardService->forgetPendingOpenTaskCountCache($assigneeStaff);
+                }
+            }
             $response['status'] 	= 	true;
             $response['message']	=	'Task completed successfully';
         } else {
@@ -293,6 +303,16 @@ class AssigneeController extends Controller
             $noteRow = Note::where('id', $data['id'] ?? 0)->first();
             if ($noteRow) {
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteRow, false);
+            }
+            $dashboardService = app(\App\Services\DashboardService::class);
+            if ($user) {
+                $dashboardService->forgetPendingOpenTaskCountCache($user);
+            }
+            if ($noteRow && ! empty($noteRow->assigned_to)) {
+                $assigneeStaff = Staff::find($noteRow->assigned_to);
+                if ($assigneeStaff) {
+                    $dashboardService->forgetPendingOpenTaskCountCache($assigneeStaff);
+                }
             }
             $response['status'] 	= 	true;
             $response['message']	=	'Task updated successfully';

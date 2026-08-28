@@ -10,6 +10,10 @@
         $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
     }
     $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
+    $_pendingTaskCount = 0;
+    if ($_staffTop instanceof \App\Models\Staff) {
+        $_pendingTaskCount = app(\App\Services\DashboardService::class)->getPendingOpenTaskCount($_staffTop);
+    }
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -53,7 +57,12 @@
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
             <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fa-solid fa-clipboard-check"></i></a>
             @endif
-            <a href="{{ route('assignee.tasks') }}" class="icon-btn" title="Tasks"><i class="fa-solid fa-list-check"></i></a>
+            <a href="{{ route('assignee.tasks') }}" id="crmNavPendingTasks" class="icon-btn" title="Tasks" style="position: relative;">
+                <i class="fa-solid fa-list-check"></i>
+                @if($_pendingTaskCount > 0)
+                    <span class="badge bg-danger crm-nav-pending-tasks-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_pendingTaskCount }}</span>
+                @endif
+            </a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fa-solid fa-users"></i></a>
                 <div class="icon-dropdown-menu">
@@ -197,3 +206,49 @@
     @csrf
     <input type="hidden" name="id" value="{{ Auth::user() ? Auth::user()->id : '' }}">
 </form>
+<script>
+(function () {
+    var countsUrl = @json(route('tasks.counts'));
+
+    function applyPendingTaskBadge(count) {
+        var link = document.getElementById('crmNavPendingTasks');
+        if (!link) return;
+        count = Math.max(0, Number(count) || 0);
+        var badge = link.querySelector('.crm-nav-pending-tasks-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge bg-danger crm-nav-pending-tasks-badge';
+                badge.style.position = 'absolute';
+                badge.style.top = '-5px';
+                badge.style.right = '-5px';
+                badge.style.fontSize = '10px';
+                badge.style.padding = '2px 5px';
+                badge.style.borderRadius = '10px';
+                link.appendChild(badge);
+            }
+            badge.textContent = String(count);
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    window.refreshCrmNavPendingTaskCount = function () {
+        if (!countsUrl) return Promise.resolve();
+        return fetch(countsUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (data) {
+                if (data && typeof data.all !== 'undefined') {
+                    applyPendingTaskBadge(data.all);
+                }
+            })
+            .catch(function () { /* ignore */ });
+    };
+})();
+</script>

@@ -25,6 +25,25 @@ class DashboardService
     }
 
     /**
+     * Open (incomplete) client action tasks for top-nav badge and dashboard KPI.
+     * Staff see tasks assigned to them; elevated Super Admin sees all open tasks.
+     */
+    public function getPendingOpenTaskCount($user): int
+    {
+        return $this->getNoteDeadlineCount($user);
+    }
+
+    public function forgetPendingOpenTaskCountCache($user): void
+    {
+        if (! $user) {
+            return;
+        }
+        $userId = (int) $user->id;
+        $seeAll = $this->viewerSeesAllMattersAndTasks($user);
+        Cache::forget('dashboard_note_deadline_count_'.$userId.'_'.($seeAll ? 'all' : 'mine'));
+    }
+
+    /**
      * Get all dashboard data
      */
     public function getDashboardData($request): array
