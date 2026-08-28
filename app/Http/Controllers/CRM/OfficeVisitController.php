@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 use App\Models\ActivitiesLog;
 use App\Models\Admin;
+use App\Models\Branch;
 use App\Models\CheckinLog;
 use App\Models\CheckinHistory;
+use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
 
 use Auth;
 
@@ -655,86 +658,66 @@ class OfficeVisitController extends Controller
 	}
 	public function waiting(Request $request)
 	{
-	      if(isset($request->t)){
-    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Models\Notification::find($request->t);
-    	       $ovv->receiver_status = 1;
-    	       $ovv->save();
-    	    }
-	    }
-		$officeId = $this->officeFilterFromRequest($request);
-		$query = CheckinLog::where('status', '=', 0)->forOfficeVisitViewer();
-		if ($officeId !== null) {
-			$query->where('office', '=', $officeId);
-		}
-		$totalData = (clone $query)->count();
-		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-
-		$activeTab = 'waiting';
-		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
-		return view('crm.officevisits.index', array_merge(
-			compact('lists', 'totalData', 'activeTab'),
-			[
-				'InPersonCount_waiting_type' => $tabCounts['waiting'],
-				'InPersonCount_attending_type' => $tabCounts['attending'],
-				'InPersonCount_completed_type' => $tabCounts['completed'],
-			]
-		));
+		return $this->renderOfficeVisitTab($request, 'waiting', 0);
 	}
+
 	public function attending(Request $request)
 	{
-	      if(isset($request->t)){
-    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Models\Notification::find($request->t);
-    	       $ovv->receiver_status = 1;
-    	       $ovv->save();
-    	    }
-	    }
-		$officeId = $this->officeFilterFromRequest($request);
-		$query = CheckinLog::where('status', '=', '2')->forOfficeVisitViewer();
-		if ($officeId !== null) {
-			$query->where('office', '=', $officeId);
-		}
-		$totalData = (clone $query)->count();
-		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-
-		$activeTab = 'attending';
-		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
-		return view('crm.officevisits.index', array_merge(
-			compact('lists', 'totalData', 'activeTab'),
-			[
-				'InPersonCount_waiting_type' => $tabCounts['waiting'],
-				'InPersonCount_attending_type' => $tabCounts['attending'],
-				'InPersonCount_completed_type' => $tabCounts['completed'],
-			]
-		));
+		return $this->renderOfficeVisitTab($request, 'attending', 2);
 	}
+
 	public function completed(Request $request)
 	{
-	      if(isset($request->t)){
-    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Models\Notification::find($request->t);
-    	       $ovv->receiver_status = 1;
-    	       $ovv->save();
-    	    }
-	    }
+		return $this->renderOfficeVisitTab($request, 'completed', 1);
+	}
+
+	/**
+	 * @return View|JsonResponse
+	 */
+	private function renderOfficeVisitTab(Request $request, string $activeTab, int $status)
+	{
+		if (isset($request->t)) {
+			if (\App\Models\Notification::where('id', $request->t)->exists()) {
+				$ovv = \App\Models\Notification::find($request->t);
+				$ovv->receiver_status = 1;
+				$ovv->save();
+			}
+		}
+
 		$officeId = $this->officeFilterFromRequest($request);
-		$query = CheckinLog::where('status', '=', '1')->forOfficeVisitViewer();
+		$query = CheckinLog::where('status', '=', $status)->forOfficeVisitViewer();
 		if ($officeId !== null) {
 			$query->where('office', '=', $officeId);
 		}
 		$totalData = (clone $query)->count();
 		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-		$activeTab = 'completed';
 		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
-		return view('crm.officevisits.index', array_merge(
-			compact('lists', 'totalData', 'activeTab'),
-			[
-				'InPersonCount_waiting_type' => $tabCounts['waiting'],
-				'InPersonCount_attending_type' => $tabCounts['attending'],
-				'InPersonCount_completed_type' => $tabCounts['completed'],
-			]
-		));
+		$branches = Branch::orderBy('office_name')->get(['id', 'office_name']);
+		$selectedOfficeName = $request->input('office_name', 'All Branches');
+
+		$viewData = [
+			'lists' => $lists,
+			'totalData' => $totalData,
+			'activeTab' => $activeTab,
+			'tabCounts' => $tabCounts,
+			'branches' => $branches,
+			'officeId' => $officeId,
+			'selectedOfficeName' => $selectedOfficeName,
+			'InPersonCount_waiting_type' => $tabCounts['waiting'],
+			'InPersonCount_attending_type' => $tabCounts['attending'],
+			'InPersonCount_completed_type' => $tabCounts['completed'],
+		];
+
+		if ($request->ajax() || $request->boolean('spa')) {
+			return response()->json([
+				'html' => view('crm.officevisits._list', $viewData)->render(),
+				'counts' => $tabCounts,
+				'activeTab' => $activeTab,
+				'totalData' => $totalData,
+			]);
+		}
+
+		return view('crm.officevisits.index', $viewData);
 	}
 	public function create(Request $request){
 		return view('crm.officevisits.create');
