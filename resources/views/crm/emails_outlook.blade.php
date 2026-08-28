@@ -470,6 +470,9 @@
             <span class="email-infinite-loader__spinner" aria-hidden="true"></span>
             <span>Loading more emails...</span>
         </div>
+        <div class="email-list-footer email-list-footer--compact" aria-live="polite">
+            <span class="email-list-footer__count" id="listTotalCount">Total: 0 emails</span>
+        </div>
         @else
         <div class="pagination-bar" id="emailPaginationBar">
             <div class="pagination-bar__summary">
