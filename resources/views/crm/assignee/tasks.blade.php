@@ -34,58 +34,9 @@
                             <a class="btn btn-outline-navy" id="archived-tab" href="{{ route('assignee.tasks.completed') }}">Completed</a>
                     {{-- Popover body from <template> (data-content attribute breaks on staff names with quotes / long HTML) --}}
                     <template id="action-add-task-popover-template">
-                        <div class="modern-popover-content add-task-layout">
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa-solid fa-user-circle"></i> Client</label>
-                                <select id="add_task_client_select" class="form-control js-data-example-ajaxccsearch__addmytask" data-placeholder="Search and select client..."></select>
-                                <div id="add_task_client_error" class="error-message"></div>
-                            </div>
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa-solid fa-users"></i> Assignees</label>
-                                <div class="dropdown-multi-select" style="width: 100%;">
-                                    <button type="button" class="btn btn-default dropdown-toggle" id="add_task_dropdown_btn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
-                                        Select assignees <span class="selected-count"></span>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="add_task_dropdown_btn" style="width: 100%;">
-                                        <div class="dropdown-search-wrapper" style="padding: 8px; border-bottom: 1px solid #c8dcef;">
-                                            <input type="text" class="form-control assignee-search-input" placeholder="Search assignees..." style="font-size: 13px; padding: 6px 10px;">
-                                        </div>
-                                        <label class="dropdown-item"><input type="checkbox" id="add_task_select_all" /> <strong>Select All</strong></label>
-                                        <div style="border-top: 1px solid #c8dcef; margin: 5px 0;"></div>
-                                        <div class="assignee-list">
-                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                @php
-                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
-                                                    $searchText = str_replace(' ', '', $searchText);
-                                                @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $admin->id }}" data-staff-name="{{ e(trim($admin->first_name . ' ' . $admin->last_name)) }}">
-                                                    <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
-                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <select class="d-none" id="add_task_rem_cat" name="rem_cat[]" multiple="multiple">
-                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value="{{ $admin->id }}">{{ $admin->first_name }} {{ $admin->last_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="add_task_assignees_error" class="error-message"></div>
-                            </div>
-                            <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="add_task_assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
-                                <div id="add_task_note_error" class="error-message"></div>
-                            </div>
-                            <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Task">
-                            <div class="text-center">
-                                <button type="button" class="btn btn-primary" id="add_my_task_submit">
-                                    <i class="fa-solid fa-circle-plus"></i> Add My Task
-                                </button>
-                            </div>
-                        </div>
+                        @include('components.add-task-form', [
+                            'staffMembers' => \App\Models\Staff::where('status', 1)->orderby('first_name', 'ASC')->get(),
+                        ])
                     </template>
                     {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Tom Select. --}}
                     {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Tom Select without dropdownParent). --}}
@@ -471,7 +422,8 @@
     grid-column: 1 / -1 !important;
 }
 
-.popover .modern-popover-content > .text-center {
+.popover .modern-popover-content > .text-center,
+.popover .modern-popover-content > .add-task-modal-footer {
     grid-column: 1 / -1 !important;
     margin-top: 10px !important;
 }
@@ -817,7 +769,7 @@ $(function () {
             boundary: 'viewport',
             container: 'body',
             customClass: 'add-my-task-popover',
-            title: '<i class="fa-solid fa-circle-plus"></i> Add New Task',
+            title: '<span class="add-task-modal-title"><i class="fa-solid fa-circle-plus"></i> Add New Task</span><button type="button" class="add-task-modal-close btn-close" aria-label="Close"></button>',
             template: '<div class="popover" role="tooltip"><div class="popover-arrow"></div><h3 class="popover-header"></h3><div class="popover-body"></div></div>'
         };
         if (actionAddTaskHtml) {

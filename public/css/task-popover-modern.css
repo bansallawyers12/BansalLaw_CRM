@@ -532,8 +532,335 @@
     font-size: 0.8rem;
 }
 
-.task-desc-mention-item:hover,
-.task-desc-mention-item.is-active {
-    background: #ddeaf8;
+.popover.add-my-task-popover {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    max-width: 640px !important;
+    width: min(640px, 94vw) !important;
+    border-radius: 14px !important;
+    border: 1px solid #c8dcef !important;
+    box-shadow: 0 24px 64px rgba(30, 61, 96, 0.18) !important;
+    overflow: visible !important;
+}
+
+.popover.add-my-task-popover .popover-arrow,
+.popover.add-my-task-popover .arrow {
+    display: none !important;
+}
+
+.popover.add-my-task-popover .popover-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    background: #fff !important;
+    color: #1e3d60 !important;
+    border-bottom: 1px solid #c8dcef !important;
+    padding: 16px 20px !important;
+    border-radius: 14px 14px 0 0 !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+}
+
+.popover.add-my-task-popover .add-task-modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.popover.add-my-task-popover .add-task-modal-close {
+    flex-shrink: 0;
+    opacity: 0.65;
+    padding: 0.5rem;
+}
+
+.popover.add-my-task-popover .add-task-modal-close:hover {
+    opacity: 1;
+}
+
+.popover.add-my-task-popover .popover-body {
+    padding: 18px 20px 20px !important;
+    background: #fff !important;
+    border-radius: 0 0 14px 14px !important;
+}
+
+.popover.add-my-task-popover .modern-popover-content.add-task-layout {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px 18px !important;
+    padding: 0 !important;
+}
+
+.popover.add-my-task-popover .add-task-modal-footer {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin-top: 4px !important;
+    padding-top: 14px !important;
+    border-top: 1px solid #e8f0fa !important;
+}
+
+.popover.add-my-task-popover .form-group-full-width,
+.popover.add-my-task-popover .add-task-description-group {
+    grid-column: 1 / -1 !important;
+}
+
+.popover.add-my-task-popover .assignee-picker-panel {
+    position: relative;
+}
+
+.popover.add-my-task-popover .assignee-picker-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 10px 6px 12px;
+    border: 1px solid #c8dcef;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a2c40;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.popover.add-my-task-popover .assignee-picker-trigger:hover {
+    border-color: #3a6fa8;
+}
+
+.popover.add-my-task-popover .assignee-picker-panel.is-open .assignee-picker-trigger,
+.popover.add-my-task-popover .assignee-picker-trigger:focus-visible {
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
+    outline: none;
+}
+
+.popover.add-my-task-popover .assignee-picker-chips-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.popover.add-my-task-popover .assignee-picker-placeholder {
+    color: #5e7a90;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.popover.add-my-task-popover .assignee-picker-panel.has-selection .assignee-picker-placeholder {
+    display: none;
+}
+
+.popover.add-my-task-popover .assignee-picker-chips {
+    display: contents;
+}
+
+.popover.add-my-task-popover .assignee-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 2px 6px 2px 8px;
+    border-radius: 999px;
+    background: rgba(58, 111, 168, 0.12);
+    color: #1e3d60;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.popover.add-my-task-popover .assignee-chip__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.popover.add-my-task-popover .assignee-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #5e7a90;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.popover.add-my-task-popover .assignee-chip-remove:hover {
+    background: rgba(168, 48, 32, 0.12);
+    color: #a83020;
+}
+
+.popover.add-my-task-popover .assignee-picker-chevron {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: #5e7a90;
+    transition: transform 0.15s ease;
+}
+
+.popover.add-my-task-popover .assignee-picker-panel.is-open .assignee-picker-chevron {
+    transform: rotate(180deg);
+}
+
+.popover.add-my-task-popover .assignee-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    border: 1px solid #c8dcef;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(30, 61, 96, 0.14);
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.popover.add-my-task-popover .assignee-picker-panel.is-open .assignee-picker-dropdown {
+    display: flex;
+}
+
+.popover.add-my-task-popover .assignee-picker-toolbar {
+    padding: 8px;
+    border-bottom: 1px solid #e8f0fa;
+    background: #f0f6ff;
+}
+
+.popover.add-my-task-popover .assignee-picker-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.popover.add-my-task-popover .assignee-picker-search i {
+    color: #5e7a90;
+    font-size: 0.85rem;
+    padding-left: 4px;
+}
+
+.popover.add-my-task-popover .assignee-picker-search .assignee-search-input {
+    border: 1px solid #c8dcef !important;
+    border-radius: 8px !important;
+    padding: 7px 10px !important;
+    font-size: 0.875rem !important;
+    box-shadow: none !important;
+    background: #fff !important;
+}
+
+.popover.add-my-task-popover .assignee-picker-search .assignee-search-input:focus {
+    border-color: #3a6fa8 !important;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12) !important;
+}
+
+.popover.add-my-task-popover .assignee-select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1e3d60;
+    border-bottom: 1px solid #e8f0fa;
+    cursor: pointer;
+    user-select: none;
+}
+
+.popover.add-my-task-popover .assignee-select-all input {
+    margin: 0;
+    accent-color: #3a6fa8;
+}
+
+.popover.add-my-task-popover .assignee-list {
+    max-height: 168px;
+    overflow-y: auto;
+    padding: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: #c8dcef transparent;
+}
+
+.popover.add-my-task-popover .assignee-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.popover.add-my-task-popover .assignee-list::-webkit-scrollbar-thumb {
+    background: #c8dcef;
+    border-radius: 999px;
+}
+
+.popover.add-my-task-popover .assignee-picker-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 7px 10px !important;
+    margin: 2px 0 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 0.875rem !important;
+    color: #1a2c40 !important;
+    background: transparent !important;
+}
+
+.popover.add-my-task-popover .assignee-picker-row input {
+    margin: 0 !important;
+    flex-shrink: 0;
+    accent-color: #3a6fa8;
+}
+
+.popover.add-my-task-popover .assignee-picker-row__text {
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.popover.add-my-task-popover .assignee-picker-row:hover {
+    background: #ddeaf8 !important;
+}
+
+.popover.add-my-task-popover .assignee-picker-row:has(.checkbox-item:checked) {
+    background: rgba(58, 111, 168, 0.1) !important;
+    color: #1e3d60 !important;
+}
+
+.popover.add-my-task-popover .assignee-count-badge {
+    display: none !important;
+}
+
+.popover.add-my-task-popover .control-label {
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    color: #5e7a90 !important;
+    margin-bottom: 6px !important;
+}
+
+.popover.add-my-task-popover textarea.form-control {
+    min-height: 88px !important;
+    resize: vertical !important;
+}
+
+.popover.add-my-task-popover .error-message:empty {
+    display: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .popover.add-my-task-popover .modern-popover-content.add-task-layout {
+        grid-template-columns: 1fr !important;
+    }
 }
 

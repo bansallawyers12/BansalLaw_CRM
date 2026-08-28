@@ -95,61 +95,19 @@
                     </div>
                     {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
                     <div id="add-task-popover-template" style="display:none;">
-                        <div class="modern-popover-content add-task-layout">
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa-solid fa-user-circle"></i> Client</label>
-                                <select id="assign_client_id" class="form-control js-data-example-ajaxccsearch__addmytask" placeholder="Search and select client..."></select>
-                                <div id="client-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa-solid fa-users"></i> Assignees</label>
-                                <div class="dropdown-multi-select" style="width: 100%;">
-                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
-                                        Select assignees <span class="selected-count"></span>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="width: 100%;">
-                                        <div class="dropdown-search-wrapper" style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                                            <input type="text" class="form-control assignee-search-input" placeholder="Search assignees..." style="font-size: 13px; padding: 6px 10px;">
-                                        </div>
-                                        <label class="dropdown-item"><input type="checkbox" id="select-all" /> <strong>Select All</strong></label>
-                                        <div style="border-top: 1px solid #e2e8f0; margin: 5px 0;"></div>
-                                        <div class="assignee-list">
-                                            @foreach(($dashboardAssignableStaff ?? collect()) as $member)
-                                                @php
-                                                    $staffId = (int) ($member['id'] ?? 0);
-                                                    $firstName = (string) ($member['first_name'] ?? '');
-                                                    $lastName = (string) ($member['last_name'] ?? '');
-                                                    $officeName = (string) ($member['office_name'] ?? '');
-                                                    $searchText = strtolower($firstName . $lastName . $officeName);
-                                                    $searchText = str_replace(' ', '', $searchText);
-                                                @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}" data-staff-id="{{ $staffId }}" data-staff-name="{{ e(trim($firstName . ' ' . $lastName)) }}">
-                                                    <input type="checkbox" class="checkbox-item" value="{{ $staffId }}">
-                                                    {{ e($firstName) }} {{ e($lastName) }} ({{ e($officeName) }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
-                                    @foreach(($dashboardAssignableStaff ?? collect()) as $member)
-                                        <option value="{{ (int) ($member['id'] ?? 0) }}">{{ e(($member['first_name'] ?? '') . ' ' . ($member['last_name'] ?? '')) }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="assignees-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
-                                <textarea id="assignnote" class="form-control js-staff-mentions" rows="3" placeholder="Enter task description... (type @ to tag staff)"></textarea>
-                                <div id="note-error" class="error-message"></div>
-                            </div>
-                            <input id="task_group" name="task_group" type="hidden" value="Personal Task">
-                            <div class="text-center">
-                                <button type="button" class="btn btn-primary" id="add_my_task">
-                                    <i class="fa-solid fa-circle-plus"></i> Add My Task
-                                </button>
-                            </div>
-                        </div>
+                        @include('components.add-task-form', [
+                            'clientSelectId' => 'assign_client_id',
+                            'clientErrorId' => 'client-error',
+                            'noteTextareaId' => 'assignnote',
+                            'noteErrorId' => 'note-error',
+                            'taskGroupId' => 'task_group',
+                            'submitBtnId' => 'add_my_task',
+                            'submitLabel' => 'Add My Task',
+                            'selectAllId' => 'select-all',
+                            'hiddenSelectId' => 'rem_cat',
+                            'assigneesErrorId' => 'assignees-error',
+                            'staffMembers' => $dashboardAssignableStaff ?? collect(),
+                        ])
                     </div>
                     <button class="todo-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
                         <i class="fa-solid fa-plus"></i>
@@ -996,7 +954,8 @@
     grid-column: 1 / -1 !important;
 }
 
-.popover .modern-popover-content > .text-center {
+.popover .modern-popover-content > .text-center,
+.popover .modern-popover-content > .add-task-modal-footer {
     grid-column: 1 / -1 !important;
     margin-top: 8px !important;
 }
@@ -1190,7 +1149,7 @@ $(function () {
             placement: 'top',
             boundary: 'viewport',
             container: 'body',
-            title: '<i class="fa-solid fa-circle-plus"></i> Add New Task',
+            title: '<span class="add-task-modal-title"><i class="fa-solid fa-circle-plus"></i> Add New Task</span><button type="button" class="add-task-modal-close btn-close" aria-label="Close"></button>',
             template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
         };
         if (contentId && $('#' + contentId).length) {
