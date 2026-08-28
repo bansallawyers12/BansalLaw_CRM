@@ -183,132 +183,7 @@ class ClientsController extends Controller
 
     public function clientsmatterslist(Request $request)
     {
-        // Check authorization using trait
-        $teamMembers = collect();
-        if ($this->hasClientListModuleAccess()) {
-            $sortField = $request->get('sort', 'cm.id');
-            $sortDirection = $request->get('direction', 'desc');
-
-            $query = DB::table('client_matters as cm')
-            ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-            ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
-            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
-            ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
-            ->where('cm.matter_status', '=', '1')
-            ->where('ad.is_archived', '=', '0')
-            ->whereIn('ad.type', ['client', 'lead'])
-            ->whereNull('ad.is_deleted')
-            ->where(function ($q) {
-                $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
-                $q->whereNull('ws.name')
-                    ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
-            });
-            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
-            StaffClientVisibility::restrictMatterListToAllocatedClients($query, 'cm', 'ad');
-
-            if ($request->has('sel_matter_id')) {
-                $sel_matter_id = $request->input('sel_matter_id');
-                if(trim($sel_matter_id) != '') {
-                    $query->where('cm.sel_matter_id', '=', $sel_matter_id);
-                }
-            }
-
-            if ($request->has('client_id')) {
-                $client_id = $request->input('client_id');
-                if(trim($client_id) != '') {
-                    $query->where('ad.client_id', '=', $client_id);
-                }
-            }
-
-            if ($request->has('name')) {
-                $name = trim($request->input('name'));
-                if ($name != '') {
-                    CrmListingTextSearch::applyToClientMattersJoinQuery($query, $name);
-                }
-            }
-
-            if ($request->filled('sel_legal_practitioner')) {
-                $query->where('cm.sel_legal_practitioner', '=', $request->input('sel_legal_practitioner'));
-            }
-
-            if ($request->filled('sel_person_responsible')) {
-                $query->where('cm.sel_person_responsible', '=', $request->input('sel_person_responsible'));
-            }
-
-            if ($request->filled('sel_person_assisting')) {
-                $query->where('cm.sel_person_assisting', '=', $request->input('sel_person_assisting'));
-            }
-
-            if ($request->filled('closure_status')) {
-                $closureStatus = $request->input('closure_status');
-                if ($closureStatus === 'complete') {
-                    $query->where('cm.matter_status', '=', '0')
-                        ->whereIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
-                } elseif ($closureStatus === 'discontinued') {
-                    $query->where('cm.matter_status', '=', '0')
-                        ->where(function ($q) {
-                            $q->whereNull('cm.discontinue_reason')
-                                ->orWhereNotIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
-                        });
-                }
-            }
-
-            if (
-                $request->filled('quick_date_range') ||
-                $request->filled('from_date') ||
-                $request->filled('to_date')
-            ) {
-                [$startDate, $endDate] = $this->resolveClientDateRange($request);
-                $dateField = $request->input('date_filter_field', 'created_at') === 'updated_at'
-                    ? 'cm.updated_at'
-                    : 'cm.created_at';
-
-                if ($startDate && $endDate) {
-                    $query->whereBetween($dateField, [$startDate, $endDate]);
-                }
-            }
-
-            // Count AFTER all filters are applied, BEFORE orderBy
-            $totalData = $query->count();
-
-            // Apply orderBy AFTER count for pagination
-            $query->orderBy($sortField, $sortDirection);
-
-            // Matters listing uses infinite scroll in fixed batches of 20.
-            $perPage = 20;
-
-            $teamMembers = \App\Models\Staff::query()
-                ->orderBy('first_name', 'asc')
-                ->select('id', 'first_name', 'last_name')
-                ->get();
-
-            $lists = $query->paginate($perPage)->appends($request->except('page'));
-        } else {
-            $sortField = $request->get('sort', 'cm.id');
-            $sortDirection = $request->get('direction', 'desc');
-
-            $query = DB::table('client_matters as cm')
-            ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
-            ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
-            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
-            ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
-            ->where('cm.matter_status', '=', '1')
-            ->where('ad.is_archived', '=', '0')
-            ->whereIn('ad.type', ['client', 'lead'])
-            ->whereNull('ad.is_deleted')
-            ->where(function ($q) {
-                $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
-                $q->whereNull('ws.name')
-                    ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
-            });
-            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
-            $query->orderBy($sortField, $sortDirection);
-            $perPage = 20;
-            $totalData = 0;
-            $lists = $query->paginate($perPage);
-        }
-        //dd( $lists);
-        return view('crm.clients.clientsmatterslist', compact(['lists', 'totalData', 'teamMembers', 'perPage']));
+        return $this->renderMattersListTab($request, 'active');
     }
 
     /**
@@ -317,47 +192,76 @@ class ClientsController extends Controller
      */
     public function closedmatterslist(Request $request)
     {
+        return $this->renderMattersListTab($request, 'closed');
+    }
+
+    /**
+     * Shared Active/Closed matters listing for SPA tab switching.
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
+     */
+    private function renderMattersListTab(Request $request, string $listTab)
+    {
+        $listTab = $listTab === 'closed' ? 'closed' : 'active';
         $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
-
+        $isClosed = $listTab === 'closed';
         $teamMembers = collect();
-        if ($this->hasClientListModuleAccess()) {
-            $sortField = $request->get('sort', 'cm.id');
-            $sortDirection = $request->get('direction', 'desc');
+        $perPage = 20;
+        $sortField = $request->get('sort', 'cm.id');
+        $sortDirection = $request->get('direction', 'desc');
 
+        if ($this->hasClientListModuleAccess()) {
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
                 ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
-                ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
+                ->select(
+                    'cm.*',
+                    'ad.client_id as client_unique_id',
+                    'ad.first_name',
+                    'ad.last_name',
+                    'ad.email',
+                    'ma.title',
+                    'ma.nick_name',
+                    'ad.dob',
+                    'ws.name as workflow_stage_name'
+                )
                 ->where('ad.is_archived', '=', '0')
                 ->whereIn('ad.type', ['client', 'lead'])
-                ->whereNull('ad.is_deleted')
-                ->where(function ($q) use ($closedStages) {
+                ->whereNull('ad.is_deleted');
+
+            if ($isClosed) {
+                $query->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
-                        ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
+                        ->orWhereRaw(
+                            'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                            $closedStages
+                        );
                 });
+            } else {
+                $query->where('cm.matter_status', '=', '1')
+                    ->where(function ($q) use ($closedStages) {
+                        $q->whereNull('ws.name')
+                            ->orWhereRaw(
+                                'LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                                $closedStages
+                            );
+                    });
+            }
+
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
             StaffClientVisibility::restrictMatterListToAllocatedClients($query, 'cm', 'ad');
 
-            if ($request->has('sel_matter_id')) {
-                $sel_matter_id = $request->input('sel_matter_id');
-                if (trim($sel_matter_id) != '') {
-                    $query->where('cm.sel_matter_id', '=', $sel_matter_id);
-                }
+            if ($request->has('sel_matter_id') && trim((string) $request->input('sel_matter_id')) !== '') {
+                $query->where('cm.sel_matter_id', '=', $request->input('sel_matter_id'));
             }
 
-            if ($request->has('client_id')) {
-                $client_id = $request->input('client_id');
-                if (trim($client_id) != '') {
-                    $query->where('ad.client_id', '=', $client_id);
-                }
+            if ($request->has('client_id') && trim((string) $request->input('client_id')) !== '') {
+                $query->where('ad.client_id', '=', $request->input('client_id'));
             }
 
-            if ($request->has('name')) {
-                $name = trim($request->input('name'));
-                if ($name != '') {
-                    CrmListingTextSearch::applyToClientMattersJoinQuery($query, $name);
-                }
+            if ($request->has('name') && trim((string) $request->input('name')) !== '') {
+                CrmListingTextSearch::applyToClientMattersJoinQuery($query, trim((string) $request->input('name')));
             }
 
             if ($request->filled('sel_legal_practitioner')) {
@@ -404,9 +308,6 @@ class ClientsController extends Controller
             $totalData = $query->count();
             $query->orderBy($sortField, $sortDirection);
 
-            // Closed matters listing uses infinite scroll in fixed batches of 20.
-            $perPage = 20;
-
             $teamMembers = \App\Models\Staff::query()
                 ->orderBy('first_name', 'asc')
                 ->select('id', 'first_name', 'last_name')
@@ -414,29 +315,84 @@ class ClientsController extends Controller
 
             $lists = $query->paginate($perPage)->appends($request->except('page'));
         } else {
-            $sortField = $request->get('sort', 'cm.id');
-            $sortDirection = $request->get('direction', 'desc');
-
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
                 ->leftJoin('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
-                ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
+                ->select(
+                    'cm.*',
+                    'ad.client_id as client_unique_id',
+                    'ad.first_name',
+                    'ad.last_name',
+                    'ad.email',
+                    'ma.title',
+                    'ma.nick_name',
+                    'ad.dob',
+                    'ws.name as workflow_stage_name'
+                )
                 ->where('ad.is_archived', '=', '0')
                 ->whereIn('ad.type', ['client', 'lead'])
-                ->whereNull('ad.is_deleted')
-                ->where(function ($q) use ($closedStages) {
+                ->whereNull('ad.is_deleted');
+
+            if ($isClosed) {
+                $query->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
-                        ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
+                        ->orWhereRaw(
+                            'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                            $closedStages
+                        );
                 });
+            } else {
+                $query->where('cm.matter_status', '=', '1')
+                    ->where(function ($q) use ($closedStages) {
+                        $q->whereNull('ws.name')
+                            ->orWhereRaw(
+                                'LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                                $closedStages
+                            );
+                    });
+            }
+
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
             $query->orderBy($sortField, $sortDirection);
-            $perPage = 20;
             $totalData = 0;
             $lists = $query->paginate($perPage);
         }
 
-        return view('crm.clients.closedmatterslist', compact(['lists', 'totalData', 'teamMembers', 'perPage']));
+        $viewData = [
+            'lists' => $lists,
+            'totalData' => $totalData,
+            'teamMembers' => $teamMembers,
+            'perPage' => $perPage,
+            'listTab' => $listTab,
+            'activeUrl' => route('clients.clientsmatterslist'),
+            'closedUrl' => route('clients.closedmatterslist'),
+        ];
+
+        if ($request->boolean('spa')) {
+            $totalForJson = method_exists($lists, 'total') ? $lists->total() : (int) $totalData;
+            return response()->json([
+                'html' => view('crm.clients.partials.matters-list-spa-body', $viewData)->render(),
+                'listTab' => $listTab,
+                'totalData' => $totalForJson,
+                'currentPage' => method_exists($lists, 'currentPage') ? $lists->currentPage() : 1,
+                'lastPage' => method_exists($lists, 'lastPage') ? $lists->lastPage() : 1,
+                'url' => $isClosed ? $viewData['closedUrl'] : $viewData['activeUrl'],
+                'title' => $isClosed ? 'Closed Matters' : 'Client Matters',
+                'subtitle' => $isClosed
+                    ? (number_format($totalForJson) . ' closed ' . \Illuminate\Support\Str::plural('matter', $totalForJson) . ' · Review history and reopen when needed')
+                    : (number_format($totalForJson) . ' active ' . \Illuminate\Support\Str::plural('matter', $totalForJson) . ' · Search, filter and open matter files'),
+            ]);
+        }
+
+        // Infinite scroll: return fragment only (no layout/scripts) so the page does not re-execute JS.
+        if ($request->ajax()) {
+            return response()
+                ->view('crm.clients.partials.matters-list-ajax-fragment', $viewData)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        }
+
+        return view('crm.clients.matters-list-spa', $viewData);
     }
 
     public function insights(Request $request)
