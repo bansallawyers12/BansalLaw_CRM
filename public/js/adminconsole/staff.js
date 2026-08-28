@@ -46,6 +46,10 @@
     }
 
     function showFlashMessage(message, type) {
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(escapeHtml(message), type === 'success' ? 'success' : 'danger', $('.server-error'));
+            return;
+        }
         var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         $('.server-error').html(
             '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +

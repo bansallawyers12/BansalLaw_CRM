@@ -337,18 +337,111 @@
 		$('html, body').animate({scrollTop:0}, 'slow');
 	}
 	
-	function successMessage(msg){
-		var html = '<div class="alert alert-success alert-dismissible fade show" role="alert"><div class="alert-body">';
-		html +=	'<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
-		html += '<strong>'+msg+'</strong>';
-		html += '</div></div>';
-		
-		return html;
+	function crmFlashHtml(type, msg, title, autoDismiss) {
+		type = type || 'info';
+		if (type === 'error') {
+			type = 'danger';
+		}
+		var icons = {
+			success: 'fa-circle-check',
+			danger: 'fa-circle-xmark',
+			warning: 'fa-triangle-exclamation',
+			info: 'fa-circle-info'
+		};
+		var titles = {
+			success: 'Success',
+			danger: 'Error',
+			warning: 'Warning',
+			info: 'Information'
+		};
+		var icon = icons[type] || icons.info;
+		var heading = title || titles[type] || 'Notice';
+		var dismissAttr = autoDismiss === false || autoDismiss === 0
+			? ''
+			: ' data-auto-dismiss="' + (autoDismiss || 6000) + '"';
+
+		return '<div class="alert crm-flash crm-flash-' + type + ' alert-' + type + ' alert-dismissible fade show" role="alert"' + dismissAttr + '>' +
+			'<div class="crm-flash__inner">' +
+			'<div class="crm-flash__icon" aria-hidden="true"><i class="fa-solid ' + icon + '"></i></div>' +
+			'<div class="crm-flash__content">' +
+			'<div class="crm-flash__title">' + heading + '</div>' +
+			'<div class="crm-flash__message">' + (msg || '') + '</div>' +
+			'</div>' +
+			'<button type="button" class="btn-close crm-flash__close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+			'</div></div>';
 	}
-	function errorMessage(msg){
-		var html = '<div class="alert alert-danger alert-dismissible fade show"><div class="alert-body">';
-		html += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'+msg;	
-		html += '</div></div>';
-		
-		return html;	
+
+	function initCrmFlashAlerts(root) {
+		var $root = root ? $(root) : $(document);
+		$root.find('.crm-flash[data-auto-dismiss]').each(function () {
+			var $el = $(this);
+			if ($el.data('crm-flash-init')) {
+				return;
+			}
+			$el.data('crm-flash-init', true);
+			var delay = parseInt($el.attr('data-auto-dismiss'), 10) || 6000;
+			setTimeout(function () {
+				if (!$el.hasClass('show')) {
+					return;
+				}
+				$el.removeClass('show');
+				setTimeout(function () {
+					$el.remove();
+				}, 300);
+			}, delay);
+		});
 	}
+
+	function observeCrmFlashContainers() {
+		if (typeof MutationObserver === 'undefined') {
+			return;
+		}
+		$('.server-error, .custom-error-msg').each(function () {
+			if (this._crmFlashObserved) {
+				return;
+			}
+			this._crmFlashObserved = true;
+			var target = this;
+			var observer = new MutationObserver(function () {
+				initCrmFlashAlerts(target);
+			});
+			observer.observe(target, { childList: true, subtree: true });
+		});
+	}
+
+	function showCrmFlash(msg, type, $container) {
+		type = type || 'success';
+		if (type === 'error') {
+			type = 'danger';
+		}
+		$container = ($container && $container.length) ? $container : $('.server-error').first();
+		if (!$container.length) {
+			$container = $('.custom-error-msg').first();
+		}
+		if (!$container.length) {
+			return;
+		}
+		$container.html(crmFlashHtml(type, msg)).show();
+		initCrmFlashAlerts($container[0]);
+		var offset = $container.offset();
+		if (offset) {
+			$('html, body').animate({ scrollTop: Math.max(0, offset.top - 80) }, 300);
+		}
+	}
+
+	function successMessage(msg) {
+		return crmFlashHtml('success', msg);
+	}
+
+	function errorMessage(msg) {
+		return crmFlashHtml('danger', msg);
+	}
+
+	window.crmFlashHtml = crmFlashHtml;
+	window.initCrmFlashAlerts = initCrmFlashAlerts;
+	window.showCrmFlash = showCrmFlash;
+
+	$(function () {
+		initCrmFlashAlerts(document);
+		observeCrmFlashContainers();
+	});
