@@ -301,21 +301,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const btnToggleListFilters = document.getElementById('btnToggleListFilters');
-    const unassignedListFilters = document.getElementById('unassignedListFilters');
-    if (btnToggleListFilters && unassignedListFilters) {
-        btnToggleListFilters.addEventListener('click', function () {
-            const isOpen = unassignedListFilters.classList.toggle('is-open');
-            btnToggleListFilters.classList.toggle('is-open', isOpen);
-            btnToggleListFilters.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            btnToggleListFilters.title = isOpen ? 'Hide filters' : 'Show filters';
-            if (isOpen && searchInput) {
+    function initListFiltersToggle(buttonEl, drawerEl, focusInput) {
+        if (!buttonEl || !drawerEl) {
+            return;
+        }
+        buttonEl.addEventListener('click', function () {
+            const isOpen = drawerEl.classList.toggle('is-open');
+            buttonEl.classList.toggle('is-open', isOpen);
+            buttonEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            buttonEl.title = isOpen ? 'Hide search and filters' : 'Show search and filters';
+            if (isOpen && focusInput) {
                 window.setTimeout(function () {
-                    searchInput.focus();
+                    focusInput.focus();
                 }, 220);
             }
         });
     }
+
+    function clientFiltersAreActive() {
+        const hasSearch = !!(searchInput && String(searchInput.value || '').trim());
+        const hasLabel = !!(labelFilter && String(labelFilter.value || '').trim());
+        const hasSender = !!(senderFilter && String(senderFilter.value || '').trim() && !senderFilter.hidden);
+        const hasSort = !!(sortOrder && sortOrder.value === 'asc');
+        const hasSendStatus = !!(sendStatusFilter && String(sendStatusFilter.value || '').trim() && !sendStatusFilter.hidden);
+        const hasDateFrom = !!(dateFromFilter && String(dateFromFilter.value || '').trim() && !dateFromFilter.hidden);
+        const hasDateTo = !!(dateToFilter && String(dateToFilter.value || '').trim() && !dateToFilter.hidden);
+        return hasSearch || hasLabel || hasSender || hasSort || hasSendStatus || hasDateFrom || hasDateTo;
+    }
+
+    function updateClientFilterToggleState() {
+        const btnToggleClientListFilters = document.getElementById('btnToggleClientListFilters');
+        if (!btnToggleClientListFilters) {
+            return;
+        }
+        btnToggleClientListFilters.classList.toggle('has-active-filters', clientFiltersAreActive());
+    }
+
+    const btnToggleListFilters = document.getElementById('btnToggleListFilters');
+    const unassignedListFilters = document.getElementById('unassignedListFilters');
+    initListFiltersToggle(btnToggleListFilters, unassignedListFilters, searchInput);
+
+    const btnToggleClientListFilters = document.getElementById('btnToggleClientListFilters');
+    const clientListFilters = document.getElementById('clientListFilters');
+    initListFiltersToggle(btnToggleClientListFilters, clientListFilters, searchInput);
+    updateClientFilterToggleState();
 
     if (gmailIconDelete) {
         gmailIconDelete.addEventListener('click', function () {
@@ -364,6 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (senderFilter) {
             senderFilter.hidden = isOutbox;
         }
+        updateClientFilterToggleState();
     }
 
     function resetComposeContext() {
@@ -1387,17 +1417,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            currentPage = 1;
-            loadEmails();
-        }
-    });
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                currentPage = 1;
+                loadEmails();
+            }
+        });
+        searchInput.addEventListener('input', updateClientFilterToggleState);
+    }
 
     if (labelFilter) {
         labelFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 
@@ -1405,6 +1439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         senderFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 
@@ -1478,6 +1513,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPage = 1;
             resetReadingPane();
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 
@@ -1485,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sendStatusFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 
@@ -1492,6 +1529,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dateFromFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 
@@ -1499,6 +1537,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dateToFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
+            updateClientFilterToggleState();
         });
     }
 

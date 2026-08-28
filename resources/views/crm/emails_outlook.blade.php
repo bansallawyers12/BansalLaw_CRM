@@ -207,13 +207,23 @@
                     </button>
                 </div>
                 @else
-                <div class="folder-tabs" role="tablist" aria-label="Mail folders">
-                    <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                        <i class="fa-solid fa-inbox"></i> Inbox
-                    </button>
-                    <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-paper-plane"></i> Sent
-                    </button>
+                <div class="{{ $compactPagination ? 'list-toolbar__folder-row' : '' }}">
+                    <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+                        <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-inbox"></i> Inbox
+                        </button>
+                        <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-paper-plane"></i> Sent
+                        </button>
+                    </div>
+                    @if($compactPagination)
+                    <div class="list-toolbar__side-actions">
+                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show search and filters">
+                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                            <span class="list-filter-toggle__text">Filters</span>
+                        </button>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -320,6 +330,68 @@
         @endif
 
         @if(! $unassignedOnly)
+        @if($compactPagination)
+        <div class="list-filters-drawer" id="clientListFilters">
+            <div class="list-filters-drawer__inner">
+                <div class="list-header list-header--client-modern">
+                    <div class="list-header-row">
+                        <div class="search-box search-box--compact list-toolbar__search">
+                            <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                            <input type="search" id="searchInput" placeholder="Search emails..." autocomplete="off" aria-label="Search emails">
+                        </div>
+                    </div>
+                    <div class="list-header-filters list-header-filters--modern">
+                        <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
+                            <option value="">All Labels</option>
+                            @if(isset($clientData) && isset($matterId))
+                                @php
+                                    $labels = \App\Models\EmailLabel::where(function($query) {
+                                            $query->where('user_id', \Illuminate\Support\Facades\Auth::id())
+                                                  ->orWhereNull('user_id');
+                                        })
+                                        ->where('is_active', true)
+                                        ->orderBy('type', 'desc')
+                                        ->orderBy('name')
+                                        ->get();
+                                @endphp
+                                @foreach($labels as $label)
+                                    <option value="{{ $label->id }}">{{ $label->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
+                            <option value="">All Senders</option>
+                            @if(isset($clientData) && isset($matterId))
+                                @php
+                                    $senders = \App\Models\EmailLog::where('client_id', $clientData->id)
+                                        ->where('client_matter_id', $matterId)
+                                        ->where('mail_type', 1)
+                                        ->whereNotNull('from_mail')
+                                        ->where('from_mail', '!=', '')
+                                        ->distinct()
+                                        ->pluck('from_mail');
+                                @endphp
+                                @foreach($senders as $sender)
+                                    <option value="{{ $sender }}">{{ $sender }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <select id="sortOrder" class="list-filter-select" aria-label="Sort order">
+                            <option value="desc" selected>Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                        <select id="sendStatusFilter" class="list-filter-select list-filter-outbox" aria-label="Filter by send status" hidden>
+                            <option value="">All Status</option>
+                            <option value="sent">Sent</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <input type="date" id="dateFromFilter" class="list-filter-date list-filter-outbox" aria-label="From date" title="From date" hidden>
+                        <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @else
         <div class="list-header">
             <div class="list-header-row">
                 <div class="search-box">
@@ -350,7 +422,6 @@
                     <option value="">All Senders</option>
                     @if(isset($clientData) && isset($matterId))
                         @php
-                            // Fetch distinct senders for this client/matter (only received emails, mail_type = 1)
                             $senders = \App\Models\EmailLog::where('client_id', $clientData->id)
                                 ->where('client_matter_id', $matterId)
                                 ->where('mail_type', 1)
@@ -377,6 +448,7 @@
                 <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
             </div>
         </div>
+        @endif
         @endif
 
         @if($unassignedOnly)

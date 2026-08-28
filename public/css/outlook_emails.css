@@ -7115,3 +7115,166 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
         grid-template-columns: 1fr;
     }
 }
+
+/* Client detail — Emails tab modern UI (compact pagination only) */
+#emails-tab .outlook-container--compact-pagination {
+    border: 1px solid #c8dcef;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(30, 61, 96, 0.06);
+}
+
+#emails-tab .outlook-container--compact-pagination .list-toolbar {
+    padding: 12px 14px;
+    background: #f0f6ff;
+    border-bottom: 1px solid #c8dcef;
+    gap: 0;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-toolbar__folder-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+#emails-tab .outlook-container--compact-pagination .folder-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #c8dcef;
+    width: auto;
+    flex: 0 1 auto;
+}
+
+#emails-tab .outlook-container--compact-pagination .folder-item {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #5e7a90;
+}
+
+#emails-tab .outlook-container--compact-pagination .folder-item:hover {
+    background: #ddeaf8;
+    color: #1e3d60;
+}
+
+#emails-tab .outlook-container--compact-pagination .folder-item.active {
+    background: #3a6fa8;
+    border-color: #3a6fa8;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(58, 111, 168, 0.25);
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle {
+    height: 38px;
+    border-color: #c8dcef;
+    border-radius: 10px;
+    color: #1e3d60;
+    background: #fff;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle:hover {
+    background: #ddeaf8;
+    border-color: #3a6fa8;
+    color: #1e3d60;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle.is-open,
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle.has-active-filters {
+    background: rgba(58, 111, 168, 0.1);
+    border-color: #3a6fa8;
+    color: #1e3d60;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle.has-active-filters::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #c8992a;
+    margin-left: 2px;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-header--client-modern {
+    padding: 0;
+    border-bottom: 1px solid #e8f0fa;
+    background: #fff;
+    gap: 10px;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-toolbar__search {
+    margin: 12px 14px 0;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 14px 12px;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-select,
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-date {
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid #c8dcef;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.8125rem;
+    color: #1a2c40;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-select:focus,
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-date:focus {
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
+    outline: none;
+}
+
+#emails-tab .outlook-container--compact-pagination .inline-drop-zone {
+    margin: 12px 14px 0;
+    padding: 12px 14px;
+    border: 1px dashed #c8dcef;
+    border-radius: 10px;
+    background: #f0f6ff;
+    color: #5e7a90;
+}
+
+#emails-tab .outlook-container--compact-pagination .inline-drop-zone:hover,
+#emails-tab .outlook-container--compact-pagination .inline-drop-zone.is-drag-over {
+    background: #ddeaf8;
+    border-color: #3a6fa8;
+    color: #1e3d60;
+}
+
+#emails-tab .outlook-container--compact-pagination .email-list {
+    background: #fff;
+}
+
+#emails-tab .outlook-container--compact-pagination .outlook-reading-pane {
+    background: #f8fbff;
+    border-left: 1px solid #e8f0fa;
+}
+
+#emails-tab .outlook-container--compact-pagination .empty-state {
+    color: #5e7a90;
+}
+
+@media (max-width: 900px) {
+    #emails-tab .outlook-container--compact-pagination .list-header-filters--modern {
+        grid-template-columns: 1fr;
+    }
+
+    #emails-tab .outlook-container--compact-pagination .list-toolbar__folder-row {
+        flex-wrap: wrap;
+    }
+}
