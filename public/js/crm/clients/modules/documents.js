@@ -105,12 +105,19 @@
         $('#renameFileName').val(fileName);
 
         var modalEl = document.getElementById('renameFileModal');
-        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+        if (!modalEl) {
             console.error('Rename file modal not available');
             return false;
         }
 
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else if (typeof $.fn.modal === 'function') {
+            $(modalEl).modal('show');
+        } else {
+            console.error('Rename file modal not available');
+            return false;
+        }
         setTimeout(function() {
             $('#renameFileName').trigger('focus').trigger('select');
         }, 200);
@@ -161,6 +168,8 @@
                     var modalEl = document.getElementById('renameFileModal');
                     if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                         bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    } else if (modalEl && typeof $.fn.modal === 'function') {
+                        $(modalEl).modal('hide');
                     }
                     $renameFileTargetRow = null;
                 } else {
@@ -285,7 +294,7 @@
         });
 
         // ---- Rename document: Personal + matter (modal) ----
-        $(document).on('click', '.persdocumnetlist .renamedoc, .persdocumnetlist a.renamedoc, .migdocumnetlist1 .renamedoc', function(e) {
+        $(document).on('click', '.renamedoc', function(e) {
             e.preventDefault();
             e.stopPropagation();
             return openRenameFileModal($(this).closest('.drow'));

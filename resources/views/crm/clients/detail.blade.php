@@ -1626,8 +1626,8 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/notes.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/matter-tasks.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/matter-tasks.js')) ?: time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/checklist.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/documents.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
 {{-- appointments.js uses Flatpickr inline (bootstrap-datepicker removed) --}}

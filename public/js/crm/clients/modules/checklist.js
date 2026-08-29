@@ -76,12 +76,19 @@
         $('#renameChecklistName').val(checklistName);
 
         var modalEl = document.getElementById('renameChecklistModal');
-        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+        if (!modalEl) {
             console.error('Rename checklist modal not available');
             return false;
         }
 
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else if (typeof $.fn.modal === 'function') {
+            $(modalEl).modal('show');
+        } else {
+            console.error('Rename checklist modal not available');
+            return false;
+        }
         setTimeout(function() {
             $('#renameChecklistName').trigger('focus').trigger('select');
         }, 200);
@@ -126,6 +133,8 @@
                     var modalEl = document.getElementById('renameChecklistModal');
                     if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                         bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    } else if (modalEl && typeof $.fn.modal === 'function') {
+                        $(modalEl).modal('hide');
                     }
                     $renameChecklistTargetRow = null;
                 } else {
@@ -160,7 +169,7 @@
         });
 
         // ---- Rename checklist: Personal + matter documents (modal) ----
-        $(document).on('click', '.persdocumnetlist .renamechecklist, .persdocumnetlist a.renamechecklist, .migdocumnetlist1 .renamechecklist', function(e) {
+        $(document).on('click', '.renamechecklist', function(e) {
             e.preventDefault();
             e.stopPropagation();
             return openRenameChecklistModal($(this).closest('.drow'));
