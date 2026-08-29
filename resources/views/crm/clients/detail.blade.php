@@ -611,178 +611,181 @@ use App\Http\Controllers\Controller;
 
 
 
-<div id="emailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true" data-staff-signature="{{ auth()->user()->email_signature ?? '' }}" data-signature-prefill="allow">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+<div id="emailmodal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal emailmodal--compose" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true" data-staff-signature="{{ auth()->user()->email_signature ?? '' }}" data-signature-prefill="allow">
+	<div class="modal-dialog modal-lg modal-dialog-centered emailmodal__dialog">
+		<div class="modal-content emailmodal__content">
+			<div class="modal-header emailmodal__header">
+				<div class="emailmodal__header-main">
+					<span class="emailmodal__header-icon" aria-hidden="true"><i class="fa-solid fa-envelope"></i></span>
+					<div>
+						<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
+						<p class="emailmodal__subtitle">Send a message for this matter</p>
+					</div>
+				</div>
+				<button type="button" class="close emailmodal__close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<div class="modal-body">
-				<form method="post" name="sendmail" action="{{route('clients.sendmail')}}" autocomplete="off" enctype="multipart/form-data">
+			<form method="post" name="sendmail" action="{{route('clients.sendmail')}}" autocomplete="off" enctype="multipart/form-data" class="emailmodal__form">
 				@csrf
-                    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                    <input type="hidden" name="type" value="client">
-                    <input type="hidden" name="mail_type" value="2">
-                    <input type="hidden" name="mail_body_type" value="sent">
-                    <input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
-					<div class="row">
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="email_from">From <span class="span_req">*</span></label>
-								@include('partials.email-from-compose')
-								@if ($errors->has('email_from'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('email_from') }}</strong>
-									</span>
-								@endif
-							</div>
+				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
+				<input type="hidden" name="type" value="client">
+				<input type="hidden" name="mail_type" value="2">
+				<input type="hidden" name="mail_body_type" value="sent">
+				<input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
+
+				<div class="modal-body emailmodal__body">
+					<div class="emailmodal__grid">
+						<div class="emailmodal__field">
+							<label for="email_from">From <span class="span_req">*</span></label>
+							@include('partials.email-from-compose')
+							@if ($errors->has('email_from'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('email_from') }}</strong>
+								</span>
+							@endif
 						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
+						<div class="emailmodal__field">
+							<div class="emailmodal__label-row">
 								<label for="email_to">To <span class="span_req">*</span></label>
-								<select multiple data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
-
-								@if ($errors->has('email_to'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('email_to') }}</strong>
-									</span>
-								@endif
+								<div class="emailmodal__extra-toggles" role="group" aria-label="Optional recipients">
+									<button type="button" class="emailmodal__chip-toggle" id="emailmodalShowCc" aria-expanded="false" aria-controls="emailmodalCcField">Cc</button>
+									<button type="button" class="emailmodal__chip-toggle" id="emailmodalShowBcc" aria-expanded="false" aria-controls="emailmodalBccField">Bcc</button>
+								</div>
 							</div>
+							<select multiple data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
+							@if ($errors->has('email_to'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('email_to') }}</strong>
+								</span>
+							@endif
 						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="email_cc">CC </label>
-								<select multiple data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
 
-								@if ($errors->has('email_cc'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('email_cc') }}</strong>
-									</span>
-								@endif
+						<div class="emailmodal__field emailmodal__field--optional" id="emailmodalCcField" hidden>
+							<label for="email_cc">Cc</label>
+							<select multiple data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
+							@if ($errors->has('email_cc'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('email_cc') }}</strong>
+								</span>
+							@endif
+						</div>
+						<div class="emailmodal__field emailmodal__field--optional" id="emailmodalBccField" hidden>
+							<label for="email_bcc">Bcc</label>
+							<select multiple data-valid="" class="js-data-example-ajaxbcc" name="email_bcc[]"></select>
+							@if ($errors->has('email_bcc'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('email_bcc') }}</strong>
+								</span>
+							@endif
+						</div>
+
+						<div class="emailmodal__field emailmodal__field--full">
+							<label for="template">Template</label>
+							<?php
+							$clientAssigneeName = ''; // assignee column removed
+							if(false){
+							} else {
+								$clientAssigneeName = 'NA';
+							}
+							?>
+							<select data-valid="" class="form-select form-control selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
+								<option value="">No template</option>
+								@foreach( \App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
+									<option value="{{$list->id}}">{{$list->name}}</option>
+								@endforeach
+							</select>
+						</div>
+
+						<div class="emailmodal__field emailmodal__field--full">
+							<label for="compose_email_subject">Subject <span class="span_req">*</span></label>
+							<input type="text" name="subject" id="compose_email_subject" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter subject" value="" />
+							<small class="emailmodal__hint" id="compose_subject_ref_hint">Matter reference required in subject: start or end is fine.</small>
+							<span class="custom-error text-danger" id="compose_subject_ref_error" role="alert" style="display:none;"></span>
+							@if ($errors->has('subject'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('subject') }}</strong>
+								</span>
+							@endif
+						</div>
+
+						<div class="emailmodal__field emailmodal__field--full emailmodal__field--message">
+							<label for="compose_email_message">Message <span class="span_req">*</span></label>
+							<textarea class="tinymce-editor selectedmessage" id="compose_email_message" name="message" data-valid="required"></textarea>
+							@if ($errors->has('message'))
+								<span class="custom-error" role="alert">
+									<strong>{{ @$errors->first('message') }}</strong>
+								</span>
+							@endif
+						</div>
+
+						<details class="emailmodal__attachments">
+							<summary class="emailmodal__attachments-summary">
+								<span><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Attachments &amp; documents</span>
+								<span class="emailmodal__attachments-hint">Optional</span>
+							</summary>
+							<div class="emailmodal__attachments-body">
+								<div class="emailmodal__field emailmodal__field--full">
+									<label>Upload files</label>
+									<input type="file" name="attach[]" class="form-control" multiple>
+								</div>
+								<div class="emailmodal__field emailmodal__field--full">
+									<label>Standard checklist templates</label>
+									<small class="emailmodal__hint">Admin-uploaded PDF packs for this matter type.</small>
+									<div class="table-responsive uploadchecklists emailmodal__table-wrap">
+										<table id="mychecklist-datatable" class="table text_wrap table-2 emailmodal__table">
+											<thead>
+												<tr>
+													<th></th>
+													<th>File Name</th>
+													<th>File</th>
+												</tr>
+											</thead>
+											<tbody>
+												@php
+													$__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
+														? \App\Models\UploadChecklist::orderBy('id')->get()
+														: collect();
+												@endphp
+												@foreach($__matterChecklistRows as $uclist)
+												<tr data-matter-id="{{ $uclist->matter_id ?? '' }}" data-checklist-id="{{ $uclist->id }}">
+													<td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
+													<td><?php echo $uclist->name; ?></td>
+													<td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
+												</tr>
+												@endforeach
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<div class="emailmodal__field emailmodal__field--full" id="compose-matter-documents-section" style="display: none;">
+									<label>Matter documents</label>
+									<small class="emailmodal__hint">Files already uploaded for this client matter.</small>
+									<div class="table-responsive emailmodal__table-wrap">
+										<table id="my-matter-documents-datatable" class="table text_wrap table-2 emailmodal__table">
+											<thead>
+												<tr>
+													<th></th>
+													<th>Checklist</th>
+													<th>File</th>
+												</tr>
+											</thead>
+											<tbody id="compose-matter-documents-tbody"></tbody>
+										</table>
+									</div>
+								</div>
 							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="email_bcc">BCC </label>
-								<select multiple data-valid="" class="js-data-example-ajaxbcc" name="email_bcc[]"></select>
-
-								@if ($errors->has('email_bcc'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('email_bcc') }}</strong>
-									</span>
-								@endif
-							</div>
-						</div>
-
-                        <div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="template">Templates </label>
-                                <?php
-                                $clientAssigneeName = ''; // assignee column removed
-                                if(false){
-                                } else {
-                                    $clientAssigneeName = 'NA';
-                                }
-                                ?>
-								<select data-valid="" class="form-select form-control selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
-									<option value="">Select template</option>
-									@foreach( \App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
-										<option value="{{$list->id}}">{{$list->name}}</option>
-									@endforeach
-								</select>
-                            </div>
-						</div>
-
-
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label for="compose_email_subject">Subject <span class="span_req">*</span></label>
-								<input type="text" name="subject" id="compose_email_subject" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject (must include matter reference)" value="" />
-								<small class="form-text text-muted" id="compose_subject_ref_hint">Matter reference is required in the subject (start or end is fine).</small>
-								<span class="custom-error text-danger" id="compose_subject_ref_error" role="alert" style="display:none;"></span>
-								@if ($errors->has('subject'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('subject') }}</strong>
-									</span>
-								@endif
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="tinymce-editor selectedmessage" id="compose_email_message" name="message" data-valid="required"></textarea>
-								@if ($errors->has('message'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('message') }}</strong>
-									</span>
-								@endif
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-						     <div class="form-group">
-						        <label>Attachment</label>
-						        <input type="file" name="attach[]" class="form-control" multiple>
-						     </div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-						    <div class="form-group">
-						        <label>Standard checklist templates</label>
-						        <small class="text-muted d-block mb-1">Admin-uploaded PDF packs for this matter type.</small>
-						    <div class="table-responsive uploadchecklists">
-							<table id="mychecklist-datatable" class="table text_wrap table-2">
-							    <thead>
-							        <tr>
-							            <th></th>
-							            <th>File Name</th>
-							            <th>File</th>
-							        </tr>
-							    </thead>
-							    <tbody>
-							        @php
-							            $__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
-							                ? \App\Models\UploadChecklist::orderBy('id')->get()
-							                : collect();
-							        @endphp
-							        @foreach($__matterChecklistRows as $uclist)
-							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}" data-checklist-id="{{ $uclist->id }}">
-							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
-							            <td><?php echo $uclist->name; ?></td>
-							             <td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
-							        </tr>
-							        @endforeach
-							    </tbody>
-							</table>
-						</div>
-						    </div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12" id="compose-matter-documents-section" style="display: none;">
-						    <div class="form-group">
-						        <label>Matter documents</label>
-						        <small class="text-muted d-block mb-1">Files already uploaded for this client matter (Matter documents tab).</small>
-						        <div class="table-responsive">
-						            <table id="my-matter-documents-datatable" class="table text_wrap table-2">
-						                <thead>
-						                    <tr>
-						                        <th></th>
-						                        <th>Checklist</th>
-						                        <th>File</th>
-						                    </tr>
-						                </thead>
-						                <tbody id="compose-matter-documents-tbody"></tbody>
-						            </table>
-						        </div>
-						    </div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="saveComposeEmail()" type="button" class="btn btn-primary">Send</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
+						</details>
 					</div>
-				</form>
-			</div>
+				</div>
+
+				<div class="modal-footer emailmodal__footer">
+					<button type="button" class="btn btn-light emailmodal__btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button onclick="saveComposeEmail()" type="button" class="btn btn-primary emailmodal__btn-primary">
+						<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send
+					</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -1229,10 +1232,12 @@ use App\Http\Controllers\Controller;
 // TinyMCE Configuration for Email Modals
 var tinymceEmailConfig = {
     license_key: 'gpl',
-    height: 300,
+    height: 260,
     menubar: false,
+    statusbar: false,
+    elementpath: false,
     plugins: ['lists', 'link', 'autolink', 'image'],
-    toolbar: 'bold italic underline strikethrough | forecolor | bullist numlist | link',
+    toolbar: 'bold italic underline | forecolor | bullist numlist | link | removeformat',
     paste_data_images: true,
     allow_html_data_urls: true,
     allow_svg_data_urls: true,
@@ -1240,6 +1245,7 @@ var tinymceEmailConfig = {
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
     branding: false,
     promotion: false,
+    placeholder: 'Write your email...',
     color_map: [
         "000000", "Black", "333333", "Dark Gray", "666666", "Medium Gray",
         "999999", "Light Gray", "CCCCCC", "Very Light Gray", "E0E0E0", "Pale Gray",
@@ -1429,7 +1435,46 @@ $(document).ready(function() {
             );
         });
         $section.show();
+        var $attachments = $('#emailmodal .emailmodal__attachments');
+        if ($attachments.length) {
+            $attachments.attr('open', 'open');
+        }
     }
+
+    function setComposeOptionalRecipientField(fieldId, toggleId, show) {
+        var $field = $('#emailmodal #' + fieldId);
+        var $toggle = $('#emailmodal #' + toggleId);
+        if (!$field.length || !$toggle.length) {
+            return;
+        }
+        if (show) {
+            $field.removeAttr('hidden').prop('hidden', false).css('display', '');
+        } else {
+            $field.attr('hidden', 'hidden').prop('hidden', true);
+        }
+        $toggle.toggleClass('is-active', !!show);
+        $toggle.attr('aria-expanded', show ? 'true' : 'false');
+    }
+
+    $('#emailmodal').on('click', '#emailmodalShowCc', function(e) {
+        e.preventDefault();
+        var willShow = $('#emailmodal #emailmodalCcField').prop('hidden') || $('#emailmodal #emailmodalCcField').is('[hidden]');
+        setComposeOptionalRecipientField('emailmodalCcField', 'emailmodalShowCc', willShow);
+    });
+    $('#emailmodal').on('click', '#emailmodalShowBcc', function(e) {
+        e.preventDefault();
+        var willShow = $('#emailmodal #emailmodalBccField').prop('hidden') || $('#emailmodal #emailmodalBccField').is('[hidden]');
+        setComposeOptionalRecipientField('emailmodalBccField', 'emailmodalShowBcc', willShow);
+    });
+
+    $('#emailmodal').on('hidden.bs.modal', function() {
+        setComposeOptionalRecipientField('emailmodalCcField', 'emailmodalShowCc', false);
+        setComposeOptionalRecipientField('emailmodalBccField', 'emailmodalShowBcc', false);
+        var $attachments = $('#emailmodal .emailmodal__attachments');
+        if ($attachments.length) {
+            $attachments.removeAttr('open');
+        }
+    });
 
     $('#emailmodal').on('shown.bs.modal', function() {
         if (typeof window.prefillComposeSubjectWithReference === 'function') {
