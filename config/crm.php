@@ -76,6 +76,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Communication Check grant (native Super Admin only)
+    |--------------------------------------------------------------------------
+    |
+    | Only role 1 may toggle {@see Staff::can_use_communication_check}. That
+    | flag shows Communication Check in the CRM Clients menu and allows the
+    | extract/match endpoints. Native Super Admin always has access when the
+    | feature is enabled for the environment.
+    |
+    */
+    'communication_check_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_COMMUNICATION_CHECK_GRANT_ROLE_IDS', '1'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff roles that may close/discontinue client matters
     |--------------------------------------------------------------------------
     |
@@ -361,6 +377,29 @@ return [
         'max_input_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME', 1800)),
         'socket_timeout_seconds' => max(120, (int) env('PERSONAL_VIDEO_UPLOAD_SOCKET_TIMEOUT', 600)),
         'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 300)),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Communication check (screenshot → extract → CRM match → gap report)
+    |--------------------------------------------------------------------------
+    |
+    | Gated by COMMUNICATION_CHECK_ENABLED and Staff::canUseCommunicationCheck()
+    | (Super Admin always; others need an explicit grant).
+    | Phase 1–3: email, SMS, and call (Call Action) screenshots.
+    |
+    */
+    'communication_check' => [
+        'enabled' => filter_var(env('COMMUNICATION_CHECK_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'max_files' => max(1, min(10, (int) env('COMMUNICATION_CHECK_MAX_FILES', 10))),
+        'max_file_kb' => max(100, (int) env('COMMUNICATION_CHECK_MAX_FILE_KB', 5120)),
+        'lookback_days_default' => max(1, (int) env('COMMUNICATION_CHECK_LOOKBACK_DAYS', 30)),
+        'followup_hours' => max(1, (int) env('COMMUNICATION_CHECK_FOLLOWUP_HOURS', 24)),
+        'datetime_window_hours' => max(1, (int) env('COMMUNICATION_CHECK_DATETIME_WINDOW_HOURS', 48)),
+        'call_window_minutes' => max(5, min(120, (int) env('COMMUNICATION_CHECK_CALL_WINDOW_MINUTES', 30))),
+        'vision_model' => env('COMMUNICATION_CHECK_VISION_MODEL', 'gpt-4o-mini'),
+        'vision_timeout' => max(30, (int) env('COMMUNICATION_CHECK_VISION_TIMEOUT', 90)),
+        'retention_hours' => max(1, (int) env('COMMUNICATION_CHECK_RETENTION_HOURS', 24)),
     ],
 
 ];

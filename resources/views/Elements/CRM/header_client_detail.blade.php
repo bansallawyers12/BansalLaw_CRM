@@ -69,6 +69,15 @@
                     <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fa-solid fa-list me-2"></i> Client List</a>
                     <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fa-solid fa-folder-open me-2"></i> Matter List</a>
                     <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fa-solid fa-file-import me-2"></i> Smart Email Import</a>
+                    @php
+                        $_ccStaff = auth()->guard('admin')->user();
+                        $_canCommunicationCheck = config('crm.communication_check.enabled')
+                            && $_ccStaff instanceof \App\Models\Staff
+                            && $_ccStaff->canUseCommunicationCheck();
+                    @endphp
+                    @if($_canCommunicationCheck)
+                    <a class="dropdown-item" href="{{ route('communication-check.index') }}"><i class="fa-solid fa-shield-halved me-2"></i> Communication Check</a>
+                    @endif
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fa-solid fa-list-alt me-2"></i> Lead List</a>
                     <a class="dropdown-item" href="{{route('leads.other_parties.index')}}"><i class="fa-solid fa-user-tag me-2"></i> Other Parties</a>

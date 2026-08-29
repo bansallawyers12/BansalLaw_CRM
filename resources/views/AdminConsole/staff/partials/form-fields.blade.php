@@ -25,6 +25,9 @@
     $canGrantAssignEmailsBySubject = \App\Models\Staff::canGrantAssignEmailsBySubjectPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantCommunicationCheck = \App\Models\Staff::canGrantCommunicationCheckPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -256,6 +259,18 @@
                         <span>Can assign unassigned emails by subject</span>
                     </label>
                     <small class="text-muted d-block mt-1">Shows the Assign by subject button on Unassigned Mail so this staff member can match and assign emails from client ID / matter in the subject.</small>
+                </div>
+                @endif
+
+                @if($canGrantCommunicationCheck && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_use_communication_check'))
+                <div class="form-group">
+                    <input type="hidden" name="can_use_communication_check" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_use_communication_check" value="1"
+                            @checked(old('can_use_communication_check', $isEdit ? ($fetchedData->can_use_communication_check ?? false) : false))>
+                        <span>Can use Communication Check</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Shows Communication Check under Clients so this staff member can upload email/SMS/call screenshots and see Logged / Worked / Gap reports. Super Admin always has access when the feature is enabled.</small>
                 </div>
                 @endif
 

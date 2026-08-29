@@ -62,6 +62,7 @@ class Staff extends Authenticatable
         'can_view_all_synced_inbox_mail',
         'can_pause_mailbox_inbox_sync',
         'can_assign_emails_by_subject',
+        'can_use_communication_check',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
     ];
@@ -88,6 +89,7 @@ class Staff extends Authenticatable
         'can_view_all_synced_inbox_mail' => 'boolean',
         'can_pause_mailbox_inbox_sync' => 'boolean',
         'can_assign_emails_by_subject' => 'boolean',
+        'can_use_communication_check' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
         'created_at' => 'datetime',
@@ -531,6 +533,43 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_assign_emails_by_subject ?? false);
+    }
+
+    /**
+     * Role IDs that may grant {@see canUseCommunicationCheck()} to others.
+     * Default: native Super Admin (1) only.
+     */
+    public static function communicationCheckGrantRoleIds(): array
+    {
+        $ids = config('crm.communication_check_grant_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may toggle Communication Check on staff records.
+     * Only native Super Admin (role 1) may grant this.
+     */
+    public static function canGrantCommunicationCheckPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::communicationCheckGrantRoleIds(), true);
+    }
+
+    /**
+     * Native Super Admin, or staff with the per-user grant, may use Communication Check
+     * (screenshot extract → CRM match → Logged/Worked/Gap). Feature flag / env gate still apply.
+     */
+    public function canUseCommunicationCheck(): bool
+    {
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
+        return (bool) ($this->can_use_communication_check ?? false);
     }
 
     /**
