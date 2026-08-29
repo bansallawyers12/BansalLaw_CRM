@@ -154,7 +154,7 @@
     @endif
     
     <!-- Email List Pane -->
-    <div class="outlook-list-pane">
+    <div class="outlook-list-pane" id="outlookListPane">
         <div class="list-toolbar{{ $unassignedOnly ? ' list-toolbar--sync-inbox' : '' }}">
             @if(! $unassignedOnly)
             <div class="list-toolbar__actions">
@@ -203,9 +203,8 @@
                         <span class="list-toolbar__assign-subject-text">Assign by subject</span>
                     </button>
                     @endif
-                    <button type="button" class="list-filter-toggle" id="btnToggleListFilters" aria-expanded="false" aria-controls="unassignedListFilters" title="Show filters">
+                    <button type="button" class="list-filter-toggle" id="btnToggleListFilters" aria-expanded="false" aria-controls="unassignedListFilters" title="Show filters" aria-label="Show filters">
                         <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                        <span class="list-filter-toggle__text">Filters</span>
                     </button>
                 </div>
                 @else
@@ -220,9 +219,8 @@
                     </div>
                     @if($compactPagination)
                     <div class="list-toolbar__side-actions">
-                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show search and filters">
+                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show search and filters" aria-label="Show search and filters">
                             <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                            <span class="list-filter-toggle__text">Filters</span>
                         </button>
                     </div>
                     @endif
@@ -513,6 +511,9 @@
 
     <!-- Reading Pane -->
     <div class="outlook-reading-pane">
+        <button type="button" class="list-pane-expand" id="btnExpandListPane" title="Show email list" aria-label="Show email list" hidden>
+            <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
+        </button>
         <!-- Empty State -->
         <div class="empty-state" id="emptyState">
             <i class="fa-solid fa-inbox" aria-hidden="true"></i>
@@ -562,6 +563,9 @@
                     </div>
                 </div>
                 <div class="action-bar action-bar--reading action-bar--outlook">
+                    <button type="button" class="action-btn list-pane-toggle-action" id="btnCollapseListPane" title="Hide email list" aria-label="Hide email list" aria-expanded="true" aria-controls="outlookListPane" hidden>
+                        <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+                    </button>
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>

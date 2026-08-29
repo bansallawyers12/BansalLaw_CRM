@@ -210,11 +210,97 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInfiniteLoader = document.getElementById('emailInfiniteLoader');
     const emailUiModeSwitch = document.getElementById('emailUiModeSwitch');
     const outlookListPane = document.querySelector('.outlook-list-pane');
+    const btnCollapseListPane = document.getElementById('btnCollapseListPane');
+    const btnExpandListPane = document.getElementById('btnExpandListPane');
     const EMAIL_UI_MODE_STORAGE_KEY = 'crm_email_ui_mode';
+    const LIST_PANE_COLLAPSED_KEY = unassignedOnly
+        ? 'crm_unassigned_list_pane_collapsed'
+        : 'crm_email_list_pane_collapsed';
     let emailUiMode = 'outlook';
+    let listPaneCollapsedPref = false;
+    let selectedEmail = null;
+
+    function isEmailPreviewOpen() {
+        return !!(selectedEmail && readingPane && readingPane.classList.contains('is-visible'));
+    }
+
+    function isListPaneCollapsed() {
+        return !!(outlookContainer && outlookContainer.classList.contains('list-pane-collapsed'));
+    }
+
+    function syncListPaneToggleVisibility() {
+        const previewOpen = isEmailPreviewOpen();
+        const collapsed = isListPaneCollapsed();
+
+        if (btnCollapseListPane) {
+            if (previewOpen && !collapsed) {
+                btnCollapseListPane.removeAttribute('hidden');
+                btnCollapseListPane.setAttribute('aria-expanded', 'true');
+                btnCollapseListPane.title = 'Hide email list';
+            } else {
+                btnCollapseListPane.setAttribute('hidden', 'hidden');
+            }
+        }
+
+        if (btnExpandListPane) {
+            if (previewOpen && collapsed) {
+                btnExpandListPane.removeAttribute('hidden');
+            } else {
+                btnExpandListPane.setAttribute('hidden', 'hidden');
+            }
+        }
+    }
+
+    function setListPaneCollapsed(collapsed, options) {
+        if (!outlookContainer) {
+            return;
+        }
+        const opts = options || {};
+        const next = !!collapsed;
+        // Never keep the list hidden when nothing is being previewed.
+        const applyCollapsed = next && (opts.force || isEmailPreviewOpen());
+        outlookContainer.classList.toggle('list-pane-collapsed', applyCollapsed);
+        listPaneCollapsedPref = next;
+        if (opts.persist !== false) {
+            try {
+                localStorage.setItem(LIST_PANE_COLLAPSED_KEY, next ? '1' : '0');
+            } catch (error) {
+                // Ignore storage failures.
+            }
+        }
+        syncListPaneToggleVisibility();
+    }
+
+    function applyListPanePreferenceForPreview() {
+        setListPaneCollapsed(listPaneCollapsedPref, { persist: false });
+    }
+
+    function initListPaneToggle() {
+        if (!outlookContainer || (!btnCollapseListPane && !btnExpandListPane)) {
+            return;
+        }
+        try {
+            listPaneCollapsedPref = localStorage.getItem(LIST_PANE_COLLAPSED_KEY) === '1';
+        } catch (error) {
+            listPaneCollapsedPref = false;
+        }
+        // Start with list visible; collapse only after an email is opened (if preferred).
+        setListPaneCollapsed(false, { persist: false });
+        if (btnCollapseListPane) {
+            btnCollapseListPane.addEventListener('click', function () {
+                setListPaneCollapsed(true);
+            });
+        }
+        if (btnExpandListPane) {
+            btnExpandListPane.addEventListener('click', function () {
+                setListPaneCollapsed(false);
+            });
+        }
+    }
+
+    initListPaneToggle();
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     let syncedDateSummary = null;
-    let selectedEmail = null;
     let assignmentModalMode = 'assign';
     let unlinkDestinationMode = 'unassigned';
     let isAssignSubmitting = false;
@@ -312,7 +398,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOpen = drawerEl.classList.toggle('is-open');
             buttonEl.classList.toggle('is-open', isOpen);
             buttonEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            buttonEl.title = isOpen ? 'Hide search and filters' : 'Show search and filters';
+            const label = isOpen ? 'Hide search and filters' : 'Show search and filters';
+            buttonEl.title = label;
+            buttonEl.setAttribute('aria-label', label);
             if (isOpen && focusInput) {
                 window.setTimeout(function () {
                     focusInput.focus();
@@ -842,6 +930,7 @@ document.addEventListener('DOMContentLoaded', function() {
             calendarBanner.hidden = true;
             calendarBanner.innerHTML = '';
         }
+        setListPaneCollapsed(false, { persist: false });
     }
 
     function isGmailUiMode() {
@@ -4504,6 +4593,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderReadingPaneCalendarBanner(email);
 
+        applyListPanePreferenceForPreview();
+
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';
 
@@ -5310,8 +5401,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok && data.success) {
                 selectedEmailId = null;
+                selectedEmail = null;
                 readingPane.classList.remove('is-visible');
                 emptyState.style.display = 'flex';
+                setListPaneCollapsed(false, { persist: false });
                 loadEmails();
                 return;
             }
