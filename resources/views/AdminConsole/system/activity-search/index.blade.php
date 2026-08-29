@@ -3,14 +3,30 @@
 
 @section('styles')
 <style>
-    /* Tom Select wrappers inside Admin Console filters */
-    .adminconsole-activity-search .ts-wrapper { width: 100% !important; }
+    .adminconsole-activity-search .ts-wrapper { width: 100% !important; max-width: 100% !important; }
+    .adminconsole-activity-search .activity-search-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem 1rem;
+    }
+    .adminconsole-activity-search .activity-search-grid .as-field {
+        min-width: 0;
+    }
+    @media (max-width: 991.98px) {
+        .adminconsole-activity-search .activity-search-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 575.98px) {
+        .adminconsole-activity-search .activity-search-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
 </style>
 @endsection
 
 @section('content')
 
-<!-- Main Content -->
 <div class="main-content adminconsole-features adminconsole-activity-search">
     <section class="section">
         <div class="section-body">
@@ -18,268 +34,239 @@
                 @include('../Elements/flash-message')
             </div>
             <div class="custom-error-msg"></div>
-            
+
             <div class="row">
                 <div class="col-3 col-md-3 col-lg-3">
                     @include('../Elements/CRM/setting')
                 </div>
-                
+
                 <div class="col-9 col-md-9 col-lg-9">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fa-solid fa-search"></i> Activity Search</h4>
+                    <div class="card activity-search-card">
+                        <div class="card-header activity-search-header">
+                            <div class="activity-search-title-block">
+                                <h4>Activity Search</h4>
+                                <p class="activity-search-subtitle">Find staff and client activity across the CRM</p>
+                            </div>
                             <div class="card-header-action">
                                 @if(isset($totalActivities) && $totalActivities > 0)
-                                    <button type="button" class="btn btn-outline-primary" onclick="exportActivities()">
-                                        <i class="fa-solid fa-file-export me-1"></i> Export Results
+                                    <button type="button" class="btn btn-outline-primary activity-search-export-btn" onclick="exportActivities()">
+                                        <i class="fa-solid fa-file-export me-1"></i> Export
                                     </button>
                                 @endif
                             </div>
                         </div>
-                        
+
                         <div class="card-body">
-                            <!-- Search Form -->
-                            <form action="{{ route('adminconsole.system.activity-search.index') }}" method="GET" id="searchForm">
+                            <form action="{{ route('adminconsole.system.activity-search.index') }}" method="GET" id="searchForm" class="activity-search-form">
                                 <input type="hidden" name="search" value="1">
-                                
-                                <div class="row">
-                                    <!-- Assigner Filter -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="assigner_id" class="form-label">
-                                            <i class="fa-solid fa-user-tag"></i> Assigner (Who Created)
-                                        </label>
-                                        <select name="assigner_id" id="assigner_id" class="form-control crm-ts-activity-search">
-                                            <option value="">All Assigners</option>
-                                            @foreach($staffList as $staff)
-                                                <option value="{{ $staff['id'] }}" 
-                                                    {{ request('assigner_id') == $staff['id'] ? 'selected' : '' }}>
-                                                    {{ $staff['name'] }} ({{ $staff['email'] }})
-                                                </option>
-                                            @endforeach
-                                        </select>
+
+                                <div class="activity-search-filters">
+                                    <div class="activity-search-grid">
+                                        <div class="as-field">
+                                            <label for="assigner_id" class="form-label">Assigner</label>
+                                            <select name="assigner_id" id="assigner_id" class="form-control crm-ts-activity-search crm-ts-activity-search-staff">
+                                                <option value="">All assigners</option>
+                                                @foreach($staffList as $staff)
+                                                    <option value="{{ $staff['id'] }}"
+                                                        data-email="{{ $staff['email'] }}"
+                                                        {{ request('assigner_id') == $staff['id'] ? 'selected' : '' }}>
+                                                        {{ $staff['name'] }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="assignee_id" class="form-label">Assignee</label>
+                                            <select name="assignee_id" id="assignee_id" class="form-control crm-ts-activity-search crm-ts-activity-search-staff">
+                                                <option value="">All assignees</option>
+                                                @foreach($staffList as $staff)
+                                                    <option value="{{ $staff['id'] }}"
+                                                        data-email="{{ $staff['email'] }}"
+                                                        {{ request('assignee_id') == $staff['id'] ? 'selected' : '' }}>
+                                                        {{ $staff['name'] }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="client_id" class="form-label">Client</label>
+                                            <select name="client_id" id="client_id" class="form-control crm-ts-activity-search crm-ts-activity-search-ajax">
+                                                <option value="">All clients</option>
+                                                @if(request('client_id'))
+                                                    <option value="{{ request('client_id') }}" selected>
+                                                        {{ request('client_name', 'Selected Client') }}
+                                                    </option>
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="activity_type" class="form-label">Activity type</label>
+                                            <select name="activity_type" id="activity_type" class="form-control crm-ts-activity-search">
+                                                <option value="">All types</option>
+                                                @foreach($activityTypes as $key => $label)
+                                                    <option value="{{ $key }}"
+                                                        {{ request('activity_type') == $key ? 'selected' : '' }}>
+                                                        {{ $label }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="task_group" class="form-label">Task category</label>
+                                            <select name="task_group" id="task_group" class="form-control crm-ts-activity-search">
+                                                <option value="">All categories</option>
+                                                @foreach($taskGroups as $key => $label)
+                                                    <option value="{{ $key }}"
+                                                        {{ request('task_group') == $key ? 'selected' : '' }}>
+                                                        {{ $label }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="task_status" class="form-label">Task status</label>
+                                            <select name="task_status" id="task_status" class="form-control crm-ts-activity-search">
+                                                <option value="">All statuses</option>
+                                                <option value="0" {{ request('task_status') === '0' ? 'selected' : '' }}>Incomplete</option>
+                                                <option value="1" {{ request('task_status') === '1' ? 'selected' : '' }}>Completed</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="keyword" class="form-label">Keyword</label>
+                                            <div class="activity-search-input-wrap">
+                                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                                <input type="text" name="keyword" id="keyword" class="form-control"
+                                                       placeholder="Subject or description"
+                                                       value="{{ request('keyword') }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="date_from" class="form-label">Date from</label>
+                                            <input type="date" name="date_from" id="date_from" class="form-control"
+                                                   value="{{ request('date_from') }}">
+                                        </div>
+
+                                        <div class="as-field">
+                                            <label for="date_to" class="form-label">Date to</label>
+                                            <input type="date" name="date_to" id="date_to" class="form-control"
+                                                   value="{{ request('date_to') }}">
+                                        </div>
                                     </div>
-                                    
-                                    <!-- Assignee Filter -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="assignee_id" class="form-label">
-                                            <i class="fa-solid fa-user-check"></i> Assignee (Assigned To)
-                                        </label>
-                                        <select name="assignee_id" id="assignee_id" class="form-control crm-ts-activity-search">
-                                            <option value="">All Assignees</option>
-                                            @foreach($staffList as $staff)
-                                                <option value="{{ $staff['id'] }}" 
-                                                    {{ request('assignee_id') == $staff['id'] ? 'selected' : '' }}>
-                                                    {{ $staff['name'] }} ({{ $staff['email'] }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <!-- Client Filter -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="client_id" class="form-label">
-                                            <i class="fa-solid fa-user"></i> Client
-                                        </label>
-                                        <select name="client_id" id="client_id" class="form-control crm-ts-activity-search crm-ts-activity-search-ajax">
-                                            <option value="">All Clients</option>
-                                            @if(request('client_id'))
-                                                <option value="{{ request('client_id') }}" selected>
-                                                    {{ request('client_name', 'Selected Client') }}
-                                                </option>
-                                            @endif
-                                        </select>
-                                    </div>
-                                    
-                                    <!-- Activity Type Filter -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="activity_type" class="form-label">
-                                            <i class="fa-solid fa-list"></i> Activity Type
-                                        </label>
-                                        <select name="activity_type" id="activity_type" class="form-control crm-ts-activity-search">
-                                            <option value="">All Types</option>
-                                            @foreach($activityTypes as $key => $label)
-                                                <option value="{{ $key }}" 
-                                                    {{ request('activity_type') == $key ? 'selected' : '' }}>
-                                                    {{ $label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <!-- Task Category Filter -->
-                                    <div class="col-md-4 mb-3">
-                                        <label for="task_group" class="form-label">
-                                            <i class="fa-solid fa-list-check"></i> Task Category
-                                        </label>
-                                        <select name="task_group" id="task_group" class="form-control crm-ts-activity-search">
-                                            <option value="">All Categories</option>
-                                            @foreach($taskGroups as $key => $label)
-                                                <option value="{{ $key }}" 
-                                                    {{ request('task_group') == $key ? 'selected' : '' }}>
-                                                    {{ $label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    
-                                    <!-- Task Status Filter -->
-                                    <div class="col-md-4 mb-3">
-                                        <label for="task_status" class="form-label">
-                                            <i class="fa-solid fa-circle-check"></i> Task Status
-                                        </label>
-                                        <select name="task_status" id="task_status" class="form-control crm-ts-activity-search">
-                                            <option value="">All Statuses</option>
-                                            <option value="0" {{ request('task_status') === '0' ? 'selected' : '' }}>Incomplete</option>
-                                            <option value="1" {{ request('task_status') === '1' ? 'selected' : '' }}>Completed</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <!-- Keyword Filter -->
-                                    <div class="col-md-4 mb-3">
-                                        <label for="keyword" class="form-label">
-                                            <i class="fa-solid fa-search"></i> Keyword
-                                        </label>
-                                        <input type="text" name="keyword" id="keyword" class="form-control" 
-                                               placeholder="Search in subject/description" 
-                                               value="{{ request('keyword') }}">
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <!-- Date From -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="date_from" class="form-label">
-                                            <i class="fa-solid fa-calendar"></i> Date From
-                                        </label>
-                                        <input type="date" name="date_from" id="date_from" class="form-control" 
-                                               value="{{ request('date_from') }}">
-                                    </div>
-                                    
-                                    <!-- Date To -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="date_to" class="form-label">
-                                            <i class="fa-solid fa-calendar"></i> Date To
-                                        </label>
-                                        <input type="date" name="date_to" id="date_to" class="form-control" 
-                                               value="{{ request('date_to') }}">
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-12 d-flex justify-content-end flex-wrap gap-2">
+
+                                    <div class="activity-search-actions">
                                         <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
-                                            <i class="fa-solid fa-arrow-rotate-right me-1"></i> Reset
+                                            Reset
                                         </button>
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="fa-solid fa-search me-1"></i> Search Activities
+                                            <i class="fa-solid fa-magnifying-glass me-1"></i> Search
                                         </button>
                                     </div>
                                 </div>
                             </form>
-                            
-                            <hr>
-                            
-                            <!-- Results Section -->
-                            @if(request('search'))
-                                <div class="mt-4">
-                                    <h5 class="mb-3">
-                                        <i class="fa-solid fa-list-alt"></i> Search Results 
-                                        <span class="badge bg-primary">{{ $totalActivities }} activities found</span>
-                                    </h5>
-                                    
+
+                            <div class="activity-search-results">
+                                @if(request('search'))
+                                    <div class="activity-search-results-head">
+                                        <h5>Results</h5>
+                                        <span class="activity-search-count">{{ number_format($totalActivities) }} found</span>
+                                    </div>
+
                                     @if($activities->count() > 0)
                                         <div class="table-responsive">
-                                            <table class="table table-striped table-hover text_wrap">
+                                            <table class="table table-hover text_wrap activity-search-table">
                                                 <thead>
                                                     <tr>
-                                                        <th>Date & Time</th>
+                                                        <th>Date</th>
                                                         <th>Assigner</th>
                                                         <th>Assignee</th>
                                                         <th>Client</th>
                                                         <th>Type</th>
                                                         <th>Subject</th>
                                                         <th>Status</th>
-                                                        <th>Action</th>
+                                                        <th></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach($activities as $activity)
                                                         <tr>
-                                                            <td>
-                                                                <small>{{ $activity->created_at ? $activity->created_at->format('Y-m-d') : 'N/A' }}</small><br>
-                                                                <small class="text-muted">{{ $activity->created_at ? $activity->created_at->format('h:i A') : '' }}</small>
+                                                            <td class="activity-search-date">
+                                                                <span class="activity-search-date-day">{{ $activity->created_at ? $activity->created_at->format('Y-m-d') : 'N/A' }}</span>
+                                                                <span class="activity-search-date-time">{{ $activity->created_at ? $activity->created_at->format('h:i A') : '' }}</span>
                                                             </td>
                                                             <td>
-                                                                <strong>{{ $activity->creator_first_name }} {{ $activity->creator_last_name }}</strong><br>
-                                                                <small class="text-muted">{{ $activity->creator_email }}</small>
+                                                                <span class="activity-search-person">{{ $activity->creator_first_name }} {{ $activity->creator_last_name }}</span>
+                                                                <span class="activity-search-meta">{{ $activity->creator_email }}</span>
                                                             </td>
                                                             <td>
                                                                 @if($activity->assignee_first_name)
-                                                                    <strong>{{ $activity->assignee_first_name }} {{ $activity->assignee_last_name }}</strong><br>
-                                                                    <small class="text-muted">{{ $activity->assignee_email }}</small>
+                                                                    <span class="activity-search-person">{{ $activity->assignee_first_name }} {{ $activity->assignee_last_name }}</span>
+                                                                    <span class="activity-search-meta">{{ $activity->assignee_email }}</span>
                                                                 @else
-                                                                    <span class="text-muted">N/A</span>
+                                                                    <span class="activity-search-meta">—</span>
                                                                 @endif
                                                             </td>
                                                             <td>
                                                                 @if($activity->client_first_name)
-                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" target="_blank">
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" target="_blank" rel="noopener">
                                                                         {{ $activity->client_first_name }} {{ $activity->client_last_name }}
                                                                     </a>
                                                                 @else
-                                                                    <span class="text-muted">N/A</span>
+                                                                    <span class="activity-search-meta">—</span>
                                                                 @endif
                                                             </td>
                                                             <td>
                                                                 @php
                                                                     $typeLabels = [
-                                                                        'activity' => ['label' => 'Activity', 'class' => 'primary'],
-                                                                        'sms' => ['label' => 'SMS', 'class' => 'info'],
-                                                                        'email' => ['label' => 'Email', 'class' => 'primary'],
-                                                                        'document' => ['label' => 'Document', 'class' => 'info'],
-                                                                        'note' => ['label' => 'Note', 'class' => 'warning'],
-                                                                        'financial' => ['label' => 'Financial', 'class' => 'success'],
+                                                                        'activity' => ['label' => 'Activity', 'tone' => 'navy'],
+                                                                        'sms' => ['label' => 'SMS', 'tone' => 'info'],
+                                                                        'email' => ['label' => 'Email', 'tone' => 'navy'],
+                                                                        'document' => ['label' => 'Document', 'tone' => 'info'],
+                                                                        'note' => ['label' => 'Note', 'tone' => 'gold'],
+                                                                        'financial' => ['label' => 'Financial', 'tone' => 'success'],
                                                                     ];
-                                                                    $typeInfo = $typeLabels[$activity->activity_type] ?? ['label' => ucfirst($activity->activity_type ?? 'N/A'), 'class' => 'secondary'];
+                                                                    $typeInfo = $typeLabels[$activity->activity_type] ?? ['label' => ucfirst($activity->activity_type ?? 'N/A'), 'tone' => 'muted'];
                                                                 @endphp
-                                                                <span class="badge bg-{{ $typeInfo['class'] }}">{{ $typeInfo['label'] }}</span>
+                                                                <span class="activity-search-pill activity-search-pill--{{ $typeInfo['tone'] }}">{{ $typeInfo['label'] }}</span>
                                                                 @if($activity->task_group)
-                                                                    <br><small class="text-muted">{{ $activity->task_group }}</small>
+                                                                    <span class="activity-search-meta">{{ $activity->task_group }}</span>
                                                                 @endif
                                                             </td>
                                                             <td>
-                                                                <strong>{{ \Illuminate\Support\Str::limit($activity->subject, 50) }}</strong>
+                                                                <span class="activity-search-subject">{{ \Illuminate\Support\Str::limit($activity->subject, 50) }}</span>
                                                                 @if($activity->description)
-                                                                    <br><small class="text-muted">{!! \Illuminate\Support\Str::limit(strip_tags($activity->description), 80) !!}</small>
+                                                                    <span class="activity-search-meta">{!! \Illuminate\Support\Str::limit(strip_tags($activity->description), 80) !!}</span>
                                                                 @endif
                                                             </td>
                                                             <td>
                                                                 @if($activity->task_group)
                                                                     @if($activity->task_status == 1)
-                                                                        <span class="badge bg-success"><i class="fa-solid fa-check"></i> Complete</span>
+                                                                        <span class="activity-search-pill activity-search-pill--success">Complete</span>
                                                                     @else
-                                                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock"></i> Pending</span>
+                                                                        <span class="activity-search-pill activity-search-pill--gold">Pending</span>
                                                                     @endif
                                                                 @else
-                                                                    <span class="text-muted">-</span>
+                                                                    <span class="activity-search-meta">—</span>
                                                                 @endif
                                                             </td>
-                                                            <td class="text-nowrap">
-                                                                <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                                            <td class="text-nowrap activity-search-row-actions">
+                                                                <button type="button" class="btn btn-sm btn-outline-primary"
                                                                         onclick="viewActivityDetails({{ $activity->id }})"
-                                                                        data-bs-toggle="tooltip" title="View Details">
+                                                                        data-bs-toggle="tooltip" title="View details">
                                                                     <i class="fa-solid fa-eye"></i>
                                                                 </button>
                                                                 @if($activity->client_id)
-                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" 
-                                                                       target="_blank" 
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}"
+                                                                       target="_blank"
                                                                        rel="noopener"
                                                                        class="btn btn-sm btn-primary"
-                                                                       data-bs-toggle="tooltip" title="View Client">
+                                                                       data-bs-toggle="tooltip" title="View client">
                                                                         <i class="fa-solid fa-user"></i>
                                                                     </a>
                                                                 @endif
@@ -289,24 +276,26 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                        
-                                        <!-- Pagination -->
-                                        <div class="mt-3">
+
+                                        <div class="activity-search-pagination">
                                             {{ $activities->links() }}
                                         </div>
                                     @else
-                                        <div class="alert alert-info">
-                                            <i class="fa-solid fa-circle-info"></i> No activities found matching your search criteria. Try adjusting your filters.
+                                        <div class="activity-search-empty activity-search-empty--soft">
+                                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                            <p>No activities match these filters. Try widening the date range or clearing a filter.</p>
                                         </div>
                                     @endif
-                                </div>
-                            @else
-                                <div class="alert alert-light border text-center activity-search-empty-hint">
-                                    <i class="fa-solid fa-search fa-3x text-muted opacity-50"></i>
-                                    <h5 class="mt-3">Search Staff Activities</h5>
-                                    <p class="text-muted">Use the filters above to search for activities by assigner, assignee, date range, and more.</p>
-                                </div>
-                            @endif
+                                @else
+                                    <div class="activity-search-empty activity-search-empty-hint">
+                                        <div class="activity-search-empty-icon">
+                                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                        </div>
+                                        <h5>Search activities</h5>
+                                        <p>Filter by staff, client, type, or date, then run a search.</p>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -315,12 +304,11 @@
     </section>
 </div>
 
-<!-- Activity Details Modal -->
 <div class="modal fade activity-details-modal" id="activityDetailsModal" tabindex="-1" aria-labelledby="activityDetailsModalLabel" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="activityDetailsModalLabel">Activity Details</h5>
+                <h5 class="modal-title" id="activityDetailsModalLabel">Activity details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="activityDetailsContent">
@@ -339,13 +327,51 @@
 $(document).ready(function() {
     var clientSearchUrl = @json(route('adminconsole.system.activity-search.search-clients'));
 
+    var staffTsRender = {
+        item: function (data, escape) {
+            return '<div class="as-ts-item" title="' + escape(data.text || '') + '">' + escape(data.text || '') + '</div>';
+        },
+        option: function (data, escape) {
+            var email = data.email || '';
+            if (!email && data.$option) {
+                email = data.$option.getAttribute('data-email') || '';
+            }
+            var html = '<div class="as-ts-option"><span class="as-ts-option-name">' + escape(data.text || '') + '</span>';
+            if (email) {
+                html += '<span class="as-ts-option-email">' + escape(email) + '</span>';
+            }
+            html += '</div>';
+            return html;
+        }
+    };
+
     $('.crm-ts-activity-search:not(.crm-ts-activity-search-ajax)').each(function () {
-        initTS(this, {
+        var isStaff = $(this).hasClass('crm-ts-activity-search-staff');
+        var cfg = {
             plugins: ['clear_button'],
             allowEmptyOption: true,
-            placeholder: 'Select an option',
-            create: false
-        });
+            placeholder: $(this).find('option[value=""]').text() || 'Select an option',
+            create: false,
+            maxOptions: null,
+            render: isStaff ? staffTsRender : {
+                item: function (data, escape) {
+                    return '<div class="as-ts-item" title="' + escape(data.text || '') + '">' + escape(data.text || '') + '</div>';
+                }
+            }
+        };
+        if (isStaff) {
+            cfg.searchField = ['text', 'email'];
+            cfg.onInitialize = function () {
+                var self = this;
+                Object.keys(self.options).forEach(function (value) {
+                    var opt = self.options[value];
+                    if (opt && opt.$option) {
+                        opt.email = opt.$option.getAttribute('data-email') || '';
+                    }
+                });
+            };
+        }
+        initTS(this, cfg);
     });
 
     initTS('#client_id', {
@@ -355,6 +381,12 @@ $(document).ready(function() {
         searchField: ['text'],
         loadThrottle: 250,
         placeholder: 'Search for a client...',
+        allowEmptyOption: true,
+        render: {
+            item: function (data, escape) {
+                return '<div class="as-ts-item" title="' + escape(data.text || '') + '">' + escape(data.text || '') + '</div>';
+            }
+        },
         shouldLoad: function (query) {
             return query.length >= 2;
         },
@@ -391,18 +423,16 @@ function resetForm() {
 }
 
 function exportActivities() {
-    // Build export URL with current filters
     const form = document.getElementById('searchForm');
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
-    
+
     window.location.href = '{{ route("adminconsole.system.activity-search.export") }}?' + params.toString();
 }
 
 function viewActivityDetails(activityId) {
     $('#activityDetailsModal').modal('show');
-    
-    // Fetch activity details via AJAX
+
     $.ajax({
         url: '/crm/activities',
         method: 'GET',
@@ -418,7 +448,7 @@ function viewActivityDetails(activityId) {
                 html += '<tr><th>Created At:</th><td>' + (response.data.created_at ? (typeof formatDisplayDateTime === 'function' ? (formatDisplayDateTime(response.data.created_at) || 'N/A') : String(response.data.created_at)) : 'N/A') + '</td></tr>';
                 html += '</table>';
                 html += '</div>';
-                
+
                 $('#activityDetailsContent').html(html);
             } else {
                 $('#activityDetailsContent').html('<div class="alert alert-danger">Failed to load activity details.</div>');
