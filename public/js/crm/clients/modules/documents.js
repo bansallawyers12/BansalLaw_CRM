@@ -7,20 +7,178 @@
     'use strict';
     if (!$) return;
 
-    $(document).ready(function() {
-        function folderUpdateErrorMessage(xhr, fallback) {
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                return xhr.responseJSON.message;
+    var $renameFileTargetRow = null;
+
+    function folderUpdateErrorMessage(xhr, fallback) {
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            return xhr.responseJSON.message;
+        }
+        if (xhr.responseJSON && xhr.responseJSON.errors) {
+            var firstKey = Object.keys(xhr.responseJSON.errors)[0];
+            if (firstKey && xhr.responseJSON.errors[firstKey][0]) {
+                return xhr.responseJSON.errors[firstKey][0];
             }
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                var firstKey = Object.keys(xhr.responseJSON.errors)[0];
-                if (firstKey && xhr.responseJSON.errors[firstKey][0]) {
-                    return xhr.responseJSON.errors[firstKey][0];
-                }
-            }
-            return fallback || 'Unable to update folder.';
+        }
+        return fallback || 'Unable to update folder.';
+    }
+
+    function getDocRowFromDrow($drow) {
+        return $drow.find('.doc-row');
+    }
+
+    function appendRenameFileModalToBody() {
+        var $modal = $('#renameFileModal');
+        if ($modal.length && !$modal.parent().is('body')) {
+            $modal.appendTo('body');
+        }
+    }
+
+    function showRenameFileError(message) {
+        $('#renameFileName').addClass('is-invalid');
+        $('#renameFileError').text(message).show();
+    }
+
+    function clearRenameFileError() {
+        $('#renameFileName').removeClass('is-invalid');
+        $('#renameFileError').text('').hide();
+    }
+
+    function applyDocumentRenameSuccess($drow, $parent, obj, fileNameBase) {
+        var previewUrl = obj.preview_url || obj.fileurl || ((obj.document_id || obj.Id) ? '/documents/preview/' + (obj.document_id || obj.Id) : '');
+        var filetype = obj.filetype;
+        var folderName = obj.folder_name;
+        var fileName = obj.filename + '.' + obj.filetype;
+        var $existingIcon = $parent.find('a i').first();
+        var iconClass = ($existingIcon.length && $existingIcon.attr('class')) ? $existingIcon.attr('class') : 'fa-solid fa-file-image';
+
+        $parent.empty()
+            .data('id', obj.Id)
+            .data('name', fileNameBase)
+            .append(
+                $('<a>', {
+                    href: 'javascript:void(0);',
+                    onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
+                }).append(
+                    $('<i>', { class: iconClass }),
+                    ' ',
+                    $('<span>').text(fileName)
+                )
+            );
+
+        if ($('#grid_' + obj.Id).length) {
+            $('#grid_' + obj.Id).html(fileName);
         }
 
+        var dropdownMenu = $drow.find('.dropdown-menu');
+        dropdownMenu.find('.dropdown-item').filter(function() {
+            return $(this).text().trim() === 'Preview';
+        }).attr('href', previewUrl);
+        $drow.find('.download-file').attr('data-filename', fileName);
+        if (obj.document_id || obj.Id) {
+            $drow.find('.download-file')
+                .attr('data-document-id', obj.document_id || obj.Id)
+                .attr('data-id', obj.document_id || obj.Id)
+                .removeAttr('data-filelink');
+        } else {
+            $drow.find('.download-file').attr('data-filelink', previewUrl);
+        }
+    }
+
+    function openRenameFileModal($drow) {
+        var $parent = getDocRowFromDrow($drow);
+        if (!$parent.length) {
+            console.error('Document row not found');
+            return false;
+        }
+
+        var docId = $parent.data('id');
+        var fileName = $parent.data('name');
+        if (!docId || !fileName) {
+            console.error('Document id or name not found');
+            return false;
+        }
+
+        appendRenameFileModalToBody();
+        $renameFileTargetRow = $drow;
+        $('#renameFileDocId').val(docId);
+        clearRenameFileError();
+        $('#renameFileName').val(fileName);
+
+        var modalEl = document.getElementById('renameFileModal');
+        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            console.error('Rename file modal not available');
+            return false;
+        }
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        setTimeout(function() {
+            $('#renameFileName').trigger('focus').trigger('select');
+        }, 200);
+        return false;
+    }
+
+    function saveRenameFile() {
+        clearRenameFileError();
+        var fileNameBase = ($('#renameFileName').val() || '').trim();
+        var docId = $('#renameFileDocId').val();
+        if (!fileNameBase) {
+            showRenameFileError('This field is required');
+            return;
+        }
+        if (!$renameFileTargetRow || !$renameFileTargetRow.length) {
+            showRenameFileError('Unable to locate the file row. Please close and try again.');
+            return;
+        }
+
+        var $parent = getDocRowFromDrow($renameFileTargetRow);
+        if (!$parent.length) {
+            showRenameFileError('Unable to locate the file row. Please close and try again.');
+            return;
+        }
+
+        var $saveBtn = $('#renameFileSaveBtn');
+        $saveBtn.prop('disabled', true);
+
+        $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                filename: fileNameBase,
+                id: docId
+            },
+            url: window.ClientDetailConfig.urls.renameDoc,
+            success: function(result) {
+                var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function() {
+                    try { return JSON.parse(result); } catch (e) { return null; }
+                })() : null);
+                if (!obj) {
+                    showRenameFileError('Unexpected response from server');
+                    return;
+                }
+                if (obj.status) {
+                    applyDocumentRenameSuccess($renameFileTargetRow, $parent, obj, fileNameBase);
+                    var modalEl = document.getElementById('renameFileModal');
+                    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    }
+                    $renameFileTargetRow = null;
+                } else {
+                    showRenameFileError(obj.message || 'Please try again');
+                    console.error('Failed to rename document:', obj.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax error:', error);
+                showRenameFileError('An error occurred while saving');
+            },
+            complete: function() {
+                $saveBtn.prop('disabled', false);
+            }
+        });
+    }
+
+    $(document).ready(function() {
         // ---- Update Personal Document Folder ----
         $(document).on('click', '.update-personal-cat-title', function() {
             var id = $(this).data('id');
@@ -126,226 +284,28 @@
             }
         });
 
-        // ---- Rename Personal Document ----
-        $(document).on('click', '.persdocumnetlist .renamedoc, .persdocumnetlist a.renamedoc', function(e) {
+        // ---- Rename document: Personal + matter (modal) ----
+        $(document).on('click', '.persdocumnetlist .renamedoc, .persdocumnetlist a.renamedoc, .migdocumnetlist1 .renamedoc', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Document row not found');
-                return false;
-            }
-            parent.data('current-html', parent.html());
-            var opentime = parent.data('name');
-            if (!opentime) {
-                console.error('Document name not found');
-                return false;
-            }
-            parent.empty().append(
-                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-primary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
-                $('<button class="btn btn-danger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
-            );
-            return false;
+            return openRenameFileModal($(this).closest('.drow'));
         });
 
-        $(document).on('click', '.persdocumnetlist .btn-danger', function(e) {
+        $('#renameFileSaveBtn').on('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Document row not found for cancel');
-                return false;
-            }
-            var hourid = parent.data('id');
-            if (hourid) {
-                parent.html(parent.data('current-html'));
-            } else {
-                parent.remove();
-            }
-            return false;
+            saveRenameFile();
         });
 
-        $(document).on('click', '.persdocumnetlist .btn-primary', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Document row not found for save');
-                return false;
+        $('#renameFileName').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveRenameFile();
             }
-            parent.find('.opentime').removeClass('is-invalid');
-            parent.find('.invalid-feedback').remove();
-            var opentime = parent.find('.opentime').val();
-            if (!opentime) {
-                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
-                return false;
-            }
-            $.ajax({
-                type: "POST",
-                dataType: 'json',
-                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
-                url: window.ClientDetailConfig.urls.renameDoc,
-                success: function(result) {
-                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
-                    if (!obj) return;
-                    if (obj.status) {
-                        var previewUrl = obj.preview_url || obj.fileurl || ((obj.document_id || obj.Id) ? '/documents/preview/' + (obj.document_id || obj.Id) : '');
-                        var filetype = obj.filetype;
-                        var folderName = obj.folder_name;
-                        var fileName = obj.filename + '.' + obj.filetype;
-                        parent.empty()
-                            .data('id', obj.Id)
-                            .data('name', opentime)
-                            .append(
-                                $('<a>', {
-                                    href: 'javascript:void(0);',
-                                    onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
-                                }).append(
-                                    $('<i>', { class: 'fa-solid fa-file-image' }),
-                                    ' ',
-                                    $('<span>').text(fileName)
-                                )
-                            );
-                        if ($('#grid_'+obj.Id).length) {
-                            $('#grid_'+obj.Id).html(fileName);
-                        }
-                        var $row = $(parent).closest('.drow');
-                        var dropdownMenu = $row.find('.dropdown-menu');
-                        dropdownMenu.find('.dropdown-item').filter(function() {
-                            return $(this).text().trim() === 'Preview';
-                        }).attr('href', previewUrl);
-                        $row.find('.download-file').attr('data-filename', fileName);
-                        if (obj.document_id || obj.Id) {
-                            $row.find('.download-file').attr('data-document-id', obj.document_id || obj.Id).attr('data-id', obj.document_id || obj.Id).removeAttr('data-filelink');
-                        } else {
-                            $row.find('.download-file').attr('data-filelink', previewUrl);
-                        }
-                    } else {
-                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
-                        console.error('Failed to rename document:', obj.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ajax error:', error);
-                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
-                }
-            });
-            return false;
         });
 
-        // ---- Rename Visa Document ----
-        $(document).on('click', '.migdocumnetlist1 .renamedoc', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Visa document row not found');
-                return false;
-            }
-            parent.data('current-html', parent.html());
-            var opentime = parent.data('name');
-            if (!opentime) {
-                console.error('Visa document name not found');
-                return false;
-            }
-            parent.empty().append(
-                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-primary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
-                $('<button class="btn btn-danger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
-            );
-            return false;
-        });
-
-        $(document).on('click', '.migdocumnetlist1 .btn-danger', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Visa document row not found for cancel');
-                return false;
-            }
-            var hourid = parent.data('id');
-            if (hourid) {
-                parent.html(parent.data('current-html'));
-            } else {
-                parent.remove();
-            }
-            return false;
-        });
-
-        $(document).on('click', '.migdocumnetlist1 .btn-primary', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.doc-row');
-            if (parent.length === 0) {
-                console.error('Visa document row not found for save');
-                return false;
-            }
-            parent.find('.opentime').removeClass('is-invalid');
-            parent.find('.invalid-feedback').remove();
-            var opentime = parent.find('.opentime').val();
-            if (!opentime) {
-                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
-                return false;
-            }
-            $.ajax({
-                type: "POST",
-                dataType: 'json',
-                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
-                url: window.ClientDetailConfig.urls.renameDoc,
-                success: function(result) {
-                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
-                    if (!obj) return;
-                    if (obj.status) {
-                        var previewUrl = obj.preview_url || obj.fileurl || ((obj.document_id || obj.Id) ? '/documents/preview/' + (obj.document_id || obj.Id) : '');
-                        var filetype = obj.filetype;
-                        var folderName = obj.folder_name;
-                        var fileName = obj.filename + '.' + obj.filetype;
-                        parent.empty()
-                            .data('id', obj.Id)
-                            .data('name', opentime)
-                            .append(
-                                $('<a>', {
-                                    href: 'javascript:void(0);',
-                                    onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
-                                }).append(
-                                    $('<i>', { class: 'fa-solid fa-file-image' }),
-                                    ' ',
-                                    $('<span>').text(fileName)
-                                )
-                            );
-                        if ($('#grid_'+obj.Id).length) {
-                            $('#grid_'+obj.Id).html(fileName);
-                        }
-                        var $row = $(parent).closest('.drow');
-                        var dropdownMenu = $row.find('.dropdown-menu');
-                        dropdownMenu.find('.dropdown-item').filter(function() {
-                            return $(this).text().trim() === 'Preview';
-                        }).attr('href', previewUrl);
-                        $row.find('.download-file').attr('data-filename', fileName);
-                        if (obj.document_id || obj.Id) {
-                            $row.find('.download-file').attr('data-document-id', obj.document_id || obj.Id).attr('data-id', obj.document_id || obj.Id).removeAttr('data-filelink');
-                        } else {
-                            $row.find('.download-file').attr('data-filelink', previewUrl);
-                        }
-                    } else {
-                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
-                        console.error('Failed to rename visa document:', obj.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ajax error:', error);
-                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
-                }
-            });
-            return false;
+        $('#renameFileModal').on('hidden.bs.modal', function() {
+            clearRenameFileError();
+            $renameFileTargetRow = null;
         });
 
         // ---- Download Document ----

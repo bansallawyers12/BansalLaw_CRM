@@ -107,3 +107,30 @@
 	</div>
 </div>
 
+<!-- Rename file modal (personal + matter documents) -->
+<div class="modal fade custom_modal" id="renameFileModal" tabindex="-1" role="dialog" aria-labelledby="renameFileModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="renameFileModalLabel">Rename File Name</h5>
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="renameFileDocId" value="">
+				<div class="form-group mb-0">
+					<label for="renameFileName">File name<span class="span_req">*</span></label>
+					<input type="text" class="form-control" id="renameFileName" autocomplete="off">
+					<small class="form-text text-muted">Enter the name without the file extension.</small>
+					<div class="invalid-feedback d-block" id="renameFileError" style="display: none;"></div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="renameFileSaveBtn">Save</button>
+			</div>
+		</div>
+	</div>
+</div>
+
