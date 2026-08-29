@@ -4202,8 +4202,9 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 .main-content.unassigned-mail-page {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 70px);
-    max-height: calc(100vh - 70px);
+    /* Top bar (~70px) + fixed .main-footer (~44px) so list footer stays visible */
+    height: calc(100vh - 114px);
+    max-height: calc(100vh - 114px);
     overflow: hidden;
     padding: 10px 14px 12px;
     box-sizing: border-box;
@@ -4278,6 +4279,48 @@ body.assign-email-modal-open .ts-dropdown .no-results,
 
 .outlook-container--unassigned .email-infinite-loader[hidden] {
     display: none !important;
+}
+
+.outlook-container--unassigned .email-list-footer--unassigned {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 12px 16px;
+    border-top: 1px solid #cbd5e1;
+    background: #eef2ff;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+}
+
+.outlook-container--unassigned .email-list-footer--unassigned .email-list-footer__count {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    letter-spacing: 0.01em;
+}
+
+.outlook-container--unassigned .folder-item .folder-item__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.outlook-container--unassigned .folder-item.active .folder-item__count {
+    background: #dbeafe;
+    color: #1e3a5f;
 }
 
 .outlook-container--unassigned .email-infinite-loader__spinner {

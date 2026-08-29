@@ -78,12 +78,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateToFilter = document.getElementById('dateToFilter');
     const pageInfo = document.getElementById('pageInfo');
     const pageSummary = document.getElementById('pageSummary');
-    const listTotalCount = document.getElementById('listTotalCount');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const perPageSelect = document.getElementById('perPageSelect');
     const PER_PAGE_OPTIONS = [10, 20, 50, 100, 200, 500];
     const PER_PAGE_STORAGE_KEY = 'outlook_emails_per_page';
+
+    function getListTotalCountEl() {
+        return document.getElementById('listTotalCount');
+    }
 
     function readStoredPerPage() {
         try {
@@ -1102,7 +1105,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatMailTotalLabel(total) {
         const safeTotal = Math.max(0, Number(total) || 0);
+        if (unassignedOnly && (currentFolder === 'unassigned' || currentFolder === 'assigned')) {
+            const kind = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
+            if (safeTotal === 1) {
+                return 'Total: 1 ' + kind + ' email';
+            }
+            return 'Total: ' + safeTotal + ' ' + kind + ' emails';
+        }
         return safeTotal === 1 ? 'Total: 1 email' : 'Total: ' + safeTotal + ' emails';
+    }
+
+    function updateFolderTabCount(folder, total) {
+        if (!unassignedOnly || !outlookContainer) {
+            return;
+        }
+        if (folder !== 'unassigned' && folder !== 'assigned') {
+            return;
+        }
+        const badge = outlookContainer.querySelector('[data-folder-count="' + folder + '"]');
+        if (!badge) {
+            return;
+        }
+        const safeTotal = Math.max(0, Number(total) || 0);
+        badge.textContent = String(safeTotal);
+        badge.hidden = false;
+        badge.setAttribute('aria-label', safeTotal + ' ' + folder + ' emails');
     }
 
     function updatePaginationDisplay(total, lastPage, from, to) {
@@ -1111,20 +1138,21 @@ document.addEventListener('DOMContentLoaded', function() {
         listTotal = safeTotal;
         listFrom = Math.max(0, Number(from) || 0);
         listLastPage = safeLastPage;
+        const listTotalCount = getListTotalCountEl();
+
+        if (listTotalCount) {
+            listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+        }
+
+        if (unassignedOnly && (currentFolder === 'unassigned' || currentFolder === 'assigned')) {
+            updateFolderTabCount(currentFolder, safeTotal);
+        }
 
         if (compactPagination) {
-            if (listTotalCount) {
-                listTotalCount.textContent = formatMailTotalLabel(safeTotal);
-            }
-
             if (pageSummary) {
                 pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
             }
         } else {
-            if (listTotalCount) {
-                listTotalCount.textContent = formatMailTotalLabel(safeTotal);
-            }
-
             if (pageSummary) {
                 pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
             }

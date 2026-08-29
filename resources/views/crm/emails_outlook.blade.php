@@ -187,10 +187,12 @@
                         <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
                             <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
                             Unassigned
+                            <span class="folder-item__count" data-folder-count="unassigned" hidden>0</span>
                         </button>
                         <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
                             <i class="fa-solid fa-user-check" aria-hidden="true"></i>
                             Assigned
+                            <span class="folder-item__count" data-folder-count="assigned" hidden>0</span>
                         </button>
                     </div>
                     @endif
@@ -460,6 +462,9 @@
                 <span class="email-infinite-loader__spinner" aria-hidden="true"></span>
                 <span>Loading more emails...</span>
             </div>
+        </div>
+        <div class="email-list-footer email-list-footer--compact email-list-footer--unassigned" aria-live="polite">
+            <span class="email-list-footer__count" id="listTotalCount">Total: —</span>
         </div>
         @else
         <div class="email-list" id="emailList">
