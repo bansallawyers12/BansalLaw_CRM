@@ -390,15 +390,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function initListFiltersToggle(buttonEl, drawerEl, focusInput) {
+    function initListFiltersToggle(buttonEl, drawerEl, focusInput, options) {
         if (!buttonEl || !drawerEl) {
             return;
         }
+        const opts = options || {};
+        const openLabel = opts.openLabel || 'Hide search and filters';
+        const closedLabel = opts.closedLabel || 'Show search and filters';
         buttonEl.addEventListener('click', function () {
             const isOpen = drawerEl.classList.toggle('is-open');
             buttonEl.classList.toggle('is-open', isOpen);
             buttonEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            const label = isOpen ? 'Hide search and filters' : 'Show search and filters';
+            const label = isOpen ? openLabel : closedLabel;
             buttonEl.title = label;
             buttonEl.setAttribute('aria-label', label);
             if (isOpen && focusInput) {
@@ -434,7 +437,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const btnToggleClientListFilters = document.getElementById('btnToggleClientListFilters');
     const clientListFilters = document.getElementById('clientListFilters');
-    initListFiltersToggle(btnToggleClientListFilters, clientListFilters, searchInput);
+    initListFiltersToggle(btnToggleClientListFilters, clientListFilters, null, {
+        openLabel: 'Hide filters',
+        closedLabel: 'Show filters'
+    });
+    updateClientFilterToggleState();
     updateClientFilterToggleState();
 
     if (gmailIconDelete) {
@@ -484,6 +491,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (senderFilter) {
             senderFilter.hidden = isOutbox;
         }
+        document.querySelectorAll('.client-mail-filters__row, .list-header-filters--modern').forEach(function (row) {
+            row.classList.toggle('is-outbox-active', isOutbox);
+        });
         updateClientFilterToggleState();
     }
 

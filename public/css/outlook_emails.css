@@ -7344,40 +7344,38 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
 }
 
+#emails-tab .outlook-container--compact-pagination .list-filter-toggle {
+    position: relative;
+}
+
 #emails-tab .outlook-container--compact-pagination .list-filter-toggle.has-active-filters::after {
     content: "";
+    position: absolute;
+    top: 7px;
+    right: 7px;
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: #c8992a;
-    margin-left: 2px;
+    margin-left: 0;
+    box-shadow: 0 0 0 2px #fff;
 }
 
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer {
-    border: 1px solid #c8dcef;
-    border-radius: 10px;
-    background: #fff;
-    overflow: hidden;
-}
-
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-header--client-modern {
-    padding: 0;
-    border-bottom: none;
-    background: #fff;
-    gap: 0;
-}
-
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-header-row {
-    display: block;
-    width: 100%;
+/* Client emails: search always visible; filter icon toggles refine row */
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
     margin: 0;
-    padding: 10px 12px 0;
-    box-sizing: border-box;
+    padding: 0;
 }
 
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-toolbar__search,
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .search-box--compact {
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .search-box--compact {
     display: block;
+    position: relative;
     width: 100%;
     max-width: none;
     flex: none;
@@ -7386,11 +7384,12 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     box-sizing: border-box;
 }
 
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-toolbar__search .search-box-icon {
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search .search-box-icon {
     left: 12px;
+    color: #7f95ab;
 }
 
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-toolbar__search input {
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search input {
     display: block;
     width: 100%;
     max-width: none;
@@ -7399,28 +7398,66 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     padding: 9px 12px 9px 36px;
     border: 1px solid #c8dcef;
     border-radius: 10px;
-    background: #f8fbff;
+    background: #fff;
     font-size: 0.875rem;
     color: #1a2c40;
     box-sizing: border-box;
+    box-shadow: none;
 }
 
-#emails-tab .outlook-container--compact-pagination .list-filters-drawer .list-toolbar__search input:focus {
+#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search input:focus {
     outline: none;
     background: #fff;
     border-color: #3a6fa8;
     box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
 }
 
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer--client {
+    display: grid;
+    grid-template-rows: 0fr;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: hidden;
+    transition: grid-template-rows 0.28s ease;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer--client.is-open {
+    grid-template-rows: 1fr;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer--client > .list-filters-drawer__inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.28s ease;
+}
+
+#emails-tab .outlook-container--compact-pagination .list-filters-drawer--client.is-open > .list-filters-drawer__inner {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row,
 #emails-tab .outlook-container--compact-pagination .list-header-filters--modern {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    padding: 10px 12px 12px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row .list-filter-select,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row .list-filter-date,
 #emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-select,
 #emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-date {
+    width: 100%;
+    min-width: 0;
     min-height: 38px;
     padding: 8px 10px;
     border: 1px solid #c8dcef;
@@ -7428,13 +7465,26 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     background: #fff;
     font-size: 0.8125rem;
     color: #1a2c40;
+    box-sizing: border-box;
 }
 
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row .list-filter-select:focus,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row .list-filter-date:focus,
 #emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-select:focus,
 #emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-date:focus {
     border-color: #3a6fa8;
     box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.12);
     outline: none;
+}
+
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row .list-filter-outbox[hidden],
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern .list-filter-outbox[hidden] {
+    display: none !important;
+}
+
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__row.is-outbox-active,
+#emails-tab .outlook-container--compact-pagination .list-header-filters--modern.is-outbox-active {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 #emails-tab .outlook-container--compact-pagination .inline-drop-zone {
@@ -7527,7 +7577,10 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 }
 
 @media (max-width: 900px) {
-    #emails-tab .outlook-container--compact-pagination .list-header-filters--modern {
+    #emails-tab .outlook-container--compact-pagination .client-mail-filters__row,
+    #emails-tab .outlook-container--compact-pagination .list-header-filters--modern,
+    #emails-tab .outlook-container--compact-pagination .client-mail-filters__row.is-outbox-active,
+    #emails-tab .outlook-container--compact-pagination .list-header-filters--modern.is-outbox-active {
         grid-template-columns: 1fr;
     }
 

@@ -219,7 +219,7 @@
                     </div>
                     @if($compactPagination)
                     <div class="list-toolbar__side-actions">
-                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show search and filters" aria-label="Show search and filters">
+                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show filters" aria-label="Show filters">
                             <i class="fa-solid fa-filter" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -331,16 +331,14 @@
 
         @if(! $unassignedOnly)
         @if($compactPagination)
-        <div class="list-filters-drawer" id="clientListFilters">
-            <div class="list-filters-drawer__inner">
-                <div class="list-header list-header--client-modern">
-                    <div class="list-header-row">
-                        <div class="search-box search-box--compact list-toolbar__search">
-                            <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                            <input type="search" id="searchInput" placeholder="Search emails..." autocomplete="off" aria-label="Search emails">
-                        </div>
-                    </div>
-                    <div class="list-header-filters list-header-filters--modern">
+        <div class="client-mail-filters client-mail-filters--compact">
+            <div class="search-box search-box--compact list-toolbar__search client-mail-filters__search">
+                <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                <input type="search" id="searchInput" placeholder="Search emails..." autocomplete="off" aria-label="Search emails">
+            </div>
+            <div class="list-filters-drawer list-filters-drawer--client" id="clientListFilters">
+                <div class="list-filters-drawer__inner">
+                    <div class="client-mail-filters__row list-header-filters list-header-filters--modern">
                         <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                             <option value="">All Labels</option>
                             @if(isset($clientData) && isset($matterId))
