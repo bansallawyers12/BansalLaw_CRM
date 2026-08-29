@@ -19,6 +19,8 @@
     
     if ($daysStalled < 1) {
         $daysStalledText = 'Today';
+    } elseif ($daysStalled === 1) {
+        $daysStalledText = '1 day ago';
     } else {
         $daysStalledText = $daysStalled . ' days ago';
     }
@@ -31,12 +33,27 @@
     $matter_name = $matter
         ? \App\Models\Matter::displayTitleFromJoinedRow($matter->title)
         : 'NA';
+
+    $upcomingDeadline = $case->upcoming_deadline ?? null;
+    $daysUntilDeadline = null;
+    if ($upcomingDeadline) {
+        $deadlineDate = $upcomingDeadline instanceof \DateTimeInterface
+            ? \Carbon\Carbon::instance($upcomingDeadline)->startOfDay()
+            : \Carbon\Carbon::parse($upcomingDeadline)->startOfDay();
+        $daysUntilDeadline = \Carbon\Carbon::today()->diffInDays($deadlineDate);
+    }
     
-    // Get latest activity information
+    // Latest activity is matter-scoped: badge type and date both come from the matter row.
     $latestActivity = $case->latest_activity ?? ['type' => 'default', 'date' => $case->updated_at];
     $activityType = $latestActivity['type'];
     
     $activityConfig = [
+        'deadline_approaching' => [
+            'label' => 'Deadline Soon',
+            'icon' => 'fa-hourglass-half',
+            'class' => 'activity-deadline',
+            'color' => '#c8992a'
+        ],
         'signed' => [
             'label' => 'Document Signed',
             'icon' => 'fa-file-signature',
@@ -100,6 +117,22 @@
     ];
     
     $activity = $activityConfig[$activityType] ?? $activityConfig['default'];
+
+    if ($daysUntilDeadline !== null) {
+        if ($daysUntilDeadline < 1) {
+            $contextText = 'Due today';
+        } elseif ($daysUntilDeadline === 1) {
+            $contextText = 'Due in 1 day';
+        } else {
+            $contextText = 'Due in ' . $daysUntilDeadline . ' days';
+        }
+
+        $contextClass = $daysUntilDeadline <= 1 ? 'text-danger' : ($daysUntilDeadline <= 3 ? 'text-warning' : 'text-info');
+        $urgencyBorder = $daysUntilDeadline <= 1 ? 'danger' : ($daysUntilDeadline <= 3 ? 'warning' : 'info');
+    } else {
+        $contextText = $daysStalledText;
+        $contextClass = $daysStalledClass;
+    }
 @endphp
 
 <li class="case-list-item case-urgency-border--{{ $urgencyBorder }}">
@@ -114,8 +147,8 @@
             <a href="{{ route('clients.detail', [base64_encode(convert_uuencode($client->id)), $case->client_unique_matter_no]) }}">
                 {{ $matter_name }} ({{ $case->client_unique_matter_no }})
             </a>
-            <span style="display: inline-block;" class="stalled-days {{ $daysStalledClass }}">
-                ({{ $daysStalledText }})
+            <span style="display: inline-block;" class="stalled-days {{ $contextClass }}">
+                ({{ $contextText }})
             </span>
         </span>
     </div>
@@ -215,6 +248,12 @@
     background: rgba(58, 111, 168, 0.1);
     color: #1e3d60;
     border-color: #c8dcef;
+}
+
+.activity-deadline {
+    background: rgba(200, 153, 42, 0.18);
+    color: #7a5800;
+    border-color: rgba(200, 153, 42, 0.45);
 }
 
 .activity-default {

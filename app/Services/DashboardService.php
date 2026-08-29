@@ -16,6 +16,12 @@ use App\Support\StaffClientVisibility;
 
 class DashboardService
 {
+    /** Open matters with matter activity within this window appear on the dashboard feed. */
+    private const RECENT_MATTER_ACTIVITY_DAYS = 90;
+
+    /** Open matters with a deadline in this forward window also appear on the dashboard feed. */
+    private const UPCOMING_MATTER_DEADLINE_DAYS = 7;
+
     /**
      * Native Super Admin (role 1) or session-elevated grant — same matter/action visibility as role 1.
      */
@@ -156,7 +162,7 @@ class DashboardService
     }
 
     /**
-     * Paginated cases requiring attention for dashboard infinite scroll.
+     * Paginated recent matter activity for dashboard infinite scroll.
      *
      * @return array{items: \Illuminate\Support\Collection, current_page: int, last_page: int, per_page: int, total: int}
      */
@@ -166,14 +172,24 @@ class DashboardService
         $perPage = max(1, min(50, $perPage));
         $total = $this->getCasesRequiringAttentionCount($user);
         $lastPage = max(1, (int) ceil($total / $perPage));
+        [$deadlineStart, $deadlineEnd] = $this->upcomingDeadlineDateRange();
 
         $cases = $this->casesRequiringAttentionQuery($user)
-            ->orderBy('updated_at', 'asc')
+            ->orderByRaw(
+                'CASE WHEN deadline IS NOT NULL AND DATE(deadline) >= ? AND DATE(deadline) <= ? THEN 0 ELSE 1 END',
+                [$deadlineStart, $deadlineEnd]
+            )
+            ->orderByRaw(
+                'CASE WHEN deadline IS NOT NULL AND DATE(deadline) >= ? AND DATE(deadline) <= ? THEN deadline END ASC',
+                [$deadlineStart, $deadlineEnd]
+            )
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
             ->skip(($page - 1) * $perPage)
             ->take($perPage)
             ->get();
 
-        $this->attachLatestActivities($cases);
+        $this->attachMatterActivity($cases);
 
         return [
             'items' => $cases,
@@ -185,7 +201,7 @@ class DashboardService
     }
 
     /**
-     * Base query for cases requiring attention (same scope as getCasesRequiringAttentionCount).
+     * Base query for recent matter activity (same scope as getCasesRequiringAttentionCount).
      */
     private function casesRequiringAttentionQuery($user)
     {
@@ -194,14 +210,19 @@ class DashboardService
                 'matter:id,title',
                 'personResponsible:id,first_name,last_name'
             ])
-            ->where('matter_status', 1)
-            ->where('updated_at', '>=', Carbon::now()->subDays(100));
+            ->where('matter_status', 1);
 
-        if (! $this->viewerSeesAllMattersAndTasks($user)) {
-            $query->whereHas('client', function ($q) use ($user) {
+        $this->applyRecentMatterActivityScope($query);
+
+        $query->whereHas('client', function ($q) use ($user) {
+            $q->where('is_archived', '0')
+                ->whereIn('type', ['client', 'lead'])
+                ->whereNull('is_deleted');
+
+            if (! $this->viewerSeesAllMattersAndTasks($user)) {
                 StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
-            });
-        }
+            }
+        });
 
         $this->applyRoleBasedFiltering($query, $user);
 
@@ -209,80 +230,95 @@ class DashboardService
     }
 
     /**
+     * Attach matter-scoped activity metadata for dashboard list items.
+     *
      * @param  \Illuminate\Support\Collection<int, ClientMatter>  $cases
      */
-    protected function attachLatestActivities($cases): void
+    protected function attachMatterActivity($cases): void
     {
-        if ($cases->isEmpty()) {
-            return;
-        }
-
-        $clientIds = $cases->pluck('client_id')->filter()->unique()->values();
-        if ($clientIds->isEmpty()) {
-            foreach ($cases as $case) {
-                $case->latest_activity = [
-                    'type' => 'default',
-                    'date' => $case->updated_at,
-                ];
-            }
-
-            return;
-        }
-
-        $latestLogIds = ActivitiesLog::query()
-            ->selectRaw('MAX(id) as id')
-            ->whereIn('client_id', $clientIds)
-            ->groupBy('client_id')
-            ->pluck('id');
-
-        $logsByClient = $latestLogIds->isEmpty()
-            ? collect()
-            : ActivitiesLog::query()
-                ->whereIn('id', $latestLogIds)
-                ->get(['id', 'client_id', 'subject', 'created_at'])
-                ->keyBy('client_id');
+        [$deadlineStart, $deadlineEnd] = $this->upcomingDeadlineDateRange();
 
         foreach ($cases as $case) {
-            $log = $logsByClient->get($case->client_id);
-            $case->latest_activity = $log
-                ? $this->activityFromLog($log)
-                : [
-                    'type' => 'default',
-                    'date' => $case->updated_at,
-                ];
+            $hasUpcomingDeadline = $this->matterHasUpcomingDeadline($case, $deadlineStart, $deadlineEnd);
+
+            $case->latest_activity = [
+                'type' => $hasUpcomingDeadline ? 'deadline_approaching' : $this->activityTypeFromMatter($case),
+                'date' => $case->updated_at,
+            ];
+            $case->upcoming_deadline = $hasUpcomingDeadline
+                ? Carbon::parse($case->deadline)->startOfDay()
+                : null;
         }
     }
 
     /**
-     * @return array{type: string, date: mixed}
+     * @return array{0: string, 1: string}
      */
-    protected function activityFromLog(ActivitiesLog $log): array
+    private function upcomingDeadlineDateRange(): array
     {
-        $subject = strtolower($log->subject ?? '');
-        $type = 'default';
+        return [
+            Carbon::today()->toDateString(),
+            Carbon::today()->addDays(self::UPCOMING_MATTER_DEADLINE_DAYS)->toDateString(),
+        ];
+    }
 
-        if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
-            $type = 'stage_updated';
-        } elseif (str_contains($subject, 'status')) {
-            $type = 'status_changed';
-        } elseif (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
-            $type = 'appointment_scheduled';
-        } elseif (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
-            $type = 'payment_received';
-        } elseif (str_contains($subject, 'note')) {
-            $type = 'note_added';
-        } elseif (str_contains($subject, 'email')) {
-            $type = 'email_sent';
-        } elseif (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
-            $type = 'document_uploaded';
-        } elseif (str_contains($subject, 'sign')) {
-            $type = 'signed';
+    private function applyRecentMatterActivityScope($query, string $matterTable = 'client_matters'): void
+    {
+        $activitySince = Carbon::now()->subDays(self::RECENT_MATTER_ACTIVITY_DAYS);
+        [$deadlineStart, $deadlineEnd] = $this->upcomingDeadlineDateRange();
+
+        $query->where(function ($scopeQuery) use ($matterTable, $activitySince, $deadlineStart, $deadlineEnd) {
+            $scopeQuery->where("{$matterTable}.updated_at", '>=', $activitySince)
+                ->orWhere(function ($deadlineQuery) use ($matterTable, $deadlineStart, $deadlineEnd) {
+                    $deadlineQuery->whereNotNull("{$matterTable}.deadline")
+                        ->whereDate("{$matterTable}.deadline", '>=', $deadlineStart)
+                        ->whereDate("{$matterTable}.deadline", '<=', $deadlineEnd);
+                });
+        });
+    }
+
+    private function matterHasUpcomingDeadline(ClientMatter $case, string $deadlineStart, string $deadlineEnd): bool
+    {
+        if ($case->deadline === null) {
+            return false;
         }
 
-        return [
-            'type' => $type,
-            'date' => $log->created_at,
+        $deadlineDate = Carbon::parse($case->deadline)->toDateString();
+
+        return $deadlineDate >= $deadlineStart && $deadlineDate <= $deadlineEnd;
+    }
+
+    protected function activityTypeFromMatter(ClientMatter $case): string
+    {
+        $type = strtolower(trim((string) ($case->updated_at_type ?? '')));
+        if ($type === '') {
+            return 'default';
+        }
+
+        $map = [
+            'signed' => 'signed',
+            'document_uploaded' => 'document_uploaded',
+            'document' => 'document_uploaded',
+            'upload' => 'document_uploaded',
+            'note' => 'note_added',
+            'email' => 'email_sent',
+            'sms' => 'sms_sent',
+            'status' => 'status_changed',
+            'stage' => 'stage_updated',
+            'workflow' => 'stage_updated',
+            'appointment' => 'appointment_scheduled',
+            'meeting' => 'appointment_scheduled',
+            'payment' => 'payment_received',
+            'invoice' => 'payment_received',
         ];
+
+        foreach ($map as $needle => $activityType) {
+            if (str_contains($type, $needle)) {
+                return $activityType;
+            }
+        }
+
+        return 'default';
     }
 
     /**
@@ -406,17 +442,21 @@ class DashboardService
     }
 
     /**
-     * Get cases requiring attention count
+     * Count open matters with matter activity in the recent activity window.
      */
     private function getCasesRequiringAttentionCount($user): int
     {
         $userId = $user ? (int) $user->id : 0;
         $seeAll = $this->viewerSeesAllMattersAndTasks($user);
 
-        return Cache::remember('dashboard_cases_attention_count_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
+        return Cache::remember('dashboard_recent_matter_activity_count_v2_' . $userId . '_' . ($seeAll ? 'all' : 'mine'), 60, function () use ($user, $seeAll) {
             $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
-                ->where('client_matters.matter_status', 1)
-                ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100));
+                ->where('clients.is_archived', '0')
+                ->whereIn('clients.type', ['client', 'lead'])
+                ->whereNull('clients.is_deleted')
+                ->where('client_matters.matter_status', 1);
+
+            $this->applyRecentMatterActivityScope($query);
 
             if (! $seeAll) {
                 StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'clients', $user);

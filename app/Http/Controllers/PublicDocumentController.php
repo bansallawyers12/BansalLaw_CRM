@@ -772,7 +772,7 @@ class PublicDocumentController extends Controller
                 // Advance workflow to next stage when document is tied to a checklist/client matter
                 if ($document->client_matter_id && $document->client_id) {
                     try {
-                        ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed', 'updated_at' => now()]);
+                        ClientMatter::touchRecentActivity((int) $document->client_matter_id, 'signed');
 
                         // Agreement-specific activity log (Costs Disclosure)
                         if ($document->doc_type === 'agreement') {

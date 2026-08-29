@@ -727,11 +727,7 @@ class ClientDocumentsController extends Controller
 
                     //Update date in client matter table
                     if( isset($request->client_matter_id) && $request->client_matter_id != ""){
-                        $obj1 = ClientMatter::find($request->client_matter_id);
-                        if ($obj1) {
-                            $obj1->updated_at = date('Y-m-d H:i:s');
-                            $obj1->save();
-                        }
+                        ClientMatter::touchRecentActivity((int) $request->client_matter_id, 'document');
                     }
                     $response['status'] 	= 	true;
                     $response['message']	=	'You have added your matter document checklist';
@@ -1045,11 +1041,7 @@ class ClientDocumentsController extends Controller
 
                             if ($result['success']) {
                                 if (isset($request->client_matter_id) && $request->client_matter_id != '') {
-                                    $obj1 = ClientMatter::find($request->client_matter_id);
-                                    if ($obj1) {
-                                        $obj1->updated_at = date('Y-m-d H:i:s');
-                                        $obj1->save();
-                                    }
+                                    ClientMatter::touchRecentActivity((int) $request->client_matter_id, 'document');
                                 }
 
                                 $obj->refresh();
@@ -1179,9 +1171,7 @@ class ClientDocumentsController extends Controller
 
                         //Update date in client matter table
                         if( isset($request->client_matter_id) && $request->client_matter_id != ""){
-                            $obj1 = ClientMatter::find($request->client_matter_id);
-                            $obj1->updated_at = date('Y-m-d H:i:s');
-                            $obj1->save();
+                            ClientMatter::touchRecentActivity((int) $request->client_matter_id, 'document');
                         }
                         
                         $response['status'] = true;
@@ -4100,11 +4090,7 @@ class ClientDocumentsController extends Controller
                 
                 // Update matter date
                 if ($matterid) {
-                    $matter = ClientMatter::find($matterid);
-                    if ($matter) {
-                        $matter->updated_at = now();
-                        $matter->save();
-                    }
+                    ClientMatter::touchRecentActivity((int) $matterid, 'document');
                 }
                 
                 $response['status'] = true;

@@ -324,4 +324,21 @@ class ClientMatter extends Model
         return $candidateRef;
     }
 
+    /**
+     * Record matter-scoped activity for dashboard recent-activity feeds.
+     */
+    public static function touchRecentActivity(int $matterId, string $type): void
+    {
+        if ($matterId <= 0) {
+            return;
+        }
+
+        static::query()
+            ->where('id', $matterId)
+            ->update([
+                'updated_at' => now(),
+                'updated_at_type' => $type,
+            ]);
+    }
+
 }

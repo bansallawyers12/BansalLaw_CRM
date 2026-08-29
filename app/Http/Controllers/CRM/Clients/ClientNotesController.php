@@ -235,11 +235,7 @@ class ClientNotesController extends Controller
                     //Update date in client matter table
                     if( isset($request->matter_id) && $request->matter_id != ""){
                         try {
-                            $obj1 = ClientMatter::find($request->matter_id);
-                            if($obj1) {
-                                $obj1->updated_at = date('Y-m-d H:i:s');
-                                $obj1->save();
-                            }
+                            ClientMatter::touchRecentActivity((int) $request->matter_id, 'note');
                         } catch (\Exception $matterError) {
                             // Log but don't fail
                             Log::warning('Error updating matter timestamp: ' . $matterError->getMessage());

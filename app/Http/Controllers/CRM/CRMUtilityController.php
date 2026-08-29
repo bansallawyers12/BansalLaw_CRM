@@ -1536,6 +1536,9 @@ class CRMUtilityController extends Controller
                             'use_for' => ! empty($obj->client_matter_id) ? 'matter' : null,
                         ]
                     );
+                    if (! empty($obj->client_matter_id)) {
+                        ClientMatter::touchRecentActivity((int) $obj->client_matter_id, 'email');
+                    }
                 }
 
                 // Return JSON response for AJAX requests, redirect for regular form submissions

@@ -97,7 +97,7 @@ class NoteMatterDocumentSyncService
         $document->created_by = $userId;
         $document->save();
 
-        ClientMatter::where('id', $matterId)->update(['updated_at' => now()]);
+        ClientMatter::touchRecentActivity($matterId, 'document');
 
         return [
             'folder_id' => (string) $folder->id,

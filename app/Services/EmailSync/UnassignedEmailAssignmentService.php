@@ -92,8 +92,7 @@ class UnassignedEmailAssignmentService
                 : 'manual_assigned';
             $emailLog->save();
 
-            $matter->updated_at = now();
-            $matter->save();
+            ClientMatter::touchRecentActivity((int) $clientMatterId, 'email');
 
             try {
                 if ($emailLog->uploaded_doc_id) {

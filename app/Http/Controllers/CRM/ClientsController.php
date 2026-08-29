@@ -2932,11 +2932,7 @@ class ClientsController extends Controller
             $objs->save();
 
             if ($target_matter_id) {
-                $obj1 = \App\Models\ClientMatter::find($target_matter_id);
-                if ($obj1) {
-                    $obj1->updated_at = date('Y-m-d H:i:s');
-                    $obj1->save();
-                }
+                ClientMatter::touchRecentActivity((int) $target_matter_id, 'email');
             }
 
             return redirect()->back()->with('success', 'Inbox email re-assigned successfully');
@@ -3034,11 +3030,7 @@ class ClientsController extends Controller
             );
 
             if ($target_matter_id) {
-                $obj1 = \App\Models\ClientMatter::find($target_matter_id);
-                if ($obj1) {
-                    $obj1->updated_at = date('Y-m-d H:i:s');
-                    $obj1->save();
-                }
+                ClientMatter::touchRecentActivity((int) $target_matter_id, 'email');
             }
 
             return redirect()->back()->with('success', 'Sent email re-assigned successfully');

@@ -98,7 +98,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Paginated Cases Requiring Attention HTML for dashboard infinite scroll.
+     * Paginated Recent Matter Activity HTML for dashboard infinite scroll.
      */
     public function casesRequiringAttention(Request $request)
     {

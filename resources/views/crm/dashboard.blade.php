@@ -64,11 +64,11 @@
             />
             
             <x-dashboard.kpi-card 
-                :title="'Cases Requiring Attention'" 
+                :title="'Recent Matter Activity'" 
                 :count="$count_cases_requiring_attention_data"
-                :route="route('dashboard') . '#cases-requiring-attention'"
-                subtitle="Matters that may need follow-up"
-                icon="fa-solid fa-triangle-exclamation"
+                :route="route('dashboard') . '#recent-matter-activity'"
+                subtitle="Active in the last 90 days or due within 7 days"
+                icon="fa-solid fa-clock-rotate-left"
                 icon-class="icon-pending" 
             />
         </section>
@@ -154,12 +154,12 @@
                 </div>
             </div>
 
-            {{-- Cases Requiring Attention --}}
-            <div class="focus-container dashboard-scroll-anchor" id="cases-requiring-attention">
+            {{-- Recent Matter Activity --}}
+            <div class="focus-container dashboard-scroll-anchor" id="recent-matter-activity">
                 <div class="focus-header">
                     <h3>
-                        <i class="fa-solid fa-circle-exclamation" style="color: var(--warning-color);"></i> 
-                        Cases Requiring Attention
+                        <i class="fa-solid fa-clock-rotate-left dashboard-theme-icon-primary"></i> 
+                        Recent Matter Activity
                     </h3>
                     <span class="badge-count" id="cases-attention-badge">{{ $count_cases_requiring_attention_data }}</span>
                 </div>
@@ -182,9 +182,9 @@
                         </div>
                     @else
                         <div class="empty-state-modern empty-state-modern--compact">
-                            <i class="fa-solid fa-thumbs-up fa-2x"></i>
-                            <h4>Great Work!</h4>
-                            <p>No cases requiring immediate attention.</p>
+                            <i class="fa-solid fa-folder-open fa-2x"></i>
+                            <h4>No Recent Activity</h4>
+                            <p>No open matters have recent activity or a deadline in the next 7 days.</p>
                         </div>
                     @endif
                 </div>
@@ -1552,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 0);
     })();
 
-    // Cases Requiring Attention infinite scroll (container scroll — UI unchanged)
+    // Recent Matter Activity infinite scroll (container scroll — UI unchanged)
     (function initCasesInfiniteScroll() {
         var root = document.getElementById('cases-attention-list-root');
         if (!root || root.getAttribute('data-infinite-scroll') !== '1') {
@@ -1616,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(function(err) {
-                    console.error('Cases requiring attention load more failed', err);
+                    console.error('Recent matter activity load more failed', err);
                 })
                 .finally(function() {
                     isLoading = false;

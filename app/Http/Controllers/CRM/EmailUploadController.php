@@ -949,11 +949,7 @@ class EmailUploadController extends Controller
             // 5. Update client matter timestamp
             $matterId = $document->client_matter_id;
             if (!empty($matterId)) {
-                $matter = ClientMatter::find($matterId);
-                if ($matter) {
-                    $matter->updated_at = now();
-                    $matter->save();
-                }
+                ClientMatter::touchRecentActivity((int) $matterId, 'email');
             }
 
             // 6. Create activity log
