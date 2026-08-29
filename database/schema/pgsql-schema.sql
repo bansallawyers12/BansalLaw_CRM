@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict NXdywLmlOiIcqQBmC0egcgIS30enWm7k0D3x8cB1FsNJloXGmG9adXgj5uuxr1Y
+\restrict DJKeBGA7l90hGEV3bkLOS1L2yyW66RwEBWgjItgef65mhZ7kPBc4UnDDkuvb05D
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -1606,47 +1606,6 @@ ALTER SEQUENCE public.conflict_party_emails_id_seq OWNED BY public.conflict_part
 
 
 --
--- Name: cost_assignment_forms; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.cost_assignment_forms (
-    id bigint NOT NULL,
-    client_id bigint,
-    client_matter_id bigint,
-    agent_id bigint,
-    "Dept_Additional_Applicant_Charge_Under_18_after_person_surcharg" numeric(15,2),
-    "Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharg" numeric(15,2),
-    "Block_1_Ex_Tax" numeric(15,2),
-    "Block_2_Ex_Tax" numeric(15,2),
-    "Block_3_Ex_Tax" numeric(15,2),
-    additional_fee_1 numeric(15,2),
-    "TotalBLOCKFEE" numeric(15,2),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    "TotalDisbursements" numeric(15,2) DEFAULT '0'::numeric
-);
-
-
---
--- Name: cost_assignment_forms_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.cost_assignment_forms_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: cost_assignment_forms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.cost_assignment_forms_id_seq OWNED BY public.cost_assignment_forms.id;
-
-
---
 -- Name: countries; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1678,41 +1637,6 @@ CREATE SEQUENCE public.countries_id_seq
 --
 
 ALTER SEQUENCE public.countries_id_seq OWNED BY public.countries.id;
-
-
---
--- Name: disbursement_lines; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.disbursement_lines (
-    id bigint NOT NULL,
-    cost_assignment_form_id bigint NOT NULL,
-    nature character varying(64) NOT NULL,
-    description character varying(191),
-    amount numeric(15,2) DEFAULT '0'::numeric NOT NULL,
-    sort_order smallint DEFAULT '0'::smallint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: disbursement_lines_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.disbursement_lines_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: disbursement_lines_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.disbursement_lines_id_seq OWNED BY public.disbursement_lines.id;
 
 
 --
@@ -2040,7 +1964,8 @@ CREATE TABLE public.email_verifications (
     ip_address character varying(45),
     user_agent text,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL
 );
 
 
@@ -2414,6 +2339,44 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 
 --
+-- Name: note_attachments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.note_attachments (
+    id bigint NOT NULL,
+    note_id bigint NOT NULL,
+    client_id bigint,
+    uploaded_by bigint,
+    original_name character varying(512) NOT NULL,
+    stored_path character varying(1024) NOT NULL,
+    mime_type character varying(191),
+    extension character varying(32),
+    file_size bigint,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: note_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.note_attachments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: note_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.note_attachments_id_seq OWNED BY public.note_attachments.id;
+
+
+--
 -- Name: notes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2437,7 +2400,8 @@ CREATE TABLE public.notes (
     mail_id bigint,
     pin smallint DEFAULT '0'::smallint,
     matter_id bigint,
-    mobile_number character varying(64)
+    mobile_number character varying(64),
+    spend_mins integer
 );
 
 
@@ -2599,7 +2563,8 @@ CREATE TABLE public.phone_verifications (
     attempts integer DEFAULT 0 NOT NULL,
     max_attempts integer DEFAULT 3 NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL
 );
 
 
@@ -3085,7 +3050,8 @@ CREATE TABLE public.staff (
     can_sync_inbox_emails boolean DEFAULT false NOT NULL,
     can_edit_final_invoice boolean DEFAULT false NOT NULL,
     can_view_all_synced_inbox_mail boolean DEFAULT false NOT NULL,
-    can_pause_mailbox_inbox_sync boolean DEFAULT false NOT NULL
+    can_pause_mailbox_inbox_sync boolean DEFAULT false NOT NULL,
+    can_assign_emails_by_subject boolean DEFAULT false NOT NULL
 );
 
 
@@ -3562,24 +3528,10 @@ ALTER TABLE ONLY public.conflict_party_emails ALTER COLUMN id SET DEFAULT nextva
 
 
 --
--- Name: cost_assignment_forms id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cost_assignment_forms ALTER COLUMN id SET DEFAULT nextval('public.cost_assignment_forms_id_seq'::regclass);
-
-
---
 -- Name: countries id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.countries ALTER COLUMN id SET DEFAULT nextval('public.countries_id_seq'::regclass);
-
-
---
--- Name: disbursement_lines id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.disbursement_lines ALTER COLUMN id SET DEFAULT nextval('public.disbursement_lines_id_seq'::regclass);
 
 
 --
@@ -3692,6 +3644,13 @@ ALTER TABLE ONLY public.matters ALTER COLUMN id SET DEFAULT nextval('public.matt
 --
 
 ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
+
+
+--
+-- Name: note_attachments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_attachments ALTER COLUMN id SET DEFAULT nextval('public.note_attachments_id_seq'::regclass);
 
 
 --
@@ -4077,14 +4036,6 @@ ALTER TABLE ONLY public.conflict_party_emails
 
 
 --
--- Name: cost_assignment_forms cost_assignment_forms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cost_assignment_forms
-    ADD CONSTRAINT cost_assignment_forms_pkey PRIMARY KEY (id);
-
-
---
 -- Name: countries countries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4098,14 +4049,6 @@ ALTER TABLE ONLY public.countries
 
 ALTER TABLE ONLY public.countries
     ADD CONSTRAINT countries_sortname_unique UNIQUE (sortname);
-
-
---
--- Name: disbursement_lines disbursement_lines_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.disbursement_lines
-    ADD CONSTRAINT disbursement_lines_pkey PRIMARY KEY (id);
 
 
 --
@@ -4250,6 +4193,14 @@ ALTER TABLE ONLY public.matters
 
 ALTER TABLE ONLY public.migrations
     ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: note_attachments note_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_attachments
+    ADD CONSTRAINT note_attachments_pkey PRIMARY KEY (id);
 
 
 --
@@ -5019,34 +4970,6 @@ CREATE INDEX conflict_party_emails_conflict_party_id_index ON public.conflict_pa
 
 
 --
--- Name: cost_assignment_forms_agent_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cost_assignment_forms_agent_id_index ON public.cost_assignment_forms USING btree (agent_id);
-
-
---
--- Name: cost_assignment_forms_client_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cost_assignment_forms_client_id_index ON public.cost_assignment_forms USING btree (client_id);
-
-
---
--- Name: cost_assignment_forms_client_matter_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cost_assignment_forms_client_matter_id_index ON public.cost_assignment_forms USING btree (client_matter_id);
-
-
---
--- Name: disbursement_lines_cost_assignment_form_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX disbursement_lines_cost_assignment_form_id_index ON public.disbursement_lines USING btree (cost_assignment_form_id);
-
-
---
 -- Name: documents_client_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5282,6 +5205,13 @@ CREATE INDEX email_verifications_email_token_sent_at_index ON public.email_verif
 --
 
 CREATE INDEX email_verifications_is_verified_index ON public.email_verifications USING btree (is_verified);
+
+
+--
+-- Name: email_verifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_verifications_status_index ON public.email_verifications USING btree (status);
 
 
 --
@@ -5523,6 +5453,27 @@ CREATE INDEX matter_checklists_matter_id_index ON public.matter_checklists USING
 
 
 --
+-- Name: note_attachments_client_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX note_attachments_client_id_index ON public.note_attachments USING btree (client_id);
+
+
+--
+-- Name: note_attachments_note_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX note_attachments_note_id_index ON public.note_attachments USING btree (note_id);
+
+
+--
+-- Name: note_attachments_uploaded_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX note_attachments_uploaded_by_index ON public.note_attachments USING btree (uploaded_by);
+
+
+--
 -- Name: notes_lead_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5611,6 +5562,13 @@ CREATE INDEX phone_verifications_otp_expires_at_index ON public.phone_verificati
 --
 
 CREATE INDEX phone_verifications_phone_country_code_index ON public.phone_verifications USING btree (phone, country_code);
+
+
+--
+-- Name: phone_verifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX phone_verifications_status_index ON public.phone_verifications USING btree (status);
 
 
 --
@@ -5890,7 +5848,7 @@ ALTER TABLE ONLY public.client_conflict_parties
 --
 
 ALTER TABLE ONLY public.client_contacts
-    ADD CONSTRAINT client_contacts_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.admins(id) ON DELETE SET NULL;
+    ADD CONSTRAINT client_contacts_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.staff(id) ON DELETE SET NULL;
 
 
 --
@@ -5898,7 +5856,7 @@ ALTER TABLE ONLY public.client_contacts
 --
 
 ALTER TABLE ONLY public.client_emails
-    ADD CONSTRAINT client_emails_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.admins(id) ON DELETE SET NULL;
+    ADD CONSTRAINT client_emails_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.staff(id) ON DELETE SET NULL;
 
 
 --
@@ -6014,19 +5972,27 @@ ALTER TABLE ONLY public.conflict_party_emails
 
 
 --
--- Name: disbursement_lines disbursement_lines_cost_assignment_form_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.disbursement_lines
-    ADD CONSTRAINT disbursement_lines_cost_assignment_form_id_foreign FOREIGN KEY (cost_assignment_form_id) REFERENCES public.cost_assignment_forms(id) ON DELETE CASCADE;
-
-
---
 -- Name: email_templates email_templates_matter_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.email_templates
     ADD CONSTRAINT email_templates_matter_id_foreign FOREIGN KEY (matter_id) REFERENCES public.matters(id) ON DELETE CASCADE;
+
+
+--
+-- Name: email_verifications email_verifications_verified_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_verifications
+    ADD CONSTRAINT email_verifications_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.staff(id) ON DELETE SET NULL;
+
+
+--
+-- Name: phone_verifications phone_verifications_verified_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.phone_verifications
+    ADD CONSTRAINT phone_verifications_verified_by_foreign FOREIGN KEY (verified_by) REFERENCES public.staff(id) ON DELETE SET NULL;
 
 
 --
@@ -6097,13 +6063,13 @@ ALTER TABLE ONLY public.staff
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NXdywLmlOiIcqQBmC0egcgIS30enWm7k0D3x8cB1FsNJloXGmG9adXgj5uuxr1Y
+\unrestrict DJKeBGA7l90hGEV3bkLOS1L2yyW66RwEBWgjItgef65mhZ7kPBc4UnDDkuvb05D
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict a4mgInEvGDG8idjgxNFo10LD5vGWNKA0kRAYXcoV7T0XAo7S3pdsvDGGLj2Scni
+\restrict c1xrU90JBpxYXVLsng1LSRfjT8ilowQhFg8Y6TQPs6Dz0tbT86Ydn5p8tWDpFHM
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -6483,6 +6449,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 365	2026_08_21_203500_rename_personal_action_task_group_to_personal_task	95
 366	2026_08_22_120000_drop_trust_compliance_tables_and_columns	96
 367	2026_08_22_180000_add_reversal_of_entry_id_to_account_client_receipts	97
+368	2026_08_22_120000_add_verification_status_and_fix_verified_by_fks	98
+369	2026_08_22_100000_drop_cost_assignment_tables	99
+370	2026_08_20_091700_create_note_attachments_table	100
+371	2026_08_21_133000_add_can_assign_emails_by_subject_to_staff_table	100
+372	2026_08_22_140000_add_spend_hours_to_notes_table	100
+373	2026_08_22_150000_rename_spend_hours_to_spend_mins_on_notes_table	100
 \.
 
 
@@ -6490,12 +6462,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 367, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 373, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict a4mgInEvGDG8idjgxNFo10LD5vGWNKA0kRAYXcoV7T0XAo7S3pdsvDGGLj2Scni
+\unrestrict c1xrU90JBpxYXVLsng1LSRfjT8ilowQhFg8Y6TQPs6Dz0tbT86Ydn5p8tWDpFHM
 

@@ -230,25 +230,167 @@ class DashboardService
     }
 
     /**
-     * Attach matter-scoped activity metadata for dashboard list items.
+     * Attach last-activity badges and upcoming-deadline flags for dashboard list items.
+     *
+     * Badge type prefers matter `updated_at_type`, then the latest timeline log
+     * matching this matter reference, then the client's latest log.
      *
      * @param  \Illuminate\Support\Collection<int, ClientMatter>  $cases
      */
     protected function attachMatterActivity($cases): void
     {
+        if ($cases->isEmpty()) {
+            return;
+        }
+
         [$deadlineStart, $deadlineEnd] = $this->upcomingDeadlineDateRange();
+        $logsByClient = $this->activityLogsGroupedByClient($cases);
 
         foreach ($cases as $case) {
             $hasUpcomingDeadline = $this->matterHasUpcomingDeadline($case, $deadlineStart, $deadlineEnd);
+            $fromMatterType = $this->activityTypeFromMatter($case);
+            $log = $this->pickActivityLogForMatter($logsByClient->get($case->client_id), $case);
 
-            $case->latest_activity = [
-                'type' => $hasUpcomingDeadline ? 'deadline_approaching' : $this->activityTypeFromMatter($case),
-                'date' => $case->updated_at,
-            ];
+            if ($fromMatterType !== 'default') {
+                $case->latest_activity = [
+                    'type' => $fromMatterType,
+                    'date' => $case->updated_at,
+                ];
+            } elseif ($log) {
+                $case->latest_activity = $this->activityFromLog($log);
+            } else {
+                $case->latest_activity = [
+                    'type' => 'default',
+                    'date' => $case->updated_at,
+                ];
+            }
+
             $case->upcoming_deadline = $hasUpcomingDeadline
                 ? Carbon::parse($case->deadline)->startOfDay()
                 : null;
         }
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, ClientMatter>  $cases
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, ActivitiesLog>>
+     */
+    protected function activityLogsGroupedByClient($cases)
+    {
+        $clientIds = $cases->pluck('client_id')->filter()->unique()->values();
+        if ($clientIds->isEmpty()) {
+            return collect();
+        }
+
+        $recentLogs = ActivitiesLog::query()
+            ->whereIn('client_id', $clientIds)
+            ->where('created_at', '>=', Carbon::now()->subDays(self::RECENT_MATTER_ACTIVITY_DAYS))
+            ->orderByDesc('id')
+            ->get(['id', 'client_id', 'subject', 'activity_type', 'created_at']);
+
+        $grouped = $recentLogs->groupBy('client_id');
+
+        $missingClientIds = $clientIds->filter(fn ($id) => ! $grouped->has($id));
+        if ($missingClientIds->isNotEmpty()) {
+            $latestIds = ActivitiesLog::query()
+                ->selectRaw('MAX(id) as id')
+                ->whereIn('client_id', $missingClientIds)
+                ->groupBy('client_id')
+                ->pluck('id');
+
+            if ($latestIds->isNotEmpty()) {
+                $fallbackLogs = ActivitiesLog::query()
+                    ->whereIn('id', $latestIds)
+                    ->get(['id', 'client_id', 'subject', 'activity_type', 'created_at']);
+
+                foreach ($fallbackLogs as $log) {
+                    $grouped->put($log->client_id, collect([$log]));
+                }
+            }
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, ActivitiesLog>|null  $clientLogs
+     */
+    protected function pickActivityLogForMatter($clientLogs, ClientMatter $case): ?ActivitiesLog
+    {
+        if (! $clientLogs || $clientLogs->isEmpty()) {
+            return null;
+        }
+
+        $matterNo = strtolower(trim((string) ($case->client_unique_matter_no ?? '')));
+        if ($matterNo !== '') {
+            $matched = $clientLogs->first(function (ActivitiesLog $log) use ($matterNo) {
+                $subject = strtolower((string) ($log->subject ?? ''));
+
+                return $subject !== '' && str_contains($subject, $matterNo);
+            });
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        return $clientLogs->first();
+    }
+
+    /**
+     * @return array{type: string, date: mixed}
+     */
+    protected function activityFromLog(ActivitiesLog $log): array
+    {
+        $fromColumn = $this->activityTypeFromActivityColumn((string) ($log->activity_type ?? ''));
+        if ($fromColumn !== 'default') {
+            return [
+                'type' => $fromColumn,
+                'date' => $log->created_at,
+            ];
+        }
+
+        $subject = strtolower((string) ($log->subject ?? ''));
+        $type = 'default';
+
+        if (str_contains($subject, 'sms')) {
+            $type = 'sms_sent';
+        } elseif (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
+            $type = 'stage_updated';
+        } elseif (str_contains($subject, 'status')) {
+            $type = 'status_changed';
+        } elseif (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
+            $type = 'appointment_scheduled';
+        } elseif (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
+            $type = 'payment_received';
+        } elseif (str_contains($subject, 'note')) {
+            $type = 'note_added';
+        } elseif (str_contains($subject, 'email') || str_contains($subject, 'inbox')) {
+            $type = 'email_sent';
+        } elseif (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
+            $type = 'document_uploaded';
+        } elseif (str_contains($subject, 'sign')) {
+            $type = 'signed';
+        }
+
+        return [
+            'type' => $type,
+            'date' => $log->created_at,
+        ];
+    }
+
+    protected function activityTypeFromActivityColumn(string $activityType): string
+    {
+        return match (strtolower(trim($activityType))) {
+            'email' => 'email_sent',
+            'note' => 'note_added',
+            'document' => 'document_uploaded',
+            'sms' => 'sms_sent',
+            'stage' => 'stage_updated',
+            'signature' => 'signed',
+            'financial' => 'payment_received',
+            default => 'default',
+        };
     }
 
     /**

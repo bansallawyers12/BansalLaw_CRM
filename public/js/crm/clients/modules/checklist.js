@@ -7,7 +7,140 @@
     'use strict';
     if (!$) return;
 
-    // Legacy workflow checklist upload handlers removed
+    var $renameChecklistTargetRow = null;
+
+    function getChecklistRowFromDrow($drow) {
+        var $parent = $drow.find('.personalchecklist-row');
+        if (!$parent.length) {
+            $parent = $drow.find('.visachecklist-row');
+        }
+        return $parent;
+    }
+
+    function getChecklistNameFromRow($parent) {
+        return $parent.data('personalchecklistname') || $parent.data('visachecklistname') || '';
+    }
+
+    function appendRenameChecklistModalToBody() {
+        var $modal = $('#renameChecklistModal');
+        if ($modal.length && !$modal.parent().is('body')) {
+            $modal.appendTo('body');
+        }
+    }
+
+    function showRenameChecklistError(message) {
+        var $input = $('#renameChecklistName');
+        var $error = $('#renameChecklistError');
+        $input.addClass('is-invalid');
+        $error.text(message).show();
+    }
+
+    function clearRenameChecklistError() {
+        $('#renameChecklistName').removeClass('is-invalid');
+        $('#renameChecklistError').text('').hide();
+    }
+
+    function applyChecklistRenameSuccess($drow, obj) {
+        var $parent = getChecklistRowFromDrow($drow);
+        if (!$parent.length) {
+            return;
+        }
+        var isVisa = $parent.hasClass('visachecklist-row');
+        $parent.empty()
+            .data('id', obj.Id)
+            .data(isVisa ? 'visachecklistname' : 'personalchecklistname', obj.checklist)
+            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
+        if ($('#grid_' + obj.Id).length) {
+            $('#grid_' + obj.Id).html(obj.checklist);
+        }
+    }
+
+    function openRenameChecklistModal($drow, fallbackName) {
+        var $parent = getChecklistRowFromDrow($drow);
+        if (!$parent.length) {
+            console.error('Checklist row not found');
+            return false;
+        }
+
+        var docId = $parent.data('id');
+        var checklistName = getChecklistNameFromRow($parent) || fallbackName || '';
+        if (!docId) {
+            console.error('Checklist document id not found');
+            return false;
+        }
+
+        appendRenameChecklistModalToBody();
+        $renameChecklistTargetRow = $drow;
+        $('#renameChecklistDocId').val(docId);
+        clearRenameChecklistError();
+        $('#renameChecklistName').val(checklistName);
+
+        var modalEl = document.getElementById('renameChecklistModal');
+        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            console.error('Rename checklist modal not available');
+            return false;
+        }
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        setTimeout(function() {
+            $('#renameChecklistName').trigger('focus').trigger('select');
+        }, 200);
+        return false;
+    }
+
+    function saveRenameChecklist() {
+        clearRenameChecklistError();
+        var checklistName = ($('#renameChecklistName').val() || '').trim();
+        var docId = $('#renameChecklistDocId').val();
+        if (!checklistName) {
+            showRenameChecklistError('This field is required');
+            return;
+        }
+        if (!$renameChecklistTargetRow || !$renameChecklistTargetRow.length) {
+            showRenameChecklistError('Unable to locate the checklist row. Please close and try again.');
+            return;
+        }
+
+        var $saveBtn = $('#renameChecklistSaveBtn');
+        $saveBtn.prop('disabled', true);
+
+        $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                checklist: checklistName,
+                id: docId
+            },
+            url: window.ClientDetailConfig.urls.renameChecklistDoc,
+            success: function(result) {
+                var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function() {
+                    try { return JSON.parse(result); } catch (e) { return null; }
+                })() : null);
+                if (!obj) {
+                    showRenameChecklistError('Unexpected response from server');
+                    return;
+                }
+                if (obj.status) {
+                    applyChecklistRenameSuccess($renameChecklistTargetRow, obj);
+                    var modalEl = document.getElementById('renameChecklistModal');
+                    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    }
+                    $renameChecklistTargetRow = null;
+                } else {
+                    showRenameChecklistError(obj.message || 'Please try again');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax error:', error);
+                showRenameChecklistError('An error occurred while saving');
+            },
+            complete: function() {
+                $saveBtn.prop('disabled', false);
+            }
+        });
+    }
 
     $(document).ready(function() {
         // ---- Application checklist: open modal ----
@@ -26,195 +159,34 @@
             $('.checklistdue_date').val(0);
         });
 
-        // ---- Rename checklist: Personal documents ----
-        $(document).on('click', '.persdocumnetlist .renamechecklist, .persdocumnetlist a.renamechecklist', function(e){
+        // ---- Rename checklist: Personal + matter documents (modal) ----
+        $(document).on('click', '.persdocumnetlist .renamechecklist, .persdocumnetlist a.renamechecklist, .migdocumnetlist1 .renamechecklist', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            var $parent = $(this).closest('.drow').find('.personalchecklist-row');
-            if ($parent.length === 0) {
-                console.error('Personal checklist row not found');
-                return false;
-            }
-            var opentime = $parent.data('personalchecklistname');
-            if (!opentime) {
-                console.error('Personal checklist name not found');
-                return false;
-            }
-            $parent.data('current-html', $parent.html());
-            $parent.empty().append(
-                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-personalprimary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
-                $('<button class="btn btn-personaldanger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
-            );
-            return false;
+            return openRenameChecklistModal($(this).closest('.drow'));
         });
 
-        $(document).on('click', '.persdocumnetlist .btn-personaldanger', function(e){
+        $(document).on('click', '.edit-checklist-btn', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.personalchecklist-row');
-            if (parent.length === 0) {
-                console.error('Personal checklist row not found for cancel');
-                return false;
-            }
-            var hourid = parent.data('id');
-            if (hourid) {
-                parent.html(parent.data('current-html'));
-            } else {
-                parent.remove();
-            }
-            return false;
+            return openRenameChecklistModal($(this).closest('.drow'), $(this).data('checklist'));
         });
 
-        $(document).on('click', '.persdocumnetlist .btn-personalprimary', function(e){
+        $('#renameChecklistSaveBtn').on('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.personalchecklist-row');
-            if (parent.length === 0) {
-                console.error('Personal checklist row not found for save');
-                return false;
-            }
-            parent.find('.opentime').removeClass('is-invalid');
-            parent.find('.invalid-feedback').remove();
-            var opentime = parent.find('.opentime').val();
-            if (!opentime) {
-                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
-                return false;
-            }
-            $.ajax({
-                type: "POST",
-                dataType: 'json',
-                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
-                url: window.ClientDetailConfig.urls.renameChecklistDoc,
-                success: function(result){
-                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
-                    if (!obj) return;
-                    if (obj.status) {
-                        parent.empty()
-                            .data('id', obj.Id)
-                            .data('personalchecklistname', obj.checklist)
-                            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
-                        if ($('#grid_'+obj.Id).length) {
-                            $('#grid_'+obj.Id).html(obj.checklist);
-                        }
-                    } else {
-                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ajax error:', error);
-                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
-                }
-            });
-            return false;
+            saveRenameChecklist();
         });
 
-        // ---- Rename checklist: Visa documents ----
-        $(document).on('click', '.migdocumnetlist1 .renamechecklist', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.visachecklist-row');
-            if (parent.length === 0) {
-                console.error('Visa checklist row not found');
-                return false;
+        $('#renameChecklistName').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveRenameChecklist();
             }
-            var opentime = parent.data('visachecklistname');
-            if (!opentime) return false;
-            parent.data('current-html', parent.html());
-            parent.empty().append(
-                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-visaprimary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
-                $('<button class="btn btn-visadanger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
-            );
-            return false;
         });
 
-        $(document).on('click', '.migdocumnetlist1 .btn-visadanger', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.visachecklist-row');
-            if (parent.length === 0) return false;
-            var hourid = parent.data('id');
-            if (hourid) {
-                parent.html(parent.data('current-html'));
-            } else {
-                parent.remove();
-            }
-            return false;
-        });
-
-        $(document).on('click', '.migdocumnetlist1 .btn-visaprimary', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            var parent = $(this).closest('.drow').find('.visachecklist-row');
-            if (parent.length === 0) return false;
-            parent.find('.opentime').removeClass('is-invalid');
-            parent.find('.invalid-feedback').remove();
-            var opentime = parent.find('.opentime').val();
-            if (!opentime) {
-                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
-                return false;
-            }
-            $.ajax({
-                type: "POST",
-                dataType: 'json',
-                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
-                url: window.ClientDetailConfig.urls.renameChecklistDoc,
-                success: function(result){
-                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
-                    if (!obj) return;
-                    if (obj.status) {
-                        parent.empty()
-                            .data('id', obj.Id)
-                            .data('visachecklistname', obj.checklist)
-                            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
-                        if ($('#grid_'+obj.Id).length) {
-                            $('#grid_'+obj.Id).html(obj.checklist);
-                        }
-                    } else {
-                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
-                        console.error('Failed to rename visa checklist:', obj.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ajax error:', error);
-                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
-                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
-                }
-            });
-            return false;
-        });
-
-        // ---- Edit checklist (triggers inline rename UI) ----
-        $(document).on('click', '.edit-checklist-btn', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            var $drow = $(this).closest('.drow');
-            var $parent = $drow.find('.personalchecklist-row').length ? $drow.find('.personalchecklist-row') : $drow.find('.visachecklist-row');
-            var isVisa = $parent.hasClass('visachecklist-row');
-            if ($parent.length === 0) {
-                console.error('Checklist row not found');
-                return false;
-            }
-            $parent.data('current-html', $parent.html());
-            var currentChecklist = $parent.data('personalchecklistname') || $parent.data('visachecklistname') || $(this).data('checklist');
-            if (!currentChecklist) {
-                console.error('Checklist name not found');
-                return false;
-            }
-            var saveBtnClass = isVisa ? 'btn-visaprimary' : 'btn-personalprimary';
-            var cancelBtnClass = isVisa ? 'btn-visadanger' : 'btn-personaldanger';
-            $parent.empty().append(
-                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', currentChecklist),
-                $('<button class="btn ' + saveBtnClass + ' btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
-                $('<button class="btn ' + cancelBtnClass + ' btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
-            );
-            return false;
+        $('#renameChecklistModal').on('hidden.bs.modal', function() {
+            clearRenameChecklistError();
+            $renameChecklistTargetRow = null;
         });
 
         // ---- Delete checklist ----
@@ -253,15 +225,6 @@
             });
             return false;
         });
-
-        // ---- Visual: make renamechecklist clickable (for initial load) ----
-        $('.renamechecklist').css({
-            'pointer-events': 'auto',
-            'cursor': 'pointer',
-            'z-index': '1000'
-        });
-        $(document).on('mouseenter', '.renamechecklist', function(){ $(this).css('background-color', '#f8f9fa'); });
-        $(document).on('mouseleave', '.renamechecklist', function(){ $(this).css('background-color', ''); });
     });
 
 })(typeof jQuery !== 'undefined' ? jQuery : null);

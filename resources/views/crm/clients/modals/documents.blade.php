@@ -81,3 +81,29 @@
 	</div>
 </div>
 
+<!-- Rename checklist modal (personal + matter documents) -->
+<div class="modal fade custom_modal" id="renameChecklistModal" tabindex="-1" role="dialog" aria-labelledby="renameChecklistModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="renameChecklistModalLabel">Rename Checklist</h5>
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="renameChecklistDocId" value="">
+				<div class="form-group mb-0">
+					<label for="renameChecklistName">Checklist name<span class="span_req">*</span></label>
+					<input type="text" class="form-control" id="renameChecklistName" autocomplete="off">
+					<div class="invalid-feedback d-block" id="renameChecklistError" style="display: none;"></div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="renameChecklistSaveBtn">Save</button>
+			</div>
+		</div>
+	</div>
+</div>
+

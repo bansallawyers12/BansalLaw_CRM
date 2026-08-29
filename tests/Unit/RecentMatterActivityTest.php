@@ -68,4 +68,47 @@ class RecentMatterActivityTest extends TestCase
             'past deadline is excluded' => [$yesterday, false],
         ];
     }
+
+    #[DataProvider('activityFromLogProvider')]
+    public function test_activity_from_log_maps_type_and_subject(string $activityType, string $subject, string $expected): void
+    {
+        $log = new \App\Models\ActivitiesLog([
+            'activity_type' => $activityType,
+            'subject' => $subject,
+        ]);
+
+        $method = new ReflectionMethod(DashboardService::class, 'activityFromLog');
+        $method->setAccessible(true);
+
+        $result = $method->invoke(new DashboardService(), $log);
+
+        $this->assertSame($expected, $result['type']);
+    }
+
+    public static function activityFromLogProvider(): array
+    {
+        return [
+            'email column maps to email sent' => ['email', 'hello', 'email_sent'],
+            'note column maps to note added' => ['note', 'hello', 'note_added'],
+            'document column maps to upload' => ['document', 'hello', 'document_uploaded'],
+            'generic type uses email subject' => ['activity', 'Inbox Email Re-assign', 'email_sent'],
+            'generic type uses note subject' => ['activity', 'added a note', 'note_added'],
+        ];
+    }
+
+    public function test_pick_activity_log_prefers_matter_reference_in_subject(): void
+    {
+        $method = new ReflectionMethod(DashboardService::class, 'pickActivityLogForMatter');
+        $method->setAccessible(true);
+
+        $clientLogs = collect([
+            new \App\Models\ActivitiesLog(['id' => 20, 'subject' => 'Email for OTHER2600001']),
+            new \App\Models\ActivitiesLog(['id' => 19, 'subject' => 'Note for MAND2600086']),
+        ]);
+        $matter = new ClientMatter(['client_unique_matter_no' => 'MAND2600086']);
+
+        $picked = $method->invoke(new DashboardService(), $clientLogs, $matter);
+
+        $this->assertSame('Note for MAND2600086', $picked->subject);
+    }
 }

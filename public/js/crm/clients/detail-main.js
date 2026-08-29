@@ -2626,11 +2626,6 @@ success: function(response) {
             initFlatpickrForClass('.report_date_fields,.report_entry_date_fields');
 
             toggleLedgerEftposSurchargeRow($newRow);
-            toggleLedgerMetaFields($newRow);
-
-            if (typeof window.updateLedgerRule42Visibility === 'function') {
-                window.updateLedgerRule42Visibility();
-            }
 
             //$('.report_entry_date_fields').last().datepicker({ format: 'dd/mm/yyyy',todayHighlight: true,autoclose: true }).datepicker('setDate', new Date());
 
@@ -2653,10 +2648,6 @@ success: function(response) {
             }
 
             grandtotalAccountTab();
-
-            if (typeof window.updateLedgerRule42Visibility === 'function') {
-                window.updateLedgerRule42Visibility();
-            }
 
         });
 
@@ -3159,43 +3150,7 @@ success: function(response) {
             }
 
             toggleLedgerEftposSurchargeRow($row);
-
-            toggleLedgerMetaFields($row);
-
-            updateLedgerRule42Visibility();
         });
-
-
-
-        function toggleLedgerMetaFields($row) {
-            var ledgerType = $row.find('.client_fund_ledger_type').val();
-            var pm = $row.find('.ledger-payment-method').val();
-            var isDeposit = ledgerType === 'Deposit';
-            var isWithdraw = ledgerType === 'Fee Transfer' || ledgerType === 'Disbursement' || ledgerType === 'Refund';
-
-            $row.find('.ledger-payer-name').toggle(isDeposit);
-            $row.find('.ledger-payee-name').toggle(isWithdraw);
-            $row.find('.ledger-banking-date').toggle(isDeposit);
-            $row.find('.ledger-bank-ref').toggle(isDeposit || pm === 'Cheque');
-            $row.find('.ledger-cheque-no').toggle(isWithdraw && pm === 'Cheque');
-            $row.find('.ledger-eft-bsb, .ledger-eft-acct-name, .ledger-eft-acct-no').toggle(isWithdraw && pm === 'Bank transfer');
-        }
-
-        window.toggleLedgerMetaFields = toggleLedgerMetaFields;
-
-
-
-        function updateLedgerRule42Visibility() {
-            var any = false;
-            $('#client_receipt_form .client_fund_ledger_type').each(function () {
-                if ($(this).val() === 'Fee Transfer') {
-                    any = true;
-                }
-            });
-            $('#ledger-rule42-block').toggle(any);
-        }
-
-        window.updateLedgerRule42Visibility = updateLedgerRule42Visibility;
 
 
 
@@ -3255,7 +3210,6 @@ success: function(response) {
 
             var $row = $(this).closest('tr');
             toggleLedgerEftposSurchargeRow($row);
-            toggleLedgerMetaFields($row);
 
             grandtotalAccountTab();
 
