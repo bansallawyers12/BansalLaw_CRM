@@ -420,4 +420,17 @@ return [
         'ai_poll_max_attempts' => max(10, (int) env('LEGAL_FORMS_AI_POLL_MAX_ATTEMPTS', 60)),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Accounts / billing (client Account tab + ledger list pages)
+    |--------------------------------------------------------------------------
+    */
+    'accounts' => [
+        'tab_trust_row_limit' => max(0, (int) env('ACCOUNTS_TAB_TRUST_ROW_LIMIT', 100)),
+        'tab_invoice_row_limit' => max(0, (int) env('ACCOUNTS_TAB_INVOICE_ROW_LIMIT', 50)),
+        'tab_office_row_limit' => max(0, (int) env('ACCOUNTS_TAB_OFFICE_ROW_LIMIT', 50)),
+        'list_per_page_options' => [10, 20, 50, 100, 200, 500],
+        'filter_cache_seconds' => max(60, (int) env('ACCOUNTS_FILTER_CACHE_SECONDS', 300)),
+    ],
+
 ];

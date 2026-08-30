@@ -6,14 +6,22 @@ use App\Models\AccountClientReceipt;
 use App\Models\ClientLegalForm;
 use App\Models\Document;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Loads client detail Account tab data (trust ledger, invoices, office receipts).
- * Keeps balance math and matter-scoped queries out of the Blade view.
+ * Also owns trust balance math and shared list-filter dropdowns for account pages.
  */
 class ClientAccountTabService
 {
+    private const FILTER_CACHE_TTL_SECONDS = 300;
+
+    private function filterCacheTtl(): int
+    {
+        return max(60, (int) config('crm.accounts.filter_cache_seconds', self::FILTER_CACHE_TTL_SECONDS));
+    }
+
     /**
      * @return array{
      *     clientMatterId: int|null,
@@ -25,14 +33,26 @@ class ClientAccountTabService
      *     trustRows: Collection<int, object>,
      *     invoiceRows: Collection<int, object>,
      *     officeRows: Collection<int, object>,
-     *     documentsById: Collection<int, Document>
+     *     documentsById: Collection<int, Document>,
+     *     trustHasMore: bool,
+     *     invoiceHasMore: bool,
+     *     officeHasMore: bool
      * }
      */
     public function build(int $clientId, ?int $clientMatterId): array
     {
-        $trustRows = $this->trustLedgerRows($clientId, $clientMatterId);
-        $invoiceRows = $this->latestInvoiceRows($clientId, $clientMatterId);
-        $officeRows = $this->officeReceiptRows($clientId, $clientMatterId);
+        $trustLimit = max(0, (int) config('crm.accounts.tab_trust_row_limit', 100));
+        $invoiceLimit = max(0, (int) config('crm.accounts.tab_invoice_row_limit', 50));
+        $officeLimit = max(0, (int) config('crm.accounts.tab_office_row_limit', 50));
+
+        [$trustRows, $trustHasMore] = $this->trustLedgerRows($clientId, $clientMatterId, $trustLimit);
+        [$invoiceRows, $invoiceHasMore] = $this->latestInvoiceRows($clientId, $clientMatterId, $invoiceLimit);
+        [$officeRows, $officeHasMore] = $this->officeReceiptRows($clientId, $clientMatterId, $officeLimit);
+
+        // Totals must use the full ledger, not the display window.
+        [$allInvoiceRows] = $invoiceLimit > 0
+            ? $this->latestInvoiceRows($clientId, $clientMatterId, 0)
+            : [$invoiceRows, false];
 
         $docIds = $trustRows->pluck('uploaded_doc_id')
             ->merge($officeRows->pluck('uploaded_doc_id'))
@@ -49,14 +69,14 @@ class ClientAccountTabService
         $costsDisclosure = $this->disclosurePayload(
             ClientLegalForm::latestCostsDisclosureForMatter($clientId, $clientMatterId)
         );
-        $invoicedTotal = $this->invoicedTotal($invoiceRows);
+        $invoicedTotal = $this->invoicedTotal($allInvoiceRows);
         $disclosedTotal = (float) ($costsDisclosure['estimatedTotal'] ?? 0);
         $exceedsDisclosure = $disclosedTotal > 0 && $invoicedTotal > $disclosedTotal;
 
         return [
             'clientMatterId' => $clientMatterId,
-            'trustBalance' => $this->trustBalanceFromRows($trustRows),
-            'outstandingBalance' => $this->outstandingBalanceFromRows($invoiceRows),
+            'trustBalance' => $this->currentFundsHeld($clientId, $clientMatterId),
+            'outstandingBalance' => $this->outstandingBalanceFromRows($allInvoiceRows),
             'invoicedTotal' => $invoicedTotal,
             'costsDisclosure' => $costsDisclosure,
             'exceedsDisclosure' => $exceedsDisclosure,
@@ -64,11 +84,14 @@ class ClientAccountTabService
             'invoiceRows' => $invoiceRows,
             'officeRows' => $officeRows,
             'documentsById' => $documentsById,
+            'trustHasMore' => $trustHasMore,
+            'invoiceHasMore' => $invoiceHasMore,
+            'officeHasMore' => $officeHasMore,
         ];
     }
 
     /**
-     * Same rules as ClientAccountsController::currentFundsHeld / trustLedgerRowExcludedFromBalance.
+     * Same rules as legacy ClientAccountsController::currentFundsHeld.
      */
     public function currentFundsHeld(int $clientId, $clientMatterId): float
     {
@@ -84,6 +107,41 @@ class ClientAccountTabService
         return isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1;
     }
 
+    /**
+     * Persist running balances for one client funds ledger (single matter or null matter).
+     *
+     * @return array{final_balance: float, entries_processed: int}
+     */
+    public function recalculateClientFundBalances(int $clientId, $clientMatterId): array
+    {
+        $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $running = 0.0;
+        foreach ($rows as $ledgerRow) {
+            if ($this->isExcludedFromTrustBalance($ledgerRow)) {
+                DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
+                    'balance_amount' => null,
+                    'updated_at' => now(),
+                ]);
+
+                continue;
+            }
+            $running += (float) $ledgerRow->deposit_amount - (float) $ledgerRow->withdraw_amount;
+            $running = round($running, 2);
+            DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
+                'balance_amount' => $running,
+                'updated_at' => now(),
+            ]);
+        }
+
+        return [
+            'final_balance' => $running,
+            'entries_processed' => $rows->count(),
+        ];
+    }
+
     public function invoicedTotal(Collection $invoiceRows): float
     {
         $total = $invoiceRows
@@ -91,6 +149,60 @@ class ClientAccountTabService
             ->sum(fn (object $row) => abs((float) ($row->withdraw_amount ?? 0)));
 
         return round($total, 2);
+    }
+
+    /**
+     * Cached client options for trust/invoice/office list filter dropdowns.
+     *
+     * @return Collection<int, object>
+     */
+    public function filterClientOptions(): Collection
+    {
+        return Cache::remember('account_receipt_filter_clients_v1', $this->filterCacheTtl(), function () {
+            return DB::table('account_client_receipts as acr')
+                ->join('admins', 'admins.id', '=', 'acr.client_id')
+                ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
+                ->distinct()
+                ->orderBy('admins.first_name', 'asc')
+                ->get();
+        });
+    }
+
+    /**
+     * Cached matter options for trust/invoice/office list filter dropdowns.
+     *
+     * @return Collection<int, object>
+     */
+    public function filterMatterOptions(): Collection
+    {
+        return Cache::remember('account_receipt_filter_matters_v1', $this->filterCacheTtl(), function () {
+            return DB::table('account_client_receipts as acr')
+                ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
+                ->join('admins', 'admins.id', '=', 'acr.client_id')
+                ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
+                ->distinct()
+                ->orderBy('admins.client_id', 'asc')
+                ->get();
+        });
+    }
+
+    public function forgetFilterCaches(): void
+    {
+        Cache::forget('account_receipt_filter_clients_v1');
+        Cache::forget('account_receipt_filter_matters_v1');
+    }
+
+    /**
+     * Whitelist per-page for account list pages.
+     */
+    public function resolveListPerPage(int $requested, int $default = 20): int
+    {
+        $allowed = config('crm.accounts.list_per_page_options', [10, 20, 50, 100, 200, 500]);
+        if (! is_array($allowed) || $allowed === []) {
+            $allowed = [10, 20, 50, 100, 200, 500];
+        }
+
+        return in_array($requested, $allowed, true) ? $requested : $default;
     }
 
     /**
@@ -125,15 +237,70 @@ class ClientAccountTabService
     }
 
     /**
-     * @return Collection<int, object>
+     * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function trustLedgerRows(int $clientId, ?int $clientMatterId): Collection
+    protected function trustLedgerRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
     {
-        $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
-            ->orderBy('id', 'asc')
-            ->get();
+        $total = $this->trustLedgerQuery($clientId, $clientMatterId)->count();
+        $hasMore = $limit > 0 && $total > $limit;
+
+        if ($hasMore) {
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get()
+                ->sortBy('id')
+                ->values();
+
+            $missingStoredBalance = false;
+            foreach ($rows as $row) {
+                if ($this->isExcludedFromTrustBalance($row)) {
+                    $row->running_balance = null;
+                    $row->is_voided_for_balance = true;
+                    continue;
+                }
+
+                if ($row->balance_amount === null || $row->balance_amount === '') {
+                    $missingStoredBalance = true;
+                    break;
+                }
+
+                $row->running_balance = round((float) $row->balance_amount, 2);
+                $row->is_voided_for_balance = false;
+            }
+
+            if (! $missingStoredBalance) {
+                return [$rows, true];
+            }
+
+            // Stale rows without persisted balances: recompute once, then re-read the window.
+            $this->recalculateClientFundBalances($clientId, $clientMatterId);
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get()
+                ->sortBy('id')
+                ->values();
+        } else {
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+                ->orderBy('id', 'asc')
+                ->get();
+        }
 
         $running = 0.0;
+        if ($hasMore) {
+            // Window start balance comes from the oldest displayed row's prior balance.
+            $first = $rows->first();
+            if ($first && ! $this->isExcludedFromTrustBalance($first) && $first->balance_amount !== null && $first->balance_amount !== '') {
+                $running = round(
+                    (float) $first->balance_amount
+                    - (float) ($first->deposit_amount ?? 0)
+                    + (float) ($first->withdraw_amount ?? 0),
+                    2
+                );
+            }
+        }
+
         foreach ($rows as $row) {
             if ($this->isExcludedFromTrustBalance($row)) {
                 $row->running_balance = null;
@@ -147,7 +314,7 @@ class ClientAccountTabService
             $row->is_voided_for_balance = false;
         }
 
-        return $rows;
+        return [$rows, $hasMore];
     }
 
     protected function trustBalanceFromRows(Collection $rows): float
@@ -161,13 +328,6 @@ class ClientAccountTabService
         }
 
         return round($held, 2);
-    }
-
-    protected function outstandingBalance(int $clientId, ?int $clientMatterId): float
-    {
-        return $this->outstandingBalanceFromRows(
-            $this->latestInvoiceRows($clientId, $clientMatterId)
-        );
     }
 
     protected function outstandingBalanceFromRows(Collection $invoiceRows): float
@@ -197,9 +357,9 @@ class ClientAccountTabService
     /**
      * Latest invoice row per receipt_id (PostgreSQL DISTINCT ON).
      *
-     * @return Collection<int, object>
+     * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function latestInvoiceRows(int $clientId, ?int $clientMatterId): Collection
+    protected function latestInvoiceRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
     {
         if ($clientMatterId !== null) {
             $rows = DB::select('
@@ -221,23 +381,35 @@ class ClientAccountTabService
             ', [$clientId]);
         }
 
-        return collect($rows);
+        $collection = collect($rows)->sortByDesc('id')->values();
+        $hasMore = $limit > 0 && $collection->count() > $limit;
+        if ($hasMore) {
+            $collection = $collection->take($limit)->values();
+        }
+
+        return [$collection, $hasMore];
     }
 
     /**
-     * @return Collection<int, object>
+     * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function officeReceiptRows(int $clientId, ?int $clientMatterId): Collection
+    protected function officeReceiptRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
     {
         $q = DB::table('account_client_receipts')
             ->where('client_id', $clientId)
             ->where('receipt_type', 2)
             ->orderByRaw("CASE WHEN invoice_no IS NULL OR invoice_no = '' THEN 0 ELSE 1 END")
-            ->orderBy('id', 'desc');
+            ->orderByDesc('id');
 
         $this->applyMatterScope($q, $clientMatterId);
 
-        return $q->get();
+        $total = (clone $q)->count();
+        $hasMore = $limit > 0 && $total > $limit;
+        if ($limit > 0) {
+            $q->limit($limit);
+        }
+
+        return [$q->get(), $hasMore];
     }
 
     protected function trustLedgerQuery(int $clientId, $clientMatterId)

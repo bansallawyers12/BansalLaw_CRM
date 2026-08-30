@@ -19,6 +19,7 @@ use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Support\InvoiceChargeTypes;
+use App\Services\ClientAccountTabService;
 use App\Services\FinancialStatsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -37,14 +38,17 @@ class ClientAccountsController extends Controller
 {
     use EnsuresCrmRecordAccess;
 
+    private ClientAccountTabService $accountTabService;
+
     /**
      * Create a new controller instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(ClientAccountTabService $accountTabService)
     {
         $this->middleware('auth:admin');
+        $this->accountTabService = $accountTabService;
     }
 
     protected function ensureAccountsClientFromRequest(Request $request): void
@@ -66,31 +70,12 @@ class ClientAccountsController extends Controller
      */
     protected function trustLedgerRowExcludedFromBalance(object $row): bool
     {
-        return isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1;
+        return $this->accountTabService->isExcludedFromTrustBalance($row);
     }
 
     protected function currentFundsHeld(int $clientId, $clientMatterId): float
     {
-        $q = DB::table('account_client_receipts')
-            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
-            ->where('client_id', $clientId)
-            ->where('receipt_type', 1);
-
-        if ($clientMatterId !== null && $clientMatterId !== '') {
-            $q->where('client_matter_id', $clientMatterId);
-        } else {
-            $q->whereNull('client_matter_id');
-        }
-
-        $held = 0.0;
-        foreach ($q->get() as $entry) {
-            if ($this->trustLedgerRowExcludedFromBalance($entry)) {
-                continue;
-            }
-            $held += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-        }
-
-        return round($held, 2);
+        return $this->accountTabService->currentFundsHeld($clientId, $clientMatterId);
     }
 
     private function createTransactionNumber(string $clientFundLedgerType): string
@@ -136,38 +121,10 @@ class ClientAccountsController extends Controller
      */
     protected function recalculateClientFundBalances(int $clientId, $clientMatterId): array
     {
-        $q = DB::table('account_client_receipts')
-            ->where('client_id', $clientId)
-            ->where('receipt_type', 1)
-            ->orderBy('id', 'asc');
-        if ($clientMatterId !== null && $clientMatterId !== '') {
-            $q->where('client_matter_id', $clientMatterId);
-        } else {
-            $q->whereNull('client_matter_id');
-        }
-        $rows = $q->get();
-        $running = 0.0;
-        foreach ($rows as $ledgerRow) {
-            if ($this->trustLedgerRowExcludedFromBalance($ledgerRow)) {
-                DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
-                    'balance_amount' => null,
-                    'updated_at' => now(),
-                ]);
+        $result = $this->accountTabService->recalculateClientFundBalances($clientId, $clientMatterId);
+        $this->accountTabService->forgetFilterCaches();
 
-                continue;
-            }
-            $running += floatval($ledgerRow->deposit_amount) - floatval($ledgerRow->withdraw_amount);
-            $running = round($running, 2);
-            DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
-                'balance_amount' => $running,
-                'updated_at' => now(),
-            ]);
-        }
-
-        return [
-            'final_balance' => $running,
-            'entries_processed' => $rows->count(),
-        ];
+        return $result;
     }
 
     /**
@@ -1635,34 +1592,19 @@ class ClientAccountsController extends Controller
    
     public function clientLedgerBalanceAmount(Request $request)
     {
-        $requestData         =     $request->all();
-        if (!empty($requestData['client_id'])) {
+        $requestData = $request->all();
+        if (! empty($requestData['client_id'])) {
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
         }
-        $response            =     [];
-        $ledgerQuery = DB::table('account_client_receipts')
-            ->where('client_id', $requestData['client_id'])
-            ->where('receipt_type', 1)
-            ->orderBy('id', 'asc');
-        if (! empty($requestData['selectedMatter'])) {
-            $ledgerQuery->where('client_matter_id', $requestData['selectedMatter']);
-        } else {
-            $ledgerQuery->whereNull('client_matter_id');
-        }
-        $rows = $ledgerQuery->get();
-        $running = 0.0;
-        foreach ($rows as $r) {
-            if ($this->trustLedgerRowExcludedFromBalance($r)) {
-                continue;
-            }
-            $running += floatval($r->deposit_amount) - floatval($r->withdraw_amount);
-        }
-        $running = round($running, 2);
-        $response['record_get'] = $running;
-        $response['status'] = true;
-        $response['message'] = 'Record is exist';
-        return response()->json($response);
-       }
+        $matterId = ! empty($requestData['selectedMatter']) ? $requestData['selectedMatter'] : null;
+        $running = $this->currentFundsHeld((int) $requestData['client_id'], $matterId);
+
+        return response()->json([
+            'record_get' => $running,
+            'status' => true,
+            'message' => 'Record is exist',
+        ]);
+    }
    
     public function getInfoByReceiptId(Request $request)
     {
@@ -2819,20 +2761,7 @@ class ClientAccountsController extends Controller
               }
 
               // 3. Calculate current balance for this client/matter
-              $ledger_entries = DB::table('account_client_receipts')
-                  ->where('client_id', $clientId)
-                  ->where('client_matter_id', $depositEntry->client_matter_id)
-                  ->where('receipt_type', 1)
-                  ->orderBy('id', 'asc')
-                  ->get();
-              
-              $running_balance = 0;
-              foreach($ledger_entries as $entry) {
-                  if ($this->trustLedgerRowExcludedFromBalance($entry)) {
-                      continue;
-                  }
-                  $running_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-              }
+              $running_balance = $this->currentFundsHeld((int) $clientId, $depositEntry->client_matter_id);
               
               if ($running_balance <= 0) {
                   throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
@@ -4309,29 +4238,12 @@ class ClientAccountsController extends Controller
       
      $totalData     = $query->count();
 
-     // Handle items per page selection (defaults to 20 and only allow whitelisted values)
-     $allowedPerPage = [10, 20, 50, 100, 200, 500];
-     $perPageRequest = (int) $request->get('per_page', 20);
-     $perPage = in_array($perPageRequest, $allowedPerPage, true) ? $perPageRequest : 20;
+     $perPage = $this->accountTabService->resolveListPerPage((int) $request->get('per_page', 20));
 
      $lists = $query->paginate($perPage);
 
-      // Dropdown: Client list with receipts
-      $clientIds = DB::table('account_client_receipts as acr')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.first_name', 'asc')
-          ->get();
-
-      // Dropdown: Matter list with receipts
-      $matterIds = DB::table('account_client_receipts as acr')
-          ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.client_id', 'asc')
-          ->get();
+      $clientIds = $this->accountTabService->filterClientOptions();
+      $matterIds = $this->accountTabService->filterMatterOptions();
      return view('crm.clients.invoicelist', compact(['lists', 'totalData', 'clientIds', 'matterIds', 'perPage']));
   }
 
@@ -4659,29 +4571,13 @@ class ClientAccountsController extends Controller
       // Total count for pagination/meta
       $totalData = $query->count();
 
-      // Get records per page from request, default to 20
-      $perPage = $request->get('per_page', 20);
-      $perPage = in_array($perPage, [10, 20, 50, 100, 200, 500]) ? $perPage : 20;
+      $perPage = $this->accountTabService->resolveListPerPage((int) $request->get('per_page', 20));
 
       // Fetch paginated list
       $lists = $query->paginate($perPage);
 
-      // Dropdown: Client list with receipts
-      $clientIds = DB::table('account_client_receipts as acr')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.first_name', 'asc')
-          ->get();
-
-      // Dropdown: Matter list with receipts
-      $matterIds = DB::table('account_client_receipts as acr')
-          ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.client_id', 'asc')
-          ->get();
+      $clientIds = $this->accountTabService->filterClientOptions();
+      $matterIds = $this->accountTabService->filterMatterOptions();
 
       return view('crm.clients.clientreceiptlist', compact(['lists', 'totalData', 'clientIds', 'matterIds', 'perPage']));
   }
@@ -4741,29 +4637,12 @@ class ClientAccountsController extends Controller
       
      $totalData     = $query->count();
 
-     // Handle items per page selection (defaults to 20 and only allow whitelisted values)
-     $allowedPerPage = [10, 20, 50, 100, 200, 500];
-     $perPageRequest = (int) $request->get('per_page', 20);
-     $perPage = in_array($perPageRequest, $allowedPerPage, true) ? $perPageRequest : 20;
+     $perPage = $this->accountTabService->resolveListPerPage((int) $request->get('per_page', 20));
 
      $lists = $query->paginate($perPage);
 
-      // Dropdown: Client list with receipts
-      $clientIds = DB::table('account_client_receipts as acr')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.first_name', 'asc')
-          ->get();
-
-      // Dropdown: Matter list with receipts
-      $matterIds = DB::table('account_client_receipts as acr')
-          ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
-          ->join('admins', 'admins.id', '=', 'acr.client_id')
-          ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
-          ->distinct()
-          ->orderBy('admins.client_id', 'asc')
-          ->get();
+      $clientIds = $this->accountTabService->filterClientOptions();
+      $matterIds = $this->accountTabService->filterMatterOptions();
 
      return view('crm.clients.officereceiptlist', compact(['lists', 'totalData', 'clientIds', 'matterIds', 'perPage']));
   }
@@ -4802,8 +4681,9 @@ class ClientAccountsController extends Controller
       $query->orderBy($sortColumn, $sortOrder);
       
       $totalData     = $query->count();
-      $lists = $query->paginate(20);
-      return view('crm.clients.journalreceiptlist', compact(['lists', 'totalData']));
+      $perPage = $this->accountTabService->resolveListPerPage((int) $request->get('per_page', 20));
+      $lists = $query->paginate($perPage);
+      return view('crm.clients.journalreceiptlist', compact(['lists', 'totalData', 'perPage']));
   }
 
   /**

@@ -11,6 +11,9 @@
         'invoiceRows' => collect(),
         'officeRows' => collect(),
         'documentsById' => collect(),
+        'trustHasMore' => false,
+        'invoiceHasMore' => false,
+        'officeHasMore' => false,
     ];
     $client_selected_matter_id = $accountTab['clientMatterId'];
     $trustBalance = $accountTab['trustBalance'];
@@ -22,6 +25,9 @@
     $receipts_lists_invoice = $accountTab['invoiceRows'];
     $receipts_lists_office = $accountTab['officeRows'];
     $accountDocumentsById = $accountTab['documentsById'];
+    $trustHasMore = ! empty($accountTab['trustHasMore']);
+    $invoiceHasMore = ! empty($accountTab['invoiceHasMore']);
+    $officeHasMore = ! empty($accountTab['officeHasMore']);
     $outstandingIsZero = round((float) $outstandingBalance, 2) == 0.0;
 @endphp
 
@@ -321,6 +327,9 @@
                         <?php } ?>
                     </tbody>
                 </table>
+                @if($trustHasMore)
+                    <p class="text-muted small mb-0 mt-2">Showing the most recent trust entries. Older rows are omitted for performance; balances above include the full ledger.</p>
+                @endif
             </div>
         </section>
 
@@ -505,6 +514,9 @@
 
                     </tbody>
                 </table>
+                @if($invoiceHasMore)
+                    <p class="text-muted small mb-0 mt-2">Showing the most recent invoices. Outstanding and invoiced totals include the full history.</p>
+                @endif
 
                 <h4 style="margin-top:14px; margin-bottom: 6px; font-weight: 600;"><i class="fa-solid fa-hand-holding-dollar" style="color: #28a745;"></i> Office Receipts</h4>
                 <table class="transaction-table">
@@ -688,6 +700,9 @@
                         ?>
                     </tbody>
                 </table>
+                @if($officeHasMore)
+                    <p class="text-muted small mb-0 mt-2">Showing the most recent office receipts.</p>
+                @endif
             </div>
         </section>
     </div>

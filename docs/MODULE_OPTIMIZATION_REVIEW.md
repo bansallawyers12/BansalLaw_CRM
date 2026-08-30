@@ -16,7 +16,7 @@
 | Clients / Matters | Partially optimized | Tab-aware detail service; task routes split out |
 | Emails (CRM) | Optimized | Lean list JSON; queued inbox sync; filter controller |
 | Legal Forms | Optimized | Paginated list; queued AI; DOCX/HTML preview cache |
-| Accounts / Billing | Partially optimized | Service extraction started; mega-controller remains |
+| Accounts / Billing | Optimized | Balance helpers in service; tab row caps; cached list filters |
 | Documents | Not / Partially | Video upload queued; lists often unbounded |
 | Notes / Tasks | Mixed | Dashboard strong; client notes N+1 |
 | Leads | Partially optimized | Paginated index; fat controller |
@@ -115,15 +115,18 @@
 
 ## 6. Accounts / Billing
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
-- `ClientAccountTabService` centralizes trust/invoice/office queries and document batching
+- `ClientAccountTabService` centralizes trust/invoice/office queries, balance math, and document batching
 - Account tab can lazy-load HTML via AJAX
+- Controller balance helpers delegate to the service (no duplicated trust math)
+- Account tab caps trust/invoice/office display rows; totals still use the full ledger
+- Trust/invoice/office/journal list pages paginate; filter client/matter dropdowns are cached
+- `recalculateClientFundBalances` lives in the service and invalidates filter caches
 
 **Gaps**
-- `ClientAccountsController` remains very large; duplicate balance helpers noted
-- Limited pagination/caching on ledger history mutations/lists
+- `ClientAccountsController` is still large (PDF/email/Hubdoc generation remain in-controller); further splits are optional
 
 ---
 
