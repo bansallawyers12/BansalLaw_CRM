@@ -17,7 +17,7 @@
 | Emails (CRM) | Optimized | Lean list JSON; queued inbox sync; filter controller |
 | Legal Forms | Optimized | Paginated list; queued AI; DOCX/HTML preview cache |
 | Accounts / Billing | Optimized | Balance helpers in service; tab row caps; cached list filters |
-| Documents | Not / Partially | Video upload queued; lists often unbounded |
+| Documents | Optimized | Folder list service + cap; streamed/queued bulk S3 |
 | Notes / Tasks | Mixed | Dashboard strong; client notes N+1 |
 | Leads | Partially optimized | Paginated index; fat controller |
 | Admin Console | Partially optimized | Paginate lists; large exports in memory |
@@ -132,16 +132,18 @@
 
 ## 7. Documents
 
-**Verdict:** Not optimized / Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - Video upload path uses job + cache (`ProcessPersonalDocumentVideoUploadJob`)
 - Model scopes (`visible`, `associated`) exist
+- `ClientDocumentFolderListService` loads lean folder rows (capped) and renders list/grid partials
+- Checklist add + `reloadDocumentFolderList` use the service (no controller `ob_start` HTML / full-client matter dump)
+- Single-file S3 puts stream from disk; bulk non-video uploads queue via `ProcessDocumentFileUploadJob` (sync + afterResponse by default)
+- Upload status polling covers videos and queued non-video files
 
 **Gaps**
-- List refresh often `Document::with(...)->get()` + HTML built in controller
-- Bulk S3 puts commonly in-request (unlike video path)
-- Hard to paginate/cache while HTML is built inside the controller
+- Further controller splits (preview/signing helpers) remain optional
 
 ---
 
@@ -329,7 +331,7 @@ Shared assets: `public/js/datatables.min.js`, `dataTables.bootstrap5.min.js`, `c
 ## Highest-impact opportunities (priority order — not applied)
 
 1. **Decompose mega-controllers** and finish service extraction (accounts / documents / email already partly done).
-2. **Fix client Notes N+1** and add pagination to Notes/Documents lists (match Dashboard / Legal Forms patterns).
+2. **Fix client Notes N+1** and add pagination to Notes lists (match Dashboard / Legal Forms / Documents patterns).
 3. **Replace DataTables + Yajra** with Alpine lists + Spatie Query Builder (Grid.js only if a table widget is still required) so jQuery can leave.
 4. **Lazy-load client detail tabs** and replace `?v={{ time() }}` with stable versioning for JS/CSS.
 5. **Python:** offload CPU to executors; implement configured response cache; shrink PDF transport.

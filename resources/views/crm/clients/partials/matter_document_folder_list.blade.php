@@ -1,7 +1,9 @@
 @foreach($fetchd as $fetch)
     @php
+        $visaTitles = $visaTitles ?? [];
         $admin = $fetch->staff;
-        $visaDocumentType = \App\Models\VisaDocumentType::where('id', $fetch->folder_name)->first();
+        $visaDocumentTypeTitle = $visaTitles[(string) $fetch->folder_name]
+            ?? (\App\Models\VisaDocumentType::where('id', $fetch->folder_name)->value('title') ?? '');
         $previewUrl = url('/documents/preview/' . $fetch->id);
         $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
     @endphp
@@ -51,7 +53,7 @@
                         <input type="hidden" name="fileid" value="{{ $fetch->id }}">
                         <input type="hidden" name="type" value="client">
                         <input type="hidden" name="doctype" value="matter">
-                        <input type="hidden" name="doccategory" value="{{ $visaDocumentType->title ?? '' }}">
+                        <input type="hidden" name="doccategory" value="{{ $visaDocumentTypeTitle }}">
                         <div class="document-drag-drop-zone visa-doc-drag-zone"
                              data-fileid="{{ $fetch->id }}"
                              data-doccategory="{{ $fetch->folder_name }}"

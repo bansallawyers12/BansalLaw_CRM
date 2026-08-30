@@ -433,4 +433,22 @@ return [
         'filter_cache_seconds' => max(60, (int) env('ACCOUNTS_FILTER_CACHE_SECONDS', 300)),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Documents (folder lists + bulk non-video S3 upload)
+    |--------------------------------------------------------------------------
+    |
+    | Bulk non-video files are staged locally then finalized afterResponse
+    | (same pattern as personal video upload) so the HTTP request returns quickly.
+    |
+    */
+    'documents' => [
+        'folder_list_limit' => max(0, (int) env('DOCUMENTS_FOLDER_LIST_LIMIT', 150)),
+        'bulk_queue_non_video' => filter_var(env('DOCUMENTS_BULK_QUEUE_NON_VIDEO', true), FILTER_VALIDATE_BOOLEAN),
+        'bulk_queue_threshold' => max(1, (int) env('DOCUMENTS_BULK_QUEUE_THRESHOLD', 1)),
+        'file_upload_queue_connection' => env('DOCUMENTS_FILE_UPLOAD_QUEUE_CONNECTION', 'sync'),
+        'file_upload_after_response' => filter_var(env('DOCUMENTS_FILE_UPLOAD_AFTER_RESPONSE', true), FILTER_VALIDATE_BOOLEAN),
+        'file_upload_timeout_seconds' => max(120, (int) env('DOCUMENTS_FILE_UPLOAD_TIMEOUT', 600)),
+    ],
+
 ];

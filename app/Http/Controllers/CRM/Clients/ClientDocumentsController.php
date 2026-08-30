@@ -26,6 +26,8 @@ use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
+use App\Services\ClientDocumentFileUploadService;
+use App\Services\ClientDocumentFolderListService;
 use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Http\JsonResponse;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
@@ -37,9 +39,17 @@ class ClientDocumentsController extends Controller
 {
     use ClientAuthorization, ClientHelpers, LogsClientActivity;
 
-    public function __construct()
-    {
+    private ClientDocumentFolderListService $folderListService;
+
+    private ClientDocumentFileUploadService $fileUploadService;
+
+    public function __construct(
+        ClientDocumentFolderListService $folderListService,
+        ClientDocumentFileUploadService $fileUploadService,
+    ) {
         $this->middleware('auth:admin');
+        $this->folderListService = $folderListService;
+        $this->fileUploadService = $fileUploadService;
     }
 
     /**
@@ -210,116 +220,15 @@ class ClientDocumentsController extends Controller
                     $response['status'] = true;
                     $response['message'] = 'You\'ve successfully added your personal checklist';
 
-                    $fetchd = Document::with('staff')->where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
-                    ob_start();
-                    foreach($fetchd as $docKey=>$fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $previewUrl = $this->documentPreviewUrl($fetch);
-                        $downloadFilename = $this->documentDownloadFilename($fetch);
-                        ?>
-                        <tr class="drow" id="id_<?php echo $fetch->id; ?>">
-                            <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="flex: 1;"><?php echo DocumentLabel::forDisplay($fetch->checklist); ?></span>
-                                    <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                        <?php if (!$fetch->file_name): ?>
-                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
-                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="white-space: initial;">
-                                <?php
-                                if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
-                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $request->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
-                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>
-                                            <i class="fa-solid fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
-                                        </a>
-                                    </div>
-                                <?php
-                                }
-                                else
-                                {?>
-                                    <div class="upload_document" style="display:inline-block;">
-                                        <form method="POST" enctype="multipart/form-data" id="upload_form_<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                            <input type="hidden" name="clientid" value="<?php echo $clientid;?>">
-                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="type" value="client">
-                                            <input type="hidden" name="doctype" value="personal">
-                                            <input type="hidden" name="doccategory" value="<?php echo $request->doccategory;?>">
-                                            
-                                            <!-- Drag and Drop Zone -->
-                                            <div class="document-drag-drop-zone personal-doc-drag-zone" 
-                                                 data-fileid="<?php echo $fetch->id; ?>" 
-                                                 data-doccategory="<?php echo $request->folder_name; ?>"
-                                                 data-formid="upload_form_<?php echo $fetch->id; ?>">
-                                                <div class="drag-zone-inner">
-                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Keep existing file input (hidden, used as fallback) -->
-                                            <input class="docupload d-none" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $request->folder_name;?>" type="file" name="document_upload" style="display: none;"/>
-                                        </form>
-                                    </div>
-                                <?php
-                                }?>
-                            </td>
-                            <td>
-                                <!-- Hidden elements for context menu actions -->
-                                <?php if ($fetch->myfile): ?>
-                                    <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($downloadFilename); ?>" href="#" style="display: none;"></a>
-                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="personal" data-doccategory="<?php echo $request->doccategory;?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-			        <?php
-			        } //end foreach
-
-                    $data = ob_get_clean();
-                    ob_start();
-                    foreach($fetchd as $fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $gridPreviewUrl = $this->documentPreviewUrl($fetch);
-                        $gridDownloadFilename = $this->documentDownloadFilename($fetch);
-                        ?>
-                        <div class="grid_list">
-                            <div class="grid_col">
-                                <div class="grid_icon">
-                                    <i class="fa-solid fa-file-image"></i>
-                                </div>
-                                <div class="grid_content">
-                                    <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
-                                    <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
-                                        <div class="dropdown-menu">
-                                            <?php if( isset($fetch->myfile) && $fetch->myfile != ""){?>
-                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>Preview</a>
-                                            <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
-
-                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?php echo $request->folder_name;?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
-                                            <?php }?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php
-                    } //end foreach
-                    $griddata = ob_get_clean();
-                    $response['data'] = $data;
-                    $response['griddata'] = $griddata;
+                    $rendered = $this->folderListService->renderPersonalFolder(
+                        (int) $clientid,
+                        (string) $request->folder_name,
+                        (string) $doctype,
+                        (string) $request->type
+                    );
+                    $response['data'] = $rendered['data'];
+                    $response['griddata'] = $rendered['griddata'];
+                    $response['has_more'] = $rendered['has_more'];
                     } //end if
                     else
                     {
@@ -561,7 +470,7 @@ class ClientDocumentsController extends Controller
                     }
 
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    $this->s3Disk()->put($filePath, $file->get());
+                    $this->fileUploadService->putUploadedFile($filePath, $file);
     
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
@@ -732,141 +641,15 @@ class ClientDocumentsController extends Controller
                     $response['status'] 	= 	true;
                     $response['message']	=	'You have added your matter document checklist';
 
-                    // Get all documents for this client (original behavior - no strict filtering)
-                    $fetchd = Document::with('staff')->where('client_id',$clientid)
-                        ->whereNull('not_used_doc')
-                        ->where('doc_type',$doctype)
-                        ->where('type',$request->type)
-                        ->orderBy('updated_at', 'DESC')
-                        ->get();
-                    
-                    ob_start();
-                    foreach($fetchd as $visaKey=>$fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
-                        $previewUrl = $this->documentPreviewUrl($fetch);
-                        $downloadFilename = $this->documentDownloadFilename($fetch);
-                        
-                        // Hide non-matching documents with CSS (original behavior)
-                        if (
-                            $request->client_matter_id != $fetch->client_matter_id ||
-                            $request->folder_name != $fetch->folder_name
-                        ) {
-                            $showCls = "style='display: none;'";
-                        } else {
-                            $showCls = "";
-                        }
-                        ?>
-                        <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls;?>>
-                            <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="flex: 1;"><?php echo DocumentLabel::forDisplay($fetch->checklist); ?></span>
-                                    <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                        <?php if (!$fetch->file_name): ?>
-                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
-                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo DocumentLabel::forDisplay($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="white-space: initial;">
-                                <?php
-                                if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
-                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showVisaFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
-                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>
-                                            <i class="fa-solid fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
-                                        </a>
-                                    </div>
-                                <?php
-                                }
-                                else
-                                {?>
-                                    <div class="migration_upload_document" style="display: inline-block;">
-                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                            <input type="hidden" name="clientid" value="<?php echo $fetch->client_id;?>">
-                                            <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id;?>">
-                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="type" value="client">
-                                            <input type="hidden" name="doctype" value="matter">
-                                            <input type="hidden" name="doccategory" value="<?php echo $VisaDocumentType->title; ?>">
-                                            
-                                            <!-- Drag and Drop Zone -->
-                                            <div class="document-drag-drop-zone visa-doc-drag-zone" 
-                                                 data-fileid="<?php echo $fetch->id;?>" 
-                                                 data-doccategory="<?php echo $fetch->folder_name;?>"
-                                                 data-formid="mig_upload_form_<?php echo $fetch->id;?>">
-                                                <div class="drag-zone-inner">
-                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Keep existing file input (hidden) -->
-                                            <input class="migdocupload d-none" 
-                                                   data-fileid="<?php echo $fetch->id;?>" 
-                                                   data-doccategory="<?php echo $fetch->folder_name;?>" 
-                                                   type="file" 
-                                                   name="document_upload"
-                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*"
-                                                   style="display: none;"/>
-                                        </form>
-                                    </div>
-                                <?php
-                                }?>
-                            </td>
-                            <td>
-                                <!-- Hidden elements for context menu actions -->
-                                <?php if ($fetch->myfile): ?>
-                                    <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($downloadFilename); ?>" href="#" style="display: none;"></a>
-                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php
-                    } //end foreach
-
-                    $data = ob_get_clean();
-                    ob_start();
-                    foreach($fetchd as $fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $gridPreviewUrl = $this->documentPreviewUrl($fetch);
-                        $gridDownloadFilename = $this->documentDownloadFilename($fetch);
-                        ?>
-                        <div class="grid_list">
-                            <div class="grid_col">
-                                <div class="grid_icon">
-                                    <i class="fa-solid fa-file-image"></i>
-                                </div>
-                                <div class="grid_content">
-                                    <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
-                                    <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
-                                        <div class="dropdown-menu">
-                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>Preview</a>
-                                            <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
-
-                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
-                                           
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <?php
-                    } //end foreach
-                    $griddata = ob_get_clean();
-                    $response['data']	= $data;
-                    $response['griddata'] = $griddata;
+                    $rendered = $this->folderListService->renderMatterFolder(
+                        (int) $clientid,
+                        (string) $request->folder_name,
+                        (string) $request->type,
+                        $request->filled('client_matter_id') ? (int) $request->client_matter_id : null
+                    );
+                    $response['data'] = $rendered['data'];
+                    $response['griddata'] = $rendered['griddata'];
+                    $response['has_more'] = $rendered['has_more'];
                 } //end if
                 else
                 {
@@ -1097,7 +880,7 @@ class ClientDocumentsController extends Controller
                     $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp, $extension);
 
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    $this->s3Disk()->put($filePath, $file->get());
+                    $this->fileUploadService->putUploadedFile($filePath, $file);
 
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
@@ -1986,7 +1769,8 @@ class ClientDocumentsController extends Controller
                 }
                 
                 $response['status'] = true;
-                $response['data'] = 'Checklist saved successfully';
+                $response['data'] = 'Checklist renamed successfully';
+                $response['message'] = 'Checklist renamed successfully';
                 $response['Id'] = $id;
                 $response['checklist'] = $checklist;
                 $response['html'] = $html;
@@ -3703,15 +3487,34 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
 
-                    // Upload file — sanitize storage key; checklist label may include special characters
+                    // Non-video: queue S3 finalize (afterResponse) for bulk, or stream put sync when disabled.
+                    if ($this->fileUploadService->shouldQueueBulkNonVideo(count($files))) {
+                        $queued = $this->fileUploadService->queueBulkFile(
+                            $file,
+                            $document,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            $type,
+                            (string) $categoryid,
+                            (string) $client_unique_id,
+                            (string) $client_first_name
+                        );
+                        $queuedVideos[] = [
+                            'token' => $queued['token'],
+                            'filename' => $fileName,
+                        ];
+                        continue;
+                    }
+
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
                     $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
                     $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    
-                    $this->s3Disk()->put($filePath, $file->get());
-                    
+
+                    $this->fileUploadService->putUploadedFile($filePath, $file);
+
                     // Update document
                     $fileUrl = $this->s3Disk()->url($filePath);
                     $document->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId);
@@ -3721,7 +3524,7 @@ class ClientDocumentsController extends Controller
                     $document->myfile_key = $name;
                     $document->file_size = $size;
                     $document->save();
-                    
+
                     $uploadedCount++;
                     
                 } catch (\Exception $e) {
@@ -3754,11 +3557,12 @@ class ClientDocumentsController extends Controller
                     $parts[] = "Successfully uploaded {$uploadedCount} file(s)";
                 }
                 if (count($queuedVideos) > 0) {
-                    $parts[] = count($queuedVideos) . ' video(s) queued for processing';
+                    $parts[] = count($queuedVideos) . ' file(s) queued for processing';
                 }
                 $response['message'] = implode('. ', $parts) . '.';
                 $response['uploaded'] = $uploadedCount;
                 $response['queued_videos'] = $queuedVideos;
+                $response['queued_files'] = $queuedVideos;
                 $response['errors'] = $errors;
             } else {
                 $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
@@ -3777,12 +3581,15 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * Poll queued personal document video upload status.
+     * Poll queued document upload status (videos + queued non-video bulk files).
      */
     public function personalVideoUploadStatus(string $token): JsonResponse
     {
-        $service = app(PersonalDocumentVideoUploadService::class);
-        $data = $service->getStatus($token);
+        $videoService = app(PersonalDocumentVideoUploadService::class);
+        $data = $videoService->getStatus($token);
+        if (! $data) {
+            $data = $this->fileUploadService->getStatus($token);
+        }
 
         if (! $data) {
             return response()->json([
@@ -4013,20 +3820,37 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
                     
-                    // Upload file — sanitize storage key; checklist label may include special characters
+                    // Non-video: queue S3 finalize for bulk, or stream put when queue disabled.
+                    if ($this->fileUploadService->shouldQueueBulkNonVideo(count($files))) {
+                        $queued = $this->fileUploadService->queueBulkFile(
+                            $file,
+                            $document,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            $type,
+                            (string) $categoryid,
+                            (string) $client_unique_id,
+                            (string) $client_first_name
+                        );
+                        $queuedVideos[] = [
+                            'token' => $queued['token'],
+                            'filename' => $fileName,
+                        ];
+                        continue;
+                    }
+
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
                     $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
                     $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    
-                    $this->s3Disk()->put($filePath, $file->get());
-                    
-                    // Refresh one more time before saving to catch any changes during S3 upload
+
+                    $this->fileUploadService->putUploadedFile($filePath, $file);
+
                     $document->refresh();
                     $finalChecklistName = DocumentLabel::normalize($document->checklist);
-                    
-                    // If checklist changed during upload, rebuild filename and move S3 file
+
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         $checklistName = $finalChecklistName;
                         $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
@@ -4036,13 +3860,8 @@ class ClientDocumentsController extends Controller
                                 $this->s3Disk()->copy($filePath, $newFilePath);
                                 $this->s3Disk()->delete($filePath);
                                 $filePath = $newFilePath;
-                                Log::info('Bulk visa upload: File moved due to checklist change', [
-                                    'old_path' => $filePath,
-                                    'new_path' => $newFilePath,
-                                    'file' => $fileName
-                                ]);
                             } catch (\Exception $e) {
-                                Log::error('Bulk visa upload: Failed to move S3 file', [
+                                Log::error('Bulk matter upload: Failed to move S3 file', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'error' => $e->getMessage()
@@ -4050,8 +3869,7 @@ class ClientDocumentsController extends Controller
                             }
                         }
                     }
-                    
-                    // Update document
+
                     $fileUrl = $this->s3Disk()->url($filePath);
                     $document->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId);
                     $document->filetype = $extension;
@@ -4060,7 +3878,7 @@ class ClientDocumentsController extends Controller
                     $document->myfile_key = $name;
                     $document->file_size = $size;
                     $document->save();
-                    
+
                     $uploadedCount++;
                     
                 } catch (\Exception $e) {
@@ -4099,11 +3917,12 @@ class ClientDocumentsController extends Controller
                     $parts[] = "Successfully uploaded {$uploadedCount} file(s)";
                 }
                 if (count($queuedVideos) > 0) {
-                    $parts[] = count($queuedVideos) . ' video(s) queued for processing';
+                    $parts[] = count($queuedVideos) . ' file(s) queued for processing';
                 }
                 $response['message'] = implode('. ', $parts) . '.';
                 $response['uploaded'] = $uploadedCount;
                 $response['queued_videos'] = $queuedVideos;
+                $response['queued_files'] = $queuedVideos;
                 $response['errors'] = $errors;
             } else {
                 $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
@@ -4176,52 +3995,16 @@ class ClientDocumentsController extends Controller
             $type = (string) ($request->input('type') ?? 'client');
 
             if (in_array($doctype, ['matter', 'visa'], true)) {
-                $clientMatterId = $request->input('client_matter_id');
-                $fetchd = Document::with('staff')
-                    ->where('client_id', $clientid)
-                    ->whereNull('not_used_doc')
-                    ->whereIn('doc_type', ['matter', 'visa'])
-                    ->where('type', $type)
-                    ->where('folder_name', $folderName)
-                    ->orderBy('created_at', 'DESC')
-                    ->get();
-
-                $parentDocs = $fetchd->filter(
-                    fn ($d) => ! str_ends_with($d->checklist ?? '', '_signed')
-                );
-
-                $response['data'] = view('crm.clients.partials.matter_document_folder_list', [
-                    'fetchd' => $parentDocs,
-                    'folderName' => $folderName,
-                    'clientMatterId' => $clientMatterId,
-                ])->render();
-                $response['griddata'] = view('crm.clients.partials.matter_document_folder_grid', [
-                    'fetchd' => $fetchd,
-                ])->render();
+                $clientMatterId = $request->filled('client_matter_id') ? (int) $request->input('client_matter_id') : null;
+                $rendered = $this->folderListService->renderMatterFolder($clientid, $folderName, $type, $clientMatterId);
             } else {
-                $doccategoryTitle = PersonalDocumentType::where('id', $folderName)->value('title') ?? '';
-                $fetchd = Document::with('staff')
-                    ->where('client_id', $clientid)
-                    ->whereNull('not_used_doc')
-                    ->where('doc_type', $doctype)
-                    ->where('type', $type)
-                    ->where('folder_name', $folderName)
-                    ->orderBy('updated_at', 'DESC')
-                    ->get();
-
-                $response['data'] = view('crm.clients.partials.personal_document_folder_list', [
-                    'fetchd' => $fetchd,
-                    'clientid' => $clientid,
-                    'folderName' => $folderName,
-                    'doccategoryTitle' => $doccategoryTitle,
-                ])->render();
-                $response['griddata'] = view('crm.clients.partials.personal_document_folder_grid', [
-                    'fetchd' => $fetchd,
-                    'folderName' => $folderName,
-                    'doccategoryTitle' => $doccategoryTitle,
-                ])->render();
+                $rendered = $this->folderListService->renderPersonalFolder($clientid, $folderName, $doctype, $type);
             }
 
+            $response['data'] = $rendered['data'];
+            $response['griddata'] = $rendered['griddata'];
+            $response['has_more'] = $rendered['has_more'];
+            $response['total'] = $rendered['total'];
             $response['status'] = true;
             $response['message'] = 'Folder list refreshed';
 
