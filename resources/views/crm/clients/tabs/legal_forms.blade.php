@@ -448,6 +448,12 @@
 
     /** Path only (same-origin); works with subdirectory installs and avoids APP_URL host mismatches */
     var LF_BASE = @json(rtrim(parse_url(url('/legal-forms'), PHP_URL_PATH) ?: '/legal-forms', '/'));
+    var LF_LIST_PER_PAGE = {{ (int) config('crm.legal_forms.list_per_page', 20) }};
+    var LF_AI_POLL_MAX = {{ (int) config('crm.legal_forms.ai_poll_max_attempts', 60) }};
+    var legalFormsPage = 1;
+    var legalFormsHasMore = false;
+    var legalFormsLoadingMore = false;
+    var legalFormsCache = [];
 
     const FORM_TYPE_LABELS = @json(\App\Models\ClientLegalForm::FORM_TYPES);
 
@@ -898,30 +904,71 @@
         });
     };
 
-    window.loadLegalForms = function() {
+    window.loadLegalForms = function(options) {
+        options = options || {};
+        var append = !!options.append;
         var clientId = {{ $fetchedData->id }};
         var matterId = '';
         var matterSelect = document.getElementById('sel_matter_id_client_detail');
         if (matterSelect) matterId = matterSelect.value || '';
 
         var listEl = document.getElementById('legal-forms-list');
-        listEl.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading forms...</div>';
+        if (!append) {
+            legalFormsPage = 1;
+            legalFormsCache = [];
+            legalFormsHasMore = false;
+            listEl.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading forms...</div>';
+        } else {
+            legalFormsLoadingMore = true;
+            var loadMoreBtn = document.getElementById('legal-forms-load-more');
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading…';
+            }
+        }
 
         $.ajax({
             url: LF_BASE + '/client-forms',
             method: 'GET',
-            data: { client_id: clientId, matter_id: matterId },
+            data: {
+                client_id: clientId,
+                matter_id: matterId || '',
+                page: legalFormsPage,
+                per_page: LF_LIST_PER_PAGE
+            },
             success: function(response) {
                 if (response.success && response.forms) {
-                    renderLegalFormsList(response.forms);
-                } else {
+                    legalFormsHasMore = !!response.has_more;
+                    if (append) {
+                        legalFormsCache = legalFormsCache.concat(response.forms);
+                    } else {
+                        legalFormsCache = response.forms.slice();
+                    }
+                    renderLegalFormsList(legalFormsCache, {
+                        total: response.total != null ? response.total : legalFormsCache.length,
+                        hasMore: legalFormsHasMore
+                    });
+                } else if (!append) {
                     listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-file-lines"></i><br>No forms found.</div>';
                 }
             },
             error: function() {
-                listEl.innerHTML = '<div class="text-center py-4 text-danger">Failed to load forms.</div>';
+                if (!append) {
+                    listEl.innerHTML = '<div class="text-center py-4 text-danger">Failed to load forms.</div>';
+                }
+            },
+            complete: function() {
+                legalFormsLoadingMore = false;
             }
         });
+    };
+
+    window.loadMoreLegalForms = function() {
+        if (legalFormsLoadingMore || !legalFormsHasMore) {
+            return;
+        }
+        legalFormsPage += 1;
+        window.loadLegalForms({ append: true });
     };
 
     function resetLegalFormPreviewPane() {
@@ -1010,13 +1057,15 @@
         return null;
     }
 
-    function renderLegalFormsList(forms) {
+    function renderLegalFormsList(forms, meta) {
+        meta = meta || {};
         var listEl = document.getElementById('legal-forms-list');
         var countEl = document.getElementById('legal-forms-count');
         resetLegalFormPreviewPane();
 
+        var totalCount = meta.total != null ? meta.total : (forms && forms.length ? forms.length : 0);
         if (countEl) {
-            countEl.textContent = forms && forms.length ? String(forms.length) : '0';
+            countEl.textContent = String(totalCount);
         }
 
         if (!forms || forms.length === 0) {
@@ -1079,6 +1128,9 @@
         });
 
         html += '</div>';
+        if (meta.hasMore) {
+            html += '<div class="text-center py-3"><button type="button" id="legal-forms-load-more" class="btn btn-sm btn-outline-secondary" onclick="loadMoreLegalForms()">Load more</button></div>';
+        }
         listEl.innerHTML = html;
     }
 
@@ -1108,6 +1160,58 @@
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
         textarea.style.opacity = '0.5';
 
+        function finishAiUi(ok, message, text) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            textarea.style.opacity = '1';
+            if (ok && text) {
+                textarea.value = text;
+                textarea.style.borderColor = '#10b981';
+                setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
+                if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                    iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
+                }
+                return;
+            }
+            var msg = message || 'Failed to generate text.';
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: msg, position: 'topRight' });
+            } else {
+                alert(msg);
+            }
+        }
+
+        function pollAiJob(jobId, attempts) {
+            attempts = attempts || 0;
+            if (attempts >= LF_AI_POLL_MAX) {
+                finishAiUi(false, 'AI generation timed out. Please try again.');
+                return;
+            }
+            $.ajax({
+                url: LF_BASE + '/generate-scope-ai/' + encodeURIComponent(jobId),
+                method: 'GET',
+                success: function(res) {
+                    var status = (res.status || '').toLowerCase();
+                    if (status === 'completed' && res.text) {
+                        finishAiUi(true, null, res.text);
+                        return;
+                    }
+                    if (status === 'failed' || status === 'not_found') {
+                        finishAiUi(false, res.message || 'AI generation failed.');
+                        return;
+                    }
+                    setTimeout(function() {
+                        pollAiJob(jobId, attempts + 1);
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    var msg = 'AI generation failed.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    finishAiUi(false, msg);
+                }
+            });
+        }
+
         $.ajax({
             url: LF_BASE + '/generate-scope-ai',
             method: 'POST',
@@ -1120,36 +1224,21 @@
             },
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
-                if (response.success && response.text) {
-                    textarea.value = response.text;
-                    textarea.style.opacity = '1';
-                    textarea.style.borderColor = '#10b981';
-                    setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
-                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-                        iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
-                    }
-                } else {
-                    textarea.style.opacity = '1';
-                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                        iziToast.error({ message: response.message || 'Failed to generate text.', position: 'topRight' });
-                    } else {
-                        alert(response.message || 'Failed to generate text.');
-                    }
+                if (response.success && response.job_id) {
+                    pollAiJob(response.job_id, 0);
+                    return;
                 }
+                // Backward-compatible: sync response with text
+                if (response.success && response.text) {
+                    finishAiUi(true, null, response.text);
+                    return;
+                }
+                finishAiUi(false, response.message || 'Failed to generate text.');
             },
             error: function(xhr) {
-                textarea.style.opacity = '1';
                 var msg = 'AI generation failed.';
                 if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                    iziToast.error({ message: msg, position: 'topRight' });
-                } else {
-                    alert(msg);
-                }
-            },
-            complete: function() {
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
+                finishAiUi(false, msg);
             }
         });
     };

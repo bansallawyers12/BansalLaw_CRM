@@ -15,7 +15,7 @@
 | Auth / Access grants | Partially → Optimized (grants) | Paginate, chunk, cached counts |
 | Clients / Matters | Partially optimized | Tab-aware detail service; task routes split out |
 | Emails (CRM) | Optimized | Lean list JSON; queued inbox sync; filter controller |
-| Legal Forms | Partially optimized | Eager load + indexes; unbounded list; sync DOCX/AI |
+| Legal Forms | Optimized | Paginated list; queued AI; DOCX/HTML preview cache |
 | Accounts / Billing | Partially optimized | Service extraction started; mega-controller remains |
 | Documents | Not / Partially | Video upload queued; lists often unbounded |
 | Notes / Tasks | Mixed | Dashboard strong; client notes N+1 |
@@ -24,7 +24,7 @@
 | Client detail UI | Partially optimized | Some lazy tabs; most SSR + large JS |
 | Emails UI | Partially optimized | Infinite scroll; very large JS |
 | Dashboard UI | Partially optimized | Infinite scroll lists; SSR + inline assets |
-| Legal Forms UI | Partially optimized | AJAX list on tab; SSR shell |
+| Legal Forms UI | Optimized | AJAX paginated list; async AI poll |
 | Python email/PDF | Mixed | Combined APIs; unused cache; blocking CPU |
 | IMAP / Inbox sync | Partially optimized | UID batching; per-message Python calls |
 
@@ -98,16 +98,18 @@
 
 ## 5. Legal Forms
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - `load(['client','matter','creator'])` / `with([...])` on show and client lists
 - DB indexes on `client_legal_forms` (`client_id`, `client_matter_id`, `form_type`)
 - Recent DOCX export unwraps form fields (clean downloads)
+- `getClientForms` paginates with lean column select + Load more UI
+- AI scope via `GenerateLegalFormScopeAiJob` (sync + afterResponse by default); UI polls status
+- DOCX reuse when file is still fresh; HTML preview cached under `storage/app/legal_form_previews/`
 
 **Gaps**
-- `getClientForms` returns unbounded `->get()` (no pagination)
-- AI scope + DOCX/HTML preview run synchronously in-request
+- None material for list/AI/preview hot paths
 
 ---
 
@@ -225,14 +227,15 @@
 
 ## 14. Legal Forms UI
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
-- List loaded on tab activate (one-shot); CRUD via AJAX
+- List loaded on tab activate; CRUD via AJAX
+- Paginated list with Load more; AI Generate polls queued job status
 
 **Gaps**
 - Shell/modals still SSR on client detail
-- Inline Blade JS; no infinite scroll (OK if lists stay small)
+- Inline Blade JS (acceptable for this tab)
 
 ---
 
@@ -277,16 +280,57 @@
 | Job queues | Email send, inbox sync, video upload used; docs/legal-form AI/DOCX less so |
 | Frontend asset cache | Weak where `time()` busting is used |
 | DB indexes | Good hygiene on `email_logs`, `client_legal_forms`, activity/note attachment paths |
+| DataTables / jQuery lock-in | **Blocking** — Yajra + DataTables keep jQuery on critical pages; Spatie Query Builder already present |
+
+---
+
+## Frontend stack: DataTables + Yajra → Alpine + Spatie (or Grid.js)
+
+**Verdict:** High leverage for removing jQuery from CRM shells. Not applied.
+
+**Why this pair blocks progress**
+- `yajra/laravel-datatables-oracle` (^13) + `datatables.net` / `datatables.net-bs5` force jQuery on every page that `@include`s `components.require-datatables`.
+- Server-side pagination/sort already exists via `spatie/laravel-query-builder` (^7) + `SortableTrait` / `SortableHelper` — Yajra mostly wraps the same Eloquent queries into a DataTables JSON contract.
+- Alpine (`alpinejs` ^3.15) is already a Composer/npm dependency and fits list UIs without a table widget.
+
+**Current inventory (as of review)**
+
+| Surface | Backend | Frontend |
+|--------|---------|----------|
+| Assignee tasks (`crm/assignee/tasks`) | `AssigneeController` → `DataTables::of($query)` (also uses Spatie sorts nearby) | `.yajra-datatable` + `serverSide: true` |
+| Booking appointments list | `BookingAppointmentsController` → `DataTables::of($query)` | DataTables AJAX consumer |
+| Client detail checklist / compose attachments | Client-side only | `#mychecklist-datatable` via `detail-main.js` / detail Blade |
+| Legacy forms | — | `custom-form-validation.js` → `#my-datatable` |
+
+Shared assets: `public/js/datatables.min.js`, `dataTables.bootstrap5.min.js`, `config/datatables.php`, npm `copy:datatables` postinstall.
+
+**Recommended direction**
+1. **Default:** Alpine lists + Spatie Query Builder JSON (`filter` / `sort` / `paginate`) — match Dashboard / email infinite-scroll patterns; no new table library.
+2. **Only if a dense spreadsheet UI is required:** Grid.js (vanilla, smaller than DataTables) as a drop-in widget — still feed it Spatie-paginated JSON, not Yajra.
+3. **Do not** introduce another jQuery table plugin.
+
+**Suggested migration order**
+1. Assignee tasks (largest Yajra surface; Spatie sorts already partially wired).
+2. Booking appointments list endpoint (calendar path already returns non-DataTables JSON).
+3. Client checklist table (client-side DataTable — easiest to replace with Alpine/`x-for`).
+4. Remove `require-datatables` from client detail once checklist is gone.
+5. Drop `yajra/laravel-datatables-oracle`, DataTables npm packages, `config/datatables.php`, and provider/alias when no callers remain.
+
+**Exit criteria for “jQuery can leave” (tables axis)**
+- Zero `DataTables::` / `Yajra\` imports in `app/`
+- Zero `@include('components.require-datatables')` and `.DataTable(` in CRM views/JS
+- Assignee + booking lists use Spatie + Alpine (or Grid.js) pagination/sort
 
 ---
 
 ## Highest-impact opportunities (priority order — not applied)
 
 1. **Decompose mega-controllers** and finish service extraction (accounts / documents / email already partly done).
-2. **Fix client Notes N+1** and add pagination to Notes/Documents/Legal Forms lists (match Dashboard patterns).
-3. **Lazy-load client detail tabs** and replace `?v={{ time() }}` with stable versioning for JS/CSS.
-4. **Python:** offload CPU to executors; implement configured response cache; shrink PDF transport.
-5. **Adopt or remove `CacheService`** so Tier-1 caching claims match reality.
+2. **Fix client Notes N+1** and add pagination to Notes/Documents lists (match Dashboard / Legal Forms patterns).
+3. **Replace DataTables + Yajra** with Alpine lists + Spatie Query Builder (Grid.js only if a table widget is still required) so jQuery can leave.
+4. **Lazy-load client detail tabs** and replace `?v={{ time() }}` with stable versioning for JS/CSS.
+5. **Python:** offload CPU to executors; implement configured response cache; shrink PDF transport.
+6. **Adopt or remove `CacheService`** so Tier-1 caching claims match reality.
 
 ---
 

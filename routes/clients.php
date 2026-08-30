@@ -285,6 +285,7 @@ Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountr
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
 Route::post('/legal-forms/upload', [\App\Http\Controllers\CRM\LegalFormsController::class, 'uploadForm'])->name('legal-forms.upload');
 Route::post('/legal-forms/generate-scope-ai', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAI'])->name('legal-forms.generate-scope-ai');
+Route::get('/legal-forms/generate-scope-ai/{jobId}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAiStatus'])->name('legal-forms.generate-scope-ai.status');
 Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'getClientForms'])->name('legal-forms.client-forms');
 Route::get('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'show'])->name('legal-forms.show');
 Route::put('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'update'])->name('legal-forms.update');

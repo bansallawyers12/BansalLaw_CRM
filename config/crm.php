@@ -397,9 +397,27 @@ return [
         'followup_hours' => max(1, (int) env('COMMUNICATION_CHECK_FOLLOWUP_HOURS', 24)),
         'datetime_window_hours' => max(1, (int) env('COMMUNICATION_CHECK_DATETIME_WINDOW_HOURS', 48)),
         'call_window_minutes' => max(5, min(120, (int) env('COMMUNICATION_CHECK_CALL_WINDOW_MINUTES', 30))),
+        'vision_provider' => strtolower((string) env('COMMUNICATION_CHECK_VISION_PROVIDER', 'openai')),
         'vision_model' => env('COMMUNICATION_CHECK_VISION_MODEL', 'gpt-4o-mini'),
         'vision_timeout' => max(30, (int) env('COMMUNICATION_CHECK_VISION_TIMEOUT', 90)),
         'retention_hours' => max(1, (int) env('COMMUNICATION_CHECK_RETENTION_HOURS', 24)),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legal forms (client tab list + AI scope + DOCX preview)
+    |--------------------------------------------------------------------------
+    |
+    | Default AI queue is sync + afterResponse so generation finishes after the
+    | JSON response without a separate worker (same pattern as personal video).
+    |
+    */
+    'legal_forms' => [
+        'list_per_page' => max(5, min(100, (int) env('LEGAL_FORMS_LIST_PER_PAGE', 20))),
+        'ai_queue_connection' => env('LEGAL_FORMS_AI_QUEUE_CONNECTION', 'sync'),
+        'ai_after_response' => filter_var(env('LEGAL_FORMS_AI_AFTER_RESPONSE', true), FILTER_VALIDATE_BOOLEAN),
+        'ai_timeout_seconds' => max(60, (int) env('LEGAL_FORMS_AI_TIMEOUT', 120)),
+        'ai_poll_max_attempts' => max(10, (int) env('LEGAL_FORMS_AI_POLL_MAX_ATTEMPTS', 60)),
     ],
 
 ];

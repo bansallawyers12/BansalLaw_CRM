@@ -3,26 +3,27 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\ClientLegalForm;
 use App\Models\ClientMatter;
-use App\Models\Document;
-use App\Models\Note;
 use App\Services\LegalFormDocxService;
-use PhpOffice\PhpWord\IOFactory;
-use GuzzleHttp\Client;
+use App\Services\LegalFormPreviewService;
+use App\Services\LegalFormScopeAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 
 class LegalFormsController extends Controller
 {
     use EnsuresCrmRecordAccess;
+
     private LegalFormDocxService $docxService;
+
+    private LegalFormPreviewService $previewService;
+
+    private LegalFormScopeAiService $scopeAiService;
 
     /** Document extensions allowed for legal form uploads (no images or executables). */
     private const UPLOAD_ALLOWED_EXTENSIONS = [
@@ -37,10 +38,15 @@ class LegalFormsController extends Controller
         'html', 'htm', 'xhtml', 'xml', 'json', 'yaml', 'yml', 'sql', 'dll', 'so', 'bin',
     ];
 
-    public function __construct(LegalFormDocxService $docxService)
-    {
+    public function __construct(
+        LegalFormDocxService $docxService,
+        LegalFormPreviewService $previewService,
+        LegalFormScopeAiService $scopeAiService,
+    ) {
         $this->middleware('auth:admin');
         $this->docxService = $docxService;
+        $this->previewService = $previewService;
+        $this->scopeAiService = $scopeAiService;
     }
 
     public function store(Request $request): JsonResponse
@@ -114,6 +120,7 @@ class LegalFormsController extends Controller
                 }
                 $docxPath = $this->docxService->generate($form);
                 $form->update(['pdf_path' => $docxPath]);
+                $this->previewService->forgetHtmlCache((int) $form->id);
 
                 return $form;
             });
@@ -234,6 +241,7 @@ class LegalFormsController extends Controller
                 $legalForm->update($data);
                 $docxPath = $this->docxService->generate($legalForm);
                 $legalForm->update(['pdf_path' => $docxPath]);
+                $this->previewService->forgetHtmlCache((int) $legalForm->id);
             });
         } catch (\Throwable $e) {
             Log::error('Legal form update failed', ['exception' => $e]);
@@ -256,6 +264,7 @@ class LegalFormsController extends Controller
         $this->ensureCrmRecordAccess((int) $legalForm->client_id);
         $this->deleteStoredFile($legalForm->pdf_path);
         $this->deleteStoredFile($legalForm->attachment_path);
+        $this->previewService->forgetHtmlCache((int) $legalForm->id);
         $legalForm->delete();
 
         return response()->json([
@@ -271,8 +280,7 @@ class LegalFormsController extends Controller
             return $this->downloadUploadedFormFile($legalForm);
         }
 
-        $docxPath = $this->docxService->generate($legalForm);
-        $legalForm->update(['pdf_path' => $docxPath]);
+        $docxPath = $this->previewService->ensureGeneratedDocx($legalForm);
 
         $fullPath = public_path($docxPath);
         if (!file_exists($fullPath)) {
@@ -452,13 +460,7 @@ class LegalFormsController extends Controller
             }
 
             if (in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
-                $fileContent = file_get_contents($fullPath);
-                if (! is_string($fileContent) || $fileContent === '') {
-                    return response($this->legalFormPreviewErrorHtml('The uploaded file could not be loaded.'), 404)
-                        ->header('Content-Type', 'text/html; charset=UTF-8');
-                }
-
-                $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
+                $htmlPreview = $this->previewService->htmlPreviewFromPath($fullPath, $filename, $legalForm);
                 if ($htmlPreview !== null) {
                     return response($htmlPreview, 200, [
                         'Content-Type' => 'text/html; charset=UTF-8',
@@ -532,12 +534,13 @@ class LegalFormsController extends Controller
 
     public function previewDocx(Request $request, ClientLegalForm $legalForm)
     {
+        $this->ensureCrmRecordAccess((int) $legalForm->client_id);
+
         if ($legalForm->is_uploaded) {
             return $this->previewUploadedFormFile($request, $legalForm);
         }
 
-        $docxPath = $this->docxService->generate($legalForm);
-        $legalForm->update(['pdf_path' => $docxPath]);
+        $docxPath = $this->previewService->ensureGeneratedDocx($legalForm);
 
         $fullPath = public_path($docxPath);
         if (! file_exists($fullPath)) {
@@ -551,13 +554,7 @@ class LegalFormsController extends Controller
         $safeFilename = str_replace('"', '\\"', $filename);
 
         if ($request->boolean('embed')) {
-            $fileContent = file_get_contents($fullPath);
-            if (! is_string($fileContent) || $fileContent === '') {
-                return response($this->legalFormPreviewErrorHtml('The form file could not be loaded.'), 404)
-                    ->header('Content-Type', 'text/html; charset=UTF-8');
-            }
-
-            $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
+            $htmlPreview = $this->previewService->htmlPreviewFromPath($fullPath, $filename, $legalForm);
             if ($htmlPreview !== null) {
                 return response($htmlPreview, 200, [
                     'Content-Type' => 'text/html; charset=UTF-8',
@@ -591,72 +588,47 @@ class LegalFormsController extends Controller
             . '<body><p>' . $body . '</p></body></html>';
     }
 
-    private function convertDocxBytesToHtml(string $fileContent, string $filename): ?string
-    {
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
-            return null;
-        }
-
-        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_legal_form_html_' . uniqid('', true);
-
-        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
-            return null;
-        }
-
-        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
-        file_put_contents($inputPath, $fileContent);
-
-        try {
-            $phpWord = IOFactory::load($inputPath);
-            $writer = IOFactory::createWriter($phpWord, 'HTML');
-            ob_start();
-            $writer->save('php://output');
-            $body = ob_get_clean();
-
-            if ($body === false || trim($body) === '') {
-                return null;
-            }
-
-            $styles = '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.55;color:#1f2937;margin:0;padding:28px 32px;background:#fff;}'
-                . 'table{border-collapse:collapse;width:100%;margin:12px 0;} td,th{border:1px solid #d1d5db;padding:6px 10px;vertical-align:top;}'
-                . 'p{margin:0.5em 0;} h1,h2,h3{color:#1a3a5c;margin:0.75em 0 0.35em;}</style>';
-
-            if (stripos($body, '<html') !== false) {
-                if (stripos($body, '</head>') !== false) {
-                    return (string) preg_replace('/<\/head>/i', $styles . '</head>', $body, 1);
-                }
-
-                return $styles . $body;
-            }
-
-            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Form preview</title>'
-                . $styles . '</head><body>'
-                . $body
-                . '</body></html>';
-        } catch (\Throwable $e) {
-            Log::warning('Legal form PhpWord HTML preview failed', [
-                'file' => $filename,
-                'error' => $e->getMessage(),
-            ]);
-
-            return null;
-        } finally {
-            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
-                @unlink($tempFile);
-            }
-            @rmdir($tempDir);
-        }
-    }
-
     public function getClientForms(Request $request): JsonResponse
     {
-        $clientId = $request->query('client_id');
-        $matterId = $request->query('matter_id');
+        $request->validate([
+            'client_id' => 'required|exists:admins,id',
+            'matter_id' => 'nullable|integer',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:5|max:100',
+        ]);
 
-        $query = ClientLegalForm::where('client_id', $clientId)
-            ->with(['matter', 'creator']);
+        $clientId = (int) $request->query('client_id');
+        $this->ensureCrmRecordAccess($clientId);
+
+        $matterId = $request->query('matter_id');
+        $perPage = (int) ($request->query('per_page') ?: config('crm.legal_forms.list_per_page', 20));
+        $perPage = max(5, min(100, $perPage));
+
+        $query = ClientLegalForm::query()
+            ->where('client_id', $clientId)
+            ->select([
+                'id',
+                'client_id',
+                'client_matter_id',
+                'created_by',
+                'form_type',
+                'is_uploaded',
+                'matter_reference',
+                'estimated_legal_fees',
+                'estimated_disbursements',
+                'estimated_barrister_fees',
+                'gst_amount',
+                'estimated_total',
+                'retainer_amount',
+                'attachment_path',
+                'attachment_original_name',
+                'form_date',
+                'created_at',
+            ])
+            ->with([
+                'matter:id,client_unique_matter_no',
+                'creator:id,first_name,last_name',
+            ]);
 
         if ($matterId) {
             $query->where(function ($q) use ($matterId) {
@@ -665,11 +637,16 @@ class LegalFormsController extends Controller
             });
         }
 
-        $forms = $query->orderBy('created_at', 'desc')->get();
+        $paginator = $query->orderByDesc('created_at')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'forms' => $forms,
+            'forms' => $paginator->items(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'total' => $paginator->total(),
+            'per_page' => $paginator->perPage(),
+            'has_more' => $paginator->hasMorePages(),
         ]);
     }
 
@@ -683,247 +660,46 @@ class LegalFormsController extends Controller
             'field' => 'required|in:scope_of_work,authority_scope,variables_affecting_costs',
         ]);
 
-        $client = Admin::find($request->client_id);
-        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        $this->ensureCrmRecordAccess((int) $request->client_id);
 
-        $clientMatterId = $request->client_matter_id;
-        if (! $clientMatterId && $request->filled('matter_reference')) {
-            $ref = trim((string) $request->matter_reference);
-            $resolved = ClientMatter::where('client_id', (int) $request->client_id)
-                ->where('client_unique_matter_no', $ref)
-                ->value('id');
-            if ($resolved) {
-                $clientMatterId = $resolved;
-            }
-        }
+        $staffId = (int) Auth::id();
+        $jobId = $this->scopeAiService->start([
+            'client_id' => (int) $request->client_id,
+            'client_matter_id' => $request->filled('client_matter_id') ? (int) $request->client_matter_id : null,
+            'matter_reference' => $request->filled('matter_reference') ? (string) $request->matter_reference : null,
+            'form_type' => (string) $request->form_type,
+            'field' => (string) $request->field,
+        ], $staffId);
 
-        $contextParts = [];
-        $contextParts[] = "Client: {$clientName}";
-        $resolvedAddr = \App\Models\ClientAddress::where('client_id', $client->id)->orderByDesc('id')->first();
-        $resolvedAddrStr = $resolvedAddr
-            ? collect([$resolvedAddr->address_line_1, $resolvedAddr->address_line_2, $resolvedAddr->suburb, $resolvedAddr->state, $resolvedAddr->zip])->filter()->implode(', ')
-            : collect([$client->address, $client->city, $client->state, $client->zip])->filter()->implode(', ');
-        if ($resolvedAddrStr) {
-            $contextParts[] = "Address: {$resolvedAddrStr}";
-        }
-        if ($client->email) {
-            $contextParts[] = "Email: {$client->email}";
-        }
-        if ($client->phone) {
-            $contextParts[] = "Phone: {$client->phone}";
-        }
+        return response()->json([
+            'success' => true,
+            'job_id' => $jobId,
+            'status' => 'queued',
+            'message' => 'AI generation queued.',
+        ]);
+    }
 
-        $documents = collect();
-        if ($clientMatterId) {
-            $matter = ClientMatter::with(['matter', 'personResponsible', 'legalPractitioner'])
-                ->where('client_id', (int) $request->client_id)
-                ->find($clientMatterId);
+    public function generateScopeAiStatus(string $jobId): JsonResponse
+    {
+        $staffId = (int) Auth::id();
+        $status = $this->scopeAiService->getStatus($jobId, $staffId);
 
-            if ($matter) {
-                $matterType = $matter->matter ? $matter->matter->title : '';
-                $matterNick = $matter->matter ? $matter->matter->nick_name : '';
-                $caseDetail = $matter->case_detail ?? '';
-
-                if ($matterType) {
-                    $contextParts[] = "Matter Type: {$matterType}";
-                }
-                if ($matterNick) {
-                    $contextParts[] = "Matter Category: {$matterNick}";
-                }
-                if ($caseDetail) {
-                    $contextParts[] = "Case Details: {$caseDetail}";
-                }
-                if ($matter->client_unique_matter_no) {
-                    $contextParts[] = "Matter Reference: {$matter->client_unique_matter_no}";
-                }
-                if ($matter->personResponsible) {
-                    $contextParts[] = 'Person Responsible: '.trim($matter->personResponsible->first_name.' '.$matter->personResponsible->last_name);
-                }
-                if ($matter->date_of_incidence) {
-                    $contextParts[] = 'Date of Incident: '.$matter->date_of_incidence->format('d/m/Y');
-                }
-                if ($matter->incidence_type) {
-                    $contextParts[] = "Incident Type: {$matter->incidence_type}";
-                }
-
-                $documents = Document::where('client_matter_id', $matter->id)
-                    ->whereNotNull('file_name')
-                    ->select('file_name', 'doc_type', 'folder_name')
-                    ->limit(30)
-                    ->get();
-
-                if ($documents->isNotEmpty()) {
-                    $docList = $documents->map(function ($doc) {
-                        $parts = [$doc->file_name];
-                        if ($doc->doc_type) {
-                            $parts[] = "({$doc->doc_type})";
-                        }
-                        if ($doc->folder_name) {
-                            $parts[] = "[{$doc->folder_name}]";
-                        }
-
-                        return implode(' ', $parts);
-                    })->implode('; ');
-                    $contextParts[] = "Documents uploaded: {$docList}";
-                }
-            }
-        }
-
-        $notesBlock = $this->buildMatterNotesContextForAi((int) $request->client_id, $clientMatterId ? (int) $clientMatterId : null);
-
-        $contextString = implode("\n", $contextParts);
-
-       
-        $formTypeLabel = ClientLegalForm::FORM_TYPES[$request->form_type] ?? $request->form_type;
-
-        $systemPrompts = [
-            'scope_of_work' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, generate a professional Scope of Work description for a {$formTypeLabel}. The scope should clearly outline what legal services will be provided. Use details from the notes where they are relevant. Write in a formal, numbered list format suitable for an Australian legal costs disclosure document. Do not include any greeting or sign-off. Only output the scope text.",
-            'authority_scope' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, generate a professional Authority to Act scope description. This should clearly state what the client is authorising the firm to do on their behalf. Use details from the notes where they are relevant. Write in formal legal language suitable for an Australian Authority to Act document. Do not include any greeting or sign-off. Only output the authority scope text.",
-            'variables_affecting_costs' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, list the key variables that might affect the total legal costs. Write as a concise bullet-point list of factors. Examples include: complexity of the matter, amount of correspondence required, whether the other party cooperates, court involvement, expert reports needed, etc. Tailor the list to this specific matter. Do not include any greeting or sign-off. Only output the variables list.",
-        ];
-
-        $systemPrompt = $systemPrompts[$request->field] ?? $systemPrompts['scope_of_work'];
-
-        $userContent = "Generate the text based on this information:\n\n{$contextString}\n\n---\n{$notesBlock}";
-
-        try {
-            $anthropicKey = config('services.anthropic.api_key');
-            if (! empty($anthropicKey)) {
-                $generatedText = $this->generateWithAnthropic($systemPrompt, $userContent);
-            } else {
-                $generatedText = $this->generateWithOpenAi($systemPrompt, $userContent);
-            }
-
-            return response()->json([
-                'success' => true,
-                'text' => trim($generatedText),
-            ]);
-        } catch (\Exception $e) {
+        if ($status === null) {
             return response()->json([
                 'success' => false,
-                'message' => 'AI generation failed: '.$e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Aggregate note text for the given client matter (notes.matter_id = client_matters.id).
-     */
-    private function buildMatterNotesContextForAi(int $clientId, ?int $clientMatterId): string
-    {
-        if (! $clientMatterId) {
-            return 'CRM notes: No matter could be resolved (select a matter on the client record or enter a Matter Reference that matches this client). Notes were not loaded.';
+                'status' => 'not_found',
+                'message' => 'AI generation job not found or expired.',
+            ], 404);
         }
 
-        $notes = Note::query()
-            ->where('client_id', $clientId)
-            ->where('matter_id', $clientMatterId)
-            ->orderByDesc('created_at')
-            ->limit(150)
-            ->get(['title', 'description', 'created_at', 'is_action']);
+        $state = (string) ($status['status'] ?? 'queued');
 
-        if ($notes->isEmpty()) {
-            return 'CRM notes: No notes are linked to this matter in the CRM (matter-scoped notes only).';
-        }
-
-        $lines = [];
-        $maxChars = 120000;
-        $used = 0;
-
-        foreach ($notes as $note) {
-            $date = $note->created_at ? $note->created_at->format('Y-m-d H:i') : '';
-            $kind = ((int) $note->is_action === 1) ? 'Task' : 'Note';
-            $title = trim((string) ($note->title ?? ''));
-            $body = trim((string) ($note->description ?? ''));
-            $chunk = "[{$date}] {$kind}".($title !== '' ? ": {$title}" : '')."\n{$body}\n";
-            if ($used + strlen($chunk) > $maxChars) {
-                $lines[] = "\n[Additional older notes omitted to fit model context limit.]";
-
-                break;
-            }
-            $lines[] = $chunk;
-            $used += strlen($chunk);
-        }
-
-        return "CRM notes for this matter:\n\n".implode("\n", $lines);
-    }
-
-    private function generateWithAnthropic(string $systemPrompt, string $userContent): string
-    {
-        $verify = config('services.anthropic.http_verify');
-        $http = Http::withHeaders([
-            'x-api-key' => config('services.anthropic.api_key'),
-            'anthropic-version' => '2023-06-01',
-            'Content-Type' => 'application/json',
-        ])->timeout((int) config('services.anthropic.timeout', 90));
-
-        if ($verify === 'false' && app()->environment(['local', 'development'])) {
-            $http = $http->withoutVerifying();
-        } elseif (is_string($verify) && $verify !== '' && $verify !== 'false') {
-            $http = $http->withOptions(['verify' => $verify]);
-        }
-
-        $response = $http->post('https://api.anthropic.com/v1/messages', [
-            'model' => config('services.anthropic.model'),
-            'max_tokens' => 1000,
-            'system' => $systemPrompt,
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $userContent,
-                ],
-            ],
+        return response()->json([
+            'success' => in_array($state, ['queued', 'processing', 'completed'], true),
+            'job_id' => $jobId,
+            'status' => $state,
+            'message' => $status['message'] ?? null,
+            'text' => $status['text'] ?? null,
         ]);
-
-        if (! $response->successful()) {
-            $err = $response->json('error.message') ?? $response->body();
-
-            throw new \RuntimeException(is_string($err) ? $err : 'Anthropic request failed');
-        }
-
-        $data = $response->json();
-
-        $blocks = $data['content'] ?? [];
-        $text = '';
-        foreach ($blocks as $block) {
-            if (($block['type'] ?? '') === 'text' && isset($block['text'])) {
-                $text .= $block['text'];
-            }
-        }
-
-        return $text;
-    }
-
-    private function generateWithOpenAi(string $systemPrompt, string $userContent): string
-    {
-        $openAiKey = config('services.openai.api_key');
-        if (empty($openAiKey)) {
-            throw new \RuntimeException('No AI provider configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env.');
-        }
-
-        $openAiClient = new Client([
-            'base_uri' => 'https://api.openai.com/v1/',
-            'headers' => [
-                'Authorization' => 'Bearer '.$openAiKey,
-                'Content-Type' => 'application/json',
-            ],
-            'timeout' => config('services.openai.timeout', 30),
-        ]);
-
-        $response = $openAiClient->post('chat/completions', [
-            'json' => [
-                'model' => 'gpt-4o-mini',
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $userContent],
-                ],
-                'temperature' => 0.7,
-                'max_tokens' => 1000,
-            ],
-        ]);
-
-        $result = json_decode($response->getBody()->getContents(), true);
-
-        return (string) ($result['choices'][0]['message']['content'] ?? '');
     }
 }
