@@ -256,107 +256,26 @@
 
                     <!-- Notes List -->
                     <div class="note_term_list subtab8-content">
-                        <?php
-                        $notelist = \App\Models\Note::with('attachments')->where('client_id', $fetchedData->id)
-                            ->whereNull('assigned_to')
-                            ->where('type', 'client')
-                            ->orderby('pin', 'DESC')
-                            ->orderBy('updated_at', 'DESC')
-                            ->get();
-                        foreach($notelist as $list) {
-                            $admin = \App\Models\Staff::where('id', $list->user_id)->first();
-                            // Determine type label and color
-                            if($list->task_group === null || $list->task_group === '') {
-                                // Handle NULL or empty task_group - assign to "Others"
-                                $typeLabel = 'Others';
-                                $typeClass = 'note-type-others';
-                                $typeInlineClass = 'others';
-                            } else {
-                                $type = strtolower($list->task_group);
-                                $typeLabel = 'Others';
-                                $typeClass = 'note-type-others';
-                                $typeInlineClass = 'others';
-
-                                if(strpos($type, 'call') !== false) { 
-                                    $typeLabel = 'Call'; 
-                                    $typeClass = 'note-type-call'; 
-                                    $typeInlineClass = 'call';
-                                }
-                                else if(strpos($type, 'email') !== false) { 
-                                    $typeLabel = 'Email'; 
-                                    $typeClass = 'note-type-email'; 
-                                    $typeInlineClass = 'email';
-                                }
-                                else if(strpos($type, 'in-person') !== false) { 
-                                    $typeLabel = 'In-Person'; 
-                                    $typeClass = 'note-type-inperson'; 
-                                    $typeInlineClass = 'inperson';
-                                }
-                                else if(strpos($type, 'others') !== false) { 
-                                    $typeLabel = 'Others'; 
-                                    $typeClass = 'note-type-others'; 
-                                    $typeInlineClass = 'others';
-                                }
-                                else if(strpos($type, 'attention') !== false) { 
-                                    $typeLabel = 'Attention'; 
-                                    $typeClass = 'note-type-attention'; 
-                                    $typeInlineClass = 'attention';
-                                }
-                            }
-
-                            //$desc = strip_tags($list->description);
-                        ?>
-                        <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="{{ $list->matter_id }}" id="note_id_{{$list->id}}" data-id="{{$list->id}}" data-type="{{ $typeLabel }}" data-note-date="{{ $list->updated_at }}">
-                            <?php if($list->pin == 1) { ?>
-                                <div class="pined_note">
-                                    <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
-                                </div>
-                            <?php } ?>
-
-                            <div class="date-time-menu-container">
-                                <span class="author-updated-date-time">{{date('d/m/Y h:i A', strtotime($list->updated_at))}}</span>
-                                <div class="note-toggle-btn-div">
-                                    <div class="dropdown">
-                                        <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <a class="dropdown-item opennoteform" data-id="{{$list->id}}" href="javascript:;">Edit</a>
-                                            @php $_nActor = Auth::user(); @endphp
-                                            @if($_nActor instanceof \App\Models\Staff && ($_nActor->hasEffectiveSuperAdminPrivileges() || (int) $_nActor->role === 16))
-                                                <a class="dropdown-item editdatetime" data-id="{{$list->id}}" href="javascript:;">Edit Date Time</a>
-                                            @endif
-                                            <a data-id="{{$list->id}}" data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>
-                                            <?php if($list->pin == 1) { ?>
-                                                <a data-id="{{$list->id}}" class="dropdown-item pinnote" href="javascript:;">Unpin</a>
-                                            <?php } else { ?>
-                                                <a data-id="{{$list->id}}" class="dropdown-item pinnote" href="javascript:;">Pin</a>
-                                            <?php } ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="note-card-info">
-                                <span class="author-name-created">{{ $admin->first_name ?? 'NA' }} {{ $admin->last_name ?? 'NA' }} added the</span><span class="note-type-inline {{ $typeInlineClass }}">{{ $typeLabel }} notes</span>
-                            </div>
-                            @if(!empty(trim((string) ($list->mobile_number ?? ''))))
-                                <div class="note-meta-redesign" style="margin-bottom: 10px;">
-                                    <i class="fa-solid fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
-                                    <strong style="margin-left: 6px;">Number:</strong> {{ $list->mobile_number }}
-                                </div>
-                            @endif
-
-                            <!--<div class="note-content-redesign">{--!! nl2br(e($desc)) !!--}</div>-->
-                            <div class="note-content-redesign">
-                                @if(!empty($list->description))
-                                    {!! \App\Support\NoteDescriptionHtml::forDisplay($list->description) !!}
-                                @endif
-                            </div>
-                            {!! \App\Support\NoteAttachmentHtml::forNoteCard($list->attachments) !!}
-                        </div>
-                        <?php } ?>
+                        @php
+                            $notesListService = app(\App\Services\ClientNotesListService::class);
+                            $notesActor = Auth::user() instanceof \App\Models\Staff ? Auth::user() : null;
+                            $notesPage = $notesListService->fetchAndRender(
+                                (int) $fetchedData->id,
+                                'client',
+                                0,
+                                null,
+                                $notesActor
+                            );
+                        @endphp
+                        {!! $notesPage['html'] !!}
                     </div>
+                    @if (!empty($notesPage['has_more']))
+                        <div class="notes-load-more-wrap text-center py-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary notes-load-more" data-next-offset="{{ $notesPage['next_offset'] }}">
+                                Load more
+                            </button>
+                        </div>
+                    @endif
                 </div>
             </div>
 

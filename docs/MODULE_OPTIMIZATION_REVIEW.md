@@ -18,7 +18,7 @@
 | Legal Forms | Optimized | Paginated list; queued AI; DOCX/HTML preview cache |
 | Accounts / Billing | Optimized | Balance helpers in service; tab row caps; cached list filters |
 | Documents | Optimized | Folder list service + cap; streamed/queued bulk S3 |
-| Notes / Tasks | Mixed | Dashboard strong; client notes N+1 |
+| Notes / Tasks | Optimized | Eager-loaded authors; paginated notes + matter tasks |
 | Leads | Partially optimized | Paginated index; fat controller |
 | Admin Console | Partially optimized | Paginate lists; large exports in memory |
 | Client detail UI | Partially optimized | Some lazy tabs; most SSR + large JS |
@@ -149,15 +149,15 @@
 
 ## 8. Notes / Tasks
 
-**Verdict:** Mixed
+**Verdict:** Optimized
 
-**What is working (Dashboard)**
-- Eager loads, skip/take paging, infinite scroll, activity batching
+**What is working**
+- Dashboard: eager loads, skip/take paging, infinite scroll, activity batching
+- Client Notes tab: `ClientNotesListService` eager-loads `user` + attachments; paginated list + Load more (SSR + AJAX)
+- Matter tasks: paginated `ClientMatterTaskController::index` with open/done counts + Load more UI
 
-**Gaps (Client tab)**
-- `ClientNotesController::getnotes` can query `Staff` per row (N+1)
-- Matter tasks often `->get()` without pagination
-
+**Gaps**
+- Client-side type/matter filters still apply to loaded pages only (load more to see older notes)
 ---
 
 ## 9. Leads
@@ -278,8 +278,8 @@
 
 | Pattern | Status |
 |--------|--------|
-| Eager loading | Strong on Dashboard, email lists, legal forms, access grants; weak on client notes staff loop |
-| Pagination / infinite scroll | Strong on clients/leads/dashboard/emails; weak on documents, notes tab, legal form lists |
+| Eager loading | Strong on Dashboard, email lists, legal forms, access grants, client notes authors; weak spots elsewhere |
+| Pagination / infinite scroll | Strong on clients/leads/dashboard/emails/notes/matter tasks/legal forms; documents use caps |
 | Caching | Dashboard + inbox sync + access grants use Cache; `CacheService` largely unused |
 | Fat controllers | `ClientsController`, `ClientAccountsController`, `ClientDocumentsController`, `LeadController`, `CRMUtilityController` |
 | Job queues | Email send, inbox sync, video upload used; docs/legal-form AI/DOCX less so |
@@ -331,11 +331,10 @@ Shared assets: `public/js/datatables.min.js`, `dataTables.bootstrap5.min.js`, `c
 ## Highest-impact opportunities (priority order — not applied)
 
 1. **Decompose mega-controllers** and finish service extraction (accounts / documents / email already partly done).
-2. **Fix client Notes N+1** and add pagination to Notes lists (match Dashboard / Legal Forms / Documents patterns).
-3. **Replace DataTables + Yajra** with Alpine lists + Spatie Query Builder (Grid.js only if a table widget is still required) so jQuery can leave.
-4. **Lazy-load client detail tabs** and replace `?v={{ time() }}` with stable versioning for JS/CSS.
-5. **Python:** offload CPU to executors; implement configured response cache; shrink PDF transport.
-6. **Adopt or remove `CacheService`** so Tier-1 caching claims match reality.
+2. **Replace DataTables + Yajra** with Alpine lists + Spatie Query Builder (Grid.js only if a table widget is still required) so jQuery can leave.
+3. **Lazy-load client detail tabs** and replace `?v={{ time() }}` with stable versioning for JS/CSS.
+4. **Python:** offload CPU to executors; implement configured response cache; shrink PDF transport.
+5. **Adopt or remove `CacheService`** so Tier-1 caching claims match reality.
 
 ---
 

@@ -451,4 +451,14 @@ return [
         'file_upload_timeout_seconds' => max(120, (int) env('DOCUMENTS_FILE_UPLOAD_TIMEOUT', 600)),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notes / matter tasks (client Notes + Tasks tabs)
+    |--------------------------------------------------------------------------
+    */
+    'notes' => [
+        'list_per_page' => max(5, min(100, (int) env('NOTES_LIST_PER_PAGE', 30))),
+        'matter_task_per_page' => max(5, min(200, (int) env('NOTES_MATTER_TASK_PER_PAGE', 50))),
+    ],
+
 ];

@@ -8,6 +8,9 @@
     if (!$) return;
 
     var baseUrl = (typeof site_url !== 'undefined' ? site_url : (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.base ? window.ClientDetailConfig.urls.base : ''));
+    var notesNextOffset = 0;
+    var notesHasMore = false;
+    var notesLoading = false;
 
     function safeParse(r) {
         if (typeof r === 'object' && r !== null) return r;
@@ -15,61 +18,125 @@
         return null;
     }
 
-    function getallnotes() {
-        var notesUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getNotes) ? window.ClientDetailConfig.urls.getNotes : baseUrl + '/get-notes';
+    function notesListRoot() {
+        return $('#noteterm-tab .note_term_list, .note_term_list').first();
+    }
+
+    function ensureLoadMoreWrap() {
+        var $list = notesListRoot();
+        if (!$list.length) {
+            return $();
+        }
+        var $wrap = $list.siblings('.notes-load-more-wrap');
+        if (!$wrap.length) {
+            $wrap = $('<div class="notes-load-more-wrap text-center py-3"></div>');
+            $list.after($wrap);
+        }
+        return $wrap;
+    }
+
+    function syncNotesLoadMore() {
+        var $wrap = ensureLoadMoreWrap();
+        if (!$wrap.length) {
+            return;
+        }
+        if (!notesHasMore) {
+            $wrap.empty().hide();
+            return;
+        }
+        $wrap.show();
+        var $btn = $wrap.find('.notes-load-more');
+        if (!$btn.length) {
+            $btn = $('<button type="button" class="btn btn-sm btn-outline-secondary notes-load-more">Load more</button>');
+            $wrap.html($btn);
+        }
+        $btn.prop('disabled', notesLoading).attr('data-next-offset', notesNextOffset);
+    }
+
+    function applyNotesFilter() {
+        if (typeof window.filterNotes === 'function') {
+            window.filterNotes();
+            return;
+        }
+        var activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+        var selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked')
+            ? $('.general_matter_checkbox_client_detail').val()
+            : $('#sel_matter_id_client_detail').val();
+
+        if (!$('.subtab8-button.active').length) {
+            $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
+            $('#noteterm-tab').find('.note-card-redesign').show();
+            return;
+        }
+
+        var matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
+            ? window.ClientDetailShared.noteMatchesSelectedMatter
+            : function (cardMatter, sel) {
+                if (!sel) return true;
+                var c = cardMatter == null ? '' : String(cardMatter).trim();
+                return c === '' || c === 'null' || c === '0' || c === String(sel);
+            };
+
+        $('#noteterm-tab').find('.note-card-redesign').each(function() {
+            var noteType = $(this).data('type');
+            var typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
+            var matterMatch = matterMatches($(this).attr('data-matterid'), selectedMatter);
+            if (typeMatch && matterMatch) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    function fetchNotesPage(offset, append) {
+        var notesUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getNotes)
+            ? window.ClientDetailConfig.urls.getNotes
+            : baseUrl + '/get-notes';
+        if (notesLoading) {
+            return;
+        }
+        notesLoading = true;
+        syncNotesLoadMore();
+
         $.ajax({
             url: notesUrl,
             type: 'GET',
             cache: false,
+            dataType: 'json',
             data: {
                 clientid: window.ClientDetailConfig.clientId,
                 type: 'client',
+                offset: offset || 0,
+                format: 'json',
                 _: Date.now()
             },
-            success: function(responses) {
+            success: function(res) {
                 $('.popuploader').hide();
-                $('.note_term_list').html(responses);
-
-                if (typeof window.filterNotes === 'function') {
-                    window.filterNotes();
-                } else {
-                    var activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-                    var selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked')
-                        ? $('.general_matter_checkbox_client_detail').val()
-                        : $('#sel_matter_id_client_detail').val();
-
-                    if (!$('.subtab8-button.active').length) {
-                        $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
-                        $('#noteterm-tab').find('.note-card-redesign').show();
-                    } else {
-                        var matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
-                            ? window.ClientDetailShared.noteMatchesSelectedMatter
-                            : function (cardMatter, sel) {
-                                if (!sel) return true;
-                                var c = cardMatter == null ? '' : String(cardMatter).trim();
-                                return c === '' || c === 'null' || c === '0' || c === String(sel);
-                            };
-
-                        $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                            var noteType = $(this).data('type');
-                            var typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
-                            var matterMatch = matterMatches($(this).attr('data-matterid'), selectedMatter);
-
-                            if (typeMatch && matterMatch) {
-                                $(this).show();
-                            } else {
-                                $(this).hide();
-                            }
-                        });
-                    }
+                notesLoading = false;
+                var payload = safeParse(res) || {};
+                var html = payload.html != null ? payload.html : '';
+                var $list = notesListRoot();
+                if (!$list.length) {
+                    return;
                 }
-
+                if (append) {
+                    $list.append(html);
+                } else {
+                    $list.html(html);
+                }
+                notesHasMore = !!payload.has_more;
+                notesNextOffset = payload.next_offset != null ? parseInt(payload.next_offset, 10) || 0 : 0;
+                syncNotesLoadMore();
+                applyNotesFilter();
                 if (typeof adjustActivityFeedHeight === 'function') {
                     adjustActivityFeedHeight();
                 }
             },
             error: function(xhr, status, error) {
                 $('.popuploader').hide();
+                notesLoading = false;
+                syncNotesLoadMore();
                 console.error('[getallnotes] Failed to refresh notes:', status, error);
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Notes refreshed but some data may be outdated. Please refresh the page.', position: 'topRight' });
@@ -80,7 +147,25 @@
         });
     }
 
+    function getallnotes() {
+        notesNextOffset = 0;
+        notesHasMore = false;
+        fetchNotesPage(0, false);
+    }
+
     window.getallnotes = getallnotes;
+
+    $(document).on('click', '.notes-load-more', function(e) {
+        e.preventDefault();
+        if (notesLoading || !notesHasMore) {
+            return;
+        }
+        var offset = parseInt($(this).attr('data-next-offset'), 10);
+        if (!(offset > 0)) {
+            offset = notesNextOffset;
+        }
+        fetchNotesPage(offset, true);
+    });
 
     function refreshMatterNotesDocumentFolder(refreshInfo) {
         if (!refreshInfo || !refreshInfo.folder_id) {
@@ -341,6 +426,13 @@
     window.resetNoteAttachments = resetNoteAttachments;
 
     $(document).ready(function() {
+        var $ssrBtn = $('.notes-load-more').first();
+        if ($ssrBtn.length) {
+            notesHasMore = true;
+            notesNextOffset = parseInt($ssrBtn.attr('data-next-offset'), 10) || 0;
+            syncNotesLoadMore();
+        }
+
         bindNoteAttachmentUi($('#create_note'));
         bindNoteAttachmentUi($('#create_note_d'));
         bindNotePageDropOverlay($('#create_note'));

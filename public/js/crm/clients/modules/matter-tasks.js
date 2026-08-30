@@ -12,6 +12,12 @@
     var pendingDelete = null;
     var UNDO_MS = 6000;
     var DONE_PANEL_KEY = 'cdn-matter-tasks-done-open';
+    var tasksPage = 1;
+    var tasksHasMore = false;
+    var tasksLoading = false;
+    var tasksRows = [];
+    var tasksOpenCount = 0;
+    var tasksDoneCount = 0;
 
     function cfg() {
         return window.ClientDetailConfig || {};
@@ -581,7 +587,7 @@
         $stats.text(parts.join(' · '));
     }
 
-    function renderList(rows) {
+    function renderList(rows, stats) {
         var open = [];
         var done = [];
         for (var i = 0; i < rows.length; i++) {
@@ -592,7 +598,9 @@
             }
         }
 
-        updateStats(open.length, done.length);
+        var openCount = stats && typeof stats.openCount === 'number' ? stats.openCount : open.length;
+        var doneCount = stats && typeof stats.doneCount === 'number' ? stats.doneCount : done.length;
+        updateStats(openCount, doneCount);
 
         if (rows.length === 0) {
             return statusBlock(
@@ -623,7 +631,7 @@
                 doneOpen = false;
             }
             html += '<details class="cdn-matter-task__done-panel"' + (doneOpen ? ' open' : '') + '>';
-            html += '<summary class="cdn-matter-task__done-summary">Completed <span class="cdn-matter-task__done-count">(' + done.length + ')</span></summary>';
+            html += '<summary class="cdn-matter-task__done-summary">Completed <span class="cdn-matter-task__done-count">(' + doneCount + ')</span></summary>';
             html += '<ul class="list-unstyled cdn-matter-task__ul cdn-matter-task__ul--done mb-0">';
             for (var d = 0; d < done.length; d++) {
                 html += buildRowHtml(done[d]);
@@ -634,6 +642,14 @@
         if (!open.length && done.length) {
             html =
                 '<p class="cdn-matter-task__all-done small text-muted mb-2">All tasks are complete.</p>' + html;
+        }
+
+        if (tasksHasMore) {
+            html +=
+                '<div class="cdn-matter-task__load-more text-center py-2">' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary cdn-matter-task-load-more"' +
+                (tasksLoading ? ' disabled' : '') +
+                '>Load more</button></div>';
         }
 
         return html;
@@ -690,6 +706,108 @@
         });
     }
 
+    function paintTasksList($list) {
+        $list.html(
+            renderList(tasksRows, {
+                openCount: tasksOpenCount,
+                doneCount: tasksDoneCount
+            })
+        );
+    }
+
+    function fetchTasksPage(page, append) {
+        var $wrap = $('#cdn-matter-tasks');
+        if (!$wrap.length) {
+            return;
+        }
+        var cid = clientId();
+        var mid = matterId();
+        var $list = $wrap.find('.cdn-matter-task__list');
+        var ref = matterRef();
+        var indexUrl = urlMap().matterTaskIndex;
+
+        if (!cid || (!mid && !ref) || !indexUrl) {
+            return;
+        }
+        if (tasksLoading) {
+            return;
+        }
+
+        tasksLoading = true;
+        if (!append) {
+            $list.html(skeletonHtml());
+        } else {
+            $list.find('.cdn-matter-task-load-more').prop('disabled', true);
+        }
+
+        var listData = { client_id: cid, page: page };
+        if (mid) {
+            listData.matter_id = mid;
+            listData.client_matter_id = mid;
+        }
+        if (ref) {
+            listData.matter_ref = ref;
+        }
+
+        $.ajax({
+            url: indexUrl,
+            type: 'GET',
+            dataType: 'json',
+            data: listData,
+            complete: function () {
+                tasksLoading = false;
+                syncComposerLock();
+            },
+            success: function (res) {
+                if (!res || !res.status) {
+                    if (!append) {
+                        $list.html(statusBlock('error', '<p class="small mb-0">Could not load tasks.</p>'));
+                        updateStats(0, 0);
+                    }
+                    return;
+                }
+                var pageRows = res.data || [];
+                tasksPage = res.page || page;
+                tasksHasMore = !!res.has_more;
+                if (typeof res.open_count === 'number') {
+                    tasksOpenCount = res.open_count;
+                }
+                if (typeof res.done_count === 'number') {
+                    tasksDoneCount = res.done_count;
+                }
+                if (append) {
+                    tasksRows = tasksRows.concat(pageRows);
+                } else {
+                    tasksRows = pageRows;
+                    if (typeof res.open_count !== 'number' || typeof res.done_count !== 'number') {
+                        var open = 0;
+                        var done = 0;
+                        for (var i = 0; i < tasksRows.length; i++) {
+                            if (isTaskDone(tasksRows[i])) {
+                                done++;
+                            } else {
+                                open++;
+                            }
+                        }
+                        tasksOpenCount = open;
+                        tasksDoneCount = done;
+                    }
+                }
+                paintTasksList($list);
+            },
+            error: function (xhr) {
+                var msg = 'Could not load tasks.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                if (!append) {
+                    $list.html(statusBlock('error', '<p class="small mb-0">' + esc(msg) + '</p>'));
+                    updateStats(0, 0);
+                }
+            }
+        });
+    }
+
     function reload() {
         if (pendingDelete) {
             flushPendingDelete(function () {
@@ -730,42 +848,12 @@
         }
 
         syncComposerLock();
-        $list.html(skeletonHtml());
-
-        var listData = { client_id: cid };
-        if (mid) {
-            listData.matter_id = mid;
-            listData.client_matter_id = mid;
-        }
-        if (ref) {
-            listData.matter_ref = ref;
-        }
-
-        $.ajax({
-            url: indexUrl,
-            type: 'GET',
-            dataType: 'json',
-            data: listData,
-            complete: function () {
-                syncComposerLock();
-            },
-            success: function (res) {
-                if (!res || !res.status) {
-                    $list.html(statusBlock('error', '<p class="small mb-0">Could not load tasks.</p>'));
-                    updateStats(0, 0);
-                    return;
-                }
-                $list.html(renderList(res.data || []));
-            },
-            error: function (xhr) {
-                var msg = 'Could not load tasks.';
-                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                $list.html(statusBlock('error', '<p class="small mb-0">' + esc(msg) + '</p>'));
-                updateStats(0, 0);
-            }
-        });
+        tasksPage = 1;
+        tasksHasMore = false;
+        tasksRows = [];
+        tasksOpenCount = 0;
+        tasksDoneCount = 0;
+        fetchTasksPage(1, false);
     }
 
     function scheduleReload() {
@@ -781,6 +869,14 @@
     $(document).ready(function () {
         initDueDatePicker();
         reload();
+
+        $(document).on('click', '.cdn-matter-task-load-more', function (e) {
+            e.preventDefault();
+            if (tasksLoading || !tasksHasMore) {
+                return;
+            }
+            fetchTasksPage(tasksPage + 1, true);
+        });
 
         $(document).on('click', '[data-tab="clientaction"]', function () {
             scheduleReload();

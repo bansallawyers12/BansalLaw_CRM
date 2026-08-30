@@ -14,9 +14,9 @@ use App\Models\Staff;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use App\Models\ClientMatter;
+use App\Services\ClientNotesListService;
 use App\Services\NoteAttachmentService;
 use App\Support\NoteAttachmentHtml;
-use App\Support\NoteDescriptionHtml;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -400,108 +400,45 @@ class ClientNotesController extends Controller
 	}
 
     /**
-     * Get notes list for Notes Tab (redesigned)
-     * 
-     * @param Request $request
-     * @return html
+     * Get notes list for Notes Tab (redesigned).
+     * Paginated + eager-loaded authors (avoids Staff N+1).
+     * Default response remains HTML for legacy callers; pass format=json for metadata.
      */
-    public function getnotes(Request $request)
-    {   
-        $client_id = $request->clientid;
-        $this->ensureCrmRecordAccess((int) $client_id);
-        $type = $request->type; 
-        $task_group = $request->task_group;
-        //if($task_group == ''){
-            $notelist = Note::with('attachments')->where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->orderby('pin', 'DESC')->orderBy('updated_at', 'DESC')->get();
-        /*}else{
-            $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->where('task_group',$task_group)->orderby('pin', 'DESC')->orderBy('created_at', 'DESC')->get();
-        }*/
-        ob_start();
-        foreach($notelist as $list){
-            $staff = Staff::where('id', $list->user_id)->first();
-            $authorFirstName = $staff ? ($staff->first_name ?? 'NA') : 'NA';
-            $authorLastName = $staff ? ($staff->last_name ?? 'NA') : 'NA';
+    public function getnotes(Request $request, ClientNotesListService $notesList)
+    {
+        $clientId = (int) $request->input('clientid', $request->query('clientid'));
+        $this->ensureCrmRecordAccess($clientId);
 
-            // Determine type label, class, and inline class (match notes.blade.php)
-            if($list->task_group === null || $list->task_group === '') {
-                $typeLabel = 'Others';
-                $typeClass = 'note-type-others';
-                $typeInlineClass = 'others';
-            } else {
-                $type11 = strtolower($list->task_group);
-                $typeLabel = 'Others';
-                $typeClass = 'note-type-others';
-                $typeInlineClass = 'others';
+        $type = (string) ($request->input('type', $request->query('type', 'client')) ?: 'client');
+        $offset = max(0, (int) $request->input('offset', $request->query('offset', 0)));
+        $limit = $request->filled('per_page') || $request->filled('limit')
+            ? (int) ($request->input('per_page', $request->input('limit')))
+            : null;
 
-                if(strpos($type11, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; $typeInlineClass = 'call'; }
-                else if(strpos($type11, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; $typeInlineClass = 'email'; }
-                else if(strpos($type11, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; $typeInlineClass = 'inperson'; }
-                else if(strpos($type11, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; $typeInlineClass = 'others'; }
-                else if(strpos($type11, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; $typeInlineClass = 'attention'; }
-            }
-            ?>
-            <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="<?php echo $list->matter_id; ?>" id="note_id_<?php echo $list->id; ?>" data-id="<?php echo $list->id;?>" data-type="<?php echo $typeLabel;?>">
-                <?php if($list->pin == 1) { ?>
-                    <div class="pined_note">
-                        <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
-                    </div>
-                <?php } ?>
+        $actor = Auth::user();
+        $actorStaff = $actor instanceof Staff ? $actor : null;
+        $payload = $notesList->fetchAndRender($clientId, $type, $offset, $limit, $actorStaff);
 
-                <div class="date-time-menu-container">
-                    <span class="author-updated-date-time"><?php echo date('d/m/Y h:i A', strtotime($list->updated_at));?></span>
-                    <div class="note-toggle-btn-div">
-                        <div class="dropdown">
-                            <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item opennoteform" data-id="<?php echo $list->id;?>" href="javascript:;">Edit</a>
-                                <?php
-                                    $noteActor = Auth::user();
-                                    if ($noteActor instanceof Staff && ($noteActor->hasEffectiveSuperAdminPrivileges() || (int) $noteActor->role === 16)) { ?>
-                                    <a class="dropdown-item editdatetime" data-id="<?php echo $list->id;?>" href="javascript:;">Edit Date Time</a>
-                                <?php }?>
-                                <a data-id="<?php echo $list->id;?>" data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>
-                                <?php if($list->pin == 1) { ?>
-                                    <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Unpin</a>
-                                <?php } else { ?>
-                                    <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Pin</a>
-                                <?php } ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        $wantsJson = $request->boolean('format_json')
+            || $request->query('format') === 'json'
+            || $request->wantsJson();
 
-                <div class="note-card-info">
-                    <span class="author-name-created"><?php echo htmlspecialchars($authorFirstName); ?> <?php echo htmlspecialchars($authorLastName); ?> added the</span><span class="note-type-inline <?php echo $typeInlineClass;?>"><?php echo $typeLabel; ?> notes</span>
-                </div>
-                <?php
-                $notePhone = trim((string) ($list->mobile_number ?? ''));
-                if ($notePhone !== '') { ?>
-                <div class="note-meta-redesign" style="margin-bottom: 10px;">
-                    <i class="fa-solid fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
-                    <strong style="margin-left: 6px;">Number:</strong> <?php echo htmlspecialchars($notePhone); ?>
-                </div>
-                <?php }
-                if ($list->spend_mins !== null && $list->spend_mins !== '') { ?>
-                <div class="note-spend-mins-badge">
-                    <i class="fa-solid fa-clock" aria-hidden="true"></i>
-                    <?php echo (int) $list->spend_mins; ?> mins
-                </div>
-                <?php } ?>
-
-                <div class="note-content-redesign">
-                    <?php
-                    echo NoteDescriptionHtml::forDisplay($list->description ?? '');
-                    ?>
-                </div>
-                <?php echo NoteAttachmentHtml::forNoteCard($list->attachments); ?>
-            </div>
-            <?php
+        if ($wantsJson) {
+            return response()->json([
+                'status' => true,
+                'html' => $payload['html'],
+                'has_more' => $payload['has_more'],
+                'total' => $payload['total'],
+                'next_offset' => $payload['next_offset'],
+                'limit' => $payload['limit'],
+            ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
         }
-        $html = ob_get_clean();
 
-        return response($html, 200)->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        return response($payload['html'], 200)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('X-Notes-Has-More', $payload['has_more'] ? '1' : '0')
+            ->header('X-Notes-Total', (string) $payload['total'])
+            ->header('X-Notes-Next-Offset', (string) $payload['next_offset']);
     }
 
     /**

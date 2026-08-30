@@ -82,15 +82,36 @@ class ClientMatterTaskController extends Controller
             return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
         }
 
-        $tasks = ClientMatterTask::query()
+        $perPage = (int) ($request->query('per_page') ?: config('crm.notes.matter_task_per_page', 50));
+        $perPage = max(5, min(200, $perPage));
+        $page = max(1, (int) $request->query('page', 1));
+
+        $base = ClientMatterTask::query()
             ->where('client_id', $clientId)
-            ->where('client_matter_id', $matter->id)
+            ->where('client_matter_id', $matter->id);
+
+        $total = (clone $base)->count();
+        $openCount = (clone $base)->where('is_done', false)->count();
+        $doneCount = max(0, $total - $openCount);
+
+        $tasks = (clone $base)
             ->with(['creator:id,first_name,last_name'])
+            ->orderBy('is_done')
             ->orderBy('sort_order')
             ->orderBy('id')
+            ->forPage($page, $perPage)
             ->get();
 
-        return response()->json(['status' => true, 'data' => $tasks]);
+        return response()->json([
+            'status' => true,
+            'data' => $tasks,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'open_count' => $openCount,
+            'done_count' => $doneCount,
+            'has_more' => ($page * $perPage) < $total,
+        ]);
     }
 
     public function store(Request $request)
