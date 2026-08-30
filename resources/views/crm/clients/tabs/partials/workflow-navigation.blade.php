@@ -20,45 +20,48 @@
         <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
             <i class="fa-solid fa-right-left"></i> Change Workflow
         </button>
+    @elseif(!empty($workflowInModal))
+        <button type="button" class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
+            <i class="fa-solid fa-angle-left"></i> Back
+        </button>
+        <div class="dropdown workflow-nav-more">
+            <button type="button" class="btn btn-sm dropdown-toggle workflow-nav-more__btn" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">
+                More
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end workflow-nav-more__menu">
+                @if($workflowCanDiscontinue)
+                    <li>
+                        <button type="button" class="dropdown-item text-danger" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}">
+                            <i class="fa-solid fa-ban"></i> Discontinue
+                        </button>
+                    </li>
+                @endif
+                <li>
+                    <button type="button" class="dropdown-item" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}">
+                        <i class="fa-solid fa-right-left"></i> Change Workflow
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
+            {{ $workflowNextBtnLabel }} <i class="fa-solid fa-angle-right"></i>
+        </button>
     @else
-        <div class="{{ !empty($workflowInModal) ? 'workflow-nav-primary' : 'd-inline-flex flex-wrap gap-2 align-items-center' }}">
+        <div class="d-inline-flex flex-wrap gap-2 align-items-center">
             <button type="button" class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
-                <i class="fa-solid fa-angle-left"></i> {{ !empty($workflowInModal) ? 'Back' : 'Back to Previous Stage' }}
+                <i class="fa-solid fa-angle-left"></i> Back to Previous Stage
             </button>
             <button type="button" class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
                 {{ $workflowNextBtnLabel }} <i class="fa-solid fa-angle-right"></i>
             </button>
         </div>
-
-        @if(!empty($workflowInModal))
-            <div class="dropdown workflow-nav-more">
-                <button type="button" class="btn btn-sm dropdown-toggle workflow-nav-more__btn" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">
-                    More
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end workflow-nav-more__menu">
-                    @if($workflowCanDiscontinue)
-                        <li>
-                            <button type="button" class="dropdown-item text-danger" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}">
-                                <i class="fa-solid fa-ban"></i> Discontinue
-                            </button>
-                        </li>
-                    @endif
-                    <li>
-                        <button type="button" class="dropdown-item" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}">
-                            <i class="fa-solid fa-right-left"></i> Change Workflow
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        @else
-            @if($workflowCanDiscontinue)
-                <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
-                    <i class="fa-solid fa-ban"></i> Discontinue
-                </button>
-            @endif
-            <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                <i class="fa-solid fa-right-left"></i> Change Workflow
+        @if($workflowCanDiscontinue)
+            <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
+                <i class="fa-solid fa-ban"></i> Discontinue
             </button>
         @endif
+        <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
+            <i class="fa-solid fa-right-left"></i> Change Workflow
+        </button>
     @endif
 </div>

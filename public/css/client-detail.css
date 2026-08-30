@@ -4905,8 +4905,8 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 #cdn-update-stage-modal .cdn-workflow-modal__actions {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 10px;
   margin-top: 2px;
@@ -4914,12 +4914,8 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   border-top: 1px solid #eef2f7;
 }
 
-#cdn-update-stage-modal .cdn-workflow-modal__actions .workflow-nav-primary {
-  display: contents;
-}
-
 #cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-back-to-previous-stage {
-  grid-column: 1;
+  flex: 0 0 auto;
   border: 1px solid #e2e8f0;
   background: #fff;
   color: #475569;
@@ -4936,13 +4932,12 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 #cdn-update-stage-modal .cdn-workflow-modal__actions .workflow-nav-more {
-  grid-column: 2;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 #cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-proceed-to-next-stage {
-  grid-column: 3;
-  justify-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 650;
   padding: 0.55rem 1.1rem;
   white-space: nowrap;
@@ -5051,20 +5046,17 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   }
 
   #cdn-update-stage-modal .cdn-workflow-modal__actions {
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: wrap;
   }
 
-  #cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-back-to-previous-stage {
-    grid-column: 1;
-  }
-
+  #cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-back-to-previous-stage,
   #cdn-update-stage-modal .cdn-workflow-modal__actions .workflow-nav-more {
-    grid-column: 2;
-    justify-self: end;
+    flex: 0 0 auto;
   }
 
   #cdn-update-stage-modal .cdn-workflow-modal__actions #workflow-tab-proceed-to-next-stage {
-    grid-column: 1 / -1;
+    flex: 1 1 100%;
+    order: 3;
   }
 }
 
