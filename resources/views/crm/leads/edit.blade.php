@@ -62,6 +62,7 @@
                     rootUrl: @json(rtrim(url('/'), '/')),
                     visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
+                    relatedContactsRoute: '{{ route("leads.related_contacts", base64_encode(convert_uuencode($fetchedData->id))) }}',
                     csrfToken: '{{ csrf_token() }}'
                 };
                 
@@ -76,6 +77,8 @@
                     @method('PUT')
                     <input type="hidden" name="id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
+                    <input type="hidden" name="contacts_truncated" id="contacts_truncated" value="{{ !empty($contacts_has_more) ? '1' : '0' }}">
+                    <input type="hidden" name="emails_truncated" id="emails_truncated" value="{{ !empty($emails_has_more) ? '1' : '0' }}">
 
                 <!-- Personal Section -->
                 <section id="personalSection" class="content-section">
@@ -314,6 +317,9 @@
 												</div>
                                     @endforeach
 											</div>
+                                @if(!empty($contacts_has_more))
+                                    <p class="small text-muted mt-2 mb-0">Showing {{ $clientContacts->count() }} of {{ $contacts_total }} phone numbers.</p>
+                                @endif
                             @else
                                 <div class="empty-state">
                                     <p>No phone numbers added yet.</p>
@@ -328,6 +334,13 @@
                                     <x-client-edit.phone-number-field :index="$index" :contact="$contact" />
                                 @endforeach
 												</div>
+                            @if(!empty($contacts_has_more))
+                                <div class="text-center py-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary lead-load-more-contacts" data-type="phones" data-next-offset="{{ $contacts_next_offset }}">
+                                        Load more phones
+                                    </button>
+                                </div>
+                            @endif
 
                             <button type="button" class="add-item-btn" onclick="addPhoneNumber()"><i class="fa-solid fa-circle-plus"></i> Add Phone Number</button>
                             <div class="edit-actions">
@@ -372,6 +385,9 @@
 													</div>
                                     @endforeach
 												</div>
+                                @if(!empty($emails_has_more))
+                                    <p class="small text-muted mt-2 mb-0">Showing {{ $emails->count() }} of {{ $emails_total }} email addresses.</p>
+                                @endif
                             @else
                                 <div class="empty-state">
                                     <p>No email addresses added yet.</p>
@@ -386,6 +402,13 @@
                                     <x-client-edit.email-field :index="$index" :email="$email" />
                                 @endforeach
 											</div>
+                            @if(!empty($emails_has_more))
+                                <div class="text-center py-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary lead-load-more-contacts" data-type="emails" data-next-offset="{{ $emails_next_offset }}">
+                                        Load more emails
+                                    </button>
+                                </div>
+                            @endif
 
                             <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fa-solid fa-circle-plus"></i> Add Email Address</button>
                             <div class="edit-actions">
@@ -505,6 +528,48 @@
                     sel.addEventListener('change', syncLeadFollowupDateEdit);
                     syncLeadFollowupDateEdit();
                 }
+                var relatedLoading = false;
+                document.querySelectorAll('.lead-load-more-contacts').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (relatedLoading || !btn) return;
+                        var cfg = window.editClientConfig || {};
+                        var url = cfg.relatedContactsRoute;
+                        if (!url) return;
+                        var type = btn.getAttribute('data-type') || 'phones';
+                        var offset = parseInt(btn.getAttribute('data-next-offset'), 10) || 0;
+                        relatedLoading = true;
+                        btn.disabled = true;
+                        fetch(url + '?type=' + encodeURIComponent(type) + '&offset=' + offset, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        }).then(function (r) { return r.json(); }).then(function (res) {
+                            relatedLoading = false;
+                            if (!res || !res.status) {
+                                btn.disabled = false;
+                                return;
+                            }
+                            var containerId = type === 'emails' ? 'emailAddressesContainer' : 'phoneNumbersContainer';
+                            var container = document.getElementById(containerId);
+                            if (container && res.html) {
+                                container.insertAdjacentHTML('beforeend', res.html);
+                            }
+                            if (res.has_more) {
+                                btn.setAttribute('data-next-offset', String(res.next_offset || 0));
+                                btn.disabled = false;
+                            } else {
+                                var wrapEl = btn.closest('.text-center');
+                                if (wrapEl) wrapEl.remove();
+                                var flagId = type === 'emails' ? 'emails_truncated' : 'contacts_truncated';
+                                var flag = document.getElementById(flagId);
+                                if (flag) flag.value = '0';
+                            }
+                        }).catch(function () {
+                            relatedLoading = false;
+                            btn.disabled = false;
+                        });
+                    });
+                });
             });
         })();
     </script>

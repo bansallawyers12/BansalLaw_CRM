@@ -461,4 +461,14 @@ return [
         'matter_task_per_page' => max(5, min(200, (int) env('NOTES_MATTER_TASK_PER_PAGE', 50))),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Leads (create/edit form dropdowns + related contact caps)
+    |--------------------------------------------------------------------------
+    */
+    'leads' => [
+        'form_cache_seconds' => max(60, (int) env('LEADS_FORM_CACHE_SECONDS', 300)),
+        'contact_row_limit' => max(5, min(200, (int) env('LEADS_CONTACT_ROW_LIMIT', 50))),
+    ],
+
 ];

@@ -19,7 +19,7 @@
 | Accounts / Billing | Optimized | Balance helpers in service; tab row caps; cached list filters |
 | Documents | Optimized | Folder list service + cap; streamed/queued bulk S3 |
 | Notes / Tasks | Optimized | Eager-loaded authors; paginated notes + matter tasks |
-| Leads | Partially optimized | Paginated index; fat controller |
+| Leads | Optimized | Form data service; cached lean staff/countries; capped related contacts |
 | Admin Console | Partially optimized | Paginate lists; large exports in memory |
 | Client detail UI | Partially optimized | Some lazy tabs; most SSR + large JS |
 | Emails UI | Partially optimized | Infinite scroll; very large JS |
@@ -162,15 +162,16 @@
 
 ## 9. Leads
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - Index: `paginate` + sortable; unread counts via grouped select
 - Conversion/import split into thinner controllers/services
+- Create/edit: `LeadFormDataService` with lean cached staff/countries + shared stage labels
+- Related phones/emails capped with Load more; truncated saves skip destructive deletes
 
 **Gaps**
-- Fat `LeadController`; full staff/country collections on create/edit
-- Related contacts/emails on edit may need limits as volume grows
+- `LeadController` store/update remain large (further splits optional)
 
 ---
 

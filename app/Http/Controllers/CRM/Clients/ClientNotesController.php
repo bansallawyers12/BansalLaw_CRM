@@ -329,7 +329,16 @@ class ClientNotesController extends Controller
 			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
 		$this->ensureCrmRecordAccess((int) $note->client_id);
-		$data = Note::select('title','description','task_group','mobile_number','matter_id','spend_mins')->where('id',$note_id)->first();
+		$detailColumns = ['title', 'description', 'task_group', 'mobile_number', 'matter_id'];
+		if (\Illuminate\Support\Facades\Schema::hasColumn('notes', 'spend_mins')) {
+			$detailColumns[] = 'spend_mins';
+		} elseif (\Illuminate\Support\Facades\Schema::hasColumn('notes', 'spend_hours')) {
+			$detailColumns[] = 'spend_hours';
+		}
+		$data = Note::select($detailColumns)->where('id', $note_id)->first();
+		if ($data && ! isset($data->spend_mins) && isset($data->spend_hours) && $data->spend_hours !== null && $data->spend_hours !== '') {
+			$data->spend_mins = (int) round(((float) $data->spend_hours) * 60);
+		}
         $attachments = NoteAttachment::where('note_id', $note_id)->orderBy('id')->get()->map(function (NoteAttachment $a) {
             return [
                 'id' => $a->id,

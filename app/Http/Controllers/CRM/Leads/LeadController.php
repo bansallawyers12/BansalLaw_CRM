@@ -20,6 +20,7 @@ use App\Traits\ClientHelpers;
 use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
+use App\Services\LeadFormDataService;
 use App\Services\LeadSpreadsheetImportService;
 use App\Services\ContactVerificationService;
 use App\Models\Staff;
@@ -355,16 +356,7 @@ class LeadController extends Controller
             // Infinite scroll listings always load in batches of 20.
             $perPage = 20;
 
-            $leadStageLabels = [
-                'new' => 'New Enquiry',
-                'initial_consultation' => 'Initial Consultation',
-                'conflict_check' => 'Conflict Check',
-                'engaged' => 'Engaged',
-                'retained' => 'Retained',
-                'follow_up' => 'Follow Up',
-                'not_proceeding' => 'Not Proceeding',
-                'declined' => 'Declined',
-            ];
+            $leadStageLabels = app(LeadFormDataService::class)->stageLabels();
 
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
@@ -377,16 +369,7 @@ class LeadController extends Controller
             $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
             $unreadEmailCounts = [];
-            $leadStageLabels = [
-                'new' => 'New Enquiry',
-                'initial_consultation' => 'Initial Consultation',
-                'conflict_check' => 'Conflict Check',
-                'engaged' => 'Engaged',
-                'retained' => 'Retained',
-                'follow_up' => 'Follow Up',
-                'not_proceeding' => 'Not Proceeding',
-                'declined' => 'Declined',
-            ];
+            $leadStageLabels = app(LeadFormDataService::class)->stageLabels();
         }
         
         return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels', 'unreadEmailCounts'));
@@ -849,23 +832,9 @@ class LeadController extends Controller
     /**
      * Show the form for creating a new lead
      */
-    public function create(Request $request)
+    public function create(Request $request, LeadFormDataService $formData)
     {
-        // Get countries for dropdowns
-        $countries = \App\Models\Country::orderBy('name', 'asc')->get();
-        $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
-        $leadStageLabels = [
-            'new' => 'New Enquiry',
-            'initial_consultation' => 'Initial Consultation',
-            'conflict_check' => 'Conflict Check',
-            'engaged' => 'Engaged',
-            'retained' => 'Retained',
-            'follow_up' => 'Follow Up',
-            'not_proceeding' => 'Not Proceeding',
-            'declined' => 'Declined',
-        ];
-
-        return view('crm.leads.create', compact('countries', 'assignableStaff', 'leadStageLabels'));
+        return view('crm.leads.create', $formData->createFormData());
     }
 
     /**
@@ -1479,7 +1448,7 @@ class LeadController extends Controller
     /**
      * Show the form for editing the specified lead
      */
-    public function edit(Request $request, $id)
+    public function edit(Request $request, $id, LeadFormDataService $formData)
     {
         // Check authorization
         $check = $this->checkAuthorizationAction('edit_lead', $request->route()->getActionMethod(), Auth::user()->role);
@@ -1498,34 +1467,19 @@ class LeadController extends Controller
         }
         
         // Using Lead model - automatically handles filtering
-        $fetchedData = Lead::with('assignedTo')->find($id);
+        $fetchedData = Lead::with('assignedTo:id,first_name,last_name')->find($id);
         
         if (!$fetchedData) {
             return Redirect::to('/leads')->with('error', 'Lead not found');
         }
 
-        // Get countries for dropdown
-        $countries = \App\Models\Country::orderBy('name', 'asc')->get();
-        
-        // Load contact / address data (required by trimmed edit form)
-        $clientContacts = ClientContact::where('client_id', $id)->get() ?? collect();
-        $emails = ClientEmail::where('client_id', $id)->get() ?? collect();
+        $form = $formData->createFormData();
+        $related = $formData->relatedContactBundle((int) $id);
+
         $currentAddress = ClientAddress::where('client_id', $id)
             ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
             ->first();
         $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
-
-        $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
-        $leadStageLabels = [
-            'new' => 'New Enquiry',
-            'initial_consultation' => 'Initial Consultation',
-            'conflict_check' => 'Conflict Check',
-            'engaged' => 'Engaged',
-            'retained' => 'Retained',
-            'follow_up' => 'Follow Up',
-            'not_proceeding' => 'Not Proceeding',
-            'declined' => 'Declined',
-        ];
 
         $activeClientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null);
 
@@ -1540,11 +1494,58 @@ class LeadController extends Controller
             ->orderByDesc('checked_at')
             ->first();
 
-        return view('crm.leads.edit', compact(
-            'fetchedData', 'countries', 'clientContacts', 'emails', 'clientAddresses',
-            'assignableStaff', 'leadStageLabels',
-            'conflictParties', 'latestConflictCheck'
-        ));
+        return view('crm.leads.edit', array_merge($form, $related, [
+            'fetchedData' => $fetchedData,
+            'clientAddresses' => $clientAddresses,
+            'conflictParties' => $conflictParties,
+            'latestConflictCheck' => $latestConflictCheck,
+        ]));
+    }
+
+    /**
+     * Paginated phone/email rows for lead edit (Load more).
+     */
+    public function relatedContactRows(Request $request, $id, LeadFormDataService $formData)
+    {
+        $decodedId = $this->decodeString($id);
+        if (! $decodedId) {
+            return response()->json(['status' => false, 'message' => 'Invalid lead'], 422);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $decodedId, Auth::user())) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $type = (string) $request->query('type', 'phones');
+        $offset = max(0, (int) $request->query('offset', 0));
+
+        if ($type === 'emails') {
+            $page = $formData->emailRowsPage((int) $decodedId, $offset);
+            $html = '';
+            foreach ($page['rows'] as $index => $email) {
+                $html .= view('components.client-edit.email-field', [
+                    'index' => $offset + $index,
+                    'email' => $email,
+                ])->render();
+            }
+        } else {
+            $page = $formData->contactRowsPage((int) $decodedId, $offset);
+            $html = '';
+            foreach ($page['rows'] as $index => $contact) {
+                $html .= view('components.client-edit.phone-number-field', [
+                    'index' => $offset + $index,
+                    'contact' => $contact,
+                ])->render();
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'html' => $html,
+            'has_more' => $page['has_more'],
+            'next_offset' => $page['next_offset'],
+            'total' => $page['total'],
+        ]);
     }
 
     /**
@@ -1859,8 +1860,9 @@ class LeadController extends Controller
                     }
                 }
                 
-                // Delete contacts not in the processed list (user removed them)
-                if (!empty($processedPhoneIds)) {
+                // Delete contacts not in the processed list (user removed them).
+                // Skip when the edit form was truncated so unseen rows are preserved.
+                if (! empty($processedPhoneIds) && ! $request->boolean('contacts_truncated')) {
                     ClientContact::where('client_id', $lead->id)
                         ->whereNotIn('id', $processedPhoneIds)
                         ->delete();
@@ -1905,8 +1907,7 @@ class LeadController extends Controller
                     }
                 }
                 
-                // Delete emails not in the processed list (user removed them)
-                if (!empty($processedEmailIds)) {
+                if (! empty($processedEmailIds) && ! $request->boolean('emails_truncated')) {
                     ClientEmail::where('client_id', $lead->id)
                         ->whereNotIn('id', $processedEmailIds)
                         ->delete();

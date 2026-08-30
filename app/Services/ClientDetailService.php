@@ -4,7 +4,8 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\ClientMatter;
-use App\Models\Staff;
+use App\Services\ClientEditService;
+use App\Services\LeadFormDataService;
 
 /**
  * Builds client/lead detail view payload with tab-aware loading so first paint
@@ -193,21 +194,8 @@ class ClientDetailService
     private function buildLeadBundle(int $clientId, Admin $fetchedData): array
     {
         return [
-            'assignableStaff' => Staff::query()
-                ->where('status', 1)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
-                ->get(),
-            'leadStageLabels' => [
-                'new' => 'New Enquiry',
-                'initial_consultation' => 'Initial Consultation',
-                'conflict_check' => 'Conflict Check',
-                'engaged' => 'Engaged',
-                'retained' => 'Retained',
-                'follow_up' => 'Follow Up',
-                'not_proceeding' => 'Not Proceeding',
-                'declined' => 'Declined',
-            ],
+            'assignableStaff' => app(LeadFormDataService::class)->assignableStaff(),
+            'leadStageLabels' => app(LeadFormDataService::class)->stageLabels(),
             'matterFormForLead' => app(ClientEditService::class)->getMatterFormForAddMatter($clientId),
             '__crmEditLeadType' => (($fetchedData->type ?? null) === 1
                 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true)),

@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Models\Note;
 use App\Models\Staff;
-use App\Support\NoteAttachmentHtml;
-use App\Support\NoteDescriptionHtml;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 
 /**
@@ -27,7 +26,6 @@ class ClientNotesListService
         'task_group',
         'matter_id',
         'mobile_number',
-        'spend_mins',
         'assigned_to',
         'created_at',
         'updated_at',
@@ -43,7 +41,7 @@ class ClientNotesListService
         $offset = max(0, $offset);
 
         $query = Note::query()
-            ->select(self::LIST_COLUMNS)
+            ->select($this->listColumns())
             ->with([
                 'user:id,first_name,last_name',
                 'attachments',
@@ -56,6 +54,7 @@ class ClientNotesListService
 
         $total = (clone $query)->count();
         $notes = $query->skip($offset)->take($limit)->get();
+        $this->normalizeSpendMinutes($notes);
         $nextOffset = $offset + $notes->count();
         $hasMore = $nextOffset < $total;
 
@@ -93,6 +92,58 @@ class ClientNotesListService
             'next_offset' => $fetched['next_offset'],
             'limit' => $fetched['limit'],
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function listColumns(): array
+    {
+        $columns = self::LIST_COLUMNS;
+        $spendColumn = $this->spendColumn();
+        if ($spendColumn !== null) {
+            $columns[] = $spendColumn;
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Prefer spend_mins; fall back to legacy spend_hours when migration not applied.
+     */
+    private function spendColumn(): ?string
+    {
+        static $column = false;
+        if ($column === false) {
+            if (Schema::hasColumn('notes', 'spend_mins')) {
+                $column = 'spend_mins';
+            } elseif (Schema::hasColumn('notes', 'spend_hours')) {
+                $column = 'spend_hours';
+            } else {
+                $column = null;
+            }
+        }
+
+        return $column;
+    }
+
+    /**
+     * @param  Collection<int, Note>  $notes
+     */
+    private function normalizeSpendMinutes(Collection $notes): void
+    {
+        if ($this->spendColumn() !== 'spend_hours') {
+            return;
+        }
+
+        foreach ($notes as $note) {
+            $hours = $note->getAttribute('spend_hours');
+            if ($hours === null || $hours === '') {
+                $note->setAttribute('spend_mins', null);
+                continue;
+            }
+            $note->setAttribute('spend_mins', (int) round(((float) $hours) * 60));
+        }
     }
 
     /**

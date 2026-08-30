@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Staff;
 use App\Models\Lead;
 use App\Support\StaffClientVisibility;
+use App\Services\LeadFormDataService;
 
 class LeadAssignmentController extends Controller
 {
@@ -55,9 +56,9 @@ class LeadAssignmentController extends Controller
             }
         }
         
-        return Staff::select('id', 'first_name', 'last_name', 'email')
-            ->where('status', 1)
-            ->get();
+        return response()->json(
+            app(LeadFormDataService::class)->assignableStaff(true)->values()
+        );
     }
 
     /**

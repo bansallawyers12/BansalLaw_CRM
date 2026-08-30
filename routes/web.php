@@ -183,6 +183,7 @@ Route::middleware(['auth:admin'])->group(function () {
 
         // Edit & Update (RESTful pattern)
         Route::get('/{id}/edit', [LeadController::class, 'edit'])->name('edit');
+        Route::get('/{id}/related-contacts', [LeadController::class, 'relatedContactRows'])->name('related_contacts');
         Route::put('/{id}', [LeadController::class, 'update'])->name('update');
         Route::patch('/{id}', [LeadController::class, 'update'])->name('patch');
 
