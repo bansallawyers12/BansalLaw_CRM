@@ -89,6 +89,7 @@ Route::middleware(['auth:admin'])->group(function () {
 
     /*---------- Dashboard Routes ----------*/
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
     Route::get('/dashboard/calendar-events', [DashboardController::class, 'calendarEvents'])->name('dashboard.calendar-events');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
     Route::get('/dashboard/tasks', [DashboardController::class, 'tasks'])->name('dashboard.tasks');

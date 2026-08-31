@@ -597,6 +597,7 @@
     function refreshUpcomingList(tz) {
         initUpcomingLazyLoad(tz || calendarElTz(), true);
     }
+    window.refreshUpcomingList = refreshUpcomingList;
 
     function showEventDetail(props) {
         var titleEl = document.getElementById('personalEventDetailTitle');

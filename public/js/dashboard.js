@@ -147,7 +147,11 @@ function extendDeadline() {
                 $('.popuploader').hide();
                 $('#extend_note_popup').modal('hide');
                 showNotification('Deadline extended successfully!', 'success');
-                setTimeout(() => location.reload(), 1000);
+                if (typeof window.refreshDashboard === 'function') {
+                    setTimeout(function () { window.refreshDashboard(); }, 400);
+                } else {
+                    setTimeout(function () { location.reload(); }, 1000);
+                }
             },
             error: function() {
                 $('.popuploader').hide();
@@ -195,7 +199,11 @@ window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
                 if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
                     window.refreshCrmNavPendingTaskCount();
                 }
-                setTimeout(() => location.reload(), 1000);
+                if (typeof window.refreshDashboard === 'function') {
+                    setTimeout(function () { window.refreshDashboard(); }, 400);
+                } else {
+                    setTimeout(function () { location.reload(); }, 1000);
+                }
             },
             error: function(xhr, status, error) {
                 console.error('Error response:', xhr.responseText);

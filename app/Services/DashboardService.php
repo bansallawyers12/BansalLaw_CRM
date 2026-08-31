@@ -50,6 +50,74 @@ class DashboardService
     }
 
     /**
+     * Clear viewer-scoped dashboard KPI caches (used by AJAX refresh).
+     */
+    public function forgetDashboardCaches($user): void
+    {
+        if (! $user) {
+            return;
+        }
+
+        $userId = (int) $user->id;
+        $seeAll = $this->viewerSeesAllMattersAndTasks($user);
+
+        Cache::forget('active_matter_count_staff_'.$userId);
+        Cache::forget('closed_matter_count_staff_'.$userId);
+        Cache::forget('dashboard_note_deadline_count_'.$userId.'_'.($seeAll ? 'all' : 'mine'));
+        Cache::forget('dashboard_recent_matter_activity_count_v2_'.$userId.'_'.($seeAll ? 'all' : 'mine'));
+        $this->forgetPendingOpenTaskCountCache($user);
+    }
+
+    /**
+     * JSON payload for dashboard refresh (KPIs + list HTML + pagination meta).
+     *
+     * @return array<string, mixed>
+     */
+    public function getRefreshSummary($user, int $perPage = 10, bool $fresh = true): array
+    {
+        $perPage = max(1, min(50, $perPage));
+
+        if ($fresh) {
+            $this->forgetDashboardCaches($user);
+        }
+
+        $notesPage = $this->getNotesPage($user, 1, $perPage);
+        $casesPage = $this->getCasesRequiringAttentionPage($user, 1, $perPage);
+
+        $tasksHtml = view('components.dashboard.todo-list-content', [
+            'notesData' => $notesPage['items'],
+            'countNoteDeadline' => $notesPage['total'],
+        ])->render();
+
+        $casesHtml = view('components.dashboard.cases-list-content', [
+            'casesData' => $casesPage['items'],
+        ])->render();
+
+        return [
+            'kpis' => [
+                'active_matters' => $this->getActiveMatterCount($user),
+                'closed_matters' => $this->getClosedMatterCount($user),
+                'note_deadline' => $notesPage['total'],
+                'recent_activity' => $casesPage['total'],
+            ],
+            'tasks' => [
+                'html' => $tasksHtml,
+                'current_page' => $notesPage['current_page'],
+                'last_page' => $notesPage['last_page'],
+                'per_page' => $notesPage['per_page'],
+                'total' => $notesPage['total'],
+            ],
+            'cases' => [
+                'html' => $casesHtml,
+                'current_page' => $casesPage['current_page'],
+                'last_page' => $casesPage['last_page'],
+                'per_page' => $casesPage['per_page'],
+                'total' => $casesPage['total'],
+            ],
+        ];
+    }
+
+    /**
      * Get all dashboard data
      */
     public function getDashboardData($request): array

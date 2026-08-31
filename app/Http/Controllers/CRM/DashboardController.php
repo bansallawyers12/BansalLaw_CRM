@@ -46,6 +46,25 @@ class DashboardController extends Controller
     }
 
     /**
+     * JSON summary for AJAX dashboard refresh (KPIs, lists, calendar stats).
+     */
+    public function summary(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $perPage = max(1, min(50, (int) $request->input('per_page', config('crm.dashboard.list_per_page', 10))));
+        $fresh = $request->boolean('fresh', true);
+
+        $payload = $this->dashboardService->getRefreshSummary($user, $perPage, $fresh);
+
+        $staff = $user instanceof Staff ? $user : null;
+        $payload['calendar_stats'] = $staff
+            ? $this->personalCalendarFeed->statsForStaff($staff)
+            : ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
+
+        return response()->json(array_merge(['success' => true], $payload));
+    }
+
+    /**
      * JSON feed for the staff personal calendar on the dashboard.
      */
     public function calendarEvents(Request $request)

@@ -226,14 +226,20 @@
 
 ## 13. Dashboard UI
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - My Tasks / Cases use container infinite scroll via `fetch`
+- **Refresh Dashboard** uses `GET /dashboard/summary` (AJAX): KPI counts, calendar stats, task/case list HTML, calendar refetch — no full page reload
+- Inline CSS moved to `public/css/dashboard.css` (incl. KPI card + todo widgets); KPI card component no longer embeds styles
+- Inline JS extracted to `public/js/crm/dashboard/dashboard-page.js` and `add-task-popover.js`
+- Asset cache busting uses `filemtime()` for dashboard CSS/JS
+- `config/crm.php` → `dashboard.list_per_page`, `dashboard.kpi_cache_seconds`
+- Shared list partials: `todo-list-content`, `cases-list-content` (SSR + refresh API)
 
-**Gaps**
-- KPI/calendar first paint is SSR; “Refresh Dashboard” full reload
-- Large inline CSS/JS in Blade limits asset caching
+**Remaining (optional)**
+- KPI/calendar first paint remains SSR (fast path); optional skeleton-only shell could defer counts further
+- `dashboard.js` task-detail helpers remain in legacy file (incremental extraction continues)
 
 ---
 

@@ -501,4 +501,14 @@ return [
         'compact_list_per_page' => max(10, min(100, (int) env('EMAILS_COMPACT_LIST_PER_PAGE', 20))),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard UI (AJAX refresh + list pagination)
+    |--------------------------------------------------------------------------
+    */
+    'dashboard' => [
+        'list_per_page' => max(5, min(50, (int) env('DASHBOARD_LIST_PER_PAGE', 10))),
+        'kpi_cache_seconds' => max(30, (int) env('DASHBOARD_KPI_CACHE_SECONDS', 300)),
+    ],
+
 ];
