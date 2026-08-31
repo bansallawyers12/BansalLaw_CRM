@@ -665,33 +665,30 @@
   align-items: stretch;
 }
 
-/* Personal documents: list + preview row at full viewport height */
+/* Personal documents: list + preview row fills tab panel (avoid nested 100vh overflow) */
 #personaldocuments-tab.client-documents-tab.tab-pane.active .subtab2-content {
   flex: 1 1 auto;
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 0;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .subtab2-pane.active {
   align-items: stretch;
-  min-height: 100vh;
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 480px;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  height: 100vh;
-  max-height: 100vh;
+  flex: 0 0 380px;
+  min-height: 0;
+  max-height: none;
   overflow: hidden;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .client-doc-preview-pane.preview-pane {
   flex: 1 1 auto;
-  height: 100vh;
-  min-height: 100vh;
-  max-height: 100vh;
+  min-height: 480px;
   align-self: stretch;
   justify-content: flex-start;
 }
@@ -722,33 +719,30 @@
   overflow: hidden;
 }
 
-/* Matter documents: list + preview row at full viewport height */
+/* Matter documents: list + preview row fills tab panel (avoid nested 100vh overflow) */
 #matterdocuments-tab.client-documents-tab.tab-pane.active .subtab6-content {
   flex: 1 1 auto;
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 0;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .subtab6-pane.active {
   align-items: stretch;
-  min-height: 100vh;
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 480px;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  height: 100vh;
-  max-height: 100vh;
+  flex: 0 0 380px;
+  min-height: 0;
+  max-height: none;
   overflow: hidden;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .client-doc-preview-pane.preview-pane {
   flex: 1 1 auto;
-  height: 100vh;
-  min-height: 100vh;
-  max-height: 100vh;
+  min-height: 480px;
   align-self: stretch;
   justify-content: flex-start;
 }
@@ -781,15 +775,26 @@
 
 #matterdocuments-tab.client-documents-tab .checklist-table-container,
 #personaldocuments-tab.client-documents-tab .checklist-table-container {
-  flex: 0 1 380px;
-  min-width: 0;
+  flex: 0 0 380px;
+  min-width: 320px;
   width: 380px;
-  max-width: 38%;
+  max-width: 42%;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
   margin-top: 0;
+}
+
+/* Grid thumbnails are updated via AJAX but list view is default; hide so flex row is list + preview only */
+#matterdocuments-tab .subtab6-pane .grid_data,
+#personaldocuments-tab .subtab2-pane .grid_data {
+  display: none !important;
+  width: 0 !important;
+  flex: 0 0 0 !important;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 #matterdocuments-tab .checklist-table-container .subtab6-header,
@@ -897,6 +902,9 @@
   z-index: 2;
   background: var(--page-bg, #f0f6ff);
   box-shadow: 0 1px 0 var(--border, #c8dcef);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #matterdocuments-tab .client-doc-preview-pane.preview-pane,

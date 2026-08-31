@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use App\Traits\SortableTrait;
 
 class ClientMatter extends Model
@@ -333,12 +334,14 @@ class ClientMatter extends Model
             return;
         }
 
+        $payload = ['updated_at' => now()];
+        if (Schema::hasColumn('client_matters', 'updated_at_type')) {
+            $payload['updated_at_type'] = $type;
+        }
+
         static::query()
             ->where('id', $matterId)
-            ->update([
-                'updated_at' => now(),
-                'updated_at_type' => $type,
-            ]);
+            ->update($payload);
     }
 
 }

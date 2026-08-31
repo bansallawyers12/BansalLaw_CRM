@@ -119,6 +119,7 @@
                     $newPane = $wrapper.find('.tab-pane').first();
                 }
 
+                var $loadedPane = $pane;
                 if ($newPane.length) {
                     var wasActive = $pane.hasClass('active');
                     $pane.replaceWith($newPane);
@@ -127,6 +128,7 @@
                     }
                     executeScripts($newPane);
                     $newPane.attr('data-loaded', '1');
+                    $loadedPane = $newPane;
                 } else {
                     $pane.html(html);
                     executeScripts($pane);
@@ -136,6 +138,8 @@
                 if (tabId === 'account' && window.ClientAccountsTab && typeof window.ClientAccountsTab.loadIfNeeded === 'function') {
                     window.ClientAccountsTab.loadIfNeeded();
                 }
+
+                $loadedPane.find('.grid_data').hide();
 
                 $(document).trigger('clientTabContentLoaded', [tabId]);
                 deferred.resolve();

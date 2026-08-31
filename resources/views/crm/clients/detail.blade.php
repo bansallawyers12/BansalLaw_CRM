@@ -591,6 +591,8 @@ use App\Http\Controllers\Controller;
     </div>
 </div>
 
+@include('crm.clients.partials.bulk-upload-mapping-modal')
+
 
 
 
