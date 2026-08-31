@@ -374,38 +374,13 @@ use App\Http\Controllers\Controller;
         <div class="cdn-tabs-strip cdn-main-tab-bar">
         <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
-            $matter_cnt = \App\Models\ClientMatter::query()
-                ->where('client_id', $fetchedData->id)
-                ->where(function ($q) {
-                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
-                })
-                ->count();
+            $matter_cnt = (int) ($matter_cnt ?? 0);
+            $crmDetailNavIsLead = (bool) ($crmDetailNavIsLead ?? false);
+            $crmShowMatterDocsForConvertedLead = (bool) ($crmShowMatterDocsForConvertedLead ?? false);
+            $hideMatterDocumentsForBankMatter = (bool) ($hideMatterDocumentsForBankMatter ?? false);
+            $isMatterIdInUrl = (bool) ($isMatterIdInUrl ?? false);
 
             // Align with $__crmIsLeadType below: leads keep Matter docs under Documents; everyone else with matters gets top-level tab.
-            $__navTypeRaw = $fetchedData->type ?? null;
-            $__navTypeStr = $__navTypeRaw === null ? '' : trim((string) $__navTypeRaw);
-            $crmDetailNavIsLead = ($__navTypeRaw === 1)
-                || in_array(strtolower($__navTypeStr), ['lead', 'l', '1'], true);
-
-            $crmShowMatterDocsForConvertedLead = ! $crmDetailNavIsLead
-                && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
-
-            // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
-            $validTabNames = [
-                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents',
-                'emails', 'client_portal', 'legalforms',
-                'formgenerations', 'formgenerationsl',
-                'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
-                'visadocuments',
-            ];
-            
-            // Check if $id1 is a valid matter ID (not a tab name)
-            $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
-
-            $hideMatterDocumentsForBankMatter = isset($id1) && $id1 !== ''
-                && preg_match('/^bank_/i', (string) $id1) === 1;
-
-            // Leads: Matter docs under Documents (Personal | Matter). Non-leads with matters: top-level tab between Documents and Legal Forms.
             $cdnShowMattersDocSubtab = ($matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false)
                 && $crmDetailNavIsLead;
 
@@ -544,37 +519,46 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
             @endif
-            @include('crm.clients.tabs.personal_details', ['suppressPersonalDetailsTagCard' => true])
-            
-            @include('crm.clients.tabs.activityfeed_tab')
+            @php
+                $cdnTabIncludes = [
+                    'personaldetails' => 'crm.clients.tabs.personal_details',
+                    'activityfeed' => 'crm.clients.tabs.activityfeed_tab',
+                    'clientaction' => 'crm.clients.tabs.client_task_tab',
+                    'noteterm' => 'crm.clients.tabs.notes',
+                    'personaldocuments' => 'crm.clients.tabs.personal_documents',
+                ];
+            @endphp
+            @foreach ($cdnTabIncludes as $cdnTabSlug => $cdnTabView)
+                @if ($cdnActiveTabSlug === $cdnTabSlug)
+                    @include($cdnTabView, $cdnTabSlug === 'personaldetails' ? ['suppressPersonalDetailsTagCard' => true] : [])
+                @else
+                    @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => $cdnTabSlug])
+                @endif
+            @endforeach
 
-            @include('crm.clients.tabs.client_task_tab')
-            
-            @include('crm.clients.tabs.notes')
-            
-            @include('crm.clients.tabs.personal_documents')
-            
-            <?php
-            // Mirror the same condition used to render sidebar buttons so that
-            // only panes for visible tabs are included (prevents duplicates)
-            $matter_cnt = \App\Models\ClientMatter::query()
-                ->where('client_id', $fetchedData->id)
-                ->where(function ($q) {
-                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
-                })
-                ->count();
-            ?>
-            @if((((isset($id1) && $id1 != "") || $matter_cnt > 0) || ($crmShowMatterDocsForConvertedLead ?? false)) && !($hideMatterDocumentsForBankMatter ?? false))
-                @include('crm.clients.tabs.matter_documents')
+            @if ($showMatterDocumentsTab ?? false)
+                @if ($cdnActiveTabSlug === 'matterdocuments')
+                    @include('crm.clients.tabs.matter_documents')
+                @else
+                    @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => 'matterdocuments'])
+                @endif
             @endif
-            @if((isset($id1) && $id1 != "") || $matter_cnt > 0 || ($crmShowMatterDocsForConvertedLead ?? false))
-                @include('crm.clients.tabs.legal_forms')
-                @include('crm.clients.tabs.account')
-                @include('crm.clients.tabs.emails')
+            @if ($showMatterBundleTabs ?? false)
+                @foreach (['legalforms' => 'crm.clients.tabs.legal_forms', 'account' => 'crm.clients.tabs.account', 'emails' => 'crm.clients.tabs.emails'] as $cdnTabSlug => $cdnTabView)
+                    @if ($cdnActiveTabSlug === $cdnTabSlug)
+                        @include($cdnTabView)
+                    @else
+                        @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => $cdnTabSlug])
+                    @endif
+                @endforeach
             @endif
-            
-            @include('crm.clients.tabs.not_used_documents')
-            
+
+            @if ($cdnActiveTabSlug === 'notuseddocuments')
+                @include('crm.clients.tabs.not_used_documents')
+            @else
+                @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => 'notuseddocuments'])
+            @endif
+
             </div>
         </div>
     </main>
@@ -1558,7 +1542,44 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}"></script>
 
 {{-- Sidebar Tabs Management - Dedicated file for sidebar navigation --}}
-<script src="{{URL::asset('js/crm/clients/sidebar-tabs.js')}}"></script>
+<script src="{{URL::asset('js/crm/clients/sidebar-tabs.js')}}?v={{ @filemtime(public_path('js/crm/clients/sidebar-tabs.js')) ?: time() }}"></script>
+
+@php
+    $cdnAssetVer = static function (string $rel): int {
+        return (int) (@filemtime(public_path($rel)) ?: time());
+    };
+    $cdnJsWithVer = static function (string $rel) use ($cdnAssetVer): string {
+        return $rel . '?v=' . $cdnAssetVer($rel);
+    };
+    $cdnLazyModuleScripts = [
+        'noteterm' => [$cdnJsWithVer('js/crm/clients/modules/notes.js')],
+        'clientaction' => [$cdnJsWithVer('js/crm/clients/modules/matter-tasks.js')],
+        'personaldocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/documents.js'),
+            $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
+            $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
+        ],
+        'matterdocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/documents.js'),
+            $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
+            $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
+        ],
+        'notuseddocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/documents.js'),
+            $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
+            $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
+        ],
+        'account' => [
+            $cdnJsWithVer('js/crm/clients/modules/accounts.js'),
+            $cdnJsWithVer('js/crm/clients/modules/invoices.js'),
+            $cdnJsWithVer('js/crm/clients/modules/ledger-dragdrop.js'),
+        ],
+    ];
+    $cdnActiveLazyPaths = $cdnLazyModuleScripts[$cdnActiveTabSlug] ?? [];
+    if (in_array($cdnActiveTabSlug, ['personaldocuments', 'matterdocuments', 'notuseddocuments'], true)) {
+        $cdnActiveLazyPaths = $cdnLazyModuleScripts['personaldocuments'];
+    }
+@endphp
 
 {{-- Pass Blade variables to JavaScript --}}
 <script>
@@ -1653,32 +1674,30 @@ $(document).ready(function() {
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
             sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',
             accountTabHtml: '{{ url("/clients/account-tab/" . ($encodeId ?? "")) }}',
-        }
+            detailTabHtml: '{{ url("/clients/detail-tab/" . ($encodeId ?? "")) }}',
+        },
+        assetBase: @json(url('/')),
+        lazyModuleScripts: @json($cdnLazyModuleScripts ?? []),
     };
     
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}
-<script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/closed-matter-view.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ @filemtime(public_path('js/crm/clients/shared.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/closed-matter-view.js') }}?v={{ @filemtime(public_path('js/crm/clients/closed-matter-view.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/detail.js') }}?v={{ @filemtime(public_path('js/crm/clients/detail.js')) ?: time() }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}
-<script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
-{{-- Phase 3 modules --}}
-<script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/notes.js')) ?: time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/matter-tasks.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/matter-tasks.js')) ?: time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/checklist.js')) ?: time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/documents.js')) ?: time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
-{{-- appointments.js uses Flatpickr inline (bootstrap-datepicker removed) --}}
-<script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/flatpickr-helpers.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/editor-helpers.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/dom-helpers.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/send-to-client.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/tab-lazy-load.js') }}?v={{ @filemtime(public_path('js/crm/clients/tab-lazy-load.js')) ?: time() }}"></script>
+@foreach ($cdnActiveLazyPaths as $cdnScriptPath)
+<script src="{{ URL::asset($cdnScriptPath) }}"></script>
+@endforeach
+{{-- appointments.js: modal booking from any tab --}}
+<script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/appointments.js')) ?: time() }}"></script>
 <script>
 (function () {
     try {
@@ -1698,7 +1717,7 @@ $(document).ready(function() {
     window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
     window.STORE_OTHER_PARTY_MINI_URL = @json(route('leads.store.other_party.mini'));
 </script>
-<script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ @filemtime(public_path('js/crm/clients/matter-assignee-modal.js')) ?: time() }}"></script>
 @if(is_array($matterFormForLead ?? null))
 <script>
 (function () {
@@ -1719,7 +1738,7 @@ $(document).ready(function() {
     window.__CRM_DOC_MAX_FILE_MB__ = {{ (int) config('crm.document_upload.max_file_size_mb', 100) }};
     window.__CRM_DOC_MAX_VIDEO_MB__ = {{ (int) config('crm.personal_video_upload.max_size_mb', 300) }};
 </script>
-<script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ @filemtime(public_path('js/crm/clients/detail-main.js')) ?: time() }}"></script>
 <script>
 (function ($) {
     $(function () {

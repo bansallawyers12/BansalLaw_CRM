@@ -194,17 +194,51 @@
      * Activate a specific tab
      */
     function activateTab(tabId) {
+        function finishActivateTab() {
+            // Timeline feed sits inside the tab pane; grid never reserves a side rail.
+            syncFeedGridLayout(false);
+            setMainColumnForTab(tabId);
+
+            if (isActivityFeedTab(tabId)) {
+                setTimeout(function() {
+                    if (typeof adjustActivityFeedHeight === 'function') {
+                        adjustActivityFeedHeight();
+                    }
+                }, 100);
+            } else {
+                handleMatterSpecificTab(tabId);
+
+                if (tabId === 'matterdocuments' || tabId === 'personaldocuments') {
+                    setTimeout(function() {
+                        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                            scheduleClientDocumentsPanelHeightAdjust();
+                        } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            adjustClientDocumentsPanelHeight();
+                        }
+                        if (typeof adjustPreviewContainers === 'function') {
+                            adjustPreviewContainers();
+                        }
+                    }, 100);
+                }
+            }
+
+            syncAriaForTabs(tabId);
+
+            // Store active tab
+            localStorage.setItem('activeTab', tabId);
+        }
+
         // Remove active class from all sidebar buttons and panes
         $('.client-nav-button').removeClass('active');
         // Do not clear panes inside Bootstrap modals (e.g. workflow in Update Stage modal)
         $('.tab-pane').not('.modal .tab-pane').removeClass('active');
-        
+
         // Add active class to the clicked button - use exact match with filter to ensure precision
         $('.client-nav-button').filter(function() {
             return $(this).data('tab') === tabId;
         }).addClass('active');
-        
-        // Show the corresponding tab pane
+
+        // Show the corresponding tab pane (placeholder until lazy HTML arrives)
         const $tabPane = $(`#${tabId}-tab`);
         if ($tabPane.length) {
             $tabPane.addClass('active');
@@ -212,44 +246,18 @@
             console.error('[SidebarTabs] Tab pane not found:', `#${tabId}-tab`);
         }
 
-        if (tabId === 'account' && window.ClientAccountsTab && typeof window.ClientAccountsTab.loadIfNeeded === 'function') {
-            window.ClientAccountsTab.loadIfNeeded();
-        }
-        
         // Update URL
         updateUrl(tabId);
-        
-        // Timeline feed sits inside the tab pane; grid never reserves a side rail.
-        syncFeedGridLayout(false);
-        setMainColumnForTab(tabId);
 
-        if (isActivityFeedTab(tabId)) {
-            setTimeout(function() {
-                if (typeof adjustActivityFeedHeight === 'function') {
-                    adjustActivityFeedHeight();
-                }
-            }, 100);
-        } else {
-            handleMatterSpecificTab(tabId);
-
-            if (tabId === 'matterdocuments' || tabId === 'personaldocuments') {
-                setTimeout(function() {
-                    if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
-                        scheduleClientDocumentsPanelHeightAdjust();
-                    } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
-                        adjustClientDocumentsPanelHeight();
-                    }
-                    if (typeof adjustPreviewContainers === 'function') {
-                        adjustPreviewContainers();
-                    }
-                }, 100);
-            }
+        var lazyPromise = $.when();
+        if (window.ClientTabLazy && typeof window.ClientTabLazy.loadIfNeeded === 'function'
+            && window.ClientTabLazy.needsLazyLoad(tabId)) {
+            lazyPromise = window.ClientTabLazy.loadIfNeeded(tabId);
+        } else if (tabId === 'account' && window.ClientAccountsTab && typeof window.ClientAccountsTab.loadIfNeeded === 'function') {
+            window.ClientAccountsTab.loadIfNeeded();
         }
 
-        syncAriaForTabs(tabId);
-        
-        // Store active tab
-        localStorage.setItem('activeTab', tabId);
+        lazyPromise.always(finishActivateTab);
     }
 
     /**

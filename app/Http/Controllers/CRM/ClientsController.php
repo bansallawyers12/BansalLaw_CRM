@@ -41,6 +41,7 @@ use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\ClientAccountTabService;
 use App\Services\ClientDetailService;
+use App\Services\ClientDetailTabHtmlService;
 use App\Services\MatterAssigneeDefaults;
 use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
@@ -1338,6 +1339,9 @@ class ClientsController extends Controller
                 $payload = $detailService->buildViewPayload((int) $id, $id1, $activeTab, $fetchedData);
                 extract($payload);
 
+                $matterNav = $detailService->resolveMatterNavContext((int) $id, $id1, $fetchedData);
+                extract($matterNav);
+
                 // Get current admin user data for SMS templates
                 $currentAdmin = Auth::user();
                 $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
@@ -1358,7 +1362,10 @@ class ClientsController extends Controller
                     'selectedClientMatter', 'isClosedMatterView',
                     'conflictParties', 'latestConflictCheck', 'conflictCheckHistory',
                     'activeClientMatterId', 'conflictCheckStaleness', 'partiesUpdatedAt',
-                    'accountTabData', 'clientAddresses', 'clientContacts', 'emails'
+                    'accountTabData', 'clientAddresses', 'clientContacts', 'emails',
+                    'matter_cnt', 'crmDetailNavIsLead', 'crmShowMatterDocsForConvertedLead',
+                    'hideMatterDocumentsForBankMatter', 'showMatterDocumentsTab', 'showMatterBundleTabs',
+                    'isMatterIdInUrl'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -1398,6 +1405,46 @@ class ClientsController extends Controller
             'fetchedData',
             'activeClientMatterId'
         ));
+    }
+
+    public function detailTabHtml(Request $request, $client_id, $tab)
+    {
+        $id = $this->decodeString($client_id);
+        if (! $id) {
+            abort(404);
+        }
+
+        $this->ensureCrmRecordAccess((int) $id);
+
+        $tabService = app(ClientDetailTabHtmlService::class);
+        $slug = strtolower((string) $tab);
+        if (! $tabService->isSupportedTab($slug)) {
+            abort(404);
+        }
+
+        $fetchedData = app(ClientDetailService::class)->loadClientRecord((int) $id);
+        if (! $fetchedData) {
+            abort(404);
+        }
+
+        $matterRef = $request->query('matter_ref');
+        $matterRef = ($matterRef !== null && $matterRef !== '') ? (string) $matterRef : null;
+        if ($matterRef === null) {
+            $alt = $request->query('client_matter_id');
+            if ($alt !== null && $alt !== '') {
+                $matterRow = ClientMatter::query()
+                    ->where('client_id', (int) $id)
+                    ->where('id', (int) $alt)
+                    ->value('client_unique_matter_no');
+                if ($matterRow) {
+                    $matterRef = (string) $matterRow;
+                }
+            }
+        }
+
+        return response(
+            $tabService->render((int) $id, (string) $client_id, $slug, $matterRef, $fetchedData)
+        )->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
     protected function googleReviewCrmTemplateExists(): bool

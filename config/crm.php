@@ -482,4 +482,13 @@ return [
         'activity_export_chunk_size' => max(100, min(2000, (int) env('ADMIN_CONSOLE_ACTIVITY_EXPORT_CHUNK_SIZE', 500))),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Client detail UI (lazy tab HTML + deferred module scripts)
+    |--------------------------------------------------------------------------
+    */
+    'client_detail' => [
+        'lazy_tab_html' => filter_var(env('CLIENT_DETAIL_LAZY_TAB_HTML', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
 ];

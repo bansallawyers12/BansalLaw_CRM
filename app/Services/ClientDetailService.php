@@ -26,6 +26,14 @@ class ClientDetailService
     /** @var list<string> Tabs that include conflict / lead pipeline partials */
     private const CONFLICT_TAB_SLUGS = ['personaldetails', 'overview', 'companydetails'];
 
+    /** URL segments that are tab slugs, not matter refs (for nav visibility). */
+    private const RESERVED_URL_SEGMENTS = [
+        'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm',
+        'personaldocuments', 'matterdocuments', 'documents', 'emails', 'client_portal', 'legalforms',
+        'formgenerations', 'formgenerationsl', 'application', 'workflow', 'checklists', 'account',
+        'notuseddocuments', 'visadocuments',
+    ];
+
     /**
      * Normalize URL segments into active tab and matter ref.
      *
@@ -83,6 +91,59 @@ class ClientDetailService
         return [
             'activeTab' => $activeTab,
             'matterRef' => ($matterRef !== null && $matterRef !== '') ? (string) $matterRef : null,
+        ];
+    }
+
+    /**
+     * Matter-aware flags for sidebar nav and conditional tab panes.
+     *
+     * @return array{
+     *     matter_cnt: int,
+     *     crmDetailNavIsLead: bool,
+     *     crmShowMatterDocsForConvertedLead: bool,
+     *     hideMatterDocumentsForBankMatter: bool,
+     *     showMatterDocumentsTab: bool,
+     *     showMatterBundleTabs: bool,
+     *     isMatterIdInUrl: bool
+     * }
+     */
+    public function resolveMatterNavContext(int $clientId, ?string $matterRef, Admin $fetchedData): array
+    {
+        $matterCnt = ClientMatter::query()
+            ->where('client_id', $clientId)
+            ->where(function ($q) {
+                $q->where('matter_status', 1)->orWhere('matter_status', '1');
+            })
+            ->count();
+
+        $typeRaw = $fetchedData->type ?? null;
+        $typeStr = $typeRaw === null ? '' : trim((string) $typeRaw);
+        $isLead = ($typeRaw === 1)
+            || in_array(strtolower($typeStr), ['lead', 'l', '1'], true);
+
+        $showMatterDocsForConvertedLead = ! $isLead
+            && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
+
+        $matterRef = ($matterRef !== null && $matterRef !== '') ? (string) $matterRef : null;
+        $isMatterIdInUrl = $matterRef !== null
+            && ! in_array(strtolower($matterRef), array_map('strtolower', self::RESERVED_URL_SEGMENTS), true);
+
+        $hideMatterDocumentsForBankMatter = $matterRef !== null
+            && preg_match('/^bank_/i', $matterRef) === 1;
+
+        $showMatterDocumentsTab = ($isMatterIdInUrl || $matterCnt > 0 || $showMatterDocsForConvertedLead)
+            && ! $hideMatterDocumentsForBankMatter;
+
+        $showMatterBundleTabs = $isMatterIdInUrl || $matterCnt > 0 || $showMatterDocsForConvertedLead;
+
+        return [
+            'matter_cnt' => $matterCnt,
+            'crmDetailNavIsLead' => $isLead,
+            'crmShowMatterDocsForConvertedLead' => $showMatterDocsForConvertedLead,
+            'hideMatterDocumentsForBankMatter' => $hideMatterDocumentsForBankMatter,
+            'showMatterDocumentsTab' => $showMatterDocumentsTab,
+            'showMatterBundleTabs' => $showMatterBundleTabs,
+            'isMatterIdInUrl' => $isMatterIdInUrl,
         ];
     }
 

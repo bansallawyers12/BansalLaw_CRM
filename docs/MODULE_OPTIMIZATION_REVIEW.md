@@ -193,16 +193,18 @@
 
 ## 11. Client detail UI (frontend)
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
-- Tab switch is client-side; Account tab lazy HTML; Legal Forms list AJAX on activate; Activity feed AJAX + IntersectionObserver
-- Progressive modules under `public/js/crm/clients/modules/`
+- Tab switch is client-side; only the active tab pane is SSR'd on first paint (others load via `/clients/detail-tab/{id}/{tab}`)
+- Account tab ledger still lazy-loads `account_content` after shell; Legal Forms list AJAX on activate; Activity feed AJAX + IntersectionObserver
+- Tab-specific modules (`notes`, `matter-tasks`, `documents`, `accounts`, etc.) load on first visit to that tab, not on every detail page load
+- Asset cache busting uses `filemtime()` instead of `time()` for client detail scripts
+- Progressive modules under `public/js/crm/clients/modules/` + `tab-lazy-load.js`
 
-**Gaps**
-- Most tab panes still SSR-`@include`d on first load (heavy TTFB)
-- `detail-main.js` is a large monolith; many scripts eager-loaded
-- Cache busting with `?v={{ time() }}` defeats browser caching
+**Remaining (optional)**
+- `detail-main.js` is still a large monolith (incremental extraction continues)
+- `appointments.js` stays eager-loaded (booking modal usable from any tab)
 
 ---
 

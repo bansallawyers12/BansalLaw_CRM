@@ -70,6 +70,7 @@ Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLea
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
 Route::get('/clients/removetag', [ClientsController::class, 'removetag']);
 Route::get('/clients/account-tab/{client_id}', [ClientsController::class, 'accountTabHtml'])->name('clients.account-tab-html');
+Route::get('/clients/detail-tab/{client_id}/{tab}', [ClientsController::class, 'detailTabHtml'])->name('clients.detail-tab-html');
 Route::get('/clients/detail/{client_id}/{client_unique_matter_ref_no?}/{tab?}', [ClientsController::class, 'detail'])->name('clients.detail');
 Route::post('/clients/google-review-reminder', [ClientsController::class, 'updateGoogleReviewReminder'])->name('clients.google-review-reminder');
 Route::post('/clients/google-review-reminder/sms', [ClientsController::class, 'sendGoogleReviewReminderSms'])->name('clients.google-review-reminder.sms');
