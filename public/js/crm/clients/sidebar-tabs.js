@@ -380,25 +380,6 @@
     }
 
     /**
-     * Filter emails by matter
-     */
-    function filterEmailsByMatter(matterId, folder) {
-        const selector = folder === 'inbox' ? '#inbox-subtab #email-list' : '#sent-subtab #email-list1';
-        
-        if (matterId !== "") {
-            $(selector).find('.email-card').each(function() {
-                if ($(this).data('matterid') == matterId) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        } else {
-            $(selector).find('.email-card').hide();
-        }
-    }
-
-    /**
      * Setup browser navigation (back/forward buttons)
      */
     function setupBrowserNavigation() {
@@ -506,8 +487,7 @@
         syncAriaForTabs: syncAriaForTabs,
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
-        filtermatterdocumentsByMatter: filtermatterdocumentsByMatter,
-        filterEmailsByMatter: filterEmailsByMatter
+        filtermatterdocumentsByMatter: filtermatterdocumentsByMatter
     };
 
 })(jQuery);

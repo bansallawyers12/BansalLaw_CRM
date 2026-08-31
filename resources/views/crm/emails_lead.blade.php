@@ -146,6 +146,7 @@
 @if($canDeleteEmail)
 <script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
 @endif
+<script src="{{ asset('js/crm/emails/matter-context.js') }}?v={{ file_exists(public_path('js/crm/emails/matter-context.js')) ? filemtime(public_path('js/crm/emails/matter-context.js')) : 1 }}"></script>
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

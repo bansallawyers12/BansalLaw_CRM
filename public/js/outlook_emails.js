@@ -311,7 +311,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Data
     const baseUrl = outlookContainer ? outlookContainer.getAttribute('data-base-url') : '';
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
-    const matterId = outlookContainer ? outlookContainer.getAttribute('data-matter-id') : '';
+    function getMatterId() {
+        if (window.EmailMatterContext && typeof window.EmailMatterContext.resolve === 'function') {
+            return window.EmailMatterContext.resolve(outlookContainer);
+        }
+        return outlookContainer ? (outlookContainer.getAttribute('data-matter-id') || '') : '';
+    }
+
     const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
     let composeFromEmail = authEmail;
     let composeReplyToEmailId = null;
@@ -346,6 +352,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setEmailUiMode('outlook', false);
     loadEmails();
     updateOutboxFiltersVisibility();
+
+    if (typeof jQuery !== 'undefined' && clientId) {
+        jQuery('#sel_matter_id_client_detail').off('change.outlookMatterFilter').on('change.outlookMatterFilter', function () {
+            const nextMatterId = getMatterId();
+            if (outlookContainer) {
+                outlookContainer.setAttribute('data-matter-id', nextMatterId || '');
+            }
+            currentPage = 1;
+            loadEmails();
+        });
+    }
 
     /*
     if (emailUiModeSwitch) {
@@ -1858,7 +1875,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         if (clientId) formData.append('client_id', clientId);
-        if (matterId) formData.append('compose_client_matter_id', matterId);
+        const composeMatterId = getMatterId();
+        if (composeMatterId) formData.append('compose_client_matter_id', composeMatterId);
         formData.append('email_from', composeFromEmail);
         appendRecipientFields(formData, 'email_to', to);
         if (cc) {
@@ -2638,11 +2656,11 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
-            if (matterId) {
+            if (getMatterId()) {
                 if (currentFolder === 'sent') {
-                    formData.append('upload_sent_mail_client_matter_id', matterId);
+                    formData.append('upload_sent_mail_client_matter_id', getMatterId());
                 } else {
-                    formData.append('upload_inbox_mail_client_matter_id', matterId);
+                    formData.append('upload_inbox_mail_client_matter_id', getMatterId());
                 }
             }
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -3006,8 +3024,8 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('folder_name', folder.folder_id);
             formData.append('type', 'client');
             formData.append('doctype', folder.storage_type === 'matter' ? 'matter' : 'personal');
-            if (folder.storage_type === 'matter' && matterId) {
-                formData.append('client_matter_id', matterId);
+            if (folder.storage_type === 'matter' && getMatterId()) {
+                formData.append('client_matter_id', getMatterId());
             }
 
             const response = await fetch(baseUrl + '/documents/reload-folder-list', {
@@ -3076,10 +3094,11 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
+            const uploadMatterId = getMatterId();
             if (currentFolder === 'sent') {
-                formData.append('upload_sent_mail_client_matter_id', matterId);
+                formData.append('upload_sent_mail_client_matter_id', uploadMatterId);
             } else {
-                formData.append('upload_inbox_mail_client_matter_id', matterId);
+                formData.append('upload_inbox_mail_client_matter_id', uploadMatterId);
             }
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
             if (forceUpload) {
@@ -3582,7 +3601,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (clientId) url.searchParams.append('client_id', clientId);
-            if (matterId) url.searchParams.append('client_matter_id', matterId);
+            const listMatterId = getMatterId();
+            if (listMatterId) url.searchParams.append('client_matter_id', listMatterId);
 
             const response = await fetch(url, {
                 headers: {
@@ -5392,8 +5412,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (clientId) {
             payload.client_id = clientId;
         }
-        if (matterId) {
-            payload.client_matter_id = matterId;
+        const deleteMatterId = getMatterId();
+        if (deleteMatterId) {
+            payload.client_matter_id = deleteMatterId;
         }
 
         try {
@@ -6219,7 +6240,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 matters.forEach(function (matter) {
                     const matterRef = String(matter.client_unique_matter_no || '').trim();
-                    const selectedByContext = matterId && String(matter.id) === String(matterId);
+                    const contextMatterId = getMatterId();
+                    const selectedByContext = contextMatterId && String(matter.id) === String(contextMatterId);
                     const selectedByRef = preferredMatterRef
                         && matterRef.toLowerCase() === String(preferredMatterRef).toLowerCase();
                     if (selectedByContext || selectedByRef) {

@@ -491,4 +491,14 @@ return [
         'lazy_tab_html' => filter_var(env('CLIENT_DETAIL_LAZY_TAB_HTML', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Emails UI (Outlook partial + upload folder cache)
+    |--------------------------------------------------------------------------
+    */
+    'emails' => [
+        'folder_cache_seconds' => max(60, (int) env('EMAILS_FOLDER_CACHE_SECONDS', 300)),
+        'compact_list_per_page' => max(10, min(100, (int) env('EMAILS_COMPACT_LIST_PER_PAGE', 20))),
+    ],
+
 ];

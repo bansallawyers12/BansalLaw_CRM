@@ -210,15 +210,17 @@
 
 ## 12. Emails UI
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - Paginated `fetch` lists; infinite scroll in compact/unassigned modes
 - AJAX for compose/upload/delete/assign (not full-page for list ops)
+- `EmailOutlookViewService` resolves matter + caches upload folder dropdowns
+- Shared `matter-context.js` resolves matter from dropdown / `ClientDetailConfig` / container (API-only filtering; legacy DOM hide removed)
+- Asset cache busting uses `filemtime()` for `outlook_emails.css` / `outlook_emails.js`
 
-**Gaps**
-- `outlook_emails.js` / `emails.js` are very large monoliths
-- `?v={{ time() }}` on assets; matter filter may duplicate API + DOM strategies
+**Remaining (optional)**
+- `outlook_emails.js` / `emails.js` remain large monoliths (incremental extraction continues)
 
 ---
 

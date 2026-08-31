@@ -1,55 +1,19 @@
 @php
-    // Support both $client and $fetchedData variable names
     $clientData = $client ?? $fetchedData ?? null;
-    
-    // Get the matter ID from URL or most recent matter
-    $matterId = null;
-    if (isset($id1) && $id1 != "") {
-        $clientMatter = \App\Models\ClientMatter::where('client_id', $clientData->id ?? 0)
-            ->where('client_unique_matter_no', $id1)
-            ->first();
-        $matterId = $clientMatter ? $clientMatter->id : null;
-    } elseif ($clientData) {
-        $clientMatter = \App\Models\ClientMatter::where('client_id', $clientData->id)
-            ->where('matter_status', 1)
-            ->orderBy('id', 'desc')
-            ->first();
-        $matterId = $clientMatter ? $clientMatter->id : null;
-    }
 
-    $emailUploadPersonalFolders = [];
-    if ($clientData && \Illuminate\Support\Facades\Schema::hasTable('personal_document_types')) {
-        $emailUploadPersonalFolders = \App\Models\PersonalDocumentType::select('id', 'title')
-            ->where('status', 1)
-            ->where(function ($query) use ($clientData) {
-                $query->whereNull('client_id')
-                    ->orWhere('client_id', $clientData->id);
-            })
-            ->orderBy('id', 'ASC')
-            ->get()
-            ->map(fn ($row) => ['id' => (string) $row->id, 'title' => $row->title])
-            ->values()
-            ->all();
-    }
-
-    $emailUploadMatterFolders = [];
-    if ($clientData && $matterId && \Illuminate\Support\Facades\Schema::hasTable('visa_document_types')) {
-        $emailUploadMatterFolders = \App\Models\VisaDocumentType::select('id', 'title')
-            ->where('status', 1)
-            ->where(function ($query) use ($clientData, $matterId) {
-                $query->where(function ($q) {
-                    $q->whereNull('client_id')->whereNull('client_matter_id');
-                })->orWhere(function ($q) use ($clientData) {
-                    $q->where('client_id', $clientData->id)->whereNull('client_matter_id');
-                })->orWhere(function ($q) use ($clientData, $matterId) {
-                    $q->where('client_id', $clientData->id)->where('client_matter_id', $matterId);
-                });
-            })
-            ->orderBy('id', 'ASC')
-            ->get()
-            ->map(fn ($row) => ['id' => (string) $row->id, 'title' => $row->title])
-            ->values()
-            ->all();
+    if ($clientData && ! isset($emailUploadPersonalFolders)) {
+        $emailOutlookCtx = app(\App\Services\Email\EmailOutlookViewService::class)->buildClientTabContext(
+            $clientData,
+            isset($id1) && $id1 !== '' ? (string) $id1 : null,
+            isset($activeClientMatterId) ? (int) $activeClientMatterId : null
+        );
+        $matterId = $emailOutlookCtx['matterId'];
+        $emailUploadPersonalFolders = $emailOutlookCtx['emailUploadPersonalFolders'];
+        $emailUploadMatterFolders = $emailOutlookCtx['emailUploadMatterFolders'];
+    } else {
+        $matterId = $matterId ?? null;
+        $emailUploadPersonalFolders = $emailUploadPersonalFolders ?? [];
+        $emailUploadMatterFolders = $emailUploadMatterFolders ?? [];
     }
 @endphp
 @php
@@ -104,7 +68,7 @@
 @endphp
 
 <!-- Outlook CSS -->
-<link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ @filemtime(public_path('css/outlook_emails.css')) ?: time() }}">
 
 <div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}{{ $compactPagination ? ' outlook-container--compact-pagination' : '' }}" id="outlookContainer"
     data-base-url="{{ url('/') }}"
@@ -1041,4 +1005,5 @@ window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed
 <link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
 <script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
 @endif
-<script src="{{ asset('js/outlook_emails.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/crm/emails/matter-context.js') }}?v={{ @filemtime(public_path('js/crm/emails/matter-context.js')) ?: time() }}"></script>
+<script src="{{ asset('js/outlook_emails.js') }}?v={{ @filemtime(public_path('js/outlook_emails.js')) ?: time() }}"></script>

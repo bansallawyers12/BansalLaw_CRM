@@ -75,17 +75,14 @@
         return clientId;
     }
 
-    /**
-     * Get matter ID from the DOM
-     */
     function getMatterId() {
         const container = document.querySelector('.email-interface-container');
+        if (window.EmailMatterContext && typeof window.EmailMatterContext.resolve === 'function') {
+            return window.EmailMatterContext.resolve(container) || null;
+        }
         if (!container) {
-            // Page doesn't have email interface - this is normal for pages that don't support emails
             return null;
         }
-        
-        // Check if the container has the required attribute
         const matterId = container.dataset.matterId;
         if (!matterId || matterId === '') {
             return null;
@@ -2260,11 +2257,16 @@
      * Get current matter ID from the matter dropdown
      */
     function getCurrentMatterIdFromDropdown() {
+        if (window.EmailMatterContext && typeof window.EmailMatterContext.fromDropdown === 'function') {
+            const fromDropdown = window.EmailMatterContext.fromDropdown();
+            if (fromDropdown) {
+                return fromDropdown;
+            }
+        }
         const matterDropdown = document.getElementById('sel_matter_id_client_detail');
         if (matterDropdown && matterDropdown.value) {
             return matterDropdown.value;
         }
-        // Fallback: try to get from email interface container
         return getMatterId();
     }
 
