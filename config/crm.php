@@ -471,4 +471,15 @@ return [
         'contact_row_limit' => max(5, min(200, (int) env('LEADS_CONTACT_ROW_LIMIT', 50))),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Console (form dropdown cache + activity export streaming)
+    |--------------------------------------------------------------------------
+    */
+    'admin_console' => [
+        'form_cache_seconds' => max(60, (int) env('ADMIN_CONSOLE_FORM_CACHE_SECONDS', 300)),
+        'activity_export_limit' => max(100, min(20000, (int) env('ADMIN_CONSOLE_ACTIVITY_EXPORT_LIMIT', 5000))),
+        'activity_export_chunk_size' => max(100, min(2000, (int) env('ADMIN_CONSOLE_ACTIVITY_EXPORT_CHUNK_SIZE', 500))),
+    ],
+
 ];

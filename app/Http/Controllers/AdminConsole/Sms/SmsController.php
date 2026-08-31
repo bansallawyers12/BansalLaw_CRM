@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminConsole\Sms;
 use App\Http\Controllers\Controller;
 use App\Models\SmsLog;
 use App\Models\SmsTemplate;
+use App\Services\AdminConsoleFormDataService;
 use App\Services\Sms\UnifiedSmsManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class SmsController extends Controller
     /**
      * Show SMS dashboard
      */
-    public function dashboard(Request $request)
+    public function dashboard(Request $request, AdminConsoleFormDataService $formData)
     {
         // Get today's statistics
         $todayStart = now()->startOfDay();
@@ -47,7 +48,7 @@ class SmsController extends Controller
                            ->limit(10)
                            ->get();
 
-        $activeTemplates = SmsTemplate::where('is_active', true)->orderBy('title')->get();
+        $activeTemplates = $formData->activeSmsTemplates();
 
         if ($request->wantsJson() || $request->ajax() || $request->has('json')) {
             return response()->json([

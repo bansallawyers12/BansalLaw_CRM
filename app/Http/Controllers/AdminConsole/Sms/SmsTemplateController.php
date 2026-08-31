@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
 use App\Models\SmsTemplate;
+use App\Services\AdminConsoleFormDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -182,15 +183,11 @@ class SmsTemplateController extends Controller
     /**
      * Get active templates (API endpoint for dropdowns)
      */
-    public function active()
+    public function active(AdminConsoleFormDataService $formData)
     {
-        $templates = SmsTemplate::where('is_active', true)
-            ->orderBy('title')
-            ->get(['id', 'title', 'message', 'variables', 'category']);
-
         return response()->json([
             'success' => true,
-            'data' => $templates
+            'data' => $formData->activeSmsTemplates()->values(),
         ]);
     }
 }

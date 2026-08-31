@@ -3,7 +3,7 @@
     $isEdit = $mode === 'edit';
     $fieldPrefix = $fieldPrefix ?? ($isEdit ? 'edit_mat' : 'create_mat');
     $fetchedData = $fetchedData ?? null;
-    $workflows = $workflows ?? \App\Models\Workflow::orderBy('name')->get();
+    $workflows = $workflows ?? app(\App\Services\AdminConsoleFormDataService::class)->workflowOptions();
     $accordionId = $fieldPrefix . '_accordion';
     $hasStream = \Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream');
     $hasBlockFees = \Illuminate\Support\Facades\Schema::hasColumn('matters', 'Block_1_Description');

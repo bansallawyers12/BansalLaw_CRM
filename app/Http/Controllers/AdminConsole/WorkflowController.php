@@ -10,6 +10,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStage;
 use App\Models\ClientMatter;
 use App\Models\Matter;
+use App\Services\AdminConsoleFormDataService;
 
 class WorkflowController extends Controller
 {
@@ -21,11 +22,14 @@ class WorkflowController extends Controller
     /**
      * List workflows (Workflow model).
      */
-    public function index(Request $request)
+    public function index(Request $request, AdminConsoleFormDataService $formData)
     {
-        $query = Workflow::with(['matter', 'stages']);
-        $lists = $query->orderBy('name')->paginate(config('constants.limit', 20));
-        $matters = Matter::orderBy('title')->get(['id', 'title', 'nick_name']);
+        $lists = Workflow::query()
+            ->with(['matter:id,title,nick_name'])
+            ->withCount('stages')
+            ->orderBy('name')
+            ->paginate(config('constants.limit', 20));
+        $matters = $formData->matterOptions();
 
         return view('AdminConsole.features.workflow.workflows-index', compact('lists', 'matters'));
     }

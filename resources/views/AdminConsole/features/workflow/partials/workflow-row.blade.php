@@ -11,7 +11,7 @@
     data-workflow-stages-url="{{ $stagesUrl }}">
     <td class="workflow-name-cell">{{ $wf->name }}</td>
     <td class="workflow-matter-cell">{{ $matterLabel }}</td>
-    <td class="workflow-stages-count-cell">{{ $wf->stages->count() }}</td>
+    <td class="workflow-stages-count-cell">{{ $wf->stages_count ?? $wf->stages->count() }}</td>
     <td class="text-nowrap">
         <div class="workflows-index-actions">
             <a class="btn btn-sm btn-primary" href="{{ $stagesUrl }}"><i class="fa-solid fa-list"></i> Manage Stages</a>

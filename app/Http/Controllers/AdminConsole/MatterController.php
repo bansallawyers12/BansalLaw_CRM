@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminConsole;
 use App\Http\Controllers\Controller;
 use App\Models\Matter;
 use App\Models\Workflow;
+use App\Services\AdminConsoleFormDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
@@ -54,7 +55,7 @@ class MatterController extends Controller
                     'mode' => 'create',
                     'fetchedData' => null,
                     'fieldPrefix' => 'create_mat',
-                    'workflows' => Workflow::orderBy('name')->get(),
+                    'workflows' => app(AdminConsoleFormDataService::class)->workflowOptions(),
                 ])->render(),
             ]);
         }
@@ -101,7 +102,7 @@ class MatterController extends Controller
                     'mode' => 'edit',
                     'fetchedData' => $matter,
                     'fieldPrefix' => 'edit_mat',
-                    'workflows' => Workflow::orderBy('name')->get(),
+                    'workflows' => app(AdminConsoleFormDataService::class)->workflowOptions(),
                 ])->render(),
             ]);
         }

@@ -20,7 +20,7 @@
 | Documents | Optimized | Folder list service + cap; streamed/queued bulk S3 |
 | Notes / Tasks | Optimized | Eager-loaded authors; paginated notes + matter tasks |
 | Leads | Optimized | Form data service; cached lean staff/countries; capped related contacts |
-| Admin Console | Partially optimized | Paginate lists; large exports in memory |
+| Admin Console | Optimized | Streamed activity export; cached lean dropdowns; workflow withCount |
 | Client detail UI | Partially optimized | Some lazy tabs; most SSR + large JS |
 | Emails UI | Partially optimized | Infinite scroll; very large JS |
 | Dashboard UI | Partially optimized | Infinite scroll lists; SSR + inline assets |
@@ -177,15 +177,17 @@
 
 ## 10. Admin Console
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - Staff/Matter lists: `with` + `paginate`
 - SMS logs paginated; routes split (`adminconsole.php`)
+- Activity Search export: `ActivitySearchService` streams CSV via `lazy()` chunks (configurable limit)
+- Workflows index: `withCount('stages')` + lean matter eager load (no full stage graphs per row)
+- `AdminConsoleFormDataService`: cached lean workflows, matters, SMS templates, activity-search staff
 
 **Gaps**
-- Activity export can load large in-memory sets (e.g. thousands of rows)
-- Templates/workflows sometimes loaded wholesale
+- ESignature audit export still loads documents in memory; further controller splits optional
 
 ---
 
