@@ -576,7 +576,7 @@ class EmailUploadController extends Controller
      * @param array<string, mixed>|null $syncMeta
      * @return array
      */
-    protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request, ?array $syncMeta = null)
+    protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request, ?array $syncMeta = null, ?array $preParsedData = null)
     {
         try {
             $clientId = $clientId > 0 ? (int) $clientId : null;
@@ -600,8 +600,8 @@ class EmailUploadController extends Controller
             $uniqueFileName = time() . '_' . $sanitizedFileName;
             $docType = 'conversion_email_fetch';
 
-            // 1. Parse email using Python microservice (before storage to allow duplicate check without S3 upload)
-            $parsedData = $this->parseEmailWithPython($file);
+            // 1. Parse email using Python microservice (reuse sync pre-parse when PDF already present)
+            $parsedData = $this->resolveParsedEmailData($file, $preParsedData, ! empty($syncMeta));
 
             if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
                 $parseError = (string) ($parsedData['error'] ?? 'Failed to parse email');
@@ -808,21 +808,27 @@ class EmailUploadController extends Controller
                 $mailReport->fetch_mail_sent_time = $this->parseEmailDateTimeForStorage($parsedData['sent_date']);
             }
             
-            // NEW: Add Python AI analysis
-            $analysisData = $this->analyzeEmailWithPython($parsedData);
-            if ($analysisData && isset($analysisData['success']) && $analysisData['success']) {
-                // Ensure JSON fields are properly formatted arrays (not objects or strings)
-                $mailReport->python_analysis = is_array($analysisData) ? $analysisData : null;
-                $mailReport->sentiment = $analysisData['sentiment'] ?? 'neutral';
-                $mailReport->language = $analysisData['language'] ?? null;
-                // Ensure these are arrays or null for JSON columns
-                $mailReport->security_issues = isset($analysisData['security_issues']) 
-                    ? (is_array($analysisData['security_issues']) ? $analysisData['security_issues'] : null)
-                    : null;
-                $mailReport->thread_info = isset($analysisData['thread_info'])
-                    ? (is_array($analysisData['thread_info']) ? $analysisData['thread_info'] : null)
-                    : null;
-                $mailReport->processed_at = now();
+            // NEW: Add Python AI analysis (optional during IMAP sync to avoid per-message HTTP)
+            $skipAnalysis = ! empty($syncMeta) && filter_var(
+                config('imap_sync.skip_python_analysis', true),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            if (! $skipAnalysis) {
+                $analysisData = $this->analyzeEmailWithPython($parsedData);
+                if ($analysisData && isset($analysisData['success']) && $analysisData['success']) {
+                    // Ensure JSON fields are properly formatted arrays (not objects or strings)
+                    $mailReport->python_analysis = is_array($analysisData) ? $analysisData : null;
+                    $mailReport->sentiment = $analysisData['sentiment'] ?? 'neutral';
+                    $mailReport->language = $analysisData['language'] ?? null;
+                    // Ensure these are arrays or null for JSON columns
+                    $mailReport->security_issues = isset($analysisData['security_issues'])
+                        ? (is_array($analysisData['security_issues']) ? $analysisData['security_issues'] : null)
+                        : null;
+                    $mailReport->thread_info = isset($analysisData['thread_info'])
+                        ? (is_array($analysisData['thread_info']) ? $analysisData['thread_info'] : null)
+                        : null;
+                    $mailReport->processed_at = now();
+                }
             }
             
             // NEW: Add metadata
@@ -1260,6 +1266,33 @@ class EmailUploadController extends Controller
             '/email/parse-render-pdf',
             max($this->pythonServiceTimeout, 180)
         );
+    }
+
+    /**
+     * Prefer reusable parse results; upgrade metadata-only sync parses to PDF when importing.
+     *
+     * @param  array<string, mixed>|null  $preParsedData
+     * @return array<string, mixed>|null
+     */
+    protected function resolveParsedEmailData($file, ?array $preParsedData, bool $isSyncImport = false): ?array
+    {
+        if (is_array($preParsedData) && empty($preParsedData['error'])
+            && (! isset($preParsedData['success']) || $preParsedData['success'])
+        ) {
+            $hasPdf = ! empty($preParsedData['pdf_base64']) || ! empty($preParsedData['pdf_file_path']);
+            if ($hasPdf || ! empty($preParsedData['pdf_generated'])) {
+                return $preParsedData;
+            }
+
+            // Metadata-first sync: upgrade to parse-render-pdf only for messages we import.
+            if ($isSyncImport || ! empty($preParsedData['_sync_metadata_only'])) {
+                return $this->parseEmailWithPython($file);
+            }
+
+            return $preParsedData;
+        }
+
+        return $this->parseEmailWithPython($file);
     }
 
     /**
@@ -2282,17 +2315,43 @@ class EmailUploadController extends Controller
     /**
      * Parse an email file for IMAP sync (no HTTP request required).
      *
+     * @param  bool  $withPdf  When true, always run parse-render-pdf (restore / backfill).
      * @return array<string, mixed>|null
      */
-    public function parseEmailFileForSync($file): ?array
+    public function parseEmailFileForSync($file, bool $withPdf = false): ?array
     {
-        return $this->parseEmailWithPython($file);
+        if ($withPdf) {
+            return $this->parseEmailWithPython($file);
+        }
+
+        $mode = strtolower((string) config('imap_sync.python_parse_mode', 'metadata_first'));
+        if ($mode === 'full') {
+            return $this->parseEmailWithPython($file);
+        }
+
+        return $this->parseEmailMetadataForSync($file);
+    }
+
+    /**
+     * Lightweight IMAP sync parse (no PDF) for matching / duplicate detection.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function parseEmailMetadataForSync($file): ?array
+    {
+        $result = $this->parseEmailMetadataWithPython($file);
+        if (is_array($result) && empty($result['error'])) {
+            $result['_sync_metadata_only'] = true;
+        }
+
+        return $result;
     }
 
     /**
      * Import a synced IMAP message using the same pipeline as manual upload.
      *
      * @param array<string, mixed> $syncMeta
+     * @param array<string, mixed>|null $preParsedData Reuse sync parse; upgrades to PDF if metadata-only
      * @return array<string, mixed>
      */
     public function importFromSync(
@@ -2303,7 +2362,8 @@ class EmailUploadController extends Controller
         string $mailType,
         int $staffUserId,
         string $clientUniqueId,
-        array $syncMeta
+        array $syncMeta,
+        ?array $preParsedData = null
     ): array {
         $payload = [
             'type' => $recordType,
@@ -2325,7 +2385,8 @@ class EmailUploadController extends Controller
             $clientUniqueId,
             $mailType,
             $request,
-            $syncMeta
+            $syncMeta,
+            $preParsedData
         );
     }
 }

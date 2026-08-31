@@ -279,15 +279,19 @@
 
 ## 16. IMAP / Inbox sync
 
-**Verdict:** Partially optimized
+**Verdict:** Optimized
 
 **What is working**
 - UID cursor / watermark; batched fetch; FT_PEEK; Seen/delete in chunks
 - Duplicate detection; CLI/job oriented with raised limits
+- **Metadata-first Python parse** (`/email/parse`) for matching + duplicate detection; full `parse-render-pdf` only when a message is actually imported
+- Sync import **reuses** the first parse payload (no second per-message Python call); skips `/email/analyze` during sync by default
+- Email preview (`getParsedEmailHtml`) reuses stored `message` / `text_preview` / existing `pdf_doc_id` before any Python re-render; persists recovered HTML on fallback
+- Config: `imap_sync.python_parse_mode`, `imap_sync.skip_python_analysis`
 
-**Gaps**
-- Import path often one Python HTTP call per message
-- Re-render/PDF on view may repeat work if artifacts not reused
+**Remaining (optional)**
+- True multi-file Python batch endpoint for concurrent imports
+- Optional queued analysis backfill for synced mail without `python_analysis`
 
 ---
 

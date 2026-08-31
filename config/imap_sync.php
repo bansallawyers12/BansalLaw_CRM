@@ -88,4 +88,17 @@ return [
     */
     'use_peek_fetch' => env('MAIL_SYNC_USE_PEEK_FETCH', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Python parser optimisation for IMAP import
+    |--------------------------------------------------------------------------
+    | metadata_first: cheap /email/parse for matching + duplicate detection;
+    |                 full parse-render-pdf only when the message is actually imported.
+    | full: always parse-render-pdf once (legacy behaviour, still single call).
+    */
+    'python_parse_mode' => env('MAIL_SYNC_PYTHON_PARSE_MODE', 'metadata_first'),
+
+    // Skip /email/analyze HTTP call during IMAP sync (analysis can be backfilled later).
+    'skip_python_analysis' => env('MAIL_SYNC_SKIP_PYTHON_ANALYSIS', true),
+
 ];

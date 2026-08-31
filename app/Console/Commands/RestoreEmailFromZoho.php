@@ -115,7 +115,7 @@ class RestoreEmailFromZoho extends Command
 
         try {
             $uploadedFile = new UploadedFile($tempPath, 'restore-' . $uid . '.eml', 'message/rfc822', null, true);
-            $parsed = $uploadController->parseEmailFileForSync($uploadedFile);
+            $parsed = $uploadController->parseEmailFileForSync($uploadedFile, true);
             if (! $parsed || ! empty($parsed['error']) || (isset($parsed['success']) && ! $parsed['success'])) {
                 $this->error('Python parse failed: ' . ($parsed['error'] ?? 'unknown error'));
 

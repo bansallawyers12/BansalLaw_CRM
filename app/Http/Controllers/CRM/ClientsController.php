@@ -5748,6 +5748,40 @@ class ClientsController extends Controller
                     ], 403);
                 }
             }
+
+            // Prefer stored body / preview so open does not re-call Python for every view.
+            $storedHtml = trim((string) ($emailLog->message ?? ''));
+            if ($storedHtml !== '' && ! \App\Models\EmailLog::isCalendarPayload($storedHtml)) {
+                return response()->json([
+                    'success' => true,
+                    'html' => $storedHtml,
+                    'source' => 'stored',
+                ]);
+            }
+
+            $storedPreview = trim((string) ($emailLog->text_preview ?? ''));
+            if ($storedPreview !== '' && ! \App\Models\EmailLog::isCalendarPayload($storedPreview)) {
+                return response()->json([
+                    'success' => true,
+                    'html' => '<div style="padding:20px;white-space:pre-wrap;">'
+                        . e($storedPreview)
+                        . '</div>',
+                    'source' => 'stored_preview',
+                ]);
+            }
+
+            // Reuse generated PDF viewer document when available (no re-render).
+            $pdfPreviewUrl = $this->resolveEmailPdfPreviewUrl($emailLog);
+            if ($pdfPreviewUrl !== '') {
+                return response()->json([
+                    'success' => true,
+                    'html' => '<iframe src="' . e($pdfPreviewUrl) . '" title="Email PDF" '
+                        . 'style="width:100%;min-height:70vh;border:0;"></iframe>',
+                    'source' => 'pdf_document',
+                    'pdf_url' => $pdfPreviewUrl,
+                ]);
+            }
+
             if (!$emailLog->s3_path) {
                 return response()->json(['error' => 'No S3 path found for this email'], 404);
             }
@@ -5773,8 +5807,29 @@ class ClientsController extends Controller
 
             if ($response->successful()) {
                 $result = $response->json();
-                $html = $result['html_body'] ?? $result['text_body'] ?? '<div style="padding:20px;">Could not extract email body.</div>';
-                return response()->json(['success' => true, 'html' => $html]);
+                $html = $result['html_content']
+                    ?? $result['html_body']
+                    ?? $result['text_preview']
+                    ?? $result['text_body']
+                    ?? '<div style="padding:20px;">Could not extract email body.</div>';
+
+                // Persist recovered body so later opens skip Python.
+                if (is_string($html) && trim($html) !== '' && trim((string) ($emailLog->message ?? '')) === '') {
+                    try {
+                        $emailLog->message = $html;
+                        if (empty($emailLog->text_preview) && ! empty($result['text_preview'])) {
+                            $emailLog->text_preview = (string) $result['text_preview'];
+                        }
+                        $emailLog->save();
+                    } catch (\Throwable $persistError) {
+                        \Illuminate\Support\Facades\Log::warning('Could not persist recovered email HTML', [
+                            'email_log_id' => $emailLog->id,
+                            'error' => $persistError->getMessage(),
+                        ]);
+                    }
+                }
+
+                return response()->json(['success' => true, 'html' => $html, 'source' => 'python_fallback']);
             }
 
             return response()->json([

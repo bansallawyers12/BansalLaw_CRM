@@ -658,7 +658,8 @@ class IncomingEmailSyncService
                     // New incoming mail must always appear unread in the CRM; the IMAP
                     // \Seen flag is unreliable (body fetch or webmail access sets it).
                     'mail_is_read' => $mailType === 'sent',
-                ]
+                ],
+                $parsedData
             );
 
             if (! empty($import['success'])) {
