@@ -24,6 +24,8 @@ except ImportError:
     BeautifulSoup = None
 
 from utils.logger import setup_logger
+from utils.ttl_cache import email_analysis_cache, stable_hash
+from config import CACHE_ENABLED
 
 logger = setup_logger(__name__, 'email_analyzer.log')
 
@@ -122,6 +124,28 @@ class EmailAnalyzerService:
         Returns:
             Dict containing analysis results
         """
+        if CACHE_ENABLED:
+            cache_key = (
+                'analyze',
+                stable_hash(
+                    email_data.get('subject', ''),
+                    email_data.get('text_content', '')[:8000],
+                    (email_data.get('html_content') or '')[:8000],
+                    len(email_data.get('attachments') or []),
+                ),
+            )
+            cached = email_analysis_cache.get(cache_key)
+            if cached is not None:
+                return cached
+        else:
+            cache_key = None
+
+        result = self._analyze_content_uncached(email_data)
+        if CACHE_ENABLED and cache_key and 'error' not in result:
+            email_analysis_cache.set(cache_key, result)
+        return result
+
+    def _analyze_content_uncached(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             logger.info(f"Analyzing email: {email_data.get('subject', 'No subject')}")
             

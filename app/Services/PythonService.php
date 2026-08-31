@@ -491,6 +491,36 @@ class PythonService
     // ============================================================================
 
     /**
+     * Resolve PDF binary from a Python parse-render-pdf response.
+     * Prefers pdf_file_path (shared filesystem) over large pdf_base64 payloads.
+     *
+     * @param  array<string, mixed>  $parsedData
+     */
+    public static function resolvePdfBytesFromParsed(array $parsedData, bool $deleteTempFile = true): ?string
+    {
+        $path = isset($parsedData['pdf_file_path']) ? (string) $parsedData['pdf_file_path'] : '';
+        if ($path !== '' && is_file($path) && is_readable($path)) {
+            $bytes = @file_get_contents($path);
+            if (is_string($bytes) && $bytes !== '') {
+                if ($deleteTempFile) {
+                    @unlink($path);
+                }
+
+                return $bytes;
+            }
+        }
+
+        if (! empty($parsedData['pdf_base64'])) {
+            $decoded = base64_decode((string) $parsedData['pdf_base64'], true);
+            if ($decoded !== false && $decoded !== '') {
+                return $decoded;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Test the Python service with a simple request
      */
     public function testConnection(): array

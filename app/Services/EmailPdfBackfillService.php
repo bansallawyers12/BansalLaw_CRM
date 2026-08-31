@@ -244,12 +244,8 @@ class EmailPdfBackfillService
         EmailLog $email,
         ?Document $existingPdfDocument = null
     ): ?int {
-        if (empty($parsedData['pdf_base64'])) {
-            return null;
-        }
-
-        $pdfBytes = base64_decode($parsedData['pdf_base64'], true);
-        if ($pdfBytes === false || strlen($pdfBytes) === 0) {
+        $pdfBytes = \App\Services\PythonService::resolvePdfBytesFromParsed($parsedData);
+        if ($pdfBytes === null || $pdfBytes === '') {
             return null;
         }
 

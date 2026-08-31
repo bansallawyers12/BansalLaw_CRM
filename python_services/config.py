@@ -51,9 +51,18 @@ CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True').lower() == 
 # Database configuration (if needed for caching)
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./services.db')
 
-# Cache configuration
+# Cache configuration (used by utils.ttl_cache for PDF info / page convert / analysis)
 CACHE_TTL = int(os.getenv('CACHE_TTL', '3600'))  # 1 hour
 CACHE_MAX_SIZE = int(os.getenv('CACHE_MAX_SIZE', '1000'))
+CACHE_ENABLED = os.getenv('CACHE_ENABLED', 'True').lower() == 'true'
+
+# Thread pool for CPU-bound work off the asyncio event loop
+WORKER_THREADS = int(os.getenv('WORKER_THREADS', str(max(4, (os.cpu_count() or 2)))))
+
+# PDF response delivery: prefer temp file path; inline base64 only under this size
+PDF_INLINE_MAX_BYTES = int(os.getenv('PDF_INLINE_MAX_BYTES', str(512 * 1024)))  # 512KB
+PDF_OUTPUT_DIR = Path(os.getenv('PDF_OUTPUT_DIR', str(Path(__file__).parent / 'temp' / 'pdf_out')))
+PDF_TEMP_RETENTION_SECONDS = int(os.getenv('PDF_TEMP_RETENTION_SECONDS', '3600'))
 
 # Email analysis configuration
 EMAIL_CATEGORIES = {
@@ -159,7 +168,8 @@ __all__ = [
     'SECURITY_SCAN_ATTACHMENTS', 'DANGEROUS_EXTENSIONS',
     'LOG_LEVEL', 'LOG_RETENTION_DAYS', 'LOG_DIR',
     'CORS_ORIGINS', 'CORS_ALLOW_CREDENTIALS',
-    'DATABASE_URL', 'CACHE_TTL', 'CACHE_MAX_SIZE',
+    'DATABASE_URL', 'CACHE_TTL', 'CACHE_MAX_SIZE', 'CACHE_ENABLED', 'WORKER_THREADS',
+    'PDF_INLINE_MAX_BYTES', 'PDF_OUTPUT_DIR', 'PDF_TEMP_RETENTION_SECONDS',
     'EMAIL_CATEGORIES', 'PRIORITY_KEYWORDS', 'SENTIMENT_KEYWORDS',
     'LANGUAGE_KEYWORDS', 'SECURITY_PATTERNS',
     'API_PREFIX', 'HEALTH_ENDPOINT', 'DOCS_ENDPOINT', 'REDOC_ENDPOINT',

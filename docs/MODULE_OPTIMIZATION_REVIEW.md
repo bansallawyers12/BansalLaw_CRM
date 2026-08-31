@@ -259,17 +259,21 @@
 
 ## 15. Python services (parser / analyzer / renderer / PDF)
 
-**Verdict:** Mixed
+**Verdict:** Optimized
 
 **What is working**
 - Combined endpoints reduce round-trips (`parse-render-pdf`, `parse-analyze-render`)
 - PDF fallbacks (WeasyPrint → PyMuPDF → ReportLab); batch convert API exists
 - Temp cleanup in `finally`; soft-fail for oversized payloads
+- `CACHE_TTL` / `CACHE_MAX_SIZE` drive in-process TTL LRU caches (`utils/ttl_cache.py`) for PDF page convert / info / validate and email analysis
+- CPU-bound work runs in a shared thread pool via `utils/async_work.run_sync` (event loop stays free)
+- `parse-render-pdf` prefers `pdf_file_path` under `temp/pdf_out/`; inline `pdf_base64` only when under `PDF_INLINE_MAX_BYTES` (default 512KB)
+- PHP consumers resolve PDF via `PythonService::resolvePdfBytesFromParsed()` (path first, then base64)
+- `/health` exposes cache + worker runtime stats
 
-**Gaps**
-- `CACHE_TTL` / `CACHE_MAX_SIZE` configured but unused in services
-- CPU work inside `async def` without thread/process offload (blocks event loop)
-- Large `pdf_base64` in JSON vs file/stream/S3 key
+**Remaining (optional)**
+- Cross-host deployments need a shared volume (or S3 upload) for `pdf_file_path`
+- Process-pool offload for heaviest PDF/image jobs if thread pool saturates under load
 
 ---
 

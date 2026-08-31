@@ -14,7 +14,6 @@ Version: 1.0.0
 
 import sys
 import time
-import base64
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -35,6 +34,15 @@ from utils.logger import setup_logger
 from utils.weasyprint_env import configure_weasyprint_dll_paths
 from utils.datetime_format import DEFAULT_TIMEZONE, format_laravel_datetime
 from utils.validators import validate_file_type, validate_file_size, validate_email_upload, resolve_email_upload_filename
+from utils.async_work import run_sync
+from utils.pdf_payload import (
+    attach_pdf_payload,
+    cleanup_stale_pdf_outputs,
+    ensure_pdf_output_dir,
+    strip_pdf_for_json_fallback,
+)
+from utils.ttl_cache import pdf_op_cache, email_analysis_cache
+from config import CACHE_ENABLED, CACHE_TTL, CACHE_MAX_SIZE, WORKER_THREADS, PDF_INLINE_MAX_BYTES
 
 configure_weasyprint_dll_paths()
 
@@ -78,6 +86,11 @@ def create_app() -> FastAPI:
     email_parser = EmailParserService()
     email_analyzer = EmailAnalyzerService()
     email_renderer = EmailRendererService()
+
+    ensure_pdf_output_dir()
+    removed = cleanup_stale_pdf_outputs()
+    if removed:
+        logger.info(f"Cleaned {removed} stale PDF output file(s) on startup")
     
     return app
 
@@ -124,6 +137,15 @@ async def health_check():
             "email_renderer": "ready",
             "weasyprint": weasyprint_status,
         },
+        "runtime": {
+            "cache_enabled": CACHE_ENABLED,
+            "cache_ttl": CACHE_TTL,
+            "cache_max_size": CACHE_MAX_SIZE,
+            "worker_threads": WORKER_THREADS,
+            "pdf_inline_max_bytes": PDF_INLINE_MAX_BYTES,
+            "pdf_op_cache": pdf_op_cache.stats(),
+            "email_analysis_cache": email_analysis_cache.stats(),
+        },
     }
 
 
@@ -144,8 +166,8 @@ async def convert_pdf_to_images(file: UploadFile = File(...)):
         # Read file content
         content = await file.read()
         
-        # Convert to images
-        result = pdf_service.convert_to_images(content, file.filename)
+        # Convert to images (CPU-bound — off event loop)
+        result = await run_sync(pdf_service.convert_to_images, content, file.filename)
         
         return JSONResponse(content=result)
         
@@ -168,8 +190,8 @@ async def merge_pdfs(files: list[UploadFile] = File(...)):
         # Read file contents
         pdf_contents = [await file.read() for file in files]
         
-        # Merge PDFs
-        result = pdf_service.merge_pdfs(pdf_contents)
+        # Merge PDFs (CPU-bound — off event loop)
+        result = await run_sync(pdf_service.merge_pdfs, pdf_contents)
         
         return JSONResponse(content=result)
         
@@ -192,7 +214,7 @@ async def convert_page(request: Request):
         
         logger.info(f"Converting page {page_number} of {file_path}")
         
-        result = pdf_service.convert_page_to_image(file_path, page_number, resolution)
+        result = await run_sync(pdf_service.convert_page_to_image, file_path, page_number, resolution)
         
         if not result.get('success'):
             raise HTTPException(status_code=500, detail=result.get('error', 'Conversion failed'))
@@ -218,7 +240,7 @@ async def get_pdf_info(request: Request):
         
         logger.info(f"Getting PDF info for: {file_path}")
         
-        result = pdf_service.get_pdf_info(file_path)
+        result = await run_sync(pdf_service.get_pdf_info, file_path)
         
         if not result.get('success'):
             raise HTTPException(status_code=500, detail=result.get('error', 'Failed to get PDF info'))
@@ -244,7 +266,7 @@ async def validate_pdf(request: Request):
         
         logger.info(f"Validating PDF: {file_path}")
         
-        result = pdf_service.validate_pdf(file_path)
+        result = await run_sync(pdf_service.validate_pdf, file_path)
         
         return JSONResponse(content=result)
         
@@ -266,7 +288,7 @@ async def normalize_pdf(request: Request):
         
         logger.info(f"Normalizing PDF: {input_path} -> {output_path}")
         
-        result = pdf_service.normalize_pdf(input_path, output_path)
+        result = await run_sync(pdf_service.normalize_pdf, input_path, output_path)
         
         if not result.get('success'):
             raise HTTPException(status_code=500, detail=result.get('error', 'Normalization failed'))
@@ -294,7 +316,7 @@ async def add_signatures(request: Request):
         
         logger.info(f"Adding {len(signatures)} signatures to PDF")
         
-        result = pdf_service.add_signatures_to_pdf(input_path, output_path, signatures)
+        result = await run_sync(pdf_service.add_signatures_to_pdf, input_path, output_path, signatures)
         
         if not result.get('success'):
             raise HTTPException(status_code=500, detail=result.get('error', 'Failed to add signatures'))
@@ -322,7 +344,7 @@ async def batch_convert_pages(request: Request):
         
         logger.info(f"Batch converting {len(pages)} pages")
         
-        result = pdf_service.batch_convert_pages(file_path, pages, resolution)
+        result = await run_sync(pdf_service.batch_convert_pages, file_path, pages, resolution)
         
         if not result.get('success'):
             raise HTTPException(status_code=500, detail=result.get('error', 'Batch conversion failed'))
@@ -382,7 +404,7 @@ async def parse_email(
         temp_path.parent.mkdir(exist_ok=True)
         temp_path.write_bytes(content)
 
-        result = email_parser.parse_email_file(str(temp_path))
+        result = await run_sync(email_parser.parse_email_file, str(temp_path))
         if str(metadata_only).lower() in ('1', 'true', 'yes'):
             result = email_parser.strip_attachment_payloads(result)
         return JSONResponse(content=result)
@@ -410,7 +432,9 @@ async def parse_render_pdf_email(
 ):
     """
     Parse .msg file, render metadata + body HTML, and generate a PDF for CRM viewing.
-    Returns parsed email data plus optional pdf_base64 (soft-fail if PDF generation fails).
+
+    Returns parsed email data plus PDF via pdf_file_path (preferred) and optional
+    pdf_base64 when the PDF is under PDF_INLINE_MAX_BYTES (soft-fail if PDF fails).
     """
     temp_path = None
     try:
@@ -429,14 +453,15 @@ async def parse_render_pdf_email(
         temp_path.parent.mkdir(exist_ok=True)
         temp_path.write_bytes(content)
 
-        parsed_data = email_parser.parse_email_file(str(temp_path))
+        parsed_data = await run_sync(email_parser.parse_email_file, str(temp_path))
 
         if parsed_data.get('success') is False or parsed_data.get('error'):
             return JSONResponse(content=parsed_data, status_code=500)
 
         display_tz = _resolve_display_timezone(timezone, timezone_query)
 
-        pdf_bytes, text_preview, pdf_error, pdf_renderer = email_renderer.render_to_pdf(
+        pdf_bytes, text_preview, pdf_error, pdf_renderer = await run_sync(
+            email_renderer.render_to_pdf,
             parsed_data,
             display_timezone=display_tz,
         )
@@ -452,12 +477,10 @@ async def parse_render_pdf_email(
             )
 
         if pdf_bytes:
-            result['pdf_base64'] = base64.b64encode(pdf_bytes).decode('ascii')
-            result['pdf_size'] = len(pdf_bytes)
-            result['pdf_generated'] = True
-            result['pdf_renderer'] = pdf_renderer or 'unknown'
+            attach_pdf_payload(result, pdf_bytes, pdf_renderer)
         else:
             result['pdf_base64'] = None
+            result['pdf_file_path'] = None
             result['pdf_size'] = 0
             result['pdf_generated'] = False
             result['pdf_error'] = pdf_error or 'PDF generation failed'
@@ -469,13 +492,9 @@ async def parse_render_pdf_email(
             return JSONResponse(content=result)
         except Exception as json_error:
             logger.warning(
-                f"parse-render-pdf response too large for {file.filename}, omitting PDF payload: {json_error}"
+                f"parse-render-pdf response too large for {file.filename}, stripping inline PDF: {json_error}"
             )
-            result.pop('pdf_base64', None)
-            result['pdf_generated'] = False
-            result['pdf_size'] = 0
-            result['pdf_error'] = result.get('pdf_error') or 'PDF omitted from service response due to size limits'
-            return JSONResponse(content=result)
+            return JSONResponse(content=strip_pdf_for_json_fallback(result))
 
     except HTTPException:
         raise
@@ -493,8 +512,8 @@ async def analyze_email(request: Request):
         email_data = await request.json()
         logger.info(f"Analyzing email: {email_data.get('subject', 'No subject')}")
         
-        # Analyze email
-        result = email_analyzer.analyze_content(email_data)
+        # Analyze email (CPU-bound — off event loop)
+        result = await run_sync(email_analyzer.analyze_content, email_data)
         
         return JSONResponse(content=result)
         
@@ -510,8 +529,8 @@ async def render_email(request: Request, timezone: str = Query(default=DEFAULT_T
         email_data = await request.json()
         logger.info(f"Rendering email: {email_data.get('subject', 'No subject')}")
         
-        # Render email
-        result = email_renderer.render_email(email_data, display_timezone=timezone)
+        # Render email (CPU-bound — off event loop)
+        result = await run_sync(email_renderer.render_email, email_data, display_timezone=timezone)
         
         return JSONResponse(content=result)
         
@@ -548,13 +567,13 @@ async def parse_analyze_render_email(
         temp_path.parent.mkdir(exist_ok=True)
         temp_path.write_bytes(content)
 
-        parsed_data = email_parser.parse_email_file(str(temp_path))
+        parsed_data = await run_sync(email_parser.parse_email_file, str(temp_path))
 
         if 'error' in parsed_data:
             return JSONResponse(content=parsed_data, status_code=500)
 
-        analysis = email_analyzer.analyze_content(parsed_data)
-        rendering = email_renderer.render_email(parsed_data, display_timezone=timezone)
+        analysis = await run_sync(email_analyzer.analyze_content, parsed_data)
+        rendering = await run_sync(email_renderer.render_email, parsed_data, display_timezone=timezone)
 
         result = {
             **parsed_data,

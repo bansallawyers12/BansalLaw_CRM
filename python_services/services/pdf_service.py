@@ -23,8 +23,20 @@ except ImportError as e:
     print(f"Warning: PDF dependencies not installed: {e}")
 
 from utils.logger import setup_logger
+from utils.ttl_cache import pdf_op_cache, stable_hash
+from config import CACHE_ENABLED
 
 logger = setup_logger(__name__, 'pdf_service.log')
+
+
+def _file_fingerprint(file_path: str) -> str:
+    """Cache key fragment: absolute path + mtime + size."""
+    path = Path(file_path)
+    try:
+        st = path.stat()
+        return f'{path.resolve()}|{st.st_mtime_ns}|{st.st_size}'
+    except OSError:
+        return str(path)
 
 
 class PDFService:
@@ -205,10 +217,27 @@ class PDFService:
         Returns:
             Dict with success status and image data
         """
+        resolution = resolution or self.default_dpi
+        resolution = min(resolution, self.max_dpi)
+        cache_key = None
+        if CACHE_ENABLED:
+            cache_key = ('convert_page', stable_hash(_file_fingerprint(file_path), page_number, resolution))
+            cached = pdf_op_cache.get(cache_key)
+            if cached is not None:
+                return cached
+
+        result = self._convert_page_to_image_uncached(file_path, page_number, resolution)
+        if CACHE_ENABLED and cache_key and result.get('success'):
+            pdf_op_cache.set(cache_key, result)
+        return result
+
+    def _convert_page_to_image_uncached(
+        self,
+        file_path: str,
+        page_number: int,
+        resolution: int
+    ) -> Dict[str, Any]:
         try:
-            resolution = resolution or self.default_dpi
-            resolution = min(resolution, self.max_dpi)
-            
             if not Path(file_path).exists():
                 logger.error(f"File not found: {file_path}")
                 return {
@@ -285,7 +314,7 @@ class PDFService:
                 }
         
         except Exception as e:
-            logger.error(f"Error converting page {page_number}: {str(e)}")
+            logger.error(f"Error converting page to image: {str(e)}")
             return {
                 'success': False,
                 'error': str(e)
@@ -301,6 +330,20 @@ class PDFService:
         Returns:
             Dict with PDF information
         """
+        if CACHE_ENABLED:
+            cache_key = ('pdf_info', stable_hash(_file_fingerprint(file_path)))
+            cached = pdf_op_cache.get(cache_key)
+            if cached is not None:
+                return cached
+        else:
+            cache_key = None
+
+        result = self._get_pdf_info_uncached(file_path)
+        if CACHE_ENABLED and cache_key and result.get('success'):
+            pdf_op_cache.set(cache_key, result)
+        return result
+
+    def _get_pdf_info_uncached(self, file_path: str) -> Dict[str, Any]:
         try:
             if not Path(file_path).exists():
                 return {
@@ -370,6 +413,20 @@ class PDFService:
         Returns:
             Dict with validation result
         """
+        if CACHE_ENABLED:
+            cache_key = ('validate_pdf', stable_hash(_file_fingerprint(file_path)))
+            cached = pdf_op_cache.get(cache_key)
+            if cached is not None:
+                return cached
+        else:
+            cache_key = None
+
+        result = self._validate_pdf_uncached(file_path)
+        if CACHE_ENABLED and cache_key and ('valid' in result):
+            pdf_op_cache.set(cache_key, result)
+        return result
+
+    def _validate_pdf_uncached(self, file_path: str) -> Dict[str, Any]:
         try:
             if not Path(file_path).exists():
                 return {

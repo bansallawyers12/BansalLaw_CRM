@@ -1173,7 +1173,7 @@ class EmailUploadController extends Controller
     ): ?int {
         $warning = null;
 
-        if (empty($parsedData['pdf_base64'])) {
+        if (empty($parsedData['pdf_base64']) && empty($parsedData['pdf_file_path'])) {
             if (!empty($parsedData['pdf_error'])) {
                 $warning = 'A PDF preview could not be generated for this email: ' . $parsedData['pdf_error'];
                 Log::warning('Email PDF not generated', [
@@ -1185,10 +1185,10 @@ class EmailUploadController extends Controller
         }
 
         try {
-            $pdfBytes = base64_decode($parsedData['pdf_base64'], true);
-            if ($pdfBytes === false || strlen($pdfBytes) === 0) {
+            $pdfBytes = \App\Services\PythonService::resolvePdfBytesFromParsed($parsedData);
+            if ($pdfBytes === null || $pdfBytes === '') {
                 $warning = 'A PDF preview could not be generated for this email (invalid PDF data from the parsing service).';
-                Log::warning('Failed to decode email PDF from Python service', ['file' => $fileName]);
+                Log::warning('Failed to resolve email PDF from Python service', ['file' => $fileName]);
                 return null;
             }
 

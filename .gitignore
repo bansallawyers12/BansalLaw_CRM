@@ -44,6 +44,7 @@ __pycache__/
 *.pyc
 *.pyo
 python_services/logs/*.log
+python_services/temp/
 python_services/__pycache__/
 python_services/*/__pycache__/
 python_pdf_service/

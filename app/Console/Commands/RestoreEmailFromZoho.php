@@ -166,12 +166,8 @@ class RestoreEmailFromZoho extends Command
      */
     private function replaceOrCreatePdf(EmailLog $email, array $parsed, string $rawEml): ?int
     {
-        if (empty($parsed['pdf_base64'])) {
-            return null;
-        }
-
-        $pdfBytes = base64_decode((string) $parsed['pdf_base64'], true);
-        if ($pdfBytes === false || $pdfBytes === '') {
+        $pdfBytes = \App\Services\PythonService::resolvePdfBytesFromParsed($parsed);
+        if ($pdfBytes === null || $pdfBytes === '') {
             return null;
         }
 
