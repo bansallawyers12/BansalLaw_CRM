@@ -455,9 +455,9 @@ $(function () {
       if (tinymce.get(editorId) === null) {
         tinymce.init({
           ...tinymceSimpleConfig,
-          height: 280,
-          min_height: 280,
-          max_height: 600,
+          height: 200,
+          min_height: 200,
+          max_height: 400,
           selector: '#' + editorId
         });
       }

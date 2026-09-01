@@ -598,7 +598,7 @@ use App\Http\Controllers\Controller;
 
 
 <div id="emailmodal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal emailmodal--compose" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true" data-staff-signature="{{ auth()->user()->email_signature ?? '' }}" data-signature-prefill="allow">
-	<div class="modal-dialog modal-lg modal-dialog-centered emailmodal__dialog">
+	<div class="modal-dialog modal-xl modal-dialog-centered emailmodal__dialog">
 		<div class="modal-content emailmodal__content">
 			<div class="modal-header emailmodal__header">
 				<div class="emailmodal__header-main">
@@ -1218,7 +1218,7 @@ use App\Http\Controllers\Controller;
 // TinyMCE Configuration for Email Modals
 var tinymceEmailConfig = {
     license_key: 'gpl',
-    height: 260,
+    height: 200,
     menubar: false,
     statusbar: false,
     elementpath: false,
