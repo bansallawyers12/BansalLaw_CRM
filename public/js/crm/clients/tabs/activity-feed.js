@@ -74,20 +74,65 @@
     };
     var sentinelObserver = null;
     var activeXhr = null;
+    var feedHandlersBound = false;
+    var clientIdRetryTimer = null;
+    var clientIdRetryAttempts = 0;
+    var MAX_CLIENT_ID_RETRIES = 25;
+
+    function resolveClientId(opts) {
+        opts = opts || {};
+        if (opts.clientId != null && String(opts.clientId) !== '') {
+            return opts.clientId;
+        }
+        var fromConfig = window.ClientDetailConfig && window.ClientDetailConfig.clientId;
+        if (fromConfig != null && String(fromConfig) !== '') {
+            return fromConfig;
+        }
+        return $('.crm-container').attr('data-client-id') || '';
+    }
+
+    /**
+     * Load the feed once #activity-feed exists (lazy Timeline tab) and clientId is available.
+     */
+    function ensureActivitiesLoaded(opts) {
+        opts = opts || { reset: true };
+        if (clientIdRetryTimer) {
+            clearTimeout(clientIdRetryTimer);
+            clientIdRetryTimer = null;
+        }
+        var $list = $('#activity-feed .feed-list');
+        if (!$list.length) {
+            return;
+        }
+        if (!resolveClientId(opts)) {
+            if (clientIdRetryAttempts >= MAX_CLIENT_ID_RETRIES) {
+                clientIdRetryAttempts = 0;
+                $list.html(FEED_ERROR_HTML);
+                return;
+            }
+            clientIdRetryAttempts += 1;
+            clientIdRetryTimer = setTimeout(function() {
+                ensureActivitiesLoaded(opts);
+            }, 80);
+            return;
+        }
+        clientIdRetryAttempts = 0;
+        loadActivities(opts);
+    }
+
+    function onTimelineDomReady() {
+        ensureTimelineFiltersVisible();
+        bindFeedScroll();
+        updateExpandAllUi(isExpandAllActive());
+        ensureActivitiesLoaded({ reset: true });
+    }
 
     /**
      * Initialize Activity Feed functionality
      */
     function init() {
-        setupFilterButtons();
-        setupWidthToggle();
-        setupExtendedFilters();
-        setupRefreshButton();
-        setupFilterBarToggle();
-        setupExpandAllToggle();
-        ensureTimelineFiltersVisible();
-        bindFeedScroll();
-        loadActivities({ reset: true });
+        bindDelegatedHandlers();
+        onTimelineDomReady();
     }
 
     function isExpandAllActive() {
@@ -152,12 +197,13 @@
     }
 
     function setupExpandAllToggle() {
-        $('#activity-feed-expand-all').on('click', function() {
-            var next = !isExpandAllActive();
-            setExpandAllActive(next);
-            setAllFeedItemsExpanded(next);
-        });
-        updateExpandAllUi(false);
+        $(document).off('click.activityFeedExpand', '#activity-feed-expand-all')
+            .on('click.activityFeedExpand', '#activity-feed-expand-all', function() {
+                var next = !isExpandAllActive();
+                setExpandAllActive(next);
+                setAllFeedItemsExpanded(next);
+            });
+        updateExpandAllUi(isExpandAllActive());
     }
 
     function isOnActivityTab() {
@@ -255,28 +301,30 @@
     }
 
     function setupFilterBarToggle() {
-        $('#activity-feed-filter-toggle').on('click', function() {
-            if (!isOnActivityTab()) {
-                return;
-            }
-            var expanding = isFilterBarCollapsed();
-            setFilterBarVisible(expanding, true);
-            if (!expanding) {
-                loadActivities({ reset: true });
-            }
-        });
+        $(document).off('click.activityFeedFilterToggle', '#activity-feed-filter-toggle')
+            .on('click.activityFeedFilterToggle', '#activity-feed-filter-toggle', function() {
+                if (!isOnActivityTab()) {
+                    return;
+                }
+                var expanding = isFilterBarCollapsed();
+                setFilterBarVisible(expanding, true);
+                if (!expanding) {
+                    ensureActivitiesLoaded({ reset: true });
+                }
+            });
     }
 
     /**
      * Setup refresh button to reload activities
      */
     function setupRefreshButton() {
-        $('#activity-feed-refresh').on('click', function() {
-            var $btn = $(this).find('i');
-            $btn.addClass('fa-spin');
-            loadActivities({ reset: true });
-            setTimeout(function() { $btn.removeClass('fa-spin'); }, 800);
-        });
+        $(document).off('click.activityFeedRefresh', '#activity-feed-refresh')
+            .on('click.activityFeedRefresh', '#activity-feed-refresh', function() {
+                var $btn = $(this).find('i');
+                $btn.addClass('fa-spin');
+                ensureActivitiesLoaded({ reset: true });
+                setTimeout(function() { $btn.removeClass('fa-spin'); }, 800);
+            });
     }
 
     /**
@@ -284,13 +332,29 @@
      * Type filter works with extended filters (search, date) when they are active
      */
     function setupFilterButtons() {
-        var $root = feedRoot();
-        if (!$root.length) return;
-        $root.find('.activity-filter-btn').on('click', function() {
-            $root.find('.activity-filter-btn').removeClass('active');
-            $(this).addClass('active');
-            loadActivities({ reset: true });
-        });
+        $(document).off('click.activityFeedType', '#activity-feed .activity-filter-btn')
+            .on('click.activityFeedType', '#activity-feed .activity-filter-btn', function() {
+                var $root = feedRoot();
+                if (!$root.length) {
+                    return;
+                }
+                $root.find('.activity-filter-btn').removeClass('active');
+                $(this).addClass('active');
+                ensureActivitiesLoaded({ reset: true });
+            });
+    }
+
+    function bindDelegatedHandlers() {
+        if (feedHandlersBound) {
+            return;
+        }
+        feedHandlersBound = true;
+        setupFilterButtons();
+        setupWidthToggle();
+        setupExtendedFilters();
+        setupRefreshButton();
+        setupFilterBarToggle();
+        setupExpandAllToggle();
     }
 
     /**
@@ -410,7 +474,7 @@
     }
 
     function reapplyFilters() {
-        loadActivities({ reset: true });
+        ensureActivitiesLoaded({ reset: true });
     }
 
     /**
@@ -418,23 +482,24 @@
      * When checked, shows extended filter bar (search, date range, apply/reset)
      */
     function setupWidthToggle() {
-        $('#increase-activity-feed-width').on('change', function() {
-            if (isOnActivityTab()) {
-                return;
-            }
-            if ($(this).is(':checked')) {
-                $('.activity-feed').addClass('wide-mode');
-                if ($('.main-content').is(':visible')) {
-                    $('.main-content').addClass('compact-mode');
+        $(document).off('change.activityFeedWidth', '#increase-activity-feed-width')
+            .on('change.activityFeedWidth', '#increase-activity-feed-width', function() {
+                if (isOnActivityTab()) {
+                    return;
                 }
-                setFilterBarVisible(true, true);
-            } else {
-                setFilterBarVisible(false, true);
-                $('.activity-feed').removeClass('wide-mode');
-                $('.main-content').removeClass('compact-mode');
-            }
-            reapplyFilters();
-        });
+                if ($(this).is(':checked')) {
+                    $('.activity-feed').addClass('wide-mode');
+                    if ($('.main-content').is(':visible')) {
+                        $('.main-content').addClass('compact-mode');
+                    }
+                    setFilterBarVisible(true, true);
+                } else {
+                    setFilterBarVisible(false, true);
+                    $('.activity-feed').removeClass('wide-mode');
+                    $('.main-content').removeClass('compact-mode');
+                }
+                reapplyFilters();
+            });
     }
 
     /**
@@ -455,25 +520,28 @@
      * Only active when checkbox is ticked
      */
     function setupExtendedFilters() {
-        $('#activity-feed-apply').on('click', function() {
-            applyExtendedFilters();
-        });
-        $('#activity-feed-reset').on('click', function() {
-            $('#activity-feed-search').val('');
-            $('#activity-feed-date-from').val('');
-            $('#activity-feed-date-to').val('');
-            applyExtendedFilters();
-        });
-        $('#activity-feed-search').on('keypress', function(e) {
-            if (e.which === 13) { applyExtendedFilters(); }
-        });
+        $(document).off('click.activityFeedApply', '#activity-feed-apply')
+            .on('click.activityFeedApply', '#activity-feed-apply', function() {
+                applyExtendedFilters();
+            });
+        $(document).off('click.activityFeedReset', '#activity-feed-reset')
+            .on('click.activityFeedReset', '#activity-feed-reset', function() {
+                $('#activity-feed-search').val('');
+                $('#activity-feed-date-from').val('');
+                $('#activity-feed-date-to').val('');
+                applyExtendedFilters();
+            });
+        $(document).off('keypress.activityFeedSearch', '#activity-feed-search')
+            .on('keypress.activityFeedSearch', '#activity-feed-search', function(e) {
+                if (e.which === 13) { applyExtendedFilters(); }
+            });
     }
 
     /**
      * Apply search and date filters, combined with current type filter
      */
     function applyExtendedFilters() {
-        loadActivities({ reset: true });
+        ensureActivitiesLoaded({ reset: true });
     }
 
     /**
@@ -706,10 +774,13 @@
         if (!$list.length) {
             return;
         }
-        var clientId = opts.clientId || (window.ClientDetailConfig && window.ClientDetailConfig.clientId);
+        var clientId = resolveClientId(opts);
         var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getActivities)
             || (typeof site_url !== 'undefined' ? site_url + '/get-activities' : '/get-activities');
         if (!clientId) {
+            if (!append) {
+                ensureActivitiesLoaded($.extend({}, opts, { reset: true }));
+            }
             return;
         }
         if (append) {
@@ -792,7 +863,7 @@
 
     window.loadActivities = loadActivities;
     window.getallactivities = function(clientId) {
-        loadActivities({ reset: true, clientId: clientId });
+        ensureActivitiesLoaded({ reset: true, clientId: clientId });
     };
 
     window.buildActivityFeedListHtml = function (data, options) {
@@ -1006,12 +1077,20 @@
         setupProgressiveDisclosure();
     });
 
+    $(document).on('clientTabContentLoaded', function(e, tabId) {
+        if (String(tabId || '').toLowerCase() !== 'activityfeed') {
+            return;
+        }
+        onTimelineDomReady();
+    });
+
     // Expose public API
     window.ActivityFeed = {
         init: init,
         filterActivities: filterActivities,
         reapplyFilters: reapplyFilters,
         ensureTimelineFiltersVisible: ensureTimelineFiltersVisible,
+        ensureActivitiesLoaded: ensureActivitiesLoaded,
         loadActivities: loadActivities,
         expandAll: function() {
             setExpandAllActive(true);

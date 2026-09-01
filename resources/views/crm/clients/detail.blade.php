@@ -1581,9 +1581,6 @@ $(document).ready(function() {
 </script>
 {{-- jquery-datetimepicker removed - not used on this page --}}
 
-{{-- Activity Feed Functionality --}}
-<script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}"></script>
-
 {{-- Sidebar Tabs Management - Dedicated file for sidebar navigation --}}
 <script src="{{URL::asset('js/crm/clients/sidebar-tabs.js')}}?v={{ @filemtime(public_path('js/crm/clients/sidebar-tabs.js')) ?: time() }}"></script>
 
@@ -1724,6 +1721,9 @@ $(document).ready(function() {
     };
     
 </script>
+
+{{-- Activity Feed: after ClientDetailConfig so clientId/urls exist; cache-bust so lazy-tab load fix is picked up --}}
+<script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/activity-feed.js') }}"></script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ @filemtime(public_path('js/crm/clients/shared.js')) ?: time() }}"></script>

@@ -200,6 +200,11 @@
             setMainColumnForTab(tabId);
 
             if (isActivityFeedTab(tabId)) {
+                if (window.ActivityFeed && typeof window.ActivityFeed.ensureActivitiesLoaded === 'function') {
+                    window.ActivityFeed.ensureActivitiesLoaded({ reset: true });
+                } else if (typeof window.loadActivities === 'function') {
+                    window.loadActivities({ reset: true });
+                }
                 setTimeout(function() {
                     if (typeof adjustActivityFeedHeight === 'function') {
                         adjustActivityFeedHeight();
