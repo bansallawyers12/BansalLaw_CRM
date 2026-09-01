@@ -363,10 +363,106 @@
 #personaldocuments-tab .bulk-upload-dropzone .bulk-upload-icon { font-size: 48px; color: var(--sidebar-active, #3a6fa8); margin-bottom: 15px; display: inline-block; }
 #personaldocuments-tab .bulk-upload-dropzone .bulk-upload-lead { font-size: 16px; color: var(--text-dark, #1a2c40); margin-bottom: 10px; }
 #personaldocuments-tab .bulk-upload-dropzone .bulk-upload-hint { font-size: 14px; color: var(--text-muted, #5e7a90); }
-.personal-docs-context-menu { background: var(--card-bg, #fff); border: 1px solid var(--border, #c8dcef); border-radius: 8px; box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12); }
-.personal-docs-context-menu .context-menu-item { border-bottom: 1px solid var(--border, #c8dcef); color: var(--text-dark, #1a2c40); }
-.personal-docs-context-menu .context-menu-item:last-child { border-bottom: none; }
-.personal-docs-context-menu .context-menu-item:hover { background-color: var(--sidebar-bg, #ddeaf8); }
+.personal-docs-context-menu,
+.matter-docs-context-menu,
+.not-used-context-menu,
+.crm-doc-context-menu {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(30, 61, 96, 0.16), 0 2px 8px rgba(30, 61, 96, 0.06);
+  min-width: 220px;
+  padding: 6px;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  z-index: 10050 !important;
+}
+.personal-docs-context-menu .context-menu-item,
+.matter-docs-context-menu .context-menu-item,
+.not-used-context-menu .context-menu-item,
+.crm-doc-context-menu .context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 0;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  border-bottom: none;
+  color: var(--navy, #1e3d60);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+.personal-docs-context-menu .context-menu-item:last-child,
+.matter-docs-context-menu .context-menu-item:last-child,
+.not-used-context-menu .context-menu-item:last-child {
+  border-bottom: none;
+}
+.personal-docs-context-menu .context-menu-item:hover,
+.matter-docs-context-menu .context-menu-item:hover,
+.not-used-context-menu .context-menu-item:hover,
+.crm-doc-context-menu .context-menu-item:hover {
+  background-color: rgba(58, 111, 168, 0.1);
+  color: var(--navy, #1e3d60);
+}
+.personal-docs-context-menu .context-menu-item i,
+.matter-docs-context-menu .context-menu-item i,
+.not-used-context-menu .context-menu-item i,
+.crm-doc-context-menu .context-menu-item i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 0 !important;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(58, 111, 168, 0.1);
+  color: var(--sidebar-active, #3a6fa8);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+.personal-docs-context-menu .context-menu-item:hover i,
+.matter-docs-context-menu .context-menu-item:hover i,
+.not-used-context-menu .context-menu-item:hover i {
+  background: rgba(58, 111, 168, 0.18);
+}
+.personal-docs-context-menu .context-menu-item[onclick*="preview"] i,
+.matter-docs-context-menu .context-menu-item[onclick*="preview"] i,
+.not-used-context-menu .context-menu-item[onclick*="preview"] i {
+  background: rgba(30, 61, 96, 0.1);
+  color: var(--navy, #1e3d60);
+}
+.personal-docs-context-menu .context-menu-item[onclick*="not-used"] i,
+.matter-docs-context-menu .context-menu-item[onclick*="not-used"] i,
+.not-used-context-menu .context-menu-item[onclick*="delete"] i,
+.not-used-context-menu .context-menu-item-danger i {
+  background: rgba(168, 48, 32, 0.1);
+  color: var(--danger, #a83020);
+}
+.personal-docs-context-menu .context-menu-item[onclick*="not-used"]:hover,
+.matter-docs-context-menu .context-menu-item[onclick*="not-used"]:hover,
+.not-used-context-menu .context-menu-item[onclick*="delete"]:hover,
+.not-used-context-menu .context-menu-item-danger:hover {
+  background-color: rgba(168, 48, 32, 0.08);
+  color: var(--danger, #a83020);
+}
+body.crm-closed-matter-view .personal-docs-context-menu,
+body.crm-closed-matter-view .matter-docs-context-menu,
+body.crm-closed-matter-view .not-used-context-menu,
+body.crm-closed-matter-view .crm-closed-matter-context-menu {
+  min-width: 168px;
+}
+body.crm-closed-matter-view .context-menu-item[onclick*="preview"] {
+  background: rgba(58, 111, 168, 0.08);
+}
+body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
+  background: rgba(58, 111, 168, 0.14);
+}
 #personaldocuments-tab .personal-doc-file-icon { color: var(--sidebar-active, #3a6fa8); }
 
 /* Matter Documents — toolbar, buttons, layout (match personal docs) */
@@ -556,34 +652,6 @@
 
 #matterdocuments-tab .matter-doc-file-icon {
   color: var(--sidebar-active, #3a6fa8);
-}
-
-.matter-docs-context-menu {
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #c8dcef);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12);
-}
-
-.matter-docs-context-menu .context-menu-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border, #c8dcef);
-  color: var(--text-dark, #1a2c40);
-}
-
-.matter-docs-context-menu .context-menu-item:last-child {
-  border-bottom: none;
-}
-
-.matter-docs-context-menu .context-menu-item:hover {
-  background-color: var(--sidebar-bg, #ddeaf8);
-}
-
-.matter-docs-context-menu .context-menu-item i {
-  margin-right: 8px;
-  width: 16px;
-  text-align: center;
 }
 
 #matterdocuments-tab .client-doc-preview-empty {

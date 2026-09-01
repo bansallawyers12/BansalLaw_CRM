@@ -271,27 +271,27 @@
                 </div>
 
             <!-- Custom Context Menu (must stay inside .tab-pane for lazy-tab load) -->
-            <div id="fileContextMenu" class="context-menu personal-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
-                <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-pen-to-square" style="margin-right: 8px;"></i> Rename Checklist
+            <div id="fileContextMenu" class="context-menu personal-docs-context-menu crm-doc-context-menu" style="display: none; position: fixed; z-index: 10050; min-width: 220px;" role="menu" aria-label="Document actions">
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('rename-checklist')">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Rename Checklist</span>
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i> Rename File Name
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('rename-doc')">
+                    <i class="fa-solid fa-file-pen" aria-hidden="true"></i><span>Rename File Name</span>
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('move')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-up-down-left-right" style="margin-right: 8px;"></i> Move Document
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('move')">
+                    <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('preview')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-eye" style="margin-right: 8px;"></i> Preview
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('preview')">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
-                <div id="context-pdf-option" class="context-menu-item" onclick="handleContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; display: none;">
-                    <i class="fa-solid fa-file-pdf" style="margin-right: 8px;"></i> PDF
+                <div id="context-pdf-option" class="context-menu-item" role="menuitem" onclick="handleContextAction('pdf')" style="display: none;">
+                    <i class="fa-solid fa-file-pdf" aria-hidden="true"></i><span>PDF</span>
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('download')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-download" style="margin-right: 8px;"></i> Download
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('download')">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-trash" style="margin-right: 8px;"></i> Not Used
+                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('not-used')">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Not Used</span>
                 </div>
             </div>
 
@@ -721,11 +721,15 @@
                     const pdfOption = document.getElementById('context-pdf-option');
                     const fileExt = String(fileType || '').toLowerCase();
                     if (pdfOption) {
-                        if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
+                        if (['jpg', 'png', 'jpeg'].includes(fileExt) && !window.__CRM_CLOSED_MATTER_VIEW__) {
                             pdfOption.style.display = 'block';
                         } else {
                             pdfOption.style.display = 'none';
                         }
+                    }
+
+                    if (typeof window.applyClosedMatterContextMenuFilter === 'function') {
+                        window.applyClosedMatterContextMenuFilter(menu);
                     }
 
                     // Measure actual menu dimensions dynamically
@@ -781,6 +785,10 @@
                     if (!currentContextFile) return;
 
                     hideContextMenu();
+
+                    if (window.__CRM_CLOSED_MATTER_VIEW__ && action !== 'preview') {
+                        return;
+                    }
 
                     switch(action) {
                         case 'rename-checklist':

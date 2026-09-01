@@ -196,18 +196,18 @@
                 </div>
 
             <!-- Custom Context Menu for Not Used Documents (must stay inside .tab-pane for lazy-tab load) -->
-            <div id="notUsedFileContextMenu" class="context-menu not-used-context-menu">
-                <div class="context-menu-item" onclick="handleNotUsedContextAction('preview')">
-                    <i class="fa-solid fa-eye"></i> Preview
+            <div id="notUsedFileContextMenu" class="context-menu not-used-context-menu crm-doc-context-menu" style="display: none; position: fixed; z-index: 10050; min-width: 220px;" role="menu" aria-label="Document actions">
+                <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('preview')">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
-                <div class="context-menu-item" onclick="handleNotUsedContextAction('download')">
-                    <i class="fa-solid fa-download"></i> Download
+                <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('download')">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
-                <div class="context-menu-item" onclick="handleNotUsedContextAction('back-to-doc')">
-                    <i class="fa-solid fa-undo"></i> Revert
+                <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('back-to-doc')">
+                    <i class="fa-solid fa-undo" aria-hidden="true"></i><span>Revert</span>
                 </div>
-                <div class="context-menu-item context-menu-item-danger" onclick="handleNotUsedContextAction('delete')">
-                    <i class="fa-solid fa-trash"></i> Delete
+                <div class="context-menu-item context-menu-item-danger" role="menuitem" onclick="handleNotUsedContextAction('delete')">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Delete</span>
                 </div>
             </div>
 
@@ -235,20 +235,27 @@
                     if (menu.parentElement !== document.body) {
                         document.body.appendChild(menu);
                     }
-                    const MENU_WIDTH = 200;
-                    const MENU_HEIGHT = 168;
+                    if (typeof window.applyClosedMatterContextMenuFilter === 'function') {
+                        window.applyClosedMatterContextMenuFilter(menu);
+                    }
+                    menu.style.visibility = 'hidden';
+                    menu.style.display = 'block';
+                    const menuWidth = menu.offsetWidth || 220;
+                    const menuHeight = menu.offsetHeight || 48;
+                    menu.style.display = 'none';
+                    menu.style.visibility = 'visible';
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
-                    const offset = 5;
+                    const offset = 4;
 
                     let menuLeft = event.clientX + offset;
                     let menuTop = event.clientY + offset;
 
-                    if (menuLeft + MENU_WIDTH > viewportWidth) {
-                        menuLeft = event.clientX - MENU_WIDTH - offset;
+                    if (menuLeft + menuWidth > viewportWidth - offset) {
+                        menuLeft = event.clientX - menuWidth - offset;
                     }
-                    if (menuTop + MENU_HEIGHT > viewportHeight) {
-                        menuTop = event.clientY - MENU_HEIGHT - offset;
+                    if (menuTop + menuHeight > viewportHeight - offset) {
+                        menuTop = event.clientY - menuHeight - offset;
                     }
                     menuLeft = Math.max(offset, menuLeft);
                     menuTop = Math.max(offset, menuTop);
@@ -274,6 +281,10 @@
                     if (!currentNotUsedContextFile) return;
 
                     hideNotUsedContextMenu();
+
+                    if (window.__CRM_CLOSED_MATTER_VIEW__ && action !== 'preview') {
+                        return;
+                    }
 
                     switch (action) {
                         case 'preview':
@@ -621,39 +632,9 @@
                     opacity: 0.6;
                 }
 
-                .not-used-context-menu {
-                    display: none;
-                    position: fixed;
-                    background: #fff;
-                    border: 1px solid var(--border, #c8dcef);
-                    border-radius: 8px;
-                    box-shadow: 0 8px 24px rgba(30, 61, 96, 0.15);
-                    z-index: 10000;
-                    min-width: 190px;
-                    overflow: hidden;
-                    padding: 4px 0;
-                }
-
-                .not-used-context-menu .context-menu-item {
-                    padding: 10px 14px;
-                    cursor: pointer;
-                    font-size: 13px;
-                    color: var(--text-dark, #1a2c40);
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .not-used-context-menu .context-menu-item:hover {
-                    background: var(--sidebar-bg, #ddeaf8);
-                }
-
+                /* Context menu styles live in client-detail.css (.crm-doc-context-menu) */
                 .not-used-context-menu .context-menu-item-danger {
                     color: var(--danger, #a83020);
-                }
-
-                .not-used-context-menu .context-menu-item-danger:hover {
-                    background: rgba(168, 48, 32, 0.08);
                 }
 
                 @media (max-width: 1100px) {

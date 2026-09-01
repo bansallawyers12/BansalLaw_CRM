@@ -37,6 +37,47 @@
     pointer-events: none;
     opacity: 0.55;
 }
+/* Closed matter: document tabs are browse + preview only */
+.crm-container--closed-matter-view .subtab2-button,
+.crm-container--closed-matter-view .subtab6-button,
+.crm-container--closed-matter-view .cdn-doc-subtab-btn,
+.crm-container--closed-matter-view .client-nav-button[data-tab="notuseddocuments"],
+.crm-container--closed-matter-view .btn-not-used-preview {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}
+.crm-container--closed-matter-view .doc-row,
+.crm-container--closed-matter-view .doc-row a {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+.crm-container--closed-matter-view #personaldocuments-tab .add_personal_doc_cat,
+.crm-container--closed-matter-view #personaldocuments-tab .add-checklist-btn,
+.crm-container--closed-matter-view #personaldocuments-tab .bulk-upload-toggle-btn,
+.crm-container--closed-matter-view #personaldocuments-tab .bulk-upload-dropzone-container,
+.crm-container--closed-matter-view #matterdocuments-tab .add-visa-doc-category,
+.crm-container--closed-matter-view #matterdocuments-tab .add-checklist-btn,
+.crm-container--closed-matter-view #matterdocuments-tab .bulk-upload-toggle-btn,
+.crm-container--closed-matter-view #matterdocuments-tab .bulk-upload-dropzone-container,
+.crm-container--closed-matter-view .pd-folder-tab-actions,
+.crm-container--closed-matter-view .md-folder-tab-actions,
+.crm-container--closed-matter-view .checklist-actions,
+.crm-container--closed-matter-view .document-drag-drop-zone,
+.crm-container--closed-matter-view .visa-doc-drag-zone,
+.crm-container--closed-matter-view .visa-sig-action-bar,
+.crm-container--closed-matter-view #notuseddocuments-tab .btn-not-used-download,
+.crm-container--closed-matter-view #notuseddocuments-tab .btn-not-used-revert,
+.crm-container--closed-matter-view #notuseddocuments-tab .btn-not-used-delete {
+    display: none !important;
+}
+/* Context menus mount on body — scope with body class, not .crm-container */
+body.crm-closed-matter-view .context-menu-item:not([onclick*="'preview'"]):not([onclick*='"preview"']) {
+    display: none !important;
+}
+body.crm-closed-matter-view .context-menu-item[onclick*="'preview'"],
+body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
+    display: block !important;
+}
 </style>
 
 <?php

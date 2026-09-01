@@ -434,30 +434,30 @@
                 </div>
 
             <!-- Custom context menu for matter documents (must stay inside .tab-pane for lazy-tab load) -->
-            <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
-                <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
-                    <i class="fa-solid fa-pen-fancy"></i> Send for Signature
+            <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu crm-doc-context-menu" style="display: none; position: fixed; z-index: 10050; min-width: 220px;" role="menu" aria-label="Document actions">
+                <div id="visa-context-send-signature" class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
+                    <i class="fa-solid fa-pen-fancy" aria-hidden="true"></i><span>Place Signature Fields</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')">
-                    <i class="fa-solid fa-pen-to-square"></i> Rename Checklist
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('rename-checklist')">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Rename Checklist</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')">
-                    <i class="fa-solid fa-file-lines"></i> Rename File Name
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('rename-doc')">
+                    <i class="fa-solid fa-file-pen" aria-hidden="true"></i><span>Rename File Name</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('move')">
-                    <i class="fa-solid fa-up-down-left-right"></i> Move Document
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('move')">
+                    <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('preview')">
-                    <i class="fa-solid fa-eye"></i> Preview
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('preview')">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
-                <div id="visa-context-pdf-option" class="context-menu-item" onclick="handleVisaContextAction('pdf')" style="display: none;">
-                    <i class="fa-solid fa-file-pdf"></i> PDF
+                <div id="visa-context-pdf-option" class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('pdf')" style="display: none;">
+                    <i class="fa-solid fa-file-pdf" aria-hidden="true"></i><span>PDF</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('download')">
-                    <i class="fa-solid fa-download"></i> Download
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('download')">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('not-used')">
-                    <i class="fa-solid fa-trash"></i> Not Used
+                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('not-used')">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Not Used</span>
                 </div>
             </div>
 
@@ -536,7 +536,7 @@
                     const sendSigOption = document.getElementById('visa-context-send-signature');
                     const fileExt = String(fileType || 'pdf').toLowerCase();
                     if (pdfOption) {
-                        if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
+                        if (['jpg', 'png', 'jpeg'].includes(fileExt) && !window.__CRM_CLOSED_MATTER_VIEW__) {
                             pdfOption.style.display = 'block';
                         } else {
                             pdfOption.style.display = 'none';
@@ -544,42 +544,48 @@
                     }
                     // For PDFs, either place fields first or send once fields are already placed.
                     if (sendSigOption) {
-                        if (fileExt === 'pdf' && fileStatus !== 'signed') {
+                        if (fileExt === 'pdf' && fileStatus !== 'signed' && !window.__CRM_CLOSED_MATTER_VIEW__) {
                             sendSigOption.style.display = 'block';
                             if (fileStatus === 'placed') {
-                                sendSigOption.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send for Signature';
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Send for Signature</span>';
                             } else if (fileStatus === 'sent') {
-                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Revise Signature Fields';
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Revise Signature Fields</span>';
                             } else {
-                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-fancy"></i> Place Signature Fields';
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-fancy" aria-hidden="true"></i><span>Place Signature Fields</span>';
                             }
                         } else {
                             sendSigOption.style.display = 'none';
                         }
                     }
 
+                    if (typeof window.applyClosedMatterContextMenuFilter === 'function') {
+                        window.applyClosedMatterContextMenuFilter(menu);
+                    }
+
+                    // Measure after closed-matter filtering so single-item menus position correctly
+                    menu.style.visibility = 'hidden';
+                    menu.style.display = 'block';
+                    const menuWidth = menu.offsetWidth || 220;
+                    const menuHeight = menu.offsetHeight || 48;
+                    menu.style.display = 'none';
+                    menu.style.visibility = 'visible';
 
                     // Position menu at cursor (position: fixed uses viewport coordinates)
-                    const MENU_WIDTH = 180;
-                    const MENU_HEIGHT = 350;
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
-                    const offset = 5;
+                    const offset = 4;
                     
                     let menuLeft = event.clientX + offset;
                     let menuTop = event.clientY + offset;
                     
-                    // Check right edge - if menu would go beyond viewport, show to the left of cursor
-                    if (menuLeft + MENU_WIDTH > viewportWidth) {
-                        menuLeft = event.clientX - MENU_WIDTH - offset;
+                    if (menuLeft + menuWidth > viewportWidth - offset) {
+                        menuLeft = event.clientX - menuWidth - offset;
                     }
                     
-                    // Check bottom edge - if menu would go beyond viewport, show above cursor
-                    if (menuTop + MENU_HEIGHT > viewportHeight) {
-                        menuTop = event.clientY - MENU_HEIGHT - offset;
+                    if (menuTop + menuHeight > viewportHeight - offset) {
+                        menuTop = event.clientY - menuHeight - offset;
                     }
                     
-                    // Keep menu inside viewport (left/top edges)
                     menuLeft = Math.max(offset, menuLeft);
                     menuTop = Math.max(offset, menuTop);
                     
@@ -606,6 +612,10 @@
                     if (!currentVisaContextFile) return;
 
                     hideVisaContextMenu();
+
+                    if (window.__CRM_CLOSED_MATTER_VIEW__ && action !== 'preview') {
+                        return;
+                    }
 
                     switch(action) {
                         case 'send-for-signature':
