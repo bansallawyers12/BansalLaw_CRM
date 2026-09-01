@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\ClientLegalForm;
 use App\Models\ClientMatter;
 use App\Services\LegalFormDocxService;
+use App\Services\LegalFormFileStorage;
 use App\Services\LegalFormPreviewService;
 use App\Services\LegalFormScopeAiService;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +26,8 @@ class LegalFormsController extends Controller
 
     private LegalFormScopeAiService $scopeAiService;
 
+    private LegalFormFileStorage $fileStorage;
+
     /** Document extensions allowed for legal form uploads (no images or executables). */
     private const UPLOAD_ALLOWED_EXTENSIONS = [
         'pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx', 'csv',
@@ -42,11 +45,13 @@ class LegalFormsController extends Controller
         LegalFormDocxService $docxService,
         LegalFormPreviewService $previewService,
         LegalFormScopeAiService $scopeAiService,
+        LegalFormFileStorage $fileStorage,
     ) {
         $this->middleware('auth:admin');
         $this->docxService = $docxService;
         $this->previewService = $previewService;
         $this->scopeAiService = $scopeAiService;
+        $this->fileStorage = $fileStorage;
     }
 
     public function store(Request $request): JsonResponse
@@ -300,19 +305,14 @@ class LegalFormsController extends Controller
     public function downloadAttachment(ClientLegalForm $legalForm)
     {
         $this->ensureCrmRecordAccess((int) $legalForm->client_id);
-        $path = $legalForm->attachment_path;
-        if (! $path) {
-            abort(404, 'Attachment not found.');
-        }
-
-        $fullPath = public_path($path);
-        if (! file_exists($fullPath)) {
+        $path = $this->fileStorage->normalize($legalForm->attachment_path);
+        if ($path === '' || ! $this->fileStorage->exists($path)) {
             abort(404, 'Attachment not found.');
         }
 
         $filename = $legalForm->attachment_original_name ?: basename($path);
 
-        return response()->download($fullPath, $filename);
+        return $this->fileStorage->downloadResponse($path, $filename);
     }
 
     public function uploadAttachment(Request $request, ClientLegalForm $legalForm): JsonResponse
@@ -358,16 +358,15 @@ class LegalFormsController extends Controller
     private function storeUploadedFormFile(\Illuminate\Http\UploadedFile $file, int $clientId, int $formId): array
     {
         $dir = 'legal_forms/' . $clientId . '/uploads';
-        $fullDir = public_path($dir);
-        if (! is_dir($fullDir)) {
-            mkdir($fullDir, 0755, true);
-        }
-
         $originalName = $file->getClientOriginalName();
         $extension = strtolower($file->getClientOriginalExtension());
         $safeName = time() . '_' . $formId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
-        $file->move($fullDir, $safeName);
         $relativePath = $dir . '/' . $safeName;
+
+        $this->fileStorage->putUploadedFile($file, $relativePath);
+        if (! $this->fileStorage->exists($relativePath)) {
+            throw new \RuntimeException('Uploaded form file could not be saved to storage.');
+        }
 
         return [
             'pdf_path' => $relativePath,
@@ -415,39 +414,60 @@ class LegalFormsController extends Controller
         }
     }
 
-    private function uploadedFormFullPath(ClientLegalForm $legalForm): string
+    private function resolveUploadedRelativePath(ClientLegalForm $legalForm): ?string
     {
-        $path = $legalForm->pdf_path ?: $legalForm->attachment_path;
-        if (! $path) {
-            abort(404, 'Uploaded form file not found.');
+        $candidates = array_values(array_unique(array_filter([
+            $this->fileStorage->normalize($legalForm->pdf_path),
+            $this->fileStorage->normalize($legalForm->attachment_path),
+        ])));
+
+        foreach ($candidates as $path) {
+            $this->fileStorage->promoteLegacyToCloud($path);
+            if ($this->fileStorage->exists($path)) {
+                return $path;
+            }
         }
 
-        $fullPath = public_path($path);
-        if (! file_exists($fullPath)) {
-            abort(404, 'Uploaded form file not found.');
-        }
-
-        return $fullPath;
+        return $candidates[0] ?? null;
     }
 
     private function downloadUploadedFormFile(ClientLegalForm $legalForm)
     {
-        $fullPath = $this->uploadedFormFullPath($legalForm);
-        $filename = $legalForm->attachment_original_name ?: basename($fullPath);
+        $relativePath = $this->resolveUploadedRelativePath($legalForm);
+        if ($relativePath === null || ! $this->fileStorage->exists($relativePath)) {
+            abort(404, 'Uploaded form file not found.');
+        }
 
-        return response()->download($fullPath, $filename);
+        $filename = $legalForm->attachment_original_name ?: basename($relativePath);
+
+        return $this->fileStorage->downloadResponse($relativePath, $filename);
     }
 
     private function previewUploadedFormFile(Request $request, ClientLegalForm $legalForm)
     {
-        $fullPath = $this->uploadedFormFullPath($legalForm);
-        $filename = $legalForm->attachment_original_name ?: basename($fullPath);
+        $relativePath = $this->resolveUploadedRelativePath($legalForm);
+        $filename = $legalForm->attachment_original_name
+            ?: ($relativePath ? basename($relativePath) : 'uploaded-form');
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if ($extension === '' && $relativePath) {
+            $extension = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
+        }
         $safeFilename = str_replace('"', '\\"', $filename);
+
+        if ($relativePath === null || ! $this->fileStorage->exists($relativePath)) {
+            if ($request->boolean('embed')) {
+                return response(
+                    $this->legalFormPreviewErrorHtml('The uploaded file could not be found in storage. Please re-upload the form.'),
+                    404
+                )->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+
+            abort(404, 'Uploaded form file not found.');
+        }
 
         if ($request->boolean('embed')) {
             if ($extension === 'pdf') {
-                $pdfData = file_get_contents($fullPath);
+                $pdfData = $this->fileStorage->get($relativePath);
                 if (! is_string($pdfData) || $pdfData === '') {
                     return response($this->legalFormPreviewErrorHtml('The uploaded PDF could not be loaded.'), 404)
                         ->header('Content-Type', 'text/html; charset=UTF-8');
@@ -460,11 +480,20 @@ class LegalFormsController extends Controller
             }
 
             if (in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
-                $htmlPreview = $this->previewService->htmlPreviewFromPath($fullPath, $filename, $legalForm);
-                if ($htmlPreview !== null) {
-                    return response($htmlPreview, 200, [
-                        'Content-Type' => 'text/html; charset=UTF-8',
-                    ]);
+                $resolved = $this->fileStorage->resolveReadablePath($relativePath, $extension);
+                if ($resolved !== null) {
+                    try {
+                        $htmlPreview = $this->previewService->htmlPreviewFromPath($resolved['path'], $filename, $legalForm);
+                        if ($htmlPreview !== null) {
+                            return response($htmlPreview, 200, [
+                                'Content-Type' => 'text/html; charset=UTF-8',
+                            ]);
+                        }
+                    } finally {
+                        if (! empty($resolved['temporary']) && is_file($resolved['path'])) {
+                            @unlink($resolved['path']);
+                        }
+                    }
                 }
             }
 
@@ -486,12 +515,15 @@ class LegalFormsController extends Controller
             'csv' => 'text/csv',
         ];
 
-        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
-
-        return response()->file($fullPath, [
+        $headers = [
             'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
-            'Content-Disposition' => $disposition . '; filename="' . $safeFilename . '"',
-        ]);
+        ];
+
+        if ($request->boolean('download')) {
+            return $this->fileStorage->downloadResponse($relativePath, $safeFilename, $headers, true);
+        }
+
+        return $this->fileStorage->inlineResponse($relativePath, $safeFilename, $headers);
     }
 
     /**
@@ -505,31 +537,24 @@ class LegalFormsController extends Controller
 
         $file = $request->file('attachment');
         $dir = 'legal_forms/' . $clientId . '/attachments';
-        $fullDir = public_path($dir);
-        if (! is_dir($fullDir)) {
-            mkdir($fullDir, 0755, true);
-        }
-
         $originalName = $file->getClientOriginalName();
         $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
-        $file->move($fullDir, $safeName);
+        $relativePath = $dir . '/' . $safeName;
+
+        $this->fileStorage->putUploadedFile($file, $relativePath);
+        if (! $this->fileStorage->exists($relativePath)) {
+            throw new \RuntimeException('Attachment file could not be saved to storage.');
+        }
 
         return [
-            'attachment_path' => $dir . '/' . $safeName,
+            'attachment_path' => $relativePath,
             'attachment_original_name' => $originalName,
         ];
     }
 
     private function deleteStoredFile(?string $relativePath): void
     {
-        if (! $relativePath) {
-            return;
-        }
-
-        $fullPath = public_path($relativePath);
-        if (file_exists($fullPath)) {
-            unlink($fullPath);
-        }
+        $this->fileStorage->delete($relativePath);
     }
 
     public function previewDocx(Request $request, ClientLegalForm $legalForm)
