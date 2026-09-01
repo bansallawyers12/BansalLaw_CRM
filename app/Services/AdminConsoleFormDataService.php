@@ -46,17 +46,51 @@ class AdminConsoleFormDataService
     }
 
     /**
-     * @return Collection<int, SmsTemplate>
+     * Active SMS templates for dropdowns (client Send SMS + Admin Console).
+     * Cached as plain arrays so file/redis cache cannot return __PHP_Incomplete_Class.
+     *
+     * @return Collection<int, object{id: int, title: string, message: string, variables: mixed, category: string|null}>
      */
     public function activeSmsTemplates(): Collection
     {
-        return Cache::remember('admin_console_sms_templates_active_v1', $this->formCacheTtl(), function () {
+        $cacheKey = 'admin_console_sms_templates_active_v2';
+
+        $rows = Cache::remember($cacheKey, $this->formCacheTtl(), function () {
             return SmsTemplate::query()
                 ->select(['id', 'title', 'message', 'variables', 'category'])
                 ->where('is_active', true)
                 ->orderBy('title')
-                ->get();
+                ->get()
+                ->map(static fn (SmsTemplate $template) => [
+                    'id' => (int) $template->id,
+                    'title' => (string) $template->title,
+                    'message' => (string) $template->message,
+                    'variables' => $template->variables,
+                    'category' => $template->category,
+                ])
+                ->all();
         });
+
+        if (! is_array($rows)) {
+            Cache::forget($cacheKey);
+            Cache::forget('admin_console_sms_templates_active_v1');
+            $rows = SmsTemplate::query()
+                ->select(['id', 'title', 'message', 'variables', 'category'])
+                ->where('is_active', true)
+                ->orderBy('title')
+                ->get()
+                ->map(static fn (SmsTemplate $template) => [
+                    'id' => (int) $template->id,
+                    'title' => (string) $template->title,
+                    'message' => (string) $template->message,
+                    'variables' => $template->variables,
+                    'category' => $template->category,
+                ])
+                ->all();
+            Cache::put($cacheKey, $rows, $this->formCacheTtl());
+        }
+
+        return collect($rows)->map(static fn (array $row) => (object) $row);
     }
 
     /**
