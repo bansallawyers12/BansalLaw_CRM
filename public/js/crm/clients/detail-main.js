@@ -4012,8 +4012,6 @@ success: function(response) {
 
             }
 
-        $('#create_note_d').hide();
-
         $('.main-footer').css(css_property);
 
 

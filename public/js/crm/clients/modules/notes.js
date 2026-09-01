@@ -6,6 +6,8 @@
 (function($) {
     'use strict';
     if (!$) return;
+    if (window.__crmNotesModuleInit) return;
+    window.__crmNotesModuleInit = true;
 
     var baseUrl = (typeof site_url !== 'undefined' ? site_url : (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.base ? window.ClientDetailConfig.urls.base : ''));
     var notesNextOffset = 0;

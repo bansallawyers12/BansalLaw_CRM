@@ -1700,6 +1700,8 @@ $(document).ready(function() {
 @endforeach
 {{-- appointments.js: modal booking from any tab --}}
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/appointments.js')) ?: time() }}"></script>
+{{-- notes.js: Add Notes hero button is available on every tab --}}
+<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/notes.js')) ?: time() }}"></script>
 <script>
 (function () {
     try {
