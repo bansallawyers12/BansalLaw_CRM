@@ -42,16 +42,16 @@
                                     $isClientGenerated = $catVal->client_id !== null;
                                     ?>
                                     <div class="button-container pd-folder-tab-wrap">
-                                        <button type="button" class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
-                                            <?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>
+                                        <button type="button" class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>" title="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>">
+                                            <?= \App\Support\DocumentLabel::forDisplay($catVal->title !== null && $catVal->title !== '' ? $catVal->title : 'Untitled folder') ?>
                                         </button>
                                         <?php if ($isClientGenerated || $isSuperAdmin): ?>
                                             <div class="action-buttons pd-folder-tab-actions">
                                                 <?php if ($isClientGenerated): ?>
-                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder" onclick="event.stopPropagation();"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <?php if ($isSuperAdmin): ?>
-                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>" title="Delete folder"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= \App\Support\DocumentLabel::forDisplay($catVal->title) ?>" title="Delete folder" onclick="event.stopPropagation();"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>

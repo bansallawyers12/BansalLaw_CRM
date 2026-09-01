@@ -7334,7 +7334,11 @@ success: function(response) {
 
             }
 
-            $('#visaclientmatterid').val(selectedMatterFM);
+            if (!selectedMatterFM && window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId) {
+                selectedMatterFM = window.ClientDetailConfig.clientMatterId;
+            }
+
+            $('#visaclientmatterid').val(selectedMatterFM || '');
 
             $('.addvisadoccatmodel').modal('show');
 

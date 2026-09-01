@@ -785,7 +785,7 @@ function customValidate(formName, savetype = '')
                                 $('.popuploader').hide();
                                 if(obj.status){
                                     $('#addpersonaldoccatmodel').modal('hide');
-									localStorage.setItem('activeTab', 'documentalls');
+									localStorage.setItem('activeTab', 'personaldocuments');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{
@@ -814,7 +814,7 @@ function customValidate(formName, savetype = '')
                                 $('.popuploader').hide();
                                 if(obj.status){
                                     $('#addvisadoccatmodel').modal('hide');
-									localStorage.setItem('activeTab', 'documentalls');
+									localStorage.setItem('activeTab', 'matterdocuments');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{

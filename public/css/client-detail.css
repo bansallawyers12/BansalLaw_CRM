@@ -207,8 +207,20 @@
 }
 
 #personaldocuments-tab .pd-folder-tab-wrap {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   position: relative;
+  max-width: 220px;
+}
+
+#personaldocuments-tab .pd-folder-tab-wrap .subtab2-button {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff !important;
+  position: relative;
+  z-index: 1;
 }
 
 #personaldocuments-tab .pd-folder-tab-actions {
@@ -217,6 +229,7 @@
   top: -4px;
   right: -6px;
   gap: 2px;
+  z-index: 2;
 }
 
 #personaldocuments-tab .pd-folder-tab-wrap:hover .pd-folder-tab-actions {
@@ -372,8 +385,20 @@
 }
 
 #matterdocuments-tab .md-folder-tab-wrap {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   position: relative;
+  max-width: 220px;
+}
+
+#matterdocuments-tab .md-folder-tab-wrap .subtab6-button {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff !important;
+  position: relative;
+  z-index: 1;
 }
 
 #matterdocuments-tab .md-folder-tab-actions {
@@ -382,6 +407,7 @@
   top: -4px;
   right: -6px;
   gap: 2px;
+  z-index: 2;
 }
 
 #matterdocuments-tab .md-folder-tab-wrap:hover .md-folder-tab-actions {
