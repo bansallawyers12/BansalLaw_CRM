@@ -22,6 +22,119 @@
         return fallback || 'Unable to update folder.';
     }
 
+    function appendRenameFolderModalToBody() {
+        var $modal = $('#renameFolderModal');
+        if ($modal.length && !$modal.parent().is('body')) {
+            $modal.appendTo('body');
+        }
+    }
+
+    function showRenameFolderError(message) {
+        $('#renameFolderName').addClass('is-invalid');
+        $('#renameFolderError').text(message).show();
+    }
+
+    function clearRenameFolderError() {
+        $('#renameFolderName').removeClass('is-invalid');
+        $('#renameFolderError').text('').hide();
+    }
+
+    function hideRenameFolderModal() {
+        var modalEl = document.getElementById('renameFolderModal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        } else if (modalEl && typeof $.fn.modal === 'function') {
+            $(modalEl).modal('hide');
+        }
+    }
+
+    function openRenameFolderModal(folderId, folderType, currentTitle) {
+        appendRenameFolderModalToBody();
+        $('#renameFolderId').val(folderId || '');
+        $('#renameFolderType').val(folderType || '');
+        clearRenameFolderError();
+        $('#renameFolderName').val(currentTitle || '');
+
+        var modalEl = document.getElementById('renameFolderModal');
+        if (!modalEl) {
+            console.error('Rename folder modal not available');
+            return false;
+        }
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else if (typeof $.fn.modal === 'function') {
+            $(modalEl).modal('show');
+        } else {
+            console.error('Rename folder modal not available');
+            return false;
+        }
+
+        setTimeout(function() {
+            $('#renameFolderName').trigger('focus').trigger('select');
+        }, 200);
+        return false;
+    }
+
+    function saveRenameFolder() {
+        clearRenameFolderError();
+        var folderId = $('#renameFolderId').val();
+        var folderType = $('#renameFolderType').val();
+        var newTitle = ($('#renameFolderName').val() || '').trim();
+        if (!newTitle) {
+            showRenameFolderError('This field is required');
+            return;
+        }
+        if (!folderId) {
+            showRenameFolderError('Unable to locate the folder. Please close and try again.');
+            return;
+        }
+
+        var updateUrl = folderType === 'personal'
+            ? window.ClientDetailConfig.urls.updatePersonalCategory
+            : window.ClientDetailConfig.urls.updateVisaCategory;
+        var activeTab = folderType === 'personal' ? 'personaldocuments' : 'matterdocuments';
+        var $saveBtn = $('#renameFolderSaveBtn');
+        $saveBtn.prop('disabled', true);
+
+        $.ajax({
+            url: updateUrl,
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                id: folderId,
+                title: newTitle
+            },
+            success: function(response) {
+                if (response && response.status) {
+                    hideRenameFolderModal();
+                    try {
+                        localStorage.setItem('activeTab', activeTab);
+                    } catch (e) {}
+                    location.reload();
+                    return;
+                }
+                showRenameFolderError((response && response.message) ? response.message : 'Unable to update folder.');
+            },
+            error: function(xhr) {
+                showRenameFolderError(folderUpdateErrorMessage(xhr));
+            },
+            complete: function() {
+                $saveBtn.prop('disabled', false);
+            }
+        });
+    }
+
+    function getFolderTitleFromButton($btn, tabButtonSelector) {
+        var title = $btn.attr('data-title') || $btn.data('title') || '';
+        title = String(title).trim();
+        if (title) {
+            return title;
+        }
+        return String($btn.closest('.pd-folder-tab-wrap, .md-folder-tab-wrap').find(tabButtonSelector).attr('title') || '').trim();
+    }
+
     function getDocRowFromDrow($drow) {
         return $drow.find('.doc-row');
     }
@@ -172,6 +285,13 @@
                         $(modalEl).modal('hide');
                     }
                     $renameFileTargetRow = null;
+                    var successMsg = obj.message || obj.data || 'Document renamed successfully';
+                    if (typeof window.showCrmFlash === 'function') {
+                        window.showCrmFlash(successMsg, 'success');
+                    } else if (typeof successMessage === 'function') {
+                        $('.custom-error-msg').html(successMessage(successMsg)).show();
+                        $('html, body').animate({ scrollTop: 0 }, 300);
+                    }
                 } else {
                     showRenameFileError(obj.message || 'Please try again');
                     console.error('Failed to rename document:', obj.message);
@@ -189,67 +309,32 @@
 
     $(document).ready(function() {
         // ---- Update Personal Document Folder ----
-        $(document).on('click', '.update-personal-cat-title', function() {
-            var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the folder:');
-            newTitle = (newTitle || '').trim();
-            if (!newTitle) {
-                return;
-            }
-            $.ajax({
-                url: window.ClientDetailConfig.urls.updatePersonalCategory,
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    id: id,
-                    title: newTitle
-                },
-                success: function(response) {
-                    if (response.status) {
-                        alert(response.message);
-                        location.reload();
-                    } else {
-                        alert(response.message || 'Unable to update folder.');
-                    }
-                },
-                error: function(xhr) {
-                    alert(folderUpdateErrorMessage(xhr));
-                }
-            });
+        $(document).on('click', '.update-personal-cat-title', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $btn = $(this);
+            return openRenameFolderModal(
+                $btn.data('id'),
+                'personal',
+                getFolderTitleFromButton($btn, '.subtab2-button')
+            );
         });
 
         // ---- Update Matter Document Folder ----
-        $(document).on('click', '.update-visa-cat-title', function() {
-            var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the folder:');
-            newTitle = (newTitle || '').trim();
-            if (!newTitle) {
-                return;
-            }
-            $.ajax({
-                url: window.ClientDetailConfig.urls.updateVisaCategory,
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    id: id,
-                    title: newTitle
-                },
-                success: function(response) {
-                    if (response.status) {
-                        alert(response.message);
-                        location.reload();
-                    } else {
-                        alert(response.message || 'Unable to update folder.');
-                    }
-                },
-                error: function(xhr) {
-                    alert(folderUpdateErrorMessage(xhr));
-                }
-            });
+        $(document).on('click', '.update-visa-cat-title', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $btn = $(this);
+            return openRenameFolderModal(
+                $btn.data('id'),
+                'visa',
+                getFolderTitleFromButton($btn, '.subtab6-button')
+            );
         });
 
         // ---- Delete Personal Document Folder ----
         $(document).on('click', '.delete-personal-cat-title', function(e) {
+            e.stopPropagation();
             e.preventDefault();
             var id = $(this).data('id');
             var title = $(this).data('title') || 'this folder';
@@ -315,6 +400,24 @@
         $('#renameFileModal').on('hidden.bs.modal', function() {
             clearRenameFileError();
             $renameFileTargetRow = null;
+        });
+
+        $('#renameFolderSaveBtn').on('click', function(e) {
+            e.preventDefault();
+            saveRenameFolder();
+        });
+
+        $('#renameFolderName').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveRenameFolder();
+            }
+        });
+
+        $('#renameFolderModal').on('hidden.bs.modal', function() {
+            clearRenameFolderError();
+            $('#renameFolderId').val('');
+            $('#renameFolderType').val('');
         });
 
         // ---- Download Document ----

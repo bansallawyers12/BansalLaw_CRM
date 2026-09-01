@@ -134,3 +134,30 @@
 	</div>
 </div>
 
+<!-- Rename folder modal (personal + matter documents) -->
+<div class="modal fade custom_modal" id="renameFolderModal" tabindex="-1" role="dialog" aria-labelledby="renameFolderModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="renameFolderModalLabel">Rename Folder</h5>
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="renameFolderId" value="">
+				<input type="hidden" id="renameFolderType" value="">
+				<div class="form-group mb-0">
+					<label for="renameFolderName">Folder name<span class="span_req">*</span></label>
+					<input type="text" class="form-control" id="renameFolderName" autocomplete="off">
+					<div class="invalid-feedback d-block" id="renameFolderError" style="display: none;"></div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="renameFolderSaveBtn">Save</button>
+			</div>
+		</div>
+	</div>
+</div>
+

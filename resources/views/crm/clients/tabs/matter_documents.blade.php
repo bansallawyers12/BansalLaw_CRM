@@ -109,7 +109,7 @@
                                         </button>
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons md-folder-tab-actions">
-                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder" onclick="event.stopPropagation();"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" data-title="<?= e(\App\Support\DocumentLabel::forDisplay($catVal->title)) ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
