@@ -165,7 +165,7 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" data-uploaded-at="<?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" data-uploaded-at="<?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? '') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
                                                                         <i class="fa-solid <?= $fileIcon ?>"></i> <span><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
@@ -269,9 +269,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Custom Context Menu -->
+            <!-- Custom Context Menu (must stay inside .tab-pane for lazy-tab load) -->
             <div id="fileContextMenu" class="context-menu personal-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
                 <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa-solid fa-pen-to-square" style="margin-right: 8px;"></i> Rename Checklist
@@ -710,14 +709,23 @@
                     };
 
                     const menu = document.getElementById('fileContextMenu');
+                    if (!menu) {
+                        return;
+                    }
+                    // Tab panes use overflow:hidden — mount on body so the menu is not clipped
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
                     
                     // Show/hide PDF option based on file type
                     const pdfOption = document.getElementById('context-pdf-option');
-                    const fileExt = fileType.toLowerCase();
-                    if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
-                        pdfOption.style.display = 'block';
-                    } else {
-                        pdfOption.style.display = 'none';
+                    const fileExt = String(fileType || '').toLowerCase();
+                    if (pdfOption) {
+                        if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
+                            pdfOption.style.display = 'block';
+                        } else {
+                            pdfOption.style.display = 'none';
+                        }
                     }
 
                     // Measure actual menu dimensions dynamically
@@ -763,7 +771,9 @@
 
                 function hideContextMenu() {
                     const menu = document.getElementById('fileContextMenu');
-                    menu.style.display = 'none';
+                    if (menu) {
+                        menu.style.display = 'none';
+                    }
                     document.removeEventListener('click', hideContextMenu);
                 }
 
@@ -1027,6 +1037,12 @@
                         hideContextMenu();
                     }
                 });
+
+                // Inline oncontextmenu handlers need globals (incl. lazy-tab globalEval)
+                window.showFileContextMenu = showFileContextMenu;
+                window.hideContextMenu = hideContextMenu;
+                window.handleContextAction = handleContextAction;
+                window.openMoveDocumentModal = openMoveDocumentModal;
             </script>
 
             <style>
@@ -2237,4 +2253,5 @@
                     return text.replace(/[&<>"']/g, m => map[m]);
                 }
             </script>
+            </div>{{-- /#personaldocuments-tab --}}
 

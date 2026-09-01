@@ -113,7 +113,9 @@
                 });
             })
             .done(function (html) {
-                var $wrapper = $('<div>').html(html);
+                var $wrapper = $('<div>');
+                // keepScripts so inline tab scripts (context menus, drag/drop) survive parse
+                $wrapper.append($.parseHTML(html, document, true));
                 var $newPane = $wrapper.children('.tab-pane').first();
                 if (!$newPane.length) {
                     $newPane = $wrapper.find('.tab-pane').first();
@@ -121,12 +123,26 @@
 
                 var $loadedPane = $pane;
                 if ($newPane.length) {
+                    // Menus/modals/scripts may be siblings after .tab-pane in older markup
+                    var $trailing = $newPane.nextAll();
                     var wasActive = $pane.hasClass('active');
                     $pane.replaceWith($newPane);
+                    if ($trailing.length) {
+                        $newPane.after($trailing);
+                    }
                     if (wasActive) {
                         $newPane.addClass('active');
                     }
-                    executeScripts($newPane);
+                    // Drop stale body-mounted context menus from a prior visit to this tab
+                    ['fileContextMenu', 'visaFileContextMenu', 'notUsedFileContextMenu'].forEach(function (id) {
+                        var nodes = document.querySelectorAll('#' + id);
+                        if (nodes.length > 1) {
+                            for (var i = 0; i < nodes.length - 1; i++) {
+                                nodes[i].parentNode && nodes[i].parentNode.removeChild(nodes[i]);
+                            }
+                        }
+                    });
+                    executeScripts($newPane.add($trailing));
                     $newPane.attr('data-loaded', '1');
                     $loadedPane = $newPane;
                 } else {

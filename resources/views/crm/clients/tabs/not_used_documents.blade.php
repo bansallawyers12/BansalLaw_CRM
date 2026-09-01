@@ -194,9 +194,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Custom Context Menu for Not Used Documents -->
+            <!-- Custom Context Menu for Not Used Documents (must stay inside .tab-pane for lazy-tab load) -->
             <div id="notUsedFileContextMenu" class="context-menu not-used-context-menu">
                 <div class="context-menu-item" onclick="handleNotUsedContextAction('preview')">
                     <i class="fa-solid fa-eye"></i> Preview
@@ -230,6 +229,12 @@
                     };
 
                     const menu = document.getElementById('notUsedFileContextMenu');
+                    if (!menu) {
+                        return;
+                    }
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
                     const MENU_WIDTH = 200;
                     const MENU_HEIGHT = 168;
                     const viewportWidth = window.innerWidth;
@@ -259,7 +264,9 @@
 
                 function hideNotUsedContextMenu() {
                     const menu = document.getElementById('notUsedFileContextMenu');
-                    menu.style.display = 'none';
+                    if (menu) {
+                        menu.style.display = 'none';
+                    }
                     document.removeEventListener('click', hideNotUsedContextMenu);
                 }
 
@@ -311,6 +318,10 @@
                         hideNotUsedContextMenu();
                     }
                 });
+
+                window.showNotUsedFileContextMenu = showNotUsedFileContextMenu;
+                window.hideNotUsedContextMenu = hideNotUsedContextMenu;
+                window.handleNotUsedContextAction = handleNotUsedContextAction;
             </script>
 
             <style>
@@ -656,3 +667,4 @@
                     }
                 }
             </style>
+            </div>{{-- /#notuseddocuments-tab --}}

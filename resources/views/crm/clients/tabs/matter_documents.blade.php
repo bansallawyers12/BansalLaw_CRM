@@ -432,9 +432,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Custom context menu for matter documents -->
+            <!-- Custom context menu for matter documents (must stay inside .tab-pane for lazy-tab load) -->
             <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
                 <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
                     <i class="fa-solid fa-pen-fancy"></i> Send for Signature
@@ -524,28 +523,39 @@
                     };
 
                     const menu = document.getElementById('visaFileContextMenu');
+                    if (!menu) {
+                        return;
+                    }
+                    // Tab panes use overflow:hidden — mount on body so the menu is not clipped
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
                     
                     // Show/hide PDF option based on file type
                     const pdfOption = document.getElementById('visa-context-pdf-option');
                     const sendSigOption = document.getElementById('visa-context-send-signature');
-                    const fileExt = fileType.toLowerCase();
-                    if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
-                        pdfOption.style.display = 'block';
-                    } else {
-                        pdfOption.style.display = 'none';
+                    const fileExt = String(fileType || 'pdf').toLowerCase();
+                    if (pdfOption) {
+                        if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
+                            pdfOption.style.display = 'block';
+                        } else {
+                            pdfOption.style.display = 'none';
+                        }
                     }
                     // For PDFs, either place fields first or send once fields are already placed.
-                    if (fileExt === 'pdf' && fileStatus !== 'signed') {
-                        sendSigOption.style.display = 'block';
-                        if (fileStatus === 'placed') {
-                            sendSigOption.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send for Signature';
-                        } else if (fileStatus === 'sent') {
-                            sendSigOption.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Revise Signature Fields';
+                    if (sendSigOption) {
+                        if (fileExt === 'pdf' && fileStatus !== 'signed') {
+                            sendSigOption.style.display = 'block';
+                            if (fileStatus === 'placed') {
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send for Signature';
+                            } else if (fileStatus === 'sent') {
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Revise Signature Fields';
+                            } else {
+                                sendSigOption.innerHTML = '<i class="fa-solid fa-pen-fancy"></i> Place Signature Fields';
+                            }
                         } else {
-                            sendSigOption.innerHTML = '<i class="fa-solid fa-pen-fancy"></i> Place Signature Fields';
+                            sendSigOption.style.display = 'none';
                         }
-                    } else {
-                        sendSigOption.style.display = 'none';
                     }
 
 
@@ -586,7 +596,9 @@
 
                 function hideVisaContextMenu() {
                     const menu = document.getElementById('visaFileContextMenu');
-                    menu.style.display = 'none';
+                    if (menu) {
+                        menu.style.display = 'none';
+                    }
                     document.removeEventListener('click', hideVisaContextMenu);
                 }
 
@@ -857,6 +869,11 @@
                         hideVisaContextMenu();
                     }
                 });
+
+                // Inline oncontextmenu handlers need globals (incl. lazy-tab globalEval)
+                window.showVisaFileContextMenu = showVisaFileContextMenu;
+                window.hideVisaContextMenu = hideVisaContextMenu;
+                window.handleVisaContextAction = handleVisaContextAction;
 
             </script>
 
@@ -2080,4 +2097,5 @@
                     pointer-events: none;
                 }
             </style>
+            </div>{{-- /#matterdocuments-tab --}}
 
