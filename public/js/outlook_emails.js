@@ -46,14 +46,19 @@ function crmOutlookEmailUpload403Message(responseText, status) {
     return 'Access denied. You may not have permission to upload emails for this client.';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function crmInitOutlookEmailsInterface() {
+    const outlookContainer = document.getElementById('outlookContainer');
+    if (!outlookContainer || outlookContainer.getAttribute('data-outlook-emails-init') === '1') {
+        return;
+    }
+    outlookContainer.setAttribute('data-outlook-emails-init', '1');
+
     let currentPage = 1;
     let currentFolder = 'inbox'; // inbox, sent, outbox, unassigned, assigned, review
     let emails = [];
     let selectedEmailId = null;
 
     // Elements
-    const outlookContainer = document.getElementById('outlookContainer');
     const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
     const unassignedOnly = !!(outlookContainer && outlookContainer.getAttribute('data-unassigned-only') === '1');
     const compactPagination = !!(outlookContainer && outlookContainer.getAttribute('data-compact-pagination') === '1');
@@ -7218,4 +7223,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
+
+function crmScheduleOutlookEmailsInterface() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', crmInitOutlookEmailsInterface, { once: true });
+    } else {
+        crmInitOutlookEmailsInterface();
+    }
+}
+
+crmScheduleOutlookEmailsInterface();
+
+if (typeof jQuery !== 'undefined') {
+    jQuery(document).on('clientTabContentLoaded', function (_event, tabId) {
+        if (String(tabId || '').toLowerCase() === 'emails') {
+            crmInitOutlookEmailsInterface();
+        }
+    });
+}
