@@ -35,12 +35,25 @@ class MatterController extends Controller
         $data = $this->buildListPayload($request);
 
         if ($request->ajax() || $request->expectsJson()) {
-            return response()->json([
+            $lists = $data['lists'];
+            $payload = [
                 'success' => true,
                 'total' => $data['totalData'],
-                'html' => view('AdminConsole.features.matter.partials.list-table', $data)->render(),
-                'pagination' => view('AdminConsole.features.matter.partials.pagination', $data)->render(),
-            ]);
+                'currentPage' => $lists->currentPage(),
+                'lastPage' => $lists->lastPage(),
+                'hasMore' => $lists->hasMorePages(),
+                'loaded' => (int) ($lists->lastItem() ?? 0),
+                'status' => view('AdminConsole.features.matter.partials.scroll-status', $data)->render(),
+            ];
+
+            if ($request->boolean('append')) {
+                $payload['append'] = true;
+                $payload['rows'] = view('AdminConsole.features.matter.partials.list-rows', $data)->render();
+            } else {
+                $payload['html'] = view('AdminConsole.features.matter.partials.list-table', $data)->render();
+            }
+
+            return response()->json($payload);
         }
 
         return view('AdminConsole.features.matter.index', $data);

@@ -11,7 +11,7 @@
     data-update-url-template="{{ route('adminconsole.features.matter.update', ['id' => '__ID__']) }}"
     data-view-url-template="{{ route('adminconsole.features.matter.view', ['id' => '__ID__']) }}"
     data-initial-search="{{ $searchBy ?? '' }}"
-    data-initial-per-page="{{ $perPage ?? config('constants.limit', 20) }}">
+    data-infinite-scroll="1">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -65,11 +65,14 @@
                             </div>
                         </div>
                         <div class="card-footer" id="mat-list-footer">
-                            @include('AdminConsole.features.matter.partials.pagination', [
+                            @include('AdminConsole.features.matter.partials.scroll-status', [
                                 'lists' => $lists,
                                 'totalData' => $totalData,
-                                'perPage' => $perPage ?? config('constants.limit', 20),
                             ])
+                        </div>
+                        <div id="mat-infinite-loader" class="mat-infinite-loader text-center text-muted small py-2 d-none" aria-hidden="true" hidden>
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Loading more matters...
                         </div>
                     </div>
                 </div>

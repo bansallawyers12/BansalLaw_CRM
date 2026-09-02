@@ -6,45 +6,30 @@
         return;
     }
 
-    var PER_PAGE_OPTIONS = [10, 20, 50, 100];
-    var PER_PAGE_STORAGE_KEY = 'admin_matter_list_per_page';
-
-    function resolveInitialPerPage() {
-        var params = new URLSearchParams(window.location.search);
-        var fromUrl = parseInt(params.get('per_page') || '', 10);
-        if (PER_PAGE_OPTIONS.indexOf(fromUrl) !== -1) {
-            return fromUrl;
-        }
-        try {
-            var stored = parseInt(localStorage.getItem(PER_PAGE_STORAGE_KEY), 10);
-            if (PER_PAGE_OPTIONS.indexOf(stored) !== -1) {
-                return stored;
-            }
-        } catch (e) {
-            // ignore storage errors
-        }
-        var initial = parseInt($app.data('initial-per-page'), 10);
-        if (PER_PAGE_OPTIONS.indexOf(initial) !== -1) {
-            return initial;
-        }
-        return 20;
-    }
+    var PAGE_SIZE = 20;
+    var infiniteBound = false;
 
     var state = {
         search: String($app.data('initial-search') || ''),
         page: 1,
-        perPage: resolveInitialPerPage(),
+        lastPage: 1,
+        total: 0,
+        loaded: 0,
         loading: false,
+        loadingMore: false,
         currentItemId: null,
         editItemId: null
     };
 
-    (function initPageFromUrl() {
-        var params = new URLSearchParams(window.location.search);
-        var page = parseInt(params.get('page') || '1', 10);
-        if (page > 0) {
-            state.page = page;
+    (function initScrollMetaFromDom() {
+        var $status = $('#mat-list-scroll-status');
+        if (!$status.length) {
+            return;
         }
+        state.page = parseInt($status.attr('data-current-page'), 10) || 1;
+        state.lastPage = parseInt($status.attr('data-last-page'), 10) || 1;
+        state.total = parseInt($status.attr('data-total'), 10) || 0;
+        state.loaded = parseInt($status.attr('data-loaded'), 10) || 0;
     })();
 
     var urls = {
@@ -59,6 +44,7 @@
     var $listContent = $('#mat-list-content');
     var $listFooter = $('#mat-list-footer');
     var $listLoading = $('#mat-list-loading');
+    var $infiniteLoader = $('#mat-infinite-loader');
     var $searchInput = $('#mat-search-input');
 
     function escapeHtml(value) {
@@ -78,6 +64,10 @@
     }
 
     function showFlashMessage(message, type) {
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(escapeHtml(message), type === 'success' ? 'success' : 'danger', $('.server-error'));
+            return;
+        }
         var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         $('.server-error').html(
             '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
@@ -107,6 +97,47 @@
         $listContent.toggleClass('is-loading', isLoading);
     }
 
+    function setInfiniteLoader(isLoading) {
+        state.loadingMore = isLoading;
+        if (!$infiniteLoader.length) {
+            return;
+        }
+        $infiniteLoader.toggleClass('d-none', !isLoading);
+        $infiniteLoader.prop('hidden', !isLoading);
+        $infiniteLoader.attr('aria-hidden', isLoading ? 'false' : 'true');
+    }
+
+    function hasMoreMatters() {
+        return state.page < state.lastPage;
+    }
+
+    function updateScrollStatus(response) {
+        state.page = parseInt(response.currentPage, 10) || state.page;
+        state.lastPage = parseInt(response.lastPage, 10) || state.lastPage;
+        state.total = parseInt(response.total, 10) || 0;
+        state.loaded = parseInt(response.loaded, 10) || $('#mat-list-tbody .mat-data-row').length;
+
+        var $status = $('#mat-list-scroll-status');
+        if (!$status.length) {
+            if (response.status) {
+                $listFooter.html(response.status);
+            }
+            return;
+        }
+
+        $status.attr('data-current-page', String(state.page));
+        $status.attr('data-last-page', String(state.lastPage));
+        $status.attr('data-total', String(state.total));
+        $status.attr('data-loaded', String(state.loaded));
+        $status.attr('data-has-more', response.hasMore ? '1' : '0');
+
+        if (state.total > 0) {
+            $status.find('[data-mat-loaded-count]').text(String(state.loaded));
+            $status.find('[data-scroll-more-hint]').toggle(!!response.hasMore);
+            $status.find('[data-scroll-end-hint]').toggle(!response.hasMore);
+        }
+    }
+
     function updateBrowserUrl() {
         if (!window.history || !window.history.replaceState) {
             return;
@@ -115,25 +146,44 @@
         if (state.search) {
             params.set('search_by', state.search);
         }
-        if (state.page > 1) {
-            params.set('page', String(state.page));
-        }
-        if (state.perPage !== 20) {
-            params.set('per_page', String(state.perPage));
-        }
         var query = params.toString();
         window.history.replaceState({ matSearch: state.search }, '', urls.index + (query ? ('?' + query) : ''));
     }
 
-    function loadList(page) {
-        if (state.loading) {
+    function appendRows(rowsHtml) {
+        var $tbody = $('#mat-list-tbody');
+        if (!$tbody.length || !rowsHtml) {
             return;
         }
-        if (typeof page === 'number') {
-            state.page = page;
+
+        $('#mat-empty-row').remove();
+        $tbody.addClass('tdata');
+
+        var $rows = $(rowsHtml);
+        $rows.each(function () {
+            var rowId = this.id;
+            if (rowId && $tbody[0].querySelector('#' + CSS.escape(rowId))) {
+                return;
+            }
+            $tbody.append(this);
+        });
+    }
+
+    function loadList(options) {
+        options = options || {};
+        var append = !!options.append;
+
+        if (state.loading || (append && (state.loadingMore || !hasMoreMatters()))) {
+            return;
         }
 
-        setLoading(true);
+        var requestPage = append ? state.page + 1 : 1;
+
+        if (append) {
+            setInfiniteLoader(true);
+        } else {
+            setLoading(true);
+        }
 
         $.ajax({
             url: urls.index,
@@ -141,22 +191,62 @@
             headers: ajaxHeaders(),
             data: {
                 search_by: state.search,
-                page: state.page,
-                per_page: state.perPage
+                page: requestPage,
+                per_page: PAGE_SIZE,
+                append: append ? 1 : 0
             }
         }).done(function (response) {
             if (!response || !response.success) {
                 showFlashMessage((response && response.message) || 'Failed to load matters.', 'error');
                 return;
             }
-            $listContent.html(response.html || '');
-            $listFooter.html(response.pagination || '');
+
+            if (append) {
+                appendRows(response.rows || '');
+                updateScrollStatus(response);
+            } else {
+                $listContent.html(response.html || '');
+                if (response.status) {
+                    $listFooter.html(response.status);
+                }
+                state.page = parseInt(response.currentPage, 10) || 1;
+                state.lastPage = parseInt(response.lastPage, 10) || 1;
+                state.total = parseInt(response.total, 10) || 0;
+                state.loaded = parseInt(response.loaded, 10) || 0;
+            }
             updateBrowserUrl();
+            window.requestAnimationFrame(maybeLoadMoreMatters);
         }).fail(function (xhr) {
             showFlashMessage((xhr.responseJSON && xhr.responseJSON.message) || 'Failed to load matters.', 'error');
         }).always(function () {
-            setLoading(false);
+            if (append) {
+                setInfiniteLoader(false);
+            } else {
+                setLoading(false);
+            }
         });
+    }
+
+    function maybeLoadMoreMatters() {
+        if (state.loading || state.loadingMore || !hasMoreMatters()) {
+            return;
+        }
+        var scrollBottom = window.innerHeight + window.scrollY;
+        var triggerLine = document.documentElement.scrollHeight - 320;
+        if (scrollBottom >= triggerLine) {
+            loadList({ append: true });
+        }
+    }
+
+    function bindInfiniteScroll() {
+        if (infiniteBound || $app.attr('data-infinite-scroll') !== '1') {
+            return;
+        }
+        infiniteBound = true;
+        $(window).on('scroll.matInfinite resize.matInfinite', function () {
+            maybeLoadMoreMatters();
+        });
+        window.requestAnimationFrame(maybeLoadMoreMatters);
     }
 
     function clearFormErrors($form, $alert) {
@@ -307,7 +397,7 @@
             var obj = typeof resp === 'string' ? JSON.parse(resp) : resp;
             if (obj.status == 1) {
                 showFlashMessage(obj.message || 'Matter deleted successfully.', 'success');
-                loadList(state.page);
+                loadList();
             } else {
                 showFlashMessage(obj.message || 'Could not delete matter.', 'error');
             }
@@ -359,15 +449,13 @@
 
     $('#mat-search-btn').on('click', function () {
         state.search = $.trim($searchInput.val());
-        state.page = 1;
-        loadList(1);
+        loadList();
     });
 
     $('#mat-search-clear').on('click', function () {
         $searchInput.val('');
         state.search = '';
-        state.page = 1;
-        loadList(1);
+        loadList();
     });
 
     $searchInput.on('keydown', function (event) {
@@ -375,37 +463,6 @@
             event.preventDefault();
             $('#mat-search-btn').trigger('click');
         }
-    });
-
-    $(document).on('change', '#mat-per-page-select', function () {
-        var nextPerPage = parseInt($(this).val(), 10);
-        state.perPage = PER_PAGE_OPTIONS.indexOf(nextPerPage) !== -1 ? nextPerPage : 20;
-        try {
-            localStorage.setItem(PER_PAGE_STORAGE_KEY, String(state.perPage));
-        } catch (e) {
-            // ignore storage errors
-        }
-        state.page = 1;
-        loadList(1);
-    });
-
-    $(document).on('click', '#mat-list-pagination a', function (event) {
-        var href = $(this).attr('href');
-        if (!href || state.loading) {
-            return;
-        }
-        event.preventDefault();
-        var url = new URL(href, window.location.origin);
-        state.page = parseInt(url.searchParams.get('page') || '1', 10) || 1;
-        if (url.searchParams.get('search_by')) {
-            state.search = url.searchParams.get('search_by');
-            $searchInput.val(state.search);
-        }
-        var perPage = parseInt(url.searchParams.get('per_page') || '', 10);
-        if (PER_PAGE_OPTIONS.indexOf(perPage) !== -1) {
-            state.perPage = perPage;
-        }
-        loadList(state.page);
     });
 
     $('#mat-add-btn').on('click', openCreateModal);
@@ -449,7 +506,7 @@
         submitForm($(this), urls.store, $('#mat-create-alert'), $('#mat-create-submit'), function (response) {
             hideModal($('#matCreateModal'));
             showFlashMessage(response.message, 'success');
-            loadList(1);
+            loadList();
         });
     });
 
@@ -467,21 +524,11 @@
             function (response) {
                 hideModal($('#matEditModal'));
                 showFlashMessage(response.message, 'success');
-                loadList(state.page);
+                loadList();
             }
         );
     });
 
     handleDeepLinkAction();
-
-    (function syncPerPageOnLoad() {
-        var params = new URLSearchParams(window.location.search);
-        if (params.has('per_page')) {
-            return;
-        }
-        var rendered = parseInt($('#mat-per-page-select').val() || '', 10);
-        if (rendered !== state.perPage) {
-            loadList(state.page);
-        }
-    })();
+    bindInfiniteScroll();
 })(jQuery);

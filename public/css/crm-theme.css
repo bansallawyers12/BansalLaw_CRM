@@ -1927,28 +1927,17 @@ body.sidebar-mini .adminconsole-matter-list .card-footer {
   border-top: 1px solid var(--border);
 }
 
-body.sidebar-mini .adminconsole-matter-list .mat-list-pagination__per-page select {
-  width: auto;
-  min-width: 72px;
-  display: inline-block;
+body.sidebar-mini .adminconsole-matter-list .mat-list-scroll-status__hint,
+body.sidebar-mini .adminconsole-matter-list .mat-list-scroll-status__end {
+  font-size: 12px;
 }
 
-body.sidebar-mini .adminconsole-matter-list .mat-list-pagination .pagination {
-  margin-bottom: 0;
+body.sidebar-mini .adminconsole-matter-list .mat-infinite-loader {
+  border-top: 1px solid var(--border);
+  background: var(--card-bg);
 }
 
-body.sidebar-mini .adminconsole-matter-list .pagination .page-link {
-  color: var(--navy);
-  border-color: var(--border);
-}
-
-body.sidebar-mini .adminconsole-matter-list .pagination .page-item.active .page-link {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
-}
-
-body.sidebar-mini .adminconsole-matter-spa .mat-list-loading {
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table-wrap {
   display: flex;
   align-items: center;
   justify-content: center;

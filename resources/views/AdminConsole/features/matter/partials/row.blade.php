@@ -2,7 +2,7 @@
     $hasStreamColumn = $hasStreamColumn ?? \Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream');
     $firstTemplate = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->first();
 @endphp
-<tr id="id_{{ $list->id }}" data-mat-id="{{ $list->id }}">
+<tr id="id_{{ $list->id }}" class="mat-data-row" data-mat-id="{{ $list->id }}">
     <td>
         <button type="button" class="btn btn-link p-0 text-start mat-view-btn" data-mat-id="{{ $list->id }}">
             <strong>{{ $list->title ?: config('constants.empty') }}</strong>
