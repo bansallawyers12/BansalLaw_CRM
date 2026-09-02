@@ -29,21 +29,17 @@
         if ($workflowSelectedMatter) {
             $workflowMatterName = \App\Models\Matter::displayTitleFromJoinedRow($workflowSelectedMatter->title ?? null);
             $workflowMatterNumber = $workflowSelectedMatter->client_unique_matter_no;
-            $workflowCurrentStageId = $workflowSelectedMatter->workflow_stage_id;
+            $workflowAllStages = \App\Support\ClientMatterWorkflowResolver::stagesForMatter($workflowSelectedMatter);
+            $workflowCurrentStageId = \App\Support\ClientMatterWorkflowResolver::resolveDisplayStageId($workflowSelectedMatter, $workflowAllStages);
+            $workflowCurrentStageRow = $workflowCurrentStageId ? $workflowAllStages->firstWhere('id', $workflowCurrentStageId) : null;
+            $workflowCurrentStageName = $workflowCurrentStageRow ? $workflowCurrentStageRow->name : null;
         } else {
+            $workflowAllStages = collect();
             $workflowCurrentStageId = null;
+            $workflowCurrentStageName = null;
         }
 
         $workflowId = $workflowSelectedMatter ? ($workflowSelectedMatter->workflow_id ?? null) : null;
-        $workflowAllStages = $workflowId
-            ? DB::table('workflow_stages')->where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->get()
-            : DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-
-        $workflowCurrentStageName = null;
-        if ($workflowSelectedMatter && $workflowCurrentStageId && $workflowAllStages->count() > 0) {
-            $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
-            $workflowCurrentStageName = $currentStageRow ? $currentStageRow->name : null;
-        }
         ?>
 
         @if($workflowSelectedMatter)

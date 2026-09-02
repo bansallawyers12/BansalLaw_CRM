@@ -47,6 +47,7 @@ use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
+use App\Support\WorkflowStageCatalog;
 
 use DateTime;
 use DateTimeZone;
@@ -3722,7 +3723,7 @@ class ClientsController extends Controller
         $matterType = Matter::find($matterId);
         $workflowId = $matterType && $matterType->workflow_id
             ? $matterType->workflow_id
-            : \App\Models\Workflow::where('name', 'General')->value('id');
+            : WorkflowStageCatalog::generalWorkflowId();
 
         if (!$workflowId) {
             $workflowId = \App\Models\Workflow::create([
@@ -3730,16 +3731,8 @@ class ClientsController extends Controller
             ])->id;
         }
 
-        $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)
-            ->orderByRaw('COALESCE(sort_order, id) ASC')
-            ->value('id')
+        $firstStageId = WorkflowStageCatalog::firstStageIdForWorkflow((int) $workflowId)
             ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id');
-
-        if (!$firstStageId) {
-            $firstStageId = \App\Models\WorkflowStage::create([
-                'name' => 'New', 'workflow_id' => $workflowId, 'sort_order' => 1,
-            ])->id;
-        }
 
         $row->workflow_id = $workflowId;
         $row->workflow_stage_id = $firstStageId;
@@ -4035,9 +4028,14 @@ class ClientsController extends Controller
                     Log::info('ConvertLeadToClient: client_unique_matter_no', ['client_unique_matter_no' => $matter->client_unique_matter_no]);
 
                     $matterType = Matter::find($request['matter_id']);
-                    $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
-                    $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
-                        ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
+                    $workflowId = $matterType && $matterType->workflow_id
+                        ? $matterType->workflow_id
+                        : WorkflowStageCatalog::generalWorkflowId();
+                    if (!$workflowId) {
+                        $workflowId = \App\Models\Workflow::create(['name' => 'General', 'status' => 1])->id;
+                    }
+                    $firstStageId = WorkflowStageCatalog::firstStageIdForWorkflow((int) $workflowId)
+                        ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id');
                     $matter->workflow_id = $workflowId;
                     $matter->workflow_stage_id = $firstStageId;
                     $matter->matter_status = 1; // Active by default
