@@ -353,12 +353,13 @@ jQuery(document).ready(function($) {
 			'<td class="office-mobile-cell">' + escapeHtml(office.display_mobile || emptyLabel) + '</td>' +
 			'<td class="office-phone-cell">' + escapeHtml(office.display_phone || emptyLabel) + '</td>' +
 			'<td class="office-contact-cell">' + escapeHtml(office.display_contact_person || emptyLabel) + '</td>' +
-			'<td class="text-nowrap"><div class="dropdown d-inline-block">' +
-			'<button class="btn btn-primary dropdown-toggle" type="button" id="officeAction_' + office.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-haspopup="true" aria-expanded="false">Action</button>' +
+			'<td class="text-nowrap text-end offices-actions-cell">' +
+			'<button type="button" class="btn btn-sm btn-outline-primary office-view-btn" data-office-view-url="' + escapeHtml(office.view_url) + '"><i class="fa-regular fa-eye"></i> View</button> ' +
+			'<button type="button" class="btn btn-sm btn-primary edit-office-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button> ' +
+			'<div class="dropdown d-inline-block">' +
+			'<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="officeAction_' + office.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-expanded="false">More</button>' +
 			'<ul class="dropdown-menu dropdown-menu-end offices-action-menu" aria-labelledby="officeAction_' + office.id + '">' +
-			'<li><a class="dropdown-item has-icon" href="' + escapeHtml(office.view_url) + '"><i class="fa-regular fa-eye"></i> View</a></li>' +
-			'<li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>' +
-			'<li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>' +
+			'<li><button type="button" class="dropdown-item text-danger delete-office-btn"><i class="fa-solid fa-trash"></i> Delete</button></li>' +
 			'</ul></div></td></tr>';
 	}
 
@@ -431,6 +432,14 @@ jQuery(document).ready(function($) {
 				$('#create-office-alert').removeClass('d-none').text(message);
 			}
 		});
+	});
+
+	$(document).on('click', '.office-view-btn', function(e) {
+		e.preventDefault();
+		var viewUrl = $(this).data('office-view-url') || $(this).attr('data-office-view-url');
+		if (viewUrl) {
+			window.location.href = viewUrl;
+		}
 	});
 
 	$(document).on('click', '.edit-office-btn', function(e) {

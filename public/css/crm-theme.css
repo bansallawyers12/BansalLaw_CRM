@@ -2491,25 +2491,102 @@ body.sidebar-mini .adminconsole-offices .office-view-link:focus {
   text-decoration: underline !important;
 }
 
+body.sidebar-mini .adminconsole-offices .offices-table tbody tr td.offices-actions-cell,
+body.sidebar-mini .adminconsole-offices .offices-table tbody tr td:last-child {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-actions-cell .btn + .btn,
+body.sidebar-mini .adminconsole-offices .offices-actions-cell .btn + .dropdown {
+  margin-left: 0.35rem;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-menu {
+  background: var(--card-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--border) !important;
+  border-top: 3px solid var(--accent-gold) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(30, 61, 96, 0.12) !important;
+  padding: 6px 0 !important;
+  min-width: 180px !important;
+  z-index: 1060 !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child button.dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.625rem !important;
+  width: calc(100% - 16px) !important;
+  max-width: calc(100% - 16px) !important;
+  margin: 2px 8px !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--text-dark) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item i,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item i {
+  color: var(--sidebar-active) !important;
+  width: 1.125rem !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger {
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger i,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger i {
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item:hover,
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item:focus,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger:hover,
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger:focus,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger:hover,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger:focus {
+  background-color: rgba(220, 53, 69, 0.08) !important;
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger:hover i,
+body.sidebar-mini .adminconsole-offices .offices-action-menu .dropdown-item.text-danger:focus i,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger:hover i,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item.text-danger:focus i {
+  color: var(--danger) !important;
+}
+
 body.sidebar-mini .adminconsole-offices .offices-action-menu {
-  z-index: 1056 !important;
+  z-index: 1060 !important;
 }
 
 body.sidebar-mini .adminconsole-offices .card-footer {
   background: var(--page-bg) !important;
   border-top: 1px solid var(--border) !important;
-}
-
-body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
-body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:focus {
-  background-color: var(--sidebar-bg) !important;
-  color: var(--navy) !important;
-}
-
-body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle {
-  background-color: var(--navy) !important;
-  border-color: var(--navy) !important;
-  color: #fff !important;
 }
 
 body.sidebar-mini .adminconsole-offices-form .office-modal-accordion {

@@ -28,17 +28,25 @@
     <td class="office-mobile-cell">{{ $displayMobile }}</td>
     <td class="office-phone-cell">{{ $displayPhone }}</td>
     <td class="office-contact-cell">{{ $displayContact }}</td>
-    <td class="text-nowrap">
+    <td class="text-nowrap text-end offices-actions-cell">
+        <button type="button" class="btn btn-sm btn-outline-primary office-view-btn" data-office-view-url="{{ $viewUrl }}">
+            <i class="fa-regular fa-eye"></i> View
+        </button>
+        <button type="button" class="btn btn-sm btn-primary edit-office-btn">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+        </button>
         <div class="dropdown d-inline-block">
-            <button class="btn btn-primary dropdown-toggle" type="button" id="officeAction_{{ $list->id }}"
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                id="officeAction_{{ $list->id }}"
                 data-bs-toggle="dropdown"
                 data-bs-popper-config='{"strategy":"fixed"}'
-                aria-haspopup="true"
-                aria-expanded="false">Action</button>
+                aria-expanded="false">More</button>
             <ul class="dropdown-menu dropdown-menu-end offices-action-menu" aria-labelledby="officeAction_{{ $list->id }}">
-                <li><a class="dropdown-item has-icon" href="{{ $viewUrl }}"><i class="fa-regular fa-eye"></i> View</a></li>
-                <li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
-                <li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>
+                <li>
+                    <button type="button" class="dropdown-item text-danger delete-office-btn">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </li>
             </ul>
         </div>
     </td>
