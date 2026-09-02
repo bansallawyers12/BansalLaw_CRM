@@ -270,6 +270,55 @@
 @push('scripts')
 <script>
 (function() {
+    function workflowSwalBase() {
+        return {
+            customClass: { popup: 'cdn-workflow-swal-popup' },
+            buttonsStyling: true,
+            reverseButtons: true,
+            focusCancel: true,
+            didOpen: function() {
+                var container = document.querySelector('.swal2-container');
+                if (container) {
+                    container.style.zIndex = '1090';
+                }
+            }
+        };
+    }
+
+    function workflowSwalConfirm(options) {
+        if (typeof Swal === 'undefined') {
+            return Promise.resolve({
+                isConfirmed: window.confirm(options.text || options.title || 'Are you sure?')
+            });
+        }
+        return Swal.fire(Object.assign({}, workflowSwalBase(), {
+            title: options.title || 'Confirm',
+            text: options.text || undefined,
+            html: options.html || undefined,
+            icon: options.icon || 'question',
+            showCancelButton: true,
+            confirmButtonText: options.confirmText || 'Yes',
+            cancelButtonText: options.cancelText || 'Cancel',
+            confirmButtonColor: options.confirmColor || '#1e3d60',
+            cancelButtonColor: options.cancelColor || '#5e7a90'
+        }));
+    }
+
+    function workflowSwalAlert(options) {
+        if (typeof Swal === 'undefined') {
+            window.alert(options.text || options.title || '');
+            return Promise.resolve();
+        }
+        return Swal.fire(Object.assign({}, workflowSwalBase(), {
+            title: options.title || '',
+            text: options.text || undefined,
+            html: options.html || undefined,
+            icon: options.icon || 'info',
+            confirmButtonText: options.confirmText || 'OK',
+            confirmButtonColor: options.confirmColor || '#1e3d60'
+        }));
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Workflow tab: Set Deadline checkbox - toggle date picker
         var setDeadlineCb = document.getElementById('workflow-set-deadline');
@@ -341,12 +390,20 @@
                 if (data.status) {
                     updateDeadlineChip(data.deadline || deadline || null);
                 } else {
-                    alert(data.message || 'Failed to update deadline.');
+                    workflowSwalAlert({
+                        title: 'Could not update deadline',
+                        text: data.message || 'Failed to update deadline.',
+                        icon: 'error'
+                    });
                 }
             })
             .catch(function(err) {
                 console.error(err);
-                alert('An error occurred.');
+                workflowSwalAlert({
+                    title: 'Error',
+                    text: 'An error occurred while updating the deadline.',
+                    icon: 'error'
+                });
             });
         }
 
@@ -356,7 +413,10 @@
             nextBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
                 var nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
-                if (!matterId) { alert('Error: Matter ID not found'); return; }
+                if (!matterId) {
+                    workflowSwalAlert({ title: 'Error', text: 'Matter ID not found.', icon: 'error' });
+                    return;
+                }
 
                 // If next stage is "Decision Received", show outcome modal first
                 if (nextStageName && nextStageName.toLowerCase() === 'decision received') {
@@ -366,7 +426,11 @@
                     var outcomeErrEl = document.querySelector('.decision-outcome-error strong');
                     var noteErrEl = document.querySelector('.decision-note-error strong');
                     if (!matterIdEl || !outcomeEl || !noteEl) {
-                        alert('Decision Received form is not available on this page.');
+                        workflowSwalAlert({
+                            title: 'Form unavailable',
+                            text: 'Decision Received form is not available on this page.',
+                            icon: 'warning'
+                        });
                         return;
                     }
                     matterIdEl.value = matterId;
@@ -378,9 +442,20 @@
                     return;
                 }
 
-                if (!confirm('Are you sure you want to proceed to the next stage?')) return;
+                var proceedText = nextStageName
+                    ? 'Move this matter to "' + nextStageName + '".'
+                    : 'Are you sure you want to proceed to the next stage?';
 
-                doProceedToNextStage(matterId, null, null, nextBtn);
+                workflowSwalConfirm({
+                    title: 'Proceed to next stage?',
+                    text: proceedText,
+                    confirmText: 'Yes, proceed',
+                    confirmColor: '#28a745'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        doProceedToNextStage(matterId, null, null, nextBtn);
+                    }
+                });
             });
         }
 
@@ -402,16 +477,23 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.status) {
-                    alert(data.message || 'Matter has been successfully moved to the next stage.');
                     window.location.reload();
                 } else {
-                    alert(data.message || 'Failed to move to next stage.');
+                    workflowSwalAlert({
+                        title: 'Could not update stage',
+                        text: data.message || 'Failed to move to next stage.',
+                        icon: 'error'
+                    });
                     if (btn) { btn.disabled = false; btn.innerHTML = orig; if (data.is_last_stage) btn.disabled = true; }
                 }
             })
             .catch(function(err) {
                 console.error(err);
-                alert('An error occurred.');
+                workflowSwalAlert({
+                    title: 'Error',
+                    text: 'An error occurred while updating the stage.',
+                    icon: 'error'
+                });
                 if (btn) { btn.disabled = false; btn.innerHTML = orig; }
             });
         }
@@ -448,36 +530,56 @@
         if (prevBtn) {
             prevBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
-                if (!matterId) { alert('Error: Matter ID not found'); return; }
-                if (!confirm('Are you sure you want to move back to the previous stage?')) return;
+                if (!matterId) {
+                    workflowSwalAlert({ title: 'Error', text: 'Matter ID not found.', icon: 'error' });
+                    return;
+                }
 
-                var btn = this;
-                var orig = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+                workflowSwalConfirm({
+                    title: 'Move to previous stage?',
+                    text: 'Are you sure you want to move back to the previous stage?',
+                    confirmText: 'Yes, go back',
+                    confirmColor: '#1e3d60'
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
 
-                fetch('{{ route("clients.matter.update-previous-stage") }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
-                    body: JSON.stringify({ matter_id: matterId })
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.status) {
-                        alert(data.message || 'Matter has been successfully moved to the previous stage.');
-                        window.location.reload();
-                    } else {
-                        alert(data.message || 'Failed to move to previous stage.');
+                    var btn = prevBtn;
+                    var orig = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+                    fetch('{{ route("clients.matter.update-previous-stage") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+                        body: JSON.stringify({ matter_id: matterId })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.status) {
+                            window.location.reload();
+                        } else {
+                            workflowSwalAlert({
+                                title: 'Could not update stage',
+                                text: data.message || 'Failed to move to previous stage.',
+                                icon: 'error'
+                            });
+                            btn.disabled = false;
+                            btn.innerHTML = orig;
+                            if (data.is_first_stage) btn.disabled = true;
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error(err);
+                        workflowSwalAlert({
+                            title: 'Error',
+                            text: 'An error occurred while updating the stage.',
+                            icon: 'error'
+                        });
                         btn.disabled = false;
                         btn.innerHTML = orig;
-                        if (data.is_first_stage) btn.disabled = true;
-                    }
-                })
-                .catch(function(err) {
-                    console.error(err);
-                    alert('An error occurred.');
-                    btn.disabled = false;
-                    btn.innerHTML = orig;
+                    });
                 });
             });
         }
@@ -503,7 +605,10 @@
             changeWorkflowBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
                 var currentWorkflowId = this.getAttribute('data-current-workflow-id');
-                if (!matterId) { alert('Error: Matter ID not found'); return; }
+                if (!matterId) {
+                    workflowSwalAlert({ title: 'Error', text: 'Matter ID not found.', icon: 'error' });
+                    return;
+                }
                 document.getElementById('change-workflow-matter-id').value = matterId;
                 var select = document.getElementById('change-workflow-select');
                 if (select && currentWorkflowId) {
@@ -528,7 +633,10 @@
             changeWorkflowSubmit.addEventListener('click', function() {
                 var matterId = document.getElementById('change-workflow-matter-id').value;
                 var workflowId = document.getElementById('change-workflow-select').value;
-                if (!matterId || !workflowId) { alert('Please select a workflow.'); return; }
+                if (!matterId || !workflowId) {
+                    workflowSwalAlert({ title: 'Select a workflow', text: 'Please select a workflow.', icon: 'warning' });
+                    return;
+                }
                 var btn = this;
                 var orig = btn.innerHTML;
                 btn.disabled = true;
@@ -544,17 +652,24 @@
                     btn.innerHTML = orig;
                     if (data.status) {
                         $('#change-workflow-modal').modal('hide');
-                        alert(data.message || 'Workflow changed successfully.');
                         window.location.reload();
                     } else {
-                        alert(data.message || 'Failed to change workflow.');
+                        workflowSwalAlert({
+                            title: 'Could not change workflow',
+                            text: data.message || 'Failed to change workflow.',
+                            icon: 'error'
+                        });
                     }
                 })
                 .catch(function(err) {
                     console.error(err);
                     btn.disabled = false;
                     btn.innerHTML = orig;
-                    alert('An error occurred.');
+                    workflowSwalAlert({
+                        title: 'Error',
+                        text: 'An error occurred while changing the workflow.',
+                        icon: 'error'
+                    });
                 });
             });
         }
@@ -569,7 +684,7 @@
                 } else if (matterId) {
                     $('#discontinue-matter-modal').modal('show');
                 } else {
-                    alert('Error: Matter ID not found');
+                    workflowSwalAlert({ title: 'Error', text: 'Matter ID not found.', icon: 'error' });
                 }
             });
         }
@@ -581,30 +696,49 @@
             e.preventDefault();
             var matterId = btn.getAttribute('data-matter-id');
             if (!matterId) return;
-            if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
-            btn.disabled = true;
-            var origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reopening...';
-            var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
-            fetch('{{ route("clients.matter.reopen") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
-                body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.status) {
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Failed to reopen matter.');
+
+            workflowSwalConfirm({
+                title: 'Reopen matter?',
+                text: 'Reopen this matter? It will be moved back to active matters.',
+                confirmText: 'Yes, reopen',
+                confirmColor: '#28a745'
+            }).then(function(result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                btn.disabled = true;
+                var origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reopening...';
+                var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
+                fetch('{{ route("clients.matter.reopen") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                    body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.status) {
+                        window.location.reload();
+                    } else {
+                        workflowSwalAlert({
+                            title: 'Could not reopen matter',
+                            text: data.message || 'Failed to reopen matter.',
+                            icon: 'error'
+                        });
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                })
+                .catch(function() {
+                    workflowSwalAlert({
+                        title: 'Error',
+                        text: 'An error occurred. Please try again.',
+                        icon: 'error'
+                    });
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
-                }
-            })
-            .catch(function() {
-                alert('An error occurred. Please try again.');
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
+                });
             });
         });
 
@@ -615,31 +749,55 @@
             e.preventDefault();
             var matterId = btn.getAttribute('data-matter-id');
             if (!matterId) return;
-            if (!confirm('Send a request to the admin to reopen this matter?')) return;
-            btn.disabled = true;
-            var origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
-            var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
-            fetch('{{ route("clients.matter.request-reopen") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
-                body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.status) {
-                    alert(data.message || 'Reopen request has been sent to admins.');
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Failed to request reopen.');
+
+            workflowSwalConfirm({
+                title: 'Request reopen?',
+                text: 'Send a request to the admin to reopen this matter?',
+                confirmText: 'Send request',
+                confirmColor: '#1e3d60'
+            }).then(function(result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                btn.disabled = true;
+                var origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
+                var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
+                fetch('{{ route("clients.matter.request-reopen") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                    body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.status) {
+                        workflowSwalAlert({
+                            title: 'Request sent',
+                            text: data.message || 'Reopen request has been sent to admins.',
+                            icon: 'success'
+                        }).then(function() {
+                            window.location.reload();
+                        });
+                    } else {
+                        workflowSwalAlert({
+                            title: 'Request failed',
+                            text: data.message || 'Failed to request reopen.',
+                            icon: 'error'
+                        });
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                })
+                .catch(function() {
+                    workflowSwalAlert({
+                        title: 'Error',
+                        text: 'An error occurred. Please try again.',
+                        icon: 'error'
+                    });
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
-                }
-            })
-            .catch(function() {
-                alert('An error occurred. Please try again.');
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
+                });
             });
         });
     });
