@@ -7,6 +7,16 @@
     'use strict';
     if (!$) return;
 
+    if (window.__ClientAccountsModuleBooted) {
+        if (typeof window.bindAccountEntryButtons === 'function') {
+            $(function() {
+                window.bindAccountEntryButtons();
+            });
+        }
+        return;
+    }
+    window.__ClientAccountsModuleBooted = true;
+
     function clientLedgerBalanceAmount(selectedMatter) {
         var client_id = window.ClientDetailConfig.clientId;
         $.ajax({
@@ -151,6 +161,151 @@
     window.clientLedgerBalanceAmount = clientLedgerBalanceAmount;
     window.renderClientFundsLedger = renderClientFundsLedger;
 
+    function resolveAccountMatterIdForEntry() {
+        if (typeof window.resolveAccountMatterId === 'function') {
+            return window.resolveAccountMatterId();
+        }
+        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+            var generalMatter = $('.general_matter_checkbox_client_detail').val();
+            if (generalMatter) {
+                return generalMatter;
+            }
+        }
+        var selectedMatter = $('#sel_matter_id_client_detail').val();
+        if (selectedMatter) {
+            return selectedMatter;
+        }
+        var cfg = window.ClientDetailConfig || {};
+        if (cfg.clientMatterId != null && cfg.clientMatterId !== '') {
+            return String(cfg.clientMatterId);
+        }
+        return '';
+    }
+
+    function loadInvoicesForOfficeReceiptEntry(matterId) {
+        var cfg = window.ClientDetailConfig || {};
+        var url = (cfg.urls && cfg.urls.getInvoicesByMatter) ? cfg.urls.getInvoicesByMatter : '';
+        if (!url) {
+            return;
+        }
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: cfg.csrfToken || '',
+                client_matter_id: matterId,
+                client_id: cfg.clientId || ''
+            },
+            success: function(response) {
+                var $select = $('#office_receipt_form').find('select[name="invoice_no[]"]');
+                $select.empty();
+                $select.append('<option value="">Select Invoice (Optional)</option>');
+                if (response.status && response.invoices && response.invoices.length > 0) {
+                    response.invoices.forEach(function(invoice) {
+                        $select.append('<option value="' + invoice.trans_no + '">' +
+                            invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) +
+                            ' (' + invoice.status + ')</option>');
+                    });
+                }
+            },
+            error: function(xhr) {
+                console.error('Failed to load invoices for office receipt:', xhr);
+                $('#office_receipt_form').find('select[name="invoice_no[]"]')
+                    .html('<option value="">Error loading invoices</option>');
+            }
+        });
+    }
+
+    function bindAccountEntryButtons() {
+        $(document).off('click.accountTab', '.createreceipt[data-account-entry="true"]')
+            .on('click.accountTab', '.createreceipt[data-account-entry="true"]', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                var receiptType = String($(this).data('receipt-type') || '');
+                var $modal = $('#createreceiptmodal');
+                var selectedMatter = resolveAccountMatterIdForEntry();
+                var modalTitles = {
+                    '1': '<i class="fa-solid fa-building-columns" style="color: #28a745;"></i> Trust Account Entry',
+                    '2': '<i class="fa-solid fa-hand-holding-dollar" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
+                    '3': '<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Tax Invoice'
+                };
+                var formIdMap = {
+                    '1': 'client_receipt_form',
+                    '2': 'office_receipt_form',
+                    '3': 'invoice_receipt_form'
+                };
+
+                if (!$modal.length) {
+                    console.error('Modal element #createreceiptmodal not found in DOM');
+                    alert('Error: Receipt modal not found. Please refresh the page.');
+                    return;
+                }
+
+                if (typeof $modal.modal !== 'function') {
+                    console.error('Bootstrap modal plugin not loaded');
+                    alert('Error: Modal plugin not available. Please refresh the page.');
+                    return;
+                }
+
+                $modal.find('.receipt-type-selector').hide();
+                $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
+                $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
+
+                if (receiptType === '1') {
+                    $('#client_matter_id_ledger').val(selectedMatter);
+                    $('input[name="receipt_type"][value="client_receipt"]').prop('checked', true).trigger('change');
+                } else if (receiptType === '2') {
+                    $('#client_matter_id_office').val(selectedMatter);
+                    $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
+                    if (typeof window.loadInvoicesForOfficeReceipt === 'function') {
+                        window.loadInvoicesForOfficeReceipt(selectedMatter);
+                    } else {
+                        loadInvoicesForOfficeReceiptEntry(selectedMatter);
+                    }
+                } else if (receiptType === '3') {
+                    if (typeof window.prepareInvoiceFormForCreate === 'function') {
+                        window.prepareInvoiceFormForCreate(selectedMatter);
+                    }
+                    $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
+                }
+
+                setTimeout(function() {
+                    $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
+                    var formId = formIdMap[receiptType];
+                    if (formId) {
+                        $('#' + formId).show();
+                    }
+                    if (receiptType === '3') {
+                        if (typeof window.prepareInvoiceFormForCreate === 'function') {
+                            window.prepareInvoiceFormForCreate(selectedMatter);
+                        }
+                        if (window._accountPendingInvoicePrefill && typeof window.getAccountCostsDisclosure === 'function' && typeof window.prefillInvoiceLinesFromDisclosure === 'function') {
+                            window.prefillInvoiceLinesFromDisclosure(window.getAccountCostsDisclosure());
+                            window._accountPendingInvoicePrefill = false;
+                        }
+                    } else if (receiptType === '1') {
+                        $('#client_matter_id_ledger').val(selectedMatter);
+                        if (window._accountPendingRetainerPrefill && typeof window.getAccountCostsDisclosure === 'function' && typeof window.prefillTrustRetainerFromDisclosure === 'function') {
+                            window.prefillTrustRetainerFromDisclosure(window.getAccountCostsDisclosure());
+                            window._accountPendingRetainerPrefill = false;
+                        }
+                    } else if (receiptType === '2') {
+                        $('#client_matter_id_office').val(selectedMatter);
+                    }
+                }, 100);
+
+                $modal.modal('show');
+            });
+    }
+
+    window.bindAccountEntryButtons = bindAccountEntryButtons;
+
+    function ensureAccountEntryButtonsBound() {
+        bindAccountEntryButtons();
+    }
+
     $(document).ready(function() {
         setTimeout(function() {
             attachEditLedgerHandlers();
@@ -241,9 +396,17 @@
     };
 
     $(document).ready(function() {
+        ensureAccountEntryButtonsBound();
         if ($('#account-tab').hasClass('active')) {
             window.ClientAccountsTab.loadIfNeeded();
         }
+    });
+
+    $(document).on('accountTabContentLoaded clientTabContentLoaded', function(e, tabId) {
+        if (e.type === 'clientTabContentLoaded' && String(tabId || '').toLowerCase() !== 'account') {
+            return;
+        }
+        ensureAccountEntryButtonsBound();
     });
 
 })(typeof jQuery !== 'undefined' ? jQuery : null);

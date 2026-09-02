@@ -1724,6 +1724,10 @@ $(document).ready(function() {
 
 {{-- Activity Feed: after ClientDetailConfig so clientId/urls exist; cache-bust so lazy-tab load fix is picked up --}}
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/activity-feed.js') }}"></script>
+@if($showMatterBundleTabs ?? false)
+{{-- accounts.js: Billing tab entry buttons must bind before lazy tab HTML injects --}}
+<script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/accounts.js') }}"></script>
+@endif
 
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ @filemtime(public_path('js/crm/clients/shared.js')) ?: time() }}"></script>

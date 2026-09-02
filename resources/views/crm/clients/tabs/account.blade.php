@@ -238,115 +238,27 @@
     window._accountPendingRetainerPrefill = false;
 
 window.captureInvoiceLineRowTemplate = captureInvoiceLineRowTemplate;
+window.resolveAccountMatterId = resolveAccountMatterId;
+window.prepareInvoiceFormForCreate = prepareInvoiceFormForCreate;
+window.getAccountCostsDisclosure = getAccountCostsDisclosure;
+window.prefillInvoiceLinesFromDisclosure = prefillInvoiceLinesFromDisclosure;
+window.prefillTrustRetainerFromDisclosure = prefillTrustRetainerFromDisclosure;
 
-document.addEventListener('DOMContentLoaded', function() {
+function initAccountTabScripts() {
+    if (window.__accountTabScriptsInitialized) {
+        if (typeof window.bindAccountEntryButtons === 'function') {
+            window.bindAccountEntryButtons();
+        }
+        return;
+    }
+    window.__accountTabScriptsInitialized = true;
+
     // Snapshot the pristine invoice line row before any edit flow replaces it.
     captureInvoiceLineRowTemplate();
 
-    // Improved Create Receipt Button Click Handler
-    // Automatically selects the correct form based on which button was clicked
-    // SOLUTION 4: Use namespaced event with higher priority to prevent conflicts
-    $(document).off('click.accountTab', '.createreceipt[data-account-entry="true"]').on('click.accountTab', '.createreceipt[data-account-entry="true"]', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation(); // Prevent other handlers from firing
-        
-        const receiptType = $(this).data('receipt-type');
-        const $modal = $('#createreceiptmodal');
-        
-        
-        // Hide the radio button selection section (not needed since button already indicates type)
-        $modal.find('.receipt-type-selector').hide();
-        
-        // Update modal title based on receipt type
-        const modalTitles = {
-            '1': '<i class="fa-solid fa-building-columns" style="color: #28a745;"></i> Trust Account Entry',
-            '2': '<i class="fa-solid fa-hand-holding-dollar" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
-            '3': '<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Tax Invoice'
-        };
-        
-        $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
-        
-        // First, explicitly hide ALL forms to prevent double display
-        $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
-        
-        // Get the selected matter ID
-        let selectedMatter = resolveAccountMatterId();
-        
-        // Select the appropriate radio button and trigger change event
-        // The change handler in detail-main.js will hide all forms and show the correct one
-        if (receiptType == '1') {
-            // Trust Account Entry
-            
-            // Set the matter ID for client ledger
-            $('#client_matter_id_ledger').val(selectedMatter);
-            
-            $('input[name="receipt_type"][value="client_receipt"]').prop('checked', true).trigger('change');
-        } else if (receiptType == '2') {
-            // Direct Office Receipt
-            
-            // Set the matter ID for office receipt
-            $('#client_matter_id_office').val(selectedMatter);
-            
-            $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
-            
-            // Load invoices for the invoice dropdown
-            loadInvoicesForOfficeReceipt(selectedMatter);
-        } else if (receiptType == '3') {
-            // Invoice
-            prepareInvoiceFormForCreate(selectedMatter);
-            
-            $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
-        }
-        
-        // Ensure only the correct form is visible after a brief delay
-        setTimeout(function() {
-            // Hide all forms again
-            $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
-            
-            // Show only the selected form
-            const formIdMap = { '1': 'client_receipt_form', '2': 'office_receipt_form', '3': 'invoice_receipt_form' };
-            const formId = formIdMap[receiptType];
-            if (formId) {
-                $('#' + formId).show();
-            }
-            
-            // Re-ensure critical fields are set (in case change event cleared them)
-            if (receiptType == '3') {
-                prepareInvoiceFormForCreate(selectedMatter);
-                if (window._accountPendingInvoicePrefill) {
-                    prefillInvoiceLinesFromDisclosure(getAccountCostsDisclosure());
-                    window._accountPendingInvoicePrefill = false;
-                }
-            } else if (receiptType == '1') {
-                $('#client_matter_id_ledger').val(selectedMatter);
-                if (window._accountPendingRetainerPrefill) {
-                    prefillTrustRetainerFromDisclosure(getAccountCostsDisclosure());
-                    window._accountPendingRetainerPrefill = false;
-                }
-            } else if (receiptType == '2') {
-                $('#client_matter_id_office').val(selectedMatter);
-            }
-        }, 100);
-        
-        // FIX 1: Ensure modal element exists and Bootstrap modal is available
-        if ($modal.length === 0) {
-            console.error('❌ Modal element #createreceiptmodal not found in DOM');
-            alert('Error: Receipt modal not found. Please refresh the page.');
-            return;
-        }
-        
-        if (typeof $modal.modal !== 'function') {
-            console.error('❌ Bootstrap modal plugin not loaded');
-            alert('Error: Modal plugin not available. Please refresh the page.');
-            return;
-        }
-        
-        // Open the modal
-        $modal.modal('show');
-        
-        // Log for debugging
-    });
+    if (typeof window.bindAccountEntryButtons === 'function') {
+        window.bindAccountEntryButtons();
+    }
 
     $(document).on('click.accountTab', '#account-view-disclosure-link', function(e) {
         e.preventDefault();
@@ -479,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    window.loadInvoicesForOfficeReceipt = loadInvoicesForOfficeReceipt;
     
     // Update Office Receipt - Save as Draft
     $('#updateOfficeReceiptDraftBtn').on('click', function() {
@@ -2484,7 +2397,43 @@ $(document).ready(function() {
         $('#uploadReceiptDocForm')[0].reset();
         // clearSelectedReceiptFile() is already called in the handler above
     });
-});
+}
+
+function scheduleAccountTabScriptsInit() {
+    function runInit() {
+        if (typeof jQuery === 'undefined') {
+            setTimeout(runInit, 25);
+            return;
+        }
+        jQuery(function() {
+            initAccountTabScripts();
+            if (typeof window.bindAccountEntryButtons === 'function') {
+                window.bindAccountEntryButtons();
+            }
+        });
+    }
+    runInit();
+}
+
+scheduleAccountTabScriptsInit();
+
+if (typeof jQuery !== 'undefined') {
+    jQuery(document).on('clientTabContentLoaded accountTabContentLoaded', function (_event, tabId) {
+        if (_event.type === 'clientTabContentLoaded') {
+            initAccountTabScripts();
+            if (typeof window.bindAccountEntryButtons === 'function') {
+                window.bindAccountEntryButtons();
+            }
+            return;
+        }
+        if (String(tabId || '').toLowerCase() === 'account') {
+            initAccountTabScripts();
+            if (typeof window.bindAccountEntryButtons === 'function') {
+                window.bindAccountEntryButtons();
+            }
+        }
+    });
+}
 </script>
 
 </div>
