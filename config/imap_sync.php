@@ -35,8 +35,17 @@ return [
 
     'sent_folders' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('MAIL_SYNC_SENT_FOLDERS', 'Sent'))
+        explode(',', (string) env('MAIL_SYNC_SENT_FOLDERS', 'Sent,Sent Items,INBOX.Sent'))
     ))),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Always sync Zoho Sent folder
+    |--------------------------------------------------------------------------
+    | When true, every mailbox sync also fetches Sent (even if the mailbox
+    | checkbox sync_sent_enabled is off). Sent Mail UI depends on this.
+    */
+    'always_sync_sent' => filter_var(env('MAIL_SYNC_ALWAYS_SYNC_SENT', true), FILTER_VALIDATE_BOOLEAN),
 
     'initial_backfill_multiplier' => (int) env('MAIL_SYNC_INITIAL_BACKFILL_MULTIPLIER', 2),
 

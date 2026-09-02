@@ -147,20 +147,30 @@
                         <span>Needs Review</span>
                     </div>
                     @else
-                    <div class="folder-tabs" role="tablist" aria-label="Synced mail folders">
-                        <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
+                    <div class="folder-tabs folder-tabs--mailbox" role="tablist" aria-label="Mailbox">
+                        <button type="button" class="folder-item folder-item--mailbox active" data-mailbox="inbox" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                            Inbox
+                        </button>
+                        <button type="button" class="folder-item folder-item--mailbox" data-folder="sent" data-mailbox="sent" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                            Sent
+                        </button>
+                    </div>
+                    <div class="folder-tabs folder-tabs--inbox-status" id="inboxStatusTabs" role="tablist" aria-label="Incoming mail status">
+                        <button type="button" class="folder-item folder-item--status active" data-folder="unassigned" role="tab" aria-selected="true">
                             <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
                             Unassigned
                             <span class="folder-item__count" data-folder-count="unassigned" hidden>0</span>
                         </button>
-                        <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
+                        <button type="button" class="folder-item folder-item--status" data-folder="assigned" role="tab" aria-selected="false">
                             <i class="fa-solid fa-user-check" aria-hidden="true"></i>
                             Assigned
                             <span class="folder-item__count" data-folder-count="assigned" hidden>0</span>
                         </button>
                     </div>
                     @endif
-                <div class="list-toolbar__side-actions">
+                <div class="list-toolbar__side-actions" id="unassignedSideActions">
                     @if($canSyncInbox && $canAssignBySubject && ! $assignmentReviewOnly)
                     <button type="button" class="list-toolbar__assign-subject" id="btnAssignBySubject" title="Assign unassigned emails whose subject has a matching client ID and matter">
                         <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
@@ -204,7 +214,7 @@
         @endif
 
         @if($canShowInboxSync && $unassignedOnly && ! $assignmentReviewOnly)
-        <div class="sync-inbox-panel sync-inbox-panel--redesign{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
+        <div class="sync-inbox-panel sync-inbox-panel--redesign{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}" id="unassignedSyncPanel">
             <div class="sync-inbox-panel__section sync-inbox-panel__section--sync">
                 <div class="sync-inbox-panel__section-label">Fetch mail</div>
                 <div class="sync-inbox-panel__sync-row">

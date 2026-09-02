@@ -55,6 +55,7 @@ function crmInitOutlookEmailsInterface() {
 
     let currentPage = 1;
     let currentFolder = 'inbox'; // inbox, sent, outbox, unassigned, assigned, review
+    let lastInboxFolder = 'unassigned';
     let emails = [];
     let selectedEmailId = null;
 
@@ -67,6 +68,11 @@ function crmInitOutlookEmailsInterface() {
     // Client matter Emails tab only has Inbox/Sent — never start on synced-mail folders.
     if (!unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
         defaultFolder = 'inbox';
+    }
+    if (unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
+        lastInboxFolder = defaultFolder;
+    } else if (unassignedOnly && defaultFolder === 'inbox') {
+        lastInboxFolder = 'unassigned';
     }
     const folderItems = outlookContainer
         ? outlookContainer.querySelectorAll('.folder-item')
@@ -1226,6 +1232,9 @@ function crmInitOutlookEmailsInterface() {
 
     function formatMailTotalLabel(total) {
         const safeTotal = Math.max(0, Number(total) || 0);
+        if (unassignedOnly && currentFolder === 'sent') {
+            return safeTotal === 1 ? 'Total: 1 sent email' : 'Total: ' + safeTotal + ' sent emails';
+        }
         if (unassignedOnly && (currentFolder === 'unassigned' || currentFolder === 'assigned')) {
             const kind = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
             if (safeTotal === 1) {
@@ -1544,7 +1553,16 @@ function crmInitOutlookEmailsInterface() {
     folderItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const target = e.currentTarget;
-            const folder = target.dataset.folder || 'inbox';
+            const mailbox = (target.dataset.mailbox || '').trim();
+            let folder = target.dataset.folder || '';
+
+            if (unassignedOnly && mailbox === 'inbox' && !folder) {
+                folder = lastInboxFolder || 'unassigned';
+            }
+            if (!folder) {
+                folder = 'inbox';
+            }
+
             // Permission gate applies only on the global synced-mail page, not client Inbox/Sent.
             if (unassignedOnly && (folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
                 return;
@@ -1604,16 +1622,28 @@ function crmInitOutlookEmailsInterface() {
             return;
         }
 
+        const isSent = currentFolder === 'sent';
         const isReview = currentFolder === 'review';
+        const isIncoming = !isSent && (currentFolder === 'unassigned' || currentFolder === 'assigned'
+            || currentFolder === 'inbox' || currentFolder === 'review');
+
+        if (isIncoming && currentFolder !== 'sent') {
+            if (currentFolder === 'unassigned' || currentFolder === 'assigned' || currentFolder === 'review') {
+                lastInboxFolder = currentFolder;
+            } else if (currentFolder === 'inbox') {
+                lastInboxFolder = 'unassigned';
+            }
+        }
+
         const titleEl = document.getElementById('unassignedFolderTitle');
         if (titleEl) {
             const icon = titleEl.querySelector('i');
             const label = titleEl.querySelector('span');
             if (icon) {
-                icon.className = 'fa-solid ' + (isReview ? 'fa-triangle-exclamation' : 'fa-inbox');
+                icon.className = 'fa-solid ' + (isReview ? 'fa-triangle-exclamation' : (isSent ? 'fa-paper-plane' : 'fa-inbox'));
             }
             if (label) {
-                label.textContent = isReview ? 'Needs Review' : 'Inbox';
+                label.textContent = isReview ? 'Needs Review' : (isSent ? 'Sent' : 'Inbox');
             }
         }
 
@@ -1622,13 +1652,53 @@ function crmInitOutlookEmailsInterface() {
             panelTitle.textContent = isReview ? 'Review filters' : 'Refine list';
         }
 
+        const inboxStatusTabs = document.getElementById('inboxStatusTabs');
+        if (inboxStatusTabs) {
+            inboxStatusTabs.hidden = isSent || isReview;
+            inboxStatusTabs.classList.toggle('is-hidden', isSent || isReview);
+        }
+
+        const syncPanel = document.getElementById('unassignedSyncPanel');
+        if (syncPanel) {
+            syncPanel.hidden = isReview;
+        }
+
+        const syncSectionLabel = syncPanel
+            ? syncPanel.querySelector('.sync-inbox-panel__section-label')
+            : null;
+        if (syncSectionLabel) {
+            syncSectionLabel.textContent = isSent ? 'Fetch sent mail' : 'Fetch mail';
+        }
+
+        if (btnSyncInbox) {
+            btnSyncInbox.setAttribute(
+                'title',
+                isSent
+                    ? 'Fetch sent mail from Zoho for the selected range'
+                    : (canSelectSyncMailbox
+                        ? 'Fetch mail from Zoho for the selected mailbox and range'
+                        : 'Fetch mail from Zoho for the selected range')
+            );
+        }
+
+        // Primary mailbox tabs: Inbox vs Sent
+        folderItems.forEach(function (tab) {
+            const mailbox = tab.dataset.mailbox || '';
+            if (!mailbox) {
+                return;
+            }
+            const isActive = isSent ? mailbox === 'sent' : mailbox === 'inbox';
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
         // Keep Unassigned / Assigned tab highlight in sync (review uses the sort filter).
         folderItems.forEach(function (tab) {
             const folder = tab.dataset.folder || '';
             if (folder !== 'unassigned' && folder !== 'assigned') {
                 return;
             }
-            const isActive = !isReview && folder === currentFolder;
+            const isActive = !isReview && !isSent && folder === currentFolder;
             tab.classList.toggle('active', isActive);
             tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
@@ -1829,13 +1899,26 @@ function crmInitOutlookEmailsInterface() {
         if (!unassignedOnly && (folder === 'unassigned' || folder === 'assigned' || folder === 'review')) {
             folder = 'inbox';
         }
+        // On the synced-mail page, Inbox mailbox means the last Unassigned/Assigned view.
+        if (unassignedOnly && folder === 'inbox') {
+            folder = lastInboxFolder || 'unassigned';
+        }
         // On the synced-mail page, clicking Unassigned/Assigned leaves Needs Review mode.
         if (unassignedOnly && sortOrder && (folder === 'unassigned' || folder === 'assigned')
             && sortOrder.value === 'review') {
             sortOrder.value = 'desc';
         }
         folderItems.forEach(function (f) {
-            const isActive = f.dataset.folder === folder;
+            const itemFolder = f.dataset.folder || '';
+            const mailbox = f.dataset.mailbox || '';
+            let isActive = false;
+            if (mailbox === 'sent') {
+                isActive = folder === 'sent';
+            } else if (mailbox === 'inbox') {
+                isActive = folder !== 'sent';
+            } else if (itemFolder) {
+                isActive = itemFolder === folder;
+            }
             f.classList.toggle('active', isActive);
             f.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
@@ -1848,6 +1931,9 @@ function crmInitOutlookEmailsInterface() {
             senderFilter.value = '';
         }
         currentFolder = folder;
+        if (unassignedOnly && (folder === 'unassigned' || folder === 'assigned' || folder === 'review')) {
+            lastInboxFolder = folder;
+        }
         currentPage = 1;
         resetReadingPane();
         updateOutboxFiltersVisibility();

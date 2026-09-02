@@ -4729,6 +4729,26 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     width: auto;
 }
 
+.outlook-container--unassigned .list-toolbar__folder-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+}
+
+.outlook-container--unassigned .folder-tabs--mailbox {
+    margin-right: 2px;
+}
+
+.outlook-container--unassigned .folder-tabs--inbox-status {
+    margin-left: 0;
+}
+
+.outlook-container--unassigned .folder-tabs--inbox-status.is-hidden,
+.outlook-container--unassigned .folder-tabs--inbox-status[hidden] {
+    display: none !important;
+}
+
 .outlook-container--unassigned .outlook-reading-pane {
     min-height: 0;
     height: 100%;

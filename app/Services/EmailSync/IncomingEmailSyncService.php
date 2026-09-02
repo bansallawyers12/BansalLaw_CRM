@@ -130,7 +130,7 @@ class IncomingEmailSyncService
         $mailbox->last_imap_uid = $inboxResult['last_uid'];
         $combined['last_uid'] = $inboxResult['last_uid'];
 
-        if ($mailbox->sync_sent_enabled) {
+        if ($this->shouldSyncSentFolder($mailbox)) {
             $sentAfterUid = $this->resolveImapCursor($mailbox, 'sent');
             $sentResult = $this->syncMailboxFolder(
                 $mailbox,
@@ -153,6 +153,18 @@ class IncomingEmailSyncService
         $mailbox->save();
 
         return $combined;
+    }
+
+    /**
+     * Whether this mailbox sync should also pull Zoho Sent.
+     */
+    protected function shouldSyncSentFolder(Email $mailbox): bool
+    {
+        if ((bool) config('imap_sync.always_sync_sent', true)) {
+            return true;
+        }
+
+        return (bool) ($mailbox->sync_sent_enabled ?? false);
     }
 
     /**
@@ -246,7 +258,8 @@ class IncomingEmailSyncService
         $mailbox->last_imap_uid = max((int) ($mailbox->last_imap_uid ?? 0), (int) ($catchupInbox['last_uid'] ?? 0));
         $combined['last_uid'] = $mailbox->last_imap_uid;
 
-        if ($mailbox->sync_sent_enabled) {
+        $catchupSent = null;
+        if ($this->shouldSyncSentFolder($mailbox)) {
             $catchupSent = $this->syncMailboxFolder(
                 $mailbox,
                 $staffUserId,
@@ -267,7 +280,7 @@ class IncomingEmailSyncService
         $this->markCatchupRan($mailbox);
 
         $catchupImported = (int) ($catchupInbox['imported'] ?? 0);
-        if ($mailbox->sync_sent_enabled) {
+        if (isset($catchupSent) && is_array($catchupSent)) {
             $catchupImported += (int) ($catchupSent['imported'] ?? 0);
         }
 
@@ -604,9 +617,9 @@ class IncomingEmailSyncService
                 ? 'sent'
                 : ($match['mail_type'] ?? 'inbox');
 
-            // When Sent-folder sync is enabled, outgoing mail must only be imported from Sent.
+            // When Sent-folder sync is active, outgoing mail must only be imported from Sent.
             // Zoho/mobile clients can surface the same sent message under INBOX or date catch-up.
-            if ($defaultMailType === 'inbox' && $mailbox->sync_sent_enabled && $mailType === 'sent') {
+            if ($defaultMailType === 'inbox' && $this->shouldSyncSentFolder($mailbox) && $mailType === 'sent') {
                 InboxSyncLogger::info('Skipped sent mail from INBOX; Sent folder sync handles outgoing mail', [
                     'mailbox' => $mailbox->email,
                     'imap_uid' => $imapUid,

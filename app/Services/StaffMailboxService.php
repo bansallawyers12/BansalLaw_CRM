@@ -40,7 +40,7 @@ class StaffMailboxService
         }
 
         if (Schema::hasColumn('emails', 'sync_sent_enabled')) {
-            $account->sync_sent_enabled = (int) ($account->sync_sent_enabled ?? 0);
+            $account->sync_sent_enabled = (int) ($account->sync_sent_enabled ?? 1);
         }
 
         $account->status = (int) ($staff->status ?? 1) === 1;

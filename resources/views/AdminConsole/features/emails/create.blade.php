@@ -72,7 +72,7 @@
 												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
 													<div class="form-group">
 														<label for="sync_sent_enabled">Sync Sent Folder</label><br>
-														<label><input type="checkbox" name="sync_sent_enabled" value="1"> Also fetch sent mail from Zoho (Sent folder)</label>
+														<label><input type="checkbox" name="sync_sent_enabled" value="1" checked> Also fetch sent mail from Zoho (Sent folder)</label>
 													</div>
 												</div>
 												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
