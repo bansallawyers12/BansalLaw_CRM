@@ -759,7 +759,7 @@
                     
                     // Validate that we have at least one signature field
                     if (signatureFields.length === 0) {
-                        alert('Please add at least one signature field before saving.');
+                        crmAlert('Please add at least one signature field before saving.');
                         isSubmitting = false; // Reset flag
                         return;
                     }

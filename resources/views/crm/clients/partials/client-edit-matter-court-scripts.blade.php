@@ -1121,8 +1121,8 @@
                 if (row) row.remove();
                 return;
             }
-            alert('Could not delete hearing. ' + (data.message || ''));
+            crmAlert('Could not delete hearing. ' + (data.message || ''));
         } catch (e) {
-            alert('Network error. Please try again.');
+            crmAlert('Network error. Please try again.');
         }
     }

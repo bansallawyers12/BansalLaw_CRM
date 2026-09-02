@@ -694,7 +694,7 @@ jQuery(document).ready(function($){
                         var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                         
                         if(!obj.status) {
-                            alert('Error: ' + obj.message);
+                            crmAlert('Error: ' + obj.message);
                             return;
                         }
                         
@@ -754,12 +754,12 @@ jQuery(document).ready(function($){
                             errorMessage = error || 'Unknown error';
                         }
                         
-                        alert('Error validating receipt: ' + errorMessage + '\n\nPlease check the browser console (F12) for more details.');
+                        crmAlert('Error validating receipt: ' + errorMessage + '\n\nPlease check the browser console (F12) for more details.');
                     }
                 });
             }
         } else {
-            alert('Please select atleast 1 receipt.');
+            crmAlert('Please select atleast 1 receipt.');
         }
     });
 
@@ -767,11 +767,11 @@ jQuery(document).ready(function($){
     // Delete receipt by super admin
     $(document).delegate('.listing-container .Delete_Receipt', 'click', function(){
         if (clickedReceiptIds.length === 0) {
-            alert('Please select a receipt to delete.');
+            crmAlert('Please select a receipt to delete.');
             return;
         }
         if (clickedReceiptIds.length > 1) {
-            alert('Please select only one receipt to delete.');
+            crmAlert('Please select only one receipt to delete.');
             return;
         }
         var mergeStr = "Are you sure you want to permanently delete this journal receipt? This action cannot be undone and will recalculate any associated invoice status.";

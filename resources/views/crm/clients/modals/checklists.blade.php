@@ -534,7 +534,7 @@
 
             $('#sig-save-btn').off('click.sig').on('click.sig', function () {
                 if (sigState.signatureFields.length === 0) {
-                    alert('Please add at least one signature field.');
+                    crmAlert('Please add at least one signature field.');
                     return;
                 }
 
@@ -568,10 +568,10 @@
 
                     $('#signaturePlacementModal').modal('hide');
                     if (resp && resp.success) {
-                        alert(resp.message || 'Signature fields saved. The signing link is now available.');
+                        crmAlert(resp.message || 'Signature fields saved. The signing link is now available.');
                         if (resp.redirect_url) window.location.href = resp.redirect_url;
                     } else {
-                        alert((resp && resp.message) ? resp.message : 'An error occurred.');
+                        crmAlert((resp && resp.message) ? resp.message : 'An error occurred.');
                     }
                 }).fail(function (xhr) {
                     var msg = 'Failed to save signature fields.';
@@ -580,7 +580,7 @@
                         else if (xhr.responseJSON.errors) msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
                     } else if (xhr.status === 419) msg = 'Session expired. Please refresh the page and try again.';
                     else if (xhr.responseText && xhr.responseText.length < 200) msg = xhr.responseText;
-                    alert(msg);
+                    crmAlert(msg);
                 }).always(function () {
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i>Save Signature Locations');
                 });

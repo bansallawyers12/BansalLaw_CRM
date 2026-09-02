@@ -105,19 +105,19 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 if (response.success) {
-                    alert('SMS sent successfully!');
+                    crmAlert('SMS sent successfully!');
                     $('#smsForm')[0].reset();
                     $('#charCount').text('0');
                 } else {
-                    alert('Error: ' + response.message);
+                    crmAlert('Error: ' + response.message);
                 }
             },
             error: function(xhr) {
                 const response = xhr.responseJSON;
                 if (response && response.message) {
-                    alert('Error: ' + response.message);
+                    crmAlert('Error: ' + response.message);
                 } else {
-                    alert('An error occurred while sending SMS');
+                    crmAlert('An error occurred while sending SMS');
                 }
             },
             complete: function() {

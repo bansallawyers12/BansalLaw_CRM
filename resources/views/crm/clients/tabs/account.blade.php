@@ -421,13 +421,13 @@ function initAccountTabScripts() {
                     $('#editOfficeReceiptModal').modal('hide');
                     
                     // Show success message
-                    alert(response.message || 'Office receipt updated successfully!');
+                    crmAlert(response.message || 'Office receipt updated successfully!');
                     
                     // Reload page to show updated data
                     localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
-                    alert('Error: ' + (response.message || 'Failed to update office receipt'));
+                    crmAlert('Error: ' + (response.message || 'Failed to update office receipt'));
                 }
             },
             error: function(xhr, status, error) {
@@ -440,7 +440,7 @@ function initAccountTabScripts() {
                         if (j.message) msg = j.message;
                     } catch (e) { /* keep default */ }
                 }
-                alert(msg);
+                crmAlert(msg);
                 console.error('AJAX error:', status, error, xhr.responseText);
             }
         });
@@ -515,7 +515,7 @@ function initAccountTabScripts() {
         // SOLUTION 5: Validate modal is available before opening
         if (typeof $modal.modal !== 'function') {
             console.error('❌ Bootstrap modal not available');
-            alert('Error: Modal plugin not loaded. Please refresh the page.');
+            crmAlert('Error: Modal plugin not loaded. Please refresh the page.');
             return;
         }
         
@@ -613,14 +613,14 @@ function initAccountTabScripts() {
                                 $amountInput.focus();
                             }
                         } else {
-                            alert('No valid amount found in clipboard. Please copy a number first.');
+                            crmAlert('No valid amount found in clipboard. Please copy a number first.');
                         }
                     })
                     .catch(err => {
-                        alert('Could not access clipboard. Please paste manually using Ctrl+V.');
+                        crmAlert('Could not access clipboard. Please paste manually using Ctrl+V.');
                     });
             } else {
-                alert('Clipboard API not available in your browser. Please paste manually.');
+                crmAlert('Clipboard API not available in your browser. Please paste manually.');
             }
         }
     });
@@ -660,14 +660,14 @@ function initAccountTabScripts() {
         e.preventDefault();
         
         if (!lastOfficeReceiptEntry) {
-            alert('No previous office receipt entry found. Create one first, then use this feature.');
+            crmAlert('No previous office receipt entry found. Create one first, then use this feature.');
             return;
         }
         
         // Find the active office receipt form
         const $activeForm = $('#office_receipt_form:visible');
         if ($activeForm.length === 0) {
-            alert('Please select "Direct Office Receipt" first.');
+            crmAlert('Please select "Direct Office Receipt" first.');
             return;
         }
         
@@ -735,12 +735,12 @@ function initAccountTabScripts() {
                 $btn.html(originalHtml);
 
                 if (!response.status) {
-                    alert('Error: ' + (response.message || 'Failed to fetch invoices'));
+                    crmAlert('Error: ' + (response.message || 'Failed to fetch invoices'));
                     return;
                 }
 
                 if (!response.invoices || response.invoices.length === 0) {
-                    alert('No unpaid invoices found for this client/matter.');
+                    crmAlert('No unpaid invoices found for this client/matter.');
                     return;
                 }
 
@@ -783,7 +783,7 @@ function initAccountTabScripts() {
                     errorMsg += 'Status: ' + xhr.status;
                 }
 
-                alert(errorMsg);
+                crmAlert(errorMsg);
             }
         });
     }
@@ -830,12 +830,12 @@ function initAccountTabScripts() {
                 $btn.html(originalHtml);
 
                 if (!response.status) {
-                    alert('Error: ' + (response.message || 'Failed to fetch invoices'));
+                    crmAlert('Error: ' + (response.message || 'Failed to fetch invoices'));
                     return;
                 }
 
                 if (!response.invoices || response.invoices.length === 0) {
-                    alert('No unpaid invoices found for this client/matter.');
+                    crmAlert('No unpaid invoices found for this client/matter.');
                     return;
                 }
 
@@ -878,7 +878,7 @@ function initAccountTabScripts() {
                     errorMsg += 'Status: ' + xhr.status;
                 }
 
-                alert(errorMsg);
+                crmAlert(errorMsg);
             }
         });
     }
@@ -1048,14 +1048,14 @@ function initAccountTabScripts() {
                     $('#quickAllocateLedgerModal').modal('hide');
                     
                     // Show success message
-                    alert('✅ Deposit successfully allocated to ' + invoiceNo + '!');
+                    crmAlert('✅ Deposit successfully allocated to ' + invoiceNo + '!');
                     
                     // Reload page to show updated allocation
                     localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
                     $btn.prop('disabled', false).html(originalHtml);
-                    alert('Error: ' + (response.message || 'Failed to allocate deposit'));
+                    crmAlert('Error: ' + (response.message || 'Failed to allocate deposit'));
                 }
             },
             error: function(xhr) {
@@ -1075,7 +1075,7 @@ function initAccountTabScripts() {
                     errorMsg += 'Status: ' + xhr.status;
                 }
                 
-                alert(errorMsg);
+                crmAlert(errorMsg);
             }
         });
     });
@@ -1270,14 +1270,14 @@ function initAccountTabScripts() {
                     $('#quickAllocateModal').modal('hide');
                     
                     // Show success message
-                    alert('✅ Receipt successfully allocated to ' + invoiceNo + '!');
+                    crmAlert('✅ Receipt successfully allocated to ' + invoiceNo + '!');
                     
                     // Reload page to show updated allocation
                     localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
                     $btn.prop('disabled', false).html(originalHtml);
-                    alert('Error: ' + (response.message || 'Failed to allocate receipt'));
+                    crmAlert('Error: ' + (response.message || 'Failed to allocate receipt'));
                 }
             },
             error: function(xhr) {
@@ -1297,7 +1297,7 @@ function initAccountTabScripts() {
                     errorMsg += 'Status: ' + xhr.status;
                 }
                 
-                alert(errorMsg);
+                crmAlert(errorMsg);
             }
         });
     });
@@ -1434,13 +1434,13 @@ function initAccountTabScripts() {
                         });
                     }, 1500);
                 } else {
-                    alert('Error: ' + (response.message || 'Failed to allocate receipt'));
+                    crmAlert('Error: ' + (response.message || 'Failed to allocate receipt'));
                 }
             },
             error: function(xhr) {
                 $loadingDiv.remove();
                 console.error('Allocation error:', xhr);
-                alert('An error occurred while allocating. Please try again.');
+                crmAlert('An error occurred while allocating. Please try again.');
             }
         });
     }
@@ -2232,7 +2232,7 @@ $(document).ready(function() {
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Invalid file type. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
             } else {
-                alert('Invalid file type. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
+                crmAlert('Invalid file type. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
             }
             return false;
         }
@@ -2243,7 +2243,7 @@ $(document).ready(function() {
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'File size exceeds 10MB limit. Please choose a smaller file.', position: 'topRight' });
             } else {
-                alert('File size exceeds 10MB limit. Please choose a smaller file.');
+                crmAlert('File size exceeds 10MB limit. Please choose a smaller file.');
             }
             return false;
         }
@@ -2299,7 +2299,7 @@ $(document).ready(function() {
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please select a file to upload.', position: 'topRight' });
             } else {
-                alert('Please select a file to upload.');
+                crmAlert('Please select a file to upload.');
             }
             return false;
         }
@@ -2319,7 +2319,7 @@ $(document).ready(function() {
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Invalid receipt type.', position: 'topRight' });
             } else {
-                alert('Invalid receipt type.');
+                crmAlert('Invalid receipt type.');
             }
             return false;
         }
@@ -2350,7 +2350,7 @@ $(document).ready(function() {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Document uploaded successfully', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Document uploaded successfully');
+                        crmAlert(response.message || 'Document uploaded successfully');
                     }
                     $('#uploadReceiptDocModal').modal('hide');
                     $('#uploadReceiptDocForm')[0].reset();
@@ -2364,7 +2364,7 @@ $(document).ready(function() {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to upload document', position: 'topRight' });
                     } else {
-                        alert('Error: ' + (response.message || 'Failed to upload document'));
+                        crmAlert('Error: ' + (response.message || 'Failed to upload document'));
                     }
                 }
             },
@@ -2380,7 +2380,7 @@ $(document).ready(function() {
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: errorMessage, position: 'topRight' });
                 } else {
-                    alert('Error: ' + errorMessage);
+                    crmAlert('Error: ' + errorMessage);
                 }
             },
             complete: function() {

@@ -1290,7 +1290,7 @@ function openAttachModal() {
 function lookupSigner() {
     const email = document.getElementById('signerEmail').value.trim();
     if (!email) {
-        alert('Please enter a signer email address');
+        crmAlert('Please enter a signer email address');
         return;
     }
     
@@ -1319,7 +1319,7 @@ function lookupSigner() {
             currentMatch = { type: 'lead', data: leadMatch };
             showMatch(leadMatch, 'Lead');
         } else {
-            alert('No matching client or lead found for this email address');
+            crmAlert('No matching client or lead found for this email address');
         }
     }, 500);
 }
@@ -1439,7 +1439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attachForm.addEventListener('submit', function(e) {
             if (!currentMatch) {
                 e.preventDefault();
-                alert('Please lookup a signer first');
+                crmAlert('Please lookup a signer first');
                 return;
             }
             
@@ -1464,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function copySigningLink(url) {
     navigator.clipboard.writeText(url).then(function() {
-        alert('Signing link copied to clipboard!');
+        crmAlert('Signing link copied to clipboard!');
     }, function(err) {
         console.error('Failed to copy: ', err);
         prompt('Copy this link:', url);
@@ -1476,7 +1476,7 @@ function confirmCancelSignature() {
 }
 
 function viewDocument() {
-    alert('Document viewer feature coming soon!');
+    crmAlert('Document viewer feature coming soon!');
 }
 
 function confirmDetach() {
@@ -1820,7 +1820,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = document.getElementById('modal_signer_name').value;
             
             if (!email || !name) {
-                alert('Please fill in all required fields.');
+                crmAlert('Please fill in all required fields.');
                 return;
             }
             
@@ -1864,7 +1864,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error adding signer: ' + error.message);
+                crmAlert('Error adding signer: ' + error.message);
                 
                 // Reset button
                 submitBtn.innerHTML = originalText;

@@ -1029,7 +1029,7 @@ document.getElementById('sendDocumentForm').addEventListener('submit', function(
     
     if (!signerName || !signerEmail) {
         e.preventDefault();
-        alert('Please fill in all required fields.');
+        crmAlert('Please fill in all required fields.');
         return false;
     }
 });
@@ -1041,7 +1041,7 @@ function previewEmail() {
     const emailMessage = document.getElementById('email_message').value;
     
     if (!signerName) {
-        alert('Please enter a signer name first');
+        crmAlert('Please enter a signer name first');
         return;
     }
     

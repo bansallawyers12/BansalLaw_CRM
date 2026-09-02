@@ -220,7 +220,7 @@
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ title: 'Error', message: 'Could not load matters list.', position: 'topRight' });
                 } else {
-                    window.alert('Could not load matters list.');
+                    window.crmAlert('Could not load matters list.');
                 }
             })
             .finally(function () {
@@ -497,12 +497,12 @@
                     } else if (resp.status) {
                         loadSpaContent('active', {}, { pushState: true });
                     } else {
-                        window.alert(resp.message || 'Failed to reopen matter.');
+                        window.crmAlert(resp.message || 'Failed to reopen matter.');
                         $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                     }
                 },
                 error: function () {
-                    window.alert('An error occurred. Please try again.');
+                    window.crmAlert('An error occurred. Please try again.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                 }
             });
@@ -536,12 +536,12 @@
                         var params = buildQueryFromForm($('#matterFilterForm'));
                         loadSpaContent('closed', params, { pushState: false });
                     } else {
-                        window.alert(resp.message || 'Failed to send request.');
+                        window.crmAlert(resp.message || 'Failed to send request.');
                         $btn.prop('disabled', false);
                     }
                 },
                 error: function () {
-                    window.alert('An error occurred. Please try again.');
+                    window.crmAlert('An error occurred. Please try again.');
                     $btn.prop('disabled', false);
                 }
             });

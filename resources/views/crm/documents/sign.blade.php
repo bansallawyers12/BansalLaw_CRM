@@ -382,6 +382,7 @@
             background: #d97706;
         }
     </style>
+    @include('components.crm-notify-assets')
     @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
@@ -599,6 +600,7 @@
 
     <!-- Simple SignaturePad Implementation -->
     @include('components.sweetalert2-scripts')
+    @include('components.crm-notify-scripts')
     <script>
         // Simple SignaturePad implementation
         class SimpleSignaturePad {
@@ -772,14 +774,14 @@
             // Validate file type
             const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
             if (!validTypes.includes(file.type)) {
-                alert('Please upload a valid image file (PNG, JPG, or SVG)');
+                crmAlert('Please upload a valid image file (PNG, JPG, or SVG)');
                 event.target.value = '';
                 return;
             }
             
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('File size must be less than 5MB');
+                crmAlert('File size must be less than 5MB');
                 event.target.value = '';
                 return;
             }
@@ -792,7 +794,7 @@
                 preview.classList.add('active');
             };
             reader.onerror = function() {
-                alert('Error reading file. Please try again.');
+                crmAlert('Error reading file. Please try again.');
                 event.target.value = '';
             };
             reader.readAsDataURL(file);
@@ -928,20 +930,20 @@
                 if (signaturePad && !signaturePad.isEmpty()) {
                     signatureData = signaturePad.toDataURL('image/png');
                 } else {
-                    alert('Please draw a signature first.');
+                    crmAlert('Please draw a signature first.');
                     return;
                 }
             } else if (currentSignatureMode === 'upload') {
                 if (uploadedSignatureData) {
                     signatureData = uploadedSignatureData;
                 } else {
-                    alert('Please upload a signature image first.');
+                    crmAlert('Please upload a signature image first.');
                     return;
                 }
             }
             
             if (!signatureData) {
-                alert('Please provide a signature first.');
+                crmAlert('Please provide a signature first.');
                 return;
             }
             // Save the user's signature for reuse
@@ -1152,7 +1154,7 @@
             const signedFields = Object.keys(savedSignatures).length;
             
             if (signedFields < totalFields) {
-                alert(`Please sign all signature fields. ${signedFields} of ${totalFields} fields are signed.`);
+                crmAlert(`Please sign all signature fields. ${signedFields} of ${totalFields} fields are signed.`);
                 return false;
             }
             return true;
@@ -1223,7 +1225,7 @@
         function goToNextUnsigned() {
             const nextField = allSignatureFields.find(f => !signedFields.has(f.id));
             if (!nextField) {
-                alert('All fields signed! Ready to submit.');
+                crmAlert('All fields signed! Ready to submit.');
                 return;
             }
             
@@ -1263,7 +1265,7 @@
 
         function submitAllSignatures() {
             if (signedFields.size < allSignatureFields.length) {
-                alert(`Please sign all fields.\n${signedFields.size} of ${allSignatureFields.length} signed.`);
+                crmAlert(`Please sign all fields.\n${signedFields.size} of ${allSignatureFields.length} signed.`);
                 return;
             }
             

@@ -127,18 +127,18 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 if (response.success) {
-                    alert('Template created successfully!');
+                    crmAlert('Template created successfully!');
                     window.location.href = '{{ route("adminconsole.features.sms.templates.index") }}';
                 } else {
-                    alert('Error: ' + response.message);
+                    crmAlert('Error: ' + response.message);
                 }
             },
             error: function(xhr) {
                 const response = xhr.responseJSON;
                 if (response && response.message) {
-                    alert('Error: ' + response.message);
+                    crmAlert('Error: ' + response.message);
                 } else {
-                    alert('An error occurred while creating the template');
+                    crmAlert('An error occurred while creating the template');
                 }
             },
             complete: function() {

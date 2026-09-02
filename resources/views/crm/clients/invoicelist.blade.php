@@ -1484,7 +1484,7 @@ jQuery(document).ready(function($){
         // If one custom date is filled, both should be filled
         if ((fromDate && !toDate) || (!fromDate && toDate)) {
             e.preventDefault();
-            alert('Please select both From Date and To Date for custom range filtering.');
+            crmAlert('Please select both From Date and To Date for custom range filtering.');
             return false;
         }
         
@@ -1495,7 +1495,7 @@ jQuery(document).ready(function($){
             
             if (from > to) {
                 e.preventDefault();
-                alert('From Date cannot be later than To Date.');
+                crmAlert('From Date cannot be later than To Date.');
                 return false;
             }
         }
@@ -1579,12 +1579,12 @@ jQuery(document).ready(function($){
                             
                             if(obj.reversals_created > 0){
                                 // If fee transfers were voided, reload the page to show updated balances
-                                alert(obj.message + debugMsg + '\n\nReloading page to show updated balances...');
+                                crmAlert(obj.message + debugMsg + '\n\nReloading page to show updated balances...');
                                 window.location.reload();
                                 return;
                             } else {
                                 // No fee transfers found - just show message
-                                alert(obj.message + debugMsg);
+                                crmAlert(obj.message + debugMsg);
                             }
                         }
                         
@@ -1609,7 +1609,7 @@ jQuery(document).ready(function($){
                 });
             }
         } else {
-            alert('Please select atleast 1 invoice.');
+            crmAlert('Please select atleast 1 invoice.');
         }
     });
 

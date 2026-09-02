@@ -585,7 +585,7 @@ window.validateWeekendDate = function(dateInput) {
     if (dayOfWeek === 0 || dayOfWeek === 6) {
         const originalDate = dateInput.getAttribute('data-original-date') || '{{ $appointment->appointment_datetime->format("Y-m-d") }}';
         dateInput.value = originalDate;
-        alert('Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
+        crmAlert('Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
         return false;
     }
 

@@ -706,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         timeout: 8000
                     });
                 } else {
-                    alert('Failed to load appointments: ' + (error && error.message ? error.message : 'Unknown error'));
+                    crmAlert('Failed to load appointments: ' + (error && error.message ? error.message : 'Unknown error'));
                 }
             }
         },
@@ -1622,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (typeof iziToast !== 'undefined' && iziToast.error) {
                 iziToast.error({ title: 'Error', message: message, position: 'topRight' });
             } else {
-                alert(message);
+                crmAlert(message);
             }
         } finally {
             reminderEl.disabled = false;
@@ -1739,7 +1739,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (typeof iziToast !== 'undefined' && iziToast.error) {
                 iziToast.error({ title: 'Error', message: message, position: 'topRight' });
             } else {
-                alert(message);
+                crmAlert(message);
             }
         } finally {
             if (saveBtn) {
@@ -2004,7 +2004,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof iziToast !== 'undefined') {
                 iziToast.warning({ title: 'Required', message: 'Title and date are required.', position: 'topRight' });
             } else {
-                alert('Title and date are required.');
+                crmAlert('Title and date are required.');
             }
             return;
         }
@@ -2017,7 +2017,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof iziToast !== 'undefined') {
                 iziToast.warning({ title: 'Invalid time', message: msg, position: 'topRight' });
             } else {
-                alert(msg);
+                crmAlert(msg);
             }
             return;
         }
@@ -2075,7 +2075,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof iziToast !== 'undefined') {
                 iziToast.error({ title: 'Error', message: err.message || 'Could not save event.', position: 'topRight' });
             } else {
-                alert(err.message || 'Could not save event.');
+                crmAlert(err.message || 'Could not save event.');
             }
         } finally {
             btn.disabled = false;
@@ -2107,7 +2107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof iziToast !== 'undefined') {
                 iziToast.error({ title: 'Error', message: err.message || 'Could not delete event.', position: 'topRight' });
             } else {
-                alert(err.message || 'Could not delete event.');
+                crmAlert(err.message || 'Could not delete event.');
             }
         }
     }

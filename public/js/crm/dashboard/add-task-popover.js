@@ -220,7 +220,7 @@
                             window.location.reload();
                         }
                     } else {
-                        window.alert(response && response.message ? response.message : 'An error occurred');
+                        window.crmAlert(response && response.message ? response.message : 'An error occurred');
                     }
                 },
                 error: function (xhr) {
@@ -231,7 +231,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
                     }
-                    window.alert(errorMsg);
+                    window.crmAlert(errorMsg);
                 }
             });
 

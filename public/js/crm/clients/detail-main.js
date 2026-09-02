@@ -3052,13 +3052,13 @@ success: function(response) {
                         }
 
                     } else {
-                        alert(obj.message || 'Could not load draft invoice.');
+                        crmAlert(obj.message || 'Could not load draft invoice.');
                     }
 
                 },
 
                 error: function() {
-                    alert('Could not load draft invoice. Please try again.');
+                    crmAlert('Could not load draft invoice. Please try again.');
                 }
 
             });
@@ -3854,11 +3854,11 @@ success: function(response) {
 
                         if (obj.not_picked_call == 1) {
 
-                            alert(obj.message);
+                            crmAlert(obj.message);
 
                         } else {
 
-                            alert(obj.message);
+                            crmAlert(obj.message);
 
                         }
 
@@ -4603,7 +4603,7 @@ success: function(response) {
 
                             // Handle failure
 
-                            alert('Error: ' + (obj.message || 'Something went wrong'));
+                            crmAlert('Error: ' + (obj.message || 'Something went wrong'));
 
                         }
 
@@ -4615,7 +4615,7 @@ success: function(response) {
 
                         console.error('Ajax error:', error);
 
-                        alert('Error: ' + error);
+                        crmAlert('Error: ' + error);
 
                     }
 
@@ -4678,13 +4678,13 @@ success: function(response) {
                     if (!obj) return;
                     if(obj.status){
 
-                        alert(obj.message);
+                        crmAlert(obj.message);
 
                         location.reload();
 
                     }else{
 
-                        alert(obj.message);
+                        crmAlert(obj.message);
 
                     }
 
@@ -4855,7 +4855,7 @@ success: function(response) {
                         if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                             iziToast.success({ message: 'Document moved to Not Used tab', position: 'topRight' });
                         } else {
-                            alert('Document moved to Not Used tab');
+                            crmAlert('Document moved to Not Used tab');
                         }
 
                     } else {
@@ -4863,7 +4863,7 @@ success: function(response) {
                         if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: res.message || 'Failed to move document', position: 'topRight' });
                         } else {
-                            alert(res.message || 'Failed to move document');
+                            crmAlert(res.message || 'Failed to move document');
                         }
                     }
 
@@ -4875,7 +4875,7 @@ success: function(response) {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Error moving document. Please try again.', position: 'topRight' });
                     } else {
-                        alert('Error moving document. Please try again.');
+                        crmAlert('Error moving document. Please try again.');
                     }
                 }
 
@@ -5142,7 +5142,7 @@ success: function(response) {
                         if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                             iziToast.success({ message: 'Document reverted to ' + docTypeLabel, position: 'topRight' });
                         } else {
-                            alert('Document reverted to ' + docTypeLabel);
+                            crmAlert('Document reverted to ' + docTypeLabel);
                         }
                         
 
@@ -5151,7 +5151,7 @@ success: function(response) {
                         if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: res.message || 'Failed to move document back', position: 'topRight' });
                         } else {
-                            alert(res.message || 'Failed to move document back');
+                            crmAlert(res.message || 'Failed to move document back');
                         }
                     }
 
@@ -5163,7 +5163,7 @@ success: function(response) {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Error moving document back. Please try again.', position: 'topRight' });
                     } else {
-                        alert('Error moving document back. Please try again.');
+                        crmAlert('Error moving document back. Please try again.');
                     }
                 }
 
@@ -5424,7 +5424,7 @@ success: function(response) {
                         if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: response && response.message ? response.message : 'Failed to pin note', position: 'topRight' });
                         } else {
-                            alert(response && response.message ? response.message : 'Failed to pin note');
+                            crmAlert(response && response.message ? response.message : 'Failed to pin note');
                         }
 
                     }
@@ -5440,7 +5440,7 @@ success: function(response) {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Failed to pin note. Please try again.', position: 'topRight' });
                     } else {
-                        alert('Failed to pin note. Please try again.');
+                        crmAlert('Failed to pin note. Please try again.');
                     }
 
                 }
@@ -5616,7 +5616,7 @@ success: function(response) {
 
                 } else {
 
-                    alert('Google Review template not found. Please create a CRM Email Template with name containing "Google Review" or alias "google_review" in Admin Console.');
+                    crmAlert('Google Review template not found. Please create a CRM Email Template with name containing "Google Review" or alias "google_review" in Admin Console.');
 
                 }
 
@@ -6082,7 +6082,7 @@ success: function(response) {
             var $form = $(this).closest('form');
             if (!$form.length) {
                 console.error('❌ Form not found for file input');
-                alert('Error: Upload form not found. Please refresh the page.');
+                crmAlert('Error: Upload form not found. Please refresh the page.');
                 return;
             }
 
@@ -6092,7 +6092,7 @@ success: function(response) {
 
             if (!isSafeDocumentFileName(file.name)) {
 
-                alert("File name cannot contain slashes. Please rename the file and try again.");
+                crmAlert("File name cannot contain slashes. Please rename the file and try again.");
 
                 $(this).val('');
 
@@ -6105,7 +6105,7 @@ success: function(response) {
                 var $zone = $form.find('.personal-doc-drag-zone');
                 $(fileInput).val('');
                 if (!$zone.length) {
-                    alert('Upload zone not found. Please refresh the page.');
+                    crmAlert('Upload zone not found. Please refresh the page.');
                     return false;
                 }
                 uploadPersonalDocFromZone($zone, file);
@@ -6486,7 +6486,7 @@ success: function(response) {
         function promptPersonalVideoUploadFolder(defaultCategoryId, onSelected, onCancel) {
             var folders = getPersonalDocumentFolders();
             if (!folders.length) {
-                alert('No personal document folders found.');
+                crmAlert('No personal document folders found.');
                 if (typeof onCancel === 'function') {
                     onCancel();
                 }
@@ -6527,7 +6527,7 @@ success: function(response) {
                     });
                 }
             } else {
-                alert(message);
+                crmAlert(message);
             }
         }
 
@@ -6792,7 +6792,7 @@ success: function(response) {
             var isVideoUpload = isPersonalDocVideoFile(file);
             var form = $('#upload_form_' + targetFileId);
             if (!form.length) {
-                alert('Upload form not found for the selected folder. Please refresh the page and try again.');
+                crmAlert('Upload form not found for the selected folder. Please refresh the page and try again.');
                 if (dragZone && dragZone.length) {
                     dragZone.removeClass('uploading');
                 }
@@ -6952,7 +6952,7 @@ success: function(response) {
 
         function uploadPersonalDocFromZone(dragZone, file) {
             if (!isSafeDocumentFileName(file.name)) {
-                alert('File name cannot contain slashes. Please rename the file and try again.');
+                crmAlert('File name cannot contain slashes. Please rename the file and try again.');
                 return false;
             }
 
@@ -6961,7 +6961,7 @@ success: function(response) {
             var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
             var maxAllowed = isVideoUploadCheck ? (maxVideoMb * 1024 * 1024) : (maxFileMb * 1024 * 1024);
             if (file.size > maxAllowed) {
-                alert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? (maxVideoMb + 'MB') : (maxFileMb + 'MB')) + '.');
+                crmAlert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? (maxVideoMb + 'MB') : (maxFileMb + 'MB')) + '.');
                 return false;
             }
 
@@ -6970,7 +6970,7 @@ success: function(response) {
             var formId = dragZone.data('formid');
             var form = $('#' + formId);
             if (!form.length) {
-                alert('Error: Upload form not found. Please refresh the page.');
+                crmAlert('Error: Upload form not found. Please refresh the page.');
                 return false;
             }
 
@@ -6995,7 +6995,7 @@ success: function(response) {
                 promptPersonalVideoUploadFolder(doccategory, function(selectedCategoryId) {
                     resolvePersonalVideoUploadTarget(selectedCategoryId, file, context, function(err, targetFileId, targetCategoryId) {
                         if (err) {
-                            alert(err);
+                            crmAlert(err);
                             return;
                         }
                         startUpload(targetFileId, targetCategoryId);
@@ -7060,14 +7060,14 @@ success: function(response) {
 
         function validateMatterDocFile(file) {
             if (!isSafeDocumentFileName(file.name)) {
-                alert("File name cannot contain slashes. Please rename the file and try again.");
+                crmAlert("File name cannot contain slashes. Please rename the file and try again.");
                 return false;
             }
             var ext = (file.name.split('.').pop() || '').toLowerCase();
             var isVideo = isMatterDocVideoFile(file);
             var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
             if (!isVideo && !allowedExtensions.includes(ext)) {
-                alert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), MP3 audio, videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings.');
+                crmAlert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), MP3 audio, videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings.');
                 return false;
             }
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
@@ -7077,7 +7077,7 @@ success: function(response) {
             var sizeLimit = isVideo ? maxVideoSize : maxSize;
             var sizeLabel = isVideo ? (maxVideoMb + 'MB') : (maxFileMb + 'MB');
             if (file.size > sizeLimit) {
-                alert('File exceeds the maximum allowed size of ' + sizeLabel + '.');
+                crmAlert('File exceeds the maximum allowed size of ' + sizeLabel + '.');
                 return false;
             }
             return true;
@@ -7260,7 +7260,7 @@ success: function(response) {
             var formId = dragZone.data('formid');
             var form = $('#' + formId);
             if (!form.length) {
-                alert('Error: Upload form not found. Please refresh the page.');
+                crmAlert('Error: Upload form not found. Please refresh the page.');
                 return false;
             }
             performMatterDocUpload(file, fileid, visa_doc_cat, form, dragZone);
@@ -7405,7 +7405,7 @@ success: function(response) {
             var visa_doc_cat = $(this).attr("data-doccategory");
             var $form = $('#mig_upload_form_'+fileidL1);
             if (!$form.length) {
-                alert('Error: Upload form not found. Please refresh the page.');
+                crmAlert('Error: Upload form not found. Please refresh the page.');
                 $(this).val('');
                 return false;
             }

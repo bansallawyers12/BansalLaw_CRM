@@ -622,13 +622,13 @@ jQuery(document).ready(function($){
                         });
                         location.reload();
                     } else {
-                        alert(obj.message);
+                        crmAlert(obj.message);
                         location.reload();
                     }
                 },
                 error: function() {
                     $('.popuploader').hide();
-                    alert('An error occurred. Please try again.');
+                    crmAlert('An error occurred. Please try again.');
                 }
             });
         } else {

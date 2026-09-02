@@ -202,4 +202,74 @@
             global.crmNotify.info(opts);
         }
     };
+
+    /**
+     * Drop-in replacement for window.alert — never uses the native browser dialog.
+     * Prefers Toastify via crmToast; falls back to SweetAlert2; otherwise console.warn.
+     */
+    function inferAlertType(message) {
+        var lower = String(message || '').toLowerCase();
+        if (/success|successfully|saved|updated|sent|copied|completed|created|uploaded|allocated|deleted/.test(lower) &&
+            !/fail|error|unable|could not|invalid/.test(lower)) {
+            return 'success';
+        }
+        if (/please |select |enter |fill |required|at least|must |missing|not found|not available|choose /.test(lower)) {
+            return 'warning';
+        }
+        if (/error|fail|invalid|unable|could not|denied|timeout|out of bounds|network/.test(lower)) {
+            return 'error';
+        }
+        return 'info';
+    }
+
+    global.crmAlert = function (message) {
+        var msg = message == null ? '' : String(message);
+        if (!msg) {
+            return;
+        }
+        var type = inferAlertType(msg);
+
+        if (typeof global.crmToast === 'function' && hasIzi()) {
+            global.crmToast(msg, type);
+            return;
+        }
+
+        if (typeof global.Swal !== 'undefined' && typeof global.Swal.fire === 'function') {
+            var icon = type === 'success' ? 'success' : (type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'info'));
+            global.Swal.fire({
+                icon: icon,
+                title: defaultTitle(type),
+                html: formatMessage(msg),
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#1e3d60'
+            });
+            return;
+        }
+
+        fallbackLog({ title: defaultTitle(type), message: msg });
+    };
+
+    // Flush any messages queued by the early head stub.
+    if (global.__crmAlertQueue && global.__crmAlertQueue.length) {
+        var queued = global.__crmAlertQueue.slice();
+        global.__crmAlertQueue.length = 0;
+        queued.forEach(function (m) {
+            global.crmAlert(m);
+        });
+    }
+
+    // Route native alert() to CRM toast/Swal wherever this script is loaded.
+    if (typeof global.alert === 'function' && !global.__crmAlertPatched) {
+        global.__crmAlertPatched = true;
+        global.__nativeAlert = global.alert.bind(global);
+        global.alert = function (message) {
+            if (typeof global.crmAlert === 'function') {
+                global.crmAlert(message);
+                return;
+            }
+            if (typeof global.__nativeAlert === 'function') {
+                global.__nativeAlert(message);
+            }
+        };
+    }
 })(typeof window !== 'undefined' ? window : this);

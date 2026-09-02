@@ -627,14 +627,14 @@
                                         data: { _token: '{{ csrf_token() }}' },
                                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                                     }).done(function(resp) {
-                                        alert((resp && resp.message) || 'Document sent for signature.');
+                                        crmAlert((resp && resp.message) || 'Document sent for signature.');
                                         location.reload();
                                     }).fail(function(xhr) {
                                         var message = 'Failed to send for signature.';
                                         if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
                                             message = xhr.responseJSON.message;
                                         }
-                                        alert(message);
+                                        crmAlert(message);
                                     });
                                 }
                             } else if (typeof $ !== 'undefined') {
@@ -669,7 +669,7 @@
                                 $downloadBtn.first().click();
                             } else {
                                 console.error('Download button not found for file ID:', currentVisaContextFile);
-                                alert('Download link not found. Please refresh the page and try again.');
+                                crmAlert('Download link not found. Please refresh the page and try again.');
                             }
                             break;
                         case 'not-used':
@@ -776,7 +776,7 @@
                     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Sending...');
                     $.post('{{ url("/signatures") }}/' + docId + '/send', { _token: '{{ csrf_token() }}' })
                         .done(function() { location.reload(); })
-                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-1"></i> Send'); });
+                        .fail(function(xhr) { crmAlert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-1"></i> Send'); });
                 });
                 $(document).on('click', '.visa-sig-revise-btn', function() {
                     var docId = $(this).data('doc-id');
@@ -787,18 +787,18 @@
                     var $bar = $(this).closest('.visa-sig-action-bar');
                     var docId = $bar.data('doc-id');
                     var signerId = $bar.data('signer-id');
-                    if (!docId || !signerId) { alert('Unable to remove.'); return; }
+                    if (!docId || !signerId) { crmAlert('Unable to remove.'); return; }
                     $.post('{{ url("/signatures") }}/' + docId + '/cancel', { _token: '{{ csrf_token() }}', signer_id: signerId })
                         .done(function() { location.reload(); })
-                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to remove'); });
+                        .fail(function(xhr) { crmAlert(xhr.responseJSON?.message || 'Failed to remove'); });
                 });
                 $(document).on('click', '.visa-sig-reminder-btn', function() {
                     var docId = $(this).data('doc-id');
                     var signerId = $(this).data('signer-id');
                     if (!docId || !signerId) return;
                     $.post('{{ url("/signatures") }}/' + docId + '/reminder', { _token: '{{ csrf_token() }}', signer_id: signerId })
-                        .done(function() { alert('Reminder sent.'); location.reload(); })
-                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send reminder'); });
+                        .done(function() { crmAlert('Reminder sent.'); location.reload(); })
+                        .fail(function(xhr) { crmAlert(xhr.responseJSON?.message || 'Failed to send reminder'); });
                 });
 
                 // Handle move visa document confirmation
@@ -848,7 +848,7 @@
                                 $('#moveVisaDocumentModal').modal('hide');
                                 
                                 // Show success message using alert
-                                alert(response.message || 'Document moved successfully');
+                                crmAlert(response.message || 'Document moved successfully');
                                 
                                 // Reload the page to refresh document lists
                                 location.reload();
@@ -1377,11 +1377,11 @@
                     });
                     
                     if (invalidFiles.length > 0) {
-                        alert('The following files were skipped:\n' + invalidFiles.join('\n'));
+                        crmAlert('The following files were skipped:\n' + invalidFiles.join('\n'));
                     }
                     
                     if (bulkUploadVisaFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, MP3, videos (MP4, WebM, MOV, VOB, etc.), or MS Teams recordings under the size limit.');
+                        crmAlert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, MP3, videos (MP4, WebM, MOV, VOB, etc.), or MS Teams recordings under the size limit.');
                         return;
                     }
                     
@@ -1593,7 +1593,7 @@
                                 window.hideBulkUploadModal();
                             }
                             resetVisaBulkUploadSelection(categoryId);
-                            alert('All files have been removed. Please select files again to upload.');
+                            crmAlert('All files have been removed. Please select files again to upload.');
                         } else {
                             // Reindex remaining rows to maintain correct file indices
                             $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
@@ -1621,7 +1621,7 @@
                     const matterId = $('#sel_matter_id_client_detail').val() || currentVisaMatterId;
                     const files = bulkUploadVisaFiles[categoryId] || [];
                     if (!files.length) {
-                        alert('No files selected. Please select files to upload.');
+                        crmAlert('No files selected. Please select files to upload.');
                         return;
                     }
                     const mappings = [];
@@ -1691,7 +1691,7 @@
                     });
                     
                     if (unmappedFiles.length > 0 && !autoCreate) {
-                        alert('Please map all files to checklists or enable "Auto-create checklist for unmatched files"');
+                        crmAlert('Please map all files to checklists or enable "Auto-create checklist for unmatched files"');
                         return;
                     }
                     

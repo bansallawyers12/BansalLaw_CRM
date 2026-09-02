@@ -517,7 +517,7 @@
     function toast(msg, ok) {
         if (typeof iziToast !== 'undefined' && iziToast.show) {
             iziToast.show({ message: msg, color: ok ? 'green' : 'red', position: 'topRight', timeout: 4000 });
-        } else { alert(msg); }
+        } else { crmAlert(msg); }
     }
 
     function esc(s) {

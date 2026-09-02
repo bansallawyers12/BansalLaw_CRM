@@ -99,7 +99,7 @@ $('#filterForm').on('submit', function(e) {
     // If one custom date is filled, both should be filled
     if ((fromDate && !toDate) || (!fromDate && toDate)) {
         e.preventDefault();
-        alert('Please select both From Date and To Date for custom range filtering.');
+        crmAlert('Please select both From Date and To Date for custom range filtering.');
         return false;
     }
     
@@ -110,7 +110,7 @@ $('#filterForm').on('submit', function(e) {
         
         if (from > to) {
             e.preventDefault();
-            alert('From Date cannot be later than To Date.');
+            crmAlert('From Date cannot be later than To Date.');
             return false;
         }
     }

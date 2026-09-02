@@ -57,7 +57,7 @@
                             timer: 3000
                         });
                     } else {
-                        alert(response.message);
+                        crmAlert(response.message);
                     }
                 } else {
                     if (typeof Swal !== 'undefined') {
@@ -67,7 +67,7 @@
                             text: response.message
                         });
                     } else {
-                        alert('Error: ' + response.message);
+                        crmAlert('Error: ' + response.message);
                     }
                 }
                 $btn.html(originalHtml);
@@ -86,7 +86,7 @@
                         text: errorMsg
                     });
                 } else {
-                    alert('Error: ' + errorMsg);
+                    crmAlert('Error: ' + errorMsg);
                 }
                 $btn.html(originalHtml);
                 $btn.prop('disabled', false);
@@ -145,7 +145,7 @@
                             timer: 3000
                         });
                     } else {
-                        alert(response.message);
+                        crmAlert(response.message);
                     }
                 } else {
                     if (typeof Swal !== 'undefined') {
@@ -155,7 +155,7 @@
                             text: response.message
                         });
                     } else {
-                        alert('Error: ' + response.message);
+                        crmAlert('Error: ' + response.message);
                     }
                 }
                 $btn.html(originalHtml);
@@ -174,7 +174,7 @@
                         text: errorMsg
                     });
                 } else {
-                    alert('Error: ' + errorMsg);
+                    crmAlert('Error: ' + errorMsg);
                 }
                 $btn.html(originalHtml);
                 $btn.prop('disabled', false);
@@ -233,7 +233,7 @@
                             timer: 3000
                         });
                     } else {
-                        alert(response.message);
+                        crmAlert(response.message);
                     }
                 } else {
                     if (typeof Swal !== 'undefined') {
@@ -243,7 +243,7 @@
                             text: response.message
                         });
                     } else {
-                        alert('Error: ' + response.message);
+                        crmAlert('Error: ' + response.message);
                     }
                 }
                 $btn.html(originalHtml);
@@ -262,7 +262,7 @@
                         text: errorMsg
                     });
                 } else {
-                    alert('Error: ' + errorMsg);
+                    crmAlert('Error: ' + errorMsg);
                 }
                 $btn.html(originalHtml);
                 $btn.prop('disabled', false);
@@ -282,7 +282,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Invoice ID is missing.' });
             } else {
-                alert('Invoice ID is missing.');
+                crmAlert('Invoice ID is missing.');
             }
             return;
         }
@@ -294,7 +294,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Configuration not available.' });
             } else {
-                alert('Configuration not available.');
+                crmAlert('Configuration not available.');
             }
             return;
         }
@@ -346,7 +346,7 @@
                             location.reload();
                         });
                     } else {
-                        alert(response.message || 'Invoice sent to Hubdoc successfully!');
+                        crmAlert(response.message || 'Invoice sent to Hubdoc successfully!');
                         location.reload();
                     }
                 } else {
@@ -357,7 +357,7 @@
                             text: response.message || 'Failed to send to Hubdoc.'
                         });
                     } else {
-                        alert('Error: ' + (response.message || 'Failed to send to Hubdoc.'));
+                        crmAlert('Error: ' + (response.message || 'Failed to send to Hubdoc.'));
                     }
                     $btn.html(originalHtml);
                     $btn.prop('disabled', false);
@@ -376,7 +376,7 @@
                         text: errorMsg
                     });
                 } else {
-                    alert('Error: ' + errorMsg);
+                    crmAlert('Error: ' + errorMsg);
                 }
                 $btn.html(originalHtml);
                 $btn.prop('disabled', false);

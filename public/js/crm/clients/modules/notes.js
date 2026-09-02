@@ -143,7 +143,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Notes refreshed but some data may be outdated. Please refresh the page.', position: 'topRight' });
                 } else {
-                    alert('Notes refreshed but some data may be outdated. Please refresh the page.');
+                    crmAlert('Notes refreshed but some data may be outdated. Please refresh the page.');
                 }
             }
         });

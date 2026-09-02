@@ -484,12 +484,12 @@ document.getElementById('convertActivityToNoteForm').addEventListener('submit', 
     const noteType = document.getElementById('convert_note_type').value;
     
     if (!clientMatterId) {
-        alert('Please select a Client Matter');
+        crmAlert('Please select a Client Matter');
         return;
     }
     
     if (!noteType) {
-        alert('Please select a Type');
+        crmAlert('Please select a Type');
         return;
     }
     
@@ -505,17 +505,17 @@ document.getElementById('convertActivityToNoteForm').addEventListener('submit', 
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Activity successfully converted to note!');
+            crmAlert('Activity successfully converted to note!');
             $('#convertActivityToNoteModal').modal('hide');
             // Optionally refresh the page or update the UI
             location.reload();
         } else {
-            alert('Error: ' + (data.message || 'Failed to convert activity to note'));
+            crmAlert('Error: ' + (data.message || 'Failed to convert activity to note'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while converting activity to note');
+        crmAlert('An error occurred while converting activity to note');
     });
 });
 //End Convert Activity to Note functionality

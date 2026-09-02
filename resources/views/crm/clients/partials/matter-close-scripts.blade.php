@@ -111,7 +111,7 @@
                 if (data.status) {
                     hideModal('#discontinue-matter-modal');
                     hideModal('#complete-matter-modal');
-                    alert(data.message || onSuccessMessage);
+                    crmAlert(data.message || onSuccessMessage);
                     var clientEncodeId = window.ClientDetailConfig ? window.ClientDetailConfig.encodeId : null;
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
@@ -121,13 +121,13 @@
                         window.location.reload();
                     }
                 } else {
-                    alert(data.message || 'Request failed.');
+                    crmAlert(data.message || 'Request failed.');
                 }
             })
             .catch(function () {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = origHtml;
-                alert('An error occurred. Please try again.');
+                crmAlert('An error occurred. Please try again.');
             });
     }
 

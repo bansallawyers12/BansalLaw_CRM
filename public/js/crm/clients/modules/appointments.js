@@ -451,7 +451,7 @@
                             var v = 'services';
 
                             var errorMessage = obj.message || 'There is a problem in our system. please try again';
-                            alert(errorMessage);
+                            crmAlert(errorMessage);
 
                             $('#myTab .nav-item #services-tab').removeClass('disabled');
 
@@ -463,7 +463,7 @@
                         console.error('Response text:', res);
                         $('input[name="service_id"]').val('');
                         var v = 'services';
-                        alert('There is a problem in our system. please try again');
+                        crmAlert('There is a problem in our system. please try again');
                         $('#myTab .nav-item #services-tab').removeClass('disabled');
                         $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
                     }
@@ -491,7 +491,7 @@
                         
                         $('input[name="service_id"]').val('');
                         var v = 'services';
-                        alert(errorMessage);
+                        crmAlert(errorMessage);
                         $('#myTab .nav-item #services-tab').removeClass('disabled');
                         $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
                         $('#myTab a[href="#'+v+'"]').trigger('click');

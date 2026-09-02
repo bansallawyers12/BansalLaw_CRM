@@ -22,6 +22,7 @@
 	<link href="{{asset('css/crm-theme.css')}}" rel="stylesheet">
 	<link href="{{asset('css/crm/modal-ui.css')}}?v={{ @filemtime(public_path('css/crm/modal-ui.css')) ?: time() }}" rel="stylesheet">
 	<link href="{{asset('css/crm-login.css')}}?v={{ @filemtime(public_path('css/crm-login.css')) ?: time() }}" rel="stylesheet">
+	@include('components.crm-notify-assets')
 	@include('components.sweetalert2-assets')
 	@include('components.font-awesome')
 
@@ -51,7 +52,8 @@
 	@include('components.bootstrap5-scripts')
 	<script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
 	<script src="{{asset('js/scripts.js')}}"></script>
-	<script src="{{asset('js/custom.js')}}"></script>
+	@include('components.crm-notify-scripts')
 	@include('components.sweetalert2-scripts')
+	<script src="{{asset('js/custom.js')}}"></script>
 </body>
 </html>

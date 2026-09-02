@@ -154,7 +154,7 @@
 
     function clientsSwalAlert(options) {
         if (typeof Swal === 'undefined') {
-            window.alert(options.text || options.title || '');
+            window.crmAlert(options.text || options.title || '');
             return Promise.resolve();
         }
         return Swal.fire($.extend({}, clientsSwalBase(), {

@@ -85,7 +85,7 @@ function removePhoneField(button) {
         if (container && container.children.length > 1) {
             section.remove();
         } else {
-            alert('At least one phone number is required.');
+            crmAlert('At least one phone number is required.');
         }
     }
 }
@@ -147,7 +147,7 @@ function removeEmailField(button) {
         if (container && container.children.length > 1) {
             section.remove();
         } else {
-            alert('At least one email address is required.');
+            crmAlert('At least one email address is required.');
         }
     }
 }

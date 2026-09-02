@@ -369,7 +369,7 @@
             },
             error: function(xhr) {
                 console.error('Error completing task:', xhr.responseText);
-                alert('An error occurred while completing the task.');
+                crmAlert('An error occurred while completing the task.');
                 
                 // Reset button
                 $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
@@ -423,7 +423,7 @@
 							location.reload();
 
 						}else{
-							alert(obj.message);
+							crmAlert(obj.message);
 							location.reload();
 
 						}

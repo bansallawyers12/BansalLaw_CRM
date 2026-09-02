@@ -68,7 +68,7 @@
             if (typeof iziToast !== 'undefined' && iziToast.show) {
                 iziToast.show({ message: 'Other party picker is not loaded. Refresh the page and try again.', color: 'red', position: 'topRight', timeout: 5000 });
             } else {
-                alert('Other party picker is not loaded. Refresh the page and try again.');
+                crmAlert('Other party picker is not loaded. Refresh the page and try again.');
             }
             return;
         }

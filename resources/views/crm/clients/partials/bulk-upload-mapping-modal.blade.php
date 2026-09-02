@@ -134,7 +134,7 @@
             if (typeof window._bulkUploadConfirmFn === 'function') {
                 window._bulkUploadConfirmFn();
             } else {
-                alert('Please select files to upload first.');
+                crmAlert('Please select files to upload first.');
             }
         });
 

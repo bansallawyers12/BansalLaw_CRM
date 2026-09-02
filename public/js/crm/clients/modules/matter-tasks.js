@@ -116,7 +116,7 @@
         } else if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
             iziToast.error({ message: msg, position: 'topRight' });
         } else {
-            alert(msg);
+            crmAlert(msg);
         }
     }
 

@@ -523,7 +523,7 @@
             jsonPost(approveTpl.replace('__ID__', id), {})
                 .then(function (x) {
                     if (!x.ok) {
-                        alert(x.j.message || 'Approve failed');
+                        crmAlert(x.j.message || 'Approve failed');
                         approveBtn.disabled = false;
                         return;
                     }
@@ -531,7 +531,7 @@
                     refreshAfterPendingAction();
                 })
                 .catch(function () {
-                    alert('Approve failed');
+                    crmAlert('Approve failed');
                     approveBtn.disabled = false;
                 });
         }
@@ -543,7 +543,7 @@
             jsonPost(rejectTpl.replace('__ID__', id2), { reason: reason })
                 .then(function (x) {
                     if (!x.ok) {
-                        alert(x.j.message || 'Reject failed');
+                        crmAlert(x.j.message || 'Reject failed');
                         rejectBtn.disabled = false;
                         return;
                     }
@@ -551,7 +551,7 @@
                     refreshAfterPendingAction();
                 })
                 .catch(function () {
-                    alert('Reject failed');
+                    crmAlert('Reject failed');
                     rejectBtn.disabled = false;
                 });
         }

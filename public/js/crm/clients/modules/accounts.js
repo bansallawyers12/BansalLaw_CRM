@@ -239,13 +239,13 @@
 
                 if (!$modal.length) {
                     console.error('Modal element #createreceiptmodal not found in DOM');
-                    alert('Error: Receipt modal not found. Please refresh the page.');
+                    crmAlert('Error: Receipt modal not found. Please refresh the page.');
                     return;
                 }
 
                 if (typeof $modal.modal !== 'function') {
                     console.error('Bootstrap modal plugin not loaded');
-                    alert('Error: Modal plugin not available. Please refresh the page.');
+                    crmAlert('Error: Modal plugin not available. Please refresh the page.');
                     return;
                 }
 

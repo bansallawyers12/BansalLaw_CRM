@@ -878,12 +878,12 @@ function updateStatus(newStatus) {
         },
         success: function(response) {
             if (response.success) {
-                alert('Status updated successfully!');
+                crmAlert('Status updated successfully!');
                 window.location.reload();
             }
         },
         error: function() {
-            alert('Failed to update status');
+            crmAlert('Failed to update status');
         }
     });
 }
@@ -891,7 +891,7 @@ function updateStatus(newStatus) {
 function cancelAppointment() {
     const reason = prompt('Please enter cancellation reason (required):');
     if (!reason || reason.trim() === '') {
-        alert('Cancellation reason is required. Operation cancelled.');
+        crmAlert('Cancellation reason is required. Operation cancelled.');
         return;
     }
 
@@ -905,14 +905,14 @@ function cancelAppointment() {
         },
         success: function(response) {
             if (response.success) {
-                alert(response.message || 'Appointment cancelled successfully!');
+                crmAlert(response.message || 'Appointment cancelled successfully!');
                 window.location.reload();
             } else {
-                alert(response.message || 'Failed to cancel appointment');
+                crmAlert(response.message || 'Failed to cancel appointment');
             }
         },
         error: function() {
-            alert('Failed to cancel appointment');
+            crmAlert('Failed to cancel appointment');
         }
     });
 }
@@ -931,12 +931,12 @@ function markCompleteAppointment() {
         },
         success: function(response) {
             if (response.success) {
-                alert('Appointment completed successfully!');
+                crmAlert('Appointment completed successfully!');
                 window.location.reload();
             }
         },
         error: function() {
-            alert('Failed to complete appointment');
+            crmAlert('Failed to complete appointment');
         }
     });
 }
@@ -954,11 +954,11 @@ function sendReminder() {
         },
         success: function(response) {
             if (response.success) {
-                alert('Reminder sent successfully!');
+                crmAlert('Reminder sent successfully!');
             }
         },
         error: function() {
-            alert('Failed to send reminder');
+            crmAlert('Failed to send reminder');
         }
     });
 }
@@ -968,7 +968,7 @@ function sendSMS() {
         return;
     }
 
-    alert('SMS functionality will be implemented');
+    crmAlert('SMS functionality will be implemented');
 }
 
 function addNote() {
@@ -984,12 +984,12 @@ function addNote() {
         },
         success: function(response) {
             if (response.success) {
-                alert('Note added successfully!');
+                crmAlert('Note added successfully!');
                 window.location.reload();
             }
         },
         error: function() {
-            alert('Failed to add note');
+            crmAlert('Failed to add note');
         }
     });
 }

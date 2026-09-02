@@ -369,7 +369,7 @@ function triggerManualSync() {
                     window.location.reload();
                 });
             } else {
-                alert('Sync completed!\nFetched: ' + response.stats.fetched + '\nNew: ' + response.stats.new);
+                crmAlert('Sync completed!\nFetched: ' + response.stats.fetched + '\nNew: ' + response.stats.new);
                 window.location.reload();
             }
         },
@@ -382,7 +382,7 @@ function triggerManualSync() {
                     confirmButtonText: 'OK'
                 });
             } else {
-                alert('Sync failed: ' + (xhr.responseJSON?.message || 'An error occurred'));
+                crmAlert('Sync failed: ' + (xhr.responseJSON?.message || 'An error occurred'));
             }
         }
     });
@@ -413,7 +413,7 @@ function testConnection() {
                     confirmButtonText: 'OK'
                 });
             } else {
-                alert('Connection successful!');
+                crmAlert('Connection successful!');
             }
         },
         error: function(xhr) {
@@ -425,7 +425,7 @@ function testConnection() {
                     confirmButtonText: 'OK'
                 });
             } else {
-                alert('Connection failed: ' + (xhr.responseJSON?.message || 'Could not connect'));
+                crmAlert('Connection failed: ' + (xhr.responseJSON?.message || 'Could not connect'));
             }
         }
     });

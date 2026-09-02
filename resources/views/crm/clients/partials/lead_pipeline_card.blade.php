@@ -324,7 +324,7 @@
                 timeout: 4000
             });
         } else {
-            alert(msg);
+            crmAlert(msg);
         }
     }
 

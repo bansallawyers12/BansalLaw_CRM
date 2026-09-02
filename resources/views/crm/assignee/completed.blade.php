@@ -320,7 +320,7 @@
 							location.reload();
 
 						}else{
-							alert(obj.message);
+							crmAlert(obj.message);
 							location.reload();
 
 						}

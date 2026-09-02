@@ -1572,7 +1572,7 @@ $(function () {
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
             }
         });
@@ -1591,7 +1591,7 @@ $(function () {
         
         if (!url) {
             console.error('No delete URL found');
-            alert('Unable to delete: missing URL');
+            crmAlert('Unable to delete: missing URL');
             return;
         }
         
@@ -1614,7 +1614,7 @@ $(function () {
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
             });
         }
@@ -1697,7 +1697,7 @@ $(function () {
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
                 
                 // Reset button
@@ -1762,14 +1762,14 @@ $(function () {
                         $('.popover-backdrop').removeClass('show');
                         if (table) { table.draw(false); }
                     } else {
-                        alert(response && response.message ? response.message : 'An error occurred');
+                        crmAlert(response && response.message ? response.message : 'An error occurred');
                         if (table) { table.draw(false); }
                     }
                 },
                 error: function(xhr, status, error) {
                     $('.popuploader').hide();
                     console.error('Error adding task:', error);
-                    alert('Failed to add task. Please try again.');
+                    crmAlert('Failed to add task. Please try again.');
                 }
             });
         } else {

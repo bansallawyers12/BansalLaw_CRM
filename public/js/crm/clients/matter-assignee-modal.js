@@ -79,7 +79,7 @@
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Required', message: 'Our client\'s role is required.', position: 'topRight' });
             } else {
-                alert('Our client\'s role is required.');
+                crmAlert('Our client\'s role is required.');
             }
             return;
         }
@@ -168,7 +168,7 @@
         if (!matterId) {
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Select Matter', message: 'Please select a matter first.', position: 'topRight' });
-            } else { alert('Please select a matter first.'); }
+            } else { crmAlert('Please select a matter first.'); }
             return;
         }
 
@@ -270,7 +270,7 @@
                 if (typeof iziToast !== 'undefined' && iziToast.error) {
                     iziToast.error({ title: 'Error', message: 'Could not load matter details. Try again.', position: 'topRight' });
                 } else {
-                    alert('Could not load matter details. Try again.');
+                    crmAlert('Could not load matter details. Try again.');
                 }
             }
         });

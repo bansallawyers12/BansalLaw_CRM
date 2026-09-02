@@ -837,7 +837,7 @@ function openAttachModal(docId, docTitle) {
         // Validate elements exist
         if (!docTitleEl || !entityTypeEl || !entitySelectGroupEl || !attachEntityIdEl || !attachFormEl) {
             console.error('❌ Required modal elements not found');
-            alert('Error: Modal elements not found. Please refresh the page and try again.');
+            crmAlert('Error: Modal elements not found. Please refresh the page and try again.');
             return;
         }
         
@@ -856,11 +856,11 @@ function openAttachModal(docId, docTitle) {
             modal.show();
         } else {
             console.error('❌ No modal library found');
-            alert('Error: Modal library not found. Please refresh the page.');
+            crmAlert('Error: Modal library not found. Please refresh the page.');
         }
     } catch (error) {
         console.error('❌ Error in openAttachModal:', error);
-        alert('Error opening attachment modal. Please try again.');
+        crmAlert('Error opening attachment modal. Please try again.');
     }
 }
 

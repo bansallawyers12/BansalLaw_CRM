@@ -2206,7 +2206,7 @@ $(function () {
             form.addEventListener('submit', function (e) {
                 if (form.getAttribute('data-has-assigned-matter') !== '1') {
                     e.preventDefault();
-                    alert('A matter must be assigned before converting this lead to a client. You will be taken to the edit page to assign a matter.');
+                    crmAlert('A matter must be assigned before converting this lead to a client. You will be taken to the edit page to assign a matter.');
                     var url = form.getAttribute('data-edit-url');
                     if (url) {
                         window.location.href = url;

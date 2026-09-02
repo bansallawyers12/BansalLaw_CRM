@@ -682,7 +682,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please choose a form type.', position: 'topRight' });
             } else {
-                alert('Please choose a form type.');
+                crmAlert('Please choose a form type.');
             }
             return;
         }
@@ -692,7 +692,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please select a document file to upload.', position: 'topRight' });
             } else {
-                alert('Please select a document file to upload.');
+                crmAlert('Please select a document file to upload.');
             }
             return;
         }
@@ -702,7 +702,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please select a matter reference.', position: 'topRight' });
             } else {
-                alert('Please select a matter reference.');
+                crmAlert('Please select a matter reference.');
             }
             return;
         }
@@ -714,7 +714,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'This file type is not allowed. Please upload a document file only.', position: 'topRight' });
             } else {
-                alert('This file type is not allowed. Please upload a document file only.');
+                crmAlert('This file type is not allowed. Please upload a document file only.');
             }
             return;
         }
@@ -738,13 +738,13 @@
                     if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Form uploaded successfully!', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Form uploaded successfully!');
+                        crmAlert(response.message || 'Form uploaded successfully!');
                     }
                 } else {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to upload form.', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Failed to upload form.');
+                        crmAlert(response.message || 'Failed to upload form.');
                     }
                 }
             },
@@ -758,7 +758,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
             },
             complete: function() {
@@ -850,7 +850,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please select a matter reference.', position: 'topRight' });
             } else {
-                alert('Please select a matter reference.');
+                crmAlert('Please select a matter reference.');
             }
             return;
         }
@@ -874,13 +874,13 @@
                     if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Form created successfully!', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Form created successfully!');
+                        crmAlert(response.message || 'Form created successfully!');
                     }
                 } else {
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to create form.', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Failed to create form.');
+                        crmAlert(response.message || 'Failed to create form.');
                     }
                 }
             },
@@ -894,7 +894,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
             },
             complete: function() {
@@ -1177,7 +1177,7 @@
             if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: msg, position: 'topRight' });
             } else {
-                alert(msg);
+                crmAlert(msg);
             }
         }
 
@@ -1256,14 +1256,14 @@
                     if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Form deleted.', position: 'topRight' });
                     } else {
-                        alert(response.message || 'Form deleted.');
+                        crmAlert(response.message || 'Form deleted.');
                     }
                 } else {
                     var failMsg = (response && response.message) ? response.message : 'Failed to delete form.';
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: failMsg, position: 'topRight' });
                     } else {
-                        alert(failMsg);
+                        crmAlert(failMsg);
                     }
                 }
             },
@@ -1275,7 +1275,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 } else {
-                    alert(msg);
+                    crmAlert(msg);
                 }
             }
         });

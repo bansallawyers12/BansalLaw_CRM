@@ -520,13 +520,13 @@
                                 
                                 if (!form.length) {
                                     console.error('❌ Form not found:', formId);
-                                    alert('Error: Upload form not found. Please refresh the page.');
+                                    crmAlert('Error: Upload form not found. Please refresh the page.');
                                     return false;
                                 }
                                 
                                 // Validate filename
                                 if (!file.name || /[\/\\]/.test(file.name)) {
-                                    alert("File name cannot contain slashes. Please rename the file and try again.");
+                                    crmAlert("File name cannot contain slashes. Please rename the file and try again.");
                                     return false;
                                 }
 
@@ -553,7 +553,7 @@
                         var $form = $('#' + formid);
                         if (!$form.length) {
                             console.error('❌ Form not found:', formid);
-                            alert('Error: Upload form not found. Please refresh the page.');
+                            crmAlert('Error: Upload form not found. Please refresh the page.');
                             return false;
                         }
 
@@ -566,11 +566,11 @@
                                 nativeInput.click();
                             } else {
                                 console.error('❌ File input element not accessible');
-                                alert('Error: File input not accessible. Please refresh the page.');
+                                crmAlert('Error: File input not accessible. Please refresh the page.');
                             }
                         } else {
                             console.error('❌ File input not found for formid:', formid);
-                            alert('Error: File input not found. Please refresh the page.');
+                            crmAlert('Error: File input not found. Please refresh the page.');
                         }
 
                         return false;
@@ -638,13 +638,13 @@
                             
                             if (!form.length) {
                                 console.error('❌ Form not found:', formId);
-                                alert('Error: Upload form not found. Please refresh the page.');
+                                crmAlert('Error: Upload form not found. Please refresh the page.');
                                 return false;
                             }
                             
                             // Validate filename
                             if (!file.name || /[\/\\]/.test(file.name)) {
-                                alert("File name cannot contain slashes. Please rename the file and try again.");
+                                crmAlert("File name cannot contain slashes. Please rename the file and try again.");
                                 return false;
                             }
 
@@ -817,7 +817,7 @@
                                 $downloadBtn.first().click();
                             } else {
                                 console.error('Download button not found for file ID:', currentContextFile);
-                                alert('Download link not found. Please refresh the page and try again.');
+                                crmAlert('Download link not found. Please refresh the page and try again.');
                             }
                             break;
                         case 'not-used':
@@ -1014,7 +1014,7 @@
                                 $('#moveDocumentModal').modal('hide');
                                 
                                 // Show success message using alert
-                                alert(response.message || 'Document moved successfully');
+                                crmAlert(response.message || 'Document moved successfully');
                                 
                                 // Reload the page to refresh document lists
                                 location.reload();
@@ -1739,11 +1739,11 @@
                     });
                     
                     if (invalidFiles.length > 0) {
-                        alert('The following files were skipped:\n' + invalidFiles.join('\n'));
+                        crmAlert('The following files were skipped:\n' + invalidFiles.join('\n'));
                     }
                     
                     if (bulkUploadFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, MP3, videos (MP4, WebM, MOV, VOB, etc.), or MS Teams recordings under the size limit.');
+                        crmAlert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, CSV, MP3, videos (MP4, WebM, MOV, VOB, etc.), or MS Teams recordings under the size limit.');
                         return;
                     }
                     
@@ -1958,7 +1958,7 @@
                         if (remainingCount === 0) {
                             window.hideBulkUploadModal();
                             resetBulkUploadSelection(categoryId);
-                            alert('All files have been removed. Please select files again to upload.');
+                            crmAlert('All files have been removed. Please select files again to upload.');
                         } else {
                             // Reindex remaining rows to maintain correct file indices
                             $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
@@ -1978,7 +1978,7 @@
                     const categoryId = currentCategoryId;
                     const files = bulkUploadFiles[categoryId] || [];
                     if (!files.length) {
-                        alert('No files selected. Please select files to upload.');
+                        crmAlert('No files selected. Please select files to upload.');
                         return;
                     }
                     const mappings = [];
@@ -2051,7 +2051,7 @@
                     });
                     
                     if (unmappedFiles.length > 0 && !autoCreate) {
-                        alert('Please map all files to checklists or enable "Auto-create checklist for unmatched files"');
+                        crmAlert('Please map all files to checklists or enable "Auto-create checklist for unmatched files"');
                         return;
                     }
                     
@@ -2186,7 +2186,7 @@
                                         if (typeof showPersonalDocVideoToast === 'function') {
                                             showPersonalDocVideoToast(success, message);
                                         } else {
-                                            alert(message);
+                                            crmAlert(message);
                                         }
                                         finishBulkUpload(success);
                                     }, { skipLoader: hasVideos });
@@ -2203,7 +2203,7 @@
                                 if (typeof showPersonalDocVideoToast === 'function') {
                                     showPersonalDocVideoToast(true, response.message || 'Files uploaded successfully!');
                                 } else {
-                                    alert(response.message || 'Files uploaded successfully!');
+                                    crmAlert(response.message || 'Files uploaded successfully!');
                                 }
                                 finishBulkUpload(true);
                             } else {
@@ -2215,7 +2215,7 @@
                                     updatePersonalVideoUploadLoader('error', 0, errorMsg);
                                     hidePersonalVideoUploadLoader(900);
                                 }
-                                alert(errorMsg);
+                                crmAlert(errorMsg);
                                 $('#bulk-upload-progress').hide();
                                 $('#confirm-bulk-upload').prop('disabled', false);
                                 resetBulkUploadFileInput(categoryId);
@@ -2232,7 +2232,7 @@
                                 updatePersonalVideoUploadLoader('error', 0, errorMsg);
                                 hidePersonalVideoUploadLoader(900);
                             }
-                            alert('Error: ' + errorMsg);
+                            crmAlert('Error: ' + errorMsg);
                             $('#bulk-upload-progress').hide();
                             $('#confirm-bulk-upload').prop('disabled', false);
                             resetBulkUploadFileInput(categoryId);

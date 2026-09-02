@@ -2563,7 +2563,7 @@ function customValidate(formName, savetype = '')
 								} else if (typeof iziToast !== 'undefined') {
 									iziToast.error({ message: refMsg, position: 'topRight' });
 								} else {
-									alert(refMsg);
+									crmAlert(refMsg);
 								}
 								return false;
 							}

@@ -328,7 +328,7 @@ window.MattersListSpaConfig = {
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ title: 'Error', message: 'Could not load matters list.', position: 'topRight' });
                 } else {
-                    window.alert('Could not load matters list.');
+                    window.crmAlert('Could not load matters list.');
                 }
             })
             .finally(function () {

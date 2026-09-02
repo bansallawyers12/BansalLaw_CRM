@@ -345,7 +345,7 @@ window.validateForm = function() {
     // If there are errors, show them in alert and prevent submission
     if (errors.length > 0) {
         const errorMessage = 'Please fix the following errors:\n\n' + errors.join('\n');
-        alert(errorMessage);
+        crmAlert(errorMessage);
         return false;
     }
     
@@ -1423,7 +1423,7 @@ window.saveAddressInfo = function() {
     const $addressesContainer = $('#addresses-container');
     if (!$addressesContainer.length) {
         console.error('❌ #addresses-container not found!');
-        alert('Error: Address container not found. Please refresh the page and try again.');
+        crmAlert('Error: Address container not found. Please refresh the page and try again.');
         return;
     }
     
@@ -1431,7 +1431,7 @@ window.saveAddressInfo = function() {
     
     if (!$addressEntries.length) {
         console.error('❌ No current address form found!');
-        alert('Error: Address form not found. Please refresh the page and try again.');
+        crmAlert('Error: Address form not found. Please refresh the page and try again.');
         return;
     }
     
@@ -1466,14 +1466,14 @@ window.saveAddressInfo = function() {
     // Show validation errors
     if (validationErrors.length > 0) {
         console.error('❌ Validation failed:', validationErrors);
-        alert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
+        crmAlert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
         return;
     }
     
     // Check if we have at least one valid address
     if (!hasAtLeastOneValidAddress) {
         console.error('❌ No valid addresses found');
-        alert('Please enter suburb and country for the current address before saving.');
+        crmAlert('Please enter suburb and country for the current address before saving.');
         return;
     }
     
@@ -1497,7 +1497,7 @@ window.saveAddressInfo = function() {
     // Check if saveSectionData exists
     if (typeof saveSectionData !== 'function') {
         console.error('❌ saveSectionData function not found!');
-        alert('Error: Save function not available. Please refresh the page and try again.');
+        crmAlert('Error: Save function not available. Please refresh the page and try again.');
         return;
     }
     
@@ -1816,7 +1816,7 @@ $(document).ready(function() {
     window.sendOTP = function(contactId, phone, countryCode) {
         // Validate contact ID
         if (!contactId || contactId === 'pending') {
-            alert('Please save the phone number first before verifying');
+            crmAlert('Please save the phone number first before verifying');
             return;
         }
         
@@ -2273,7 +2273,7 @@ $(document).ready(function() {
             editForm.addEventListener('submit', function(e) {
                 if (!validatePersonalEmailTypes()) {
                     e.preventDefault();
-                    alert('Only one email address can be of type Personal. Please correct the entries.');
+                    crmAlert('Only one email address can be of type Personal. Please correct the entries.');
                 }
             });
         }
@@ -2437,7 +2437,7 @@ window.goBackWithRefresh = function() {
 window.sendEmailVerification = function(emailId, emailAddress) {
     // Validate email ID
     if (!emailId || emailId === 'pending' || !emailAddress) {
-        alert('Please save the email first before verifying');
+        crmAlert('Please save the email first before verifying');
         return;
     }
 
@@ -2464,7 +2464,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Verification email sent successfully! Please ask the client to check their email and click the verification link.');
+            crmAlert('Verification email sent successfully! Please ask the client to check their email and click the verification link.');
             
             // Update button to show resend option with polling indicator
             button.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i> Resend <i class="fa-solid fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>';
@@ -2473,14 +2473,14 @@ window.sendEmailVerification = function(emailId, emailAddress) {
             // Start polling for verification status
             startEmailVerificationPolling(emailId);
         } else {
-            alert('Error: ' + (data.message || 'Failed to send verification email'));
+            crmAlert('Error: ' + (data.message || 'Failed to send verification email'));
             button.innerHTML = originalContent;
         }
         button.disabled = false;
     })
     .catch(error => {
         console.error('Error sending verification email:', error);
-        alert('Network error. Please try again.');
+        crmAlert('Network error. Please try again.');
         button.innerHTML = originalContent;
         button.disabled = false;
     });
@@ -2490,7 +2490,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
 function resendEmailVerification(emailId, emailAddress) {
     // Validate email ID
     if (!emailId || emailId === 'pending') {
-        alert('Please save the email first before verifying');
+        crmAlert('Please save the email first before verifying');
         return;
     }
     
@@ -2516,19 +2516,19 @@ function resendEmailVerification(emailId, emailAddress) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Verification email resent successfully!');
+            crmAlert('Verification email resent successfully!');
             
             // Start polling for verification status
             startEmailVerificationPolling(emailId);
         } else {
-            alert('Error: ' + (data.message || 'Failed to resend verification email'));
+            crmAlert('Error: ' + (data.message || 'Failed to resend verification email'));
         }
         button.innerHTML = originalContent;
         button.disabled = false;
     })
     .catch(error => {
         console.error('Error resending verification email:', error);
-        alert('Network error. Please try again.');
+        crmAlert('Network error. Please try again.');
         button.innerHTML = originalContent;
         button.disabled = false;
     });

@@ -284,6 +284,7 @@
             margin: 20px auto;
         }
     </style>
+    @include('components.crm-notify-assets')
     @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
@@ -525,6 +526,7 @@
 
     <!-- Professional SignaturePad Implementation -->
     @include('components.sweetalert2-scripts')
+    @include('components.crm-notify-scripts')
     <script>
         
         // Track which images have been processed to avoid duplicates
@@ -675,7 +677,7 @@
             // ✅ CHECK: Ensure SignaturePad library is loaded
             if (typeof window.SignaturePad === 'undefined') {
                 console.error('SignaturePad library not loaded!');
-                alert('Signature pad failed to load. Please refresh the page.');
+                crmAlert('Signature pad failed to load. Please refresh the page.');
                 useFallback = true;
                 // Show fallback textarea
                 canvas.style.display = 'none';
@@ -707,7 +709,7 @@
                 return pad;
             } catch (error) {
                 console.error('Failed to create SignaturePad:', error);
-                alert('Signature pad initialization failed. Using text fallback.');
+                crmAlert('Signature pad initialization failed. Using text fallback.');
                 useFallback = true;
                 canvas.style.display = 'none';
                 document.getElementById('fallback-signature').style.display = 'block';
@@ -862,14 +864,14 @@
             // Validate file type
             const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
             if (!validTypes.includes(file.type)) {
-                alert('Please upload a valid image file (PNG, JPG, or SVG)');
+                crmAlert('Please upload a valid image file (PNG, JPG, or SVG)');
                 event.target.value = '';
                 return;
             }
             
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('File size must be less than 5MB');
+                crmAlert('File size must be less than 5MB');
                 event.target.value = '';
                 return;
             }
@@ -884,7 +886,7 @@
                 }
             };
             reader.onerror = function() {
-                alert('Error reading file. Please try again.');
+                crmAlert('Error reading file. Please try again.');
                 event.target.value = '';
             };
             reader.readAsDataURL(file);
@@ -1019,20 +1021,20 @@
                 if (signaturePad && !signaturePad.isEmpty()) {
                     signatureData = signaturePad.toDataURL('image/png');
                 } else {
-                    alert('Please draw a signature first.');
+                    crmAlert('Please draw a signature first.');
                     return;
                 }
             } else if (currentSignatureMode === 'upload') {
                 if (uploadedSignatureData) {
                     signatureData = uploadedSignatureData;
                 } else {
-                    alert('Please upload a signature image first.');
+                    crmAlert('Please upload a signature image first.');
                     return;
                 }
             }
             
             if (!signatureData) {
-                alert('Please provide a signature first.');
+                crmAlert('Please provide a signature first.');
                 return;
             }
             // Save the user's signature for reuse
@@ -1065,13 +1067,13 @@
                     xPercent, yPercent, wPercent, hPercent,
                     naturalWidth, naturalHeight, displayWidth, displayHeight
                 });
-                alert('Error calculating signature position. Please try again or contact support.');
+                crmAlert('Error calculating signature position. Please try again or contact support.');
                 return;
             }
 
             if (xPercent < 0 || xPercent > 1 || yPercent < 0 || yPercent > 1) {
                 console.error('[Signature Error] Position out of bounds!', {xPercent, yPercent});
-                alert('Signature position is out of bounds. Please contact support.');
+                crmAlert('Signature position is out of bounds. Please contact support.');
                 return;
             }
             
@@ -1337,7 +1339,7 @@
             
             // Check if all fields are signed
             if (signedFields < totalFields) {
-                alert(`Please sign all signature fields. ${signedFields} of ${totalFields} fields are signed.`);
+                crmAlert(`Please sign all signature fields. ${signedFields} of ${totalFields} fields are signed.`);
                 return false;
             }
             
@@ -1356,7 +1358,7 @@
             });
             
             if (emptySignatures.length > 0) {
-                alert(`Some signature fields appear to be empty or invalid. Please re-sign these fields.`);
+                crmAlert(`Some signature fields appear to be empty or invalid. Please re-sign these fields.`);
                 
                 // Highlight the empty fields
                 emptySignatures.forEach(fieldId => {
@@ -1439,7 +1441,7 @@
             // ✅ FIX #5: VALIDATE HIDDEN FIELDS WERE POPULATED
             const populated = populateHiddenFields();
             if (!populated) {
-                alert('Failed to prepare signature data for submission. Please try again.');
+                crmAlert('Failed to prepare signature data for submission. Please try again.');
                 
                 // Reset state
                 window.signingInProgress = false;
@@ -1497,7 +1499,7 @@
                         formSubmitBtn.textContent = 'Submit Signatures';
                         formSubmitBtn.disabled = false;
                     }
-                    alert('Submission timeout. This may be due to a network issue or server problem. Please check your connection and try again.');
+                    crmAlert('Submission timeout. This may be due to a network issue or server problem. Please check your connection and try again.');
                 }, 90000); // Hard timeout at 90 seconds
                 
                 // Store BOTH timeout IDs for cleanup on successful redirect
@@ -1506,7 +1508,7 @@
                 form.submit();
             } else {
                 // Handle missing form
-                alert('Error: Form not found. Please refresh the page and try again.');
+                crmAlert('Error: Form not found. Please refresh the page and try again.');
                 window.signingInProgress = false;
                 const overlay = document.getElementById('loading-overlay');
                 if (overlay) overlay.remove();

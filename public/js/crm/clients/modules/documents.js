@@ -360,10 +360,10 @@
                         },
                         success: function(response) {
                             if (response.status) {
-                                alert('✓ Success: ' + response.message);
+                                crmAlert('✓ Success: ' + response.message);
                                 location.reload();
                             } else {
-                                alert('✗ Error: ' + (response.message || 'Failed to delete folder.'));
+                                crmAlert('✗ Error: ' + (response.message || 'Failed to delete folder.'));
                             }
                         },
                         error: function(xhr) {
@@ -371,7 +371,7 @@
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMsg = xhr.responseJSON.message;
                             }
-                            alert('✗ Error: ' + errorMsg);
+                            crmAlert('✗ Error: ' + errorMsg);
                         }
                     });
                 }
@@ -431,7 +431,7 @@
             var filename = $this.attr('data-filename') || $this.data('filename');
             if ((!documentId && !filelink) || !filename) {
                 console.error('Missing file info - documentId:', documentId, 'filelink:', filelink, 'filename:', filename);
-                alert('Missing file info. Please try again.');
+                crmAlert('Missing file info. Please try again.');
                 return false;
             }
             $this.html('<i class="fa-solid fa-spinner fa-spin"></i> Downloading...');
@@ -445,7 +445,7 @@
             var token = $('meta[name="csrf-token"]').attr('content');
             if (!token) {
                 console.error('CSRF token not found');
-                alert('Security token not found. Please refresh the page and try again.');
+                crmAlert('Security token not found. Please refresh the page and try again.');
                 $this.html('Download').prop('disabled', false);
                 return false;
             }
@@ -464,7 +464,7 @@
                 }, 2000);
             } catch (error) {
                 console.error('Error submitting form:', error);
-                alert('Error initiating download. Please try again.');
+                crmAlert('Error initiating download. Please try again.');
                 $this.html('Download').prop('disabled', false);
             }
             setTimeout(function() { form.remove(); }, 1000);

@@ -1175,7 +1175,7 @@
         });
         if (invalidMessage) {
             if (typeof showNotification === 'function') showNotification(invalidMessage, 'error');
-            else alert(invalidMessage);
+            else crmAlert(invalidMessage);
             return;
         }
 

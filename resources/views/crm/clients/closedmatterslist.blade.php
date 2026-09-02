@@ -496,12 +496,12 @@ jQuery(document).ready(function($){
                 } else if (resp.status) {
                     window.location.reload();
                 } else {
-                    alert(resp.message || 'Failed to reopen matter.');
+                    crmAlert(resp.message || 'Failed to reopen matter.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                 }
             },
             error: function(){
-                alert('An error occurred. Please try again.');
+                crmAlert('An error occurred. Please try again.');
                 $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
             }
         });
@@ -521,15 +521,15 @@ jQuery(document).ready(function($){
             data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
             success: function(resp){
                 if (resp.status) {
-                    alert(resp.message || 'Reopen request has been sent to admins.');
+                    crmAlert(resp.message || 'Reopen request has been sent to admins.');
                     window.location.reload();
                 } else {
-                    alert(resp.message || 'Failed to request reopen.');
+                    crmAlert(resp.message || 'Failed to request reopen.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
                 }
             },
             error: function(){
-                alert('An error occurred. Please try again.');
+                crmAlert('An error occurred. Please try again.');
                 $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
             }
         });

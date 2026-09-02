@@ -172,7 +172,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
                 } else {
-                    alert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
+                    crmAlert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
                 }
                 return false;
             }
@@ -183,7 +183,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'File too large: ' + file.name + '. Maximum size is 10MB.', position: 'topRight' });
                 } else {
-                    alert('File too large: ' + file.name + '. Maximum size is 10MB.');
+                    crmAlert('File too large: ' + file.name + '. Maximum size is 10MB.');
                 }
                 return false;
             }
@@ -458,7 +458,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
                 } else {
-                    alert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
+                    crmAlert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
                 }
                 return false;
             }
@@ -469,7 +469,7 @@
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'File too large: ' + file.name + '. Maximum size is 10MB.', position: 'topRight' });
                 } else {
-                    alert('File too large: ' + file.name + '. Maximum size is 10MB.');
+                    crmAlert('File too large: ' + file.name + '. Maximum size is 10MB.');
                 }
                 return false;
             }

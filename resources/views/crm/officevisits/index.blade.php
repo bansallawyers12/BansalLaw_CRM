@@ -731,7 +731,7 @@
 						if (obj.status) {
 							refreshCurrentTab();
 						} else {
-							alert(obj.message);
+							crmAlert(obj.message);
 						}
 					},
 					complete: function () { $('.popuploader').hide(); }
@@ -750,10 +750,10 @@
 					success: function (response) {
 						var obj = $.parseJSON(response);
 						if (obj.status) {
-							alert(obj.message);
+							crmAlert(obj.message);
 							refreshCurrentTab();
 						} else {
-							alert(obj.message);
+							crmAlert(obj.message);
 						}
 					},
 					complete: function () { $('.popuploader').hide(); }

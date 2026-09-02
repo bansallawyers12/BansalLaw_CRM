@@ -707,7 +707,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error completing task:', xhr.responseText);
-                    alert('An error occurred while completing the task.');
+                    crmAlert('An error occurred while completing the task.');
                     $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                 }
             });
@@ -764,13 +764,13 @@
                         $('.update_task').popover('hide');
                         location.reload();
                     } else {
-                        alert((obj && obj.message) ? obj.message : 'Could not update task.');
+                        crmAlert((obj && obj.message) ? obj.message : 'Could not update task.');
                     }
                 },
                 error: function(xhr) {
                     $('.popuploader').hide();
                     console.error('Error updating task:', xhr.responseText);
-                    alert('An error occurred while updating the task. Please try again.');
+                    crmAlert('An error occurred while updating the task. Please try again.');
                 }
             });
         });
@@ -788,11 +788,11 @@
                         if (response.success) {
                             location.reload();
                         } else {
-                            alert('Error deleting task: ' + response.message);
+                            crmAlert('Error deleting task: ' + response.message);
                         }
                     },
                     error: function(xhr, status, error) {
-                        alert('Error deleting task. Please try again.');
+                        crmAlert('Error deleting task. Please try again.');
                         console.error('Delete error:', error);
                     }
                 });

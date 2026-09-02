@@ -12,7 +12,7 @@
 			var conf = confirm('Do you want to change status to declined?');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to update the record.');
+				crmAlert('Please select ID to update the record.');
 				return false;	
 			} else {
 				$(".server-error").html(''); //remove server error.
@@ -53,7 +53,7 @@
 			var conf = confirm('Do you want to change status to Approve?');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to update the record.');
+				crmAlert('Please select ID to update the record.');
 				return false;	
 			} else {
 				$(".server-error").html(''); //remove server error.
@@ -96,7 +96,7 @@
 			var conf = confirm('Do you want to change status to Process?');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to update the record.');
+				crmAlert('Please select ID to update the record.');
 				return false;	
 			} else {
 				$(".server-error").html(''); //remove server error.
@@ -140,7 +140,7 @@
 			var conf = confirm('Do you want to change status to Archive?');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to update the record.');
+				crmAlert('Please select ID to update the record.');
 				return false;	
 			} else {
 				$(".server-error").html(''); //remove server error.
@@ -182,7 +182,7 @@
 		var conf = confirm('Are you sure, you would like to delete this record. Remember all Related data would be deleted.');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to delete the record.');
+				crmAlert('Please select ID to delete the record.');
 				return false;	
 			} else {
 				$('.popuploader').show();
@@ -240,7 +240,7 @@
 		var conf = confirm('Are you sure, you would like to move this record.');
 		if(conf){	 
 			if(id == '') {
-				alert('Please select ID to delete the record.');
+				crmAlert('Please select ID to delete the record.');
 				return false;	
 			} else {
 				$('.popuploader').show();

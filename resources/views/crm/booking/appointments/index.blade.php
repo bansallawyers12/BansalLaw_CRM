@@ -1158,7 +1158,7 @@ function manualSync() {
                     window.location.reload();
                 });
             } else {
-                alert(
+                crmAlert(
                     'Sync completed!\n' +
                     'Fetched: ' + response.stats.fetched + '\n' +
                     'New: ' + response.stats.new + '\n' +
@@ -1179,7 +1179,7 @@ function manualSync() {
                     confirmButtonText: 'OK'
                 });
             } else {
-                alert('Sync failed: ' + message);
+                crmAlert('Sync failed: ' + message);
             }
         }
     });
@@ -1247,7 +1247,7 @@ $('#edit-datetime-form').on('submit', function(event) {
                     window.location.reload();
                 });
             } else {
-                alert(message);
+                crmAlert(message);
                 window.location.reload();
             }
         },
