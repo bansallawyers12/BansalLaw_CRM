@@ -24,6 +24,24 @@
             return loadedScripts[url];
         }
 
+        // Active-tab modules are often SSR-included in detail.blade.php. If we inject
+        // the same file again, module IIFEs re-bind delegated handlers (e.g. Add task ×2).
+        var pathOnly = String(path || '').split('?')[0].replace(/^\//, '');
+        if (pathOnly) {
+            var alreadyInDom = false;
+            $('script[src]').each(function () {
+                var src = String(this.getAttribute('src') || '');
+                if (src.indexOf(pathOnly) !== -1) {
+                    alreadyInDom = true;
+                    return false;
+                }
+            });
+            if (alreadyInDom) {
+                loadedScripts[url] = $.when();
+                return loadedScripts[url];
+            }
+        }
+
         loadedScripts[url] = $.Deferred(function (defer) {
             var el = document.createElement('script');
             el.src = url;

@@ -6401,13 +6401,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1;
 }
 
-.cdn-matter-task-composer__due-wrap {
-  position: relative;
-  flex: 0 0 auto;
-  min-width: 10.5rem;
-  max-width: 13rem;
-}
-
 .cdn-matter-task-composer__due-icon {
   position: absolute;
   left: 0.75rem;
@@ -6417,6 +6410,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   color: #64748b;
   font-size: 0.85rem;
   pointer-events: none;
+}
+
+.cdn-matter-task-composer__due-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 10.5rem;
+  max-width: 13rem;
+  cursor: pointer;
 }
 
 .cdn-matter-task-composer__due,
@@ -6430,6 +6431,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   padding-left: 2.15rem !important;
   background: #fff;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
 }
 
 .cdn-matter-task-composer__due::placeholder,
@@ -6452,31 +6454,26 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16) !important;
 }
 
-/* Hide the storage input when Flatpickr altInput is active */
-.cdn-matter-task-composer__due-wrap input.cdn-matter-task-composer__due.flatpickr-input:not(.cdn-matter-task-composer__due-alt) {
-  position: absolute !important;
-  left: 0;
-  top: 0;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-}
-
-/* Modern Flatpickr popup for task due date */
+/* Modern Flatpickr popup for task due date — force visible when open */
 .cdn-matter-task-due-calendar.flatpickr-calendar {
   border-radius: 14px;
   border: 1px solid var(--cdn-border, #e2e8f0);
   box-shadow: 0 16px 40px rgba(30, 61, 96, 0.18);
   padding: 12px;
-  background: #fff;
+  background: #fff !important;
   font-family: inherit;
   width: 320px;
-  margin-top: 10px;
+  max-width: calc(100vw - 24px);
+  margin-top: 6px;
   box-sizing: border-box;
+  z-index: 100000 !important;
+}
+
+.cdn-matter-task-due-calendar.flatpickr-calendar.open {
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .cdn-matter-task-due-calendar .flatpickr-months {
@@ -6589,24 +6586,39 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   max-width: none;
 }
 
-.cdn-matter-task-due-calendar .flatpickr-days {
+.cdn-matter-task-due-calendar .flatpickr-innerContainer,
+.cdn-matter-task-due-calendar .flatpickr-rContainer {
+  display: block;
   width: 100%;
 }
 
+.cdn-matter-task-due-calendar .flatpickr-days {
+  width: 100% !important;
+  min-height: 220px;
+}
+
 .cdn-matter-task-due-calendar .dayContainer {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  min-height: 220px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .cdn-matter-task-due-calendar .flatpickr-day {
   border-radius: 9px;
-  color: #1e293b;
+  color: #1e293b !important;
   font-weight: 500;
-  max-width: calc(100% / 7);
-  height: 38px;
-  line-height: 38px;
+  flex: 0 0 14.2857%;
+  max-width: 14.2857%;
+  width: 14.2857% !important;
+  height: 38px !important;
+  line-height: 38px !important;
   margin: 1px 0;
+  display: inline-block;
+  box-sizing: border-box;
 }
 
 .cdn-matter-task-due-calendar .flatpickr-day:hover,
@@ -6617,7 +6629,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 .cdn-matter-task-due-calendar .flatpickr-day.today {
   border-color: #3a6fa8;
-  color: #1e3d60;
+  color: #1e3d60 !important;
   font-weight: 700;
 }
 
@@ -6625,14 +6637,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .cdn-matter-task-due-calendar .flatpickr-day.selected:hover {
   background: #3a6fa8;
   border-color: #3a6fa8;
-  color: #fff;
+  color: #fff !important;
   box-shadow: 0 4px 10px rgba(58, 111, 168, 0.35);
 }
 
 .cdn-matter-task-due-calendar .flatpickr-day.flatpickr-disabled,
 .cdn-matter-task-due-calendar .flatpickr-day.prevMonthDay,
 .cdn-matter-task-due-calendar .flatpickr-day.nextMonthDay {
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
 .cdn-matter-task-composer__btn {

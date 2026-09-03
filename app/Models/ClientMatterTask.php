@@ -22,7 +22,8 @@ class ClientMatterTask extends Model
 
     protected $casts = [
         'is_done' => 'boolean',
-        'due_date' => 'date',
+        // Y-m-d so client list/meta rendering does not depend on ISO datetime parsing
+        'due_date' => 'date:Y-m-d',
     ];
 
     public function clientMatter(): BelongsTo

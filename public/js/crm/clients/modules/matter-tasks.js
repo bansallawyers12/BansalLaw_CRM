@@ -7,14 +7,22 @@
     if (!$) {
         return;
     }
+    // Script can be included via SSR active-tab AND ClientTabLazy.ensureTabScripts —
+    // without this guard, delegated click handlers stack and each Add creates N tasks.
+    if (window.__cdnMatterTasksModuleBound) {
+        return;
+    }
+    window.__cdnMatterTasksModuleBound = true;
 
     var reloadTimer = null;
     var pendingDelete = null;
     var UNDO_MS = 6000;
     var DONE_PANEL_KEY = 'cdn-matter-tasks-done-open';
+    var EVT = '.cdnMatterTasks';
     var tasksPage = 1;
     var tasksHasMore = false;
     var tasksLoading = false;
+    var taskAddInFlight = false;
     var tasksRows = [];
     var tasksOpenCount = 0;
     var tasksDoneCount = 0;
@@ -167,6 +175,18 @@
         return $('<div>').text(text == null ? '' : String(text)).html();
     }
 
+    function getDueFlatpickr($due) {
+        if (!$due || !$due.length) {
+            return null;
+        }
+        var el = $due[0];
+        var fp = $due.data('flatpickr') || (el && el._flatpickr) || null;
+        if (fp && !$due.data('flatpickr')) {
+            $due.data('flatpickr', fp);
+        }
+        return fp;
+    }
+
     function syncComposerLock() {
         var $wrap = $('#cdn-matter-tasks');
         if (!$wrap.length) {
@@ -186,7 +206,7 @@
         var busy = $wrap.hasClass('cdn-matter-tasks--busy');
         $inp.prop('disabled', !unlocked || busy);
         $due.prop('disabled', !unlocked || busy);
-        var fp = $due.data('flatpickr');
+        var fp = getDueFlatpickr($due);
         if (fp && fp.altInput) {
             fp.altInput.disabled = !unlocked || busy;
         }
@@ -196,7 +216,7 @@
 
     function clearDueDateInput() {
         var $due = $('#cdn-matter-task-due');
-        var fp = $due.data('flatpickr');
+        var fp = getDueFlatpickr($due);
         clearFieldInvalid($due);
         if (fp && fp.altInput) {
             clearFieldInvalid($(fp.altInput));
@@ -269,7 +289,7 @@
     }
 
     function getDueDateTypedValue($due) {
-        var fp = $due.data('flatpickr');
+        var fp = getDueFlatpickr($due);
         if (fp && fp.altInput) {
             return (fp.altInput.value || '').trim();
         }
@@ -292,7 +312,7 @@
      * Validate optional due date. Returns Y-m-d string, '' if empty, or null if invalid.
      */
     function validateTaskDueDate($due) {
-        var fp = $due.data('flatpickr');
+        var fp = getDueFlatpickr($due);
         var $visible = fp && fp.altInput ? $(fp.altInput) : $due;
         clearFieldInvalid($due);
         clearFieldInvalid($visible);
@@ -316,6 +336,7 @@
 
         if (fp && typeof fp.setDate === 'function') {
             try {
+                // Input shows d/m/Y; selectedDates still resolve from parsed Y-m-d
                 fp.setDate(parsed.value, true, 'Y-m-d');
             } catch (e) {
                 markFieldInvalid($visible);
@@ -330,25 +351,52 @@
         return parsed.value;
     }
 
-    function initDueDatePicker() {
+    function destroyDueDatePicker($due) {
+        var fp = getDueFlatpickr($due);
+        if (fp && typeof fp.destroy === 'function') {
+            try {
+                fp.destroy();
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        if ($due && $due.length) {
+            $due.removeData('flatpickr');
+            if ($due[0]) {
+                delete $due[0]._flatpickr;
+            }
+        }
+    }
+
+    function initDueDatePicker(force) {
         var el = document.getElementById('cdn-matter-task-due');
-        if (!el || typeof flatpickr === 'undefined') {
-            return;
+        if (!el) {
+            return false;
+        }
+        if (typeof flatpickr === 'undefined') {
+            return false;
         }
         var $due = $(el);
-        if ($due.data('flatpickr')) {
-            return;
+        var existing = getDueFlatpickr($due);
+        if (existing && !force) {
+            // Instance exists but may be detached after lazy-tab HTML replace
+            if (existing.input && document.body.contains(existing.input)) {
+                return true;
+            }
+            destroyDueDatePicker($due);
+        } else if (existing && force) {
+            destroyDueDatePicker($due);
         }
 
         var fp = flatpickr(el, {
-            altInput: true,
-            altFormat: 'd/m/Y',
-            dateFormat: 'Y-m-d',
-            altInputClass: 'form-control cdn-matter-task-composer__due-alt',
+            // Single visible input (d/m/Y) — avoids altInput + hidden field CSS races
+            dateFormat: 'd/m/Y',
             allowInput: true,
             clickOpens: true,
+            closeOnSelect: true,
             disableMobile: true,
             monthSelectorType: 'static',
+            appendTo: document.body,
             locale: {
                 firstDayOfWeek: 1
             },
@@ -356,31 +404,33 @@
                 if (instance.calendarContainer) {
                     instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
                 }
-                if (instance.altInput) {
-                    $(instance.altInput).on('blur.matterTaskDue', function () {
-                        var typed = (instance.altInput.value || '').trim();
+                $(instance.input)
+                    .off('blur.matterTaskDue input.matterTaskDue')
+                    .on('blur.matterTaskDue', function () {
+                        var typed = (instance.input.value || '').trim();
                         if (!typed) {
-                            clearFieldInvalid($(instance.altInput));
+                            clearFieldInvalid($(instance.input));
                             instance.clear();
                             return;
                         }
                         var parsed = parseDueDateInput(typed);
                         if (!parsed.ok) {
-                            markFieldInvalid($(instance.altInput));
+                            markFieldInvalid($(instance.input));
                             return;
                         }
-                        clearFieldInvalid($(instance.altInput));
+                        clearFieldInvalid($(instance.input));
                         instance.setDate(parsed.value, true, 'Y-m-d');
+                        instance.close();
+                    })
+                    .on('input.matterTaskDue', function () {
+                        clearFieldInvalid($(instance.input));
                     });
-                    $(instance.altInput).on('input.matterTaskDue', function () {
-                        clearFieldInvalid($(instance.altInput));
-                    });
-                }
             },
-            onChange: function () {
+            onChange: function (selectedDates, dateStr, instance) {
                 clearFieldInvalid($due);
-                if (fp.altInput) {
-                    clearFieldInvalid($(fp.altInput));
+                // Ensure popup hides after picking a day (do not leave sticky inline styles)
+                if (selectedDates && selectedDates.length && instance && typeof instance.close === 'function') {
+                    instance.close();
                 }
             },
             onOpen: function (selectedDates, dateStr, instance) {
@@ -388,17 +438,37 @@
                     return;
                 }
                 instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
-                // Nudge below the input so the header/arrows are not tight against the field.
-                window.requestAnimationFrame(function () {
-                    var top = parseFloat(instance.calendarContainer.style.top || '0');
-                    if (!isNaN(top)) {
-                        instance.calendarContainer.style.top = top + 8 + 'px';
-                    }
-                });
+                // Only z-index — never set display/visibility/opacity inline or closeOnSelect cannot hide the calendar
+                instance.calendarContainer.style.zIndex = '100000';
+            },
+            onClose: function (selectedDates, dateStr, instance) {
+                if (!instance.calendarContainer) {
+                    return;
+                }
+                // Clear any leftover visibility overrides so Flatpickr CSS can hide the popup
+                instance.calendarContainer.style.removeProperty('display');
+                instance.calendarContainer.style.removeProperty('visibility');
+                instance.calendarContainer.style.removeProperty('opacity');
             }
         });
 
         $due.data('flatpickr', fp);
+        syncComposerLock();
+        return true;
+    }
+
+    function ensureDueDatePicker() {
+        if (initDueDatePicker(false)) {
+            return;
+        }
+        // Flatpickr or tab HTML may not be ready yet (lazy tab / script order)
+        var attempts = 0;
+        var timer = window.setInterval(function () {
+            attempts += 1;
+            if (initDueDatePicker(false) || attempts >= 20) {
+                window.clearInterval(timer);
+            }
+        }, 100);
     }
 
     function setBusy(busy) {
@@ -460,12 +530,13 @@
             return null;
         }
         var s = String(raw).trim();
+        // Prefer calendar Y-m-d (API now returns date:Y-m-d). Avoid UTC shift from ISO midnights.
         var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (!m) {
-            var d = new Date(s);
-            return isNaN(d.getTime()) ? null : d;
+        if (m) {
+            return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
         }
-        return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        var d = new Date(s);
+        return isNaN(d.getTime()) ? null : d;
     }
 
     function formatDueDate(raw) {
@@ -867,10 +938,13 @@
     }
 
     $(document).ready(function () {
-        initDueDatePicker();
+        ensureDueDatePicker();
         reload();
 
-        $(document).on('click', '.cdn-matter-task-load-more', function (e) {
+        // Rebind safely if this ready block ever re-runs (namespaced + off-first)
+        $(document).off(EVT);
+
+        $(document).on('click' + EVT, '.cdn-matter-task-load-more', function (e) {
             e.preventDefault();
             if (tasksLoading || !tasksHasMore) {
                 return;
@@ -878,11 +952,38 @@
             fetchTasksPage(tasksPage + 1, true);
         });
 
-        $(document).on('click', '[data-tab="clientaction"]', function () {
+        $(document).on('click' + EVT, '[data-tab="clientaction"]', function () {
+            ensureDueDatePicker();
             scheduleReload();
         });
 
-        $(document).on('toggle', '.cdn-matter-task__done-panel', function () {
+        $(document).on('clientTabContentLoaded' + EVT, function (e, tabId) {
+            if (String(tabId || '').toLowerCase() !== 'clientaction') {
+                return;
+            }
+            // Lazy-loaded Tasks HTML replaces the due input — re-bind Flatpickr
+            ensureDueDatePicker();
+            scheduleReload();
+        });
+
+        // Calendar icon should open the picker (icon itself is pointer-events: none)
+        $(document).on('mousedown' + EVT, '.cdn-matter-task-composer__due-wrap', function (e) {
+            var $due = $('#cdn-matter-task-due');
+            if (!$due.length || $due.prop('disabled')) {
+                return;
+            }
+            // Only force-open when clicking the wrap chrome / icon area, not while typing
+            if (e.target === $due[0]) {
+                return;
+            }
+            var fp = getDueFlatpickr($due);
+            if (fp && typeof fp.open === 'function') {
+                e.preventDefault();
+                fp.open();
+            }
+        });
+
+        $(document).on('toggle' + EVT, '.cdn-matter-task__done-panel', function () {
             try {
                 window.sessionStorage.setItem(DONE_PANEL_KEY, this.open ? '1' : '0');
             } catch (e) {
@@ -890,9 +991,15 @@
             }
         });
 
-        $(document).on('click', '#cdn-matter-task-add', function () {
+        $(document).on('click' + EVT, '#cdn-matter-task-add', function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (taskAddInFlight) {
+                return;
+            }
             var $inp = $('#cdn-matter-task-title');
             var $due = $('#cdn-matter-task-due');
+            ensureDueDatePicker();
             var title = validateTaskTitle($inp);
             if (title === null) {
                 return;
@@ -915,6 +1022,7 @@
             }
 
             var $btn = $(this);
+            taskAddInFlight = true;
             setBusy(true);
             $btn.prop('disabled', true);
             var storeData = {
@@ -971,31 +1079,32 @@
                     notifyError(msg);
                 },
                 complete: function () {
+                    taskAddInFlight = false;
                     setBusy(false);
                     $btn.prop('disabled', false);
                 }
             });
         });
 
-        $(document).on('input', '#cdn-matter-task-title', function () {
+        $(document).on('input' + EVT, '#cdn-matter-task-title', function () {
             clearFieldInvalid($(this));
         });
 
-        $(document).on('keydown', '#cdn-matter-task-title', function (e) {
+        $(document).on('keydown' + EVT, '#cdn-matter-task-title', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 $('#cdn-matter-task-add').trigger('click');
             }
         });
 
-        $(document).on('keydown', '.cdn-matter-task-composer__due-alt', function (e) {
+        $(document).on('keydown' + EVT, '#cdn-matter-task-due, .cdn-matter-task-composer__due-alt', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 $('#cdn-matter-task-add').trigger('click');
             }
         });
 
-        $(document).on('change', '.cdn-matter-task__cb', function () {
+        $(document).on('change' + EVT, '.cdn-matter-task__cb', function () {
             var $cb = $(this);
             if ($cb.prop('disabled')) {
                 return;
@@ -1045,7 +1154,7 @@
             });
         });
 
-        $(document).on('click', '.cdn-matter-task__del', function () {
+        $(document).on('click' + EVT, '.cdn-matter-task__del', function () {
             var $btn = $(this);
             if ($btn.prop('disabled')) {
                 return;
