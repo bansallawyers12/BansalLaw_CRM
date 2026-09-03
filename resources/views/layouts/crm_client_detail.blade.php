@@ -1507,6 +1507,13 @@
             transition: background-color .15s ease, color .15s ease !important; 
         }
         .icon-btn:hover { background: rgba(0,123,255,.1) !important; color: #0d6efd !important; }
+        .icon-btn.active {
+            background: #3a6fa8 !important;
+            color: #fff !important;
+            box-shadow: inset 0 -3px 0 #c8992a !important;
+        }
+        .icon-btn.active i { color: #fff !important; }
+        .icon-btn.active:hover { background: #3a6fa8 !important; color: #fff !important; }
         /* Notification badge: see crm-theme.css (.notification-bell-inner / .countbell) */
         /* Flash animation when notification count updates */
         .notification-bell-flash { animation: notificationBellFlash 0.6s ease-out !important; }

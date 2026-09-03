@@ -78,6 +78,13 @@
             transition: all .15s ease !important; text-decoration: none !important; 
         }
         .icon-btn:hover { background: #f3f5f7 !important; color: #0d6efd !important; }
+        .icon-btn.active {
+            background: #3a6fa8 !important;
+            color: #fff !important;
+            box-shadow: inset 0 -3px 0 #c8992a !important;
+        }
+        .icon-btn.active i { color: #fff !important; }
+        .icon-btn.active:hover { background: #3a6fa8 !important; color: #fff !important; }
         .icon-btn i { font-size: 18px !important; }
         /* Flash animation when notification count updates */
         .notification-bell-flash { animation: notificationBellFlash 0.6s ease-out !important; }

@@ -14,6 +14,32 @@
     if ($_staffTop instanceof \App\Models\Staff) {
         $_pendingTaskCount = app(\App\Services\DashboardService::class)->getPendingOpenTaskCount($_staffTop);
     }
+
+    $_routeName = Route::currentRouteName() ?? '';
+    $_navAccounts = in_array($_routeName, [
+        'clients.invoicelist',
+        'clients.clientreceiptlist',
+        'clients.officereceiptlist',
+        'clients.journalreceiptlist',
+        'clients.analytics-dashboard',
+    ], true);
+    $_navUnassigned = $_routeName === 'clients.unassigned-emails';
+    $_navActive = [
+        'dashboard' => $_routeName === 'dashboard' || str_starts_with($_routeName, 'dashboard.'),
+        'signatures' => str_starts_with($_routeName, 'signatures.'),
+        'booking' => str_starts_with($_routeName, 'booking.'),
+        'officevisits' => str_starts_with($_routeName, 'officevisits.'),
+        'frontdesk' => str_starts_with($_routeName, 'front-desk.checkin'),
+        'tasks' => $_routeName === 'assignee.tasks' || str_starts_with($_routeName, 'assignee.tasks.'),
+        'unassigned' => $_navUnassigned,
+        'accounts' => $_navAccounts,
+        'clients' => (
+            str_starts_with($_routeName, 'clients.')
+            || str_starts_with($_routeName, 'leads.')
+            || str_starts_with($_routeName, 'emails.smart-import')
+            || str_starts_with($_routeName, 'communication-check.')
+        ) && !$_navUnassigned && !$_navAccounts,
+    ];
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -21,11 +47,11 @@
     </button>
     <div class="topbar-left">
         <div class="icon-group">
-            <a href="{{route('dashboard')}}" class="icon-btn" title="Dashboard"><i class="fa-solid fa-tachometer-alt"></i></a>
+            <a href="{{route('dashboard')}}" class="icon-btn{{ $_navActive['dashboard'] ? ' active' : '' }}" title="Dashboard"@if($_navActive['dashboard']) aria-current="page"@endif><i class="fa-solid fa-tachometer-alt"></i></a>
             <a href="{{ route('dashboard') }}#myCalendarSection" class="icon-btn" title="My Calendar"><i class="fa-solid fa-calendar-days"></i></a>
-            <a href="{{ route('signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fa-solid fa-pen"></i></a>
+            <a href="{{ route('signatures.index') }}" class="icon-btn{{ $_navActive['signatures'] ? ' active' : '' }}" title="Signature Dashboard"@if($_navActive['signatures']) aria-current="page"@endif><i class="fa-solid fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">
-                <a href="{{ route('booking.appointments.index') }}" class="icon-btn" title="Website Bookings" style="position: relative;">
+                <a href="{{ route('booking.appointments.index') }}" class="icon-btn{{ $_navActive['booking'] ? ' active' : '' }}" title="Website Bookings" style="position: relative;"@if($_navActive['booking']) aria-current="page"@endif>
                     <i class="fa-solid fa-globe"></i>
                     @php
                         $pendingCount = \App\Models\BookingAppointment::where('status', 'pending')->where('is_paid', 1)->count();
@@ -53,18 +79,18 @@
                     @endif
                 </div>
             </div>
-            <a href="{{route('officevisits.waiting')}}" class="icon-btn" title="In Person"><i class="fa-solid fa-user-check"></i></a>
+            <a href="{{route('officevisits.waiting')}}" class="icon-btn{{ $_navActive['officevisits'] ? ' active' : '' }}" title="In Person"@if($_navActive['officevisits']) aria-current="page"@endif><i class="fa-solid fa-user-check"></i></a>
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
-            <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fa-solid fa-clipboard-check"></i></a>
+            <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn{{ $_navActive['frontdesk'] ? ' active' : '' }}" title="Front-Desk Check-In"@if($_navActive['frontdesk']) aria-current="page"@endif><i class="fa-solid fa-clipboard-check"></i></a>
             @endif
-            <a href="{{ route('assignee.tasks') }}" id="crmNavPendingTasks" class="icon-btn" title="Tasks" style="position: relative;">
+            <a href="{{ route('assignee.tasks') }}" id="crmNavPendingTasks" class="icon-btn{{ $_navActive['tasks'] ? ' active' : '' }}" title="Tasks" style="position: relative;"@if($_navActive['tasks']) aria-current="page"@endif>
                 <i class="fa-solid fa-list-check"></i>
                 @if($_pendingTaskCount > 0)
                     <span class="badge bg-danger crm-nav-pending-tasks-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_pendingTaskCount }}</span>
                 @endif
             </a>
             <div class="icon-dropdown js-dropdown">
-                <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fa-solid fa-users"></i></a>
+                <a href="{{route('clients.index')}}" class="icon-btn{{ $_navActive['clients'] ? ' active' : '' }}" title="Clients"@if($_navActive['clients']) aria-current="page"@endif><i class="fa-solid fa-users"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fa-solid fa-list me-2"></i> Client List</a>
                     <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fa-solid fa-folder-open me-2"></i> Matter List</a>
@@ -86,7 +112,7 @@
                 </div>
             </div>
             @if($_canViewSyncedInboxNav)
-            <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_canViewAllSyncedInbox ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}">
+            <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn{{ $_navActive['unassigned'] ? ' active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_canViewAllSyncedInbox ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}"@if($_navActive['unassigned']) aria-current="page"@endif>
                 <i class="fa-solid fa-inbox"></i>
                 @if($_unassignedMailCount > 0)
                     <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
@@ -94,7 +120,7 @@
             </a>
             @endif
             <div class="icon-dropdown js-dropdown">
-                <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fa-solid fa-briefcase"></i></a>
+                <a href="{{route('clients.invoicelist')}}" class="icon-btn{{ $_navActive['accounts'] ? ' active' : '' }}" title="Accounts"@if($_navActive['accounts']) aria-current="page"@endif><i class="fa-solid fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
                     @if($_crmTopAdminish)
                     <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fa-solid fa-chart-line me-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
