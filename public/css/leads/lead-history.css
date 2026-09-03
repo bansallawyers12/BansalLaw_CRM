@@ -1,0 +1,699 @@
+/**
+ * Lead Followup History — page UI (docs/theme.md tokens)
+ */
+.lead-history-page {
+  --lh-navy: var(--navy, #1e3d60);
+  --lh-gold: var(--accent-gold, #c8992a);
+  --lh-gold-light: var(--accent-light, #fefae8);
+  --lh-page: var(--page-bg, #f0f6ff);
+  --lh-card: var(--card-bg, #ffffff);
+  --lh-text: var(--text-dark, #1a2c40);
+  --lh-muted: var(--text-muted, #5e7a90);
+  --lh-border: var(--border, #c8dcef);
+  --lh-success: var(--success, #1e7a52);
+  --lh-sidebar: var(--sidebar-bg, #ddeaf8);
+  --lh-hover: var(--sidebar-hover, #c8dcef);
+  --lh-active: var(--sidebar-active, #3a6fa8);
+}
+
+.lead-history-page .lead-history-layout {
+  align-items: flex-start;
+}
+
+.lead-history-page .lead-history-card {
+  background: var(--lh-card);
+  border: 1px solid var(--lh-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+  overflow: hidden;
+}
+
+.lead-history-page .lead-history-card + .lead-history-card {
+  margin-top: 0;
+}
+
+/* ---------- Profile panel ---------- */
+.lead-history-page .lh-profile {
+  padding: 0;
+}
+
+.lead-history-page .lh-profile__hero {
+  padding: 24px 20px 18px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--lh-sidebar) 0%, var(--lh-card) 100%);
+  border-bottom: 1px solid var(--lh-border);
+}
+
+.lead-history-page .lh-profile__avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lh-active);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(58, 111, 168, 0.28);
+}
+
+.lead-history-page .lh-profile__name {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lh-navy);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.lead-history-page .lh-profile__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--lh-gold-light);
+  color: var(--lh-gold);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.lead-history-page .lh-profile__actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.lead-history-page .lh-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--lh-border);
+  background: var(--lh-card);
+  color: var(--lh-navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+
+.lead-history-page .lh-icon-btn:hover {
+  background: var(--lh-sidebar);
+  border-color: var(--lh-active);
+  color: var(--lh-active);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.lead-history-page .lh-profile__body {
+  padding: 16px 18px 20px;
+}
+
+.lead-history-page .lh-info-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(200, 220, 239, 0.55);
+}
+
+.lead-history-page .lh-info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.lead-history-page .lh-info-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--lh-muted);
+  padding-top: 2px;
+}
+
+.lead-history-page .lh-info-value {
+  font-size: 13.5px;
+  color: var(--lh-text);
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lead-history-page .lh-info-value--wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.lead-history-page .lh-assignee {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lead-history-page .lh-assignee__avatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--lh-navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lead-history-page .lh-assignee__meta {
+  min-width: 0;
+}
+
+.lead-history-page .lh-assignee__name {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--lh-text);
+  line-height: 1.2;
+}
+
+.lead-history-page .lh-assignee__email {
+  display: block;
+  font-size: 11.5px;
+  color: var(--lh-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Main panel ---------- */
+.lead-history-page .lh-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+}
+
+.lead-history-page .lh-main__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--lh-border);
+  background: linear-gradient(90deg, #fff 0%, var(--lh-page) 100%);
+}
+
+.lead-history-page .lh-main__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lh-navy);
+}
+
+.lead-history-page .lh-main__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lead-history-page .lh-btn,
+#myAddnotes.lh-note-modal .lh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.lead-history-page .lh-btn:hover,
+#myAddnotes.lh-note-modal .lh-btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.lead-history-page .lh-btn:focus-visible,
+#myAddnotes.lh-note-modal .lh-btn:focus-visible {
+  outline: 2px solid var(--lh-active, #3a6fa8);
+  outline-offset: 2px;
+}
+
+.lead-history-page .lh-btn--gold,
+#myAddnotes.lh-note-modal .lh-btn--gold {
+  background: var(--lh-gold, #c8992a);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(200, 153, 42, 0.35);
+}
+
+.lead-history-page .lh-btn--gold:hover,
+#myAddnotes.lh-note-modal .lh-btn--gold:hover {
+  background: #b58924;
+  color: #fff;
+}
+
+.lead-history-page .lh-btn--success,
+#myAddnotes.lh-note-modal .lh-btn--success {
+  background: var(--lh-success, #1e7a52);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(30, 122, 82, 0.28);
+}
+
+.lead-history-page .lh-btn--success:hover,
+#myAddnotes.lh-note-modal .lh-btn--success:hover {
+  background: #196844;
+  color: #fff;
+}
+
+.lead-history-page .lh-btn--navy,
+#myAddnotes.lh-note-modal .lh-btn--navy {
+  background: var(--lh-navy, #1e3d60);
+  color: #fff;
+}
+
+.lead-history-page .lh-btn--navy:hover,
+#myAddnotes.lh-note-modal .lh-btn--navy:hover {
+  background: #163251;
+  color: #fff;
+}
+
+.lead-history-page .lh-btn--ghost,
+#myAddnotes.lh-note-modal .lh-btn--ghost {
+  background: var(--lh-card, #fff);
+  border-color: var(--lh-border, #c8dcef);
+  color: var(--lh-navy, #1e3d60);
+}
+
+.lead-history-page .lh-btn--ghost:hover,
+#myAddnotes.lh-note-modal .lh-btn--ghost:hover {
+  background: var(--lh-sidebar, #ddeaf8);
+  color: var(--lh-navy, #1e3d60);
+}
+
+.lead-history-page .lh-main__body {
+  padding: 0;
+  flex: 1;
+}
+
+/* ---------- Tabs ---------- */
+.lead-history-page .lh-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--lh-border);
+  background: #fff;
+  list-style: none;
+  margin: 0;
+}
+
+.lead-history-page .lh-tabs .nav-item {
+  margin: 0;
+}
+
+.lead-history-page .lh-tabs .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 12px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--lh-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.lead-history-page .lh-tabs .nav-link:hover {
+  color: var(--lh-navy);
+  background: rgba(221, 234, 248, 0.45);
+  text-decoration: none;
+}
+
+.lead-history-page .lh-tabs .nav-link.active {
+  color: var(--lh-navy);
+  border-bottom-color: var(--lh-gold);
+  background: transparent;
+}
+
+.lead-history-page .lh-tabs .nav-link i {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.lead-history-page .lh-tab-content {
+  padding: 20px;
+}
+
+.lead-history-page .lh-tab-content > .tab-pane {
+  animation: lhFadeIn 0.22s ease;
+}
+
+@keyframes lhFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Empty states ---------- */
+.lead-history-page .lh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  border: 1px dashed var(--lh-border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--lh-page) 0%, #fff 100%);
+}
+
+.lead-history-page .lh-empty__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lh-sidebar);
+  color: var(--lh-active);
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+.lead-history-page .lh-empty__title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lh-navy);
+}
+
+.lead-history-page .lh-empty__text {
+  margin: 0 0 18px;
+  max-width: 360px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--lh-muted);
+}
+
+/* ---------- Lead emails scoped polish ---------- */
+.email-interface-container[data-context="lead"] {
+  border: 1px solid var(--lh-border, #c8dcef);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.email-interface-container[data-context="lead"] .email-control-bar {
+  background: var(--page-bg, #f0f6ff);
+  border-bottom: 1px solid var(--border, #c8dcef);
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.email-interface-container[data-context="lead"] .lead-email-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f7fc;
+  border-bottom: 1px solid var(--border, #c8dcef);
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sidebar-active, #3a6fa8);
+  border-radius: 0;
+}
+
+.email-interface-container[data-context="lead"] .lead-email-notice .upload-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-interface-container[data-context="lead"] .empty-state {
+  padding: 48px 20px;
+}
+
+.email-interface-container[data-context="lead"] .empty-state-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--sidebar-bg, #ddeaf8);
+  color: var(--sidebar-active, #3a6fa8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.email-interface-container[data-context="lead"] .empty-state-text h3 {
+  color: var(--navy, #1e3d60);
+  font-weight: 700;
+}
+
+.email-interface-container[data-context="lead"] .empty-state-text p {
+  color: var(--text-muted, #5e7a90);
+  margin-bottom: 16px;
+}
+
+.email-interface-container[data-context="lead"] .lh-email-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: none;
+  background: var(--navy, #1e3d60);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.email-interface-container[data-context="lead"] .lh-email-empty-cta:hover {
+  background: #163251;
+  transform: translateY(-1px);
+}
+
+.email-interface-container[data-context="lead"] .email-content-placeholder .placeholder-content {
+  color: var(--text-muted, #5e7a90);
+}
+
+.email-interface-container[data-context="lead"] .email-content-placeholder .placeholder-content i {
+  color: var(--sidebar-active, #3a6fa8);
+  opacity: 0.55;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 991.98px) {
+  .lead-history-page .lh-profile {
+    margin-bottom: 16px;
+  }
+
+  .lead-history-page .lh-main__header {
+    padding: 14px 16px;
+  }
+
+  .lead-history-page .lh-tab-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .lead-history-page .lh-info-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .lead-history-page .lh-main__actions {
+    width: 100%;
+  }
+
+  .lead-history-page .lh-main__actions .lh-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* ---------- Add Note modal ---------- */
+#myAddnotes.lh-note-modal .modal-dialog {
+  max-width: 720px;
+}
+
+#myAddnotes.lh-note-modal .modal-content {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--border, #c8dcef);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__icon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sidebar-bg, #ddeaf8);
+  color: var(--sidebar-active, #3a6fa8);
+  font-size: 18px;
+}
+
+#myAddnotes.lh-note-modal .modal-title,
+#myAddnotes.lh-note-modal .lh-note-modal__header h5 {
+  color: var(--navy, #1e3d60) !important;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__subtitle {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-muted, #5e7a90);
+  line-height: 1.35;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__close.crm-modal-close,
+#myAddnotes.lh-note-modal .crm-modal-close {
+  margin: 0;
+  opacity: 0.75;
+  color: var(--text-muted, #5e7a90);
+}
+
+#myAddnotes.lh-note-modal .crm-modal-close:hover,
+#myAddnotes.lh-note-modal .crm-modal-close:focus {
+  opacity: 1;
+  color: var(--navy, #1e3d60);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__body {
+  padding: 20px;
+  background: #fff;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__field {
+  margin-bottom: 16px;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__field:last-child {
+  margin-bottom: 0;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted, #5e7a90);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__label .span_req {
+  color: var(--danger, #a83020);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__select {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 8px;
+  min-height: 40px;
+  color: var(--text-dark, #1a2c40);
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__select:focus {
+  border-color: var(--sidebar-active, #3a6fa8);
+  box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__editor {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__editor:focus-within {
+  border-color: var(--sidebar-active, #3a6fa8);
+  box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.12);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__editor .tox-tinymce {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--page-bg, #f0f6ff);
+  border-top: 1px solid var(--border, #c8dcef);
+}
+
+#myAddnotes.lh-note-modal .lh-note-modal__footer .lh-btn {
+  min-width: 110px;
+  justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+  #myAddnotes.lh-note-modal .modal-dialog {
+    margin: 0.75rem;
+  }
+
+  #myAddnotes.lh-note-modal .lh-note-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  #myAddnotes.lh-note-modal .lh-note-modal__footer .lh-btn {
+    width: 100%;
+  }
+}

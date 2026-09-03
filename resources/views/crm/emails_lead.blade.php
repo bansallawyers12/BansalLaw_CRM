@@ -33,7 +33,7 @@
         <!-- Left Email List Pane (no upload for leads - emails are from CRM send only) -->
         <div class="email-list-pane">
             <div class="upload-section-header lead-email-notice">
-                <span class="upload-title"><i class="fa-solid fa-circle-info"></i> Emails sent to this lead from the CRM</span>
+                <span class="upload-title"><i class="fa-solid fa-circle-info"></i> Showing emails sent to this lead from the CRM</span>
             </div>
             <div class="upload-section-container" style="display: none;">
                 <!-- Upload hidden for leads - no .msg upload support yet -->
@@ -55,8 +55,14 @@
                         <i class="fa-solid fa-inbox"></i>
                     </div>
                     <div class="empty-state-text">
-                        <h3>No emails found</h3>
-                        <p>Emails sent to this lead from the CRM will appear here.</p>
+                        <h3>No emails yet</h3>
+                        <p>Send the first message to start this lead’s email thread.</p>
+                        <button type="button" class="lh-email-empty-cta clientemail"
+                                data-id="{{ $leadData->id ?? '' }}"
+                                data-email="{{ $leadData->email ?? '' }}"
+                                data-name="{{ trim(($leadData->first_name ?? '') . ' ' . ($leadData->last_name ?? '')) }}">
+                            <i class="fa-solid fa-envelope"></i> Compose email
+                        </button>
                     </div>
                 </div>
             </div>
@@ -135,12 +141,10 @@
 @endif
 
 <link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
+<link rel="stylesheet" href="{{ asset('css/leads/lead-history.css') }}?v={{ file_exists(public_path('css/leads/lead-history.css')) ? filemtime(public_path('css/leads/lead-history.css')) : 1 }}">
 @if($canDeleteEmail)
 <link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
 @endif
-<style>
-.lead-email-notice { background: #f0f9ff; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #0369a1; }
-</style>
 <script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)

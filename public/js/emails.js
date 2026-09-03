@@ -1610,15 +1610,27 @@
         const emailList = document.getElementById('emailList');
         if (!emailList) return;
 
-        const sub = subtitle || (message ? 'Please try again.' : (currentMailType === 'sent' ? 'Emails sent from the CRM will appear here.' : 'Upload .msg files to get started with email management.'));
+        const leadEmpty = isLeadContext() && !message;
+        const sub = subtitle || (message
+            ? 'Please try again.'
+            : (leadEmpty
+                ? 'Send the first message to start this lead’s email thread.'
+                : (currentMailType === 'sent'
+                    ? 'Emails sent from the CRM will appear here.'
+                    : 'Upload .msg files to get started with email management.')));
+        const title = message || (leadEmpty ? 'No emails yet' : 'No emails found');
+        const composeCta = leadEmpty
+            ? `<button type="button" class="lh-email-empty-cta clientemail"><i class="fa-solid fa-envelope"></i> Compose email</button>`
+            : '';
         emailList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">
                     <i class="fa-solid fa-inbox"></i>
                 </div>
                 <div class="empty-state-text">
-                    <h3>${message || 'No emails found'}</h3>
+                    <h3>${title}</h3>
                     <p>${sub}</p>
+                    ${composeCta}
                 </div>
             </div>
         `;
