@@ -5064,6 +5064,181 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
   animation: crm-notification-bell-flash 0.6s ease-out !important;
 }
 
+/* Sticky matter reopen alerts (cannot be permanently dismissed while pending) */
+@keyframes crm-reopen-bell-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.main-topbar .icon-btn.notification-toggle.has-reopen-alert {
+  animation: crm-reopen-bell-pulse 1.6s ease-in-out infinite;
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #dc2626 !important;
+}
+
+.main-topbar .icon-btn.notification-toggle .countbell.countbell--urgent {
+  background: #dc2626 !important;
+}
+
+.crm-notif-reopen-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 7px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #dc2626;
+  border-radius: 999px;
+}
+
+.crm-notif-item--reopen:hover {
+  background: #fee2e2 !important;
+}
+
+.matter-reopen-urgent-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+  background: linear-gradient(90deg, #7f1d1d 0%, #dc2626 55%, #b91c1c 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(127, 29, 29, 0.35);
+}
+
+.matter-reopen-urgent-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+
+.matter-reopen-urgent-bar__icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.matter-reopen-urgent-bar__text {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.matter-reopen-urgent-bar__text strong {
+  font-size: 0.95rem;
+}
+
+.matter-reopen-urgent-bar__text span {
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matter-reopen-urgent-bar__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.matter-reopen-urgent-bar__btn {
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.matter-reopen-urgent-bar__btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.matter-reopen-urgent-bar__btn--solid {
+  background: #fff;
+  color: #991b1b;
+  border-color: #fff;
+}
+
+.matter-reopen-urgent-bar__btn--solid:hover {
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.matter-reopen-urgent-modal .modal-header {
+  background: #fef2f2;
+  border-bottom-color: #fecaca;
+}
+
+.matter-reopen-urgent-modal__hint {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.matter-reopen-urgent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.matter-reopen-urgent-list li + li {
+  margin-top: 8px;
+}
+
+.matter-reopen-urgent-list a {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+}
+
+.matter-reopen-urgent-list a:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.matter-reopen-urgent-list__badge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  background: #dc2626;
+  border-radius: 999px;
+}
+
+.matter-reopen-urgent-list__msg {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7f1d1d;
+  line-height: 1.4;
+}
+
+.matter-reopen-urgent-list small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
 .main-content .header,
 .main-content .header-title-section {
   border-bottom: 1px solid var(--border);

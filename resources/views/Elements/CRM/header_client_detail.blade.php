@@ -160,41 +160,61 @@
         <a href="javascript:;" title="Add Office Check-In" class="icon-btn opencheckin"><i class="fa-solid fa-person-booth"></i></a>
         @if(Auth::user())
             @php
+                $reopenNotifService = app(\App\Services\MatterReopenNotificationService::class);
+                $reopenNotifService->reassertUnreadForReceiver((int) Auth::user()->id);
+                $pendingReopenAlerts = $reopenNotifService->pendingAlertsForStaff(
+                    Auth::user() instanceof \App\Models\Staff ? Auth::user() : null
+                );
+                $pendingReopenCount = $pendingReopenAlerts->count();
                 $notifUnread = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count();
-                $recentNotifs = \App\Models\Notification::where('receiver_id', Auth::user()->id)
-                                    ->orderBy('id', 'DESC')
-                                    ->take(5)
-                                    ->get();
+                $recentNotifs = $reopenNotifService
+                    ->orderWithStickyFirst(
+                        \App\Models\Notification::where('receiver_id', Auth::user()->id)
+                    )
+                    ->take(8)
+                    ->get();
             @endphp
             <div class="dropdown d-inline-block align-middle me-1">
-                <a href="javascript:;" class="icon-btn notification-toggle" title="Notifications" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative;">
+                <a href="javascript:;" class="icon-btn notification-toggle{{ $pendingReopenCount > 0 ? ' has-reopen-alert' : '' }}" title="{{ $pendingReopenCount > 0 ? 'Urgent: matter reopen request pending' : 'Notifications' }}" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative;">
                     <span class="notification-bell-inner">
                         <i class="fa-solid fa-bell" aria-hidden="true"></i>
                         @if($notifUnread > 0)
-                            <span class="countbell" id="countbell_notification" aria-live="polite">{{ $notifUnread }}</span>
+                            <span class="countbell{{ $pendingReopenCount > 0 ? ' countbell--urgent' : '' }}" id="countbell_notification" aria-live="polite">{{ $notifUnread }}</span>
                         @endif
                     </span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end shadow-sm" style="width: 350px; padding: 0; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 8px; z-index: 1050;">
                     <div class="dropdown-header d-flex justify-content-between align-items-center" style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; border-radius: 12px 12px 0 0;">
                         <h6 class="m-0" style="font-weight: 600; color: #1e293b;">Notifications</h6>
-                        @if($notifUnread > 0)
+                        @if($pendingReopenCount > 0)
+                            <span class="badge" style="background: #dc2626; color: white; border-radius: 999px;">{{ $pendingReopenCount }} Reopen</span>
+                        @elseif($notifUnread > 0)
                             <span class="badge" style="background: #ef4444; color: white; border-radius: 999px;">{{ $notifUnread }} New</span>
                         @endif
                     </div>
                     <div style="max-height: 360px; overflow-y: auto;">
                         @if($recentNotifs->count() > 0)
                             @foreach($recentNotifs as $notif)
-                                <a href="{{ $notif->url }}?t={{ $notif->id }}" class="dropdown-item d-flex align-items-start py-3 px-3" style="border-bottom: 1px solid #f1f5f9; white-space: normal; background: {{ ($notif->receiver_status ?? 0) == 0 ? '#eff6ff' : 'transparent' }};">
+                                @php
+                                    $isStickyReopen = ($notif->notification_type ?? '') === \App\Services\MatterReopenNotificationService::TYPE_REQUEST
+                                        && (int) ($notif->receiver_status ?? 0) === 0
+                                        && $reopenNotifService->isStickyPending($notif);
+                                @endphp
+                                <a href="{{ $notif->url }}{{ str_contains((string) $notif->url, '?') ? '&' : '?' }}t={{ $notif->id }}" class="dropdown-item d-flex align-items-start py-3 px-3 crm-notif-item{{ $isStickyReopen ? ' crm-notif-item--reopen' : '' }}" style="border-bottom: 1px solid #f1f5f9; white-space: normal; background: {{ $isStickyReopen ? '#fef2f2' : (($notif->receiver_status ?? 0) == 0 ? '#eff6ff' : 'transparent') }};">
                                     <div class="me-3 mt-1">
-                                        @if(($notif->receiver_status ?? 0) == 0)
+                                        @if($isStickyReopen)
+                                            <div class="crm-notif-dot crm-notif-dot--urgent" style="width: 8px; height: 8px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #fecaca;"></div>
+                                        @elseif(($notif->receiver_status ?? 0) == 0)
                                             <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 0 2px #bfdbfe;"></div>
                                         @else
                                             <div style="width: 8px; height: 8px; background: #cbd5e1; border-radius: 50%;"></div>
                                         @endif
                                     </div>
                                     <div class="flex-grow-1">
-                                        <p class="m-0" style="font-size: 0.85rem; color: #334155; line-height: 1.4; text-wrap: wrap;">{{ $notif->message }}</p>
+                                        @if($isStickyReopen)
+                                            <span class="crm-notif-reopen-badge">Action required</span>
+                                        @endif
+                                        <p class="m-0" style="font-size: 0.85rem; color: {{ $isStickyReopen ? '#991b1b' : '#334155' }}; line-height: 1.4; text-wrap: wrap; font-weight: {{ $isStickyReopen ? '600' : '400' }};">{{ $notif->message }}</p>
                                         <small style="font-size: 0.75rem; color: #64748b; margin-top: 4px; display: block;">{{ date('d M Y, h:i A', strtotime($notif->created_at)) }}</small>
                                     </div>
                                 </a>

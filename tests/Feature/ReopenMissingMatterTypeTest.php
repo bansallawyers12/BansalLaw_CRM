@@ -121,6 +121,57 @@ class ReopenMissingMatterTypeTest extends TestCase
     }
 
     #[Test]
+    public function pending_reopen_notification_cannot_be_marked_read_until_resolved()
+    {
+        $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);
+        $superAdmin = Staff::factory()->create(['role' => 1, 'status' => 1]);
+
+        $clientMatter = ClientMatter::create([
+            'client_id' => $client->id,
+            'sel_matter_id' => null,
+            'client_unique_matter_no' => null,
+            'matter_status' => 0,
+            'discontinue_reason' => 'Completed',
+            'reopen_requested_by' => 42,
+        ]);
+
+        $notification = Notification::create([
+            'sender_id' => 42,
+            'receiver_id' => $superAdmin->id,
+            'module_id' => $clientMatter->id,
+            'url' => '/clients/detail/test',
+            'notification_type' => 'Matter Reopen Request',
+            'message' => 'Someone has requested to reopen Matter.',
+            'receiver_status' => 0,
+            'sender_status' => 0,
+            'seen' => 0,
+        ]);
+
+        $service = app(\App\Services\MatterReopenNotificationService::class);
+        $this->assertTrue($service->isStickyPending($notification));
+        $this->assertFalse($service->tryMarkAsRead($notification, $superAdmin->id));
+
+        $notification->refresh();
+        $this->assertSame(0, (int) $notification->receiver_status);
+
+        // Force-mark then reassert keeps it unread while pending
+        $notification->receiver_status = 1;
+        $notification->seen = 1;
+        $notification->save();
+        $service->reassertUnreadForReceiver($superAdmin->id);
+        $notification->refresh();
+        $this->assertSame(0, (int) $notification->receiver_status);
+
+        $this->actingAs($superAdmin, 'admin')
+            ->postJson('/clients/matter/reopen', ['matter_id' => $clientMatter->id])
+            ->assertStatus(200);
+
+        $notification->refresh();
+        $this->assertSame(1, (int) $notification->receiver_status);
+        $this->assertFalse($service->isStickyPending($notification->fresh()));
+    }
+
+    #[Test]
     public function closed_matters_list_includes_matters_with_null_matter_type()
     {
         $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);

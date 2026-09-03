@@ -86,6 +86,34 @@
         background-color: rgba(254, 250, 232, 0.85) !important;
     }
 
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen td {
+        background-color: #fef2f2 !important;
+        color: #991b1b !important;
+        font-weight: 700 !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen td:first-child {
+        border-left: 3px solid #dc2626 !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen:hover td {
+        background-color: #fee2e2 !important;
+    }
+
+    #crm-all-notifications .crm-reopen-action-badge {
+        display: inline-block;
+        margin-right: 8px;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #fff;
+        background: #dc2626;
+        border-radius: 999px;
+        vertical-align: middle;
+    }
+
     body.sidebar-mini #crm-all-notifications .table a {
         color: var(--sidebar-active) !important;
         font-weight: 600 !important;
@@ -205,16 +233,29 @@
 									</thead>
 									<tbody class="tdata">
 										@foreach ($lists as $list)
-										<tr id="id_{{@$list->id}}" class="{{ ($list->receiver_status ?? 0) == 0 ? 'crm-notification-row-unread' : '' }}">
+										@php
+											$isStickyReopen = ($list->notification_type ?? '') === \App\Services\MatterReopenNotificationService::TYPE_REQUEST
+												&& (int) ($list->receiver_status ?? 0) === 0
+												&& app(\App\Services\MatterReopenNotificationService::class)->isStickyPending($list);
+											$rowClass = $isStickyReopen
+												? 'crm-notification-row-unread crm-notification-row-reopen'
+												: (($list->receiver_status ?? 0) == 0 ? 'crm-notification-row-unread' : '');
+										@endphp
+										<tr id="id_{{@$list->id}}" class="{{ $rowClass }}">
 											<td class="text-center">
-												@if(($list->receiver_status ?? 0) == 1)
+												@if($isStickyReopen)
+													<span class="notification-status-unread" style="background:#dc2626;box-shadow:0 0 0 3px #fecaca;" data-bs-toggle="tooltip" title="Action required" aria-label="Action required"></span>
+												@elseif(($list->receiver_status ?? 0) == 1)
 													<span class="notification-status-read" data-bs-toggle="tooltip" title="Read" aria-label="Read"></span>
 												@else
 													<span class="notification-status-unread" data-bs-toggle="tooltip" title="Unread" aria-label="Unread"></span>
 												@endif
 											</td>
 											<td>
-												<a href="{{$list->url}}?t={{$list->id}}">
+												<a href="{{$list->url}}{{ str_contains((string) ($list->url ?? ''), '?') ? '&' : '?' }}t={{$list->id}}">
+													@if($isStickyReopen)
+														<span class="crm-reopen-action-badge">Action required</span>
+													@endif
 													{{$list->message}}
 												</a>
 											</td>

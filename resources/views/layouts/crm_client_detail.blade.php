@@ -1642,6 +1642,7 @@
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg" style="height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: hidden !important;"></div>
             @include('../Elements/CRM/header_client_detail')
+            @include('../Elements/CRM/matter_reopen_alerts')
             @yield('content')
             @include('../Elements/CRM/footer_client_detail')
         </div>

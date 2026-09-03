@@ -1258,8 +1258,10 @@ class ClientsController extends Controller
         if (isset($request->t)) {
             if (\App\Models\Notification::where('id', $request->t)->exists()) {
                 $ovv = \App\Models\Notification::find($request->t);
-                $ovv->receiver_status = 1;
-                $ovv->save();
+                if ($ovv && (int) $ovv->receiver_id === (int) (Auth::id() ?? 0)) {
+                    app(\App\Services\MatterReopenNotificationService::class)
+                        ->tryMarkAsRead($ovv, (int) Auth::id());
+                }
             }
         }
 

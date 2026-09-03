@@ -891,14 +891,8 @@ class ClientMatterHubController extends Controller
 			}
 
 			try {
-				\App\Models\Notification::query()
-					->where('module_id', $clientMatter->id)
-					->where('notification_type', 'Matter Reopen Request')
-					->where('receiver_status', 0)
-					->update([
-						'receiver_status' => 1,
-						'seen' => 1,
-					]);
+				app(\App\Services\MatterReopenNotificationService::class)
+					->markResolvedForMatter((int) $clientMatter->id);
 			} catch (\Throwable $notifyError) {
 				Log::warning('Could not mark reopen-request notifications as cancelled', [
 					'matter_id' => $clientMatter->id,
@@ -968,6 +962,16 @@ class ClientMatterHubController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
+				try {
+					app(\App\Services\MatterReopenNotificationService::class)
+						->markResolvedForMatter((int) $clientMatter->id);
+				} catch (\Throwable $notifyError) {
+					Log::warning('Could not mark reopen-request notifications as resolved', [
+						'matter_id' => $clientMatter->id,
+						'error' => $notifyError->getMessage(),
+					]);
+				}
+
 				// Send notification back to requester if applicable
 				if ($requesterId && $requesterId != (Auth::guard('admin')->id() ?? Auth::id())) {
 					$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;

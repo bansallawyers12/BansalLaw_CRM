@@ -738,10 +738,13 @@ class DashboardService
             return ['status' => 'error'];
         }
 
-        $notification->receiver_status = 1;
-        $notification->save();
+        $marked = app(\App\Services\MatterReopenNotificationService::class)
+            ->tryMarkAsRead($notification, (int) Auth::id());
 
-        return ['status' => 'success'];
+        return [
+            'status' => $marked ? 'success' : 'sticky',
+            'sticky' => ! $marked && ($notification->notification_type ?? '') === \App\Services\MatterReopenNotificationService::TYPE_REQUEST,
+        ];
     }
 
     /**

@@ -693,6 +693,7 @@
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>
             @include('../Elements/CRM/header_client_detail')
+            @include('../Elements/CRM/matter_reopen_alerts')
             @yield('content')
             @include('../Elements/CRM/footer_client_detail')
         </div>

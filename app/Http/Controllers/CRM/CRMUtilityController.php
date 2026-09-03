@@ -1636,7 +1636,14 @@ class CRMUtilityController extends Controller
     }
 
 	public function allnotification(Request $request){
-		$lists = \App\Models\Notification::where('receiver_id', Auth::user()->id)->orderby('created_at','DESC')->paginate(20);
+		$reopenNotifService = app(\App\Services\MatterReopenNotificationService::class);
+		$reopenNotifService->reassertUnreadForReceiver((int) Auth::user()->id);
+
+		$lists = $reopenNotifService
+			->orderWithStickyFirst(
+				\App\Models\Notification::where('receiver_id', Auth::user()->id)
+			)
+			->paginate(20);
 		// Fix URLs for notifications that point to non-existent or wrong routes
 		$lists->getCollection()->transform(function ($notification) {
 			// Message notifications: /messages (404) -> client detail + Workflow tab
@@ -1789,10 +1796,13 @@ class CRMUtilityController extends Controller
             return response()->json(['status' => 'error']);
         }
 
-        $notification->receiver_status = 1;
-        $notification->save();
+        $marked = app(\App\Services\MatterReopenNotificationService::class)
+            ->tryMarkAsRead($notification, (int) Auth::id());
 
-        return response()->json(['status' => 'success']);
+        return response()->json([
+            'status' => $marked ? 'success' : 'sticky',
+            'sticky' => ! $marked && ($notification->notification_type ?? '') === \App\Services\MatterReopenNotificationService::TYPE_REQUEST,
+        ]);
     }
 
     /**
