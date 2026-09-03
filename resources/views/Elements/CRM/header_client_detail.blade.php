@@ -200,7 +200,7 @@
                                         && (int) ($notif->receiver_status ?? 0) === 0
                                         && $reopenNotifService->isStickyPending($notif);
                                 @endphp
-                                <a href="{{ $notif->url }}{{ str_contains((string) $notif->url, '?') ? '&' : '?' }}t={{ $notif->id }}" class="dropdown-item d-flex align-items-start py-3 px-3 crm-notif-item{{ $isStickyReopen ? ' crm-notif-item--reopen' : '' }}" style="border-bottom: 1px solid #f1f5f9; white-space: normal; background: {{ $isStickyReopen ? '#fef2f2' : (($notif->receiver_status ?? 0) == 0 ? '#eff6ff' : 'transparent') }};">
+                                <a href="{{ $notif->url }}{{ str_contains((string) $notif->url, '?') ? '&' : '?' }}{{ $isStickyReopen ? 'show_reopen=1&' : '' }}t={{ $notif->id }}" class="dropdown-item d-flex align-items-start py-3 px-3 crm-notif-item{{ $isStickyReopen ? ' crm-notif-item--reopen' : '' }}" style="border-bottom: 1px solid #f1f5f9; white-space: normal; background: {{ $isStickyReopen ? '#fef2f2' : (($notif->receiver_status ?? 0) == 0 ? '#eff6ff' : 'transparent') }};">
                                     <div class="me-3 mt-1">
                                         @if($isStickyReopen)
                                             <div class="crm-notif-dot crm-notif-dot--urgent" style="width: 8px; height: 8px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #fecaca;"></div>

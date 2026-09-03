@@ -77,6 +77,9 @@
         if (el.closest('.crm-closed-matter-allow')) {
             return true;
         }
+        if (el.matches('[data-crm-reopen-matter], .matter-detail-reopen-btn') || el.closest('[data-crm-reopen-matter], .matter-detail-reopen-btn')) {
+            return true;
+        }
         if (isDocumentReadOnlyAllowed(el)) {
             return true;
         }

@@ -1,14 +1,63 @@
 <div class="stage-navigation-buttons {{ $navigationClass ?? '' }}">
     @if($workflowIsReadOnly)
         <span class="text-muted small"><i class="fa-solid fa-lock"></i> View only — this matter is closed.</span>
+        @if($workflowCanReopen)
+            @php
+                $workflowReopenRequesterName = null;
+                $workflowReopenRequesterId = (int) ($workflowSelectedMatter->reopen_requested_by ?? 0);
+                if ($workflowReopenRequesterId > 0) {
+                    $workflowReopenRequester = \App\Models\Staff::query()
+                        ->select('id', 'first_name', 'last_name')
+                        ->find($workflowReopenRequesterId);
+                    if ($workflowReopenRequester) {
+                        $workflowReopenRequesterName = trim(($workflowReopenRequester->first_name ?? '') . ' ' . ($workflowReopenRequester->last_name ?? ''));
+                    }
+                }
+            @endphp
+            @if($workflowReopenRequesterName)
+                <span class="badge bg-warning text-dark align-middle" title="Pending reopen request">
+                    <i class="fa-solid fa-hand-paper"></i> Requested by {{ $workflowReopenRequesterName }}
+                </span>
+            @elseif($workflowReopenRequesterId > 0)
+                <span class="badge bg-warning text-dark align-middle" title="Pending reopen request">
+                    <i class="fa-solid fa-clock"></i> Reopen requested
+                </span>
+            @endif
+            <button class="btn btn-primary btn-sm matter-detail-reopen-btn crm-closed-matter-allow"
+                    id="workflow-tab-reopen"
+                    type="button"
+                    data-crm-reopen-matter="{{ $workflowSelectedMatter->id }}"
+                    data-matter-id="{{ $workflowSelectedMatter->id }}"
+                    data-requester-name="{{ $workflowReopenRequesterName ?? '' }}"
+                    title="Reopen Matter">
+                <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
+            </button>
+        @endif
     @elseif($workflowIsDiscontinued)
         @if($workflowCanReopen)
             @if($workflowSelectedMatter->reopen_requested_by ?? null)
+                @php
+                    $workflowReopenRequesterName = null;
+                    $workflowReopenRequesterId = (int) ($workflowSelectedMatter->reopen_requested_by ?? 0);
+                    if ($workflowReopenRequesterId > 0) {
+                        $workflowReopenRequester = \App\Models\Staff::query()
+                            ->select('id', 'first_name', 'last_name')
+                            ->find($workflowReopenRequesterId);
+                        if ($workflowReopenRequester) {
+                            $workflowReopenRequesterName = trim(($workflowReopenRequester->first_name ?? '') . ' ' . ($workflowReopenRequester->last_name ?? ''));
+                        }
+                    }
+                @endphp
                 <span class="badge bg-warning text-dark align-middle" title="A team member requested reopen">
-                    <i class="fa-solid fa-clock"></i> Requested
+                    <i class="fa-solid fa-clock"></i>
+                    @if($workflowReopenRequesterName)
+                        Requested by {{ $workflowReopenRequesterName }}
+                    @else
+                        Requested
+                    @endif
                 </span>
             @endif
-            <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
+            <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" data-crm-reopen-matter="{{ $workflowSelectedMatter->id }}" data-requester-name="{{ $workflowReopenRequesterName ?? '' }}" title="Reopen Matter">
                 <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
             </button>
         @else

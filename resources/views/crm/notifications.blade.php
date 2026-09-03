@@ -252,7 +252,7 @@
 												@endif
 											</td>
 											<td>
-												<a href="{{$list->url}}{{ str_contains((string) ($list->url ?? ''), '?') ? '&' : '?' }}t={{$list->id}}">
+												<a href="{{$list->url}}{{ str_contains((string) ($list->url ?? ''), '?') ? '&' : '?' }}{{ $isStickyReopen ? 'show_reopen=1&' : '' }}t={{$list->id}}">
 													@if($isStickyReopen)
 														<span class="crm-reopen-action-badge">Action required</span>
 													@endif

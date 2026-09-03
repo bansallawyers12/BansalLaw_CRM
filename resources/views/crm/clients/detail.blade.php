@@ -16,7 +16,8 @@
 .crm-closed-matter-banner {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
     margin: 0 0 0.75rem;
     padding: 0.65rem 1rem;
     border-radius: 6px;
@@ -24,6 +25,30 @@
     border: 1px solid #e6c878;
     color: #5c4a1a;
     font-size: 0.9rem;
+    font-weight: 600;
+}
+.crm-closed-matter-banner__body {
+    flex: 1 1 220px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.crm-closed-matter-banner__body strong {
+    font-weight: 700;
+}
+.crm-closed-matter-banner__requester {
+    font-weight: 600;
+    color: #7f1d1d;
+    font-size: 0.85rem;
+}
+.crm-closed-matter-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+.crm-closed-matter-banner__actions .btn {
     font-weight: 600;
 }
 .crm-container--closed-matter-view .tab-content input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
@@ -80,9 +105,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 }
 </style>
 
-<?php
-use App\Http\Controllers\Controller;
-?>
 @php
     $cdnActiveTabSlug = strtolower((string) ($activeTab ?? 'personaldetails'));
     $cdnActivityTabOnly = $cdnActiveTabSlug === 'activityfeed';
@@ -159,6 +181,23 @@ use App\Http\Controllers\Controller;
                 $cdnMatterRefLabel = $cdnMatterRow?->client_unique_matter_no;
             }
 
+            $cdnCanReopenClosedMatter = false;
+            $cdnReopenRequestedByName = null;
+            $cdnReopenRequestedById = (int) ($cdnMatterRow->reopen_requested_by ?? 0);
+            if (!empty($isClosedMatterView)) {
+                $_cdnReopenViewer = Auth::guard('admin')->user() ?? Auth::user();
+                $cdnCanReopenClosedMatter = $_cdnReopenViewer instanceof \App\Models\Staff
+                    && ($_cdnReopenViewer->hasEffectiveSuperAdminPrivileges() || $_cdnReopenViewer->hasCrmModule('45'));
+                if ($cdnReopenRequestedById > 0) {
+                    $_cdnRequester = \App\Models\Staff::query()
+                        ->select('id', 'first_name', 'last_name')
+                        ->find($cdnReopenRequestedById);
+                    if ($_cdnRequester) {
+                        $cdnReopenRequestedByName = trim(($_cdnRequester->first_name ?? '') . ' ' . ($_cdnRequester->last_name ?? ''));
+                    }
+                }
+            }
+
             $cdnWorkflowStageLabel = null;
             if ($cdnMatterRefLabel) {
                 $cdnWs = DB::table('client_matters')
@@ -196,9 +235,35 @@ use App\Http\Controllers\Controller;
 
         <section class="cdn-client-hero" aria-label="Client summary">
             @if(!empty($isClosedMatterView))
-                <div class="crm-closed-matter-banner" role="status">
+                <div class="crm-closed-matter-banner" role="status" id="crmClosedMatterBanner">
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
-                    <span>This matter is closed. You can view details but cannot make changes.</span>
+                    <div class="crm-closed-matter-banner__body">
+                        <strong>This matter is closed. You can view details but cannot make changes.</strong>
+                        @if(!empty($cdnReopenRequestedByName))
+                            <span class="crm-closed-matter-banner__requester">
+                                <i class="fa-solid fa-hand-paper" aria-hidden="true"></i>
+                                Reopen requested by {{ $cdnReopenRequestedByName }}
+                            </span>
+                        @elseif(!empty($cdnReopenRequestedById))
+                            <span class="crm-closed-matter-banner__requester">
+                                <i class="fa-solid fa-hand-paper" aria-hidden="true"></i>
+                                A reopen request is pending for this matter
+                            </span>
+                        @endif
+                    </div>
+                    @if(!empty($cdnCanReopenClosedMatter) && !empty($cdnMatterRow?->id))
+                        <div class="crm-closed-matter-banner__actions">
+                            <button type="button"
+                                    class="btn btn-success btn-sm crm-closed-matter-allow"
+                                    data-crm-reopen-matter="{{ $cdnMatterRow->id }}"
+                                    data-matter-id="{{ $cdnMatterRow->id }}"
+                                    data-requester-name="{{ $cdnReopenRequestedByName ?? '' }}"
+                                    title="Reopen this closed matter">
+                                <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i>
+                                Reopen matter
+                            </button>
+                        </div>
+                    @endif
                 </div>
             @endif
             <div class="cdn-client-hero__inner">
@@ -235,6 +300,15 @@ use App\Http\Controllers\Controller;
                             <span class="cdn-client-hero__matter-chip">
                                 <span class="badge bg-secondary">Closed matter</span>
                             </span>
+                            @if(!empty($cdnReopenRequestedByName))
+                                <span class="badge bg-warning text-dark" title="Pending reopen request">
+                                    Requested by {{ $cdnReopenRequestedByName }}
+                                </span>
+                            @elseif(!empty($cdnReopenRequestedById))
+                                <span class="badge bg-warning text-dark" title="Pending reopen request">
+                                    Reopen requested
+                                </span>
+                            @endif
                         </div>
                         @endif
                         <div class="cdn-client-hero__tags" aria-label="Tags">
@@ -1636,6 +1710,9 @@ $(document).ready(function() {
         matterUniqueNo: @json(($cdnMatterRefLabel ?? '')),
         clientMatterId: @json($cdnMatterRow?->id ?? null),
         isClosedMatterView: @json(!empty($isClosedMatterView)),
+        canReopenClosedMatter: @json(!empty($cdnCanReopenClosedMatter)),
+        reopenRequestedByName: @json($cdnReopenRequestedByName ?? null),
+        reopenRequestedById: @json($cdnReopenRequestedById ?? 0),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
         detailBaseUrl: '{{ url("/clients/detail") }}',
@@ -1732,6 +1809,20 @@ $(document).ready(function() {
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ @filemtime(public_path('js/crm/clients/shared.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/closed-matter-view.js') }}?v={{ @filemtime(public_path('js/crm/clients/closed-matter-view.js')) ?: time() }}"></script>
+<script>
+    window.crmMatterReopenConfig = {
+        url: @json(route('clients.matter.reopen')),
+        csrfToken: @json(csrf_token())
+    };
+</script>
+<script src="{{ URL::asset('js/crm/clients/matter-reopen-actions.js') }}?v={{ @filemtime(public_path('js/crm/clients/matter-reopen-actions.js')) ?: time() }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof window.crmMaybePromptReopenFromQuery === 'function') {
+            window.crmMaybePromptReopenFromQuery();
+        }
+    });
+</script>
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}?v={{ @filemtime(public_path('js/crm/clients/detail.js')) ?: time() }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}

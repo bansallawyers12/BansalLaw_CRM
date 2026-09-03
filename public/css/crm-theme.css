@@ -5212,6 +5212,14 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
   border-color: #f87171;
 }
 
+.matter-reopen-urgent-list__card {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff;
+}
+
 .matter-reopen-urgent-list__badge {
   display: inline-block;
   margin-bottom: 6px;
@@ -5232,11 +5240,26 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
   line-height: 1.4;
 }
 
+.matter-reopen-urgent-list__requester {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #991b1b;
+}
+
 .matter-reopen-urgent-list small {
   display: block;
   margin-top: 4px;
   color: #64748b;
   font-size: 0.75rem;
+}
+
+.matter-reopen-urgent-list__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 .main-content .header,
