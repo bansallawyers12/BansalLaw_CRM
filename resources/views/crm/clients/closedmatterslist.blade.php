@@ -420,6 +420,11 @@
                                                             <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested">
                                                                 <i class="fa-solid fa-clock"></i> Requested
                                                             </button>
+                                                            @if((int) $list->reopen_requested_by === (int) ($_cmViewer->id ?? 0))
+                                                                <button class="btn btn-outline-danger btn-sm closed-matter-cancel-reopen-request" type="button" data-matter-id="{{ $list->id }}" title="Cancel reopen request">
+                                                                    <i class="fa-solid fa-xmark"></i> Cancel
+                                                                </button>
+                                                            @endif
                                                         @else
                                                             <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter">
                                                                 <i class="fa-solid fa-hand-paper"></i> Request
@@ -531,6 +536,34 @@ jQuery(document).ready(function($){
             error: function(){
                 crmAlert('An error occurred. Please try again.');
                 $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
+            }
+        });
+    });
+
+    $(document).on('click', '.closed-matter-cancel-reopen-request', function(e){
+        e.preventDefault();
+        var matterId = $(this).data('matter-id');
+        if (!matterId) return;
+        if (!confirm('Cancel this reopen request?')) return;
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...');
+        $.ajax({
+            url: '{{ route("clients.matter.cancel-reopen-request") }}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+            success: function(resp){
+                if (resp.status) {
+                    crmAlert(resp.message || 'Reopen request has been cancelled.');
+                    window.location.reload();
+                } else {
+                    crmAlert(resp.message || 'Failed to cancel reopen request.');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
+                }
+            },
+            error: function(){
+                crmAlert('An error occurred. Please try again.');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
             }
         });
     });

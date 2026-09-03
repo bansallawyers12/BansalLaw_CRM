@@ -11,6 +11,11 @@
                 <button class="btn btn-secondary btn-sm" disabled title="Reopen Requested">
                     <i class="fa-solid fa-clock"></i> Reopen Requested
                 </button>
+                @if((int) ($workflowSelectedMatter->reopen_requested_by ?? 0) === (int) ($workflowViewer->id ?? 0))
+                    <button class="btn btn-outline-danger btn-sm matter-detail-cancel-reopen-request-btn" type="button" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Cancel reopen request">
+                        <i class="fa-solid fa-xmark"></i> Cancel Request
+                    </button>
+                @endif
             @else
                 <button class="btn btn-warning btn-sm matter-detail-request-reopen-btn" id="workflow-tab-request-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Request Admin to Reopen Matter">
                     <i class="fa-solid fa-hand-paper"></i> Request Reopen

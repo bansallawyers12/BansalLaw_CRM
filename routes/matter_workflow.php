@@ -23,6 +23,7 @@ Route::post('/clients/matter/update-previous-stage', [ClientMatterWorkflowContro
 Route::post('/clients/matter/discontinue', [ClientMatterWorkflowController::class, 'discontinueClientMatter'])->name('clients.matter.discontinue');
 Route::post('/clients/matter/reopen', [ClientMatterWorkflowController::class, 'reopenClientMatter'])->name('clients.matter.reopen');
 Route::post('/clients/matter/request-reopen', [ClientMatterWorkflowController::class, 'requestReopenMatter'])->name('clients.matter.request-reopen');
+Route::post('/clients/matter/cancel-reopen-request', [ClientMatterWorkflowController::class, 'cancelReopenRequest'])->name('clients.matter.cancel-reopen-request');
 Route::post('/clients/matter/delete', [ClientMatterWorkflowController::class, 'deleteClientMatter'])->name('clients.matter.delete');
 Route::post('/clients/matter/update-deadline', [ClientMatterWorkflowController::class, 'updateClientMatterDeadline'])->name('clients.matter.update-deadline');
 Route::post('/clients/matter/change-workflow', [ClientMatterWorkflowController::class, 'changeClientMatterWorkflow'])->name('clients.matter.change-workflow');

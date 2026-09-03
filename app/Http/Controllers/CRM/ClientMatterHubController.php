@@ -844,6 +844,90 @@ class ClientMatterHubController extends Controller
 	}
 
 	/**
+	 * Cancel a pending reopen request (requester or staff who can reopen).
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function cancelReopenRequest(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+
+			if ($clientMatter->matter_status == 1) {
+				return response()->json(['status' => false, 'message' => 'Matter is already open.'], 400);
+			}
+
+			if (empty($clientMatter->reopen_requested_by)) {
+				return response()->json(['status' => false, 'message' => 'There is no pending reopen request for this matter.'], 400);
+			}
+
+			$user = Auth::guard('admin')->user() ?? Auth::user();
+			$userId = (int) ($user->id ?? 0);
+			$canReopen = $user instanceof \App\Models\Staff
+				&& ($user->hasEffectiveSuperAdminPrivileges() || $user->hasCrmModule('45'));
+			$isRequester = $userId > 0 && (int) $clientMatter->reopen_requested_by === $userId;
+
+			if (! $isRequester && ! $canReopen) {
+				return response()->json(['status' => false, 'message' => 'You do not have permission to cancel this reopen request.'], 403);
+			}
+
+			$clientMatter->reopen_requested_by = null;
+			$saved = $clientMatter->save();
+
+			if (! $saved) {
+				return response()->json(['status' => false, 'message' => 'Failed to cancel reopen request.'], 500);
+			}
+
+			try {
+				\App\Models\Notification::query()
+					->where('module_id', $clientMatter->id)
+					->where('notification_type', 'Matter Reopen Request')
+					->where('receiver_status', 0)
+					->update([
+						'receiver_status' => 1,
+						'seen' => 1,
+					]);
+			} catch (\Throwable $notifyError) {
+				Log::warning('Could not mark reopen-request notifications as cancelled', [
+					'matter_id' => $clientMatter->id,
+					'error' => $notifyError->getMessage(),
+				]);
+			}
+
+			return response()->json([
+				'status' => true,
+				'message' => 'Reopen request has been cancelled.',
+			]);
+		} catch (\Exception $e) {
+			if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface || $e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+				throw $e;
+			}
+			Log::error('Error cancelling reopen request: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString(),
+			]);
+
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while cancelling the reopen request.',
+			], 500);
+		}
+	}
+
+	/**
 	 * Reopen a discontinued client matter (set matter_status = 1).
 	 *
 	 * @param Request $request

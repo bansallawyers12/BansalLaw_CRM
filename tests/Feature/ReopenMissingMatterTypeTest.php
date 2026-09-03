@@ -64,6 +64,33 @@ class ReopenMissingMatterTypeTest extends TestCase
     }
 
     #[Test]
+    public function cancel_reopen_request_clears_pending_flag_for_requester()
+    {
+        $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);
+        $staff = Staff::factory()->create(['role' => 1]);
+
+        $clientMatter = ClientMatter::create([
+            'client_id' => $client->id,
+            'sel_matter_id' => null,
+            'client_unique_matter_no' => null,
+            'matter_status' => 0,
+            'discontinue_reason' => 'Completed',
+            'reopen_requested_by' => $staff->id,
+        ]);
+
+        $response = $this->actingAs($staff, 'admin')
+            ->postJson('/clients/matter/cancel-reopen-request', [
+                'matter_id' => $clientMatter->id,
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $clientMatter->refresh();
+        $this->assertNull($clientMatter->reopen_requested_by);
+    }
+
+    #[Test]
     public function reopen_client_matter_succeeds_when_matter_type_is_null()
     {
         $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);

@@ -92,6 +92,11 @@ class ClientMatterWorkflowController extends Controller
         return $this->hub()->requestReopenMatter($request);
     }
 
+    public function cancelReopenRequest(Request $request)
+    {
+        return $this->hub()->cancelReopenRequest($request);
+    }
+
     public function deleteClientMatter(Request $request)
     {
         return $this->hub()->deleteClientMatter($request);

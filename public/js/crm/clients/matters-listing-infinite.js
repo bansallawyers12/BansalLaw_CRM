@@ -546,6 +546,47 @@
                 }
             });
         });
+
+        $(document).on('click.mattersSpa', '.closed-matter-cancel-reopen-request', function (e) {
+            e.preventDefault();
+            var matterId = $(this).data('matter-id');
+            if (!matterId) {
+                return;
+            }
+            if (!window.confirm('Cancel this reopen request?')) {
+                return;
+            }
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...');
+            $.ajax({
+                url: window.mattersCancelReopenRequestUrl || '',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                data: JSON.stringify({ matter_id: matterId }),
+                success: function (resp) {
+                    if (resp.status) {
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.success({ title: 'Cancelled', message: resp.message || 'Request cancelled.', position: 'topRight' });
+                        } else {
+                            window.crmAlert(resp.message || 'Reopen request has been cancelled.');
+                        }
+                        var params = buildQueryFromForm($('#matterFilterForm'));
+                        loadSpaContent('closed', params, { pushState: false });
+                    } else {
+                        window.crmAlert(resp.message || 'Failed to cancel reopen request.');
+                        $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
+                    }
+                },
+                error: function () {
+                    window.crmAlert('An error occurred. Please try again.');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
+                }
+            });
+        });
     }
 
     if (!$) {

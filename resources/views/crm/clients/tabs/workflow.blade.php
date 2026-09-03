@@ -800,6 +800,65 @@
                 });
             });
         });
+
+        // Cancel reopen request (requester)
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.matter-detail-cancel-reopen-request-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var matterId = btn.getAttribute('data-matter-id');
+            if (!matterId) return;
+
+            workflowSwalConfirm({
+                title: 'Cancel request?',
+                text: 'Cancel this reopen request?',
+                confirmText: 'Cancel request',
+                confirmColor: '#a83020'
+            }).then(function(result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                btn.disabled = true;
+                var origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...';
+                var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
+                fetch('{{ route("clients.matter.cancel-reopen-request") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                    body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.status) {
+                        workflowSwalAlert({
+                            title: 'Request cancelled',
+                            text: data.message || 'Reopen request has been cancelled.',
+                            icon: 'success'
+                        }).then(function() {
+                            window.location.reload();
+                        });
+                    } else {
+                        workflowSwalAlert({
+                            title: 'Cancel failed',
+                            text: data.message || 'Failed to cancel reopen request.',
+                            icon: 'error'
+                        });
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                })
+                .catch(function() {
+                    workflowSwalAlert({
+                        title: 'Error',
+                        text: 'An error occurred. Please try again.',
+                        icon: 'error'
+                    });
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                });
+            });
+        });
     });
 })();
 </script>

@@ -171,6 +171,7 @@
 <script>
 window.mattersReopenUrl = @json(route('clients.matter.reopen'));
 window.mattersRequestReopenUrl = @json(route('clients.matter.request-reopen'));
+window.mattersCancelReopenRequestUrl = @json(route('clients.matter.cancel-reopen-request'));
 window.mattersUpdateOfficeUrl = @json(route('matters.update-office'));
 window.MattersListSpaConfig = {
     activeUrl: @json($activeUrl),

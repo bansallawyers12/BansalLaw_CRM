@@ -388,6 +388,11 @@
                                             <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested">
                                                 <i class="fa-solid fa-clock"></i> Requested
                                             </button>
+                                            @if((int) $list->reopen_requested_by === (int) ($_cmViewer->id ?? 0))
+                                                <button class="btn btn-outline-danger btn-sm closed-matter-cancel-reopen-request" type="button" data-matter-id="{{ $list->id }}" title="Cancel reopen request">
+                                                    <i class="fa-solid fa-xmark"></i> Cancel
+                                                </button>
+                                            @endif
                                         @else
                                             <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter">
                                                 <i class="fa-solid fa-hand-paper"></i> Request
