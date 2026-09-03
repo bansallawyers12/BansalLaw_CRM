@@ -3,6 +3,11 @@
         <span class="text-muted small"><i class="fa-solid fa-lock"></i> View only — this matter is closed.</span>
     @elseif($workflowIsDiscontinued)
         @if($workflowCanReopen)
+            @if($workflowSelectedMatter->reopen_requested_by ?? null)
+                <span class="badge bg-warning text-dark align-middle" title="A team member requested reopen">
+                    <i class="fa-solid fa-clock"></i> Requested
+                </span>
+            @endif
             <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
                 <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
             </button>

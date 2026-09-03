@@ -413,6 +413,11 @@
                                                     </a>
                                                     @if($isDiscontinued)
                                                         @if($_cmCanReopen)
+                                                            @if($list->reopen_requested_by)
+                                                                <span class="badge bg-warning text-dark me-1" title="A team member requested reopen">
+                                                                    <i class="fa-solid fa-clock"></i> Requested
+                                                                </span>
+                                                            @endif
                                                             <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}">
                                                                 <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
                                                             </button>

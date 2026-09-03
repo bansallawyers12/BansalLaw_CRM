@@ -797,8 +797,7 @@ class ClientMatterHubController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
-				// Send notification to admins
-				$admins = \App\Models\Admin::where('role', 1)->whereNull('is_deleted')->get();
+				$requesterId = (int) ($clientMatter->reopen_requested_by ?? 0);
 				$requesterName = Auth::user() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'A team member';
 				$matterObj = $clientMatter->sel_matter_id ? \App\Models\Matter::find($clientMatter->sel_matter_id) : null;
 				$matterTitle = $matterObj ? $matterObj->title : 'Matter';
@@ -806,10 +805,10 @@ class ClientMatterHubController extends Controller
 				$matterNoLabel = !empty($clientMatter->client_unique_matter_no) ? ' (' . $clientMatter->client_unique_matter_no . ')' : '';
 				$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . $matterNoSuffix;
 
-				foreach ($admins as $admin) {
+				foreach ($this->staffWhoCanReopenMatters($requesterId) as $approver) {
 					\App\Models\Notification::create([
-						'sender_id' => Auth::guard('admin')->id() ?? Auth::id(),
-						'receiver_id' => $admin->id,
+						'sender_id' => $requesterId ?: (Auth::guard('admin')->id() ?? Auth::id()),
+						'receiver_id' => $approver->id,
 						'module_id' => $clientMatter->id,
 						'url' => $url,
 						'notification_type' => 'Matter Reopen Request',
@@ -1592,5 +1591,30 @@ class ClientMatterHubController extends Controller
 	{
 		// Deprecated/Disabled: Matter email history is preserved upon discontinue/completion for legal/audit purposes.
 		return;
+	}
+
+	/**
+	 * Active CRM staff who can approve/reopen discontinued matters (for notifications).
+	 *
+	 * @return \Illuminate\Support\Collection<int, Staff>
+	 */
+	private function staffWhoCanReopenMatters(int $excludeStaffId = 0)
+	{
+		return Staff::query()
+			->where('status', 1)
+			->when($excludeStaffId > 0, static fn ($q) => $q->where('id', '!=', $excludeStaffId))
+			->orderBy('id')
+			->get()
+			->filter(static function (Staff $staff): bool {
+				if ((int) ($staff->role ?? 0) === 1) {
+					return true;
+				}
+				if ((bool) ($staff->grant_super_admin_access ?? false)) {
+					return true;
+				}
+
+				return $staff->hasCrmModule('45');
+			})
+			->values();
 	}
 }

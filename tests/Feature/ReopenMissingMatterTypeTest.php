@@ -29,7 +29,7 @@ class ReopenMissingMatterTypeTest extends TestCase
     public function request_reopen_succeeds_when_matter_type_and_matter_no_are_null()
     {
         $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);
-        $staff = Staff::factory()->create(['role' => 1]); // Staff with access
+        $staff = Staff::factory()->create(['role' => 1, 'status' => 1]); // requester (can access record)
 
         // Discontinued matter with null sel_matter_id and null client_unique_matter_no
         $clientMatter = ClientMatter::create([
@@ -40,8 +40,8 @@ class ReopenMissingMatterTypeTest extends TestCase
             'discontinue_reason' => 'Completed',
         ]);
 
-        // Create an admin to receive notifications
-        $adminUser = Admin::factory()->create(['role' => 1, 'type' => 'admin']);
+        // Another Super Admin receives the notification (requester is excluded)
+        $superAdmin = Staff::factory()->create(['role' => 1, 'status' => 1]);
 
         $response = $this->actingAs($staff, 'admin')
             ->postJson('/clients/matter/request-reopen', [
@@ -54,9 +54,10 @@ class ReopenMissingMatterTypeTest extends TestCase
         $clientMatter->refresh();
         $this->assertEquals($staff->id, $clientMatter->reopen_requested_by);
 
-        // Verify notification created for admin with fallback title 'Matter'
+        // Verify notification created for other superadmin staff with fallback title 'Matter'
         $notification = Notification::where('module_id', $clientMatter->id)
             ->where('notification_type', 'Matter Reopen Request')
+            ->where('receiver_id', $superAdmin->id)
             ->first();
 
         $this->assertNotNull($notification);
