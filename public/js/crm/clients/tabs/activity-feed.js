@@ -51,19 +51,32 @@
             || isTaskOrActionTimelineItem($item);
     }
 
-    var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 28px 20px; color: #5e7a90;">' +
-        '<i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;" aria-hidden="true"></i>' +
-        '<p class="mb-0 small">No activities match your filters</p></li>';
+    var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results feed-item-no-results--show" role="status">' +
+        '<span class="activity-feed-empty-icon" aria-hidden="true"><i class="fa-solid fa-inbox"></i></span>' +
+        '<p class="mb-1 activity-feed-empty-title">No records found</p>' +
+        '<p class="mb-0 small activity-feed-empty-text">Nothing matches this filter yet.</p>' +
+        '</li>';
 
-    var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">' +
-        '<i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;" aria-hidden="true"></i>' +
-        '<p class="mb-1" style="color: #1e3d60; font-weight: 600;">No activities yet</p>' +
-        '<p class="mb-0 small">Notes, tasks, documents, and stage changes will appear here.</p></li>';
+    var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" role="status">' +
+        '<span class="activity-feed-empty-icon" aria-hidden="true"><i class="fa-solid fa-inbox"></i></span>' +
+        '<p class="mb-1 activity-feed-empty-title">No records found</p>' +
+        '<p class="mb-0 small activity-feed-empty-text">Notes, tasks, documents, and stage changes will appear here.</p>' +
+        '</li>';
+
+    var FEED_LOADING_HTML = '<li class="feed-item feed-item--loading" role="status" aria-live="polite">' +
+        '<span class="activity-feed-loader" aria-hidden="true">' +
+        '<i class="fa-solid fa-spinner fa-spin"></i>' +
+        '</span>' +
+        '<p class="mb-0 small activity-feed-loader__text">Loading…</p>' +
+        '</li>';
 
     var FEED_LOAD_SENTINEL_HTML = '<li class="feed-item feed-load-sentinel" aria-hidden="true"></li>';
 
-    var FEED_ERROR_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 36px 20px; color: #5e7a90;">' +
-        '<p class="mb-0 small">Could not load timeline. Use Refresh to try again.</p></li>';
+    var FEED_ERROR_HTML = '<li class="feed-item feed-item--empty" role="alert">' +
+        '<span class="activity-feed-empty-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>' +
+        '<p class="mb-1 activity-feed-empty-title">Could not load timeline</p>' +
+        '<p class="mb-0 small activity-feed-empty-text">Use Refresh to try again.</p>' +
+        '</li>';
 
     var feedState = {
         page: 0,
@@ -320,11 +333,34 @@
     function setupRefreshButton() {
         $(document).off('click.activityFeedRefresh', '#activity-feed-refresh')
             .on('click.activityFeedRefresh', '#activity-feed-refresh', function() {
+                var $root = feedRoot();
+                if ($root.hasClass('is-loading')) {
+                    return;
+                }
                 var $btn = $(this).find('i');
                 $btn.addClass('fa-spin');
+                showFeedLoadingState();
                 ensureActivitiesLoaded({ reset: true });
                 setTimeout(function() { $btn.removeClass('fa-spin'); }, 800);
             });
+    }
+
+    function setFeedLoadingUi(isLoading) {
+        var $root = feedRoot();
+        if (!$root.length) {
+            return;
+        }
+        $root.toggleClass('is-loading', !!isLoading);
+        $root.find('.activity-filter-btn').prop('disabled', !!isLoading);
+        $root.attr('aria-busy', isLoading ? 'true' : 'false');
+    }
+
+    function showFeedLoadingState() {
+        var $list = $('#activity-feed .feed-list');
+        if ($list.length) {
+            $list.html(FEED_LOADING_HTML);
+        }
+        setFeedLoadingUi(true);
     }
 
     /**
@@ -335,11 +371,16 @@
         $(document).off('click.activityFeedType', '#activity-feed .activity-filter-btn')
             .on('click.activityFeedType', '#activity-feed .activity-filter-btn', function() {
                 var $root = feedRoot();
-                if (!$root.length) {
+                if (!$root.length || $root.hasClass('is-loading')) {
+                    return;
+                }
+                var $btn = $(this);
+                if ($btn.hasClass('active')) {
                     return;
                 }
                 $root.find('.activity-filter-btn').removeClass('active');
-                $(this).addClass('active');
+                $btn.addClass('active');
+                showFeedLoadingState();
                 ensureActivitiesLoaded({ reset: true });
             });
     }
@@ -579,11 +620,20 @@
     function updateEmptyState() {
         var $root = feedRoot();
         if (!$root.length) return;
-        var $acts = $root.find('.feed-item.activity');
+        var $list = $root.find('.feed-list');
+        var $acts = $list.find('.feed-item.activity');
         var total = $acts.length;
         var visible = $acts.not('.' + FILTER_HIDDEN_CLASS).length;
-        $root.find('.feed-item--empty').toggleClass(FILTER_HIDDEN_CLASS, total > 0);
-        $root.find('.feed-item-no-results').toggleClass('feed-item-no-results--show', visible === 0 && total > 0);
+        var filtered = filtersAreActive();
+
+        $list.find('.feed-item--empty, .feed-item-no-results, .feed-item--loading').remove();
+
+        if (visible > 0) {
+            return;
+        }
+
+        // No visible rows: show empty / no-records message (server filter or client filter)
+        $list.append(filtered || total > 0 ? FEED_NO_RESULTS_HTML : FEED_EMPTY_HTML);
     }
 
     // --- Progressive disclosure: build feed HTML (shared with client + company detail AJAX) ---
@@ -763,6 +813,7 @@
         if (typeof adjustActivityFeedHeight === 'function') {
             adjustActivityFeedHeight();
         }
+        updateEmptyState();
         observeSentinel();
         fillViewportIfNeeded();
     }
@@ -795,6 +846,12 @@
             if (activeXhr && typeof activeXhr.abort === 'function') {
                 activeXhr.abort();
             }
+            // Show loader for filter/tab changes and full refresh (not infinite-scroll append)
+            if (!$list.find('.feed-item--loading').length) {
+                showFeedLoadingState();
+            } else {
+                setFeedLoadingUi(true);
+            }
         }
 
         var requestSeq = feedState.requestSeq;
@@ -812,6 +869,9 @@
                 }
                 feedState.loading = false;
                 activeXhr = null;
+                if (!append) {
+                    setFeedLoadingUi(false);
+                }
                 if (!response || !response.status) {
                     if (!append) {
                         $list.html(FEED_ERROR_HTML);
@@ -855,6 +915,7 @@
                     return;
                 }
                 if (!append) {
+                    setFeedLoadingUi(false);
                     $list.html(FEED_ERROR_HTML);
                 }
             }

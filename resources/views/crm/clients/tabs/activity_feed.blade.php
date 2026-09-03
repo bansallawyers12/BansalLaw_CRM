@@ -65,8 +65,11 @@
     </div>
 
     <ul class="feed-list">
-        <li class="feed-item feed-item--loading" style="text-align: center; padding: 36px 20px; color: #5e7a90;">
-            <p class="mb-0 small">Loading timeline…</p>
+        <li class="feed-item feed-item--loading" role="status" aria-live="polite">
+            <span class="activity-feed-loader" aria-hidden="true">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </span>
+            <p class="mb-0 small activity-feed-loader__text">Loading…</p>
         </li>
     </ul>
 </aside>
