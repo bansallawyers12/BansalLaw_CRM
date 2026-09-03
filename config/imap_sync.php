@@ -110,4 +110,19 @@ return [
     // Skip /email/analyze HTTP call during IMAP sync (analysis can be backfilled later).
     'skip_python_analysis' => env('MAIL_SYNC_SKIP_PYTHON_ANALYSIS', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Excluded mailboxes (never sync Inbox or Sent from Zoho)
+    |--------------------------------------------------------------------------
+    | Comma-separated addresses. Matching CRM mailboxes are skipped by cron,
+    | manual sync, and read-state sync for both INBOX and Sent folders.
+    */
+    'excluded_mailboxes' => array_values(array_unique(array_filter(array_map(
+        static fn ($address) => strtolower(trim((string) $address)),
+        explode(',', (string) env(
+            'MAIL_SYNC_EXCLUDED_MAILBOXES',
+            'michaelsaleh.bi@outlook.com'
+        ))
+    )))),
+
 ];

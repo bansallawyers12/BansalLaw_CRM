@@ -53,6 +53,7 @@ class IncomingEmailSyncService
             ->where('status', true)
             ->where('sync_enabled', true);
         self::applyMailboxHasZohoPasswordScope($query);
+        self::applyExcludedMailboxesScope($query);
 
         if ($mailboxFilter !== null && $mailboxFilter !== '') {
             $query->whereRaw('LOWER(email) = ?', [strtolower(trim($mailboxFilter))]);
@@ -100,6 +101,18 @@ class IncomingEmailSyncService
      */
     public function syncMailbox(Email $mailbox, ?\DateTimeInterface $since = null, bool $forceCatchup = false): array
     {
+        if (self::isMailboxExcluded((string) ($mailbox->email ?? ''))) {
+            return [
+                'mailbox' => $mailbox->email,
+                'imported' => 0,
+                'skipped' => 0,
+                'failed' => 0,
+                'errors' => ['Mailbox excluded from Zoho inbox/sent sync'],
+                'last_uid' => (int) ($mailbox->last_imap_uid ?? 0),
+                'excluded' => true,
+            ];
+        }
+
         $staffUserId = $mailbox->resolveOwnerStaffId();
         if (! $staffUserId) {
             $error = 'No staff user linked to mailbox ' . $mailbox->email;
@@ -1138,6 +1151,7 @@ class IncomingEmailSyncService
             ->where('status', true)
             ->where('sync_enabled', true);
         self::applyMailboxHasZohoPasswordScope($query);
+        self::applyExcludedMailboxesScope($query);
 
         return $query
             ->orderBy('email')
@@ -1151,7 +1165,7 @@ class IncomingEmailSyncService
     public static function findSyncableMailbox(string $email): ?Email
     {
         $normalized = strtolower(trim($email));
-        if ($normalized === '') {
+        if ($normalized === '' || self::isMailboxExcluded($normalized)) {
             return null;
         }
 
@@ -1175,6 +1189,46 @@ class IncomingEmailSyncService
     }
 
     /**
+     * @return list<string>
+     */
+    public static function excludedMailboxAddresses(): array
+    {
+        $configured = config('imap_sync.excluded_mailboxes', []);
+        if (! is_array($configured)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($address) => strtolower(trim((string) $address)),
+            $configured
+        ))));
+    }
+
+    public static function isMailboxExcluded(string $email): bool
+    {
+        $normalized = strtolower(trim($email));
+        if ($normalized === '') {
+            return false;
+        }
+
+        return in_array($normalized, self::excludedMailboxAddresses(), true);
+    }
+
+    /**
+     * Skip hard-excluded Zoho mailboxes (Inbox + Sent).
+     */
+    public static function applyExcludedMailboxesScope($query): void
+    {
+        $excluded = self::excludedMailboxAddresses();
+        if ($excluded === []) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($excluded), '?'));
+        $query->whereRaw('LOWER(email) NOT IN (' . $placeholders . ')', $excluded);
+    }
+
+    /**
      * @return list<int>
      */
     public static function syncableMailboxIds(): array
@@ -1183,6 +1237,7 @@ class IncomingEmailSyncService
             ->where('status', true)
             ->where('sync_enabled', true);
         self::applyMailboxHasZohoPasswordScope($query);
+        self::applyExcludedMailboxesScope($query);
 
         return $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
     }
@@ -1240,6 +1295,7 @@ class IncomingEmailSyncService
         $query = Email::query()
             ->where('status', true)
             ->where('sync_enabled', true);
+        self::applyExcludedMailboxesScope($query);
 
         if ($mailboxFilter !== null && $mailboxFilter !== '') {
             $query->whereRaw('LOWER(email) = ?', [strtolower(trim($mailboxFilter))]);

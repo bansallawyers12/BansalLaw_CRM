@@ -48,6 +48,7 @@ class SyncInboxEmails extends Command
         if ($this->option('full')) {
             $query = Email::query()->where('status', true)->where('sync_enabled', true);
             IncomingEmailSyncService::applyMailboxHasZohoPasswordScope($query);
+            IncomingEmailSyncService::applyExcludedMailboxesScope($query);
             if ($email) {
                 $query->whereRaw('LOWER(email) = ?', [strtolower(trim((string) $email))]);
             }

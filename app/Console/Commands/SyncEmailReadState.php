@@ -42,6 +42,7 @@ class SyncEmailReadState extends Command
             ->where('sync_enabled', true)
             ->orderBy('email');
         IncomingEmailSyncService::applyMailboxHasZohoPasswordScope($mailboxQuery);
+        IncomingEmailSyncService::applyExcludedMailboxesScope($mailboxQuery);
 
         if ($mailboxFilter !== '') {
             $mailboxQuery->whereRaw('LOWER(email) = ?', [$mailboxFilter]);
