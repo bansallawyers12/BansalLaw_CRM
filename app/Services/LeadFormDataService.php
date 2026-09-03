@@ -46,11 +46,19 @@ class LeadFormDataService
      */
     public function countries(): Collection
     {
-        return Cache::remember('lead_form_countries_v1', $this->formCacheTtl(), function () {
+        $cacheKey = 'lead_form_countries_v2';
+
+        $rows = $this->rememberArrayCache($cacheKey, function () {
             return Country::query()
                 ->select(['id', 'name', 'sortname', 'phonecode'])
                 ->orderBy('name')
-                ->get();
+                ->get()
+                ->map(static fn (Country $country) => $country->toArray())
+                ->all();
+        });
+
+        return collect($rows)->map(static function (array $row) {
+            return Country::make($row);
         });
     }
 
@@ -61,9 +69,10 @@ class LeadFormDataService
      */
     public function assignableStaff(bool $includeEmail = false): Collection
     {
-        $cacheKey = $includeEmail ? 'lead_form_assignable_staff_email_v1' : 'lead_form_assignable_staff_v1';
+        // v2 keys store plain arrays — v1 cached Eloquent Collections can unserialize as __PHP_Incomplete_Class
+        $cacheKey = $includeEmail ? 'lead_form_assignable_staff_email_v2' : 'lead_form_assignable_staff_v2';
 
-        return Cache::remember($cacheKey, $this->formCacheTtl(), function () use ($includeEmail) {
+        $rows = $this->rememberArrayCache($cacheKey, function () use ($includeEmail) {
             $columns = $includeEmail
                 ? ['id', 'first_name', 'last_name', 'email']
                 : ['id', 'first_name', 'last_name'];
@@ -73,8 +82,56 @@ class LeadFormDataService
                 ->where('status', 1)
                 ->orderBy('first_name')
                 ->orderBy('last_name')
-                ->get();
+                ->get()
+                ->map(static fn (Staff $staff) => $staff->only($columns))
+                ->all();
         });
+
+        return collect($rows)->map(static function (array $row) {
+            return Staff::make($row);
+        });
+    }
+
+    /**
+     * Cache only JSON-safe arrays. Bust and rebuild if a prior entry unserialized badly.
+     *
+     * @param  callable(): array<int, array<string, mixed>>  $builder
+     * @return array<int, array<string, mixed>>
+     */
+    private function rememberArrayCache(string $cacheKey, callable $builder): array
+    {
+        $cached = Cache::get($cacheKey);
+        if ($this->isUsableCachedRowList($cached)) {
+            return $cached;
+        }
+
+        if ($cached !== null) {
+            Cache::forget($cacheKey);
+        }
+
+        $rows = $builder();
+        if (! is_array($rows)) {
+            $rows = [];
+        }
+
+        Cache::put($cacheKey, $rows, $this->formCacheTtl());
+
+        return $rows;
+    }
+
+    private function isUsableCachedRowList(mixed $cached): bool
+    {
+        if (! is_array($cached)) {
+            return false;
+        }
+
+        foreach ($cached as $row) {
+            if (! is_array($row)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
