@@ -5178,6 +5178,48 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
   color: #7f1d1d;
 }
 
+.matter-reopen-urgent-bar.is-snoozed {
+  display: none !important;
+}
+
+.matter-reopen-snooze {
+  position: relative;
+}
+
+.matter-reopen-snooze .dropdown-toggle::after {
+  margin-left: 0.35em;
+}
+
+.matter-reopen-snooze__menu {
+  z-index: 1200 !important;
+  min-width: 160px;
+  padding: 4px 0;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(127, 29, 29, 0.18);
+}
+
+.matter-reopen-snooze__menu .dropdown-item {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7f1d1d;
+  padding: 0.45rem 0.9rem;
+}
+
+.matter-reopen-snooze__menu .dropdown-item:hover,
+.matter-reopen-snooze__menu .dropdown-item:focus {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.matter-reopen-urgent-modal__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .matter-reopen-urgent-modal .modal-header {
   background: #fef2f2;
   border-bottom-color: #fecaca;

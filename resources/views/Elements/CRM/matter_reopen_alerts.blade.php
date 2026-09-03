@@ -1,4 +1,4 @@
-{{-- Sticky matter-reopen alerts for approvers: resurfaces on every page load until reopen/cancel. --}}
+{{-- Sticky matter-reopen alerts for approvers: resurfaces on every page load until reopen/cancel (or snoozed). --}}
 @php
     $_reopenAlertStaff = Auth::user();
     $_reopenAlertService = app(\App\Services\MatterReopenNotificationService::class);
@@ -20,6 +20,13 @@
             ->get(['id', 'first_name', 'last_name'])
             ->keyBy('id')
         : collect();
+    $_reopenAlertFingerprint = $_pendingReopenAlerts
+        ->pluck('id')
+        ->filter()
+        ->map(static fn ($id) => (string) $id)
+        ->sort()
+        ->values()
+        ->implode(',');
 @endphp
 
 @if($_pendingReopenAlerts->isNotEmpty())
@@ -37,8 +44,20 @@
     if (!empty($_firstAlert->id)) {
         $_firstReopenUrl .= '&t=' . $_firstAlert->id;
     }
+    $_snoozeOptions = [
+        5 => '5 minutes',
+        10 => '10 minutes',
+        20 => '20 minutes',
+        30 => '30 minutes',
+        60 => '1 hour',
+    ];
 @endphp
-<div class="matter-reopen-urgent-bar" id="matterReopenUrgentBar" role="alert" aria-live="assertive">
+<div class="matter-reopen-urgent-bar"
+     id="matterReopenUrgentBar"
+     role="alert"
+     aria-live="assertive"
+     data-staff-id="{{ $_reopenAlertStaff->id ?? 0 }}"
+     data-alert-fingerprint="{{ $_reopenAlertFingerprint }}">
     <div class="matter-reopen-urgent-bar__inner">
         <div class="matter-reopen-urgent-bar__icon" aria-hidden="true">
             <i class="fa-solid fa-triangle-exclamation"></i>
@@ -68,6 +87,24 @@
                     Reopen matter
                 </button>
             @endif
+            <div class="dropdown matter-reopen-snooze">
+                <button type="button"
+                        class="matter-reopen-urgent-bar__btn dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        title="Hide this alert temporarily">
+                    Remind me
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end matter-reopen-snooze__menu">
+                    @foreach($_snoozeOptions as $mins => $label)
+                        <li>
+                            <button type="button" class="dropdown-item" data-crm-reopen-snooze="{{ $mins }}">
+                                {{ $label }}
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -84,7 +121,7 @@
             </div>
             <div class="modal-body">
                 <p class="matter-reopen-urgent-modal__hint">
-                    These stay highlighted until you reopen the matter or the requester cancels. Use <strong>Reopen</strong> here, or open the matter to review first.
+                    These stay highlighted until you reopen the matter or the requester cancels. Use <strong>Remind me</strong> to hide the alert for a while — it will return when that time ends.
                 </p>
                 <ul class="matter-reopen-urgent-list">
                     @foreach($_pendingReopenAlerts as $alert)
@@ -122,9 +159,22 @@
                     @endforeach
                 </ul>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer matter-reopen-urgent-modal__footer">
                 <a href="{{ route('crm.all-notifications') }}" class="btn btn-outline-secondary btn-sm">All notifications</a>
-                <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal">Remind me on next page</button>
+                <div class="dropdown dropup matter-reopen-snooze">
+                    <button type="button" class="btn btn-outline-danger btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Remind me
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end matter-reopen-snooze__menu">
+                        @foreach($_snoozeOptions as $mins => $label)
+                            <li>
+                                <button type="button" class="dropdown-item" data-crm-reopen-snooze="{{ $mins }}">
+                                    {{ $label }}
+                                </button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -139,7 +189,13 @@
 <script src="{{ asset('js/crm/clients/matter-reopen-actions.js') }}?v={{ @filemtime(public_path('js/crm/clients/matter-reopen-actions.js')) ?: time() }}"></script>
 <script>
 (function () {
-    function showMatterReopenModal() {
+    function bootMatterReopenUi() {
+        var snoozed = typeof window.crmInitMatterReopenSnooze === 'function'
+            ? window.crmInitMatterReopenSnooze()
+            : false;
+        if (snoozed) {
+            return;
+        }
         try {
             var params = new URLSearchParams(window.location.search || '');
             if (params.get('show_reopen') === '1') {
@@ -154,10 +210,10 @@
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
-            setTimeout(showMatterReopenModal, 400);
+            setTimeout(bootMatterReopenUi, 400);
         });
     } else {
-        setTimeout(showMatterReopenModal, 400);
+        setTimeout(bootMatterReopenUi, 400);
     }
 })();
 </script>
