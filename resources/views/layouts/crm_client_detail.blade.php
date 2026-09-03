@@ -1574,7 +1574,8 @@
         .icon-dropdown-menu { 
             position: absolute !important; top: 44px !important; left: 0 !important; min-width: 240px !important; 
             background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
-            padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+            padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important;
+            z-index: 1110 !important;
         }
         /* click-driven dropdowns, JS toggles .show */
         .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
@@ -1593,7 +1594,7 @@
         .profile-dropdown { position: relative !important; }
         .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
         .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; }
-        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
+        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; z-index: 1110 !important; }
         .profile-dropdown .profile-menu.show { display: block !important; }
         .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
         .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }

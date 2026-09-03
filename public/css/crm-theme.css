@@ -4887,6 +4887,7 @@ body > .ts-dropdown.crm-global-search-dropdown [data-selectable],
   background: var(--card-bg) !important;
   border: 1px solid var(--border) !important;
   box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08) !important;
+  z-index: 1110 !important;
 }
 
 .icon-dropdown-menu .dropdown-item,
@@ -5099,8 +5100,9 @@ body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
 
 .matter-reopen-urgent-bar {
   position: sticky;
-  top: 0;
-  z-index: 1040;
+  /* Below sticky topbar (70px / z-index 1000) so nav dropdowns stay clickable on top */
+  top: 70px;
+  z-index: 990;
   background: linear-gradient(90deg, #7f1d1d 0%, #dc2626 55%, #b91c1c 100%);
   color: #fff;
   box-shadow: 0 4px 16px rgba(127, 29, 29, 0.35);

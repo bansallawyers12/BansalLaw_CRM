@@ -116,7 +116,8 @@
             background: #fff !important; border: 1px solid #e9ecef !important; 
             border-radius: 8px !important; min-width: 200px !important; 
             padding: 6px 0 !important; display: none !important; 
-            box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+            box-shadow: 0 12px 24px rgba(0,0,0,.08) !important;
+            z-index: 1110 !important;
         }
         .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
         #crm-access-notification-dropdown .icon-dropdown-menu {
