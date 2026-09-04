@@ -72,6 +72,12 @@ class EmailLog extends Authenticatable
     public const CALENDAR_INVITE_SUBJECT_PATTERN =
         '^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\\b';
 
+    /**
+     * Court / tribunal hearing notices that belong on the hearing list and calendar, not mail lists.
+     */
+    public const HEARING_NOTICE_SUBJECT_PATTERN =
+        '\\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\\b';
+
     public static function calendarInvitationBodyMarker(): string
     {
         return 'This message is a calendar invitation.';
@@ -91,10 +97,22 @@ class EmailLog extends Authenticatable
     }
 
     /**
-     * Exclude calendar invites / ICS events from mail lists only.
-     * Does not delete email_logs or calendar records — StaffCalendarEvent /
-     * ClientCourtHearing feeds are untouched. Events stay on the calendar.
-     * Also hides emails already merged into calendar (any link source), including historical rows.
+     * True when the subject looks like a court/tribunal hearing notice.
+     */
+    public static function isHearingNoticeSubject(?string $subject): bool
+    {
+        $subject = trim((string) $subject);
+        if ($subject === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/' . self::HEARING_NOTICE_SUBJECT_PATTERN . '/i', $subject);
+    }
+
+    /**
+     * Exclude calendar invites / ICS events / hearing notices from mail lists only.
+     * Does not delete email_logs, StaffCalendarEvent, or ClientCourtHearing records —
+     * calendar and hearing lists are untouched.
      *
      * @param  Builder|\Illuminate\Database\Query\Builder  $query
      */
@@ -124,12 +142,31 @@ class EmailLog extends Authenticatable
 
         $query->whereRaw("COALESCE(subject, '') !~* ?", [self::CALENDAR_INVITE_SUBJECT_PATTERN]);
 
-        // Any existing calendar link means this row already has a calendar event — hide from mail lists.
+        // Hearing date notices belong on the hearing list / calendar only.
+        // Use ILIKE (not \b) — PostgreSQL does not treat \b as a word boundary.
+        $query->where(function ($keep) {
+            $keep->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%hearing%'])
+                ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%tribunal%'])
+                ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%court listing%']);
+        });
+
+        // Any existing calendar link means this row already has a calendar/hearing event.
         if (Schema::hasTable('email_calendar_links')) {
             $query->whereNotExists(function ($sub) {
                 $sub->selectRaw('1')
                     ->from('email_calendar_links')
                     ->whereColumn('email_calendar_links.email_log_id', 'email_logs.id');
+            });
+        }
+
+        // Emails that already created a ClientCourtHearing (notes reference Email #id).
+        if (Schema::hasTable('client_court_hearings')) {
+            $query->whereNotExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('client_court_hearings')
+                    ->whereRaw(
+                        "client_court_hearings.notes LIKE ('%Email #' || email_logs.id::text || '%')"
+                    );
             });
         }
 

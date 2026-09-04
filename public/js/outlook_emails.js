@@ -575,6 +575,17 @@ function crmInitOutlookEmailsInterface() {
         if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
             return true;
         }
+        // Hearing notices belong on hearing list / calendar only.
+        if (/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
+            return true;
+        }
+        const events = email.calendar && Array.isArray(email.calendar.events) ? email.calendar.events : [];
+        if (events.some(function (ev) {
+            const t = String((ev && ev.event_type) || '').toLowerCase();
+            return t === 'hearing' || t === 'court' || t === 'mention' || t === 'tribunal';
+        })) {
+            return true;
+        }
         return false;
     }
 

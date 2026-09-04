@@ -592,6 +592,9 @@
         if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
             return true;
         }
+        if (/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
+            return true;
+        }
         const attachments = Array.isArray(email.attachments) ? email.attachments : [];
         return attachments.some(function (att) {
             const name = String(att.filename || att.file_name || att.display_name || '').toLowerCase();

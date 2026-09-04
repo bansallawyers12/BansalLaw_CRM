@@ -43,6 +43,17 @@ class EmailLogPlainTextPreviewTest extends TestCase
     }
 
     #[Test]
+    public function hearing_notice_subjects_are_detected(): void
+    {
+        $this->assertTrue(EmailLog::isHearingNoticeSubject('Hearing Listed on 24 June 2026 at 10:00am'));
+        $this->assertTrue(EmailLog::isHearingNoticeSubject('Divorce Hearing | 30 July 2026'));
+        $this->assertTrue(EmailLog::isHearingNoticeSubject('RE: Compliance directions hearing 19 June 2026'));
+        $this->assertTrue(EmailLog::isHearingNoticeSubject('Matter is listed for an In-Person Hearing on 24 June 2026'));
+        $this->assertFalse(EmailLog::isHearingNoticeSubject('Re: Matter update for client'));
+        $this->assertFalse(EmailLog::isHearingNoticeSubject('Evidence.com - Evidence Download Link'));
+    }
+
+    #[Test]
     public function calendar_payload_detection_matches_ics_dumps(): void
     {
         $ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Hearing\nEND:VEVENT\nEND:VCALENDAR";
