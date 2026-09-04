@@ -683,7 +683,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 @include('crm.clients.addclientmodal')
 @include('crm.clients.editclientmodal')
 @include('crm.clients.modals.edit-matter-office')
-@include('crm.clients.modals.client-management')
+{{-- client-management (incl. change-matter-assignee modal) is already included via addclientmodal — do not include again (duplicate IDs break Add other party). --}}
 @include('crm.clients.partials.add-matter-modal')
 
 {{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}

@@ -4,17 +4,57 @@
 (function ($) {
     'use strict';
 
+    /**
+     * Prefer the visible modal when duplicate IDs exist (legacy double-includes).
+     * Moving a modal to document.body changes tree order; getElementById/querySelector
+     * would otherwise target a hidden copy and "Add other party" would appear dead.
+     */
+    function getChangeMatterAssigneeModalEl() {
+        var shown = document.querySelector('#changeMatterAssigneeModal.show');
+        if (shown) {
+            return shown;
+        }
+        var open = document.querySelector('#changeMatterAssigneeModal[aria-modal="true"]');
+        if (open) {
+            return open;
+        }
+        return document.getElementById('changeMatterAssigneeModal');
+    }
+
+    function $inChangeMatterModal(selector) {
+        var modal = getChangeMatterAssigneeModalEl();
+        if (modal) {
+            return $(modal).find(selector);
+        }
+        return $(selector);
+    }
+
+    function getOpposingPartiesContainerEl() {
+        var modal = getChangeMatterAssigneeModalEl();
+        if (modal) {
+            return modal.querySelector('#change_matter_opposing_parties_container');
+        }
+        return document.querySelector('#change_matter_opposing_parties_container');
+    }
+
     function getChangeMatterStream() {
-        var opt = $('#change_sel_matter_id').find('option:selected');
+        var $sel = $inChangeMatterModal('#change_sel_matter_id');
+        var opt = $sel.find('option:selected');
         var s = opt.attr('data-stream');
         return (s && String(s).trim() !== '') ? String(s).trim() : 'general';
     }
 
     function showChangeMatterAssigneeModal() {
-        var el = document.getElementById('changeMatterAssigneeModal');
+        var el = getChangeMatterAssigneeModalEl();
         if (!el) {
             return;
         }
+        // Drop stray duplicate modals so IDs stay unique.
+        document.querySelectorAll('#changeMatterAssigneeModal').forEach(function (node) {
+            if (node !== el) {
+                node.remove();
+            }
+        });
         if (el.parentElement !== document.body) {
             document.body.appendChild(el);
         }
@@ -27,6 +67,10 @@
 
     window.changeMatterAppendOpposingRow = function (data) {
         if (!window.OtherPartyPicker) {
+            return;
+        }
+        var container = getOpposingPartiesContainerEl();
+        if (!container) {
             return;
         }
         var prefill = {};
@@ -44,7 +88,7 @@
                 rep_notes: data.rep_notes || ''
             };
         }
-        window.OtherPartyPicker.appendRow('#change_matter_opposing_parties_container', {
+        window.OtherPartyPicker.appendRow(container, {
             rowClass: 'cm-opp-row opp-party-row',
             searchUrl: window.OTHER_PARTY_SEARCH_URL,
             solicitorSearchUrl: window.CONTACT_PERSON_SEARCH_URL,
@@ -58,7 +102,7 @@
         var stream = getChangeMatterStream();
         var map = window.MATTER_PARTY_ROLES_BY_STREAM || {};
         var roles = map[stream] || map.general || {};
-        var $pr = $('#change_matter_our_party_role');
+        var $pr = $inChangeMatterModal('#change_matter_our_party_role');
         if (!$pr.length) { return; }
         var cur = $pr.val();
         $pr.empty().append($('<option/>').val('').text('— Select role —'));
@@ -69,13 +113,17 @@
             $pr.val(cur);
         }
         if (window.OtherPartyPicker) {
-            window.OtherPartyPicker.rebuildRoleSelects('#change_matter_opposing_parties_container', stream);
+            var container = getOpposingPartiesContainerEl();
+            if (container) {
+                window.OtherPartyPicker.rebuildRoleSelects(container, stream);
+            }
         }
     };
 
     window.prepareChangeMatterAssigneeSubmit = function () {
-        var ourRole = $.trim($('#change_matter_our_party_role').val() || '');
-        if ($('#change_matter_our_party_role').length && ourRole === '') {
+        var $ourRole = $inChangeMatterModal('#change_matter_our_party_role');
+        var ourRole = $.trim($ourRole.val() || '');
+        if ($ourRole.length && ourRole === '') {
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Required', message: 'Our client\'s role is required.', position: 'topRight' });
             } else {
@@ -84,13 +132,14 @@
             return;
         }
 
-        var rows = window.OtherPartyPicker
-            ? window.OtherPartyPicker.collectRows('#change_matter_opposing_parties_container')
+        var container = getOpposingPartiesContainerEl();
+        var rows = window.OtherPartyPicker && container
+            ? window.OtherPartyPicker.collectRows(container)
             : [];
-        $('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
+        $inChangeMatterModal('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
 
-        var init = $('#change_matter_initial_sel_matter_id').val();
-        var now = $('#change_sel_matter_id').val();
+        var init = $inChangeMatterModal('#change_matter_initial_sel_matter_id').val();
+        var now = $inChangeMatterModal('#change_sel_matter_id').val();
         if (init && now && String(init) !== String(now)) {
             if (!window.confirm('You are changing the law matter type. The existing matter reference will not change automatically. Continue?')) {
                 return;
@@ -107,6 +156,7 @@
 
     $(document).on('click', '#change_matter_add_opposing_btn', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         if (typeof window.changeMatterAppendOpposingRow === 'function') {
             window.changeMatterAppendOpposingRow({});
         }
@@ -172,7 +222,20 @@
             return;
         }
 
-        $('#selectedMatterLM').val(matterId);
+        // Dedupe + pin the modal before filling fields so selectors hit the live copy.
+        var modalEl = getChangeMatterAssigneeModalEl();
+        if (modalEl) {
+            document.querySelectorAll('#changeMatterAssigneeModal').forEach(function (node) {
+                if (node !== modalEl) {
+                    node.remove();
+                }
+            });
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        }
+
+        $inChangeMatterModal('#selectedMatterLM').val(matterId);
 
         var fetchUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.fetchClientMatterAssignee) || '/clients/fetchClientMatterAssignee';
 
@@ -185,9 +248,9 @@
                 var m = info.matter_info || {};
                 var staffMap = info.assignee_staff_for_modal || {};
 
-                var $lp = $('#change_sel_legal_practitioner_id');
-                var $pr = $('#change_sel_person_responsible_id');
-                var $pa = $('#change_sel_person_assisting_id');
+                var $lp = $inChangeMatterModal('#change_sel_legal_practitioner_id');
+                var $pr = $inChangeMatterModal('#change_sel_person_responsible_id');
+                var $pa = $inChangeMatterModal('#change_sel_person_assisting_id');
 
                 ensureSelectOptionForValue($lp, m.sel_legal_practitioner, labelFromAssigneeStaffMap(staffMap, m.sel_legal_practitioner));
                 ensureSelectOptionForValue($pr, m.sel_person_responsible, labelFromAssigneeStaffMap(staffMap, m.sel_person_responsible));
@@ -202,31 +265,34 @@
                 if (m.sel_person_assisting) { $pa.val(String(m.sel_person_assisting)).trigger('change'); }
                 else { $pa.val('').trigger('change'); }
 
-                if (m.office_id) { $('#change_office_id').val(String(m.office_id)).trigger('change'); }
-                else { $('#change_office_id').val('').trigger('change'); }
+                if (m.office_id) { $inChangeMatterModal('#change_office_id').val(String(m.office_id)).trigger('change'); }
+                else { $inChangeMatterModal('#change_office_id').val('').trigger('change'); }
 
-                if ($('#change_matter_incidence_type').length) {
-                    $('#change_matter_incidence_type').val(m.incidence_type ? String(m.incidence_type) : '');
+                var $incidence = $inChangeMatterModal('#change_matter_incidence_type');
+                if ($incidence.length) {
+                    $incidence.val(m.incidence_type ? String(m.incidence_type) : '');
                 }
 
-                if ($('#change_matter_date_of_incidence').length) {
+                var $doiEl = $inChangeMatterModal('#change_matter_date_of_incidence');
+                if ($doiEl.length) {
                     var doi = m.date_of_incidence;
                     if (doi) {
                         doi = String(doi);
                         if (doi.indexOf('T') > 0) { doi = doi.split('T')[0]; }
                         else if (doi.indexOf(' ') > 0) { doi = doi.split(' ')[0]; }
-                        $('#change_matter_date_of_incidence').val(doi);
+                        $doiEl.val(doi);
                     } else {
-                        $('#change_matter_date_of_incidence').val('');
+                        $doiEl.val('');
                     }
                 }
 
-                if ($('#change_matter_case_detail').length) {
-                    $('#change_matter_case_detail').val(m.case_detail ? String(m.case_detail) : '');
+                var $caseDetail = $inChangeMatterModal('#change_matter_case_detail');
+                if ($caseDetail.length) {
+                    $caseDetail.val(m.case_detail ? String(m.case_detail) : '');
                 }
 
                 var matterOpts = info.matter_options || [];
-                var $mtSel = $('#change_sel_matter_id');
+                var $mtSel = $inChangeMatterModal('#change_sel_matter_id');
                 if ($mtSel.length) {
                     $mtSel.empty();
                     $mtSel.append($('<option/>').val('').text('\u2014 Select law matter type \u2014'));
@@ -238,24 +304,23 @@
                     if (m.sel_matter_id) {
                         $mtSel.val(String(m.sel_matter_id));
                     }
-                    $('#change_matter_initial_sel_matter_id').val(m.sel_matter_id ? String(m.sel_matter_id) : '');
+                    $inChangeMatterModal('#change_matter_initial_sel_matter_id').val(m.sel_matter_id ? String(m.sel_matter_id) : '');
                 }
 
                 if (typeof window.changeMatterRebuildPartyRoleSelect === 'function') {
                     window.changeMatterRebuildPartyRoleSelect();
                 }
 
-                if ($('#change_matter_our_party_role').length) {
-                    $('#change_matter_our_party_role').val(m.our_party_role ? String(m.our_party_role) : '');
+                var $ourPartyRole = $inChangeMatterModal('#change_matter_our_party_role');
+                if ($ourPartyRole.length) {
+                    $ourPartyRole.val(m.our_party_role ? String(m.our_party_role) : '');
                 }
 
                 var opp = info.opposing_parties || [];
-                var $oppC = $('#change_matter_opposing_parties_container');
-                if ($oppC.length) {
-                    $oppC.empty();
-                    if (opp.length === 0) {
-                        // no default row
-                    } else {
+                var oppContainer = getOpposingPartiesContainerEl();
+                if (oppContainer) {
+                    $(oppContainer).empty();
+                    if (opp.length > 0) {
                         opp.forEach(function (p) {
                             if (typeof window.changeMatterAppendOpposingRow === 'function') {
                                 window.changeMatterAppendOpposingRow(p);
@@ -278,7 +343,7 @@
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function () {
         var modalEl = this;
-        $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
+        $(modalEl).find('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
             var el = this;
             if (typeof destroyTS === 'function') destroyTS(el);
             if (typeof initTS === 'function') {
@@ -292,10 +357,11 @@
     });
 
     $(document).on('hidden.bs.modal', '#changeMatterAssigneeModal', function () {
-        $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
+        var modalEl = this;
+        $(modalEl).find('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
-        $('#change_matter_opposing_parties_container .opp-party-lead-select').each(function () {
+        $(modalEl).find('#change_matter_opposing_parties_container .opp-party-lead-select, #change_matter_opposing_parties_container .opp-party-solicitor-select').each(function () {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
     });
