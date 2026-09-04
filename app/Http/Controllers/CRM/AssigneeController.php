@@ -337,10 +337,34 @@ class AssigneeController extends Controller
             $query->where('user_id', Auth::user()->id);
         }
 
-        $assignees_notCompleted = $this->sortNotesList($query)->paginate(20);
+        $perPage = 20;
+        $assignees_notCompleted = $this->sortNotesList($query)->paginate($perPage);
+        $i = (request()->input('page', 1) - 1) * $perPage;
 
-         return view('crm.assignee.assign_by_me',compact('assignees_notCompleted'))
-          ->with('i', (request()->input('page', 1) - 1) * 20);
+        if ($request->ajax() || $request->boolean('infinite')) {
+            $html = view('crm.assignee.partials.assigned_by_me_rows', [
+                'assignees_notCompleted' => $assignees_notCompleted,
+                'i' => $i,
+                'appendOnly' => true,
+            ])->render();
+
+            return response()->json([
+                'html' => $html,
+                'current_page' => $assignees_notCompleted->currentPage(),
+                'last_page' => $assignees_notCompleted->lastPage(),
+                'per_page' => $assignees_notCompleted->perPage(),
+                'from' => $assignees_notCompleted->firstItem() ?: 0,
+                'to' => $assignees_notCompleted->lastItem() ?: 0,
+                'total' => $assignees_notCompleted->total(),
+                'has_more' => $assignees_notCompleted->hasMorePages(),
+                'next_page' => $assignees_notCompleted->hasMorePages()
+                    ? ($assignees_notCompleted->currentPage() + 1)
+                    : null,
+            ]);
+        }
+
+         return view('crm.assignee.assign_by_me', compact('assignees_notCompleted'))
+          ->with('i', $i);
      }
 
     //All assigned to me action list

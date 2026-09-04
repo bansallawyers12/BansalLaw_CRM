@@ -3,7 +3,6 @@
 @section('title', 'Assigned by Me')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
@@ -84,6 +83,46 @@
     .listing-container .btn-sm {
         padding: 5px 10px;
         font-size: 0.85em;
+    }
+
+    .assigned-by-me-infinite-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .assigned-by-me-infinite-loader[hidden] {
+        display: none !important;
+    }
+
+    .assigned-by-me-infinite-loader__spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border, #c8dcef);
+        border-top-color: var(--navy, #1e3d60);
+        border-radius: 50%;
+        animation: assignedByMeSpin 0.7s linear infinite;
+    }
+
+    @keyframes assignedByMeSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    .assigned-by-me-scroll-info {
+        text-align: center;
+        padding: 8px 12px 16px;
+        color: var(--text-muted, #5e7a90);
+        font-size: 0.8125rem;
+    }
+
+    .assigned-by-me-scroll-sentinel {
+        height: 1px;
+        width: 100%;
     }
 
     /* Update-task popover: theme tokens (popover mounts under body; outside .listing-container) */
@@ -219,104 +258,28 @@
                                             <th width="15%">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @if (count($assignees_notCompleted) > 0)
-                                            @foreach ($assignees_notCompleted as $list)
-                                                @php
-                                                    $admin = \App\Models\Staff::where('id', $list->assigned_to)->first();
-                                                    $full_name = $admin ? ($admin->first_name ?? 'N/A') . ' ' . ($admin->last_name ?? 'N/A') : 'N/P';
-                                                    $client_name = $list->noteClient ? trim($list->noteClient->company_name_or_personal_name) : 'N/P';
-                                                    if ($list->noteClient && $client_name === '') {
-                                                        $client_name = trim($list->noteClient->first_name . ' ' . $list->noteClient->last_name) ?: 'N/P';
-                                                    }
-                                                @endphp
-                                                <tr>
-                                                    <td style="text-align: center;">{{ ++$i }}</td>
-                                                    <td style="text-align: center;">
-                                                        <input type="radio" class="complete_task" data-bs-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
-                                                    </td>
-                                                    <td>{{ $full_name }}</td>
-                                                    <td>
-                                                        {{ $client_name }}
-                                                        <br>
-                                                        @if ($list->noteClient)
-                                                            @php
-                                                                $matterRef = $list->matterReference();
-                                                                $detailUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
-                                                                $linkLabel = $matterRef ?: ($list->noteClient->client_id ?? 'Open');
-                                                            @endphp
-                                                            <a href="{{ $detailUrl }}" target="_blank">{{ $linkLabel }}</a>
-                                                            @if ($matterRef && !empty($list->noteClient->client_id))
-                                                                <br><small class="text-muted">{{ $list->noteClient->client_id }}</small>
-                                                            @endif
-                                                        @endif
-                                                    </td>
-                                                    <td>{{ $list->action_date ? date('d/m/Y', strtotime($list->action_date)) : 'N/P' }}</td>
-                                                    <td>{{ $list->task_group ?? 'N/P' }}</td>
-                                                    <td>
-                                                        @if (isset($list->description) && $list->description != "")
-                                                            @if (mb_strlen($list->description) > 190)
-                                                                {{ mb_substr($list->description, 0, 190) }}
-                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
-                                                            @else
-                                                                {{ $list->description }}
-                                                            @endif
-                                                        @else
-                                                            N/P
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if ($list->noteClient)
-                                                            @php
-                                                                $openMatterUrl = $list->clientDetailUrl() ?: URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
-                                                                $matterRef = $list->matterReference() ?: '';
-                                                                $clientLabel = $client_name !== 'N/P' ? $client_name : '';
-                                                            @endphp
-                                                            <a href="{{ $openMatterUrl }}" target="_blank" class="btn btn-info btn-sm" data-bs-toggle="tooltip" title="Open matter">
-                                                                <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
-                                                            </a>
-                                                        @else
-                                                            @php
-                                                                $openMatterUrl = '';
-                                                                $matterRef = '';
-                                                                $clientLabel = '';
-                                                            @endphp
-                                                        @endif
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-primary btn-sm update_task"
-                                                            title="Update Task"
-                                                            data-assignedto="{{ $list->assigned_to }}"
-                                                            data-noteid="{{ e($list->description ?? '') }}"
-                                                            data-taskid="{{ $list->id }}"
-                                                            data-taskgroupid="{{ e($list->task_group ?? '') }}"
-                                                            data-actiondate="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}"
-                                                            data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"
-                                                            data-matterref="{{ e($matterRef) }}"
-                                                            data-matterurl="{{ e($openMatterUrl) }}"
-                                                            data-clientlabel="{{ e($clientLabel) }}"
-                                                        >
-                                                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                                                        </button>
-                                                        <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
-                                                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @else
-                                            <tr>
-                                                <td colspan="8" style="text-align: center; padding: 20px;">
-                                                    No tasks assigned by me.
-                                                </td>
-                                            </tr>
-                                        @endif
+                                    <tbody id="assignedByMeTbody"
+                                           data-page="{{ $assignees_notCompleted->currentPage() }}"
+                                           data-last-page="{{ $assignees_notCompleted->lastPage() }}"
+                                           data-total="{{ $assignees_notCompleted->total() }}"
+                                           data-loaded="{{ $assignees_notCompleted->count() }}"
+                                           data-has-more="{{ $assignees_notCompleted->hasMorePages() ? '1' : '0' }}">
+                                        @include('crm.assignee.partials.assigned_by_me_rows', [
+                                            'assignees_notCompleted' => $assignees_notCompleted,
+                                            'i' => $i,
+                                            'appendOnly' => false,
+                                        ])
                                     </tbody>
                                 </table>
-                                
-                                <!-- Pagination -->
-                                <div class="card-footer">
-                                    {!! $assignees_notCompleted->appends($_GET)->links() !!}
+
+                                <div id="assignedByMeInfiniteLoader" class="assigned-by-me-infinite-loader" hidden aria-live="polite">
+                                    <span class="assigned-by-me-infinite-loader__spinner" aria-hidden="true"></span>
+                                    <span>Loading more tasks...</span>
+                                </div>
+                                <div id="assignedByMeScrollSentinel" class="assigned-by-me-scroll-sentinel" aria-hidden="true"></div>
+                                <div id="assignedByMeScrollInfo" class="assigned-by-me-scroll-info">
+                                    Showing {{ $assignees_notCompleted->firstItem() ?: 0 }}–{{ $assignees_notCompleted->lastItem() ?: 0 }}
+                                    of {{ $assignees_notCompleted->total() }} entries
                                 </div>
                             </div>
                         </div>
@@ -798,6 +761,162 @@
                 });
             }
         });
+
+        // Infinite scroll — Assigned by Me page only
+        (function initAssignedByMeInfiniteScroll() {
+            var $tbody = $('#assignedByMeTbody');
+            if (!$tbody.length) {
+                return;
+            }
+
+            var state = {
+                page: parseInt($tbody.attr('data-page'), 10) || 1,
+                lastPage: parseInt($tbody.attr('data-last-page'), 10) || 1,
+                total: parseInt($tbody.attr('data-total'), 10) || 0,
+                loaded: parseInt($tbody.attr('data-loaded'), 10) || 0,
+                hasMore: $tbody.attr('data-has-more') === '1',
+                loading: false
+            };
+
+            function updateScrollInfo() {
+                var from = state.loaded > 0 ? 1 : 0;
+                var to = state.loaded;
+                var text = state.total > 0
+                    ? ('Showing ' + from + '–' + to + ' of ' + state.total + ' entries')
+                    : 'Showing 0 of 0 entries';
+                $('#assignedByMeScrollInfo').text(text);
+            }
+
+            function setLoader(visible) {
+                $('#assignedByMeInfiniteLoader').prop('hidden', !visible);
+            }
+
+            function buildNextUrl(nextPage) {
+                var url = new URL(window.location.href);
+                url.searchParams.set('page', String(nextPage));
+                url.searchParams.set('infinite', '1');
+                return url.toString();
+            }
+
+            function loadMore() {
+                if (state.loading || !state.hasMore) {
+                    return;
+                }
+                var nextPage = state.page + 1;
+                if (nextPage > state.lastPage) {
+                    state.hasMore = false;
+                    return;
+                }
+
+                state.loading = true;
+                setLoader(true);
+
+                $.ajax({
+                    url: buildNextUrl(nextPage),
+                    type: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    success: function(resp) {
+                        if (!resp || !resp.html) {
+                            state.hasMore = false;
+                            return;
+                        }
+                        var $rows = $(resp.html).filter('tr');
+                        if (!$rows.length) {
+                            state.hasMore = false;
+                            updateScrollInfo();
+                            return;
+                        }
+
+                        // Skip duplicate note ids if overlapping pages somehow appear
+                        var existing = {};
+                        $tbody.find('tr[data-note-id]').each(function() {
+                            existing[String($(this).attr('data-note-id'))] = true;
+                        });
+                        var appended = 0;
+                        $rows.each(function() {
+                            var id = String($(this).attr('data-note-id') || '');
+                            if (id && existing[id]) {
+                                return;
+                            }
+                            if (id) {
+                                existing[id] = true;
+                            }
+                            $tbody.append(this);
+                            appended++;
+                        });
+
+                        state.page = resp.current_page || nextPage;
+                        state.lastPage = resp.last_page || state.lastPage;
+                        state.total = typeof resp.total === 'number' ? resp.total : state.total;
+                        state.loaded += appended;
+                        state.hasMore = !!resp.has_more && appended > 0;
+                        $tbody.attr({
+                            'data-page': state.page,
+                            'data-last-page': state.lastPage,
+                            'data-total': state.total,
+                            'data-loaded': state.loaded,
+                            'data-has-more': state.hasMore ? '1' : '0'
+                        });
+                        updateScrollInfo();
+
+                        // Re-init tooltips/popovers on new rows if plugins are present
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                            $tbody.find('[data-bs-toggle="tooltip"]').each(function() {
+                                try { new bootstrap.Tooltip(this); } catch (err) {}
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        var st = xhr && xhr.status;
+                        if (st === 401 || st === 419 || st === 403) {
+                            window.location.reload();
+                            return;
+                        }
+                        console.error('Assigned-by-me infinite scroll error:', st, xhr && xhr.responseText);
+                    },
+                    complete: function() {
+                        state.loading = false;
+                        setLoader(false);
+                        window.requestAnimationFrame(maybeFillViewport);
+                    }
+                });
+            }
+
+            function maybeFillViewport() {
+                if (state.loading || !state.hasMore) {
+                    return;
+                }
+                var sentinel = document.getElementById('assignedByMeScrollSentinel');
+                if (!sentinel) {
+                    return;
+                }
+                var rect = sentinel.getBoundingClientRect();
+                if (rect.top <= window.innerHeight + 140) {
+                    loadMore();
+                }
+            }
+
+            updateScrollInfo();
+
+            var sentinel = document.getElementById('assignedByMeScrollSentinel');
+            if (sentinel && 'IntersectionObserver' in window) {
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            loadMore();
+                        }
+                    });
+                }, { root: null, rootMargin: '200px 0px', threshold: 0 });
+                observer.observe(sentinel);
+            } else {
+                $(window).on('scroll.assignedByMeInfinite resize.assignedByMeInfinite', maybeFillViewport);
+            }
+
+            window.requestAnimationFrame(maybeFillViewport);
+        })();
     });
 </script>
 @endpush
