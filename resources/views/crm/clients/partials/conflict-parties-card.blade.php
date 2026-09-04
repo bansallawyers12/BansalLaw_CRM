@@ -67,9 +67,8 @@
         border-bottom: 1px solid #e9ecef;
     }
     #conflictPartiesCard .cp-card-header h3 { margin: 0; font-size: 1.05rem; font-weight: 600; flex: 1; }
-    #conflictPartiesCard .cp-subsection { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #dee2e6; }
-    #conflictPartiesCard .cp-subsection-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: #495057; }
-    #conflictPartiesCard .cp-outcome-badge {
+    #conflictPartiesCard .cp-outcome-badge,
+    #conflictPartiesEditModal .cp-outcome-badge {
         display: inline-block;
         padding: 2px 8px;
         border-radius: 4px;
@@ -77,33 +76,33 @@
         font-weight: 600;
         color: #fff;
     }
-    #conflictPartiesCard .cp-match-list {
+    #conflictPartiesEditModal .cp-match-list {
         max-height: 220px;
         overflow-y: auto;
         border: 1px solid #e9ecef;
-        border-radius: 4px;
+        border-radius: 6px;
         background: #fafbfc;
         padding: 8px;
         margin-bottom: 10px;
     }
-    #conflictPartiesCard .cp-match-item {
+    #conflictPartiesEditModal .cp-match-item {
         padding: 6px 0;
         border-bottom: 1px solid #eee;
         font-size: 12px;
     }
-    #conflictPartiesCard .cp-match-item:last-child { border-bottom: 0; }
-    #conflictPartiesCard .cp-match-name { font-weight: 600; color: #212529; }
-    #conflictPartiesCard .cp-match-meta { color: #666; }
-    #conflictPartiesCard .cp-match-item.cp-match-informational {
+    #conflictPartiesEditModal .cp-match-item:last-child { border-bottom: 0; }
+    #conflictPartiesEditModal .cp-match-name { font-weight: 600; color: #212529; }
+    #conflictPartiesEditModal .cp-match-meta { color: #666; }
+    #conflictPartiesEditModal .cp-match-item.cp-match-informational {
         background: #f4f6f8;
         border-radius: 4px;
         padding: 6px 8px;
         margin-bottom: 4px;
         border-bottom: 0;
     }
-    #conflictPartiesCard .cp-match-item.cp-match-informational .cp-match-name { color: #5f6368; font-weight: 500; }
-    #conflictPartiesCard .cp-match-item.cp-match-informational .cp-match-meta { color: #80868b; }
-    #conflictPartiesCard .cp-info-badge {
+    #conflictPartiesEditModal .cp-match-item.cp-match-informational .cp-match-name { color: #5f6368; font-weight: 500; }
+    #conflictPartiesEditModal .cp-match-item.cp-match-informational .cp-match-meta { color: #80868b; }
+    #conflictPartiesEditModal .cp-info-badge {
         display: inline-block;
         font-size: 11px;
         font-weight: 600;
@@ -113,127 +112,89 @@
         padding: 1px 6px;
         margin-left: 6px;
     }
-    #conflictPartiesCard .cp-info-panel {
+    #conflictPartiesEditModal .cp-info-panel {
         margin-bottom: 10px;
         padding: 8px;
         border: 1px dashed #dadce0;
-        border-radius: 4px;
+        border-radius: 6px;
         background: #fafafa;
     }
-    #conflictPartiesCard .cp-info-panel-title {
+    #conflictPartiesEditModal .cp-info-panel-title {
         font-size: 12px;
         font-weight: 600;
         color: #5f6368;
         margin-bottom: 6px;
     }
-    #conflictPartiesCard .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
-    #conflictPartiesCard .cp-history-item { padding: 3px 0; }
-    #conflictPartiesCard .cp-history-row {
+    #conflictPartiesEditModal .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
+    #conflictPartiesEditModal .cp-history-item { padding: 3px 0; }
+    #conflictPartiesEditModal .cp-history-row {
         cursor: pointer;
         border-radius: 4px;
         padding: 4px 6px;
         margin: 0 -6px;
     }
-    #conflictPartiesCard .cp-history-row:hover { background: #f1f3f4; }
-    #conflictPartiesCard .cp-force-clear-panel {
+    #conflictPartiesEditModal .cp-history-row:hover { background: #f1f3f4; }
+    #conflictPartiesEditModal .cp-force-clear-panel {
         border: 1px solid #f5c6cb;
         background: #fff5f5;
-        border-radius: 4px;
+        border-radius: 6px;
         padding: 8px 10px;
         margin-bottom: 10px;
         font-size: 12px;
     }
-    #conflictPartiesCard .cp-force-clear-panel summary {
+    #conflictPartiesEditModal .cp-force-clear-panel summary {
         cursor: pointer;
         font-weight: 600;
         color: #c5221f;
     }
-    #conflictPartiesCard .cp-access-locked {
-        color: #856404;
-        font-size: 11px;
-        margin-left: 4px;
-    }
-    #conflictPartiesCard .cp-history-modal .modal-body { font-size: 13px; }
-    #conflictPartiesCard .cp-stale-hint {
+    #conflictPartiesEditModal .cp-stale-hint {
         font-size: 12px;
         color: #856404;
         background: #fff3cd;
         border: 1px solid #ffeeba;
-        border-radius: 4px;
+        border-radius: 6px;
         padding: 6px 8px;
         margin-bottom: 8px;
     }
-#conflictPartiesCard #cpPartiesContainer {
+    #conflictPartiesEditModal .cp-access-locked {
+        color: #856404;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+    #cpHistoryDetailModal .modal-body { font-size: 13px; }
+    #conflictPartiesEditModal .cp-modal-section {
         margin-bottom: 8px;
-        min-width: 0;
-        overflow: visible;
     }
-
-    #conflictPartiesCard .cp-edit,
-    #conflictPartiesCard .opp-party-row {
-        min-width: 0;
-        overflow: visible;
+    #conflictPartiesEditModal .cp-modal-section--outcome {
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #e9ecef;
     }
-    #conflictPartiesCard .cp-edit .cp-card-header {
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-    }
-    #conflictPartiesCard .cp-edit-title {
-        margin: 0;
+    #conflictPartiesEditModal .cp-modal-section__title {
+        margin: 0 0 4px;
         font-size: 1rem;
-        font-weight: 600;
+        font-weight: 700;
         color: #1f2937;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-    }
-    #conflictPartiesCard .cp-close-icon-btn {
-        width: 28px;
-        height: 28px;
-        border-radius: 999px;
-        border: 1px solid #dbe1ea;
-        color: #5f6b7a;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        background: #fff;
-    }
-    #conflictPartiesCard .cp-close-icon-btn:hover {
-        background: #f5f7fb;
-        color: #2f3f53;
-    }
-    #conflictPartiesCard .cp-edit-block {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #e9ecef;
-    }
-    #conflictPartiesCard .cp-edit > .cp-edit-block:first-of-type {
-        margin-top: 0;
-        padding-top: 0;
-        border-top: 0;
-    }
-    #conflictPartiesCard .cp-edit-actions {
-        position: sticky;
-        bottom: 0;
-        z-index: 4;
-        background: #fff;
-        border-top: 1px solid #e9ecef;
-        margin: 0 -4px;
-        padding: 10px 4px 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
     }
-    #conflictPartiesCard .cp-cancel-ghost {
-        color: #6c757d;
-        text-decoration: none;
+    #conflictPartiesEditModal .cp-modal-section__head {
+        margin-bottom: 12px;
     }
-    #conflictPartiesCard .cp-cancel-ghost:hover {
-        color: #495057;
-        text-decoration: underline;
+    #conflictPartiesEditModal #cpPartiesContainer {
+        margin-bottom: 8px;
+        min-width: 0;
+        overflow: visible;
+    }
+    #conflictPartiesEditModal .opp-party-row {
+        min-width: 0;
+        overflow: visible;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
     }
 </style>
 <link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
@@ -250,7 +211,7 @@
                     title="Edit other parties"
                     aria-label="Edit other parties"
                     aria-expanded="false"
-                    aria-controls="conflictPartiesEdit">
+                    aria-controls="conflictPartiesEditModal">
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
             </button>
         </div>
@@ -297,155 +258,173 @@
             </span>
         </div>
     </div>
+</div>
 
-    <div id="conflictPartiesEdit"
-         class="cp-edit"
-         style="display:none;"
-         role="region"
-         aria-label="Edit other parties"
-         aria-hidden="true">
-        <div class="cp-card-header">
-            <h4 class="cp-edit-title"><i class="fa-solid fa-pen-to-square text-primary"></i>Editing other parties</h4>
-            <button type="button" class="cp-open-edit cp-close-icon-btn" aria-label="Close editor">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-            </button>
-        </div>
-
-        <div class="cp-edit-block" id="cpOtherPartiesSection">
-            <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
-                <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
-                    <i class="fa-solid fa-user-plus"></i> New other party
-                </button>
-                <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="small">Full create form</a>
+{{-- Large editor modal (opened from pencil) --}}
+<div class="modal fade custom_modal" id="conflictPartiesEditModal" tabindex="-1" role="dialog"
+     aria-labelledby="conflictPartiesEditModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="conflictPartiesEditModalTitle">Other parties &amp; conflict check</h5>
+                <button type="button" class="crm-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <div class="modal-body" id="conflictPartiesEdit">
+                <div class="cp-modal-section" id="cpOtherPartiesSection">
+                    <div class="cp-modal-section__head">
+                        <h6 class="cp-modal-section__title">Other parties</h6>
+                        <p class="text-muted small mb-0">Search and link parties for this matter. Save before running a conflict check.</p>
+                    </div>
 
-            <div id="cpMiniCreateOtherParty" class="cp-mini-create" style="display:none;">
-                <p class="small fw-semibold mb-2 mb-0">Quick create other party</p>
-                <p class="text-muted small mb-2">First &amp; last name required. Phone or email required.</p>
-                <div class="row g-2">
-                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
-                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
-                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
-                    <div class="col-sm-6 col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
-                </div>
-                <div class="mt-2 d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cpMiniOpCancel">Cancel</button>
-                </div>
-                <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
-            </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
+                            <i class="fa-solid fa-user-plus"></i> New other party
+                        </button>
+                        <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="small">Full create form</a>
+                    </div>
 
-            <div id="cpPartiesContainer"></div>
-
-            <div class="cp-edit-actions">
-                <button type="button" class="btn btn-outline-primary btn-sm" id="cpAddPartyBtn">
-                    <i class="fa-solid fa-plus"></i> Add party
-                </button>
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" id="cpSavePartiesBtn">Save parties</button>
-                    <button type="button" class="btn btn-link btn-sm cp-open-edit cp-cancel-ghost">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="cp-subsection cp-edit-block" id="cpOutcomeSection">
-            <div class="cp-subsection-title"><i class="fa-solid fa-clipboard-check"></i> Conflict check outcome</div>
-            <p class="text-muted small mb-2" id="cpLastCheckHint">
-                @if($latestCheckedAt && $latestOutcomeLabel)
-                    Last check: {{ $latestCheckedAt }} — {{ $latestOutcomeLabel }}
-                @else
-                    Last check: Not checked yet
-                @endif
-            </p>
-
-            <div class="cp-stale-hint" id="cpStaleHint" @if(empty($conflictCheckStaleness['is_stale'])) style="display:none;" @endif>
-                {{ $conflictCheckStaleness['reason'] ?? 'Parties were updated after the last Clear/Waived check. Re-run the conflict search before saving a new outcome.' }}
-            </div>
-
-            <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
-                <button type="button" class="btn btn-outline-success btn-sm" id="cpRunCheckBtn">
-                    <i class="fa-solid fa-magnifying-glass"></i> Run conflict check
-                </button>
-                <span class="text-muted small" id="cpRunCheckStatus"></span>
-            </div>
-            <p class="text-muted small mb-2">
-                Searches saved client details and saved other parties. If you have added parties above, click <strong>Save parties</strong> before running the check.
-            </p>
-            <div id="cpRunCheckWarnings" class="small text-warning mb-2" style="display:none;"></div>
-
-            <div id="cpMatchesPanel" style="display:none;">
-                <div class="small fw-semibold mb-1" id="cpMatchesHeading">Matches</div>
-                <div class="cp-match-list" id="cpMatchesList"></div>
-                <div id="cpInformationalPanel" class="cp-info-panel" style="display:none;">
-                    <div class="cp-info-panel-title"><i class="fa-solid fa-circle-info"></i> Same other-party elsewhere</div>
-                    <div class="cp-match-list" id="cpInformationalList"></div>
-                </div>
-            </div>
-
-            <details class="cp-force-clear-panel" id="cpForceClearPanel" style="display:none;">
-                <summary>Override — clear despite matches</summary>
-                <div class="mt-2">
-                    <label class="d-flex align-items-start gap-2 mb-1">
-                        <input type="checkbox" id="cpForceClear" value="1">
-                        <span>I have reviewed the listed matches and document why Clear is appropriate despite potential conflicts.</span>
-                    </label>
-                    <p class="text-muted small mb-0">Requires detailed notes (at least 20 characters) in the Notes field.</p>
-                </div>
-            </details>
-
-            <div class="form-group mb-2">
-                <label for="cpOutcomeSelect">Outcome</label>
-                <select id="cpOutcomeSelect" class="form-control form-control-sm">
-                    @foreach($outcomeLabels as $val => $lbl)
-                        <option value="{{ $val }}" @selected($latestOutcome === $val)>{{ $lbl }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group mb-2">
-                <label for="cpOutcomeNotes">Notes</label>
-                <textarea id="cpOutcomeNotes" class="form-control form-control-sm" rows="2">{{ $latestConflictCheck?->outcome_notes ?? '' }}</textarea>
-            </div>
-            <div class="form-group mb-2">
-                <label class="d-flex align-items-center gap-2">
-                    <input type="checkbox" id="cpConsentObtained" @checked($latestConflictCheck?->consent_obtained ?? false)> Consent obtained
-                </label>
-            </div>
-            <div class="form-group mb-2">
-                <label for="cpConsentNotes">Consent notes</label>
-                <input type="text" id="cpConsentNotes" class="form-control form-control-sm"
-                       placeholder="Who gave consent, form used, etc."
-                       value="{{ $latestConflictCheck?->consent_notes ?? '' }}">
-            </div>
-            <button type="button" class="btn btn-success btn-sm" id="cpSaveOutcomeBtn">Save outcome</button>
-
-            @if($conflictCheckHistory->isNotEmpty())
-                <div class="cp-history-list" id="cpHistoryList">
-                    <div class="fw-semibold mb-1" style="margin-top:10px;">Recent checks</div>
-                    @foreach($conflictCheckHistory as $hist)
-                        @php
-                            $hLabel = $outcomeLabels[$hist->outcome] ?? $hist->outcome;
-                            $hAt = $hist->checked_at ? $hist->checked_at->format('d M Y H:i') : '—';
-                            $hMatches = (int) ($hist->match_count ?? (is_array($hist->matches) ? count($hist->matches) : 0));
-                            $hInfo = (int) ($hist->informational_count ?? 0);
-                            $hMatter = $hist->clientMatter?->client_unique_matter_no;
-                        @endphp
-                        <div class="cp-history-item cp-history-row" role="button" tabindex="0" data-check-id="{{ $hist->id }}">
-                            {{ $hAt }} —
-                            <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$hist->outcome] ?? '#555' }};">{{ $hLabel }}</span>
-                            @if($hMatter)
-                                <span class="text-muted">· {{ $hMatter }}</span>
-                            @endif
-                            @if($hMatches > 0)
-                                <span class="text-muted">({{ $hMatches }} conflict{{ $hMatches === 1 ? '' : 's' }})</span>
-                            @elseif($hInfo > 0)
-                                <span class="text-muted">(0 conflicts · {{ $hInfo }} informational)</span>
-                            @endif
+                    <div id="cpMiniCreateOtherParty" class="cp-mini-create" style="display:none;">
+                        <p class="small fw-semibold mb-1">Quick create other party</p>
+                        <p class="text-muted small mb-2">First &amp; last name required. Phone or email required.</p>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-3"><input type="text" class="form-control" id="cpMiniOpFirst" placeholder="First name *" autocomplete="off"></div>
+                            <div class="col-12 col-md-3"><input type="text" class="form-control" id="cpMiniOpLast" placeholder="Last name *" autocomplete="off"></div>
+                            <div class="col-12 col-md-3"><input type="text" class="form-control" id="cpMiniOpPhone" placeholder="Phone" autocomplete="off"></div>
+                            <div class="col-12 col-md-3"><input type="email" class="form-control" id="cpMiniOpEmail" placeholder="Email" autocomplete="off"></div>
                         </div>
-                    @endforeach
+                        <div class="mt-2 d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="cpMiniOpCancel">Cancel</button>
+                        </div>
+                        <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
+                    </div>
+
+                    <div id="cpPartiesContainer" class="mb-3"></div>
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-1">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="cpAddPartyBtn">
+                            <i class="fa-solid fa-plus"></i> Add party
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="cpSavePartiesBtn">Save parties</button>
+                    </div>
                 </div>
-            @else
-                <div class="cp-history-list" id="cpHistoryList" style="display:none;"></div>
-            @endif
+
+                <div class="cp-modal-section cp-modal-section--outcome" id="cpOutcomeSection">
+                    <div class="cp-modal-section__head">
+                        <h6 class="cp-modal-section__title"><i class="fa-solid fa-clipboard-check"></i> Conflict check</h6>
+                        <p class="text-muted small mb-0" id="cpLastCheckHint">
+                            @if($latestCheckedAt && $latestOutcomeLabel)
+                                Last check: {{ $latestCheckedAt }} — {{ $latestOutcomeLabel }}
+                            @else
+                                Last check: Not checked yet
+                            @endif
+                        </p>
+                    </div>
+
+                    <div class="cp-stale-hint" id="cpStaleHint" @if(empty($conflictCheckStaleness['is_stale'])) style="display:none;" @endif>
+                        {{ $conflictCheckStaleness['reason'] ?? 'Parties were updated after the last Clear/Waived check. Re-run the conflict search before saving a new outcome.' }}
+                    </div>
+
+                    <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-success btn-sm" id="cpRunCheckBtn">
+                            <i class="fa-solid fa-magnifying-glass"></i> Run conflict check
+                        </button>
+                        <span class="text-muted small" id="cpRunCheckStatus"></span>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Searches saved client details and saved other parties. If you added parties above, click <strong>Save parties</strong> first.
+                    </p>
+                    <div id="cpRunCheckWarnings" class="small text-warning mb-2" style="display:none;"></div>
+
+                    <div id="cpMatchesPanel" style="display:none;">
+                        <div class="small fw-semibold mb-1" id="cpMatchesHeading">Matches</div>
+                        <div class="cp-match-list" id="cpMatchesList"></div>
+                        <div id="cpInformationalPanel" class="cp-info-panel" style="display:none;">
+                            <div class="cp-info-panel-title"><i class="fa-solid fa-circle-info"></i> Same other-party elsewhere</div>
+                            <div class="cp-match-list" id="cpInformationalList"></div>
+                        </div>
+                    </div>
+
+                    <details class="cp-force-clear-panel" id="cpForceClearPanel" style="display:none;">
+                        <summary>Override — clear despite matches</summary>
+                        <div class="mt-2">
+                            <label class="d-flex align-items-start gap-2 mb-1">
+                                <input type="checkbox" id="cpForceClear" value="1">
+                                <span>I have reviewed the listed matches and document why Clear is appropriate despite potential conflicts.</span>
+                            </label>
+                            <p class="text-muted small mb-0">Requires detailed notes (at least 20 characters) in the Notes field.</p>
+                        </div>
+                    </details>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="form-group mb-2">
+                                <label for="cpOutcomeSelect">Outcome</label>
+                                <select id="cpOutcomeSelect" class="form-control">
+                                    @foreach($outcomeLabels as $val => $lbl)
+                                        <option value="{{ $val }}" @selected($latestOutcome === $val)>{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-group mb-2">
+                                <label for="cpConsentNotes">Consent notes</label>
+                                <input type="text" id="cpConsentNotes" class="form-control"
+                                       placeholder="Who gave consent, form used, etc."
+                                       value="{{ $latestConflictCheck?->consent_notes ?? '' }}">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group mb-2">
+                                <label for="cpOutcomeNotes">Notes</label>
+                                <textarea id="cpOutcomeNotes" class="form-control" rows="3">{{ $latestConflictCheck?->outcome_notes ?? '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group mb-2">
+                                <label class="d-flex align-items-center gap-2 mb-0">
+                                    <input type="checkbox" id="cpConsentObtained" @checked($latestConflictCheck?->consent_obtained ?? false)> Consent obtained
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-success btn-sm" id="cpSaveOutcomeBtn">Save outcome</button>
+
+                    @if($conflictCheckHistory->isNotEmpty())
+                        <div class="cp-history-list" id="cpHistoryList">
+                            <div class="fw-semibold mb-1" style="margin-top:12px;">Recent checks</div>
+                            @foreach($conflictCheckHistory as $hist)
+                                @php
+                                    $hLabel = $outcomeLabels[$hist->outcome] ?? $hist->outcome;
+                                    $hAt = $hist->checked_at ? $hist->checked_at->format('d M Y H:i') : '—';
+                                    $hMatches = (int) ($hist->match_count ?? (is_array($hist->matches) ? count($hist->matches) : 0));
+                                    $hInfo = (int) ($hist->informational_count ?? 0);
+                                    $hMatter = $hist->clientMatter?->client_unique_matter_no;
+                                @endphp
+                                <div class="cp-history-item cp-history-row" role="button" tabindex="0" data-check-id="{{ $hist->id }}">
+                                    {{ $hAt }} —
+                                    <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$hist->outcome] ?? '#555' }};">{{ $hLabel }}</span>
+                                    @if($hMatter)
+                                        <span class="text-muted">· {{ $hMatter }}</span>
+                                    @endif
+                                    @if($hMatches > 0)
+                                        <span class="text-muted">({{ $hMatches }} conflict{{ $hMatches === 1 ? '' : 's' }})</span>
+                                    @elseif($hInfo > 0)
+                                        <span class="text-muted">(0 conflicts · {{ $hInfo }} informational)</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="cp-history-list" id="cpHistoryList" style="display:none;"></div>
+                    @endif
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
@@ -459,6 +438,7 @@
     if (!card) return;
 
     var viewEl = document.getElementById('conflictPartiesView');
+    var editModal = document.getElementById('conflictPartiesEditModal');
     var editEl = document.getElementById('conflictPartiesEdit');
     var container = document.getElementById('cpPartiesContainer');
     var openBtns = card.querySelectorAll('.cp-open-edit');
@@ -466,6 +446,7 @@
     var addPartyBtn = document.getElementById('cpAddPartyBtn');
     var saveOutcomeBtn = document.getElementById('cpSaveOutcomeBtn');
     var runCheckBtn = document.getElementById('cpRunCheckBtn');
+    var editorOpen = false;
 
     var partyRoles = @json($partyRoles);
     var initialParties = @json($initialParties);
@@ -652,31 +633,61 @@
         }
     }
 
+    function prepareConflictPartiesModalShell() {
+        if (!editModal) return null;
+        if (editModal.parentElement !== document.body) {
+            document.body.appendChild(editModal);
+        }
+        return editModal;
+    }
+
     function setEditMode(open) {
-        if (!viewEl || !editEl) return;
+        if (!editModal) return;
         if (open) {
-            viewEl.style.display = 'none';
-            viewEl.setAttribute('aria-hidden', 'true');
-            editEl.style.display = '';
-            editEl.setAttribute('aria-hidden', 'false');
+            prepareConflictPartiesModalShell();
+            editorOpen = true;
             openBtns.forEach(function (b) { b.setAttribute('aria-expanded', 'true'); });
             initEditorRows();
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(editModal, { focus: false }).show();
+            } else if (window.jQuery) {
+                window.jQuery(editModal).modal('show');
+            } else {
+                editModal.style.display = 'block';
+                editModal.classList.add('show');
+                document.body.classList.add('modal-open');
+            }
         } else {
+            if (!editorOpen) return;
+            editorOpen = false;
             destroyEditorRows();
-            viewEl.style.display = '';
-            viewEl.setAttribute('aria-hidden', 'false');
-            editEl.style.display = 'none';
-            editEl.setAttribute('aria-hidden', 'true');
             openBtns.forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                var inst = bootstrap.Modal.getInstance(editModal);
+                if (inst) inst.hide();
+            } else if (window.jQuery) {
+                window.jQuery(editModal).modal('hide');
+            } else {
+                editModal.style.display = 'none';
+                editModal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
         }
     }
 
     openBtns.forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var open = editEl && editEl.style.display !== 'none';
-            setEditMode(!open);
+            setEditMode(true);
         });
     });
+
+    if (editModal) {
+        editModal.addEventListener('hidden.bs.modal', function () {
+            editorOpen = false;
+            destroyEditorRows();
+            openBtns.forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+        });
+    }
 
     if (addPartyBtn) {
         addPartyBtn.addEventListener('click', function () { addPartyRow(); });
@@ -903,12 +914,16 @@
         var bodyEl = document.getElementById('cpHistoryDetailBody');
         if (!modalEl || !bodyEl) return;
 
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
         bodyEl.innerHTML = '<div class="text-muted">Loading…</div>';
         var url = conflictCheckDetailUrl.replace('__ID__', encodeURIComponent(checkId))
             + '?client_id=' + encodeURIComponent(clientId);
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            bootstrap.Modal.getOrCreateInstance(modalEl, { focus: false }).show();
         } else {
             modalEl.style.display = 'block';
         }

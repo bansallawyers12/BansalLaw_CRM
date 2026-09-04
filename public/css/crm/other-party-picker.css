@@ -282,6 +282,7 @@ body > .ts-dropdown {
     background-color: #f8f9fa;
 }
 
+#conflictPartiesEditModal .cp-mini-create,
 #conflictPartiesCard .cp-mini-create {
     background: #f8f9fa;
     border: 1px solid #dee2e6;
@@ -290,6 +291,7 @@ body > .ts-dropdown {
     margin-bottom: 12px;
 }
 
+#conflictPartiesEditModal .cp-mini-create .row,
 #conflictPartiesCard .cp-mini-create .row {
     margin-bottom: 0;
 }

@@ -1112,6 +1112,22 @@ input:checked + .slider:before {
     opacity: 1 !important;
 }
 
+#conflictPartiesEditModal.modal {
+    z-index: 12050 !important;
+}
+#conflictPartiesEditModal.modal.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+#conflictPartiesEditModal.modal.show .modal-dialog {
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+#cpHistoryDetailModal.modal {
+    z-index: 12100 !important;
+}
+
 /* Tom Select dropdownParent:body must sit above this modal. */
 body.modal-open > .ts-dropdown,
 body > .ts-dropdown {

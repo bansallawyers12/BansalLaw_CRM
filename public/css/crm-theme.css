@@ -6726,9 +6726,312 @@ body.sidebar-mini #addMatterModal .modal-footer .btn-primary:focus {
   background: var(--sidebar-active) !important;
   border-color: var(--sidebar-active) !important;
 }
+
+body.sidebar-mini #addMatterModal .modal-footer .btn-secondary {
   background: var(--sidebar-bg) !important;
   border-color: var(--sidebar-active) !important;
   color: var(--navy) !important;
+}
+
+/* Other parties & conflict check — large modal, same chrome as Add/Edit matter */
+body.sidebar-mini #conflictPartiesEditModal.custom_modal .modal-dialog,
+body.sidebar-mini #conflictPartiesEditModal .modal-dialog {
+  max-width: 1140px;
+  width: calc(100% - 1.5rem);
+}
+
+body.sidebar-mini #conflictPartiesEditModal.custom_modal .modal-content,
+body.sidebar-mini #conflictPartiesEditModal .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .modal-title,
+body.sidebar-mini #conflictPartiesEditModal .modal-header h5.modal-title,
+body.sidebar-mini #conflictPartiesEditModal .modal-header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  flex: 1;
+  min-width: 0;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .close:not(.crm-modal-close),
+body.sidebar-mini #conflictPartiesEditModal .modal-header .btn-close,
+body.sidebar-mini #conflictPartiesEditModal .modal-header .close-btn:not(.crm-modal-close) {
+  display: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close i,
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close span {
+  display: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close::after {
+  content: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close:hover,
+body.sidebar-mini #conflictPartiesEditModal .modal-header .crm-modal-close:focus {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body {
+  background: var(--card-bg) !important;
+  padding: 22px 24px !important;
+  position: relative;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .form-group > label,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .row .col-12 > label,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .row [class*='col-'] > label {
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.45 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body input.form-control,
+body.sidebar-mini #conflictPartiesEditModal .modal-body textarea.form-control,
+body.sidebar-mini #conflictPartiesEditModal .modal-body select.form-control:not(.tomselected):not(.ts-hidden-accessible) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 38px !important;
+  height: auto !important;
+  padding: 6px 12px !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  color: #212529 !important;
+  background: #fff !important;
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single .ts-control,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .opp-party-row .ts-wrapper.single .ts-control {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 38px !important;
+  height: auto !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  padding-left: 12px !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  color: #212529 !important;
+  background: #fff !important;
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body textarea.form-control {
+  display: block !important;
+  align-items: stretch !important;
+  min-height: 100px !important;
+  padding: 10px 12px !important;
+  resize: vertical;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body select.form-control:not(.tomselected):not(.ts-hidden-accessible) {
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  padding-right: 2rem !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single {
+  width: 100% !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single.focus .ts-control,
+body.sidebar-mini #conflictPartiesEditModal .modal-body input.form-control:focus,
+body.sidebar-mini #conflictPartiesEditModal .modal-body textarea.form-control:focus,
+body.sidebar-mini #conflictPartiesEditModal .modal-body select.form-control:focus {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+  outline: 0 !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single .ts-control .item {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  color: #212529 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single.input-active .ts-control .item {
+  display: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single .ts-control input {
+  color: #212529 !important;
+  background: transparent !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single .ts-control input::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single.has-items:not(.input-active) .ts-control > input {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 1px !important;
+  min-width: 0 !important;
+  height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  border: 0 !important;
+  pointer-events: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single:not(.has-items) .ts-control > input,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single.input-active .ts-control > input,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .ts-wrapper.single.focus .ts-control > input {
+  opacity: 1 !important;
+  position: static !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  pointer-events: auto !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body select.ts-hidden-accessible,
+body.sidebar-mini #conflictPartiesEditModal .modal-body select.tomselected {
+  position: absolute !important;
+  width: 1px !important;
+  min-width: 0 !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  pointer-events: none !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal #cpPartiesContainer .opp-party-row {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+body.sidebar-mini #conflictPartiesEditModal #cpPartiesContainer .opp-party-row__top {
+  grid-template-columns: minmax(0, 1.8fr) minmax(160px, 1fr) 42px;
+  align-items: end;
+  gap: 12px 14px;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-footer {
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+  padding: 14px 24px !important;
+  gap: 10px;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-footer .btn-secondary,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .btn-secondary {
+  background: var(--sidebar-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+
+body.sidebar-mini #conflictPartiesEditModal .modal-body .btn-primary:hover,
+body.sidebar-mini #conflictPartiesEditModal .modal-body .btn-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
 }
 
 /*
