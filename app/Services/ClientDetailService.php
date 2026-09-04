@@ -181,8 +181,14 @@ class ClientDetailService
 
         $matterContext = $this->resolveMatterContext($clientId, $matterRef);
         $leadBundle = $this->needsLeadBundle($tabSlug, $isLead)
-            ? $this->buildLeadBundle($clientId, $fetchedData)
+            ? $this->buildLeadBundle($fetchedData)
             : $this->emptyLeadBundle($fetchedData);
+
+        // Add-matter dropdowns must load for converted clients as well as leads.
+        // needsLeadBundle is lead-only (pipeline staff/stages); matter form is shared.
+        if ($this->needsMatterFormBundle($tabSlug)) {
+            $leadBundle['matterFormForLead'] = app(ClientEditService::class)->getMatterFormForAddMatter($clientId);
+        }
 
         $conflictBundle = $this->needsConflictBundle($tabSlug)
             ? $this->buildConflictBundle($clientId, $matterContext['activeClientMatterId'], $fetchedData)
@@ -250,14 +256,23 @@ class ClientDetailService
     }
 
     /**
+     * Overview / personal / company tabs show Client Matters (+ add matter).
+     */
+    private function needsMatterFormBundle(string $tabSlug): bool
+    {
+        return in_array($tabSlug, self::CONFLICT_TAB_SLUGS, true);
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function buildLeadBundle(int $clientId, Admin $fetchedData): array
+    private function buildLeadBundle(Admin $fetchedData): array
     {
         return [
             'assignableStaff' => app(LeadFormDataService::class)->assignableStaff(),
             'leadStageLabels' => app(LeadFormDataService::class)->stageLabels(),
-            'matterFormForLead' => app(ClientEditService::class)->getMatterFormForAddMatter($clientId),
+            // Filled in buildViewPayload via needsMatterFormBundle (clients + leads).
+            'matterFormForLead' => null,
             '__crmEditLeadType' => (($fetchedData->type ?? null) === 1
                 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true)),
         ];

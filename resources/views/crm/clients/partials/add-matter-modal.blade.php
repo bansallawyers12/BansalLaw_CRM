@@ -6,7 +6,17 @@
                 <x-crm.modal-close :dismiss="false" onclick="closeAddMatterModal()" />
             </div>
             <div class="modal-body add-matter-modal__body">
-                <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
+                @php
+                    if (! empty($fetchedData->is_company)) {
+                        $__addMatterSubjectName = trim((string) (optional($fetchedData->company)->company_name ?? ''));
+                        if ($__addMatterSubjectName === '') {
+                            $__addMatterSubjectName = trim((string) ($fetchedData->client_id ?? 'Company'));
+                        }
+                    } else {
+                        $__addMatterSubjectName = trim(($fetchedData->first_name ?? '') . ' ' . ($fetchedData->last_name ?? ''));
+                    }
+                @endphp
+                <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $__addMatterSubjectName }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
                 <div id="editAddMatterMsg" class="add-matter-modal__msg"></div>
                 <div class="row add-matter-modal__grid">
                     <div class="col-md-6 add-matter-modal__field">
