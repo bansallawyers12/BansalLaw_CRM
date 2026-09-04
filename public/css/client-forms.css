@@ -1100,6 +1100,18 @@ input:checked + .slider:before {
     opacity: 1 !important;
 }
 
+#addMatterModal.modal {
+    z-index: 12050 !important;
+}
+#addMatterModal.modal.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+#addMatterModal.modal.show .modal-dialog {
+    transform: none !important;
+    opacity: 1 !important;
+}
+
 /* Tom Select dropdownParent:body must sit above this modal. */
 body.modal-open > .ts-dropdown,
 body > .ts-dropdown {

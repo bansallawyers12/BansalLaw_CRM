@@ -8,6 +8,24 @@
     window.OTHER_PARTY_SEARCH_URL = window.OTHER_PARTY_SEARCH_URL || @json(route('api.search.other.party'));
     window.CONTACT_PERSON_SEARCH_URL = window.CONTACT_PERSON_SEARCH_URL || @json(route('api.search.contact.person'));
 
+    function getAddMatterModalEl() {
+        var shown = document.querySelector('#addMatterModal.show');
+        if (shown) return shown;
+        return document.getElementById('addMatterModal');
+    }
+
+    function prepareAddMatterModalShell() {
+        var el = getAddMatterModalEl();
+        if (!el) return null;
+        document.querySelectorAll('#addMatterModal').forEach(function (node) {
+            if (node !== el) node.remove();
+        });
+        if (el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+        return el;
+    }
+
     function clearQuickAddOpposingParties() {
         var oppWrap = document.getElementById('quick_add_opposing_parties_wrap');
         if (!oppWrap) return;
@@ -17,11 +35,7 @@
         oppWrap.innerHTML = '';
     }
 
-    function closeAddMatterModal() {
-        var el = document.getElementById('addMatterModal');
-        if (!el) return;
-        el.style.display = 'none';
-        document.body.style.overflow = '';
+    function resetAddMatterFormFields() {
         var msg = document.getElementById('editAddMatterMsg');
         if (msg) msg.innerHTML = '';
         var caseDetail = document.getElementById('edit_add_matter_case_detail');
@@ -30,15 +44,63 @@
         if (doi) doi.value = '';
         var it = document.getElementById('edit_add_matter_incidence_type');
         if (it) it.value = '';
-        var opr = document.getElementById('edit_add_matter_our_party_role');
-        if (opr) opr.value = '';
+
+        [
+            'edit_add_matter_our_party_role',
+            'edit_add_matter_matter_id',
+            'edit_add_matter_legal_practitioner',
+            'edit_add_matter_person_responsible',
+            'edit_add_matter_person_assisting'
+        ].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (el.tomselect) {
+                el.tomselect.clear(true);
+            } else {
+                el.value = '';
+            }
+        });
         clearQuickAddOpposingParties();
+    }
+
+    function closeAddMatterModal() {
+        var el = getAddMatterModalEl();
+        if (!el) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var inst = bootstrap.Modal.getInstance(el);
+            if (inst) {
+                inst.hide();
+            } else {
+                el.classList.remove('show');
+                el.style.display = 'none';
+                el.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
+            }
+        } else if (window.jQuery) {
+            window.jQuery(el).modal('hide');
+        } else {
+            el.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        resetAddMatterFormFields();
     }
 
     function getQuickAddMatterStream() {
         var sel = document.getElementById('edit_add_matter_matter_id');
         if (!sel) return 'general';
-        var opt = sel.options[sel.selectedIndex];
+        var val = sel.tomselect ? String(sel.tomselect.getValue() || '') : String(sel.value || '');
+        var opt = null;
+        if (val) {
+            for (var i = 0; i < sel.options.length; i++) {
+                if (String(sel.options[i].value) === val) {
+                    opt = sel.options[i];
+                    break;
+                }
+            }
+        } else {
+            opt = sel.options[sel.selectedIndex];
+        }
         return opt && opt.getAttribute('data-stream') ? opt.getAttribute('data-stream') : 'general';
     }
 
@@ -48,15 +110,22 @@
         var roles = map[stream] || map.general || {};
         var pr = document.getElementById('edit_add_matter_our_party_role');
         if (!pr) return;
-        var cur = pr.value;
-        pr.innerHTML = '<option value="">— Select role —</option>';
+        var cur = pr.tomselect ? String(pr.tomselect.getValue() || '') : pr.value;
+        var html = '<option value="">— Select role —</option>';
         Object.keys(roles).forEach(function (k) {
-            var o = document.createElement('option');
-            o.value = k;
-            o.textContent = roles[k];
-            pr.appendChild(o);
+            html += '<option value="' + k + '">' + roles[k] + '</option>';
         });
-        if (cur) pr.value = cur;
+        if (pr.tomselect && typeof window.destroyTS === 'function') {
+            window.destroyTS(pr);
+        }
+        pr.innerHTML = html;
+        if (cur && roles[cur]) {
+            pr.value = cur;
+        }
+        ensureSearchableModalSelect(pr, 'Search role…');
+        if (cur && roles[cur] && pr.tomselect) {
+            pr.tomselect.setValue(cur, true);
+        }
         if (window.OtherPartyPicker) {
             window.OtherPartyPicker.rebuildRoleSelects('#quick_add_opposing_parties_wrap', stream);
         }
@@ -91,25 +160,96 @@
 
     bindQuickAddOpposingPartyButton();
 
-    function openAddMatterModal() {
-        var el = document.getElementById('addMatterModal');
-        if (!el) return;
-        el.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        bindQuickAddOpposingPartyButton();
-        if (typeof window.rebuildQuickAddPartyRole === 'function') window.rebuildQuickAddPartyRole();
+    function ensureSearchableModalSelect(selectEl, placeholder) {
+        if (!selectEl || typeof window.initTS !== 'function') {
+            return null;
+        }
+        if (selectEl.tomselect) {
+            return selectEl.tomselect;
+        }
+        selectEl.removeAttribute('placeholder');
+        var ph = placeholder || selectEl.getAttribute('data-placeholder') || 'Type to search…';
+        selectEl.removeAttribute('data-placeholder');
+        var ts = window.initTS(selectEl, {
+            plugins: ['clear_button'],
+            create: false,
+            allowEmptyOption: true,
+            maxItems: 1,
+            placeholder: ph,
+            dropdownParent: 'body',
+            sortField: { field: 'text', direction: 'asc' }
+        });
+        if (ts && window.OtherPartyPicker && typeof window.OtherPartyPicker.bindModalScrollDropdown === 'function') {
+            window.OtherPartyPicker.bindModalScrollDropdown(ts, selectEl);
+        }
+        return ts;
     }
 
-    function addMatterModalBackdropClick(e) {
-        if (e.target && e.target.id === 'addMatterModal') {
-            closeAddMatterModal();
+    function ensureAddMatterSearchableSelects() {
+        var matterSel = document.getElementById('edit_add_matter_matter_id');
+        var firstInit = matterSel && !matterSel.tomselect;
+        ensureSearchableModalSelect(matterSel, 'Search matter type…');
+        if (firstInit && matterSel) {
+            matterSel.addEventListener('change', function () {
+                if (typeof window.rebuildQuickAddPartyRole === 'function') {
+                    window.rebuildQuickAddPartyRole();
+                }
+            });
+        }
+        ensureSearchableModalSelect(
+            document.getElementById('edit_add_matter_legal_practitioner'),
+            'Search legal practitioner…'
+        );
+        ensureSearchableModalSelect(
+            document.getElementById('edit_add_matter_person_responsible'),
+            'Search person responsible…'
+        );
+        ensureSearchableModalSelect(
+            document.getElementById('edit_add_matter_person_assisting'),
+            'Search person assisting…'
+        );
+        ensureSearchableModalSelect(
+            document.getElementById('edit_add_matter_office_id'),
+            'Search office…'
+        );
+        ensureSearchableModalSelect(
+            document.getElementById('edit_add_matter_our_party_role'),
+            'Search role…'
+        );
+    }
+
+    function openAddMatterModal() {
+        var el = prepareAddMatterModalShell();
+        if (!el) return;
+        bindQuickAddOpposingPartyButton();
+        if (typeof window.rebuildQuickAddPartyRole === 'function') window.rebuildQuickAddPartyRole();
+
+        function afterShown() {
+            ensureAddMatterSearchableSelects();
+            if (typeof window.rebuildQuickAddPartyRole === 'function') {
+                window.rebuildQuickAddPartyRole();
+            }
+        }
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            // focus:false so Tom Select dropdowns on <body> remain clickable
+            var inst = bootstrap.Modal.getOrCreateInstance(el, { focus: false });
+            el.addEventListener('shown.bs.modal', afterShown, { once: true });
+            inst.show();
+        } else if (window.jQuery) {
+            window.jQuery(el).one('shown.bs.modal', afterShown).modal('show');
+        } else {
+            el.style.display = 'block';
+            el.classList.add('show');
+            document.body.classList.add('modal-open');
+            afterShown();
         }
     }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            var m = document.getElementById('addMatterModal');
-            if (m && m.style.display === 'flex') closeAddMatterModal();
+    // Reset form when Bootstrap finishes hiding (Cancel / X / backdrop).
+    document.addEventListener('hidden.bs.modal', function (e) {
+        if (e.target && e.target.id === 'addMatterModal') {
+            resetAddMatterFormFields();
         }
     });
 
@@ -199,7 +339,6 @@
 
     window.openAddMatterModal = openAddMatterModal;
     window.closeAddMatterModal = closeAddMatterModal;
-    window.addMatterModalBackdropClick = addMatterModalBackdropClick;
     window.submitLeadMatterFromEdit = submitLeadMatterFromEdit;
     window.quickAddOpposingPartyRow = quickAddOpposingPartyRow;
 })();

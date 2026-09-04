@@ -102,7 +102,14 @@
 
     function getChangeMatterStream() {
         var $sel = $inChangeMatterModal('#change_sel_matter_id');
-        var opt = $sel.find('option:selected');
+        if (!$sel.length) {
+            return 'general';
+        }
+        var el = $sel[0];
+        var val = el && el.tomselect ? String(el.tomselect.getValue() || '') : String($sel.val() || '');
+        var opt = val
+            ? $sel.find('option').filter(function () { return String(this.value) === val; }).first()
+            : $sel.find('option:selected');
         var s = opt.attr('data-stream');
         return (s && String(s).trim() !== '') ? String(s).trim() : 'general';
     }
@@ -159,13 +166,21 @@
         var roles = map[stream] || map.general || {};
         var $pr = $inChangeMatterModal('#change_matter_our_party_role');
         if (!$pr.length) { return; }
-        var cur = $pr.val();
+        var el = $pr[0];
+        var cur = el && el.tomselect ? String(el.tomselect.getValue() || '') : $pr.val();
+        if (el && el.tomselect && typeof destroyTS === 'function') {
+            destroyTS(el);
+        }
         $pr.empty().append($('<option/>').val('').text('— Select role —'));
         Object.keys(roles).forEach(function (k) {
             $pr.append($('<option/>').val(k).text(roles[k]));
         });
-        if (cur) {
+        if (cur && roles[cur]) {
             $pr.val(cur);
+        }
+        ensureChangeMatterSearchableSelect(el, 'Search role…');
+        if (cur && roles[cur] && el && el.tomselect) {
+            el.tomselect.setValue(cur, true);
         }
         if (window.OtherPartyPicker) {
             var container = getOpposingPartiesContainerEl();
@@ -236,6 +251,10 @@
         if (!$mtSel.length) {
             return;
         }
+        var el = $mtSel[0];
+        if (el && el.tomselect && typeof destroyTS === 'function') {
+            destroyTS(el);
+        }
         var html = ['<option value="">\u2014 Select law matter type \u2014</option>'];
         (matterOpts || []).forEach(function (o) {
             var streamAttr = o.stream ? ' data-stream="' + String(o.stream).replace(/"/g, '&quot;') + '"' : '';
@@ -246,6 +265,50 @@
         if (selectedId) {
             $mtSel.val(String(selectedId));
         }
+        ensureChangeMatterSearchableSelect(el, 'Search law matter type…');
+        if (selectedId && el && el.tomselect) {
+            el.tomselect.setValue(String(selectedId), true);
+        }
+    }
+
+    function ensureChangeMatterSearchableSelect(selectEl, placeholder) {
+        if (!selectEl || typeof initTS !== 'function') {
+            return null;
+        }
+        if (selectEl.tomselect) {
+            return selectEl.tomselect;
+        }
+        selectEl.removeAttribute('placeholder');
+        selectEl.removeAttribute('data-placeholder');
+        var ts = initTS(selectEl, {
+            plugins: ['clear_button'],
+            create: false,
+            allowEmptyOption: true,
+            maxItems: 1,
+            placeholder: placeholder || 'Type to search…',
+            dropdownParent: 'body',
+            sortField: { field: 'text', direction: 'asc' }
+        });
+        if (ts && window.OtherPartyPicker && typeof window.OtherPartyPicker.bindModalScrollDropdown === 'function') {
+            window.OtherPartyPicker.bindModalScrollDropdown(ts, selectEl);
+        }
+        return ts;
+    }
+
+    function ensureChangeMatterSearchableSelects(modal) {
+        if (!modal) {
+            return;
+        }
+        [
+            ['#change_sel_matter_id', 'Search law matter type…'],
+            ['#change_sel_legal_practitioner_id', 'Search legal practitioner…'],
+            ['#change_sel_person_responsible_id', 'Search person responsible…'],
+            ['#change_sel_person_assisting_id', 'Search person assisting…'],
+            ['#change_office_id', 'Search office…'],
+            ['#change_matter_our_party_role', 'Search role…']
+        ].forEach(function (pair) {
+            ensureChangeMatterSearchableSelect(modal.querySelector(pair[0]), pair[1]);
+        });
     }
 
     function applyMatterAssigneePayload(info) {
@@ -303,8 +366,16 @@
 
         var $ourPartyRole = $inChangeMatterModal('#change_matter_our_party_role');
         if ($ourPartyRole.length) {
-            $ourPartyRole.val(m.our_party_role ? String(m.our_party_role) : '');
+            var roleVal = m.our_party_role ? String(m.our_party_role) : '';
+            var roleEl = $ourPartyRole[0];
+            if (roleEl && roleEl.tomselect) {
+                roleEl.tomselect.setValue(roleVal, true);
+            } else {
+                $ourPartyRole.val(roleVal);
+            }
         }
+
+        ensureChangeMatterSearchableSelects(modal);
 
         var opp = info.opposing_parties || [];
         var oppContainer = getOpposingPartiesContainerEl();

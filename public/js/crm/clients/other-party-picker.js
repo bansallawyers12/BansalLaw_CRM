@@ -21,6 +21,102 @@
         return html;
     }
 
+    /**
+     * Body-parented Tom Select only tracks window scroll. Modal/body overflow
+     * scroll leaves the menu floating. Pin with position:fixed under the control,
+     * and close immediately when any modal scroll container moves.
+     */
+    function bindDropdownToScrollParents(ts, selectEl) {
+        if (!ts || !selectEl) {
+            return;
+        }
+
+        function pinDropdownUnderControl() {
+            var control = ts.control;
+            var dropdown = ts.dropdown;
+            if (!control || !dropdown) {
+                return;
+            }
+            var rect = control.getBoundingClientRect();
+            dropdown.style.setProperty('position', 'fixed', 'important');
+            dropdown.style.setProperty('top', Math.round(rect.bottom) + 'px', 'important');
+            dropdown.style.setProperty('left', Math.round(rect.left) + 'px', 'important');
+            dropdown.style.setProperty('width', Math.round(rect.width) + 'px', 'important');
+            dropdown.style.setProperty('right', 'auto', 'important');
+            dropdown.style.setProperty('margin', '0', 'important');
+            dropdown.style.setProperty('z-index', '13000', 'important');
+        }
+
+        // Prefer viewport-fixed coords so modal scroll cannot leave the menu behind.
+        ts.positionDropdown = function () {
+            if (!this.isOpen) {
+                return;
+            }
+            pinDropdownUnderControl();
+        };
+
+        var scrollTargets = [];
+        function addTarget(el) {
+            if (el && scrollTargets.indexOf(el) === -1) {
+                scrollTargets.push(el);
+            }
+        }
+
+        var modal = typeof selectEl.closest === 'function' ? selectEl.closest('.modal') : null;
+        if (modal) {
+            addTarget(modal);
+            addTarget(modal.querySelector('.modal-dialog'));
+            addTarget(modal.querySelector('.modal-content'));
+            addTarget(modal.querySelector('.modal-body'));
+        }
+
+        var node = selectEl.parentElement;
+        while (node && node !== document.body && node !== document.documentElement) {
+            var style = window.getComputedStyle(node);
+            var overflow = (style.overflow + ' ' + style.overflowY + ' ' + style.overflowX).toLowerCase();
+            if (/(auto|scroll|overlay)/.test(overflow)) {
+                addTarget(node);
+            }
+            node = node.parentElement;
+        }
+
+        function hideOnScroll() {
+            if (ts.isOpen) {
+                ts.close(false);
+            }
+        }
+
+        scrollTargets.forEach(function (el) {
+            el.addEventListener('scroll', hideOnScroll, { passive: true });
+        });
+        // Wheel/touch often move the modal before scroll listeners settle.
+        if (modal) {
+            modal.addEventListener('wheel', hideOnScroll, { passive: true, capture: true });
+            modal.addEventListener('touchmove', hideOnScroll, { passive: true, capture: true });
+        }
+
+        function cleanup() {
+            scrollTargets.forEach(function (el) {
+                el.removeEventListener('scroll', hideOnScroll);
+            });
+            if (modal) {
+                modal.removeEventListener('wheel', hideOnScroll, true);
+                modal.removeEventListener('touchmove', hideOnScroll, true);
+            }
+        }
+
+        ts.on('destroy', cleanup);
+        ts.on('dropdown_open', function () {
+            requestAnimationFrame(pinDropdownUnderControl);
+        });
+        // After AJAX results paint, re-pin under the field.
+        ts.on('load', function () {
+            if (ts.isOpen) {
+                requestAnimationFrame(pinDropdownUnderControl);
+            }
+        });
+    }
+
     function initSearchTomSelect(selectEl, searchUrl, excludeId, placeholder) {
         if (selectEl && typeof global.destroyTS === 'function') {
             global.destroyTS(selectEl);
@@ -41,7 +137,10 @@
         // Enforce exactly one selected party per row.
         cfg.maxItems = 1;
         cfg.create = false;
-        global.initTS(selectEl, cfg);
+        var ts = global.initTS(selectEl, cfg);
+        if (ts) {
+            bindDropdownToScrollParents(ts, selectEl);
+        }
         return true;
     }
 
@@ -473,6 +572,7 @@
         initTomSelect: function (el, url, excludeId) {
             return initSearchTomSelect(el, url, excludeId);
         },
+        bindModalScrollDropdown: bindDropdownToScrollParents,
         selectParty: selectPartyOnRow,
         partyRoleOptionsHtml: partyRoleOptionsHtml,
         filterDynFields: filterDynFields,
