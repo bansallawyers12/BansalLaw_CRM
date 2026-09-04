@@ -31,4 +31,22 @@ class EmailLogPlainTextPreviewTest extends TestCase
             EmailLog::plainTextPreview($html, 100)
         );
     }
+
+    #[Test]
+    public function calendar_invite_subjects_are_detected(): void
+    {
+        $this->assertTrue(EmailLog::isCalendarInviteSubject('Invitation: Directions Hearing'));
+        $this->assertTrue(EmailLog::isCalendarInviteSubject('Accepted: Team Meeting'));
+        $this->assertTrue(EmailLog::isCalendarInviteSubject('Updated Invitation: Conference'));
+        $this->assertFalse(EmailLog::isCalendarInviteSubject('Re: Matter update for client'));
+        $this->assertFalse(EmailLog::isCalendarInviteSubject('Evidence.com - Evidence Download Link'));
+    }
+
+    #[Test]
+    public function calendar_payload_detection_matches_ics_dumps(): void
+    {
+        $ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Hearing\nEND:VEVENT\nEND:VCALENDAR";
+        $this->assertTrue(EmailLog::isCalendarPayload($ics));
+        $this->assertFalse(EmailLog::isCalendarPayload('Please see the attached documents.'));
+    }
 }

@@ -6043,6 +6043,9 @@ class ClientsController extends Controller
             }
         }
 
+        // Calendar invites / ICS events belong on the calendar, not mail lists.
+        \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
         // Apply search filter if present
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -6200,6 +6203,7 @@ class ClientsController extends Controller
             if (! empty($clientMatterId)) {
                 $unreadCountQuery->where('client_matter_id', $clientMatterId);
             }
+            \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($unreadCountQuery);
             $unreadCount = $unreadCountQuery->count();
         } elseif ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
             $unreadCountQuery = \App\Models\EmailLog::query();
@@ -6233,6 +6237,8 @@ class ClientsController extends Controller
             if (! empty($mailboxFilter)) {
                 \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($unreadCountQuery, (string) $mailboxFilter);
             }
+
+            \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($unreadCountQuery);
 
             $unreadCount = $unreadCountQuery->count();
         }
@@ -6309,6 +6315,8 @@ class ClientsController extends Controller
                 'total' => 0,
             ];
         }
+
+        \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
         $tz = config('app.timezone', 'Australia/Melbourne');
         $now = now()->timezone($tz);

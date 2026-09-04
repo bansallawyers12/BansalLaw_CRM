@@ -4,9 +4,11 @@ namespace App\Models;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\SortableTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class EmailLog extends Authenticatable
 {
@@ -62,6 +64,88 @@ class EmailLog extends Authenticatable
         $head = substr($upper, 0, 800);
 
         return str_contains($head, 'BEGIN:VCALENDAR') && str_contains($upper, 'BEGIN:VEVENT');
+    }
+
+    /**
+     * Outlook/Zoho calendar invite / RSVP subject prefixes (case-insensitive).
+     */
+    public const CALENDAR_INVITE_SUBJECT_PATTERN =
+        '^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\\b';
+
+    public static function calendarInvitationBodyMarker(): string
+    {
+        return 'This message is a calendar invitation.';
+    }
+
+    /**
+     * True when the subject looks like a calendar invite / RSVP, not a normal email.
+     */
+    public static function isCalendarInviteSubject(?string $subject): bool
+    {
+        $subject = trim((string) $subject);
+        if ($subject === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/' . self::CALENDAR_INVITE_SUBJECT_PATTERN . '/i', $subject);
+    }
+
+    /**
+     * Exclude calendar invites / ICS events from mail lists only.
+     * Does not delete email_logs or calendar records — StaffCalendarEvent /
+     * ClientCourtHearing feeds are untouched. Events stay on the calendar.
+     * Also hides emails already merged into calendar (any link source), including historical rows.
+     *
+     * @param  Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    public static function applyExcludeCalendarInvitesFromMailLists($query): void
+    {
+        $invitationPhrase = self::calendarInvitationBodyMarker();
+
+        $query->where(function ($keep) use ($invitationPhrase) {
+            $keep->whereNull('message')
+                ->orWhere('message', 'not like', '%' . $invitationPhrase . '%');
+        });
+
+        $query->where(function ($keep) {
+            $keep->whereNull('text_preview')
+                ->orWhere('text_preview', '')
+                ->orWhereRaw(
+                    "UPPER(LEFT(TRIM(COALESCE(text_preview, '')), 850)) NOT LIKE ?",
+                    ['%BEGIN:VCALENDAR%']
+                );
+        });
+
+        // Also catch invitation text left in the lean preview column after summarizeCalendarPayload.
+        $query->where(function ($keep) use ($invitationPhrase) {
+            $keep->whereNull('text_preview')
+                ->orWhere('text_preview', 'not like', '%' . $invitationPhrase . '%');
+        });
+
+        $query->whereRaw("COALESCE(subject, '') !~* ?", [self::CALENDAR_INVITE_SUBJECT_PATTERN]);
+
+        // Any existing calendar link means this row already has a calendar event — hide from mail lists.
+        if (Schema::hasTable('email_calendar_links')) {
+            $query->whereNotExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('email_calendar_links')
+                    ->whereColumn('email_calendar_links.email_log_id', 'email_logs.id');
+            });
+        }
+
+        // ICS attachments without a link yet still belong on the calendar, not mail lists.
+        if (Schema::hasTable('email_log_attachments')) {
+            $query->whereNotExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('email_log_attachments')
+                    ->whereColumn('email_log_attachments.email_log_id', 'email_logs.id')
+                    ->where(function ($att) {
+                        $att->whereRaw("LOWER(COALESCE(email_log_attachments.extension, '')) = 'ics'")
+                            ->orWhereRaw("LOWER(COALESCE(email_log_attachments.filename, '')) LIKE '%.ics'")
+                            ->orWhereRaw("LOWER(COALESCE(email_log_attachments.content_type, '')) LIKE '%calendar%'");
+                    });
+            });
+        }
     }
 
     public static function icsPropertyValue(string $ics, string $field): string

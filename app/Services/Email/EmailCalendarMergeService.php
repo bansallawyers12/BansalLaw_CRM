@@ -59,7 +59,6 @@ class EmailCalendarMergeService
             return ['merged' => 0, 'pending' => 0, 'links' => []];
         }
 
-        $hasClient = ! empty($emailLog->client_id);
         $merged = 0;
         $pending = 0;
         $links = [];
@@ -70,25 +69,10 @@ class EmailCalendarMergeService
             }
 
             try {
-                if ($hasClient) {
-                    $link = $this->createMergedLink($emailLog, $event, $staffUserId);
-                    $merged++;
-                } else {
-                    $link = EmailCalendarLink::create([
-                        'email_log_id' => $emailLog->id,
-                        'calendar_type' => $this->calendarTypeForEvent($event['event_type']),
-                        'calendar_id' => null,
-                        'event_type' => $event['event_type'],
-                        'event_title' => $event['title'],
-                        'starts_at' => $event['starts_at'],
-                        'ends_at' => $event['ends_at'] ?? null,
-                        'location' => $event['location'] ?? null,
-                        'source' => $event['source'],
-                        'status' => EmailCalendarLink::STATUS_PENDING,
-                    ]);
-                    $pending++;
-                }
-
+                // Always create the calendar record (staff event when no client yet).
+                // Mail lists hide calendar-related emails; the event must still appear on the calendar.
+                $link = $this->createMergedLink($emailLog, $event, $staffUserId);
+                $merged++;
                 $links[] = $link;
             } catch (Throwable $e) {
                 Log::warning('Email calendar merge failed for detected event', [
@@ -360,7 +344,9 @@ class EmailCalendarMergeService
 
         return EmailCalendarLink::create([
             'email_log_id' => $emailLog->id,
-            'calendar_type' => $this->calendarTypeForEvent($event['event_type']),
+            'calendar_type' => ! empty($emailLog->client_id)
+                ? $this->calendarTypeForEvent($event['event_type'])
+                : EmailCalendarLink::TYPE_STAFF_EVENT,
             'calendar_id' => $calendarId,
             'event_type' => $event['event_type'],
             'event_title' => $event['title'],
@@ -370,6 +356,77 @@ class EmailCalendarMergeService
             'source' => $event['source'],
             'status' => EmailCalendarLink::STATUS_MERGED,
         ]);
+    }
+
+    /**
+     * Promote historical pending links onto the staff calendar so hiding calendar
+     * mail from email lists does not leave those events invisible.
+     *
+     * @return array{promoted: int, failed: int}
+     */
+    public function promotePendingLinksOntoCalendar(?int $staffUserId = null): array
+    {
+        if (! Schema::hasTable('email_calendar_links')) {
+            return ['promoted' => 0, 'failed' => 0];
+        }
+
+        $promoted = 0;
+        $failed = 0;
+
+        EmailCalendarLink::query()
+            ->where('status', EmailCalendarLink::STATUS_PENDING)
+            ->whereNull('calendar_id')
+            ->orderBy('id')
+            ->chunkById(50, function ($links) use (&$promoted, &$failed, $staffUserId) {
+                foreach ($links as $pendingLink) {
+                    try {
+                        $emailLog = EmailLog::query()->find($pendingLink->email_log_id);
+                        $startsAt = $pendingLink->starts_at;
+                        $endsAt = $pendingLink->ends_at;
+                        if (! $startsAt instanceof Carbon) {
+                            $failed++;
+                            continue;
+                        }
+
+                        $isAllDay = $startsAt->format('H:i:s') === '00:00:00'
+                            && ($endsAt === null || ($endsAt instanceof Carbon && $endsAt->format('H:i:s') === '00:00:00'));
+
+                        $event = [
+                            'title' => $pendingLink->event_title,
+                            'event_type' => $pendingLink->event_type,
+                            'starts_at' => $startsAt,
+                            'ends_at' => $endsAt,
+                            'location' => $pendingLink->location,
+                            'source' => $pendingLink->source,
+                            'is_all_day' => $isAllDay,
+                        ];
+
+                        if ($emailLog) {
+                            $calendarId = $this->createCalendarRecord($emailLog, $event, $staffUserId);
+                            $pendingLink->calendar_type = ! empty($emailLog->client_id)
+                                ? $this->calendarTypeForEvent((string) $pendingLink->event_type)
+                                : EmailCalendarLink::TYPE_STAFF_EVENT;
+                        } else {
+                            // Orphan link (email deleted): still keep the event on the staff calendar.
+                            $calendarId = $this->createOrphanStaffCalendarEvent($event, $staffUserId, (int) $pendingLink->email_log_id);
+                            $pendingLink->calendar_type = EmailCalendarLink::TYPE_STAFF_EVENT;
+                        }
+
+                        $pendingLink->calendar_id = $calendarId;
+                        $pendingLink->status = EmailCalendarLink::STATUS_MERGED;
+                        $pendingLink->save();
+                        $promoted++;
+                    } catch (Throwable $e) {
+                        $failed++;
+                        Log::warning('Failed promoting pending email calendar link onto calendar', [
+                            'email_calendar_link_id' => $pendingLink->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            });
+
+        return ['promoted' => $promoted, 'failed' => $failed];
     }
 
     /**
@@ -389,7 +446,9 @@ class EmailCalendarMergeService
             throw new \InvalidArgumentException('Calendar event is missing a start time.');
         }
 
-        if ($this->calendarTypeForEvent($event['event_type']) === EmailCalendarLink::TYPE_COURT_HEARING) {
+        if ($this->calendarTypeForEvent($event['event_type']) === EmailCalendarLink::TYPE_COURT_HEARING
+            && ! empty($emailLog->client_id)
+        ) {
             $hearingType = CalendarEventText::sanitizeHearingType(
                 ucfirst(str_replace('_', ' ', $event['event_type']))
             );
@@ -418,6 +477,8 @@ class EmailCalendarMergeService
             return (int) $hearing->id;
         }
 
+        // No client (or non-hearing): staff calendar event so it still shows on the calendar.
+
         $endsAt = $event['ends_at'] ?: $startsAt->copy()->addHour();
         $title = $this->cleanStaffEventTitle((string) ($event['title'] ?? ''), $event['event_type']);
 
@@ -441,6 +502,43 @@ class EmailCalendarMergeService
             'client_matter_id' => $emailLog->client_matter_id ?: null,
             'location' => $location,
             'notes' => $notes,
+            'created_by_staff_id' => $staffUserId ?: null,
+        ]);
+
+        return (int) $staffEvent->id;
+    }
+
+    /**
+     * @param  array{title: string, event_type: string, starts_at: Carbon, ends_at: ?Carbon, location: ?string, source: string, is_all_day: bool}  $event
+     */
+    protected function createOrphanStaffCalendarEvent(array $event, ?int $staffUserId, int $formerEmailLogId): int
+    {
+        $startsAt = $event['starts_at'];
+        $endsAt = $event['ends_at'] ?: $startsAt->copy()->addHour();
+        $isAllDay = (bool) ($event['is_all_day'] ?? false);
+        $title = $this->cleanStaffEventTitle((string) ($event['title'] ?? ''), (string) ($event['event_type'] ?? 'meeting'));
+        $location = CalendarEventText::sanitizeLocation($event['location'] ?? null);
+
+        $existingStaffId = $this->findExistingStaffEventId(
+            null,
+            $startsAt,
+            $isAllDay,
+            $this->staffEventType((string) ($event['event_type'] ?? 'meeting'))
+        );
+        if ($existingStaffId !== null) {
+            return $existingStaffId;
+        }
+
+        $staffEvent = StaffCalendarEvent::create([
+            'title' => mb_substr($title, 0, 255),
+            'event_type' => $this->staffEventType((string) ($event['event_type'] ?? 'meeting')),
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'is_all_day' => $isAllDay,
+            'client_id' => null,
+            'client_matter_id' => null,
+            'location' => $location,
+            'notes' => 'Auto-created from email (Email #' . $formerEmailLogId . ')',
             'created_by_staff_id' => $staffUserId ?: null,
         ]);
 

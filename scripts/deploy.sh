@@ -190,6 +190,10 @@ done
 start_php_fpm_if_we_stopped_it
 # app_run "$PHP_BIN artisan import:reference-master-data"
 
+# Ensure calendar events from email invites stay on the calendar (idempotent; never deletes).
+echo "Promoting pending email calendar links onto calendar..."
+app_run "$PHP_BIN artisan emails:promote-pending-calendar || true"
+
 # ── [8/11] Required storage / cache directories ─────────────────────
 echo "[8/11] Ensuring required directories..."
 ensure_laravel_writable_dirs

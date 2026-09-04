@@ -1605,6 +1605,7 @@ class IncomingEmailSyncService
         $query = EmailLog::query();
         self::applyUnassignedSyncedInboxScope($query);
         self::applySyncedInboxVisibilityFilter($query, $staff);
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
         return (int) $query->count();
     }

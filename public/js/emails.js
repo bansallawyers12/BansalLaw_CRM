@@ -566,13 +566,49 @@
      * when the schema is not migrated / integration not configured (see ClientsController::filterEmails).
      */
     function normalizeEmailListResponse(data) {
+        return filterOutCalendarEmailsFromList(normalizeEmailListResponseRaw(data));
+    }
+
+    function filterOutCalendarEmailsFromList(list) {
+        if (!Array.isArray(list)) {
+            return [];
+        }
+        return list.filter(function (email) {
+            return !emailLooksLikeCalendarListItem(email);
+        });
+    }
+
+    function emailLooksLikeCalendarListItem(email) {
+        if (!email) {
+            return false;
+        }
+        if (email.is_calendar_invite || email.has_calendar_invite || email.has_calendar) {
+            return true;
+        }
+        if (email.calendar && (email.calendar.has_calendar || (email.calendar.count || 0) > 0)) {
+            return true;
+        }
+        const subject = String(email.subject || '').trim();
+        if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
+            return true;
+        }
+        const attachments = Array.isArray(email.attachments) ? email.attachments : [];
+        return attachments.some(function (att) {
+            const name = String(att.filename || att.file_name || att.display_name || '').toLowerCase();
+            const type = String(att.content_type || att.mime_type || '').toLowerCase();
+            const ext = String(att.extension || '').toLowerCase();
+            return ext === 'ics' || name.endsWith('.ics') || type.indexOf('calendar') !== -1;
+        });
+    }
+
+    function normalizeEmailListResponseRaw(data) {
         if (Array.isArray(data)) {
             return data;
         }
         // Sometimes the backend can return JSON as a string.
         if (typeof data === 'string') {
             try {
-                return normalizeEmailListResponse(JSON.parse(data));
+                return normalizeEmailListResponseRaw(JSON.parse(data));
             } catch (e) {
                 console.warn('Could not parse email list JSON string response:', e);
                 return [];

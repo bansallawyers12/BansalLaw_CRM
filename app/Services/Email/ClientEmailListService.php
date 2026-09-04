@@ -94,6 +94,7 @@ class ClientEmailListService
 
         $this->applyListSelect($query);
         $this->applyCommonFilters($query, $filters);
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
         return $query->paginate($perPage);
     }
@@ -155,6 +156,8 @@ class ClientEmailListService
 
         $this->applyCommonFilters($query, $filters);
 
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
         return $query->paginate($perPage);
     }
 
@@ -204,6 +207,7 @@ class ClientEmailListService
 
         $this->applyListSelect($query);
         $this->applyCommonFilters($query, $filters);
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
         return $query->paginate($perPage);
     }

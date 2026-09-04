@@ -555,6 +555,29 @@ function crmInitOutlookEmailsInterface() {
         return hasCalendarAttachment(email);
     }
 
+    /**
+     * Calendar invites/events belong on the calendar only — never keep them in mail lists.
+     */
+    function emailIsCalendarOnlyListItem(email) {
+        if (!email) {
+            return false;
+        }
+        if (email.is_calendar_invite || email.has_calendar_invite || email.has_calendar) {
+            return true;
+        }
+        if (email.calendar && (email.calendar.has_calendar || (email.calendar.count || 0) > 0)) {
+            return true;
+        }
+        if (hasCalendarAttachment(email)) {
+            return true;
+        }
+        const subject = String(email.subject || '').trim();
+        if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
+            return true;
+        }
+        return false;
+    }
+
     function hasCalendarAttachment(email) {
         const attachments = getUserEmailAttachments(email);
         return attachments.some(function(att) {
@@ -3714,6 +3737,10 @@ function crmInitOutlookEmailsInterface() {
             }
             
             const fetchedEmails = Array.isArray(data.emails) ? data.emails : [];
+            // Defense in depth: never render calendar invites/events in mail lists.
+            const mailOnlyEmails = fetchedEmails.filter(function (email) {
+                return !emailIsCalendarOnlyListItem(email);
+            });
             if (append) {
                 const existingIds = {};
                 emails.forEach(function (email) {
@@ -3721,7 +3748,7 @@ function crmInitOutlookEmailsInterface() {
                         existingIds[String(email.id)] = true;
                     }
                 });
-                const uniqueEmails = fetchedEmails.filter(function (email) {
+                const uniqueEmails = mailOnlyEmails.filter(function (email) {
                     if (!email || email.id == null) {
                         return false;
                     }
@@ -3734,7 +3761,7 @@ function crmInitOutlookEmailsInterface() {
                 });
                 emails = emails.concat(uniqueEmails);
             } else {
-                emails = fetchedEmails;
+                emails = mailOnlyEmails;
             }
 
             if (data.date_summary) {

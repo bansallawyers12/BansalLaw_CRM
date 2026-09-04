@@ -134,6 +134,7 @@ class SubjectReferenceAutoAssignService
 
         IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
         $query->where('sync_assignment_status', 'unassigned');
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
         if ($staff) {
             IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
