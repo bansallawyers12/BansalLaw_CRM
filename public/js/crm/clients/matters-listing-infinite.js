@@ -477,34 +477,44 @@
             if (!matterId) {
                 return;
             }
-            if (!window.confirm('Reopen this matter? It will be moved back to active matters.')) {
-                return;
-            }
             var $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reopening...');
-            $.ajax({
-                url: window.mattersReopenUrl || '',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Accept': 'application/json'
-                },
-                data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
-                success: function (resp) {
-                    if (resp.status && resp.redirect_url) {
-                        window.location.href = resp.redirect_url;
-                    } else if (resp.status) {
-                        loadSpaContent('active', {}, { pushState: true });
-                    } else {
-                        window.crmAlert(resp.message || 'Failed to reopen matter.');
+            var ask = (typeof window.crmConfirm === 'function')
+                ? window.crmConfirm({
+                    title: 'Reopen matter?',
+                    text: 'Reopen this matter? It will be moved back to active matters.',
+                    confirmText: 'Yes, reopen',
+                    confirmColor: '#28a745'
+                })
+                : Promise.resolve(false);
+            ask.then(function (ok) {
+                if (!ok) {
+                    return;
+                }
+                $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reopening...');
+                $.ajax({
+                    url: window.mattersReopenUrl || '',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+                    success: function (resp) {
+                        if (resp.status && resp.redirect_url) {
+                            window.location.href = resp.redirect_url;
+                        } else if (resp.status) {
+                            loadSpaContent('active', {}, { pushState: true });
+                        } else {
+                            window.crmAlert(resp.message || 'Failed to reopen matter.');
+                            $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
+                        }
+                    },
+                    error: function () {
+                        window.crmAlert('An error occurred. Please try again.');
                         $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                     }
-                },
-                error: function () {
-                    window.crmAlert('An error occurred. Please try again.');
-                    $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
-                }
+                });
             });
         });
 
@@ -514,36 +524,46 @@
             if (!matterId) {
                 return;
             }
-            if (!window.confirm('Send a request to the admin to reopen this matter?')) {
-                return;
-            }
             var $btn = $(this);
-            $btn.prop('disabled', true);
-            $.ajax({
-                url: window.mattersRequestReopenUrl || '',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Accept': 'application/json'
-                },
-                data: JSON.stringify({ matter_id: matterId }),
-                success: function (resp) {
-                    if (resp.status) {
-                        if (typeof iziToast !== 'undefined') {
-                            iziToast.success({ title: 'Sent', message: resp.message || 'Request sent.', position: 'topRight' });
+            var ask = (typeof window.crmConfirm === 'function')
+                ? window.crmConfirm({
+                    title: 'Request reopen?',
+                    text: 'Send a request to the admin to reopen this matter?',
+                    confirmText: 'Yes, send request',
+                    confirmColor: '#1e3d60'
+                })
+                : Promise.resolve(false);
+            ask.then(function (ok) {
+                if (!ok) {
+                    return;
+                }
+                $btn.prop('disabled', true);
+                $.ajax({
+                    url: window.mattersRequestReopenUrl || '',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    data: JSON.stringify({ matter_id: matterId }),
+                    success: function (resp) {
+                        if (resp.status) {
+                            if (typeof iziToast !== 'undefined') {
+                                iziToast.success({ title: 'Sent', message: resp.message || 'Request sent.', position: 'topRight' });
+                            }
+                            var params = buildQueryFromForm($('#matterFilterForm'));
+                            loadSpaContent('closed', params, { pushState: false });
+                        } else {
+                            window.crmAlert(resp.message || 'Failed to send request.');
+                            $btn.prop('disabled', false);
                         }
-                        var params = buildQueryFromForm($('#matterFilterForm'));
-                        loadSpaContent('closed', params, { pushState: false });
-                    } else {
-                        window.crmAlert(resp.message || 'Failed to send request.');
+                    },
+                    error: function () {
+                        window.crmAlert('An error occurred. Please try again.');
                         $btn.prop('disabled', false);
                     }
-                },
-                error: function () {
-                    window.crmAlert('An error occurred. Please try again.');
-                    $btn.prop('disabled', false);
-                }
+                });
             });
         });
 
@@ -553,38 +573,48 @@
             if (!matterId) {
                 return;
             }
-            if (!window.confirm('Cancel this reopen request?')) {
-                return;
-            }
             var $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...');
-            $.ajax({
-                url: window.mattersCancelReopenRequestUrl || '',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Accept': 'application/json'
-                },
-                data: JSON.stringify({ matter_id: matterId }),
-                success: function (resp) {
-                    if (resp.status) {
-                        if (typeof iziToast !== 'undefined') {
-                            iziToast.success({ title: 'Cancelled', message: resp.message || 'Request cancelled.', position: 'topRight' });
-                        } else {
-                            window.crmAlert(resp.message || 'Reopen request has been cancelled.');
-                        }
-                        var params = buildQueryFromForm($('#matterFilterForm'));
-                        loadSpaContent('closed', params, { pushState: false });
-                    } else {
-                        window.crmAlert(resp.message || 'Failed to cancel reopen request.');
-                        $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
-                    }
-                },
-                error: function () {
-                    window.crmAlert('An error occurred. Please try again.');
-                    $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
+            var ask = (typeof window.crmConfirm === 'function')
+                ? window.crmConfirm({
+                    title: 'Cancel request?',
+                    text: 'Cancel this reopen request?',
+                    confirmText: 'Yes, cancel request',
+                    confirmColor: '#a83020'
+                })
+                : Promise.resolve(false);
+            ask.then(function (ok) {
+                if (!ok) {
+                    return;
                 }
+                $btn.prop('disabled', true);
+                $.ajax({
+                    url: window.mattersCancelReopenRequestUrl || window.mattersCancelReopenUrl || '',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    data: JSON.stringify({ matter_id: matterId }),
+                    success: function (resp) {
+                        if (resp.status) {
+                            if (typeof iziToast !== 'undefined') {
+                                iziToast.success({ title: 'Cancelled', message: resp.message || 'Request cancelled.', position: 'topRight' });
+                            } else if (typeof window.crmAlert === 'function') {
+                                window.crmAlert(resp.message || 'Reopen request has been cancelled.');
+                            }
+                            var params = buildQueryFromForm($('#matterFilterForm'));
+                            loadSpaContent('closed', params, { pushState: false });
+                        } else {
+                            window.crmAlert(resp.message || 'Failed to cancel reopen request.');
+                            $btn.prop('disabled', false);
+                        }
+                    },
+                    error: function () {
+                        window.crmAlert('An error occurred. Please try again.');
+                        $btn.prop('disabled', false);
+                    }
+                });
             });
         });
     }

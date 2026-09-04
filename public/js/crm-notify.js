@@ -249,6 +249,49 @@
         fallbackLog({ title: defaultTitle(type), message: msg });
     };
 
+    /**
+     * CRM confirmation dialog (SweetAlert2). Drop-in replacement for window.confirm().
+     * @param {string|{title?: string, text?: string, html?: string, icon?: string, confirmText?: string, cancelText?: string, confirmColor?: string, cancelColor?: string}} options
+     * @returns {Promise<boolean>}
+     */
+    global.crmConfirm = function (options) {
+        var opts = typeof options === 'string'
+            ? { text: options }
+            : (options || {});
+        var title = opts.title || 'Confirm';
+        var text = opts.text || '';
+        var html = opts.html || undefined;
+
+        if (typeof global.Swal !== 'undefined' && typeof global.Swal.fire === 'function') {
+            return global.Swal.fire({
+                title: title,
+                text: html ? undefined : text,
+                html: html,
+                icon: opts.icon || 'question',
+                showCancelButton: true,
+                reverseButtons: true,
+                focusCancel: true,
+                confirmButtonText: opts.confirmText || 'Yes',
+                cancelButtonText: opts.cancelText || 'Cancel',
+                confirmButtonColor: opts.confirmColor || '#1e3d60',
+                cancelButtonColor: opts.cancelColor || '#5e7a90',
+                customClass: { popup: 'crm-swal-popup' }
+            }).then(function (result) {
+                return !!(result && result.isConfirmed);
+            });
+        }
+
+        // Last resort only when SweetAlert2 is not loaded.
+        var fallback = text || title;
+        if (typeof global.__nativeConfirm === 'function') {
+            return Promise.resolve(!!global.__nativeConfirm(fallback));
+        }
+        if (typeof global.confirm === 'function') {
+            return Promise.resolve(!!global.confirm(fallback));
+        }
+        return Promise.resolve(false);
+    };
+
     // Flush any messages queued by the early head stub.
     if (global.__crmAlertQueue && global.__crmAlertQueue.length) {
         var queued = global.__crmAlertQueue.slice();

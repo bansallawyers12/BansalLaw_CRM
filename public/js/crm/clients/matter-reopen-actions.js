@@ -20,6 +20,14 @@
     }
 
     function confirmReopen(message) {
+        if (typeof window.crmConfirm === 'function') {
+            return window.crmConfirm({
+                title: 'Reopen matter?',
+                text: message || 'Reopen this matter? It will be moved back to active matters.',
+                confirmText: 'Yes, reopen',
+                confirmColor: '#28a745'
+            });
+        }
         if (window.Swal && typeof window.Swal.fire === 'function') {
             return window.Swal.fire({
                 title: 'Reopen matter?',
@@ -33,7 +41,7 @@
                 return !!(result && result.isConfirmed);
             });
         }
-        return Promise.resolve(window.confirm(message || 'Reopen this matter? It will be moved back to active matters.'));
+        return Promise.resolve(false);
     }
 
     function postReopen(matterId, buttonEl) {

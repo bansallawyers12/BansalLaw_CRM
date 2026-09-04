@@ -492,28 +492,38 @@ jQuery(document).ready(function($){
         e.preventDefault();
         var matterId = $(this).data('matter-id');
         if (!matterId) return;
-        if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reopening...');
-        $.ajax({
-            url: '{{ route("clients.matter.reopen") }}',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
-            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
-            success: function(resp){
-                if (resp.status && resp.redirect_url) {
-                    window.location.href = resp.redirect_url;
-                } else if (resp.status) {
-                    window.location.reload();
-                } else {
-                    crmAlert(resp.message || 'Failed to reopen matter.');
+        var ask = (typeof window.crmConfirm === 'function')
+            ? window.crmConfirm({
+                title: 'Reopen matter?',
+                text: 'Reopen this matter? It will be moved back to active matters.',
+                confirmText: 'Yes, reopen',
+                confirmColor: '#28a745'
+            })
+            : Promise.resolve(false);
+        ask.then(function(ok){
+            if (!ok) return;
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reopening...');
+            $.ajax({
+                url: '{{ route("clients.matter.reopen") }}',
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+                data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+                success: function(resp){
+                    if (resp.status && resp.redirect_url) {
+                        window.location.href = resp.redirect_url;
+                    } else if (resp.status) {
+                        window.location.reload();
+                    } else {
+                        crmAlert(resp.message || 'Failed to reopen matter.');
+                        $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
+                    }
+                },
+                error: function(){
+                    crmAlert('An error occurred. Please try again.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                 }
-            },
-            error: function(){
-                crmAlert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
-            }
+            });
         });
     });
 
@@ -521,27 +531,37 @@ jQuery(document).ready(function($){
         e.preventDefault();
         var matterId = $(this).data('matter-id');
         if (!matterId) return;
-        if (!confirm('Send a request to the admin to reopen this matter?')) return;
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Requesting...');
-        $.ajax({
-            url: '{{ route("clients.matter.request-reopen") }}',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
-            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
-            success: function(resp){
-                if (resp.status) {
-                    crmAlert(resp.message || 'Reopen request has been sent to admins.');
-                    window.location.reload();
-                } else {
-                    crmAlert(resp.message || 'Failed to request reopen.');
+        var ask = (typeof window.crmConfirm === 'function')
+            ? window.crmConfirm({
+                title: 'Request reopen?',
+                text: 'Send a request to the admin to reopen this matter?',
+                confirmText: 'Yes, send request',
+                confirmColor: '#1e3d60'
+            })
+            : Promise.resolve(false);
+        ask.then(function(ok){
+            if (!ok) return;
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Requesting...');
+            $.ajax({
+                url: '{{ route("clients.matter.request-reopen") }}',
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+                data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+                success: function(resp){
+                    if (resp.status) {
+                        crmAlert(resp.message || 'Reopen request has been sent to admins.');
+                        window.location.reload();
+                    } else {
+                        crmAlert(resp.message || 'Failed to request reopen.');
+                        $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
+                    }
+                },
+                error: function(){
+                    crmAlert('An error occurred. Please try again.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
                 }
-            },
-            error: function(){
-                crmAlert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
-            }
+            });
         });
     });
 
@@ -549,27 +569,37 @@ jQuery(document).ready(function($){
         e.preventDefault();
         var matterId = $(this).data('matter-id');
         if (!matterId) return;
-        if (!confirm('Cancel this reopen request?')) return;
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...');
-        $.ajax({
-            url: '{{ route("clients.matter.cancel-reopen-request") }}',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
-            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
-            success: function(resp){
-                if (resp.status) {
-                    crmAlert(resp.message || 'Reopen request has been cancelled.');
-                    window.location.reload();
-                } else {
-                    crmAlert(resp.message || 'Failed to cancel reopen request.');
+        var ask = (typeof window.crmConfirm === 'function')
+            ? window.crmConfirm({
+                title: 'Cancel request?',
+                text: 'Cancel this reopen request?',
+                confirmText: 'Yes, cancel request',
+                confirmColor: '#a83020'
+            })
+            : Promise.resolve(false);
+        ask.then(function(ok){
+            if (!ok) return;
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...');
+            $.ajax({
+                url: '{{ route("clients.matter.cancel-reopen-request") }}',
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+                data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+                success: function(resp){
+                    if (resp.status) {
+                        crmAlert(resp.message || 'Reopen request has been cancelled.');
+                        window.location.reload();
+                    } else {
+                        crmAlert(resp.message || 'Failed to cancel reopen request.');
+                        $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
+                    }
+                },
+                error: function(){
+                    crmAlert('An error occurred. Please try again.');
                     $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
                 }
-            },
-            error: function(){
-                crmAlert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fa-solid fa-xmark"></i> Cancel');
-            }
+            });
         });
     });
 });
