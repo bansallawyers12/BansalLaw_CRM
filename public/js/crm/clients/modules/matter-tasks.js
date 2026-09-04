@@ -574,11 +574,23 @@
         return name;
     }
 
+    function assigneeName(it) {
+        var a = it && it.assignee;
+        if (!a) {
+            return '';
+        }
+        return ((a.first_name || '') + ' ' + (a.last_name || '')).trim();
+    }
+
     function rowMetaHtml(it) {
         var parts = [];
         var creator = creatorName(it);
         if (creator) {
             parts.push('Added by ' + esc(creator));
+        }
+        var assignee = assigneeName(it);
+        if (assignee && assignee !== creator) {
+            parts.push('Assigned to ' + esc(assignee));
         }
         var when = formatCreatedAt(it.created_at);
         if (when) {

@@ -75,7 +75,13 @@ class ClientMatterTaskSyncService
 
         $existing = $this->findLinkedTaskForNote($note);
         if ($existing) {
-            return $existing;
+            if ((int) ($existing->note_id ?? 0) < 1) {
+                $existing->note_id = (int) $note->id;
+                $existing->saveQuietly();
+            }
+            $this->repairCreatedByFromLinkedNotes([$existing]);
+
+            return $existing->fresh(['creator:id,first_name,last_name']);
         }
 
         $matter = null;
@@ -114,7 +120,8 @@ class ClientMatterTaskSyncService
                 : null;
             $task->is_done = (string) $note->status === '1';
             $task->sort_order = $maxSort + 1;
-            $task->created_by = (int) ($note->assigned_to ?: $note->user_id);
+            // "Added by" must be the note creator (user_id), not the assignee.
+            $task->created_by = (int) ($note->user_id ?: Auth::id() ?: $note->assigned_to);
             $task->note_id = $note->id;
             $task->save();
 
@@ -181,6 +188,49 @@ class ClientMatterTaskSyncService
     }
 
     /**
+     * Fix checklist rows that stored assignee as created_by when mirrored from Actions.
+     * "Added by" should match notes.user_id (creator), not notes.assigned_to.
+     *
+     * @param  \Illuminate\Support\Collection<int, ClientMatterTask>|iterable<ClientMatterTask>  $tasks
+     */
+    public function repairCreatedByFromLinkedNotes(iterable $tasks): void
+    {
+        $tasks = collect($tasks)->filter(static fn ($t) => $t instanceof ClientMatterTask && (int) ($t->note_id ?? 0) > 0);
+        if ($tasks->isEmpty()) {
+            return;
+        }
+
+        $noteIds = $tasks->pluck('note_id')->filter()->unique()->values();
+        $notes = Note::query()
+            ->whereIn('id', $noteIds)
+            ->get(['id', 'user_id', 'assigned_to'])
+            ->keyBy('id');
+
+        foreach ($tasks as $task) {
+            $note = $notes->get($task->note_id);
+            if (! $note) {
+                continue;
+            }
+
+            $creatorId = (int) ($note->user_id ?? 0);
+            if ($creatorId < 1) {
+                continue;
+            }
+
+            if ((int) ($task->created_by ?? 0) === $creatorId) {
+                continue;
+            }
+
+            $task->created_by = $creatorId;
+            $task->saveQuietly();
+            if ($task->relationLoaded('creator')) {
+                $task->unsetRelation('creator');
+                $task->load('creator:id,first_name,last_name');
+            }
+        }
+    }
+
+    /**
      * When a checklist task is removed, mark the linked Action complete (keeps audit trail).
      */
     public function onClientTaskDeleted(ClientMatterTask $task): void
@@ -201,11 +251,32 @@ class ClientMatterTaskSyncService
 
         if (! empty($note->unique_group_id)) {
             $noteIds = Note::where('unique_group_id', $note->unique_group_id)->pluck('id');
-
-            return ClientMatterTask::whereIn('note_id', $noteIds)->first();
+            $byGroup = ClientMatterTask::whereIn('note_id', $noteIds)->first();
+            if ($byGroup) {
+                return $byGroup;
+            }
         }
 
-        return null;
+        // Legacy rows mirrored before note_id was set: match open checklist by matter + title.
+        $title = $this->titleFromNote($note);
+        if ($title === '' || (int) ($note->client_id ?? 0) < 1) {
+            return null;
+        }
+
+        $matterId = (int) ($note->matter_id ?? 0);
+        $query = ClientMatterTask::query()
+            ->where('client_id', (int) $note->client_id)
+            ->where('title', $title)
+            ->where(function ($q) {
+                $q->whereNull('note_id')->orWhere('note_id', 0);
+            })
+            ->orderByDesc('id');
+
+        if ($matterId > 0) {
+            $query->where('client_matter_id', $matterId);
+        }
+
+        return $query->first();
     }
 
     private function resolveDefaultMatterForClient(int $clientId): ?ClientMatter
