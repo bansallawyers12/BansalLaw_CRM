@@ -29,6 +29,9 @@
             console.warn('Party search: Tom Select helpers not loaded.');
             return false;
         }
+        // Placeholder comes only from Tom Select config — avoid data-placeholder twin.
+        selectEl.removeAttribute('data-placeholder');
+        selectEl.removeAttribute('placeholder');
         var cfg = global.buildContactPersonSearchTomSelectConfig({
             url: searchUrl,
             placeholder: placeholder || 'Type name, phone, email, or ID…',
@@ -223,19 +226,20 @@
         row.innerHTML =
             '<div class="opp-party-row__top">' +
                 '<div class="opp-party-field opp-party-field--party">' +
-                    '<div class="opp-party-label-row">' +
-                        '<label>Other party <span class="text-danger">*</span></label>' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove" aria-label="Remove this party">' +
-                            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>' +
-                        '</button>' +
-                    '</div>' +
-                    '<select class="form-control opp-party-lead-select" data-placeholder="Search other party…"></select>' +
+                    '<label>Other party <span class="text-danger">*</span></label>' +
+                    '<select class="form-control opp-party-lead-select"></select>' +
                     '<input type="hidden" class="opp-party-lead-id" value="">' +
                     '<input type="hidden" class="opp-party-name" value="">' +
                 '</div>' +
                 '<div class="opp-party-field opp-party-field--role">' +
                     '<label>Their role <span class="text-danger">*</span></label>' +
                     '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream, customRoles) + '</select>' +
+                '</div>' +
+                '<div class="opp-party-field opp-party-field--actions">' +
+                    '<span class="opp-party-actions-label" aria-hidden="true">&nbsp;</span>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove" aria-label="Remove this party" title="Remove">' +
+                        '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>' +
+                    '</button>' +
                 '</div>' +
             '</div>' +
             '<div class="opp-party-solicitor-block">' +
@@ -249,7 +253,7 @@
                         '<label><input type="radio" value="manual"> Enter manually</label>' +
                     '</div>' +
                     '<div class="opp-party-solicitor-search-wrap">' +
-                        '<select class="form-control opp-party-solicitor-select" data-placeholder="Search solicitor…"></select>' +
+                        '<select class="form-control opp-party-solicitor-select"></select>' +
                     '</div>' +
                     '<div class="opp-party-rep-fields">' +
                         '<div class="opp-party-field"><label class="small mb-1">Solicitor firm</label>' +
@@ -286,12 +290,7 @@
             if (partyField) {
                 var legacyName = String(data.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 partyField.innerHTML =
-                    '<div class="opp-party-label-row">' +
-                        '<label>Other party <span class="text-muted">(legacy — re-link)</span></label>' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove" aria-label="Remove this party">' +
-                            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>' +
-                        '</button>' +
-                    '</div>' +
+                    '<label>Other party <span class="text-muted">(legacy — re-link)</span></label>' +
                     '<input type="text" class="form-control form-control-sm opp-party-legacy-name" readonly value="' + legacyName + '" title="' + legacyName + '">' +
                     '<input type="hidden" class="opp-party-lead-id" value="">' +
                     '<input type="hidden" class="opp-party-name" value="' + legacyName + '">';

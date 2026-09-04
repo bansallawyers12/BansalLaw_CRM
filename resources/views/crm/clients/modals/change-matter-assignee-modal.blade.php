@@ -3,65 +3,76 @@
     $__crmSolicitorStaff = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
     $__crmPersonResponsibleStaff = \App\Services\ClientEditService::staffSelectableForPersonResponsibleRole();
     $__crmPersonAssistingStaff = \App\Services\ClientEditService::staffSelectableForPersonAssistingRole();
+    $__crmOffices = \App\Models\Branch::orderBy('office_name')->get(['id', 'office_name']);
+    $__crmStaffOptionLabel = static function ($staff): string {
+        return trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
+    };
 @endphp
 <div class="modal fade custom_modal" id="changeMatterAssigneeModal" tabindex="-1" role="dialog" aria-labelledby="change_MatterModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="change_MatterModalLabel">Edit matter details</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+				<button type="button" class="crm-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
+                <div id="change_matter_assignee_loading" class="change-matter-modal__loading" hidden>
+                    <div class="change-matter-modal__loading-inner">
+                        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                        <span>Loading matter details…</span>
+                    </div>
+                </div>
                 <form method="post" action="{{URL::to('/clients/updateClientMatterAssignee')}}" name="change_matter_assignee" autocomplete="off" id="change_matter_assignee">
 				    @csrf
+                    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
+                    <input type="hidden" name="user_id" value="{{@Auth::user()->id}}">
+                    <input type="hidden" name="selectedMatterLM" id="selectedMatterLM" value="">
+                    <input type="hidden" id="change_matter_initial_sel_matter_id" value="">
+                    <input type="hidden" name="opposing_parties_json" id="change_matter_opposing_parties_json" value="[]">
+
                     <div class="row">
-                        <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                        <input type="hidden" name="user_id" value="{{@Auth::user()->id}}">
-                        <input type="hidden" name="selectedMatterLM" id="selectedMatterLM" value="">
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
                                 <label for="change_sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control crm-ts-plain" name="legal_practitioner" id="change_sel_legal_practitioner_id">
+                                <select data-valid="required" class="form-control" name="legal_practitioner" id="change_sel_legal_practitioner_id">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach($__crmSolicitorStaff as $migAgntlist)
-                                        <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}}@if(!empty($migAgntlist->email)) ({{@$migAgntlist->email}})@endif</option>
+                                        <option value="{{$migAgntlist->id}}">{{ $__crmStaffOptionLabel($migAgntlist) }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
-                                <label for="person_responsible">Person Responsible <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control crm-ts-plain" name="person_responsible" id="change_sel_person_responsible_id">
+                                <label for="change_sel_person_responsible_id">Person Responsible <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control" name="person_responsible" id="change_sel_person_responsible_id">
                                     <option value="">Select Person Responsible</option>
                                     @foreach($__crmPersonResponsibleStaff as $perreslist)
-                                        <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}}@if(!empty($perreslist->email)) ({{@$perreslist->email}})@endif</option>
+                                        <option value="{{$perreslist->id}}">{{ $__crmStaffOptionLabel($perreslist) }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
-                                <label for="person_assisting">Person Assisting <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control crm-ts-plain" name="person_assisting" id="change_sel_person_assisting_id">
+                                <label for="change_sel_person_assisting_id">Person Assisting <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control" name="person_assisting" id="change_sel_person_assisting_id">
                                     <option value="">Select Person Assisting</option>
                                     @foreach($__crmPersonAssistingStaff as $perassislist)
-                                        <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}}@if(!empty($perassislist->email)) ({{@$perassislist->email}})@endif</option>
+                                        <option value="{{$perassislist->id}}">{{ $__crmStaffOptionLabel($perassislist) }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
-                                <label for="office_id">Handling Office</label>
-                                <select class="form-control crm-ts-plain" name="office_id" id="change_office_id">
+                                <label for="change_office_id">Handling Office</label>
+                                <select class="form-control" name="office_id" id="change_office_id">
                                     <option value="">Select Office</option>
-                                    @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                    @foreach($__crmOffices as $office)
                                         <option value="{{$office->id}}">{{$office->office_name}}</option>
                                     @endforeach
                                 </select>
@@ -71,22 +82,21 @@
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
                                 <label for="change_sel_matter_id">Law matter type</label>
-                                <select class="form-select" name="sel_matter_id" id="change_sel_matter_id">
+                                <select class="form-control" name="sel_matter_id" id="change_sel_matter_id">
                                     <option value="">— Loading —</option>
                                 </select>
                                 <small class="form-text text-muted">Changing type may not match the matter reference prefix; update details if needed.</small>
                             </div>
                         </div>
-                        <input type="hidden" id="change_matter_initial_sel_matter_id" value="">
 
                         @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'our_party_role'))
-                        <div class="col-12 col-md-12 col-lg-12">
+                        <div class="col-12">
                             <div class="form-group">
                                 <label for="change_matter_our_party_role">Our client&rsquo;s role <span class="text-danger">*</span></label>
-                                <select class="form-select" name="our_party_role" id="change_matter_our_party_role" data-valid="required">
+                                <select class="form-control" name="our_party_role" id="change_matter_our_party_role" data-valid="required">
                                     <option value="">— Select role —</option>
                                 </select>
                             </div>
@@ -100,7 +110,6 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="change_matter_add_opposing_btn">
                                 <i class="fa-solid fa-plus"></i> Add other party
                             </button>
-                            <input type="hidden" name="opposing_parties_json" id="change_matter_opposing_parties_json" value="[]">
                         </div>
 
                         @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'incidence_type'))
@@ -128,10 +137,10 @@
                         </div>
                         @endif
 
-                        <div class="col-9 col-md-9 col-lg-9 text-right">
-                            <button onclick="if(typeof window.prepareChangeMatterAssigneeSubmit === 'function') { window.prepareChangeMatterAssigneeSubmit(); } else { customValidate('change_matter_assignee'); }" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
+                        <div class="col-12 text-right mt-2">
+                            <button type="button" class="btn btn-primary" id="change_matter_assignee_save_btn" onclick="if(typeof window.prepareChangeMatterAssigneeSubmit === 'function') { window.prepareChangeMatterAssigneeSubmit(); } else { customValidate('change_matter_assignee'); }">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
                     </div>
 				</form>
 			</div>

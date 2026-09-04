@@ -2779,7 +2779,8 @@ textarea.pe-modal__input {
 }
 
 body > .ts-dropdown {
-    z-index: 10050 !important;
+    /* Above #changeMatterAssigneeModal / move-doc modals (12050) */
+    z-index: 13000 !important;
 }
 
 .popover .ts-wrapper {

@@ -1100,6 +1100,13 @@ input:checked + .slider:before {
     opacity: 1 !important;
 }
 
+/* Tom Select dropdownParent:body must sit above this modal. */
+body.modal-open > .ts-dropdown,
+body > .ts-dropdown {
+    z-index: 13000 !important;
+    pointer-events: auto !important;
+}
+
 .modal-content {
     background-color: var(--card-bg-color);
     margin: auto;

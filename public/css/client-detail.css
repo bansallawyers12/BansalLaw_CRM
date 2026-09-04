@@ -7080,6 +7080,13 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1 !important;
 }
 
+/* Other-party / contact Tom Select uses dropdownParent: body — must clear the modal (12050). */
+body.modal-open > .ts-dropdown,
+body > .ts-dropdown {
+  z-index: 13000 !important;
+  pointer-events: auto !important;
+}
+
 /* Document move modals: centered overlay when appended to body from overflow:hidden tab panes. */
 #moveDocumentModal.modal,
 #moveVisaDocumentModal.modal {
