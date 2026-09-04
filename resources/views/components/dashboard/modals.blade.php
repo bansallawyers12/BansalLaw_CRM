@@ -414,33 +414,24 @@
     background: var(--card-bg, #ffffff);
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header {
-    background: var(--navy, #1e3d60);
+    background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, #2a5080 100%);
     color: #fff;
-    border-bottom: 1px solid var(--border, #c8dcef);
+    border-bottom: 3px solid var(--accent-gold, #c8992a);
     padding: 1rem 1.25rem;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title {
     color: #fff !important;
     font-weight: 700;
     font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i,
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .completion-task-modal-header-icon {
     color: var(--accent-gold, #c8992a) !important;
-    margin-right: 0.35rem;
     font-size: 1.1em;
-}
-#dashboardCompletionNotesModal .dashboard-completion-modal-header .close {
-    color: #fff;
-    opacity: 0.9;
-    text-shadow: none;
-    font-size: 1.5rem;
-    font-weight: 400;
-}
-#dashboardCompletionNotesModal .dashboard-completion-modal-header .close:hover,
-#dashboardCompletionNotesModal .dashboard-completion-modal-header .close:focus {
-    opacity: 1;
-    color: #fff;
 }
 #dashboardCompletionNotesModal .modal-body {
     background: var(--page-bg, #f0f6ff);
@@ -578,9 +569,7 @@
                 <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
                     <i class="fa-solid fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <x-crm.modal-close />
             </div>
             <div class="modal-body">
                 <div class="form-group mb-0">
