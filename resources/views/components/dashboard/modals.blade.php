@@ -330,79 +330,148 @@
     }
 }
 
-/* Extend Notes Deadline — docs/theme.md (Powder Blue & Soft Gold) */
+/* Extend Notes Deadline — match Complete Task modal layout */
 #extend_note_popup .modal-dialog {
     max-width: 520px;
 }
-#extend_note_popup .modal-content {
+#extend_note_popup .extend-note-modal-content {
     border-radius: 12px;
-    border: 1px solid #c8dcef;
+    border: 1px solid var(--border, #c8dcef);
     box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
     padding: 0;
     overflow: hidden;
-    background: #ffffff;
+    background: var(--card-bg, #ffffff);
 }
+#extend_note_popup .extend-note-modal-header,
 #extend_note_popup .modal-header {
-    background: #ffffff;
-    border-bottom: 1px solid #c8dcef;
-    padding: 1rem 1.25rem;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%);
+    background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%);
+    border-bottom: 3px solid var(--accent-gold, #c8992a);
+    color: #fff;
+    padding: 1rem 1.25rem;
 }
-#extend_note_popup .modal-title {
-    color: #1e3d60;
+#extend_note_popup .extend-note-modal-header .modal-title,
+#extend_note_popup .modal-header .modal-title {
+    color: #fff !important;
     font-weight: 700;
     font-size: 1.1rem;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: -0.01em;
 }
-#extend_note_popup .modal-header .close {
-    color: #1e3d60;
-    opacity: 0.85;
-    text-shadow: none;
-    font-size: 1.5rem;
-    font-weight: 400;
+#extend_note_popup .extend-note-modal-header .modal-title i,
+#extend_note_popup .extend-note-header-icon {
+    color: var(--accent-gold, #c8992a) !important;
+    font-size: 1.1em;
 }
-#extend_note_popup .modal-header .close:hover,
-#extend_note_popup .modal-header .close:focus {
-    opacity: 1;
-    color: #1e3d60;
+#extend_note_popup .extend-note-modal-body {
+    background: var(--page-bg, #f0f6ff);
+    padding: 1.25rem 1.25rem 1rem;
 }
-#extend_note_popup #popover-content {
-    padding: 1.25rem 1.25rem 1.5rem;
-    background: #f0f6ff;
+#extend_note_popup .extend-note-modal-body .form-group {
+    margin-bottom: 1rem;
 }
-#extend_note_popup .control-label {
-    color: #5e7a90 !important;
+#extend_note_popup .extend-note-modal-body .form-group:last-of-type {
+    margin-bottom: 0;
+}
+#extend_note_popup .extend-note-modal-body .form-group label {
+    display: block;
+    color: var(--text-muted, #5e7a90);
     font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
 }
-#extend_note_popup .form-control {
-    border: 1px solid #c8dcef;
+#extend_note_popup .extend-note-modal-body .form-group label i {
+    color: var(--navy, #1e3d60);
+    margin-right: 0.35rem;
+}
+#extend_note_popup .extend-note-modal-body .form-control {
+    border: 1px solid var(--border, #c8dcef) !important;
     border-radius: 8px;
-    color: #1a2c40;
+    padding: 12px;
+    background: var(--card-bg, #ffffff);
+    color: var(--text-dark, #1a2c40);
+    background-image: none !important;
 }
-#extend_note_popup .form-control:focus {
-    border-color: #3a6fa8;
+#extend_note_popup .extend-note-modal-body textarea.form-control {
+    resize: vertical;
+    min-height: 96px;
+}
+#extend_note_popup .extend-note-modal-body .form-control:focus {
+    border-color: var(--sidebar-active, #3a6fa8) !important;
     box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
     outline: none;
 }
-#extend_note_popup .box-footer {
-    padding: 0.75rem 0 0 !important;
+#extend_note_popup .extend-note-modal-body .form-text {
+    color: var(--text-muted, #5e7a90) !important;
+    font-size: 0.8125rem;
     margin-top: 0.5rem;
-    border-top: 1px solid #c8dcef;
+    display: block;
 }
-#extend_note_popup #extend_deadline {
-    background: #1e3d60;
-    border: 1px solid #1e3d60;
-    color: #fff;
+#extend_note_popup .extend-note-modal-body .form-text i {
+    color: var(--sidebar-active, #3a6fa8);
+}
+#extend_note_popup .extend-note-modal-body .custom-error {
+    display: block;
+    color: var(--danger, #a83020);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+}
+#extend_note_popup .extend-note-modal-footer {
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+#extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend {
+    background-color: var(--card-bg, #ffffff) !important;
+    background-image: none !important;
+    color: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
     font-weight: 600;
     border-radius: 8px;
-    padding: 0.5rem 1.5rem;
-    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.2);
+    padding: 0.45rem 1rem;
 }
+#extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend i {
+    color: var(--navy, #1e3d60) !important;
+}
+#extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend:hover,
+#extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend:focus {
+    background-color: var(--sidebar-hover, #c8dcef) !important;
+    border-color: var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+#extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary,
+#extend_note_popup #extend_deadline {
+    background-color: var(--navy, #1e3d60) !important;
+    background-image: none !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
+}
+#extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary i,
+#extend_note_popup #extend_deadline i {
+    color: #fff !important;
+}
+#extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary:hover,
+#extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary:focus,
 #extend_note_popup #extend_deadline:hover,
 #extend_note_popup #extend_deadline:focus {
-    background: #3a6fa8;
-    border-color: #3a6fa8;
-    color: #fff;
+    background-color: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: #fff !important;
 }
 
 /* Complete Task / Completion Notes (dashboard) — docs/theme.md (tokens via :root) */
@@ -518,44 +587,56 @@
 
 {{-- Extend Note Deadline Modal --}}
 <div class="modal fade custom_modal" id="extend_note_popup" tabindex="-1" role="dialog" aria-labelledby="create_action_popupLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="create_action_popupLabel">Extend Notes Deadline</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content extend-note-modal-content">
+            <div class="modal-header extend-note-modal-header">
+                <h5 class="modal-title" id="create_action_popupLabel">
+                    <i class="fa-solid fa-calendar-plus extend-note-header-icon" aria-hidden="true"></i>
+                    Extend Notes Deadline
+                </h5>
+                <x-crm.modal-close />
             </div>
             <input id="note_id" type="hidden" value="">
             <input id="unique_group_id" type="hidden" value="">
-            <div id="popover-content">
-                <div class="box-header with-border">
-                    <div class="form-group row mb-3">
-                        <label for="assignnote" class="col-sm-3 control-label c6 f13 pt-2">Note</label>
-                        <div class="col-sm-9">
-                            <textarea id="assignnote" class="form-control" placeholder="Enter a note..." rows="3"></textarea>
-                        </div>
-                        <div class="clearfix"></div>
-                    </div>
-                </div>
-
-                <div class="form-group row note_deadline mb-0">
-                    <label for="note_deadline" class="col-sm-3 control-label c6 f13 pt-2">
-                        Note Deadline
+            <div class="modal-body extend-note-modal-body" id="popover-content">
+                <div class="form-group">
+                    <label for="assignnote">
+                        <i class="fa-solid fa-note-sticky" aria-hidden="true"></i> Note
                     </label>
-                    <div class="col-sm-9">
-                        <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="note_deadline" value="{{ date('Y-m-d') }}" name="note_deadline">
-                    </div>
-                    <div class="clearfix"></div>
+                    <textarea
+                        id="assignnote"
+                        class="form-control"
+                        placeholder="Enter a note..."
+                        rows="4"
+                    ></textarea>
                 </div>
-
-                <div class="box-footer">
-                    <div class="row text-center">
-                        <div class="col-md-12 text-center">
-                            <button type="button" class="btn" id="extend_deadline">Extend Deadline</button>
-                        </div>
-                    </div>
+                <div class="form-group note_deadline">
+                    <label for="note_deadline">
+                        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Note Deadline
+                    </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="note_deadline"
+                        name="note_deadline"
+                        data-flatpickr="standard"
+                        placeholder="dd/mm/yyyy"
+                        autocomplete="off"
+                        value="{{ date('d/m/Y') }}"
+                    >
+                    <small class="form-text">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        Choose the new deadline for this note.
+                    </small>
                 </div>
+            </div>
+            <div class="modal-footer extend-note-modal-footer">
+                <button type="button" class="btn btn-cancel-extend" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-extend-deadline-primary" id="extend_deadline">
+                    <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Extend Deadline
+                </button>
             </div>
         </div>
     </div>

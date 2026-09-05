@@ -1,21 +1,22 @@
 @php $comp = $fetchedData->company ?? null; @endphp
 {{-- Company Information Card --}}
-<div class="card" style="margin-bottom: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3><i class="fa-solid fa-building"></i> Company Information</h3>
-        <div style="display:flex; align-items:center; gap:12px;">
-            @if(empty($isClosedMatterView))
-            <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
-               class="btn btn-sm btn-primary">
-                <i class="fa-solid fa-pen-to-square"></i> Edit
-            </a>
-            @endif
+<article class="card cdn-ov-card">
+    <header class="cdn-ov-card__head">
+        <div class="cdn-ov-card__title">
+            <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
+            <h3>Company Information</h3>
         </div>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-        <div class="field-group">
-            <span class="field-label">Company Name:</span>
-            <span class="field-value">{{ optional($fetchedData->company)->company_name ?? 'N/A' }}</span>
+        @if(empty($isClosedMatterView))
+        <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
+           class="cdn-ov-card__action">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit
+        </a>
+        @endif
+    </header>
+    <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Company Name</span>
+            <span class="cdn-ov-field__value">{{ optional($fetchedData->company)->company_name ?? 'N/A' }}</span>
         </div>
         @php
             $tradingNamesDisplay = $comp && ($comp->tradingNames?->isNotEmpty() ?? false)
@@ -23,33 +24,33 @@
                 : ($comp->trading_name ?? null);
         @endphp
         @if($tradingNamesDisplay)
-        <div class="field-group">
-            <span class="field-label">Trading Name(s):</span>
-            <span class="field-value">{{ $tradingNamesDisplay }}</span>
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Trading Name(s)</span>
+            <span class="cdn-ov-field__value">{{ $tradingNamesDisplay }}</span>
         </div>
         @endif
         @if(optional($fetchedData->company)->ABN_number)
-        <div class="field-group">
-            <span class="field-label">ABN:</span>
-            <span class="field-value">{{ $fetchedData->company->ABN_number }}</span>
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">ABN</span>
+            <span class="cdn-ov-field__value">{{ $fetchedData->company->ABN_number }}</span>
         </div>
         @endif
         @if(optional($fetchedData->company)->ACN)
-        <div class="field-group">
-            <span class="field-label">ACN:</span>
-            <span class="field-value">{{ $fetchedData->company->ACN }}</span>
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">ACN</span>
+            <span class="cdn-ov-field__value">{{ $fetchedData->company->ACN }}</span>
         </div>
         @endif
         @if(optional($fetchedData->company)->company_type)
-        <div class="field-group">
-            <span class="field-label">Business Type:</span>
-            <span class="field-value">{{ \App\Models\Company::businessTypeLabel($fetchedData->company->company_type) }}</span>
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Business Type</span>
+            <span class="cdn-ov-field__value">{{ \App\Models\Company::businessTypeLabel($fetchedData->company->company_type) }}</span>
         </div>
         @endif
         @if(optional($fetchedData->company)->company_website)
-        <div class="field-group">
-            <span class="field-label">Website:</span>
-            <span class="field-value">
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Website</span>
+            <span class="cdn-ov-field__value">
                 <a href="{{ $fetchedData->company->company_website }}" target="_blank" rel="noopener noreferrer">
                     {{ $fetchedData->company->company_website }}
                 </a>
@@ -57,31 +58,36 @@
         </div>
         @endif
         @if($comp && $comp->isTrusteeBusiness() && ($comp->trust_name || $comp->trust_abn || $comp->trustee_name || $comp->trustee_details))
-        <div class="field-group" style="grid-column: 1 / -1;">
-            <span class="field-label">Trust details:</span>
-            <span class="field-value">
+        <div class="cdn-ov-field cdn-ov-field--full">
+            <span class="cdn-ov-field__label">Trust details</span>
+            <span class="cdn-ov-field__value">
                 @if($comp->trust_name) Trust name: {{ $comp->trust_name }}@endif
-                @if($comp->trust_abn) @if($comp->trust_name) | @endif ABN/ACN: {{ $comp->trust_abn }}@endif
-                @if($comp->trustee_name) @if($comp->trust_name || $comp->trust_abn) | @endif Trustee: {{ $comp->trustee_name }}@endif
-                @if($comp->trustee_details) | {{ $comp->trustee_details }}@endif
+                @if($comp->trust_abn) @if($comp->trust_name) · @endif ABN/ACN: {{ $comp->trust_abn }}@endif
+                @if($comp->trustee_name) @if($comp->trust_name || $comp->trust_abn) · @endif Trustee: {{ $comp->trustee_name }}@endif
+                @if($comp->trustee_details) · {{ $comp->trustee_details }}@endif
             </span>
         </div>
         @endif
     </div>
     @if(!empty($cdnHeroLastUpdateOn))
-    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f7; text-align: right;">
-        <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
-    </div>
+    <footer class="cdn-ov-card__foot">
+        Last update on {{ $cdnHeroLastUpdateOn }}
+    </footer>
     @endif
-</div>
+</article>
 
 {{-- Company Phone & Email Card --}}
-<div class="card" style="margin-bottom: 20px;">
-    <h3><i class="fa-solid fa-phone"></i> Contact Information</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-        <div class="field-group">
-            <span class="field-label">Phone:</span>
-            <span class="field-value">
+<article class="card cdn-ov-card">
+    <header class="cdn-ov-card__head">
+        <div class="cdn-ov-card__title">
+            <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
+            <h3>Contact Information</h3>
+        </div>
+    </header>
+    <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Phone</span>
+            <span class="cdn-ov-field__value">
                 <?php
                 if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
                     $companyContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')
@@ -108,18 +114,10 @@
 
                         $formattedPhone = \App\Helpers\PhoneValidationHelper::formatAustralianPhone($conVal->phone, $country_code);
 
-                        if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
-                            if ( $conVal->is_verified ) {
-                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
-                            } else {
-                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
-                            }
+                        if ( isset($conVal->is_verified) && $conVal->is_verified ) {
+                            $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                         } else {
-                            if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
-                            } else {
-                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
-                            }
+                            $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                         }
                     }
                     echo $phonenoStr;
@@ -129,9 +127,9 @@
             </span>
         </div>
 
-        <div class="field-group">
-            <span class="field-label">Email:</span>
-            <span class="field-value">
+        <div class="cdn-ov-field">
+            <span class="cdn-ov-field__label">Email</span>
+            <span class="cdn-ov-field__value">
                 <?php
                 if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
                     $companyEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')
@@ -149,18 +147,10 @@
                 if( !empty($companyEmails) && count($companyEmails)>0 ){
                     $emailStr = "";
                     foreach($companyEmails as $emailKey=>$emailVal){
-                        if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
-                            if ( $emailVal->is_verified ) {
-                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
-                            } else {
-                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
-                            }
+                        if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
+                            $emailStr .= '<span class="cdn-ov-contact-line"><a href="mailto:'.e($emailVal->email).'">'.e($emailVal->email).'</a> <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                         } else {
-                            if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
-                            } else {
-                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
-                            }
+                            $emailStr .= '<span class="cdn-ov-contact-line"><a href="mailto:'.e($emailVal->email).'">'.e($emailVal->email).'</a> <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                         }
                     }
                     echo $emailStr;
@@ -170,56 +160,56 @@
             </span>
         </div>
     </div>
-</div>
+</article>
 
 @php $contactPerson = optional($fetchedData->company)->contactPerson; @endphp
 @if($contactPerson)
-    <div class="card" style="margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3><i class="fa-solid fa-user-tie"></i> Primary Contact Person</h3>
+    <article class="card cdn-ov-card">
+        <header class="cdn-ov-card__head">
+            <div class="cdn-ov-card__title">
+                <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user-tie"></i></span>
+                <h3>Primary Contact Person</h3>
+            </div>
             <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}"
-               class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-up-right-from-square"></i> View Profile
+               class="cdn-ov-card__action">
+                <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i> View Profile
             </a>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-            <div class="field-group">
-                <span class="field-label">Name:</span>
-                <span class="field-value">
-                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}"
-                       style="color: #007bff; text-decoration: none;">
+        </header>
+        <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+            <div class="cdn-ov-field">
+                <span class="cdn-ov-field__label">Name</span>
+                <span class="cdn-ov-field__value">
+                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}">
                         {{ $contactPerson->first_name }} {{ $contactPerson->last_name }}
                     </a>
                 </span>
             </div>
             @if(optional($fetchedData->company)->contact_person_position)
-            <div class="field-group">
-                <span class="field-label">Position:</span>
-                <span class="field-value">{{ $fetchedData->company->contact_person_position }}</span>
+            <div class="cdn-ov-field">
+                <span class="cdn-ov-field__label">Position</span>
+                <span class="cdn-ov-field__value">{{ $fetchedData->company->contact_person_position }}</span>
             </div>
             @endif
             @if($contactPerson->email)
-            <div class="field-group">
-                <span class="field-label">Email:</span>
-                <span class="field-value">
-                    <a href="mailto:{{ $contactPerson->email }}" style="color: #007bff; text-decoration: none;">
-                        {{ $contactPerson->email }}
-                    </a>
+            <div class="cdn-ov-field">
+                <span class="cdn-ov-field__label">Email</span>
+                <span class="cdn-ov-field__value">
+                    <a href="mailto:{{ $contactPerson->email }}">{{ $contactPerson->email }}</a>
                 </span>
             </div>
             @endif
             @if($contactPerson->phone)
-            <div class="field-group">
-                <span class="field-label">Phone:</span>
-                <span class="field-value">{{ $contactPerson->phone }}</span>
+            <div class="cdn-ov-field">
+                <span class="cdn-ov-field__label">Phone</span>
+                <span class="cdn-ov-field__value">{{ $contactPerson->phone }}</span>
             </div>
             @endif
             @if($contactPerson->client_id)
-            <div class="field-group">
-                <span class="field-label">Client ID:</span>
-                <span class="field-value">{{ $contactPerson->client_id }}</span>
+            <div class="cdn-ov-field">
+                <span class="cdn-ov-field__label">Client ID</span>
+                <span class="cdn-ov-field__value">{{ $contactPerson->client_id }}</span>
             </div>
             @endif
         </div>
-    </div>
+    </article>
 @endif

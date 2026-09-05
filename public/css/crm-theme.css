@@ -4485,6 +4485,55 @@ body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn
   color: var(--navy) !important;
 }
 
+/* Extend Notes Deadline — beats body.sidebar-mini h5 { navy } on dark header */
+body.sidebar-mini #extend_note_popup .extend-note-modal-header .modal-title,
+body.sidebar-mini #extend_note_popup .modal-header .modal-title,
+body.sidebar-mini #extend_note_popup .modal-header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-header .modal-title i,
+body.sidebar-mini #extend_note_popup .extend-note-header-icon {
+  color: var(--accent-gold) !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend {
+  background-color: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend:hover,
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-cancel-extend:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary,
+body.sidebar-mini #extend_note_popup #extend_deadline {
+  background-color: var(--navy) !important;
+  background-image: none !important;
+  border: 1px solid var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary:hover,
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary:focus,
+body.sidebar-mini #extend_note_popup #extend_deadline:hover,
+body.sidebar-mini #extend_note_popup #extend_deadline:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #extend_note_popup .extend-note-modal-footer .btn.btn-extend-deadline-primary i,
+body.sidebar-mini #extend_note_popup #extend_deadline i {
+  color: #fff !important;
+}
+
 /* Complete Task modal — header title white; icon accent-gold (theme.md) */
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title {
   color: #fff !important;

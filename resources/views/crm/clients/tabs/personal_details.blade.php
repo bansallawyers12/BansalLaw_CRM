@@ -9,24 +9,28 @@
                     $detailHasDobVerifiedCol = $__sch::hasTable('admins')
                         && $__sch::hasColumn('admins', 'dob_verified_date');
                 @endphp
-                <div class="content-grid">
+                <div class="content-grid cdn-overview">
                     @if(!empty($fetchedData->is_company))
                         @include('crm.companies.partials.company_overview_unified')
                     @else
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3><i class="fa-solid fa-user"></i> Personal Information</h3>
-                        </div>
-                        <div class="field-group">
-                            <span class="field-label">Age / Date of Birth</span>
-                            <span class="field-value">
+                    <article class="card cdn-ov-card">
+                        <header class="cdn-ov-card__head">
+                            <div class="cdn-ov-card__title">
+                                <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+                                <h3>Personal Information</h3>
+                            </div>
+                        </header>
+                        <div class="cdn-ov-card__body">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Age / Date of Birth</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDobTick = '<i class="fa-regular fa-circle unverified-icon fa-lg"></i>';
+                                    $verifiedDobTick = '<i class="fa-regular fa-circle cdn-ov-unverified"></i>';
                                     if ($detailHasDobVerifiedCol) {
                                         $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                         if ($verifiedDob) {
-                                            $verifiedDobTick = '<i class="fa-solid fa-circle-check verified-icon fa-lg"></i>';
+                                            $verifiedDobTick = '<i class="fa-solid fa-circle-check cdn-ov-verified"></i>';
                                         }
                                     }
                                     
@@ -55,9 +59,9 @@
                             </span>
                         </div>
 
-                        <div class="field-group">
-                            <span class="field-label">Gender</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Gender</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if ( isset($fetchedData->gender) && $fetchedData->gender != '') {
                                     echo $fetchedData->gender;
@@ -67,9 +71,9 @@
                             </span>
                         </div>
 
-                        <div class="field-group">
-                            <span class="field-label">Marital Status</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Marital Status</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if ( isset($fetchedData->marital_status) && $fetchedData->marital_status != '') {
                                     echo $fetchedData->marital_status;
@@ -79,9 +83,9 @@
                             </span>
                         </div>
 
-                        <div class="field-group">
-                            <span class="field-label">Client Email</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Client Email</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
                                     $clientEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->get();
@@ -101,16 +105,16 @@
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                             // Show verification status for ALL email types
                                             if ( $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                                             } else {
-                                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                                             }
                                         } else {
                                             // For emails without type, still show verification status if available
                                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                                             } else {
-                                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                                             }
                                         }
                                     }
@@ -121,9 +125,9 @@
                             </span>
                         </div>
 
-                        <div class="field-group">
-                            <span class="field-label">Client Phone</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Client Phone</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
                                     $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
@@ -151,16 +155,16 @@
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                                             } else {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
                                             } else {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
                                             }
                                         }
                                     }
@@ -184,9 +188,9 @@
                         }
                         ?>
 
-                        <div class="field-group">
-                            <span class="field-label">Address</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Address</span>
+                            <span class="cdn-ov-field__value">
                                 <?php
                                 if($address_Info) {
                                     $addressParts = array_filter([
@@ -213,19 +217,20 @@
                         </div>
 
                         <?php if($address_Info && $address_Info->regional_code): ?>
-                        <div class="field-group">
-                            <span class="field-label">Regional Classification</span>
-                            <span class="field-value">
+                        <div class="cdn-ov-field">
+                            <span class="cdn-ov-field__label">Regional Classification</span>
+                            <span class="cdn-ov-field__value">
                                 <?php echo $address_Info->regional_code; ?>
                             </span>
                         </div>
                         <?php endif; ?>
-                        @if(!empty($cdnHeroLastUpdateOn))
-                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f7; text-align: right;">
-                            <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
                         </div>
+                        @if(!empty($cdnHeroLastUpdateOn))
+                        <footer class="cdn-ov-card__foot">
+                            Last update on {{ $cdnHeroLastUpdateOn }}
+                        </footer>
                         @endif
-                    </div>
+                    </article>
 
 
                     @endif
@@ -279,18 +284,26 @@
                                 $overviewClientMatterId = (int) $matter_dis_ref_info_arr->id;
                             }
                             ?>
-                        <div class="card">
-                            <h3><i class="fa-solid fa-user"></i> Matter assignee
+                        <article class="card cdn-ov-card">
+                            <header class="cdn-ov-card__head">
+                                <div class="cdn-ov-card__title">
+                                    <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user-group"></i></span>
+                                    <h3>Matter assignee</h3>
+                                </div>
                                 @if($overviewClientMatterId)
-                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">Edit details</a>
+                                <a class="cdn-ov-card__action changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">
+                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit details
+                                </a>
                                 @else
-                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button">Edit details</a>
+                                <a class="cdn-ov-card__action changeMatterAssignee" href="javascript:;" role="button">
+                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit details
+                                </a>
                                 @endif
-                            </h3>
-
-                            <div class="field-group">
-                                <span class="field-label">Principal Solicitor</span>
-                                <span class="field-value">
+                            </header>
+                            <div class="cdn-ov-card__body">
+                            <div class="cdn-ov-field">
+                                <span class="cdn-ov-field__label">Principal Solicitor</span>
+                                <span class="cdn-ov-field__value">
                                     <?php
                                     $lpName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
@@ -303,9 +316,9 @@
                                     ?>
                                 </span>
                             </div>
-                            <div class="field-group">
-                                <span class="field-label">Responsible Solicitor</span>
-                                <span class="field-value">
+                            <div class="cdn-ov-field">
+                                <span class="cdn-ov-field__label">Responsible Solicitor</span>
+                                <span class="cdn-ov-field__value">
                                     <?php
                                     $prName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
@@ -319,9 +332,9 @@
                                 </span>
                             </div>
 
-                            <div class="field-group">
-                                <span class="field-label">Paralegal</span>
-                                <span class="field-value">
+                            <div class="cdn-ov-field">
+                                <span class="cdn-ov-field__label">Paralegal</span>
+                                <span class="cdn-ov-field__value">
                                     <?php
                                     $paName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
@@ -335,9 +348,9 @@
                                 </span>
                             </div>
 
-                            <div class="field-group">
-                                <span class="field-label">Handling Office</span>
-                                <span class="field-value">
+                            <div class="cdn-ov-field">
+                                <span class="cdn-ov-field__label">Handling Office</span>
+                                <span class="cdn-ov-field__value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->office_id != ''){
                                         $office_info = \App\Models\Branch::select('office_name')->where('id', $matter_dis_ref_info_arr->office_id)->first();
@@ -349,10 +362,17 @@
                                     } ?>
                                 </span>
                             </div>
-                        </div>
+                            </div>
+                        </article>
 
-                        <div class="card">
-                            <h3><i class="fa-solid fa-briefcase"></i> Matter Details</h3>
+                        <article class="card cdn-ov-card">
+                            <header class="cdn-ov-card__head">
+                                <div class="cdn-ov-card__title">
+                                    <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
+                                    <h3>Matter Details</h3>
+                                </div>
+                            </header>
+                            <div class="cdn-ov-card__body">
                             @php
                                 $mdRows = [];
                                 if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
@@ -405,22 +425,22 @@
                                 }
                             @endphp
                             @forelse($mdRows as $mdRow)
-                            <div class="field-group">
+                            <div class="cdn-ov-field">
                                 @if($mdRow['label'] !== '')
-                                <span class="field-label">{{ $mdRow['label'] }}</span>
-                                <span class="field-value">{{ $mdRow['value'] }}</span>
+                                <span class="cdn-ov-field__label">{{ $mdRow['label'] }}</span>
+                                <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
                                 @else
-                                <span class="field-value">{{ $mdRow['value'] }}</span>
+                                <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
                                 @endif
                             </div>
                             @empty
-                            <p class="text-muted mb-0" style="font-size:0.9rem;">No matter details recorded yet. Use <strong>Edit details</strong> on Matter assignee to add subtype, dates, or case notes.</p>
+                            <p class="cdn-ov-empty">No matter details recorded yet. Use <strong>Edit details</strong> on Matter assignee to add subtype, dates, or case notes.</p>
                             @endforelse
                             @if($linkedOtherParties->isNotEmpty())
-                                <div class="field-group" style="margin-top:0.75rem;">
-                                    <span class="field-label">Other parties</span>
-                                    <div class="field-value">
-                                        <ul class="mb-0 ps-3" style="font-size:0.9rem;">
+                                <div class="cdn-ov-field">
+                                    <span class="cdn-ov-field__label">Other parties</span>
+                                    <div class="cdn-ov-field__value">
+                                        <ul class="cdn-ov-party-list">
                                             @foreach($linkedOtherParties as $opp)
                                                 @php
                                                     $oppRoleLabel = $opp->party_role;
@@ -436,7 +456,7 @@
                                                         $opp->rep_phone ?? null,
                                                     ]);
                                                 @endphp
-                                                <li class="mb-1">
+                                                <li>
                                                     <strong>{{ $opp->name }}</strong>
                                                     @if($oppRoleLabel)<span class="text-muted"> — {{ $oppRoleLabel }}</span>@endif
                                                     @if($repParts !== [])
@@ -451,7 +471,8 @@
                                     </div>
                                 </div>
                             @endif
-                        </div>
+                            </div>
+                        </article>
                     <?php
                     } ?>
 

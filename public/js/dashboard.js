@@ -141,7 +141,7 @@ function extendDeadline() {
                 note_id: $('#note_id').val(),
                 unique_group_id: $('#unique_group_id').val(),
                 description: $('#assignnote').val(),
-                note_deadline: $('#note_deadline').val()
+                note_deadline: noteDeadlineToYmd($('#note_deadline').val())
             },
             success: function(response) {
                 $('.popuploader').hide();
@@ -168,7 +168,7 @@ function openExtendDeadlineModal() {
     $('#note_id').val($button.attr("data-noteid"));
     $('#unique_group_id').val($button.attr("data-uniquegroupid"));
     $('#assignnote').val($button.attr("data-assignnote"));
-    $('#note_deadline').val($button.attr("data-deadlinedate"));
+    setNoteDeadlineInput($button.attr("data-deadlinedate"));
     $('#extend_note_popup').modal('show');
 }
 
@@ -366,14 +366,17 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
 window.openExtendModal = function(taskId) {
     const taskItem = $(`[data-task-id="${taskId}"]`);
     if (!taskItem.length) return;
-    
+
     const data = taskItem.data();
-    
+    const description = stripHtml(data.description);
+    const deadline = data.deadlineFormatted || data.deadline || '';
+
     $('#note_id').val(taskId);
     $('#unique_group_id').val(data.uniqueGroupId);
-    $('#assignnote').val(stripHtml(data.description));
-    $('#note_deadline').val(data.deadlineFormatted || '');
-    
+    $('#assignnote').val(description);
+    setNoteDeadlineInput(deadline);
+
+    closeTaskDetail();
     $('#extend_note_popup').modal('show');
 };
 
@@ -388,33 +391,13 @@ window.extendTaskFromDetail = function() {
     const taskId = panel.data('taskId');
     const uniqueGroupId = panel.data('uniqueGroupId');
     const description = panel.data('description');
-    const deadline = panel.data('deadline');
-    
+    const deadline = panel.data('deadlineFormatted') || panel.data('deadline');
+
     $('#note_id').val(taskId);
     $('#unique_group_id').val(uniqueGroupId);
     $('#assignnote').val(stripHtml(description));
-    $('#note_deadline').val(deadline);
-    
-    // Close detail panel and open modal
-    closeTaskDetail();
-    $('#extend_note_popup').modal('show');
-};
+    setNoteDeadlineInput(deadline);
 
-// Open Extend Modal from Task Item
-window.openExtendModal = function(taskId) {
-    const taskItem = $(`[data-task-id="${taskId}"]`);
-    if (!taskItem.length) return;
-    
-    const data = taskItem.data();
-    const description = stripHtml(data.description);
-    const deadline = data.deadlineFormatted || formatDate(data.deadline);
-    
-    // Populate modal
-    $('#note_id').val(taskId);
-    $('#unique_group_id').val(data.uniqueGroupId);
-    $('#assignnote').val(description);
-    $('#note_deadline').val(deadline);
-    
     // Close detail panel and open modal
     closeTaskDetail();
     $('#extend_note_popup').modal('show');
@@ -461,6 +444,66 @@ function stripHtml(html) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
+}
+
+/** Convert Y-m-d / ISO / Date-ish strings to dd/mm/yyyy for display. */
+function noteDeadlineToDdMmYyyy(value) {
+    if (!value) {
+        return '';
+    }
+    var str = String(value).trim();
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+        var parts = str.split('/');
+        return ('0' + parts[0]).slice(-2) + '/' + ('0' + parts[1]).slice(-2) + '/' + parts[2];
+    }
+    var iso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+        return iso[3] + '/' + iso[2] + '/' + iso[1];
+    }
+    var parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+        var d = ('0' + parsed.getDate()).slice(-2);
+        var m = ('0' + (parsed.getMonth() + 1)).slice(-2);
+        return d + '/' + m + '/' + parsed.getFullYear();
+    }
+    return str;
+}
+
+/** Convert dd/mm/yyyy (or Y-m-d) to Y-m-d for the API. */
+function noteDeadlineToYmd(value) {
+    if (!value) {
+        return '';
+    }
+    var str = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+    }
+    var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+        return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    }
+    return str;
+}
+
+function setNoteDeadlineInput(value) {
+    var display = noteDeadlineToDdMmYyyy(value);
+    var $el = $('#note_deadline');
+    if (!$el.length) {
+        return;
+    }
+    if (typeof CRM_Flatpickr !== 'undefined' && !$el.data('flatpickr')) {
+        CRM_Flatpickr.initStandard($el);
+    }
+    var fp = $el.data('flatpickr');
+    if (fp) {
+        if (display) {
+            fp.setDate(display, true);
+        } else {
+            fp.clear();
+        }
+        return;
+    }
+    $el.val(display);
 }
 
 function formatDate(dateString) {
