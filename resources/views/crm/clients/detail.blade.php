@@ -688,7 +688,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 
 {{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
 <div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered cdn-update-stage-modal-dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered cdn-update-stage-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <div>

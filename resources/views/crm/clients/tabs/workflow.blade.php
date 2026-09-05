@@ -86,10 +86,11 @@
                     if ($workflowIsLastStage) {
                         $workflowNextBtnLabel = 'Last stage';
                         $workflowNextBtnTitle = 'This matter is already on the last stage';
-                    } elseif ($workflowNextStageName) {
-                        $workflowNextBtnLabel = 'Go to ' . $workflowNextStageName;
                     } else {
-                        $workflowNextBtnLabel = 'Next stage';
+                        $workflowNextBtnLabel = 'Advance to next stage';
+                        $workflowNextBtnTitle = $workflowNextStageName
+                            ? ('Advance to ' . $workflowNextStageName)
+                            : 'Advance to next stage';
                     }
                 }
 
@@ -106,7 +107,7 @@
             @endphp
 
             @if($workflowInModal)
-                <div class="cdn-workflow-modal">
+                <div class="cdn-workflow-modal cdn-workflow-modal--case">
                     <div class="cdn-workflow-modal__matter-row">
                         <div class="cdn-workflow-modal__matter">
                             <span class="cdn-workflow-modal__matter-icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></span>
@@ -115,73 +116,83 @@
                                 <div class="cdn-workflow-modal__matter-ref">{{ $workflowMatterNumber }}</div>
                             </div>
                         </div>
-                        <span class="badge cdn-workflow-modal__status {{ $workflowStatusBadgeClass }}">{{ $workflowStatusLabel }}</span>
-                    </div>
-
-                    @if($workflowTotalStages > 0)
-                        <div class="cdn-workflow-modal__track">
-                            @include('crm.clients.tabs.partials.workflow-stages-list', [
-                                'containerClass' => 'cdn-workflow-modal__stepper',
-                                'listClass' => 'workflow-stages-list--horizontal workflow-stages-list--stepper',
-                                'showStepNumbers' => true,
-                            ])
+                        <div class="cdn-workflow-modal__matter-meta">
                             @if($workflowTotalStages > 1)
-                                <div class="progress cdn-workflow-modal__progress-bar" role="progressbar" aria-valuenow="{{ $workflowProgressPercentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="Workflow progress {{ $workflowProgressPercentage }} percent">
-                                    <div class="progress-bar" style="width: {{ $workflowProgressPercentage }}%;"></div>
+                                <div class="cdn-workflow-modal__file-progress" role="progressbar" aria-valuenow="{{ $workflowProgressPercentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="File progress {{ $workflowProgressPercentage }} percent">
+                                    <span class="cdn-workflow-modal__file-progress-label">File progress {{ $workflowProgressPercentage }}%</span>
+                                    <span class="cdn-workflow-modal__file-progress-track"><span class="cdn-workflow-modal__file-progress-fill" style="width: {{ $workflowProgressPercentage }}%;"></span></span>
                                 </div>
                             @endif
-                        </div>
-                    @endif
-
-                    <div class="cdn-workflow-modal__stage-card">
-                        <div class="cdn-workflow-modal__stage-main">
-                            <div class="cdn-workflow-modal__stage-kicker">
-                                Current stage
-                                @if($workflowTotalStages > 0)
-                                    <span class="cdn-workflow-modal__stage-count">{{ max($workflowStagePosition, 1) }}/{{ $workflowTotalStages }}</span>
-                                @endif
-                                @if($workflowTotalStages > 1)
-                                    <span class="cdn-workflow-modal__stage-pct">{{ $workflowProgressPercentage }}%</span>
-                                @endif
-                            </div>
-                            <div class="cdn-workflow-modal__stage-name">{{ $workflowCurrentStageName ?? 'Not set' }}</div>
-                            @if($workflowNextStageName)
-                                <div class="cdn-workflow-modal__next">Next: <strong>{{ $workflowNextStageName }}</strong></div>
-                            @else
-                                <div class="cdn-workflow-modal__next cdn-workflow-modal__next--last">Last stage in this workflow</div>
-                            @endif
-                        </div>
-
-                        <div class="deadline-section cdn-workflow-modal__deadline">
-                            <div class="cdn-workflow-modal__deadline-label">Deadline</div>
-                            @if(empty($isClosedMatterView))
-                            <label class="cdn-workflow-modal__deadline-toggle">
-                                <input type="checkbox" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
-                                    {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
-                                <span>Set deadline</span>
-                            </label>
-                            <div class="workflow-deadline-date-wrapper" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
-                                <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
-                                <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
-                                    value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
-                                    data-matter-id="{{ $workflowSelectedMatter->id }}">
-                            </div>
-                            @endif
-                            <div class="cdn-workflow-modal__deadline-chip" @if(!$workflowSelectedMatter->deadline) hidden @endif>
-                                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
-                                <span class="cdn-workflow-modal__deadline-chip-text">
-                                    @if($workflowSelectedMatter->deadline)
-                                        {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}
-                                    @endif
-                                </span>
-                            </div>
+                            <span class="badge cdn-workflow-modal__status {{ $workflowStatusBadgeClass }}">{{ $workflowStatusLabel }}</span>
                         </div>
                     </div>
 
-                    @include('crm.clients.tabs.partials.workflow-navigation', [
-                        'navigationClass' => 'cdn-workflow-modal__actions',
-                        'workflowInModal' => true,
-                    ])
+                    <div class="cdn-workflow-modal__layout">
+                        <aside class="cdn-workflow-modal__stages-pane" aria-label="Case stages">
+                            @include('crm.clients.tabs.partials.workflow-stages-list', [
+                                'containerClass' => 'cdn-workflow-modal__stages',
+                                'listClass' => 'workflow-stages-list--vertical workflow-stages-list--case',
+                                'showStepNumbers' => true,
+                                'showLocks' => true,
+                                'stagesHeading' => 'Case stages',
+                            ])
+                        </aside>
+
+                        <section class="cdn-workflow-modal__stage-pane">
+                            <div class="cdn-workflow-modal__stage-kicker">
+                                Stage {{ max($workflowStagePosition, 1) }} of {{ max($workflowTotalStages, 1) }}
+                            </div>
+                            <h3 class="cdn-workflow-modal__stage-title">{{ $workflowCurrentStageName ?? 'Not set' }}</h3>
+                            @if($workflowNextStageName)
+                                <p class="cdn-workflow-modal__next">Next: <strong>{{ $workflowNextStageName }}</strong></p>
+                            @else
+                                <p class="cdn-workflow-modal__next cdn-workflow-modal__next--last">Last stage in this workflow</p>
+                            @endif
+
+                            <div class="cdn-workflow-modal__checklist">
+                                <div class="cdn-workflow-modal__checklist-heading">Deadline</div>
+
+                                <div class="cdn-workflow-modal__checklist-list" role="list">
+                                    <div class="cdn-workflow-modal__check-item cdn-workflow-modal__check-item--deadline" role="listitem">
+                                        <div class="cdn-workflow-modal__check-main">
+                                            @if(empty($isClosedMatterView))
+                                                <label class="cdn-workflow-modal__check-toggle">
+                                                    <input type="checkbox" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                                        {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
+                                                    <span class="cdn-workflow-modal__check-box" aria-hidden="true"></span>
+                                                    <span class="cdn-workflow-modal__check-label">Set deadline</span>
+                                                </label>
+                                                <div class="workflow-deadline-date-wrapper" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
+                                                    <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
+                                                    <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
+                                                        value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
+                                                        data-matter-id="{{ $workflowSelectedMatter->id }}">
+                                                </div>
+                                            @else
+                                                <span class="cdn-workflow-modal__check-label">Deadline</span>
+                                            @endif
+                                        </div>
+                                        <div class="cdn-workflow-modal__deadline-chip" @if(!$workflowSelectedMatter->deadline) hidden @endif>
+                                            <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                                            <span class="cdn-workflow-modal__deadline-chip-text">
+                                                @if($workflowSelectedMatter->deadline)
+                                                    {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cdn-workflow-modal__footer">
+                                <div class="cdn-workflow-modal__outstanding-spacer"></div>
+                                @include('crm.clients.tabs.partials.workflow-navigation', [
+                                    'navigationClass' => 'cdn-workflow-modal__actions',
+                                    'workflowInModal' => true,
+                                ])
+                            </div>
+                        </section>
+                    </div>
                 </div>
             @else
             <div class="row mt-3">

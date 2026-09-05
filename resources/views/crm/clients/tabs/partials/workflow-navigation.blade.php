@@ -103,7 +103,7 @@
             </ul>
         </div>
         <button type="button" class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
-            {{ $workflowNextBtnLabel }} <i class="fa-solid fa-angle-right"></i>
+            {{ $workflowNextBtnLabel }} <i class="fa-solid fa-arrow-right"></i>
         </button>
     @else
         <div class="d-inline-flex flex-wrap gap-2 align-items-center">
