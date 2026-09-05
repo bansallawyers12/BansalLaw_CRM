@@ -326,10 +326,19 @@ class AssigneeController extends Controller
      //All assigned by me action list which r incomplete
      public function assigned_by_me(Request $request)
      {
-        $query = Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])
-            ->where('status','<>',1)
-            ->where('type','client')
+        $listStatus = $request->input('status', 'incomplete') === 'completed'
+            ? 'completed'
+            : 'incomplete';
+
+        $query = Note::with(['noteStaff', 'noteClient.company', 'assigned_staff', 'clientMatter'])
+            ->where('type', 'client')
             ->where('is_action', 1);
+
+        if ($listStatus === 'completed') {
+            $query->where('status', 1);
+        } else {
+            $query->where('status', '<>', 1);
+        }
 
         if ($this->viewerSeesAllTasks()) {
             $query->whereNotNull('client_id');
@@ -338,33 +347,75 @@ class AssigneeController extends Controller
         }
 
         $perPage = 20;
-        $assignees_notCompleted = $this->sortNotesList($query)->paginate($perPage);
-        $i = (request()->input('page', 1) - 1) * $perPage;
+        $assignees = $this->sortNotesList($query)->paginate($perPage)->appends(
+            $request->except('page', 'infinite', 'spa')
+        );
+        $i = ((int) $request->input('page', 1) - 1) * $perPage;
 
-        if ($request->ajax() || $request->boolean('infinite')) {
-            $html = view('crm.assignee.partials.assigned_by_me_rows', [
-                'assignees_notCompleted' => $assignees_notCompleted,
-                'i' => $i,
+        $rowViewData = [
+            'assignees' => $assignees,
+            'assignees_notCompleted' => $assignees, // legacy alias for rows partial
+            'i' => $i,
+            'listStatus' => $listStatus,
+        ];
+
+        // Infinite scroll append — rows only
+        if ($request->boolean('infinite') || ($request->ajax() && ! $request->boolean('spa'))) {
+            $html = view('crm.assignee.partials.assigned_by_me_rows', array_merge($rowViewData, [
                 'appendOnly' => true,
-            ])->render();
+            ]))->render();
 
             return response()->json([
                 'html' => $html,
-                'current_page' => $assignees_notCompleted->currentPage(),
-                'last_page' => $assignees_notCompleted->lastPage(),
-                'per_page' => $assignees_notCompleted->perPage(),
-                'from' => $assignees_notCompleted->firstItem() ?: 0,
-                'to' => $assignees_notCompleted->lastItem() ?: 0,
-                'total' => $assignees_notCompleted->total(),
-                'has_more' => $assignees_notCompleted->hasMorePages(),
-                'next_page' => $assignees_notCompleted->hasMorePages()
-                    ? ($assignees_notCompleted->currentPage() + 1)
+                'status' => $listStatus,
+                'current_page' => $assignees->currentPage(),
+                'last_page' => $assignees->lastPage(),
+                'per_page' => $assignees->perPage(),
+                'from' => $assignees->firstItem() ?: 0,
+                'to' => $assignees->lastItem() ?: 0,
+                'total' => $assignees->total(),
+                'has_more' => $assignees->hasMorePages(),
+                'next_page' => $assignees->hasMorePages()
+                    ? ($assignees->currentPage() + 1)
                     : null,
             ]);
         }
 
-         return view('crm.assignee.assign_by_me', compact('assignees_notCompleted'))
-          ->with('i', $i);
+        // SPA tab / sort — replace table body region
+        if ($request->boolean('spa')) {
+            $html = view('crm.assignee.partials.assigned_by_me_table', array_merge($rowViewData, [
+                'appendOnly' => false,
+            ]))->render();
+
+            $pushQuery = $request->except('spa', 'infinite', 'page');
+            if ($listStatus === 'incomplete') {
+                unset($pushQuery['status']);
+            } else {
+                $pushQuery['status'] = 'completed';
+            }
+            $pushUrl = route('assignee.assigned_by_me', $pushQuery);
+
+            return response()->json([
+                'html' => $html,
+                'status' => $listStatus,
+                'current_page' => $assignees->currentPage(),
+                'last_page' => $assignees->lastPage(),
+                'per_page' => $assignees->perPage(),
+                'from' => $assignees->firstItem() ?: 0,
+                'to' => $assignees->lastItem() ?: 0,
+                'total' => $assignees->total(),
+                'has_more' => $assignees->hasMorePages(),
+                'loaded' => $assignees->count(),
+                'url' => $pushUrl,
+            ]);
+        }
+
+        return view('crm.assignee.assign_by_me', [
+            'assignees' => $assignees,
+            'assignees_notCompleted' => $assignees,
+            'listStatus' => $listStatus,
+            'i' => $i,
+        ]);
      }
 
     //All assigned to me action list
@@ -387,9 +438,9 @@ class AssigneeController extends Controller
     }
 
     public function tasksCompleted(Request $request)
-    {   //dd($request->all());
+    {
         $req_data = $request->all();
-        if( isset($req_data['group_type'])  && $req_data['group_type'] != ""){
+        if (isset($req_data['group_type']) && $req_data['group_type'] != "") {
             $task_group = $req_data['group_type'];
         } else {
             $task_group = 'All';
@@ -419,13 +470,71 @@ class AssigneeController extends Controller
                 return $query->where('task_group', 'like', $task_group);
             });
 
-        $assignees_completed = $this->sortNotesList($assignees_completed, '-action_date')->paginate(20);
+        $perPage = 20;
+        $assignees_completed = $this->sortNotesList($assignees_completed, '-action_date')
+            ->paginate($perPage)
+            ->appends($request->except('page', 'infinite', 'spa'));
+        $i = ((int) $request->input('page', 1) - 1) * $perPage;
 
-        // Get action group counts with single optimized query
         $taskGroupCounts = $this->getCompletedTaskGroupCounts($staff);
-        
-        //dd(count($assignees_completed));
-        return view('crm.assignee.tasks.completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
+
+        $viewData = [
+            'assignees_completed' => $assignees_completed,
+            'task_group' => $task_group,
+            'taskGroupCounts' => $taskGroupCounts,
+            'i' => $i,
+        ];
+
+        if ($request->boolean('infinite') || ($request->ajax() && ! $request->boolean('spa'))) {
+            $html = view('crm.assignee.tasks.partials.completed_rows', array_merge($viewData, [
+                'appendOnly' => true,
+            ]))->render();
+
+            return response()->json([
+                'html' => $html,
+                'group_type' => $task_group,
+                'current_page' => $assignees_completed->currentPage(),
+                'last_page' => $assignees_completed->lastPage(),
+                'per_page' => $assignees_completed->perPage(),
+                'from' => $assignees_completed->firstItem() ?: 0,
+                'to' => $assignees_completed->lastItem() ?: 0,
+                'total' => $assignees_completed->total(),
+                'has_more' => $assignees_completed->hasMorePages(),
+                'next_page' => $assignees_completed->hasMorePages()
+                    ? ($assignees_completed->currentPage() + 1)
+                    : null,
+                'counts' => $taskGroupCounts,
+            ]);
+        }
+
+        if ($request->boolean('spa')) {
+            $html = view('crm.assignee.tasks.partials.completed_spa_body', array_merge($viewData, [
+                'appendOnly' => false,
+            ]))->render();
+
+            $pushQuery = $request->except('spa', 'infinite', 'page');
+            if (($pushQuery['group_type'] ?? 'All') === 'All') {
+                unset($pushQuery['group_type']);
+            }
+            $pushUrl = route('assignee.tasks.completed', $pushQuery);
+
+            return response()->json([
+                'html' => $html,
+                'group_type' => $task_group,
+                'current_page' => $assignees_completed->currentPage(),
+                'last_page' => $assignees_completed->lastPage(),
+                'per_page' => $assignees_completed->perPage(),
+                'from' => $assignees_completed->firstItem() ?: 0,
+                'to' => $assignees_completed->lastItem() ?: 0,
+                'total' => $assignees_completed->total(),
+                'has_more' => $assignees_completed->hasMorePages(),
+                'loaded' => $assignees_completed->count(),
+                'url' => $pushUrl,
+                'counts' => $taskGroupCounts,
+            ]);
+        }
+
+        return view('crm.assignee.tasks.completed', $viewData);
     }
 
     /**
@@ -949,6 +1058,14 @@ class AssigneeController extends Controller
             $objs->pin = 0;
             $objs->activity_type = 'activity';
             $objs->save();
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Task deleted successfully',
+                ]);
+            }
+
             return redirect()->route('assignee.tasks.completed')->with('success','Task deleted successfully');
         }
     }

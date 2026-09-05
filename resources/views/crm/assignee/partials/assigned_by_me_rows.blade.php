@@ -1,5 +1,10 @@
-@if (count($assignees_notCompleted) > 0)
-    @foreach ($assignees_notCompleted as $list)
+@php
+    $assignees = $assignees ?? $assignees_notCompleted ?? collect();
+    $listStatus = ($listStatus ?? 'incomplete') === 'completed' ? 'completed' : 'incomplete';
+    $isCompleted = $listStatus === 'completed';
+@endphp
+@if (count($assignees) > 0)
+    @foreach ($assignees as $list)
         @php
             $admin = \App\Models\Staff::where('id', $list->assigned_to)->first();
             $full_name = $admin ? ($admin->first_name ?? 'N/A') . ' ' . ($admin->last_name ?? 'N/A') : 'N/P';
@@ -7,12 +12,16 @@
             if ($list->noteClient && $client_name === '') {
                 $client_name = trim($list->noteClient->first_name . ' ' . $list->noteClient->last_name) ?: 'N/P';
             }
-            $rowIndex = isset($i) ? ++$i : ($assignees_notCompleted->firstItem() + $loop->index);
+            $rowIndex = isset($i) ? ++$i : ($assignees->firstItem() + $loop->index);
         @endphp
         <tr data-note-id="{{ $list->id }}">
             <td style="text-align: center;">{{ $rowIndex }}</td>
             <td style="text-align: center;">
-                <input type="radio" class="complete_task" data-bs-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                @if ($isCompleted)
+                    <input type="radio" class="not_complete_task" data-bs-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                @else
+                    <input type="radio" class="complete_task" data-bs-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                @endif
             </td>
             <td>{{ $full_name }}</td>
             <td>
@@ -61,22 +70,24 @@
                         $clientLabel = '';
                     @endphp
                 @endif
-                <button
-                    type="button"
-                    class="btn btn-primary btn-sm update_task"
-                    title="Update Task"
-                    data-assignedto="{{ $list->assigned_to }}"
-                    data-noteid="{{ e($list->description ?? '') }}"
-                    data-taskid="{{ $list->id }}"
-                    data-taskgroupid="{{ e($list->task_group ?? '') }}"
-                    data-actiondate="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}"
-                    data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"
-                    data-matterref="{{ e($matterRef) }}"
-                    data-matterurl="{{ e($openMatterUrl) }}"
-                    data-clientlabel="{{ e($clientLabel) }}"
-                >
-                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                </button>
+                @unless ($isCompleted)
+                    <button
+                        type="button"
+                        class="btn btn-primary btn-sm update_task"
+                        title="Update Task"
+                        data-assignedto="{{ $list->assigned_to }}"
+                        data-noteid="{{ e($list->description ?? '') }}"
+                        data-taskid="{{ $list->id }}"
+                        data-taskgroupid="{{ e($list->task_group ?? '') }}"
+                        data-actiondate="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}"
+                        data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"
+                        data-matterref="{{ e($matterRef) }}"
+                        data-matterurl="{{ e($openMatterUrl) }}"
+                        data-clientlabel="{{ e($clientLabel) }}"
+                    >
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                    </button>
+                @endunless
                 <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
                     <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 </button>
@@ -86,7 +97,7 @@
 @elseif (empty($appendOnly))
     <tr class="assigned-by-me-empty-row">
         <td colspan="8" style="text-align: center; padding: 20px;">
-            No tasks assigned by me.
+            {{ $isCompleted ? 'No completed tasks assigned by me.' : 'No tasks assigned by me.' }}
         </td>
     </tr>
 @endif

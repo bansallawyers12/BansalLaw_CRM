@@ -125,6 +125,29 @@
         width: 100%;
     }
 
+    #assigned-by-me-spa-root.is-spa-loading #assigned-by-me-spa-content {
+        opacity: 0.55;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
+
+    .assigned-by-me-spa-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .assigned-by-me-spa-loading[hidden],
+    .assigned-by-me-spa-loading.d-none {
+        display: none !important;
+    }
+
     /* Update-task popover: theme tokens (popover mounts under body; outside .listing-container) */
     .popover .popover-body h4 {
         color: var(--navy, #1e3d60);
@@ -213,7 +236,14 @@
 @endsection
 
 @section('content')
-<div class="listing-container">
+@php
+    $assignees = $assignees ?? $assignees_notCompleted ?? collect();
+    $listStatus = ($listStatus ?? 'incomplete') === 'completed' ? 'completed' : 'incomplete';
+@endphp
+<div class="listing-container" id="assigned-by-me-spa-root"
+     data-base-url="{{ route('assignee.assigned_by_me') }}"
+     data-status="{{ $listStatus }}"
+     data-infinite-scroll="1">
     <section class="listing-section" style="padding-top: 80px;">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
@@ -223,10 +253,18 @@
                 <div class="client-status">
                     <ul class="nav nav-pills" id="client_tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="status-badge nav-link active" href="{{ route('assignee.tasks') }}">Incomplete</a>
+                            <a class="status-badge nav-link assigned-by-me-spa-tab {{ $listStatus === 'incomplete' ? 'active' : '' }}"
+                               href="{{ route('assignee.assigned_by_me') }}"
+                               data-status="incomplete"
+                               role="tab"
+                               aria-selected="{{ $listStatus === 'incomplete' ? 'true' : 'false' }}">Incomplete</a>
                         </li>
                         <li class="nav-item">
-                            <a class="status-badge nav-link" href="{{ route('assignee.tasks.completed') }}">Completed</a>
+                            <a class="status-badge nav-link assigned-by-me-spa-tab {{ $listStatus === 'completed' ? 'active' : '' }}"
+                               href="{{ route('assignee.assigned_by_me', ['status' => 'completed']) }}"
+                               data-status="completed"
+                               role="tab"
+                               aria-selected="{{ $listStatus === 'completed' ? 'true' : 'false' }}">Completed</a>
                         </li>
                     </ul>
                 </div>
@@ -234,55 +272,18 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ route('assignee.assigned_by_me') }}" method="get" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-12 group_type_section">
-                                <!-- Add filters if needed -->
-                            </div>
-                        </div>
-                    </form>
-
-                    <div class="tab-content">
-                        <div class="tab-pane fade show active" id="active_quotation" role="tabpanel">
-                            <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th width="5%" style="text-align: center;">Sno</th>
-                                            <th width="5%" style="text-align: center;">Done</th>
-                                            <th width="15%">Assignee Name</th>
-                                            <th width="15%">Client / Matter</th>
-                                            <th width="15%" class="sort_col">@sortablelink('action_date', 'Assign Date')</th>
-                                            <th width="10%" class="sort_col">@sortablelink('task_group', 'Type')</th>
-                                            <th>Note</th>
-                                            <th width="15%">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="assignedByMeTbody"
-                                           data-page="{{ $assignees_notCompleted->currentPage() }}"
-                                           data-last-page="{{ $assignees_notCompleted->lastPage() }}"
-                                           data-total="{{ $assignees_notCompleted->total() }}"
-                                           data-loaded="{{ $assignees_notCompleted->count() }}"
-                                           data-has-more="{{ $assignees_notCompleted->hasMorePages() ? '1' : '0' }}">
-                                        @include('crm.assignee.partials.assigned_by_me_rows', [
-                                            'assignees_notCompleted' => $assignees_notCompleted,
-                                            'i' => $i,
-                                            'appendOnly' => false,
-                                        ])
-                                    </tbody>
-                                </table>
-
-                                <div id="assignedByMeInfiniteLoader" class="assigned-by-me-infinite-loader" hidden aria-live="polite">
-                                    <span class="assigned-by-me-infinite-loader__spinner" aria-hidden="true"></span>
-                                    <span>Loading more tasks...</span>
-                                </div>
-                                <div id="assignedByMeScrollSentinel" class="assigned-by-me-scroll-sentinel" aria-hidden="true"></div>
-                                <div id="assignedByMeScrollInfo" class="assigned-by-me-scroll-info">
-                                    Showing {{ $assignees_notCompleted->firstItem() ?: 0 }}–{{ $assignees_notCompleted->lastItem() ?: 0 }}
-                                    of {{ $assignees_notCompleted->total() }} entries
-                                </div>
-                            </div>
-                        </div>
+                    <div id="assignedByMeSpaLoading" class="assigned-by-me-spa-loading d-none" aria-live="polite" aria-busy="false">
+                        <span class="assigned-by-me-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Updating list...</span>
+                    </div>
+                    <div id="assigned-by-me-spa-content">
+                        @include('crm.assignee.partials.assigned_by_me_table', [
+                            'assignees' => $assignees,
+                            'assignees_notCompleted' => $assignees,
+                            'i' => $i ?? 0,
+                            'listStatus' => $listStatus,
+                            'appendOnly' => false,
+                        ])
                     </div>
                 </div>
             </div>
@@ -341,6 +342,7 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
+<script src="{{ asset('js/crm/assignee/assigned-by-me-spa.js') }}?v={{ @filemtime(public_path('js/crm/assignee/assigned-by-me-spa.js')) ?: time() }}"></script>
 {{-- $.fn.popover: public/js/bootstrap5-jquery-compat.js (layout) --}}
 <style>
     /* Reuse Action page Update Task styles on Assigned by Me */
@@ -624,7 +626,11 @@
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
                     success: function() {
-                        location.reload();
+                        if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
+                            window.AssignedByMeSpa.reload();
+                        } else {
+                            location.reload();
+                        }
                     }
                 });
             }
@@ -665,7 +671,11 @@
                     $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                     currentTaskId = null;
                     currentTaskGroupId = null;
-                    location.reload();
+                    if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
+                        window.AssignedByMeSpa.reload();
+                    } else {
+                        location.reload();
+                    }
                 },
                 error: function(xhr) {
                     console.error('Error completing task:', xhr.responseText);
@@ -724,7 +734,11 @@
                     var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                     if (obj && obj.success) {
                         $('.update_task').popover('hide');
-                        location.reload();
+                        if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
+                            window.AssignedByMeSpa.reload();
+                        } else {
+                            location.reload();
+                        }
                     } else {
                         crmAlert((obj && obj.message) ? obj.message : 'Could not update task.');
                     }
@@ -748,7 +762,11 @@
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            location.reload();
+                            if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
+                                window.AssignedByMeSpa.reload();
+                            } else {
+                                location.reload();
+                            }
                         } else {
                             crmAlert('Error deleting task: ' + response.message);
                         }
@@ -760,162 +778,6 @@
                 });
             }
         });
-
-        // Infinite scroll — Assigned by Me page only
-        (function initAssignedByMeInfiniteScroll() {
-            var $tbody = $('#assignedByMeTbody');
-            if (!$tbody.length) {
-                return;
-            }
-
-            var state = {
-                page: parseInt($tbody.attr('data-page'), 10) || 1,
-                lastPage: parseInt($tbody.attr('data-last-page'), 10) || 1,
-                total: parseInt($tbody.attr('data-total'), 10) || 0,
-                loaded: parseInt($tbody.attr('data-loaded'), 10) || 0,
-                hasMore: $tbody.attr('data-has-more') === '1',
-                loading: false
-            };
-
-            function updateScrollInfo() {
-                var from = state.loaded > 0 ? 1 : 0;
-                var to = state.loaded;
-                var text = state.total > 0
-                    ? ('Showing ' + from + '–' + to + ' of ' + state.total + ' entries')
-                    : 'Showing 0 of 0 entries';
-                $('#assignedByMeScrollInfo').text(text);
-            }
-
-            function setLoader(visible) {
-                $('#assignedByMeInfiniteLoader').prop('hidden', !visible);
-            }
-
-            function buildNextUrl(nextPage) {
-                var url = new URL(window.location.href);
-                url.searchParams.set('page', String(nextPage));
-                url.searchParams.set('infinite', '1');
-                return url.toString();
-            }
-
-            function loadMore() {
-                if (state.loading || !state.hasMore) {
-                    return;
-                }
-                var nextPage = state.page + 1;
-                if (nextPage > state.lastPage) {
-                    state.hasMore = false;
-                    return;
-                }
-
-                state.loading = true;
-                setLoader(true);
-
-                $.ajax({
-                    url: buildNextUrl(nextPage),
-                    type: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    success: function(resp) {
-                        if (!resp || !resp.html) {
-                            state.hasMore = false;
-                            return;
-                        }
-                        var $rows = $(resp.html).filter('tr');
-                        if (!$rows.length) {
-                            state.hasMore = false;
-                            updateScrollInfo();
-                            return;
-                        }
-
-                        // Skip duplicate note ids if overlapping pages somehow appear
-                        var existing = {};
-                        $tbody.find('tr[data-note-id]').each(function() {
-                            existing[String($(this).attr('data-note-id'))] = true;
-                        });
-                        var appended = 0;
-                        $rows.each(function() {
-                            var id = String($(this).attr('data-note-id') || '');
-                            if (id && existing[id]) {
-                                return;
-                            }
-                            if (id) {
-                                existing[id] = true;
-                            }
-                            $tbody.append(this);
-                            appended++;
-                        });
-
-                        state.page = resp.current_page || nextPage;
-                        state.lastPage = resp.last_page || state.lastPage;
-                        state.total = typeof resp.total === 'number' ? resp.total : state.total;
-                        state.loaded += appended;
-                        state.hasMore = !!resp.has_more && appended > 0;
-                        $tbody.attr({
-                            'data-page': state.page,
-                            'data-last-page': state.lastPage,
-                            'data-total': state.total,
-                            'data-loaded': state.loaded,
-                            'data-has-more': state.hasMore ? '1' : '0'
-                        });
-                        updateScrollInfo();
-
-                        // Re-init tooltips/popovers on new rows if plugins are present
-                        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-                            $tbody.find('[data-bs-toggle="tooltip"]').each(function() {
-                                try { new bootstrap.Tooltip(this); } catch (err) {}
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        var st = xhr && xhr.status;
-                        if (st === 401 || st === 419 || st === 403) {
-                            window.location.reload();
-                            return;
-                        }
-                        console.error('Assigned-by-me infinite scroll error:', st, xhr && xhr.responseText);
-                    },
-                    complete: function() {
-                        state.loading = false;
-                        setLoader(false);
-                        window.requestAnimationFrame(maybeFillViewport);
-                    }
-                });
-            }
-
-            function maybeFillViewport() {
-                if (state.loading || !state.hasMore) {
-                    return;
-                }
-                var sentinel = document.getElementById('assignedByMeScrollSentinel');
-                if (!sentinel) {
-                    return;
-                }
-                var rect = sentinel.getBoundingClientRect();
-                if (rect.top <= window.innerHeight + 140) {
-                    loadMore();
-                }
-            }
-
-            updateScrollInfo();
-
-            var sentinel = document.getElementById('assignedByMeScrollSentinel');
-            if (sentinel && 'IntersectionObserver' in window) {
-                var observer = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            loadMore();
-                        }
-                    });
-                }, { root: null, rootMargin: '200px 0px', threshold: 0 });
-                observer.observe(sentinel);
-            } else {
-                $(window).on('scroll.assignedByMeInfinite resize.assignedByMeInfinite', maybeFillViewport);
-            }
-
-            window.requestAnimationFrame(maybeFillViewport);
-        })();
     });
 </script>
 @endpush

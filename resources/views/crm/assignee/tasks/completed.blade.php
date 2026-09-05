@@ -226,7 +226,69 @@
         color: var(--text-muted, #5e7a90) !important;
         font-style: italic;
     }
-    
+
+    .completed-tasks-infinite-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .completed-tasks-infinite-loader[hidden] {
+        display: none !important;
+    }
+
+    .completed-tasks-infinite-loader__spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border, #c8dcef);
+        border-top-color: var(--navy, #1e3d60);
+        border-radius: 50%;
+        animation: completedTasksSpin 0.7s linear infinite;
+    }
+
+    @keyframes completedTasksSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    .completed-tasks-scroll-info {
+        text-align: center;
+        padding: 8px 12px 16px;
+        color: var(--text-muted, #5e7a90);
+        font-size: 0.8125rem;
+    }
+
+    .completed-tasks-scroll-sentinel {
+        height: 1px;
+        width: 100%;
+    }
+
+    #completed-tasks-spa-root.is-spa-loading #completed-tasks-spa-content {
+        opacity: 0.55;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
+
+    .completed-tasks-spa-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .completed-tasks-spa-loading.d-none {
+        display: none !important;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .listing-container .filter-buttons {
@@ -281,7 +343,13 @@
 @endsection
 
 @section('content')
-<div class="listing-container">
+@php
+    $task_group = $task_group ?? 'All';
+@endphp
+<div class="listing-container" id="completed-tasks-spa-root"
+     data-base-url="{{ route('assignee.tasks.completed') }}"
+     data-group-type="{{ $task_group }}"
+     data-infinite-scroll="1">
     <section class="listing-section" style="padding-top: 80px;">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
@@ -302,178 +370,18 @@
                 </div>
                 
                 <div class="card-body">
-                    <div class="tab-content" id="quotationContent">
-                        <form action="{{ route('assignee.tasks.completed') }}" method="get" class="action-completed-filter-form">
-                            <div class="row mb-3">
-                                <div class="col-md-12 filter-buttons">
-                                    <a href="{{ route('assignee.tasks.completed', ['group_type' => 'All']) }}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Call']) }}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa-solid fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Checklist']) }}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa-solid fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Review']) }}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa-solid fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Query']) }}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa-solid fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Urgent']) }}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Personal Task']) }}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' || $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] ?? 0 }}</span></a>
-                                    </button>
-                                    <button type="button">
-                                        <a href="{{ route('assignee.tasks.completed', ['group_type' => 'Follow Up']) }}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-
-                        <div class="tab-pane fade show active" id="active_quotation" role="tabpanel" aria-labelledby="active_quotation-tab">
-                            <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th style="text-align: center;">Sno</th>
-                                            <th style="text-align: center;">Done</th>
-                                            <th>Assigner Name</th>
-                                            <th>Client Reference</th>
-                                            <th class="sort_col">@sortablelink('action_date','Assign Date')</th>
-                                            <th class="sort_col">@sortablelink('task_group','Type')</th>
-                                            <th>Note</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if(count($assignees_completed) > 0)
-                                            @foreach($assignees_completed as $list)
-                                                <?php
-                                                    $staff = $list->noteStaff;
-                                                    $full_name = $staff ? ($staff->first_name ?? 'N/A') . ' ' . ($staff->last_name ?? 'N/A') : 'N/A';
-                                                    $client_name = $list->noteClient ? trim($list->noteClient->company_name_or_personal_name) : 'N/P';
-                                                    if ($list->noteClient && $client_name === '') {
-                                                        $client_name = trim($list->noteClient->first_name . ' ' . $list->noteClient->last_name) ?: 'N/P';
-                                                    }
-                                                ?>
-                                                <tr>
-                                                    <td style="text-align: center;">{{ ++$i }}</td>
-                                                    <td style="text-align: center;">
-                                                        <input type="radio" class="not_complete_task" data-bs-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
-                                                    </td>
-                                                    <td>{{ $full_name }}</td>
-                                                    <td>
-                                                        {{ $client_name }}<br>
-                                                        @if($list->noteClient)
-                                                            <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank">{{ $list->noteClient->client_id }}</a>
-                                                        @endif
-                                                    </td>
-                                                    <td>{{ date('d/m/Y', strtotime($list->action_date)) ?? 'N/P' }}</td>
-                                                    <td>{{ $list->task_group ?? 'N/P' }}</td>
-                                                    <td>
-                                                        @if(isset($list->description) && $list->description != "")
-                                                            @if(strlen($list->description) > 190)
-                                                                {{ substr($list->description, 0, 190) }}
-                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
-                                                            @else
-                                                                {{ $list->description }}
-                                                            @endif
-                                                        @else
-                                                            N/P
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        <div class="action-buttons">
-                                                            @if($list->task_group != 'Personal Task' && $list->task_group != 'Personal Action')
-                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary btn-sm update_task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="<div id='popover-content'>
-                                                                    <h4 class='text-center'>Update Task</h4>
-                                                                    <div class='clearfix'></div>
-                                                                    <div class='box-header with-border'>
-                                                                        <div class='form-group row' style='margin-bottom:12px'>
-                                                                            <label for='inputSub3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Select Assignee</label>
-                                                                            <div class='col-sm-9'>
-                                                                                <select class='crm-ts-assignee form-control selec_reg' id='rem_cat' name='rem_cat'>
-                                                                                    <option value=''>Select</option>
-                                                                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                                                        <?php $branchname = \App\Models\Branch::where('id', $admin->office_id)->first(); ?>
-                                                                                        <option value='{{ $admin->id }}' {{ $admin->id == $list->assigned_to ? 'selected' : '' }}>{{ $admin->first_name . ' ' . $admin->last_name . ' (' . @$branchname->office_name . ')' }}</option>
-                                                                                    @endforeach
-                                                                                </select>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class='box-header with-border'>
-                                                                        <div class='form-group row' style='margin-bottom:12px'>
-                                                                            <label for='inputEmail3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Note</label>
-                                                                            <div class='col-sm-9'>
-                                                                                <textarea id='assignnote' class='form-control tinymce-editor f13' placeholder='Enter a note....' type='text'></textarea>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class='box-header with-border'>
-                                                                        <div class='form-group row' style='margin-bottom:12px'>
-                                                                            <label for='inputEmail3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>DateTime</label>
-                                                                            <div class='col-sm-9'>
-                                                                                <input type='date' class='form-control f13' placeholder='yyyy-mm-dd' id='popoverdatetime' value='{{ date('Y-m-d') }}' name='popoverdate'>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class='form-group row' style='margin-bottom:12px'>
-                                                                        <label for='inputSub3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Group</label>
-                                                                        <div class='col-sm-9'>
-                                                                            <select class='crm-ts-assignee form-control selec_reg' id='task_group' name='task_group'>
-                                                                                <option value=''>Select</option>
-                                                                                <option value='Call'>Call</option>
-                                                                                <option value='Checklist'>Checklist</option>
-                                                                                <option value='Review'>Review</option>
-                                                                                <option value='Query'>Query</option>
-                                                                                <option value='Urgent'>Urgent</option>
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-                                                                    <input id='assign_note_id' type='hidden' value=''>
-                                                                    <input id='assign_client_id' type='hidden' value='{{ base64_encode(convert_uuencode(@$list->client_id)) }}'>
-                                                                    <div class='box-footer' style='padding:10px 0'>
-                                                                        <div class='row text-center'>
-                                                                            <div class='col-md-12 text-center'>
-                                                                                <button class='btn btn-info' id='updateTask'>Update Task</button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>">
-                                                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                                                                </button>
-                                                            @endif
-
-                                                            <form action="{{ route('assignee.destroy_complete_activity', $list->id) }}" method="POST">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
-                                                                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @else
-                                            <tr>
-                                                <td colspan="8" style="text-align: center; padding: 20px;">
-                                                    There are no completed tasks.
-                                                </td>
-                                            </tr>
-                                        @endif
-                                    </tbody>
-                                </table>
-                                
-                                <!-- Pagination -->
-                                <div class="card-footer">
-                                    {!! $assignees_completed->appends($_GET)->links() !!}
-                                </div>
-                            </div>
-                        </div>
+                    <div id="completedTasksSpaLoading" class="completed-tasks-spa-loading d-none" aria-live="polite" aria-busy="false">
+                        <span class="completed-tasks-infinite-loader__spinner" aria-hidden="true"></span>
+                        <span>Updating list...</span>
+                    </div>
+                    <div id="completed-tasks-spa-content">
+                        @include('crm.assignee.tasks.partials.completed_spa_body', [
+                            'assignees_completed' => $assignees_completed,
+                            'task_group' => $task_group,
+                            'taskGroupCounts' => $taskGroupCounts,
+                            'i' => $i ?? 0,
+                            'appendOnly' => false,
+                        ])
                     </div>
                 </div>
             </div>
@@ -491,42 +399,109 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
+<script src="{{ asset('js/crm/assignee/tasks-completed-spa.js') }}?v={{ @filemtime(public_path('js/crm/assignee/tasks-completed-spa.js')) ?: time() }}"></script>
 <script>
 jQuery(document).ready(function($){
-    $('.listing-container [data-bs-toggle="tooltip"]').tooltip();
+    function spaReload() {
+        if (window.CompletedTasksSpa && typeof window.CompletedTasksSpa.reload === 'function') {
+            window.CompletedTasksSpa.reload();
+        } else {
+            location.reload();
+        }
+    }
 
-    $(document).delegate('.listing-container .openassignee', 'click', function(){
-        $('.assignee').show();
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/[&<>"']/g, function(m) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m];
+        });
+    }
+
+    function getCompletedUpdateTaskContent(assignedTo, noteText, taskId, taskGroup, followupDate, clientId) {
+        assignedTo = String(assignedTo || '');
+        noteText = escapeHtml(noteText || '');
+        taskId = escapeHtml(taskId || '');
+        taskGroup = String(taskGroup || '');
+        followupDate = escapeHtml((followupDate || '').toString().split(' ')[0] || '');
+        clientId = escapeHtml(clientId || '');
+
+        var staffOptions = `
+            @foreach (\App\Models\Staff::where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
+                @php $branchname = \App\Models\Branch::where('id', $admin->office_id)->first(); @endphp
+                <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
+                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ $branchname->office_name ?? 'N/A' }})
+                </option>
+            @endforeach
+        `;
+
+        return `
+            <div id="popover-content" class="modern-popover-content update-task-layout">
+                <div class="form-group">
+                    <label class="control-label" for="rem_cat">Select Assignee</label>
+                    <select class="form-control crm-ts-assignee selec_reg" id="rem_cat" name="rem_cat">
+                        <option value="">Select</option>
+                        ${staffOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label" for="assignnote">Note</label>
+                    <textarea id="assignnote" class="form-control f13" rows="4" placeholder="Enter a note....">${noteText}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="control-label" for="popoverdatetime">DateTime</label>
+                    <input type="date" class="form-control f13" id="popoverdatetime" value="${followupDate}" name="popoverdate">
+                </div>
+                <div class="form-group">
+                    <label class="control-label" for="task_group">Group</label>
+                    <select class="form-control crm-ts-assignee selec_reg" id="task_group" name="task_group">
+                        <option value="">Select</option>
+                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>Call</option>
+                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>Checklist</option>
+                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
+                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
+                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
+                    </select>
+                </div>
+                <input id="assign_note_id" type="hidden" value="${taskId}">
+                <input id="assign_client_id" type="hidden" value="${clientId}">
+                <div class="update-task-actions">
+                    <button type="button" class="btn btn-info" id="updateTask">Update Task</button>
+                </div>
+            </div>`;
+    }
+
+    $(document).on('click', '#completed-tasks-spa-root .completed-update-task', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $button = $(this);
+        $('.update_task').popover('hide');
+        $button.popover('dispose');
+        $button.popover({
+            html: true,
+            sanitize: false,
+            title: 'Update Task',
+            content: getCompletedUpdateTaskContent(
+                $button.attr('data-assignedto') || '',
+                $button.attr('data-noteid') || '',
+                $button.attr('data-taskid') || '',
+                $button.attr('data-taskgroupid') || '',
+                $button.attr('data-actiondate') || '',
+                $button.attr('data-clientid') || ''
+            ),
+            trigger: 'manual',
+            placement: 'auto',
+            boundary: 'viewport',
+            customClass: 'update-task-popover',
+            template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>',
+            container: 'body'
+        }).popover('show');
     });
 
-    $(document).delegate('.listing-container .closeassignee', 'click', function(){
-        $('.assignee').hide();
-    });
-
-    // Reassign task
-    $(document).delegate('.listing-container .reassign_task', 'click', function(){
-        var note_id = $(this).attr('data-noteid');
-        $('#assignnote').val(note_id);
-        var task_id = $(this).attr('data-taskid');
-        $('#assign_note_id').val(task_id);
-    });
-
-    // Update task popover — populate fields + Tom Select (dropdown parent = popover shell)
-    $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
-        var $trigger = $(this);
+    $(document).on('shown.bs.popover', '#completed-tasks-spa-root .completed-update-task', function() {
         var $shell = $('.popover.show').last();
         var $popover = $shell.find('.popover-body');
         if (!$popover.length) {
             $popover = $shell;
-        }
-
-        $popover.find('#assignnote').val($trigger.attr('data-noteid') || '');
-        $popover.find('#assign_note_id').val($trigger.attr('data-taskid') || '');
-        var taskgroup_id = $trigger.attr('data-taskgroupid');
-        $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
-        var followupdate_id = $trigger.attr('data-actiondate');
-        if (followupdate_id) {
-            $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
         }
 
         $popover.find('.crm-ts-assignee').each(function() {
@@ -545,14 +520,14 @@ jQuery(document).ready(function($){
         }
     });
 
-    $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
+    $(document).on('hide.bs.popover', '#completed-tasks-spa-root .completed-update-task', function() {
         $('.popover .crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
     });
 
     // Mark task as incomplete
-    $(document).delegate('.listing-container .not_complete_task', 'click', function(){
+    $(document).on('click', '#completed-tasks-spa-root .not_complete_task', function(){
         var row_id = $(this).attr('data-id');
         var row_unique_group_id = $(this).attr('data-unique_group_id');
         if(row_id != ""){
@@ -561,15 +536,38 @@ jQuery(document).ready(function($){
                 url: "{{ route('tasks.reopen') }}",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: { id: row_id, unique_group_id: row_unique_group_id },
-                success: function(response){
-                    var obj = $.parseJSON(response);
-                    location.reload();
+                success: function(){
+                    spaReload();
                 }
             });
         }
     });
 
-    // Reassign from completed (creates new action) â€” button id in popover is #updateTask
+    $(document).on('click', '#completed-tasks-spa-root .deleteCompletedNote', function(e) {
+        e.preventDefault();
+        var url = $(this).data('remote');
+        if (!url || !confirm('Are you sure want to delete?')) {
+            return;
+        }
+        $.ajax({
+            type: 'DELETE',
+            url: url,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.success) {
+                    spaReload();
+                } else {
+                    crmAlert('Error deleting task: ' + ((response && response.message) || 'Unknown error'));
+                }
+            },
+            error: function() {
+                crmAlert('Error deleting task. Please try again.');
+            }
+        });
+    });
+
+    // Reassign from completed (creates new action)
     $(document).on('click', '#updateTask', function() {
         var $root = $(this).closest('.popover-body');
         if (!$root.length) {
@@ -616,14 +614,12 @@ jQuery(document).ready(function($){
                 success: function(response) {
                     $('.popuploader').hide();
                     var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                    if (obj.success) {
-                        $("[data-role=popover]").each(function() {
-                            (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false;
-                        });
-                        location.reload();
+                    $('.update_task').popover('hide');
+                    if (obj && obj.success) {
+                        spaReload();
                     } else {
-                        crmAlert(obj.message);
-                        location.reload();
+                        crmAlert((obj && obj.message) ? obj.message : 'Could not update task.');
+                        spaReload();
                     }
                 },
                 error: function() {
@@ -635,10 +631,6 @@ jQuery(document).ready(function($){
             $("#loader").hide();
         }
     });
-
-    // REMOVED: Deprecated appointment system functionality
-    // Open assignee view modal - endpoint /get-assigne-detail was removed
-    // $(document).delegate('.listing-container .openassigneview', 'click', function(){ ... });
 });
 </script>
 @endpush
