@@ -289,6 +289,80 @@
         display: none !important;
     }
 
+    .completed-tasks-header-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .completed-tasks-header-title h4 {
+        margin: 0;
+    }
+
+    .completed-tasks-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border, #c8dcef);
+        background: #fff;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .completed-tasks-back:hover,
+    .completed-tasks-back:focus {
+        background: var(--page-bg, #f0f6ff);
+        border-color: var(--sidebar-active, #3a6fa8);
+        color: var(--navy, #1e3d60);
+    }
+
+    /* DONE — same rounded checkbox as Tasks / Assigned by Me */
+    #completed-tasks-spa-root .action-done-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        margin: 0 auto;
+        padding: 0;
+        border: 1.5px solid #b7c9dc;
+        border-radius: 7px;
+        background: #fff;
+        color: transparent;
+        cursor: pointer;
+        vertical-align: middle;
+        box-shadow: none;
+        transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #completed-tasks-spa-root .action-done-btn i {
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    #completed-tasks-spa-root .action-done-btn--done {
+        border-color: var(--navy, #1e3d60);
+        background: var(--navy, #1e3d60);
+        color: #fff;
+    }
+
+    #completed-tasks-spa-root .action-done-btn--done:hover,
+    #completed-tasks-spa-root .action-done-btn--done:focus-visible {
+        border-color: var(--sidebar-active, #3a6fa8);
+        background: var(--sidebar-active, #3a6fa8);
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.18);
+        outline: none;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .listing-container .filter-buttons {
@@ -356,8 +430,13 @@
             
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
-                        <h4>Completed Tasks</h4>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="completed-tasks-header-title">
+                            <a href="{{ route('assignee.tasks') }}" class="completed-tasks-back" title="Back to Tasks">
+                                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+                            </a>
+                            <h4>Completed Tasks</h4>
+                        </div>
                         <ul class="nav nav-pills" id="client_tabs" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link" id="incomplete-tab" href="{{ route('assignee.tasks') }}">Incomplete</a>
@@ -479,7 +558,7 @@ jQuery(document).ready(function($){
         $button.popover({
             html: true,
             sanitize: false,
-            title: 'Update Task',
+            title: '<span class="update-task-modal-title">Update Task</span><button type="button" class="update-task-modal-close btn-close" aria-label="Close"></button>',
             content: getCompletedUpdateTaskContent(
                 $button.attr('data-assignedto') || '',
                 $button.attr('data-noteid') || '',
@@ -524,6 +603,12 @@ jQuery(document).ready(function($){
         $('.popover .crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
+    });
+
+    $(document).on('click', '.update-task-modal-close', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('.update_task, .completed-update-task').popover('hide');
     });
 
     // Mark task as incomplete

@@ -18,6 +18,37 @@
         gap: 15px;
     }
 
+    .listing-container .client-header__title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .listing-container .assigned-by-me-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border, #c8dcef);
+        background: #fff;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .listing-container .assigned-by-me-back:hover,
+    .listing-container .assigned-by-me-back:focus {
+        background: var(--page-bg, #f0f6ff);
+        border-color: var(--sidebar-active, #3a6fa8);
+        color: var(--navy, #1e3d60);
+    }
+
     .listing-container .client-header h1,
     .listing-container .client-header h4 {
         font-size: 1.5rem;
@@ -76,8 +107,63 @@
         margin-left: 5px;
     }
 
-    .listing-container .complete_task {
+    .listing-container .complete_task,
+    .listing-container .not_complete_task {
         cursor: pointer;
+    }
+
+    /* DONE — same rounded checkbox as Tasks page */
+    #assigned-by-me-spa-root .action-done-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        margin: 0 auto;
+        padding: 0;
+        border: 1.5px solid #b7c9dc;
+        border-radius: 7px;
+        background: #fff;
+        color: transparent;
+        cursor: pointer;
+        vertical-align: middle;
+        box-shadow: none;
+        transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #assigned-by-me-spa-root .action-done-btn i {
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    #assigned-by-me-spa-root .action-done-btn:hover,
+    #assigned-by-me-spa-root .action-done-btn:focus-visible {
+        border-color: var(--navy, #1e3d60);
+        background: rgba(30, 61, 96, 0.06);
+        color: var(--navy, #1e3d60);
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.14);
+        outline: none;
+    }
+
+    #assigned-by-me-spa-root .action-done-btn:active {
+        border-color: var(--navy, #1e3d60);
+        background: var(--navy, #1e3d60);
+        color: #fff;
+        box-shadow: none;
+    }
+
+    #assigned-by-me-spa-root .action-done-btn--done {
+        border-color: var(--navy, #1e3d60);
+        background: var(--navy, #1e3d60);
+        color: #fff;
+    }
+
+    #assigned-by-me-spa-root .action-done-btn--done:hover,
+    #assigned-by-me-spa-root .action-done-btn--done:focus-visible {
+        border-color: var(--sidebar-active, #3a6fa8);
+        background: var(--sidebar-active, #3a6fa8);
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.18);
     }
 
     .listing-container .btn-sm {
@@ -249,7 +335,12 @@
             @include('../Elements/flash-message')
             
             <div class="client-header">
-                <h4>Assigned by Me</h4>
+                <div class="client-header__title">
+                    <a href="{{ route('assignee.tasks') }}" class="assigned-by-me-back" title="Back to Tasks">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+                    </a>
+                    <h4>Assigned by Me</h4>
+                </div>
                 <div class="client-status">
                     <ul class="nav nav-pills" id="client_tabs" role="tablist">
                         <li class="nav-item">
@@ -355,12 +446,67 @@
         box-shadow: 0 16px 40px rgba(30, 61, 96, 0.16) !important;
     }
     .popover.update-task-popover .popover-header {
-        background: #fff !important;
-        color: var(--navy, #1e3d60) !important;
-        border-bottom: 1px solid var(--border, #c8dcef) !important;
-        font-size: 1.05rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+        background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+        color: #fff !important;
+        border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+        font-size: 1.125rem !important;
         font-weight: 700 !important;
-        padding: 14px 18px !important;
+        padding: 16px 20px !important;
+        border-radius: 12px 12px 0 0 !important;
+        letter-spacing: -0.01em !important;
+    }
+    .popover.update-task-popover .update-task-modal-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+        font-weight: 700 !important;
+        flex: 1;
+        min-width: 0;
+    }
+    .popover.update-task-popover .update-task-modal-close {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        background: rgba(255, 255, 255, 0.14) !important;
+        background-image: none !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+        filter: none !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        overflow: hidden !important;
+        cursor: pointer !important;
+    }
+    .popover.update-task-popover .update-task-modal-close::before {
+        content: "" !important;
+        display: block !important;
+        width: 14px !important;
+        height: 14px !important;
+        background-color: #fff !important;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+    }
+    .popover.update-task-popover .update-task-modal-close:hover,
+    .popover.update-task-popover .update-task-modal-close:focus {
+        opacity: 1 !important;
+        background: rgba(255, 255, 255, 0.22) !important;
+        background-image: none !important;
+        border-color: rgba(255, 255, 255, 0.55) !important;
     }
     .popover.update-task-popover .popover-body {
         background: #fff !important;
@@ -566,7 +712,7 @@
             $button.popover({
                 html: true,
                 sanitize: false,
-                title: 'Update Task',
+                title: '<span class="update-task-modal-title">Update Task</span><button type="button" class="update-task-modal-close btn-close" aria-label="Close"></button>',
                 content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel),
                 trigger: 'manual',
                 placement: 'auto',
@@ -602,6 +748,12 @@
         });
 
         $(document).on('click', '#updateTaskCancel', function() {
+            $('.update_task').popover('hide');
+        });
+
+        $(document).on('click', '.update-task-modal-close', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             $('.update_task').popover('hide');
         });
 

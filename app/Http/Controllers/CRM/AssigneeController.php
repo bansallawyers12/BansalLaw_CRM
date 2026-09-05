@@ -680,9 +680,12 @@ class AssigneeController extends Controller
                 $dataTable = DataTables::of($query)
                     ->addIndexColumn()
                     ->addColumn('done_action', function($data) {
-                        return '<label class="action-done-toggle" title="Mark complete">'
-                            .'<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">'
-                            .'</label>';
+                        return '<button type="button" class="action-done-btn complete_task"'
+                            .' data-id="'.$data->id.'"'
+                            .' data-unique_group_id="'.e((string) ($data->unique_group_id ?? '')).'"'
+                            .' data-bs-toggle="tooltip" title="Mark complete" aria-label="Mark complete">'
+                            .'<i class="fa-solid fa-check" aria-hidden="true"></i>'
+                            .'</button>';
                     })
                     ->addColumn('assigner_name', function($data) {
                         try {

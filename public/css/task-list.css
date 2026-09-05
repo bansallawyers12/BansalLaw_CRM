@@ -448,24 +448,49 @@
     border-color: rgba(30, 122, 82, 0.28);
 }
 
-/* Done toggle */
-.assignee-action-page .action-done-toggle {
+/* Done control — rounded checkbox aligned with table action buttons */
+.assignee-action-page .action-done-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    margin: 0;
+    width: 26px;
+    height: 26px;
+    margin: 0 auto;
+    padding: 0;
+    border: 1.5px solid #b7c9dc;
+    border-radius: 7px;
+    background: #fff;
+    color: transparent;
     cursor: pointer;
-    position: relative;
+    vertical-align: middle;
+    box-shadow: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.assignee-action-page .action-done-toggle input {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    cursor: pointer;
-    accent-color: var(--navy, #1e3d60);
+.assignee-action-page .action-done-btn i {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.assignee-action-page .action-done-btn:hover,
+.assignee-action-page .action-done-btn:focus-visible {
+    border-color: var(--navy, #1e3d60);
+    background: rgba(30, 61, 96, 0.06);
+    color: var(--navy, #1e3d60);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.14);
+    outline: none;
+}
+
+.assignee-action-page .action-done-btn:active {
+    border-color: var(--navy, #1e3d60);
+    background: var(--navy, #1e3d60);
+    color: #fff;
+    box-shadow: none;
+}
+
+/* Legacy radio wrapper (keep harmless if any cached HTML remains) */
+.assignee-action-page .action-done-toggle {
+    display: none;
 }
 
 /* Row actions */

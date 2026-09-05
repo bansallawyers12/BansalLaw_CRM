@@ -16,7 +16,15 @@
         <tr data-note-id="{{ $list->id }}">
             <td style="text-align: center;">{{ $rowIndex }}</td>
             <td style="text-align: center;">
-                <input type="radio" class="not_complete_task" data-bs-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                <button type="button"
+                    class="action-done-btn action-done-btn--done not_complete_task"
+                    data-id="{{ $list->id }}"
+                    data-unique_group_id="{{ $list->unique_group_id }}"
+                    data-bs-toggle="tooltip"
+                    title="Mark incomplete"
+                    aria-label="Mark incomplete">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                </button>
             </td>
             <td>{{ $full_name }}</td>
             <td>

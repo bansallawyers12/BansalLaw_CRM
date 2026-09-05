@@ -18,9 +18,25 @@
             <td style="text-align: center;">{{ $rowIndex }}</td>
             <td style="text-align: center;">
                 @if ($isCompleted)
-                    <input type="radio" class="not_complete_task" data-bs-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                    <button type="button"
+                        class="action-done-btn action-done-btn--done not_complete_task"
+                        data-id="{{ $list->id }}"
+                        data-unique_group_id="{{ $list->unique_group_id }}"
+                        data-bs-toggle="tooltip"
+                        title="Mark incomplete"
+                        aria-label="Mark incomplete">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    </button>
                 @else
-                    <input type="radio" class="complete_task" data-bs-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                    <button type="button"
+                        class="action-done-btn complete_task"
+                        data-id="{{ $list->id }}"
+                        data-unique_group_id="{{ $list->unique_group_id }}"
+                        data-bs-toggle="tooltip"
+                        title="Mark complete"
+                        aria-label="Mark complete">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    </button>
                 @endif
             </td>
             <td>{{ $full_name }}</td>

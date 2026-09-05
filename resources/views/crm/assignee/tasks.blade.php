@@ -184,6 +184,70 @@
         margin: 0 !important;
         overflow: visible !important; /* Tom Select dropdown is clipped by overflow:hidden on .popover */
     }
+
+    /* Add New Task — same navy gradient header as Add matter */
+    .popover.add-my-task-popover .popover-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+        background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+        color: #fff !important;
+        border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+        padding: 16px 20px !important;
+        border-radius: 14px 14px 0 0 !important;
+        font-weight: 700 !important;
+        font-size: 1.125rem !important;
+        letter-spacing: -0.01em !important;
+    }
+
+    .popover.add-my-task-popover .add-task-modal-title,
+    .popover.add-my-task-popover .add-task-modal-title i {
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+    }
+
+    .popover.add-my-task-popover .add-task-modal-close {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        background: rgba(255, 255, 255, 0.14) !important;
+        background-image: none !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+        filter: none !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        overflow: hidden !important;
+        cursor: pointer !important;
+    }
+
+    .popover.add-my-task-popover .add-task-modal-close::before {
+        content: "" !important;
+        display: block !important;
+        width: 14px !important;
+        height: 14px !important;
+        background-color: #fff !important;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+    }
+
+    .popover.add-my-task-popover .add-task-modal-close:hover,
+    .popover.add-my-task-popover .add-task-modal-close:focus {
+        opacity: 1 !important;
+        background: rgba(255, 255, 255, 0.22) !important;
+        background-image: none !important;
+        border-color: rgba(255, 255, 255, 0.55) !important;
+    }
     
     /* Hide arrow for centered Add My Task popover */
     .popover.add-my-task-popover .arrow,
@@ -286,12 +350,71 @@
 }
 
 .popover.update-task-popover .popover-header {
-    background: #fff !important;
-    color: var(--navy, #1e3d60) !important;
-    border-bottom: 1px solid var(--border, #c8dcef) !important;
-    font-size: 1.05rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+    background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+    color: #fff !important;
+    border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+    font-size: 1.125rem !important;
     font-weight: 700 !important;
-    padding: 14px 18px !important;
+    padding: 16px 20px !important;
+    border-radius: 12px 12px 0 0 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.popover.update-task-popover .update-task-modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    font-weight: 700 !important;
+    flex: 1;
+    min-width: 0;
+}
+
+.popover.update-task-popover .update-task-modal-close {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+}
+
+.popover.update-task-popover .update-task-modal-close::before {
+    content: "" !important;
+    display: block !important;
+    width: 14px !important;
+    height: 14px !important;
+    background-color: #fff !important;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+.popover.update-task-popover .update-task-modal-close:hover,
+.popover.update-task-popover .update-task-modal-close:focus {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 0.22) !important;
+    background-image: none !important;
+    border-color: rgba(255, 255, 255, 0.55) !important;
 }
 
 .popover.update-task-popover .popover-body {
@@ -1384,6 +1507,12 @@ $(function () {
         $('.update_task').popover('hide');
     });
 
+    $(document).on('click', '.update-task-modal-close', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('.update_task').popover('hide');
+    });
+
     $(document).on('hide.bs.popover', '.update_task', function() {
         $('.popover-backdrop').removeClass('show').off('click.updateTask');
     });
@@ -1455,7 +1584,7 @@ $(function () {
         $button.popover({
             html: true,
             sanitize: false,
-            title: 'Update Task',
+            title: '<span class="update-task-modal-title">Update Task</span><button type="button" class="update-task-modal-close btn-close" aria-label="Close"></button>',
             content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId, matterRef, matterUrl, clientLabel),
             trigger: 'manual',
             placement: 'auto',
