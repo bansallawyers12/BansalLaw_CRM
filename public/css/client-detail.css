@@ -5236,25 +5236,84 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   overflow: hidden;
 }
 
+/* Update stage — same navy gradient header as Add matter / Compose Email */
+#cdn-update-stage-modal .cdn-update-stage-modal__header,
 #cdn-update-stage-modal .modal-header {
-  align-items: flex-start;
-  border-bottom: 1px solid #eef2f7;
-  padding: 1.05rem 1.35rem 0.9rem;
-  background: #fff;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
   border-radius: 16px 16px 0 0;
 }
 
-#cdn-update-stage-modal .modal-title {
-  font-weight: 750;
-  color: #0f172a;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
+#cdn-update-stage-modal .cdn-update-stage-modal__header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+#cdn-update-stage-modal .modal-title,
+#cdn-update-stage-modal .cdn-update-stage-modal__header h5 {
+  font-weight: 700 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 1.125rem !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
 }
 
 #cdn-update-stage-modal .cdn-update-stage-modal-subtitle {
   margin-top: 3px;
   font-size: 13px;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+#cdn-update-stage-modal .cdn-update-stage-modal__close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+#cdn-update-stage-modal .cdn-update-stage-modal__close i,
+#cdn-update-stage-modal .cdn-update-stage-modal__close span {
+  display: none !important;
+}
+
+#cdn-update-stage-modal .cdn-update-stage-modal__close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+#cdn-update-stage-modal .cdn-update-stage-modal__close:hover,
+#cdn-update-stage-modal .cdn-update-stage-modal__close:focus {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
 }
 
 @media (max-width: 991.98px) {
@@ -5279,8 +5338,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     gap: 12px;
   }
 
+  #cdn-update-stage-modal .cdn-update-stage-modal__header,
   #cdn-update-stage-modal .modal-header {
-    padding: 1rem 1.15rem 0.85rem;
+    padding: 14px 16px !important;
   }
 
   #cdn-update-stage-modal .cdn-workflow-modal__matter-row {
@@ -7251,6 +7311,81 @@ body > .ts-dropdown {
 .hide-list-view .grid_data { display: none !important; }
 .active-preview-doc { background-color: rgba(58, 111, 168, 0.1) !important; }
 
+/* Send SMS (#sendSmsModal) — same navy gradient header as Add matter / Compose Email */
+#sendSmsModal.custom_modal .modal-content {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16);
+}
+
+#sendSmsModal .send-sms-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%);
+  border-bottom: 3px solid var(--accent-gold, #c8992a);
+  color: #fff;
+}
+
+#sendSmsModal .send-sms-modal__header .modal-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+}
+
+#sendSmsModal .send-sms-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  opacity: 1;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#sendSmsModal .send-sms-modal__close i,
+#sendSmsModal .send-sms-modal__close span {
+  display: none;
+}
+
+#sendSmsModal .send-sms-modal__close::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+#sendSmsModal .send-sms-modal__close:hover,
+#sendSmsModal .send-sms-modal__close:focus {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+
 /* Compose Email (#emailmodal): xl modal, no inner body scroll */
 #emailmodal.emailmodal--compose .emailmodal__dialog {
   max-width: min(960px, 96vw);
@@ -7262,7 +7397,7 @@ body > .ts-dropdown {
   flex-direction: column;
   border: 1px solid var(--border, #c8dcef);
   border-radius: 12px;
-  overflow: visible;
+  overflow: hidden;
   box-shadow: 0 12px 40px rgba(30, 61, 96, 0.16);
 }
 
@@ -7273,64 +7408,70 @@ body > .ts-dropdown {
 
 #emailmodal.emailmodal--compose .emailmodal__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border, #c8dcef);
-  background: var(--card-bg, #fff);
-  flex-shrink: 0;
-}
-
-#emailmodal.emailmodal--compose .emailmodal__header-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 0;
-}
-
-#emailmodal.emailmodal--compose .emailmodal__header-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: #e8f1fb;
-  color: #3a6fa8;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%);
+  border-bottom: 3px solid var(--accent-gold, #c8992a);
+  color: #fff;
   flex-shrink: 0;
 }
 
 #emailmodal.emailmodal--compose .emailmodal__header .modal-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  color: #1e3d60;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
   line-height: 1.3;
-}
-
-#emailmodal.emailmodal--compose .emailmodal__subtitle {
-  margin: 2px 0 0;
-  font-size: 0.8125rem;
-  color: #6b8299;
-  line-height: 1.35;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
 }
 
 #emailmodal.emailmodal--compose .emailmodal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   margin: 0 0 0 auto;
-  padding: 4px 8px;
-  opacity: 0.7;
-  font-size: 1.5rem;
-  font-weight: 400;
-  line-height: 1;
-  color: #1e3d60;
-  background: transparent;
-  border: 0;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  opacity: 1;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-#emailmodal.emailmodal--compose .emailmodal__close:hover {
+#emailmodal.emailmodal--compose .emailmodal__close i,
+#emailmodal.emailmodal--compose .emailmodal__close span {
+  display: none;
+}
+
+#emailmodal.emailmodal--compose .emailmodal__close::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+#emailmodal.emailmodal--compose .emailmodal__close:hover,
+#emailmodal.emailmodal--compose .emailmodal__close:focus {
   opacity: 1;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
 }
 
 #emailmodal.emailmodal--compose .emailmodal__body {

@@ -3,15 +3,7 @@
 	<div class="modal-dialog modal-lg modal-dialog-centered">
 		<div class="modal-content">
 			<div class="modal-header appointment-schedule-modal-header sa-appoint-modal__header">
-				<div class="sa-appoint-modal__heading">
-					<span class="sa-appoint-modal__icon" aria-hidden="true">
-						<i class="fa-solid fa-calendar-plus"></i>
-					</span>
-					<div>
-						<h5 class="modal-title mb-0" id="interestModalLabel">Schedule Appointment</h5>
-						<p class="sa-appoint-modal__subtitle mb-0">Book a consultation for this client</p>
-					</div>
-				</div>
+				<h5 class="modal-title mb-0" id="interestModalLabel">Schedule Appointment</h5>
 				<x-crm.modal-close />
 			</div>
 			<div class="modal-body sa-appoint-modal__body">
@@ -257,45 +249,67 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	background: var(--card-bg, #fff) !important;
-	background-image: none !important;
-	border-bottom: 1px solid var(--border, #c8dcef) !important;
-	padding: 14px 18px !important;
-	color: var(--navy, #1e3d60) !important;
-}
-
-#create_appoint.sa-appoint-modal .sa-appoint-modal__heading {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	min-width: 0;
-}
-
-#create_appoint.sa-appoint-modal .sa-appoint-modal__icon {
-	flex-shrink: 0;
-	width: 36px;
-	height: 36px;
-	border-radius: 9px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: rgba(58, 111, 168, 0.12);
-	color: var(--sidebar-active, #3a6fa8);
-	font-size: 14px;
+	background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+	background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+	border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+	padding: 16px 20px !important;
+	color: #fff !important;
 }
 
 #create_appoint.sa-appoint-modal .modal-title,
 #create_appoint.sa-appoint-modal .modal-header h5 {
-	color: var(--navy, #1e3d60) !important;
-	font-size: 1.05rem !important;
+	color: #fff !important;
+	-webkit-text-fill-color: #fff !important;
+	font-size: 1.125rem !important;
 	font-weight: 700 !important;
+	margin: 0 !important;
+	letter-spacing: -0.01em !important;
+	flex: 1;
+	min-width: 0;
 }
 
-#create_appoint.sa-appoint-modal .sa-appoint-modal__subtitle {
-	font-size: 12px;
-	color: var(--text-muted, #5e7a90);
-	font-weight: 500;
-	margin-top: 1px;
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	flex-shrink: 0 !important;
+	width: 36px !important;
+	height: 36px !important;
+	min-width: 36px !important;
+	margin: 0 0 0 auto !important;
+	padding: 0 !important;
+	border-radius: 8px !important;
+	border: 1px solid rgba(255, 255, 255, 0.4) !important;
+	background: rgba(255, 255, 255, 0.14) !important;
+	color: #fff !important;
+	opacity: 1 !important;
+	font-size: 0 !important;
+	line-height: 0 !important;
+	overflow: hidden !important;
+	cursor: pointer !important;
+}
+
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close i,
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close span {
+	display: none !important;
+}
+
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close::before {
+	content: "" !important;
+	display: block !important;
+	width: 14px !important;
+	height: 14px !important;
+	background-color: #fff !important;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close:hover,
+#create_appoint.sa-appoint-modal .sa-appoint-modal__header .crm-modal-close:focus {
+	background: rgba(255, 255, 255, 0.22) !important;
+	border-color: rgba(255, 255, 255, 0.55) !important;
+	color: #fff !important;
+	opacity: 1 !important;
 }
 
 #create_appoint.sa-appoint-modal .sa-appoint-modal__body {

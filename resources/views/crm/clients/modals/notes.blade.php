@@ -98,15 +98,7 @@
 	<div class="modal-dialog modal-xl modal-dialog-centered">
 		<div class="modal-content note-modal-with-drop">
 			<div class="modal-header sa-note-modal__header">
-				<div class="sa-note-modal__heading">
-					<span class="sa-note-modal__icon" aria-hidden="true">
-						<i class="fa-solid fa-note-sticky"></i>
-					</span>
-					<div>
-						<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
-						<p class="sa-note-modal__subtitle mb-0">Add notes, minutes spent and files for this matter</p>
-					</div>
-				</div>
+				<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				<x-crm.modal-close />
 			</div>
 			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
@@ -315,45 +307,38 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    background: var(--card-bg, #fff) !important;
-    background-image: none !important;
-    border-bottom: 1px solid var(--border, #c8dcef) !important;
-    padding: 14px 18px !important;
-    color: var(--navy, #1e3d60) !important;
-}
-
-#create_note_d.sa-note-modal .sa-note-modal__heading {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-}
-
-#create_note_d.sa-note-modal .sa-note-modal__icon {
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(58, 111, 168, 0.12);
-    color: var(--sidebar-active, #3a6fa8);
-    font-size: 14px;
+    background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+    background-image: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+    border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+    padding: 16px 20px !important;
+    color: #fff !important;
 }
 
 #create_note_d.sa-note-modal .modal-title,
 #create_note_d.sa-note-modal .modal-header h5 {
-    color: var(--navy, #1e3d60) !important;
-    font-size: 1.05rem !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    font-size: 1.125rem !important;
     font-weight: 700 !important;
+    margin: 0 !important;
+    letter-spacing: -0.01em !important;
+    flex: 1;
+    min-width: 0;
 }
 
-#create_note_d.sa-note-modal .sa-note-modal__subtitle {
-    font-size: 12px;
-    color: var(--text-muted, #5e7a90);
-    font-weight: 500;
-    margin-top: 1px;
+#create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close {
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+}
+
+#create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close:hover,
+#create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close:focus {
+    background: rgba(255, 255, 255, 0.22) !important;
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    color: #fff !important;
+    opacity: 1 !important;
 }
 
 #create_note_d.sa-note-modal .sa-note-modal__body {

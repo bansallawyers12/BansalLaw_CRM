@@ -6069,7 +6069,7 @@ body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-danger {
   color: var(--danger) !important;
 }
 
-/* ---------- Schedule Appointment modal (#create_appoint) — light simple header ---------- */
+/* ---------- Schedule Appointment (#create_appoint) — same navy gradient header as Add matter ---------- */
 body.sidebar-mini #create_appoint.add_appointment .modal-content {
   border: 1px solid var(--border) !important;
   border-radius: 12px !important;
@@ -6080,28 +6080,29 @@ body.sidebar-mini #create_appoint.add_appointment .modal-content {
 body.sidebar-mini #create_appoint.add_appointment .appointment-schedule-modal-header,
 body.sidebar-mini #create_appoint.add_appointment .modal-header,
 body.sidebar-mini #create_appoint.add_appointment .sa-appoint-modal__header {
-  background: var(--card-bg) !important;
-  background-image: none !important;
-  border-bottom: 1px solid var(--border) !important;
-  color: var(--navy) !important;
-  padding: 14px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
   overflow: visible;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title i,
 body.sidebar-mini #create_appoint.add_appointment .modal-header h5 {
-  color: var(--navy) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
   font-weight: 700 !important;
-  font-size: 1.05rem !important;
-}
-
-body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close {
-  color: var(--text-muted) !important;
-  opacity: 0.75 !important;
-  text-shadow: none !important;
-  font-weight: 400 !important;
-  overflow: hidden;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  flex: 1;
+  min-width: 0;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .close:not(.crm-modal-close),
@@ -6109,10 +6110,43 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header .btn-close {
   display: none !important;
 }
 
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  text-shadow: none !important;
+  font-weight: 400 !important;
+}
+
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close i,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close span,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .close span {
   display: none !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
 }
 
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close::after,
@@ -6127,40 +6161,288 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:hover,
 body.sidebar-mini #create_appoint.add_appointment .modal-header .crm-modal-close:focus {
   opacity: 1 !important;
-  color: var(--navy) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
 }
 
-/* Create Note (enhanced) #create_note_d — match Schedule Appointment modal header (navy title on white) */
+/* Create Note (enhanced) #create_note_d — same navy gradient header as Add matter */
 body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header {
-  background: var(--card-bg, #fff) !important;
-  background-image: none !important;
-  border-bottom: 1px solid var(--border, #c8dcef) !important;
-  color: var(--navy, #1e3d60) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
 }
 
 body.sidebar-mini #create_note_d.sa-note-modal .modal-title,
 body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header h5 {
-  color: var(--navy, #1e3d60) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
   font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  flex: 1;
+  min-width: 0;
 }
 
-body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__subtitle {
-  color: var(--text-muted, #5e7a90) !important;
-}
-
-body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__icon {
-  color: var(--sidebar-active, #3a6fa8) !important;
-}
-
-body.sidebar-mini #create_note_d.sa-note-modal .crm-modal-close {
-  color: var(--text-muted, #5e7a90) !important;
-  opacity: 0.9 !important;
-}
-
-body.sidebar-mini #create_note_d.sa-note-modal .crm-modal-close:hover,
-body.sidebar-mini #create_note_d.sa-note-modal .crm-modal-close:focus {
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
   opacity: 1 !important;
-  color: var(--navy, #1e3d60) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close i,
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close span {
+  display: none !important;
+}
+
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close:hover,
+body.sidebar-mini #create_note_d.sa-note-modal .sa-note-modal__header .crm-modal-close:focus {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
+}
+
+/* Compose Email (#emailmodal) — same navy gradient header as Add matter / Create Note */
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__header .modal-title,
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  flex: 1;
+  min-width: 0;
+}
+
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close i,
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close span {
+  display: none !important;
+}
+
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close:hover,
+body.sidebar-mini #emailmodal.emailmodal--compose .emailmodal__close:focus {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
+}
+
+/* Send SMS (#sendSmsModal) — same navy gradient header as Add matter / Compose Email */
+body.sidebar-mini #sendSmsModal .send-sms-modal__header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini #sendSmsModal .send-sms-modal__header .modal-title,
+body.sidebar-mini #sendSmsModal .send-sms-modal__header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  flex: 1;
+  min-width: 0;
+}
+
+body.sidebar-mini #sendSmsModal .send-sms-modal__close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini #sendSmsModal .send-sms-modal__close i,
+body.sidebar-mini #sendSmsModal .send-sms-modal__close span {
+  display: none !important;
+}
+
+body.sidebar-mini #sendSmsModal .send-sms-modal__close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+body.sidebar-mini #sendSmsModal .send-sms-modal__close:hover,
+body.sidebar-mini #sendSmsModal .send-sms-modal__close:focus {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
+}
+
+/* Update stage (#cdn-update-stage-modal) — same navy gradient header as Add matter / Compose Email */
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__header,
+body.sidebar-mini #cdn-update-stage-modal .modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  background-image: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .modal-title,
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal-subtitle {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close i,
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close span {
+  display: none !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close::before {
+  content: "" !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #fff !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='black' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close:hover,
+body.sidebar-mini #cdn-update-stage-modal .cdn-update-stage-modal__close:focus {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
 }
 
 /* Legal Forms modal (client detail tab) — global body.sidebar-mini h5 { navy } made title invisible on dark header */

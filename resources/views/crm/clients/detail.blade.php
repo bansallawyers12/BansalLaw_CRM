@@ -690,14 +690,12 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 <div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered cdn-update-stage-modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <div>
+            <div class="modal-header cdn-update-stage-modal__header">
+                <div class="cdn-update-stage-modal__header-text">
                     <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
                     <p class="cdn-update-stage-modal-subtitle mb-0">Move this matter through its workflow</p>
                 </div>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="crm-modal-close cdn-update-stage-modal__close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body cdn-update-stage-modal-body">
                 @include('crm.clients.tabs.workflow', ['workflowInModal' => true])
@@ -716,16 +714,8 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 	<div class="modal-dialog modal-xl modal-dialog-centered emailmodal__dialog">
 		<div class="modal-content emailmodal__content">
 			<div class="modal-header emailmodal__header">
-				<div class="emailmodal__header-main">
-					<span class="emailmodal__header-icon" aria-hidden="true"><i class="fa-solid fa-envelope"></i></span>
-					<div>
-						<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-						<p class="emailmodal__subtitle">Send a message for this matter</p>
-					</div>
-				</div>
-				<button type="button" class="close emailmodal__close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
+				<button type="button" class="crm-modal-close emailmodal__close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<form method="post" name="sendmail" action="{{route('clients.sendmail')}}" autocomplete="off" enctype="multipart/form-data" class="emailmodal__form">
 				@csrf
@@ -934,13 +924,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 <div id="sendSmsModal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="smsModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="smsModalLabel">
-					<i class="fa-solid fa-sms"></i> Send SMS
-				</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+			<div class="modal-header send-sms-modal__header">
+				<h5 class="modal-title" id="smsModalLabel">Send SMS</h5>
+				<button type="button" class="crm-modal-close send-sms-modal__close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
 				<form id="sendSmsForm">
