@@ -1639,11 +1639,13 @@ class CRMUtilityController extends Controller
 		$reopenNotifService = app(\App\Services\MatterReopenNotificationService::class);
 		$reopenNotifService->reassertUnreadForReceiver((int) Auth::user()->id);
 
+		$perPage = 20;
 		$lists = $reopenNotifService
 			->orderWithStickyFirst(
 				\App\Models\Notification::where('receiver_id', Auth::user()->id)
 			)
-			->paginate(20);
+			->paginate($perPage)
+			->appends($request->except('page', 'infinite'));
 		// Fix URLs for notifications that point to non-existent or wrong routes
 		$lists->getCollection()->transform(function ($notification) {
 			// Message notifications: /messages (404) -> client detail + Workflow tab
@@ -1671,6 +1673,25 @@ class CRMUtilityController extends Controller
 			}
 			return $notification;
 		});
+
+		// Infinite scroll append — rows only (this page only)
+		if ($request->boolean('infinite')) {
+			$html = view('crm.notifications.partials.notification_rows', [
+				'lists' => $lists,
+			])->render();
+
+			return response()->json([
+				'html' => $html,
+				'current_page' => $lists->currentPage(),
+				'last_page' => $lists->lastPage(),
+				'total' => $lists->total(),
+				'from' => $lists->firstItem(),
+				'to' => $lists->lastItem(),
+				'has_more' => $lists->hasMorePages(),
+				'loaded' => $lists->count(),
+			]);
+		}
+
 		return view('crm.notifications', compact(['lists']));
 	}
 

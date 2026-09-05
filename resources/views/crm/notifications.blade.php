@@ -4,200 +4,284 @@
 @section('styles')
 <style>
     /*
-     * All notifications — docs/theme.md (Powder Blue & Soft Gold).
-     * body.sidebar-mini prefix beats layout inline .table rules; #crm beats generic .badge.
+     * All notifications — modern feed (docs/theme.md Powder Blue & Soft Gold).
+     * Scoped to #crm-all-notifications only.
      */
-    body.sidebar-mini #crm-all-notifications.card {
+    body.sidebar-mini #crm-all-notifications.crm-notif-shell {
         border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
         box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
         background: var(--card-bg) !important;
+        overflow: hidden;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-header {
-        background: var(--navy) !important;
+    body.sidebar-mini #crm-all-notifications .crm-notif-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 20px !important;
+        margin: 0 !important;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+        border-bottom: 3px solid var(--accent-gold) !important;
         color: #fff !important;
-        border-bottom: 1px solid var(--border) !important;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-header h4 {
+    body.sidebar-mini #crm-all-notifications .crm-notif-header h4,
+    body.sidebar-mini #crm-all-notifications .crm-notif-header .crm-notif-title {
+        margin: 0 !important;
+        padding: 0 !important;
         color: #fff !important;
-    }
-
-    /* Total count — KPI-style pill (theme.md status / labels) */
-    body.sidebar-mini #crm-all-notifications .card-header-action .badge,
-    body.sidebar-mini #crm-all-notifications .card-header-action .badge.badge-primary,
-    body.sidebar-mini #crm-all-notifications .card-header-action .badge.bg-primary {
-        background: rgba(255, 255, 255, 0.22) !important;
-        color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.45) !important;
+        font-size: 1.125rem !important;
         font-weight: 700 !important;
-        font-size: 0.8125rem !important;
-        padding: 0.35em 0.75em !important;
-        border-radius: 8px !important;
+        line-height: 1.3 !important;
+        letter-spacing: 0.01em;
     }
 
-    /* Table — theme.md Tables */
-    body.sidebar-mini #crm-all-notifications .table {
-        border-color: var(--border) !important;
-        color: var(--text-dark) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table thead th {
-        background-color: var(--page-bg) !important;
-        color: var(--text-muted) !important;
-        border-color: var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
+    body.sidebar-mini #crm-all-notifications .crm-notif-count,
+    body.sidebar-mini #crm-all-notifications #notificationsTotalBadge {
+        background: rgba(255, 255, 255, 0.18) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
         font-weight: 600 !important;
-        text-transform: uppercase !important;
-        font-size: 0.72rem !important;
-        letter-spacing: 0.06em !important;
-        padding: 12px 10px !important;
+        font-size: 0.75rem !important;
+        padding: 0.3em 0.7em !important;
+        border-radius: 999px !important;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
     }
 
-    body.sidebar-mini #crm-all-notifications .table tbody td {
+    #crm-all-notifications .crm-notif-body-wrap {
+        padding: 0;
+        background: var(--card-bg);
+    }
+
+    #crm-all-notifications .crm-notif-list {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 6px 0;
+        list-style: none;
+    }
+
+    #crm-all-notifications .crm-notif-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 20px;
+        margin: 0 8px;
+        border-radius: 10px;
+        text-decoration: none !important;
+        color: inherit !important;
+        border-left: 3px solid transparent;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+        position: relative;
+    }
+
+    #crm-all-notifications .crm-notif-item + .crm-notif-item {
+        margin-top: 2px;
+    }
+
+    #crm-all-notifications .crm-notif-item:hover,
+    #crm-all-notifications .crm-notif-item:focus-visible {
+        background: #ebf3ff !important;
+        outline: none;
+    }
+
+    #crm-all-notifications .crm-notif-item--unread {
+        background: rgba(254, 250, 232, 0.55);
+        border-left-color: var(--accent-gold);
+    }
+
+    #crm-all-notifications .crm-notif-item--unread:hover,
+    #crm-all-notifications .crm-notif-item--unread:focus-visible {
+        background: rgba(254, 250, 232, 0.9) !important;
+    }
+
+    #crm-all-notifications .crm-notif-item--reopen {
+        background: #fef2f2;
+        border-left-color: #dc2626;
+    }
+
+    #crm-all-notifications .crm-notif-item--reopen:hover,
+    #crm-all-notifications .crm-notif-item--reopen:focus-visible {
+        background: #fee2e2 !important;
+    }
+
+    #crm-all-notifications .crm-notif-icon {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        margin-top: 1px;
+    }
+
+    #crm-all-notifications .crm-notif-item--read .crm-notif-icon {
+        background: rgba(94, 122, 144, 0.12);
+        color: var(--text-muted);
+    }
+
+    #crm-all-notifications .crm-notif-item--unread:not(.crm-notif-item--reopen) .crm-notif-icon {
+        background: rgba(200, 153, 42, 0.16);
+        color: #9a7418;
+    }
+
+    #crm-all-notifications .crm-notif-item--reopen .crm-notif-icon {
+        background: rgba(220, 38, 38, 0.12);
+        color: #b91c1c;
+    }
+
+    #crm-all-notifications .crm-notif-body {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    body.sidebar-mini #crm-all-notifications .crm-notif-message {
         color: var(--text-dark) !important;
+        font-size: 0.9375rem !important;
         font-weight: 500 !important;
-        border-color: var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        padding: 12px 10px !important;
-        vertical-align: middle !important;
+        line-height: 1.45 !important;
+        word-break: break-word;
     }
 
-    body.sidebar-mini #crm-all-notifications .table tbody tr:nth-child(even) td {
-        background-color: rgba(221, 234, 248, 0.35) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr:hover td {
-        background-color: #ebf3ff !important;
-        color: var(--text-dark) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread td {
-        background-color: rgba(254, 250, 232, 0.65) !important;
+    body.sidebar-mini #crm-all-notifications .crm-notif-item--unread .crm-notif-message {
         font-weight: 600 !important;
     }
 
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread td:first-child {
-        border-left: 3px solid var(--accent-gold) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread:hover td {
-        background-color: rgba(254, 250, 232, 0.85) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen td {
-        background-color: #fef2f2 !important;
+    body.sidebar-mini #crm-all-notifications .crm-notif-item--reopen .crm-notif-message {
         color: #991b1b !important;
         font-weight: 700 !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen td:first-child {
-        border-left: 3px solid #dc2626 !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-reopen:hover td {
-        background-color: #fee2e2 !important;
     }
 
     #crm-all-notifications .crm-reopen-action-badge {
         display: inline-block;
         margin-right: 8px;
+        margin-bottom: 2px;
         padding: 2px 8px;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 700;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
         color: #fff;
         background: #dc2626;
-        border-radius: 999px;
+        border-radius: 6px;
         vertical-align: middle;
     }
 
-    body.sidebar-mini #crm-all-notifications .table a {
-        color: var(--sidebar-active) !important;
-        font-weight: 600 !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table a:hover {
-        color: var(--navy) !important;
-    }
-
-    /* Status dots — theme.md icon/status accents */
-    #crm-all-notifications .notification-status-read,
-    #crm-all-notifications .notification-status-unread {
-        display: inline-block;
-        width: 11px;
-        height: 11px;
-        border-radius: 50%;
-        vertical-align: middle;
-        box-sizing: border-box;
-    }
-
-    #crm-all-notifications .notification-status-read {
-        background-color: rgba(94, 122, 144, 0.35) !important;
-        border: 2px solid var(--text-muted) !important;
-    }
-
-    #crm-all-notifications .notification-status-unread {
-        background-color: var(--accent-gold) !important;
-        border: 2px solid rgba(200, 153, 42, 0.55) !important;
-        box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.2);
-    }
-
-    body.sidebar-mini #crm-all-notifications .table td.text-center {
+    body.sidebar-mini #crm-all-notifications .crm-notif-meta {
         color: var(--text-muted) !important;
-    }
-
-    body.sidebar-mini #crm-all-notifications .table td:last-child {
-        color: var(--text-muted) !important;
+        font-size: 0.8125rem !important;
         font-weight: 500 !important;
-        text-align: right !important;
-        white-space: nowrap;
+        line-height: 1.3 !important;
+    }
+
+    #crm-all-notifications .crm-notif-chevron {
+        flex: 0 0 auto;
+        color: var(--border);
+        font-size: 0.75rem;
+        margin-top: 12px;
+        opacity: 0.85;
+        transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    #crm-all-notifications .crm-notif-item:hover .crm-notif-chevron {
+        color: var(--sidebar-active);
+        transform: translateX(2px);
     }
 
     body.sidebar-mini #crm-all-notifications .crm-notifications-empty {
-        padding: 40px;
+        padding: 56px 24px;
+        text-align: center;
     }
 
-    body.sidebar-mini #crm-all-notifications .crm-notifications-empty i {
-        font-size: 48px;
-        color: var(--sidebar-bg) !important;
+    body.sidebar-mini #crm-all-notifications .crm-notifications-empty .crm-notif-empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--page-bg);
+        color: var(--sidebar-active);
+        font-size: 1.5rem;
     }
 
     body.sidebar-mini #crm-all-notifications .crm-notifications-empty h5 {
         color: var(--navy) !important;
         font-weight: 700 !important;
+        margin-bottom: 6px !important;
     }
 
     body.sidebar-mini #crm-all-notifications .crm-notifications-empty .text-muted {
         color: var(--text-muted) !important;
+        margin: 0 !important;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-footer {
-        background: var(--page-bg) !important;
-        border-top: 1px solid var(--border) !important;
+    #crm-all-notifications .notifications-infinite-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 16px 8px 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.8125rem;
+        font-weight: 600;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-footer .pagination li a,
-    body.sidebar-mini #crm-all-notifications .card-footer .pagination li span {
-        color: var(--navy) !important;
-        background: var(--card-bg) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
+    #crm-all-notifications .notifications-infinite-loader[hidden] {
+        display: none !important;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-footer .pagination li.active span {
-        background: var(--navy) !important;
-        border-color: var(--navy) !important;
-        color: #fff !important;
-        font-weight: 600 !important;
+    #crm-all-notifications .notifications-infinite-loader__spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--border, #c8dcef);
+        border-top-color: var(--navy, #1e3d60);
+        border-radius: 50%;
+        animation: notificationsSpin 0.7s linear infinite;
     }
 
-    body.sidebar-mini #crm-all-notifications .card-footer .pagination li a:hover {
-        background: var(--sidebar-bg) !important;
-        color: var(--navy) !important;
-        border-color: var(--border) !important;
+    @keyframes notificationsSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    #crm-all-notifications .notifications-scroll-info {
+        text-align: center;
+        padding: 4px 12px 18px;
+        color: var(--text-muted, #5e7a90);
+        font-size: 0.75rem;
+    }
+
+    #crm-all-notifications .notifications-scroll-sentinel {
+        height: 1px;
+        width: 100%;
+    }
+
+    @media (max-width: 576px) {
+        #crm-all-notifications .crm-notif-item {
+            margin: 0 4px;
+            padding: 12px 12px;
+            gap: 12px;
+        }
+
+        #crm-all-notifications .crm-notif-icon {
+            flex-basis: 36px;
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+        }
+
+        #crm-all-notifications .crm-notif-chevron {
+            display: none;
+        }
     }
 </style>
 @endsection
@@ -213,73 +297,41 @@
 			</div>
 			<div class="row">
 				<div class="col-12 col-md-12 col-lg-12">
-					<div class="card" id="crm-all-notifications">
-						<div class="card-header">
-							<h4>Notifications</h4>
-							<div class="card-header-action">
-								<span class="badge bg-primary">{{ $lists->total() }} Total</span>
-							</div>
+					<div class="card crm-notif-shell" id="crm-all-notifications" data-base-url="{{ route('crm.all-notifications') }}">
+						<div class="crm-notif-header">
+							<h4 class="crm-notif-title">Notifications</h4>
+							<span class="crm-notif-count" id="notificationsTotalBadge">{{ $lists->total() }} Total</span>
 						</div>
-						<div class="card-body">
+						<div class="crm-notif-body-wrap">
 							@if($lists->count() > 0)
-							<div class="table-responsive">
-								<table class="table">
-									<thead>
-										<tr>
-										  <th width="50">Status</th>
-										  <th>Message</th>
-										  <th width="200">Date</th>
-										</tr>
-									</thead>
-									<tbody class="tdata">
-										@foreach ($lists as $list)
-										@php
-											$isStickyReopen = ($list->notification_type ?? '') === \App\Services\MatterReopenNotificationService::TYPE_REQUEST
-												&& (int) ($list->receiver_status ?? 0) === 0
-												&& app(\App\Services\MatterReopenNotificationService::class)->isStickyPending($list);
-											$rowClass = $isStickyReopen
-												? 'crm-notification-row-unread crm-notification-row-reopen'
-												: (($list->receiver_status ?? 0) == 0 ? 'crm-notification-row-unread' : '');
-										@endphp
-										<tr id="id_{{@$list->id}}" class="{{ $rowClass }}">
-											<td class="text-center">
-												@if($isStickyReopen)
-													<span class="notification-status-unread" style="background:#dc2626;box-shadow:0 0 0 3px #fecaca;" data-bs-toggle="tooltip" title="Action required" aria-label="Action required"></span>
-												@elseif(($list->receiver_status ?? 0) == 1)
-													<span class="notification-status-read" data-bs-toggle="tooltip" title="Read" aria-label="Read"></span>
-												@else
-													<span class="notification-status-unread" data-bs-toggle="tooltip" title="Unread" aria-label="Unread"></span>
-												@endif
-											</td>
-											<td>
-												<a href="{{$list->url}}{{ str_contains((string) ($list->url ?? ''), '?') ? '&' : '?' }}{{ $isStickyReopen ? 'show_reopen=1&' : '' }}t={{$list->id}}">
-													@if($isStickyReopen)
-														<span class="crm-reopen-action-badge">Action required</span>
-													@endif
-													{{$list->message}}
-												</a>
-											</td>
-											<td>
-												{{date('d/m/Y h:i A', strtotime($list->created_at))}}
-											</td>
-										</tr>
-										@endforeach
-									</tbody>
-								</table>
+							<div id="notificationsList"
+								class="crm-notif-list"
+								data-page="{{ $lists->currentPage() }}"
+								data-last-page="{{ $lists->lastPage() }}"
+								data-total="{{ $lists->total() }}"
+								data-loaded="{{ $lists->count() }}"
+								data-has-more="{{ $lists->hasMorePages() ? '1' : '0' }}">
+								@include('crm.notifications.partials.notification_rows', ['lists' => $lists])
+							</div>
+							<div id="notificationsInfiniteLoader" class="notifications-infinite-loader" hidden aria-live="polite">
+								<span class="notifications-infinite-loader__spinner" aria-hidden="true"></span>
+								<span>Loading more…</span>
+							</div>
+							<div id="notificationsScrollSentinel" class="notifications-scroll-sentinel" aria-hidden="true"></div>
+							<div id="notificationsScrollInfo" class="notifications-scroll-info">
+								Showing {{ $lists->firstItem() ?: 0 }}–{{ $lists->lastItem() ?: 0 }}
+								of {{ $lists->total() }}
 							</div>
 							@else
-							<div class="text-center crm-notifications-empty">
-								<i class="fa-solid fa-bell" aria-hidden="true"></i>
-								<h5 class="mt-3">No Notifications</h5>
-								<p class="text-muted">You don't have any notifications yet.</p>
+							<div class="crm-notifications-empty">
+								<div class="crm-notif-empty-icon" aria-hidden="true">
+									<i class="fa-regular fa-bell"></i>
+								</div>
+								<h5>No notifications</h5>
+								<p class="text-muted">You’re all caught up.</p>
 							</div>
 							@endif
 						</div>
-						@if($lists->count() > 0)
-						<div class="card-footer">
-							{!! $lists->appends(\Request::except('page'))->render() !!}
-						</div>
-						@endif
 					</div>
 				</div>
 			</div>
@@ -288,3 +340,7 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/crm/notifications-infinite.js') }}?v={{ @filemtime(public_path('js/crm/notifications-infinite.js')) ?: time() }}"></script>
+@endpush
