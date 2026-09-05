@@ -58,15 +58,17 @@
 
 <style>
     #conflictPartiesCard .cp-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 12px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
     }
-    #conflictPartiesCard .cp-card-header h3 { margin: 0; font-size: 1.05rem; font-weight: 600; flex: 1; }
+    #conflictPartiesCard .cp-card-header h3 { margin: 0; }
+    #conflictPartiesCard .cp-open-edit.cdn-ov-card__action {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #c8dcef);
+        color: var(--navy, #1e3d60);
+        box-shadow: none;
+    }
     #conflictPartiesCard .cp-outcome-badge,
     #conflictPartiesEditModal .cp-outcome-badge {
         display: inline-block;
@@ -199,23 +201,27 @@
 </style>
 <link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
 
-<div class="card" id="conflictPartiesCard"
+<div class="card cdn-ov-card" id="conflictPartiesCard"
      data-client-id="{{ $fetchedData->id }}"
      data-client-matter-id="{{ $activeClientMatterId ?? '' }}"
      data-parties-updated-at="{{ $partiesUpdatedAtIso }}">
     <div id="conflictPartiesView" class="cp-view" role="region" aria-label="Other parties summary">
-        <div class="cp-card-header">
-            <h3><i class="fa-solid fa-user-shield"></i> Other Parties &amp; Conflict Check</h3>
+        <header class="cdn-ov-card__head cp-card-header">
+            <div class="cdn-ov-card__title">
+                <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user-shield"></i></span>
+                <h3>Other Parties &amp; Conflict Check</h3>
+            </div>
             <button type="button"
-                    class="btn btn-primary btn-sm cp-open-edit cp-open-edit--icon"
+                    class="cdn-ov-card__action btn btn-sm cp-open-edit"
                     title="Edit other parties"
                     aria-label="Edit other parties"
                     aria-expanded="false"
                     aria-controls="conflictPartiesEditModal">
-                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
             </button>
-        </div>
+        </header>
 
+        <div class="cdn-ov-card__body">
         @if(! empty($activeClientMatterId))
         <p class="text-muted mb-2" style="font-size:13px;">
             Other parties for the active matter only. Each matter can have its own defendants.
@@ -256,6 +262,7 @@
                     Not checked yet
                 @endif
             </span>
+        </div>
         </div>
     </div>
 </div>

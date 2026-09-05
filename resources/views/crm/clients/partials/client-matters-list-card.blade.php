@@ -39,22 +39,28 @@
     $matterCount = $clientMattersList->count();
 @endphp
 
-<div class="card" id="clientMattersListCard">
-    <div class="client-matter-list-card-header">
-        <h3><i class="fa-solid fa-folder-open"></i> Client Matters</h3>
+<div class="card cdn-ov-card" id="clientMattersListCard">
+    <header class="cdn-ov-card__head client-matter-list-card-header">
+        <div class="cdn-ov-card__title">
+            <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></span>
+            <h3>Client Matters</h3>
+        </div>
         @if($canAddClientMatter)
             <button type="button"
-                    class="client-matter-list-add-btn"
+                    class="cdn-ov-card__action client-matter-list-add-btn"
                     title="Add a new matter"
                     aria-label="Add a new matter"
-                    onclick="event.stopPropagation(); if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">+</button>
+                    onclick="event.stopPropagation(); if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add
+            </button>
         @endif
-    </div>
+    </header>
 
+    <div class="cdn-ov-card__body">
     @if($matterCount === 0)
     <p class="text-muted mb-0" style="font-size:13px;">
         @if($canAddClientMatter)
-            No active matters yet. Use <strong>+</strong> to add one.
+            No active matters yet. Use <strong>Add</strong> to add one.
         @else
             No active matters yet.
         @endif
@@ -139,46 +145,15 @@
         @endforeach
     @endforeach
     @endif
+    </div>
 </div>
 
 <style>
     #clientMattersListCard .client-matter-list-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 12px;
-    }
-    #clientMattersListCard .client-matter-list-card-header h3 {
-        margin: 0;
-        flex: 1;
+        margin-bottom: 0;
     }
     #clientMattersListCard .client-matter-list-add-btn {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: none;
-        font-weight: 700;
-        font-size: 1.05rem;
-        line-height: 1;
         cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        padding: 0;
-        background: #dbeafe;
-        color: #1d4ed8;
-        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-    }
-    #clientMattersListCard .client-matter-list-add-btn:hover {
-        background: #bfdbfe;
-        color: #1e3a8a;
-        transform: scale(1.05);
-    }
-    #clientMattersListCard .client-matter-list-add-btn:focus-visible {
-        outline: 2px solid #2563eb;
-        outline-offset: 2px;
     }
     #clientMattersListCard .client-matter-list-close-btn {
         margin-left: 8px;

@@ -8039,3 +8039,31 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-party-list li + li {
   margin-top: 0.4rem;
 }
+
+/* Overview cards — action can be <a> or <button> */
+#personaldetails-tab .cdn-overview .cdn-ov-card__action.btn,
+#personaldetails-tab .cdn-overview button.cdn-ov-card__action {
+  background: var(--card-bg, #fff) !important;
+  background-image: none !important;
+  border: 1px solid var(--border, #c8dcef) !important;
+  color: var(--navy, #1e3d60) !important;
+  box-shadow: none !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  padding: 6px 10px !important;
+  line-height: 1.2 !important;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__action.btn:hover,
+#personaldetails-tab .cdn-overview .cdn-ov-card__action.btn:focus,
+#personaldetails-tab .cdn-overview button.cdn-ov-card__action:hover,
+#personaldetails-tab .cdn-overview button.cdn-ov-card__action:focus {
+  background: var(--sidebar-hover, #c8dcef) !important;
+  border-color: var(--sidebar-active, #3a6fa8) !important;
+  color: var(--navy, #1e3d60) !important;
+}
+
+#personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body,
+#personaldetails-tab .cdn-overview #conflictPartiesCard .cdn-ov-card__body {
+  padding-top: 14px;
+}
