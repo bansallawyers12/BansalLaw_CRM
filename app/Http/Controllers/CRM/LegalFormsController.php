@@ -241,6 +241,18 @@ class LegalFormsController extends Controller
             $data['estimated_total'] = $fees + $disbursements + $barrister + $data['gst_amount'];
         }
 
+        // Uploaded forms are source PDFs/DOCXs — never regenerate or overwrite their stored paths.
+        if ($legalForm->is_uploaded) {
+            $legalForm->update($data);
+            $this->previewService->forgetHtmlCache((int) $legalForm->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Form updated successfully.',
+                'form' => $legalForm->fresh()->load(['client', 'matter', 'creator']),
+            ]);
+        }
+
         try {
             DB::transaction(function () use ($legalForm, $data) {
                 $legalForm->update($data);

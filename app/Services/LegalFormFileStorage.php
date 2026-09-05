@@ -11,7 +11,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Legal form uploads use the shared documents disk (S3 when configured),
- * with legacy fallback to public/legal_forms/... for older local files.
+ * with a durable local mirror under storage/app/legal_forms/... and legacy
+ * fallback to public/legal_forms/... for older local files.
+ *
+ * Storing only under public/ caused mass loss: untracked upload files disappear
+ * on deploy/clean while DB rows remain.
  */
 class LegalFormFileStorage
 {
@@ -54,7 +58,7 @@ class LegalFormFileStorage
 
                     return is_numeric($size) && (int) $size >= 0;
                 } catch (\Throwable $ignored) {
-                    // Fall through to local legacy path.
+                    // Fall through to local paths.
                 }
             } catch (\Throwable $e) {
                 Log::warning('Legal form cloud exists() failed', [
@@ -64,7 +68,7 @@ class LegalFormFileStorage
             }
         }
 
-        return is_file($this->legacyPublicPath($path));
+        return is_file($this->durableLocalPath($path)) || is_file($this->legacyPublicPath($path));
     }
 
     public function get(?string $relativePath): ?string
@@ -97,14 +101,16 @@ class LegalFormFileStorage
             }
         }
 
-        $legacy = $this->legacyPublicPath($path);
-        if (! is_file($legacy)) {
-            return null;
+        foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $local) {
+            if (! is_file($local)) {
+                continue;
+            }
+            $bytes = file_get_contents($local);
+
+            return is_string($bytes) ? $bytes : null;
         }
 
-        $bytes = file_get_contents($legacy);
-
-        return is_string($bytes) ? $bytes : null;
+        return null;
     }
 
     public function putUploadedFile(UploadedFile $file, string $relativePath): void
@@ -114,39 +120,97 @@ class LegalFormFileStorage
             throw new \InvalidArgumentException('Legal form storage path is empty.');
         }
 
+        $bytes = null;
+        $realPath = $file->getRealPath();
+        $useStream = is_string($realPath) && $realPath !== '' && is_file($realPath);
+
         if ($this->usesCloud()) {
-            $realPath = $file->getRealPath();
-            if (! is_string($realPath) || $realPath === '' || ! is_file($realPath)) {
-                $this->disk()->put($path, $file->get());
-
-                return;
-            }
-
-            $stream = fopen($realPath, 'r');
-            if ($stream === false) {
-                $this->disk()->put($path, $file->get());
-
-                return;
-            }
-
-            try {
-                $this->disk()->put($path, $stream);
-            } finally {
-                if (is_resource($stream)) {
-                    fclose($stream);
+            if ($useStream) {
+                $stream = fopen($realPath, 'r');
+                if ($stream === false) {
+                    $bytes = $file->get();
+                    $this->disk()->put($path, $bytes);
+                } else {
+                    try {
+                        $this->disk()->put($path, $stream);
+                    } finally {
+                        if (is_resource($stream)) {
+                            fclose($stream);
+                        }
+                    }
                 }
+            } else {
+                $bytes = $file->get();
+                $this->disk()->put($path, $bytes);
             }
+        }
 
+        // Always keep a durable local mirror outside public/ so deploy/clean cannot wipe uploads.
+        if ($useStream && $bytes === null) {
+            $this->writeLocalFile($path, $realPath, true);
+        } else {
+            if ($bytes === null) {
+                $bytes = $file->get();
+            }
+            $this->writeLocalFile($path, $bytes, false);
+        }
+
+        if (! $this->usesCloud() && $useStream && is_file($realPath)) {
+            // Local-only mode already wrote durable mirror; nothing else required.
             return;
         }
+    }
 
-        $fullPath = $this->legacyPublicPath($path);
-        $dir = dirname($fullPath);
-        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
-            throw new \RuntimeException('Could not create legal form upload directory.');
+    /**
+     * Store raw bytes at the legal-form relative path (cloud + durable local).
+     */
+    public function putBytes(string $relativePath, string $bytes): void
+    {
+        $path = $this->normalize($relativePath);
+        if ($path === '') {
+            throw new \InvalidArgumentException('Legal form storage path is empty.');
+        }
+        if ($bytes === '') {
+            throw new \InvalidArgumentException('Legal form file content is empty.');
         }
 
-        $file->move($dir, basename($fullPath));
+        if ($this->usesCloud()) {
+            $this->disk()->put($path, $bytes);
+        }
+
+        $this->writeLocalFile($path, $bytes, false);
+    }
+
+    /**
+     * Copy an existing S3 object into the legal-forms key (and durable local mirror).
+     */
+    public function copyFromCloudKey(string $sourceKey, string $relativePath): bool
+    {
+        $path = $this->normalize($relativePath);
+        $source = $this->normalize($sourceKey);
+        if ($path === '' || $source === '') {
+            return false;
+        }
+
+        try {
+            $bytes = $this->disk()->get($source);
+        } catch (\Throwable $e) {
+            Log::warning('Legal form copyFromCloudKey get failed', [
+                'source' => $source,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        if (! is_string($bytes) || $bytes === '') {
+            return false;
+        }
+
+        $this->putBytes($path, $bytes);
+
+        return $this->exists($path);
     }
 
     public function delete(?string $relativePath): void
@@ -169,9 +233,10 @@ class LegalFormFileStorage
             }
         }
 
-        $legacy = $this->legacyPublicPath($path);
-        if (is_file($legacy)) {
-            @unlink($legacy);
+        foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $local) {
+            if (is_file($local)) {
+                @unlink($local);
+            }
         }
     }
 
@@ -185,9 +250,10 @@ class LegalFormFileStorage
             return null;
         }
 
-        $legacy = $this->legacyPublicPath($path);
-        if (is_file($legacy)) {
-            return ['path' => $legacy, 'temporary' => false];
+        foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $local) {
+            if (is_file($local)) {
+                return ['path' => $local, 'temporary' => false];
+            }
         }
 
         $bytes = $this->get($path);
@@ -246,16 +312,19 @@ class LegalFormFileStorage
             }
         }
 
-        $legacy = $this->legacyPublicPath($path);
-        if (! is_file($legacy)) {
-            abort(404, 'Uploaded form file not found.');
+        foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $local) {
+            if (! is_file($local)) {
+                continue;
+            }
+
+            return $asAttachment
+                ? response()->download($local, $filename, $headers)
+                : response()->file($local, array_merge([
+                    'Content-Disposition' => 'inline; filename="'.str_replace('"', '\\"', $filename).'"',
+                ], $headers));
         }
 
-        return $asAttachment
-            ? response()->download($legacy, $filename, $headers)
-            : response()->file($legacy, array_merge([
-                'Content-Disposition' => 'inline; filename="'.str_replace('"', '\\"', $filename).'"',
-            ], $headers));
+        abort(404, 'Uploaded form file not found.');
     }
 
     /**
@@ -268,7 +337,7 @@ class LegalFormFileStorage
     }
 
     /**
-     * If a legacy public/ file exists and cloud disk is enabled, copy it up so future
+     * If a legacy public/ or durable local file exists and cloud disk is enabled, copy it up so future
      * previews work from any environment.
      */
     public function promoteLegacyToCloud(?string $relativePath): void
@@ -282,11 +351,6 @@ class LegalFormFileStorage
             return;
         }
 
-        $legacy = $this->legacyPublicPath($path);
-        if (! is_file($legacy)) {
-            return;
-        }
-
         try {
             if ($this->disk()->exists($path)) {
                 return;
@@ -295,7 +359,18 @@ class LegalFormFileStorage
             // Continue and attempt put.
         }
 
-        $stream = fopen($legacy, 'r');
+        $local = null;
+        foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $candidate) {
+            if (is_file($candidate)) {
+                $local = $candidate;
+                break;
+            }
+        }
+        if ($local === null) {
+            return;
+        }
+
+        $stream = fopen($local, 'r');
         if ($stream === false) {
             return;
         }
@@ -303,7 +378,7 @@ class LegalFormFileStorage
         try {
             $this->disk()->put($path, $stream);
         } catch (\Throwable $e) {
-            Log::warning('Legal form legacy→cloud promote failed', [
+            Log::warning('Legal form local→cloud promote failed', [
                 'path' => $path,
                 'error' => $e->getMessage(),
             ]);
@@ -312,6 +387,35 @@ class LegalFormFileStorage
                 fclose($stream);
             }
         }
+    }
+
+    /**
+     * @param  string|resource  $source  Absolute path (when $sourceIsPath) or raw bytes
+     */
+    private function writeLocalFile(string $relativePath, $source, bool $sourceIsPath): void
+    {
+        $fullPath = $this->durableLocalPath($relativePath);
+        $dir = dirname($fullPath);
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            throw new \RuntimeException('Could not create legal form storage directory.');
+        }
+
+        if ($sourceIsPath) {
+            if (! @copy((string) $source, $fullPath)) {
+                throw new \RuntimeException('Could not write legal form local mirror.');
+            }
+
+            return;
+        }
+
+        if (@file_put_contents($fullPath, (string) $source) === false) {
+            throw new \RuntimeException('Could not write legal form local mirror.');
+        }
+    }
+
+    private function durableLocalPath(string $relativePath): string
+    {
+        return storage_path('app/'.$relativePath);
     }
 
     private function legacyPublicPath(string $relativePath): string
