@@ -125,15 +125,36 @@
     }
 
     function billingPanel() {
-        return $('#activity-feed-billing-panel');
+        var $all = $('#activity-feed-billing-panel');
+        if ($all.length <= 1) {
+            return $all;
+        }
+        var $open = $all.filter('.show').first();
+        if ($open.length) {
+            return $open;
+        }
+        var $onBody = $all.filter(function () {
+            return this.parentNode === document.body;
+        }).first();
+        if ($onBody.length) {
+            return $onBody;
+        }
+        // Prefer the panel that already has fee lines loaded
+        var $withFees = $all.filter(function () {
+            return $(this).find('#activity-feed-billing-fees-body tr[data-fee-row]').length > 0;
+        }).first();
+        if ($withFees.length) {
+            return $withFees;
+        }
+        return $all.last();
     }
 
     function ensureBillingModalOnBody() {
-        var $modals = $('#activity-feed-billing-panel');
-        if ($modals.length > 1) {
-            $modals.slice(1).remove();
-        }
         var $modal = billingPanel();
+        if ($modal.length) {
+            $('#activity-feed-billing-panel').not($modal).remove();
+        }
+        $modal = billingPanel();
         if ($modal.length && !$modal.parent().is('body')) {
             $modal.appendTo('body');
         }
@@ -323,6 +344,213 @@
             '<table><thead><tr>' +
             '<th class="num">#</th><th>Category</th><th>Where it applies</th><th class="num">Amount (incl. GST)</th>' +
             '</tr></thead><tbody>' + body + '</tbody></table></body></html>';
+    }
+
+    function buildBillingInvoiceEmailHtml() {
+        syncCacheFromDom();
+        var feeState = readFeeLines();
+        var disbRows = readDisbursements();
+        var totals = calculate(feeState.lines, disbRows);
+        var th = 'background:#1e3d60;color:#fff;padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;';
+        var td = 'border-bottom:1px solid #d7e3ef;padding:8px 6px;vertical-align:top;';
+        var tdRight = td + 'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;';
+        var tdCenter = td + 'text-align:center;width:40px;white-space:nowrap;font-variant-numeric:tabular-nums;';
+
+        var feesBody;
+        if (!feeState.detailLines.length) {
+            feesBody = '<tr><td colspan="4" style="' + td + 'color:#5e7a90;font-style:italic;text-align:center;">No professional fee lines selected.</td></tr>';
+        } else {
+            feesBody = feeState.detailLines.map(function (line, index) {
+                return '<tr>' +
+                    '<td style="' + tdCenter + '">' + (index + 1) + '</td>' +
+                    '<td style="' + td + 'white-space:nowrap;">' + escapeHtml(line.date) + '</td>' +
+                    '<td style="' + td + '">' + escapeHtml(line.description) + '</td>' +
+                    '<td style="' + tdRight + '">' + money(line.amount_incl_gst) + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        var disbBody;
+        if (!disbRows.length) {
+            disbBody = '<tr><td colspan="5" style="' + td + 'color:#5e7a90;font-style:italic;text-align:center;">No disbursements.</td></tr>';
+        } else {
+            disbBody = disbRows.map(function (row, index) {
+                var n = normalizeDisbursement(row);
+                return '<tr>' +
+                    '<td style="' + tdCenter + '">' + (index + 1) + '</td>' +
+                    '<td style="' + td + '">' + escapeHtml(row.description || 'Disbursement') + '</td>' +
+                    '<td style="' + tdRight + '">' + money(n.net) + '</td>' +
+                    '<td style="' + tdRight + '">' + money(n.gst) + '</td>' +
+                    '<td style="' + tdRight + '">' + money(n.incl_gst) + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        return '<div style="font-family:Segoe UI,Arial,sans-serif;color:#1a2c40;font-size:14px;line-height:1.45;">' +
+            '<p style="margin:0 0 4px;font-size:18px;font-weight:700;color:#1e3d60;">BANSAL Lawyers — Billing invoice</p>' +
+            '<p style="margin:0 0 16px;color:#5e7a90;font-size:12px;">' +
+            escapeHtml(clientLabelForReport()) + '<br>Generated: ' + escapeHtml(new Date().toLocaleString()) +
+            '</p>' +
+
+            '<p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1e3d60;">Professional Fees</p>' +
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px;">' +
+            '<thead><tr>' +
+            '<th style="' + th + 'text-align:center;">#</th>' +
+            '<th style="' + th + 'text-align:left;">Date</th>' +
+            '<th style="' + th + 'text-align:left;">Description</th>' +
+            '<th style="' + th + 'text-align:right;">Amount (Including GST)</th>' +
+            '</tr></thead>' +
+            '<tbody>' + feesBody + '</tbody>' +
+            '<tfoot><tr>' +
+            '<td colspan="3" style="padding:10px 6px 8px;text-align:right;font-weight:600;border-top:1px solid #1e3d60;">Fees subtotal (incl. GST)</td>' +
+            '<td style="padding:10px 6px 8px;text-align:right;font-weight:700;border-top:1px solid #1e3d60;white-space:nowrap;">' + money(totals.fees_incl) + '</td>' +
+            '</tr></tfoot>' +
+            '</table>' +
+
+            '<p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1e3d60;">Disbursements</p>' +
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px;">' +
+            '<thead><tr>' +
+            '<th style="' + th + 'text-align:center;">#</th>' +
+            '<th style="' + th + 'text-align:left;">Description</th>' +
+            '<th style="' + th + 'text-align:right;">Amount</th>' +
+            '<th style="' + th + 'text-align:right;">GST</th>' +
+            '<th style="' + th + 'text-align:right;">Amount (Including GST)</th>' +
+            '</tr></thead>' +
+            '<tbody>' + disbBody + '</tbody>' +
+            '<tfoot><tr>' +
+            '<td colspan="2" style="padding:10px 6px 8px;text-align:right;font-weight:600;border-top:1px solid #1e3d60;">Disb. subtotal</td>' +
+            '<td style="padding:10px 6px 8px;text-align:right;font-weight:700;border-top:1px solid #1e3d60;white-space:nowrap;">' + money(totals.disb_net) + '</td>' +
+            '<td style="padding:10px 6px 8px;text-align:right;font-weight:700;border-top:1px solid #1e3d60;white-space:nowrap;">' + money(totals.disb_gst) + '</td>' +
+            '<td style="padding:10px 6px 8px;text-align:right;font-weight:700;border-top:1px solid #1e3d60;white-space:nowrap;">' + money(totals.disb_incl) + '</td>' +
+            '</tr></tfoot>' +
+            '</table>' +
+
+            '<table style="width:100%;max-width:360px;margin-left:auto;border-collapse:collapse;font-size:13px;">' +
+            '<tr>' +
+            '<td style="padding:4px 0;color:#5e7a90;">Total Fees and Disbursements</td>' +
+            '<td style="padding:4px 0;text-align:right;font-weight:600;white-space:nowrap;">' + money(totals.total_net) + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td style="padding:4px 0;color:#5e7a90;">GST Included</td>' +
+            '<td style="padding:4px 0;text-align:right;font-weight:600;white-space:nowrap;">' + money(totals.gst_included) + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td style="padding:8px 0 0;border-top:2px solid #1e3d60;font-weight:700;color:#1e3d60;">Total Amount Due</td>' +
+            '<td style="padding:8px 0 0;border-top:2px solid #1e3d60;text-align:right;font-weight:700;color:#1e3d60;white-space:nowrap;font-size:15px;">' + money(totals.total_due) + '</td>' +
+            '</tr>' +
+            '</table>' +
+            '</div><p><br></p>';
+    }
+
+    function setComposeMessageHtml(html) {
+        var $ta = $('#compose_email_message');
+        if (typeof window.setTinyMCEContent === 'function') {
+            window.setTinyMCEContent('compose_email_message', html);
+            return;
+        }
+        if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+            try {
+                tinymce.get('compose_email_message').setContent(html);
+                return;
+            } catch (e) { /* fall through */ }
+        }
+        if ($ta.length) {
+            $ta.val(html);
+        }
+    }
+
+    function emailBillingStructure() {
+        var $emailModal = $('#emailmodal');
+        if (!$emailModal.length) {
+            window.alert('Compose Email is not available on this page.');
+            return;
+        }
+
+        // Keep the active billing panel (with loaded fee lines) and drop any empty duplicates
+        ensureBillingModalOnBody();
+        syncCacheFromDom();
+        var html = buildBillingInvoiceEmailHtml();
+        var feeState = readFeeLines();
+        var disbRows = readDisbursements();
+        if (!feeState.detailLines.length && !disbRows.length) {
+            window.alert('No selected fee lines found. In Billing, click Reload, keep lines selected, then click Email again.');
+            return;
+        }
+
+        var subjectBase = 'Billing invoice — ' + clientLabelForReport();
+        var cfgClient = window.ClientDetailConfig || {};
+
+        function openComposeWithInvoice() {
+            var matterId = cfgClient.clientMatterId
+                || $('#sel_matter_id_client_detail').val()
+                || $('.general_matter_checkbox_client_detail:checked').val()
+                || '';
+            if (matterId) {
+                $('#emailmodal #compose_client_matter_id').val(matterId);
+            }
+
+            var emailModalEl = $emailModal.get(0);
+            if (emailModalEl) {
+                emailModalEl.dataset.signaturePrefill = 'skip';
+            }
+
+            var $subj = $('#compose_email_subject');
+            if (typeof window.ensureSubjectHasComposeReference === 'function') {
+                $subj.val(window.ensureSubjectHasComposeReference(subjectBase));
+            } else if (typeof window.prefillComposeSubjectWithReference === 'function') {
+                window.prefillComposeSubjectWithReference(true);
+                var existing = $.trim($subj.val() || '');
+                if (existing && existing.toLowerCase().indexOf('billing invoice') === -1) {
+                    $subj.val(existing + ' — Billing invoice');
+                } else if (!existing) {
+                    $subj.val(subjectBase);
+                }
+            } else {
+                $subj.val(subjectBase);
+            }
+
+            var applied = false;
+            var applyBody = function () {
+                if (applied) {
+                    return;
+                }
+                applied = true;
+                setComposeMessageHtml(html);
+            };
+
+            $emailModal.off('shown.bs.modal.timelineBillingEmail')
+                .one('shown.bs.modal.timelineBillingEmail', function () {
+                    setTimeout(applyBody, 250);
+                });
+
+            if (typeof $emailModal.modal === 'function') {
+                $emailModal.modal('show');
+            } else {
+                $emailModal.addClass('show').css('display', 'block').attr('aria-hidden', 'false');
+                $('body').addClass('modal-open');
+            }
+
+            if ($emailModal.hasClass('show') || $emailModal.is(':visible')) {
+                setTimeout(applyBody, 300);
+            }
+        }
+
+        if (isPanelOpen()) {
+            var $billing = billingPanel();
+            $billing.off('hidden.bs.modal.timelineBillingEmail')
+                .one('hidden.bs.modal.timelineBillingEmail', function () {
+                    setTimeout(openComposeWithInvoice, 50);
+                });
+            setPanelOpen(false);
+            setTimeout(function () {
+                if (!$emailModal.hasClass('show') && !$emailModal.is(':visible')) {
+                    openComposeWithInvoice();
+                }
+            }, 600);
+            return;
+        }
+
+        openComposeWithInvoice();
     }
 
     function printBillingStructure() {
@@ -640,7 +868,12 @@
         var lines = [];
         var selectedLines = 0;
         var detailLines = [];
-        $('#activity-feed-billing-fees-body tr[data-fee-row]').each(function () {
+        var $panel = billingPanel();
+        var $rows = $panel.find('#activity-feed-billing-fees-body tr[data-fee-row]');
+        if (!$rows.length) {
+            $rows = $('#activity-feed-billing-fees-body tr[data-fee-row]');
+        }
+        $rows.each(function () {
             var $tr = $(this);
             if (!$tr.find('.billing-fee-include').is(':checked')) {
                 return;
@@ -665,12 +898,40 @@
             });
             selectedLines += 1;
         });
+
+        // Fallback: use in-memory timeline rows if the DOM panel was replaced/empty
+        if (!detailLines.length && cachedRows.length) {
+            cachedRows.forEach(function (row) {
+                if (!row.included) {
+                    return;
+                }
+                var rate = row.category ? amountForCategory(row.category) : round2(row.rate || 0);
+                var qty = Number(row.qty) || 0;
+                var amount = round2(qty * rate);
+                if (!(amount > 0)) {
+                    return;
+                }
+                lines.push({ amount_incl_gst: amount });
+                detailLines.push({
+                    date: row.date || '',
+                    description: row.description || '',
+                    amount_incl_gst: amount
+                });
+                selectedLines += 1;
+            });
+        }
+
         return { lines: lines, selectedLines: selectedLines, detailLines: detailLines };
     }
 
     function readDisbursements() {
         var rows = [];
-        $('#activity-feed-billing-disb-body tr[data-disb-row]').each(function () {
+        var $panel = billingPanel();
+        var $disbRows = $panel.find('#activity-feed-billing-disb-body tr[data-disb-row]');
+        if (!$disbRows.length) {
+            $disbRows = $('#activity-feed-billing-disb-body tr[data-disb-row]');
+        }
+        $disbRows.each(function () {
             var $tr = $(this);
             var netVal = $tr.find('.billing-disb-net').val();
             var gstVal = $tr.find('.billing-disb-gst').val();
@@ -1020,6 +1281,12 @@
             .on('click.timelineBilling', '#activity-feed-billing-share-structure', function (e) {
                 e.preventDefault();
                 shareBillingStructure();
+            });
+
+        $(document).off('click.timelineBilling', '#activity-feed-billing-email-structure')
+            .on('click.timelineBilling', '#activity-feed-billing-email-structure', function (e) {
+                e.preventDefault();
+                emailBillingStructure();
             });
 
         $(document).off('change.timelineBillingShowAll', '#activity-feed-billing-show-all')

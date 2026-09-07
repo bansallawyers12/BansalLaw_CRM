@@ -54,6 +54,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-share-structure" title="Share complete billing structure">
                                     <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Share
                                 </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-email-structure" title="Email complete billing invoice">
+                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i> Email
+                                </button>
                                 <button type="button" class="btn btn-sm btn-primary" id="activity-feed-billing-save-rates">Save amounts</button>
                             </div>
                         </div>
