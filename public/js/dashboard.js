@@ -429,12 +429,21 @@ function updateTaskCount() {
                     </div>
                     <h4>All caught up!</h4>
                     <p>You have no tasks at the moment.</p>
-                    <button class="todo-empty-add-btn" onclick="openCreateTaskModal()">
+                    <button type="button"
+                            class="todo-empty-add-btn add_my_task"
+                            data-container="body"
+                            data-placement="bottom-start"
+                            data-html="true"
+                            data-content-id="add-task-popover-template"
+                            title="Add New Task">
                         <i class="fa-solid fa-plus"></i>
                         Add a task
                     </button>
                 </div>
             `);
+            if (window.DashboardAddTaskPopover && typeof window.DashboardAddTaskPopover.init === 'function') {
+                window.DashboardAddTaskPopover.init('.todo-task-list-container');
+            }
         }
     }
 }
@@ -531,6 +540,18 @@ function formatDate(dateString) {
 $(document).on('keydown', function(e) {
     if (e.key === 'Escape') {
         closeTaskDetail();
+    }
+});
+
+// Keyboard: open task detail from focused row content (Enter / Space)
+$(document).on('keydown', '.todo-task-content[role="button"]', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') {
+        return;
+    }
+    e.preventDefault();
+    var taskId = $(this).data('task-id') || $(this).closest('.todo-task-item').data('task-id');
+    if (taskId && typeof window.openTaskDetail === 'function') {
+        window.openTaskDetail(taskId);
     }
 });
 

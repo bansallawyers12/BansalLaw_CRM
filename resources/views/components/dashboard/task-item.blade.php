@@ -75,17 +75,23 @@
         <input type="checkbox"
                id="task-{{ $note->id }}"
                class="task-complete-checkbox"
+               aria-label="Mark task complete"
                onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, {{ $uniqueGroupIdSafe }})">
-        <label for="task-{{ $note->id }}"></label>
+        <label for="task-{{ $note->id }}" class="visually-hidden">Mark task complete</label>
     </div>
     
-    <div class="todo-task-content" onclick="openTaskDetail({{ $note->id }})">
+    <div class="todo-task-content"
+         role="button"
+         tabindex="0"
+         aria-label="View task details: {{ e(Str::limit(strip_tags($note->description), 80)) }}"
+         data-task-id="{{ $note->id }}"
+         onclick="openTaskDetail({{ $note->id }})">
         <div class="todo-task-title">
             {{ Str::limit(strip_tags($note->description), 60) }}
         </div>
         <div class="todo-task-meta">
             <span class="task-client-info">
-                <i class="fa-solid fa-user"></i>
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
                 {{ $clientName }}
                 @if($clientCode)
                     <span class="task-client-code">({{ $clientCode }})</span>
@@ -98,27 +104,31 @@
         <span class="todo-task-due {{ $urgencyClass }}">
             @if($note->note_deadline)
                 @if($isOverdue)
-                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
                 @else
-                    <i class="fa-regular fa-calendar"></i>
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                 @endif
             @else
-                <i class="fa-solid fa-infinity"></i>
+                <i class="fa-solid fa-infinity" aria-hidden="true"></i>
             @endif
             {{ $daysLeftText }}
         </span>
         <div class="todo-task-hover-actions">
             @if($note->note_deadline)
-                <button class="todo-action-btn"
+                <button type="button"
+                        class="todo-action-btn"
                         onclick="event.stopPropagation(); openExtendModal({{ $note->id }})"
-                        title="Extend Deadline">
-                    <i class="fa-solid fa-calendar-plus"></i>
+                        title="Extend Deadline"
+                        aria-label="Extend deadline">
+                    <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
                 </button>
             @else
-                <button class="todo-action-btn"
+                <button type="button"
+                        class="todo-action-btn"
                         onclick="event.stopPropagation(); openAddDeadlineModal({{ $note->id }})"
-                        title="Add Deadline">
-                    <i class="fa-solid fa-calendar-plus"></i>
+                        title="Add Deadline"
+                        aria-label="Add deadline">
+                    <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
                 </button>
             @endif
         </div>
@@ -144,7 +154,8 @@
     border-color: var(--border-color, #c8dcef);
 }
 
-.todo-task-item:hover .todo-task-hover-actions {
+.todo-task-item:hover .todo-task-hover-actions,
+.todo-task-item:focus-within .todo-task-hover-actions {
     opacity: 1;
     visibility: visible;
 }
@@ -152,6 +163,18 @@
 .todo-task-checkbox {
     position: relative;
     flex-shrink: 0;
+}
+
+.todo-task-checkbox .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }
 
 .task-complete-checkbox {
@@ -165,8 +188,11 @@
     position: relative;
 }
 
-.task-complete-checkbox:hover {
+.task-complete-checkbox:hover,
+.task-complete-checkbox:focus-visible {
     border-color: var(--primary-color, #1e3d60);
+    outline: 2px solid rgba(58, 111, 168, 0.35);
+    outline-offset: 2px;
 }
 
 .task-complete-checkbox:checked {
@@ -189,6 +215,16 @@
     flex: 1;
     min-width: 0;
     cursor: pointer;
+    border-radius: 6px;
+}
+
+.todo-task-content:focus {
+    outline: none;
+}
+
+.todo-task-content:focus-visible {
+    outline: 2px solid var(--sidebar-active, #3a6fa8);
+    outline-offset: 2px;
 }
 
 .todo-task-title {
@@ -299,9 +335,12 @@
     transition: all 0.2s ease;
 }
 
-.todo-action-btn:hover {
+.todo-action-btn:hover,
+.todo-action-btn:focus-visible {
     background: rgba(58, 111, 168, 0.15);
     color: var(--primary-color, #1e3d60);
+    outline: 2px solid rgba(58, 111, 168, 0.35);
+    outline-offset: 1px;
 }
 
 @media (max-width: 768px) {

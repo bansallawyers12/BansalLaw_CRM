@@ -48,8 +48,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| DASH-1 | **High** | `public/js/dashboard.js` ~L449; route `/dashboard` | After completing all tasks, empty-state HTML injects a button calling `openCreateTaskModal()`, but **that function is not defined anywhere**. Working add-task flow uses `.add_my_task` popover (`add-task-popover.js`). **“Add a task” silently fails** after dynamic empty-state render. |
-| DASH-2 | Medium | `resources/views/components/dashboard/task-item.blade.php`, `public/js/dashboard.js` | Task rows use `onclick` on `<div>`/checkbox (`openTaskDetail`, `handleTaskComplete`) without `role="button"`, `tabindex`, or keyboard handlers. **Keyboard and screen-reader users cannot operate tasks** from the list. |
+| DASH-1 | **High** | `public/js/dashboard.js`; route `/dashboard` | ~~Empty-state called undefined `openCreateTaskModal()`.~~ **Fixed:** dynamic empty-state uses `.add_my_task` + `DashboardAddTaskPopover.init()` (same as static empty state / header Add). |
+| DASH-2 | Medium | `resources/views/components/dashboard/task-item.blade.php`, `public/js/dashboard.js` | ~~Task rows used `onclick` without keyboard/a11y affordances.~~ **Fixed:** content has `role="button"` + `tabindex="0"` + Enter/Space handler; checkbox/action buttons have accessible names; hover actions show on `:focus-within`. |
 | DASH-3 | Medium | `public/js/crm/dashboard/dashboard-page.js` ~L246–440 | Infinite scroll and refresh failures log to `console.error` only — **no user-visible toast** when “Load more” or dashboard refresh fails. |
 | DASH-4 | Low | `resources/views/crm/dashboard.blade.php` | Loads both legacy `public/js/dashboard.js` and newer `public/js/crm/dashboard/dashboard-page.js`. Split responsibility increases regression risk (see DASH-1). |
 | DASH-5 | Medium | `routes/web.php` L96 vs L258 | **Two different `completeTask` handlers:** `DashboardController@completeTask` (`dashboard.tasks.complete`) vs `AssigneeController@completeTask` (`tasks.complete`). Potential inconsistent task-completion behavior depending on which endpoint the UI calls. |
@@ -258,7 +258,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 ## Recommended fix priority (documentation only)
 
 ### P0 — Broken user flows
-1. **DASH-1** — Wire empty-state “Add task” to `.add_my_task` popover or implement `openCreateTaskModal`.
+1. ~~**DASH-1** — Wire empty-state “Add task” to `.add_my_task` popover or implement `openCreateTaskModal`.~~ **Done.**
 2. **MAT-1 / MAT-2** — Consolidate matter discontinue/reopen to `/clients/matter/*` only; update all JS callers.
 3. **CLI-1** — Resolve `clients.edit` vs `clients.update` route overlap.
 4. **LEAD-1** — Remove or replace deprecated lead assignment routes with clear UI messaging.

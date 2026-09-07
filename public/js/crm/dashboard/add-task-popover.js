@@ -238,4 +238,8 @@
             return false;
         });
     });
+
+    window.DashboardAddTaskPopover = {
+        init: initPopovers
+    };
 })(typeof jQuery !== 'undefined' ? jQuery : null);
