@@ -6430,6 +6430,23 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   color: var(--text-muted, #5e7a90);
 }
 
+#activity-feed-billing-panel .activity-feed-billing-structure-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+#activity-feed-billing-panel .activity-feed-billing-col-sno,
+#activity-feed-billing-panel .activity-feed-billing-sno-cell {
+  width: 2.75rem;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--navy, #1e3d60);
+}
+
 #activity-feed-billing-panel .activity-feed-billing-table-wrap--structure {
   max-height: 260px;
 }

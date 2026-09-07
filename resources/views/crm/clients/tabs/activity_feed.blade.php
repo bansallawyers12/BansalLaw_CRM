@@ -47,13 +47,22 @@
                     <div class="activity-feed-billing-section">
                         <div class="activity-feed-billing-section__head">
                             <h5 class="activity-feed-billing-section__title">Billing structure</h5>
-                            <button type="button" class="btn btn-sm btn-primary" id="activity-feed-billing-save-rates">Save amounts</button>
+                            <div class="activity-feed-billing-structure-actions">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-print-structure" title="Print complete billing structure">
+                                    <i class="fa-solid fa-print" aria-hidden="true"></i> Print
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-share-structure" title="Share complete billing structure">
+                                    <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Share
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" id="activity-feed-billing-save-rates">Save amounts</button>
+                            </div>
                         </div>
                         <p class="activity-feed-billing-structure-help">Set how much (incl. GST) is charged for each activity type. Only Super Admin can change these amounts. Timeline lines use this schedule automatically.</p>
                         <div class="activity-feed-billing-table-wrap activity-feed-billing-table-wrap--structure">
                             <table class="table table-sm activity-feed-billing-table mb-0">
                                 <thead>
                                     <tr>
+                                        <th scope="col" class="activity-feed-billing-col-sno">#</th>
                                         <th scope="col">Category</th>
                                         <th scope="col">Where it applies</th>
                                         <th scope="col" class="text-right">Amount (incl. GST)</th>
@@ -61,7 +70,7 @@
                                 </thead>
                                 <tbody id="activity-feed-billing-structure-body">
                                     <tr class="activity-feed-billing-empty">
-                                        <td colspan="3">Loading billing structure…</td>
+                                        <td colspan="4">Loading billing structure…</td>
                                     </tr>
                                 </tbody>
                             </table>

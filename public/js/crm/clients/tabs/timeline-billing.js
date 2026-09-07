@@ -229,12 +229,13 @@
         }
         var keys = Object.keys(scheduleByKey);
         if (!keys.length) {
-            $body.html('<tr class="activity-feed-billing-empty"><td colspan="3">No billing categories configured.</td></tr>');
+            $body.html('<tr class="activity-feed-billing-empty"><td colspan="4">No billing categories configured.</td></tr>');
             return;
         }
-        var html = keys.map(function (key) {
+        var html = keys.map(function (key, index) {
             var row = scheduleByKey[key];
             return '<tr data-rate-key="' + escapeHtml(key) + '">' +
+                '<td class="activity-feed-billing-sno-cell">' + (index + 1) + '</td>' +
                 '<td><strong>' + escapeHtml(row.label) + '</strong></td>' +
                 '<td class="activity-feed-billing-applies">' + escapeHtml(row.applies_to) + '</td>' +
                 '<td class="text-right">' +
@@ -244,6 +245,155 @@
                 '</div></td></tr>';
         }).join('');
         $body.html(html);
+    }
+
+    function clientLabelForReport() {
+        var c = window.ClientDetailConfig || {};
+        var parts = [];
+        if (c.clientFirstName) {
+            parts.push(String(c.clientFirstName));
+        }
+        if (c.clientRef) {
+            parts.push('(' + String(c.clientRef) + ')');
+        }
+        if (c.matterUniqueNo || c.matterRefNo) {
+            parts.push('Matter ' + String(c.matterUniqueNo || c.matterRefNo));
+        }
+        return parts.length ? parts.join(' ') : 'Client file';
+    }
+
+    function buildStructureReportRows() {
+        return Object.keys(scheduleByKey).map(function (key, index) {
+            var row = scheduleByKey[key];
+            var amount = round2(row.amount_incl_gst || 0);
+            return {
+                sno: index + 1,
+                key: key,
+                label: row.label,
+                applies_to: row.applies_to,
+                amount: amount
+            };
+        });
+    }
+
+    function buildStructureReportText() {
+        var rows = buildStructureReportRows();
+        var lines = [
+            'BANSAL Lawyers — Billing structure',
+            clientLabelForReport(),
+            'Generated: ' + new Date().toLocaleString(),
+            '',
+            '#\tCategory\tWhere it applies\tAmount (incl. GST)'
+        ];
+        rows.forEach(function (row) {
+            lines.push([
+                String(row.sno),
+                row.label,
+                row.applies_to,
+                money(row.amount)
+            ].join('\t'));
+        });
+        return lines.join('\n');
+    }
+
+    function buildStructureReportHtml() {
+        var rows = buildStructureReportRows();
+        var body = rows.map(function (row) {
+            return '<tr>' +
+                '<td class="num">' + row.sno + '</td>' +
+                '<td>' + escapeHtml(row.label) + '</td>' +
+                '<td>' + escapeHtml(row.applies_to) + '</td>' +
+                '<td class="num">' + money(row.amount) + '</td>' +
+                '</tr>';
+        }).join('');
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Billing structure</title>' +
+            '<style>' +
+            'body{font-family:Segoe UI,Arial,sans-serif;color:#111;margin:24px;}' +
+            'h1{font-size:18px;margin:0 0 4px;}' +
+            '.meta{color:#555;font-size:12px;margin-bottom:18px;}' +
+            'table{width:100%;border-collapse:collapse;font-size:13px;}' +
+            'th,td{border-bottom:1px solid #ccc;padding:8px 6px;text-align:left;vertical-align:top;}' +
+            'th{background:#1e3d60;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}' +
+            'td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}' +
+            'th.num:first-child,td.num:first-child{text-align:center;width:3rem;}' +
+            '@media print{body{margin:12mm;}}' +
+            '</style></head><body>' +
+            '<h1>BANSAL Lawyers — Billing structure</h1>' +
+            '<div class="meta">' + escapeHtml(clientLabelForReport()) + '<br>Generated: ' + escapeHtml(new Date().toLocaleString()) + '</div>' +
+            '<table><thead><tr>' +
+            '<th class="num">#</th><th>Category</th><th>Where it applies</th><th class="num">Amount (incl. GST)</th>' +
+            '</tr></thead><tbody>' + body + '</tbody></table></body></html>';
+    }
+
+    function printBillingStructure() {
+        var html = buildStructureReportHtml();
+        var win = window.open('', '_blank', 'noopener,noreferrer,width=960,height=720');
+        if (!win) {
+            window.alert('Please allow pop-ups to print the billing structure.');
+            return;
+        }
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(function () {
+            try {
+                win.print();
+            } catch (e) { /* ignore */ }
+        }, 250);
+    }
+
+    function shareBillingStructure() {
+        var text = buildStructureReportText();
+        var title = 'Billing structure — ' + clientLabelForReport();
+        var $status = $('#activity-feed-billing-save-status');
+
+        function showShareStatus(msg, ok) {
+            if (!$status.length) {
+                return;
+            }
+            $status.prop('hidden', false).removeAttr('hidden')
+                .removeClass('is-error is-ok')
+                .addClass(ok ? 'is-ok' : 'is-error')
+                .text(msg);
+        }
+
+        if (navigator.share) {
+            navigator.share({ title: title, text: text }).then(function () {
+                showShareStatus('Billing structure shared.', true);
+            }).catch(function (err) {
+                if (err && err.name === 'AbortError') {
+                    return;
+                }
+                copyStructureText(text, showShareStatus);
+            });
+            return;
+        }
+        copyStructureText(text, showShareStatus);
+    }
+
+    function copyStructureText(text, showShareStatus) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+                showShareStatus('Billing structure copied to clipboard.', true);
+            }).catch(function () {
+                fallbackCopyStructureText(text, showShareStatus);
+            });
+            return;
+        }
+        fallbackCopyStructureText(text, showShareStatus);
+    }
+
+    function fallbackCopyStructureText(text, showShareStatus) {
+        var $ta = $('<textarea>').val(text).css({ position: 'fixed', left: '-9999px', top: '0' }).appendTo('body');
+        $ta[0].select();
+        try {
+            var ok = document.execCommand('copy');
+            showShareStatus(ok ? 'Billing structure copied to clipboard.' : 'Could not copy billing structure.', ok);
+        } catch (e) {
+            showShareStatus('Could not copy billing structure.', false);
+        }
+        $ta.remove();
     }
 
     function readStructureAmountsFromDom() {
@@ -858,6 +1008,18 @@
             .on('click.timelineBilling', '#activity-feed-billing-save-rates', function (e) {
                 e.preventDefault();
                 saveRates();
+            });
+
+        $(document).off('click.timelineBilling', '#activity-feed-billing-print-structure')
+            .on('click.timelineBilling', '#activity-feed-billing-print-structure', function (e) {
+                e.preventDefault();
+                printBillingStructure();
+            });
+
+        $(document).off('click.timelineBilling', '#activity-feed-billing-share-structure')
+            .on('click.timelineBilling', '#activity-feed-billing-share-structure', function (e) {
+                e.preventDefault();
+                shareBillingStructure();
             });
 
         $(document).off('change.timelineBillingShowAll', '#activity-feed-billing-show-all')
