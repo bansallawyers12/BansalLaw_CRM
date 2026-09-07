@@ -128,9 +128,24 @@
         return $('#activity-feed-billing-panel');
     }
 
+    function ensureBillingModalOnBody() {
+        var $modals = $('#activity-feed-billing-panel');
+        if ($modals.length > 1) {
+            $modals.slice(1).remove();
+        }
+        var $modal = billingPanel();
+        if ($modal.length && !$modal.parent().is('body')) {
+            $modal.appendTo('body');
+        }
+        ensureStatementModalOnBody();
+    }
+
     function isPanelOpen() {
         var $panel = billingPanel();
-        return $panel.length > 0 && !$panel.prop('hidden') && !$panel.is('[hidden]');
+        if (!$panel.length) {
+            return false;
+        }
+        return $panel.hasClass('show') || $panel.is(':visible');
     }
 
     function showAllNonBillable() {
@@ -150,29 +165,52 @@
         $('#activity-feed').toggleClass('activity-feed--billing-open', !!open);
     }
 
+    function showBillingModalDom($modal) {
+        $modal.addClass('show').css('display', 'block').attr('aria-hidden', 'false');
+        $('body').addClass('modal-open');
+        if (!$('.modal-backdrop.activity-feed-billing-backdrop').length) {
+            $('<div class="modal-backdrop fade show activity-feed-billing-backdrop"></div>').appendTo('body');
+        }
+    }
+
+    function hideBillingModalDom($modal) {
+        $modal.removeClass('show').css('display', 'none').attr('aria-hidden', 'true');
+        $('.modal-backdrop.activity-feed-billing-backdrop').remove();
+        if (!$('.modal.show').length) {
+            $('body').removeClass('modal-open');
+            $('.modal-backdrop').remove();
+        }
+    }
+
     function setPanelOpen(open) {
         var $panel = billingPanel();
         if (!$panel.length) {
             return;
         }
+        ensureBillingModalOnBody();
+        $panel = billingPanel();
+
         if (open) {
-            $panel.prop('hidden', false).removeAttr('hidden');
             updateCalcButton(true);
             renderStructureTable();
-            ensureStatementModalOnBody();
             if (!$('#activity-feed-billing-fees-body tr[data-fee-row]').length) {
                 loadFromTimeline();
             } else {
                 recalculate();
             }
+            if (typeof $panel.modal === 'function') {
+                $panel.modal('show');
+            } else {
+                showBillingModalDom($panel);
+            }
         } else {
             closeStatementModal();
-            $panel.prop('hidden', true).attr('hidden', 'hidden');
+            if (typeof $panel.modal === 'function') {
+                $panel.modal('hide');
+            } else {
+                hideBillingModalDom($panel);
+            }
             updateCalcButton(false);
-        }
-        if (typeof window.adjustActivityFeedHeight === 'function') {
-            window.adjustActivityFeedHeight();
-            setTimeout(window.adjustActivityFeedHeight, 150);
         }
     }
 
@@ -686,12 +724,20 @@
             return;
         }
         if (typeof $modal.modal === 'function') {
+            $modal.off('shown.bs.modal.timelineBillingStatement')
+                .on('shown.bs.modal.timelineBillingStatement', function () {
+                    var $backs = $('.modal-backdrop');
+                    if ($backs.length > 1) {
+                        $backs.last().css('z-index', 12075);
+                    }
+                    $modal.css('z-index', 12100);
+                });
             $modal.modal('show');
         } else {
-            $modal.addClass('show').css('display', 'block').attr('aria-hidden', 'false');
+            $modal.addClass('show').css({ display: 'flex', zIndex: 12100 }).attr('aria-hidden', 'false');
             $('body').addClass('modal-open');
-            if (!$('.modal-backdrop').length) {
-                $('<div class="modal-backdrop fade show"></div>').appendTo('body');
+            if (!$('.modal-backdrop.activity-feed-billing-statement-backdrop').length) {
+                $('<div class="modal-backdrop fade show activity-feed-billing-statement-backdrop" style="z-index:12075"></div>').appendTo('body');
             }
         }
     }
@@ -705,8 +751,10 @@
             $modal.modal('hide');
         } else {
             $modal.removeClass('show').css('display', 'none').attr('aria-hidden', 'true');
-            $('body').removeClass('modal-open');
-            $('.modal-backdrop').remove();
+            $('.modal-backdrop.activity-feed-billing-statement-backdrop').remove();
+            if (!$('.modal.show').length) {
+                $('body').removeClass('modal-open');
+            }
         }
     }
 
@@ -886,9 +934,19 @@
             return;
         }
         loadScheduleFromConfig();
-        ensureStatementModalOnBody();
+        ensureBillingModalOnBody();
         updateCalcButton(isPanelOpen());
         bindHandlers();
+
+        $(document).off('hidden.bs.modal.timelineBilling', '#activity-feed-billing-panel')
+            .on('hidden.bs.modal.timelineBilling', '#activity-feed-billing-panel', function () {
+                closeStatementModal();
+                updateCalcButton(false);
+            })
+            .off('shown.bs.modal.timelineBilling', '#activity-feed-billing-panel')
+            .on('shown.bs.modal.timelineBilling', '#activity-feed-billing-panel', function () {
+                updateCalcButton(true);
+            });
     }
 
     $(document).ready(init);
