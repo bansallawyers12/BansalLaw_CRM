@@ -7578,7 +7578,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .cdn-matter-task__done-summary::before {
-  content: 'ÃƒÂ¢Ã‚Â–Ã‚Â¸';
+  content: '\25B8'; /* ▸ disclosure triangle */
   display: inline-block;
   margin-right: 0.35rem;
   transition: transform 0.15s ease;

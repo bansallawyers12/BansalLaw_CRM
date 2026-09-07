@@ -956,7 +956,7 @@ $(function () {
                 value: $('#searchInput').val() || '',
                 regex: false
             },
-            order: [{ column: 4, dir: 'desc' }],
+            order: [{ column: 4, dir: 'asc' }],
             columns: []
         };
 
@@ -1231,7 +1231,7 @@ $(function () {
         paging: true,
         lengthChange: false,
         pageLength: ACTION_PAGE_SIZE,
-        order: [[4, 'desc']],
+        order: [[4, 'asc']],
         responsive: false,
         autoWidth: false,
         language: {

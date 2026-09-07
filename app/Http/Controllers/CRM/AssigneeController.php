@@ -59,6 +59,33 @@ class AssigneeController extends Controller
     }
 
     /**
+     * Sort open tasks by due date: missing dates first when ascending,
+     * then earliest → latest (later dates first when descending, missing last).
+     */
+    private function orderTasksByDueDate($query, string $direction = 'asc'): void
+    {
+        $direction = $direction === 'desc' ? 'desc' : 'asc';
+
+        // MySQL historically allows zero dates; Postgres rejects '0000-00-00' literals.
+        $missingDate = match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => "(notes.action_date IS NULL OR notes.action_date = '0000-00-00' OR notes.action_date = '0000-00-00 00:00:00')",
+            default => '(notes.action_date IS NULL)',
+        };
+
+        if ($direction === 'asc') {
+            // No due date on top, then early → late
+            $query->orderByRaw("{$missingDate} DESC")
+                ->orderBy('notes.action_date', 'asc')
+                ->orderBy('notes.created_at', 'desc');
+        } else {
+            // Late → early, no due date at bottom
+            $query->orderByRaw("{$missingDate} ASC")
+                ->orderBy('notes.action_date', 'desc')
+                ->orderBy('notes.created_at', 'desc');
+        }
+    }
+
+    /**
      * @return list<AllowedSort>
      */
     private function noteListAllowedSorts(): array
@@ -634,10 +661,10 @@ class AssigneeController extends Controller
                 // Note: Search functionality is now handled by Yajra DataTables filterColumn() definitions
                 // The custom 'd.search' parameter from frontend is handled by DataTables' built-in search
 
-                // Apply sorting
-                $orderDirection = in_array($request->input('order.0.dir'), ['asc', 'desc']) 
-                    ? $request->input('order.0.dir') 
-                    : 'desc';
+                // Apply sorting — default: no due date first, then earliest → latest
+                $orderDirection = in_array($request->input('order.0.dir'), ['asc', 'desc'])
+                    ? $request->input('order.0.dir')
+                    : 'asc';
 
                 if ($request->has('order')) {
                     $orderColumnIndex = (int) $request->order[0]['column'];
@@ -661,7 +688,7 @@ class AssigneeController extends Controller
                                 );
                             break;
                         case 'assign_date':
-                            $query->orderBy('notes.action_date', $orderDirection);
+                            $this->orderTasksByDueDate($query, $orderDirection);
                             break;
                         case 'task_group':
                             $query->orderBy('notes.task_group', $orderDirection);
@@ -670,11 +697,11 @@ class AssigneeController extends Controller
                             $query->orderBy('notes.description', $orderDirection);
                             break;
                         default:
-                            $query->orderBy('notes.created_at', 'desc'); // Fallback sorting
+                            $this->orderTasksByDueDate($query, 'asc');
                             break;
                     }
                 } else {
-                    $query->orderBy('notes.created_at', 'desc'); // Default sorting
+                    $this->orderTasksByDueDate($query, 'asc');
                 }
 
                 $dataTable = DataTables::of($query)
