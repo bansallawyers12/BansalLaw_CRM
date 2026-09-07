@@ -17,7 +17,7 @@
     max-width: none !important;
 }
 
-/* On the Timeline tab the feed is already full-width — hide the expand-width toggle */
+/* On the Timeline tab the feed is already full-width â hide the expand-width toggle */
 .crm-container--activity-tab .activity-feed-header label,
 .crm-container--activity-tab .activity-feed-expand-label {
     display: none !important;
@@ -141,7 +141,7 @@
 /* Documents Tab CSS (tokens: docs/theme.md via crm-theme.css :root) */
 .documentalls-container { padding: 0; background-color: var(--card-bg, #fff); border-radius: 10px; box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); border: 1px solid var(--border, #c8dcef); margin-top: 20px; }
 .subtabs, .subtabs2, .subtabs6 { display: flex; background-color: transparent; padding: 0; gap: 5px; flex-wrap: wrap; }
-/* Navy → active blue (docs/theme.md) + gold accent; matches appointment / note modal headers */
+/* Navy â active blue (docs/theme.md) + gold accent; matches appointment / note modal headers */
 .subtabs3 { display: flex; background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%); padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; border-bottom: 3px solid var(--accent-gold, #c8992a); }
 .subtab-header-container { background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%); padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 3px solid var(--accent-gold, #c8992a); }
 .subtab-button.ms-auto { margin-inline-start: auto; }
@@ -191,7 +191,7 @@
 #personaldocuments-tab .subtab-header-container .btn-secondary { background: var(--card-bg, #fff) !important; color: var(--navy, #1e3d60) !important; border: 1px solid var(--border, #c8dcef) !important; font-weight: 600; padding: 10px 18px; border-radius: 8px; box-shadow: none !important; }
 #personaldocuments-tab .subtab-header-container .btn-secondary:hover { background: var(--sidebar-bg, #ddeaf8) !important; color: var(--navy, #1e3d60) !important; box-shadow: none !important; }
 
-/* Personal Documents — toolbar buttons (padding + layout) */
+/* Personal Documents â toolbar buttons (padding + layout) */
 #personaldocuments-tab .pd-folder-bar {
   align-items: center;
   padding: 12px 14px;
@@ -465,7 +465,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 #personaldocuments-tab .personal-doc-file-icon { color: var(--sidebar-active, #3a6fa8); }
 
-/* Matter Documents — toolbar, buttons, layout (match personal docs) */
+/* Matter Documents â toolbar, buttons, layout (match personal docs) */
 #matterdocuments-tab .md-folder-bar {
   align-items: center;
   padding: 12px 14px;
@@ -683,7 +683,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   gap: 8px;
 }
 
-/* Matter Documents tab — theme.md tokens */
+/* Matter Documents tab â theme.md tokens */
 #matterdocuments-tab .subtab-header-container .btn-secondary { background: var(--card-bg, #fff) !important; color: var(--navy, #1e3d60) !important; border: 1px solid var(--border, #c8dcef) !important; font-weight: 600; }
 #matterdocuments-tab .subtab-header-container .btn-secondary:hover { background: var(--sidebar-bg, #ddeaf8) !important; color: var(--navy, #1e3d60) !important; }
 #matterdocuments-tab .matter-bulk-dropzone { margin: 15px 0; padding: 20px; border: 2px dashed var(--sidebar-active, #3a6fa8); border-radius: 8px; background-color: var(--page-bg, #f0f6ff); }
@@ -2424,7 +2424,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     padding: 0 1px;
 }
 
-/* Back — same grey language as collapse control, pill shape, no default browser border */
+/* Back â same grey language as collapse control, pill shape, no default browser border */
 .client-navigation-sidebar .client-detail-back-btn {
     display: inline-flex;
     align-items: center;
@@ -2465,7 +2465,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     opacity: 0.95;
 }
 
-/* Sidebar collapse — circular, aligned with back pill */
+/* Sidebar collapse â circular, aligned with back pill */
 .client-navigation-sidebar .sidebar-header-toolbar .sidebar-toggle-btn {
     position: static;
     flex-shrink: 0;
@@ -2936,7 +2936,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* --------------------------------------------------------------------------
-   Google review reminder modal — high-contrast actions (WCAG AA friendly)
+   Google review reminder modal â high-contrast actions (WCAG AA friendly)
    Theme overrides were washing out btn-outline-secondary (near-invisible text).
    -------------------------------------------------------------------------- */
 .google-review-reminder-modal .modal-header {
@@ -3828,7 +3828,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     margin-right: 3px;
 }
 
-/* Legal form modal — flex column so footer stays pinned; body scrolls (overrides client-forms.css max-height) */
+/* Legal form modal â flex column so footer stays pinned; body scrolls (overrides client-forms.css max-height) */
 #legalFormModal.legal-form-modal .legal-form-modal-dialog {
     max-width: 760px;
     width: calc(100% - 1.5rem);
@@ -3871,7 +3871,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     text-align: center;
 }
 
-/* style.css sets height:42px on .form-control and 64px on other textareas — reset in this modal */
+/* style.css sets height:42px on .form-control and 64px on other textareas â reset in this modal */
 #legalFormModal.legal-form-modal textarea.form-control,
 #legalFormModal.legal-form-modal textarea.lf-modal-textarea {
     height: auto !important;
@@ -4177,7 +4177,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* =============================================================================
-   Activity Feed — docs/theme.md (powder blue / navy; fixes timeline + icons)
+   Activity Feed â docs/theme.md (powder blue / navy; fixes timeline + icons)
    Scoped to .crm-container so layout .feed-icon width:25px and #0d6efd are overridden.
    ============================================================================= */
 .crm-container .activity-feed .feed-load-sentinel {
@@ -4378,7 +4378,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     color: #5e7a90;
 }
 
-/* Icon badge — layout’s 25px column broke FA circles */
+/* Icon badge â layoutâs 25px column broke FA circles */
 .crm-container .activity-feed .feed-icon {
     width: 36px !important;
     height: 36px !important;
@@ -4516,7 +4516,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     overflow: hidden;
 }
 
-/* Collapsed by default — only show detail after the row is expanded */
+/* Collapsed by default â only show detail after the row is expanded */
 .crm-container .activity-feed .feed-item:not(.feed-item--expanded) .feed-item-detail {
     display: none !important;
 }
@@ -4673,7 +4673,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   --cdn-primary-soft: #dbeafe;
   --cdn-radius: 14px;
   --cdn-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
-  /* Must match .main-content horizontal padding — subtab strip full-bleed uses this */
+  /* Must match .main-content horizontal padding â subtab strip full-bleed uses this */
   --cdn-main-content-pad-x: 18px;
   box-sizing: border-box;
   width: 100%;
@@ -4690,7 +4690,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   box-sizing: inherit;
 }
 
-/* Update Stage modal — Migration Manager–style case stages + checklist. */
+/* Update Stage modal â Migration Managerâstyle case stages + checklist. */
 #cdn-update-stage-modal .cdn-update-stage-modal-dialog {
   max-width: 1080px;
   margin: 1.25rem auto;
@@ -5236,7 +5236,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   overflow: hidden;
 }
 
-/* Update stage — same navy gradient header as Add matter / Compose Email */
+/* Update stage â same navy gradient header as Add matter / Compose Email */
 #cdn-update-stage-modal .cdn-update-stage-modal__header,
 #cdn-update-stage-modal .modal-header {
   display: flex !important;
@@ -5423,7 +5423,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 
-/* —— Hero card (client identity + actions) —— */
+/* ââ Hero card (client identity + actions) ââ */
 .cdn-client-hero {
   background: var(--cdn-card);
   border: 1px solid var(--cdn-border);
@@ -5922,7 +5922,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   flex: none !important;
 }
 
-/* Tabs without a feed (Tasks, Notes, etc.): single column — avoids empty right rail */
+/* Tabs without a feed (Tasks, Notes, etc.): single column â avoids empty right rail */
 .crm-container.crm-container--unified.crm-container--no-feed {
   grid-template-columns: 1fr;
   grid-template-rows: auto auto;
@@ -6080,6 +6080,574 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  margin-right: 2px;
+  padding: 0;
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(30, 61, 96, 0.04);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 10px;
+  min-width: 4.75rem;
+  border-right: 1px solid var(--border, #c8dcef);
+  background: var(--page-bg, #f0f6ff);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell:last-child {
+  border-right: none;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell--due {
+  background: var(--navy, #1e3d60);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted, #5e7a90);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell--due .activity-feed-billing-summary__label {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy, #1e3d60);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell--due .activity-feed-billing-summary__value {
+  color: #fff;
+  font-size: 13px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px !important;
+  border-radius: 8px;
+  color: var(--text-muted, #5e7a90) !important;
+  text-decoration: none !important;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc i {
+  font-size: 12px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc:hover,
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc.is-active {
+  background: var(--page-bg, #f0f6ff);
+  color: var(--navy, #1e3d60) !important;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc.is-active {
+  background: var(--navy, #1e3d60);
+  color: #fff !important;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 12px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 2px 8px rgba(30, 61, 96, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  max-height: min(46vh, 480px);
+  position: relative;
+  z-index: 6;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--page-bg, #f0f6ff) 0%, #fff 100%);
+  border-bottom: 1px solid var(--border, #c8dcef);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 7;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy, #1e3d60);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--text-muted, #5e7a90);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-rate {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-light, #fefae8);
+  color: var(--navy, #1e3d60);
+  font-weight: 600;
+  border: 1px solid rgba(200, 153, 42, 0.35);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-count.is-clickable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: var(--navy, #1e3d60);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-count.is-clickable:hover {
+  color: var(--sidebar-active, #3a6fa8);
+}
+
+#activity-feed-billing-statement-modal .activity-feed-billing-statement__inner {
+  max-width: 100%;
+  margin: 0;
+  font-family: 'Times New Roman', Times, 'Liberation Serif', serif;
+  color: #111;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-block {
+  margin-bottom: 22px;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-block__title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Times New Roman', Times, serif;
+  color: #111;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-table thead th {
+  text-align: left;
+  font-weight: 700;
+  padding: 4px 8px 6px 0;
+  border-bottom: 1px solid #222;
+  font-size: 13px;
+  background: transparent;
+  color: #111 !important;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-table thead th.text-right {
+  text-align: right;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-table tbody td {
+  padding: 5px 8px 5px 0;
+  vertical-align: top;
+  border-bottom: none;
+  color: #111;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-table tbody td.text-right,
+#activity-feed-billing-statement-modal .billing-statement-table tfoot td.text-right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-col-date {
+  width: 7.5rem;
+  white-space: nowrap;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-subtotal td {
+  padding-top: 8px;
+  border-top: 1px solid #222;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-empty {
+  font-style: italic;
+  color: #666;
+  text-align: center !important;
+  padding: 12px 0 !important;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-totals {
+  margin-left: auto;
+  width: min(100%, 320px);
+  margin-top: 8px;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-totals__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-totals__row strong {
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5rem;
+  text-align: right;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-totals__row--due {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #222;
+  font-weight: 700;
+}
+
+#activity-feed-billing-statement-modal .billing-statement-totals__row--due strong {
+  border-bottom: 2px solid #111;
+  padding-bottom: 1px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-sa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--navy, #1e3d60);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-structure-help {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted, #5e7a90);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table-wrap--structure {
+  max-height: 260px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-applies {
+  color: var(--text-muted, #5e7a90);
+  font-size: 11px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-amount-input {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-amount-prefix {
+  color: var(--text-muted, #5e7a90);
+  font-weight: 600;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-amount-input .form-control-sm {
+  margin-left: 0;
+  max-width: 6.5rem;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-save-status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-save-status.is-ok {
+  color: var(--success, #1e7a52);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-save-status.is-error {
+  color: var(--danger, #a83020);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-category {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--navy, #1e3d60);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-rate {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #5e7a90);
+  white-space: nowrap;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__actions .btn {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-close {
+  color: var(--navy, #1e3d60) !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-section {
+  padding: 10px 14px 4px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-section__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy, #1e3d60);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-show-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #5e7a90);
+  cursor: pointer;
+  user-select: none;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table-wrap {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table-wrap--disb {
+  max-height: 140px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table {
+  font-size: 12px;
+  color: var(--text-dark, #1a2c40);
+  margin-bottom: 0 !important;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--navy, #1e3d60);
+  color: #fff !important;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: none;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table tbody td,
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table tfoot td {
+  padding: 7px 10px;
+  border-color: #e8eef5;
+  vertical-align: middle;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table tfoot td {
+  background: var(--page-bg, #f0f6ff);
+  font-size: 11px;
+  color: var(--text-muted, #5e7a90);
+  font-weight: 600;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table tfoot strong {
+  color: var(--navy, #1e3d60);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table tr.is-excluded td {
+  opacity: 0.45;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-date {
+  white-space: nowrap;
+  color: var(--text-muted, #5e7a90);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-desc {
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy, #1e3d60);
+  white-space: nowrap;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .form-control-sm {
+  min-width: 3.75rem;
+  max-width: 5.5rem;
+  height: 28px;
+  padding: 2px 6px;
+  margin-left: auto;
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-disb-desc.form-control-sm {
+  min-width: 10rem;
+  max-width: none;
+  width: 100%;
+  margin-left: 0;
+  text-align: left;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-col-include,
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-col-remove {
+  width: 2.25rem;
+  text-align: center;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-empty td {
+  color: var(--text-muted, #5e7a90);
+  font-style: italic;
+  text-align: center;
+  padding: 16px 10px !important;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__footer {
+  margin: 8px 14px 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--page-bg, #f0f6ff);
+  border: 1px solid var(--border, #c8dcef);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__footer-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 16px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--text-muted, #5e7a90);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__footer-row strong {
+  min-width: 5.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy, #1e3d60);
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__footer-row--due {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border, #c8dcef);
+  font-weight: 700;
+  color: var(--navy, #1e3d60);
+  font-size: 13px;
+}
+
+.crm-container .activity-feed.activity-feed--simple .activity-feed-billing-panel__footer-row--due strong {
+  font-size: 14px;
+  border-bottom: 2px solid var(--navy, #1e3d60);
+  padding-bottom: 1px;
+}
+
+@media (max-width: 900px) {
+  .crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__label {
+    display: none;
+  }
+  .crm-container .activity-feed.activity-feed--simple .activity-feed-billing-summary__cell {
+    min-width: 0;
+    padding: 5px 8px;
+  }
+  .crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc__label {
+    display: none;
+  }
+  .crm-container .activity-feed.activity-feed--simple .activity-feed-billing-calc {
+    width: 32px;
+    padding: 0 !important;
+    justify-content: center;
+  }
+  .crm-container .activity-feed.activity-feed--simple .activity-feed-billing-table .billing-fee-desc {
+    max-width: 12rem;
+  }
 }
 
 .crm-container .activity-feed.activity-feed--simple .activity-feed-filter-toggle,
@@ -6241,7 +6809,8 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .cdn-timeline-tab > aside.activity-feed .activity-feed-toolbar,
 .cdn-timeline-tab > aside.activity-feed .activity-feed-header,
 .cdn-timeline-tab > aside.activity-feed .activity-filters,
-.cdn-timeline-tab > aside.activity-feed .activity-feed-filter-bar {
+.cdn-timeline-tab > aside.activity-feed .activity-feed-filter-bar,
+.cdn-timeline-tab > aside.activity-feed .activity-feed-billing-panel {
   flex-shrink: 0;
 }
 
@@ -6431,8 +7000,8 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* Stack subtab strip above tab panes. Base layout uses row flex (vertical nav + content);
-   this layout has no side nav here — row layout put the strip beside .tab-content and the strip's
-   calc(100% + …) width collapsed the content column to ~0, hiding documents. */
+   this layout has no side nav here â row layout put the strip beside .tab-content and the strip's
+   calc(100% + â¦) width collapsed the content column to ~0, hiding documents. */
 .crm-container.crm-container--unified .main-content-with-tabs {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   display: flex;
@@ -6562,7 +7131,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   }
 }
 
-/* Tasks tab — single-purpose layout */
+/* Tasks tab â single-purpose layout */
 .cdn-tasks-tab-card {
   border: 1px solid var(--cdn-border, #e2e8f0);
   border-radius: var(--cdn-radius, 12px);
@@ -6704,7 +7273,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16) !important;
 }
 
-/* Modern Flatpickr popup for task due date — force visible when open */
+/* Modern Flatpickr popup for task due date â force visible when open */
 .cdn-matter-task-due-calendar.flatpickr-calendar {
   border-radius: 14px;
   border: 1px solid var(--cdn-border, #e2e8f0);
@@ -6905,7 +7474,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   padding-right: 1.1rem;
 }
 
-/* Tasks tab — matter task list
+/* Tasks tab â matter task list
    Do NOT use Bootstrap .form-check-input on these rows: BS uses float/negative margins that
    break flex layout and make the label overlap the checkbox. */
 .cdn-matter-task__ul {
@@ -6945,7 +7514,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .cdn-matter-task__done-summary::before {
-  content: '▸';
+  content: 'â¸';
   display: inline-block;
   margin-right: 0.35rem;
   transition: transform 0.15s ease;
@@ -7251,7 +7820,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1 !important;
 }
 
-/* Add matter — same stacking as Edit matter details */
+/* Add matter â same stacking as Edit matter details */
 #addMatterModal.modal {
   z-index: 12050 !important;
 }
@@ -7264,7 +7833,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1 !important;
 }
 
-/* Other parties & conflict check — same stacking as Add/Edit matter */
+/* Other parties & conflict check â same stacking as Add/Edit matter */
 #conflictPartiesEditModal.modal {
   z-index: 12050 !important;
 }
@@ -7282,7 +7851,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   z-index: 12100 !important;
 }
 
-/* Other-party / contact Tom Select uses dropdownParent: body — must clear the modal (12050). */
+/* Other-party / contact Tom Select uses dropdownParent: body â must clear the modal (12050). */
 body.modal-open > .ts-dropdown,
 body > .ts-dropdown {
   z-index: 13000 !important;
@@ -7311,7 +7880,7 @@ body > .ts-dropdown {
 .hide-list-view .grid_data { display: none !important; }
 .active-preview-doc { background-color: rgba(58, 111, 168, 0.1) !important; }
 
-/* Send SMS (#sendSmsModal) — same navy gradient header as Add matter / Compose Email */
+/* Send SMS (#sendSmsModal) â same navy gradient header as Add matter / Compose Email */
 #sendSmsModal.custom_modal .modal-content {
   border: 1px solid var(--border, #c8dcef);
   border-radius: 12px;
@@ -7756,7 +8325,7 @@ body > .ts-dropdown {
   outline: 0;
 }
 
-/* Recipient Tom Select (To / Cc / Bcc) — match normal inputs, no solid fill */
+/* Recipient Tom Select (To / Cc / Bcc) â match normal inputs, no solid fill */
 #emailmodal .modal-body .ts-wrapper,
 #emailmodal .modal-body .ts-wrapper.form-control,
 #emailmodal .modal-body .ts-wrapper.form-select,
@@ -7835,7 +8404,7 @@ body > .ts-dropdown {
 
 /* ============================================================
  * Client Overview tab only (#personaldetails-tab .cdn-overview)
- * Simple modern cards � docs/theme.md Powder Blue & Soft Gold
+ * Simple modern cards  docs/theme.md Powder Blue & Soft Gold
  * ============================================================ */
 #personaldetails-tab .cdn-overview {
   gap: 16px !important;
@@ -8040,7 +8609,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   margin-top: 0.4rem;
 }
 
-/* Overview cards � action can be <a> or <button> */
+/* Overview cards  action can be <a> or <button> */
 #personaldetails-tab .cdn-overview .cdn-ov-card__action.btn,
 #personaldetails-tab .cdn-overview button.cdn-ov-card__action {
   background: var(--card-bg, #fff) !important;

@@ -1651,6 +1651,12 @@ $(document).ready(function() {
     $cdnJsWithVer = static function (string $rel) use ($cdnAssetVer): string {
         return $rel . '?v=' . $cdnAssetVer($rel);
     };
+    $_cdnTimelineBillingViewer = Auth::guard('admin')->user() ?? Auth::user();
+    $cdnCanTimelineBilling = $_cdnTimelineBillingViewer instanceof \App\Models\Staff
+        && $_cdnTimelineBillingViewer->hasEffectiveSuperAdminPrivileges();
+    $cdnTimelineBillingStructure = $cdnCanTimelineBilling
+        ? \App\Support\TimelineBillingSchedule::structure()
+        : [];
     $cdnLazyModuleScripts = [
         'noteterm' => [$cdnJsWithVer('js/crm/clients/modules/notes.js')],
         'clientaction' => [$cdnJsWithVer('js/crm/clients/modules/matter-tasks.js')],
@@ -1779,6 +1785,13 @@ $(document).ready(function() {
             accountTabHtml: '{{ url("/clients/account-tab/" . ($encodeId ?? "")) }}',
             detailTabHtml: '{{ url("/clients/detail-tab/" . ($encodeId ?? "")) }}',
         },
+        timelineBilling: {
+            enabled: @json(!empty($cdnCanTimelineBilling)),
+            gstRate: {{ (float) config('crm.timeline_billing.gst_rate', 0.10) }},
+            structure: @json($cdnTimelineBillingStructure ?? []),
+            ratesUrl: '{{ route("clients.timeline-billing-rates") }}',
+            saveRatesUrl: '{{ route("clients.timeline-billing-rates.save") }}',
+        },
         assetBase: @json(url('/')),
         lazyModuleScripts: @json($cdnLazyModuleScripts ?? []),
     };
@@ -1787,6 +1800,7 @@ $(document).ready(function() {
 
 {{-- Activity Feed: after ClientDetailConfig so clientId/urls exist; cache-bust so lazy-tab load fix is picked up --}}
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/activity-feed.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/tabs/timeline-billing.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/timeline-billing.js') }}"></script>
 @if($showMatterBundleTabs ?? false)
 {{-- accounts.js: Billing tab entry buttons must bind before lazy tab HTML injects --}}
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/accounts.js') }}"></script>

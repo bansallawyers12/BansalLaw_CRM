@@ -20,6 +20,7 @@ use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\ComposeSendersController;
 use App\Http\Controllers\CRM\AccessGrantController;
+use App\Http\Controllers\CRM\TimelineBillingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -165,6 +166,8 @@ Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clien
 Route::post('/unarchive/{id}', [ClientsController::class, 'unarchive'])->name('clients.unarchive');
 Route::get('/change-client-status', [ClientsController::class, 'updateclientstatus'])->name('clients.updateclientstatus');
 Route::get('/get-activities', [ClientsController::class, 'activities'])->name('clients.activities');
+Route::get('/clients/timeline-billing-rates', [TimelineBillingController::class, 'rates'])->name('clients.timeline-billing-rates');
+Route::post('/clients/timeline-billing-rates', [TimelineBillingController::class, 'saveRates'])->name('clients.timeline-billing-rates.save');
 Route::post('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
 Route::post('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);

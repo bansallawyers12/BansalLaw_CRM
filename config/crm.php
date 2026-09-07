@@ -435,6 +435,65 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Timeline billing calculator (Activity / Timeline tab)
+    |--------------------------------------------------------------------------
+    |
+    | Professional fees use a GST-inclusive unit rate (default $55.00).
+    | Disbursement GST defaults to gst_rate × net when GST is omitted.
+    |
+    */
+    'timeline_billing' => [
+        'unit_rate_incl_gst' => max(0, (float) env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+        'gst_rate' => max(0, min(1, (float) env('TIMELINE_BILLING_GST_RATE', 0.10))),
+        /*
+         * Default GST-inclusive amounts per timeline category (Super Admin can override at runtime).
+         */
+        'categories' => [
+            'email' => [
+                'label' => 'Email',
+                'applies_to' => 'Emails and email-related notes',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_EMAIL_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'note' => [
+                'label' => 'Note',
+                'applies_to' => 'Client notes (non-email)',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_NOTE_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'document' => [
+                'label' => 'Document',
+                'applies_to' => 'Document uploads and checklist items',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_DOCUMENT_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'signature' => [
+                'label' => 'Signature',
+                'applies_to' => 'Signature / signing activity',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_SIGNATURE_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'activity' => [
+                'label' => 'Task / Action',
+                'applies_to' => 'Tasks and actions on the file',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_ACTIVITY_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'sms' => [
+                'label' => 'SMS',
+                'applies_to' => 'SMS messages',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_SMS_AMOUNT', env('TIMELINE_BILLING_UNIT_RATE_INCL_GST', 55)),
+            ],
+            'search' => [
+                'label' => 'Search / attending',
+                'applies_to' => 'Searching, attending, InfoTrack-style work',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_SEARCH_AMOUNT', 110),
+            ],
+            'review' => [
+                'label' => 'Review',
+                'applies_to' => 'Reviewing documents or orders',
+                'amount_incl_gst' => (float) env('TIMELINE_BILLING_REVIEW_AMOUNT', 110),
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Documents (folder lists + bulk non-video S3 upload)
     |--------------------------------------------------------------------------
     |
