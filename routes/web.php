@@ -46,7 +46,7 @@ Route::get('/', function () {
     return redirect()->route('crm.login');
 });
 
-// Cache clearing route - protected with authentication
+// Cache clearing route — CRM staff only (auth:admin, not default web guard)
 Route::get('/clear-cache', function () {
     Artisan::call('config:clear');
     Artisan::call('view:clear');
@@ -56,7 +56,7 @@ Route::get('/clear-cache', function () {
         'success' => true,
         'message' => 'Cache cleared successfully'
     ]);
-})->middleware('auth');
+})->middleware('auth:admin');
 
 /*--------------------------------------------------
 | SECTION: Authentication Routes
@@ -75,9 +75,9 @@ require __DIR__ . '/adminconsole.php';
 Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('crm.login');
 Route::post('/login', [AdminLoginController::class, 'login'])->name('crm.login.post');
 Route::post('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout');
-Route::get('/logout', function () {
-    return redirect()->route('crm.login');
-})->name('crm.logout.get');
+// GET /logout must destroy the session too — a redirect-only handler left bookmarks
+// appearing signed out while the admin session stayed active (AUTH-1).
+Route::get('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout.get');
 
 /*--------------------------------------------------
 | SECTION: CRM Application Routes (Protected)

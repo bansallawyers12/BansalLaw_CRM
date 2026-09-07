@@ -321,7 +321,7 @@ Within `routes/web.php`:
 | GET | `/login` | `crm.login` | Staff login form |
 | POST | `/login` | `crm.login.post` | Authenticate staff |
 | POST | `/logout` | `crm.logout` | End session |
-| GET | `/logout` | `crm.logout.get` | Redirect to login |
+| GET | `/logout` | `crm.logout.get` | End session (same as POST) |
 | GET | `/up` | `health.up` | Health check (plain `OK` response) |
 
 #### Email verification

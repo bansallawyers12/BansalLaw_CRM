@@ -38,9 +38,9 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| AUTH-1 | Medium | `routes/web.php` L78–80 | `GET /logout` redirects to login **without** destroying the session. Only `POST /logout` calls `AdminLoginController@logout`. Users bookmarking GET logout may believe they are signed out while session remains active. |
-| AUTH-2 | Medium | `routes/web.php` L49–59 | `/clear-cache` uses default `auth` guard, not `auth:admin`. Any user on the default guard could trigger cache clears if such accounts exist. |
-| AUTH-3 | Low | `resources/views/layouts/crm-login.blade.php` | Viewport meta includes deprecated `shrink-to-fit=no` — minor mobile scaling behavior on iOS. |
+| AUTH-1 | Medium | `routes/web.php` | ~~`GET /logout` redirects to login **without** destroying the session.~~ **Fixed:** `GET /logout` now calls `AdminLoginController@logout` (same as POST). |
+| AUTH-2 | Medium | `routes/web.php` | ~~`/clear-cache` uses default `auth` guard, not `auth:admin`.~~ **Fixed:** middleware is now `auth:admin`. |
+| AUTH-3 | Low | `resources/views/layouts/crm-login.blade.php` | ~~Viewport meta includes deprecated `shrink-to-fit=no`.~~ **Fixed:** viewport is `width=device-width, initial-scale=1`. |
 
 ---
 
