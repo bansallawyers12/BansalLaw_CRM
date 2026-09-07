@@ -166,6 +166,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Communication Check permission.', 422);
             }
 
+            $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantTimelineBilling && $request->has('can_use_timeline_billing')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant Timeline Billing permission.', 422);
+            }
+
             $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -288,6 +295,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantCommunicationCheckPermission($actor instanceof Staff ? $actor : null) && $request->has('can_use_communication_check')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Communication Check permission.', 422);
+            }
+
+            if (! Staff::canGrantTimelineBillingPermission($actor instanceof Staff ? $actor : null) && $request->has('can_use_timeline_billing')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant Timeline Billing permission.', 422);
             }
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
@@ -559,6 +570,13 @@ class StaffController extends Controller
         );
         if ($canGrantCommunicationCheck && Schema::hasColumn('staff', 'can_use_communication_check')) {
             $obj->can_use_communication_check = $request->boolean('can_use_communication_check');
+        }
+
+        $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantTimelineBilling && Schema::hasColumn('staff', 'can_use_timeline_billing')) {
+            $obj->can_use_timeline_billing = $request->boolean('can_use_timeline_billing');
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(

@@ -1653,7 +1653,7 @@ $(document).ready(function() {
     };
     $_cdnTimelineBillingViewer = Auth::guard('admin')->user() ?? Auth::user();
     $cdnCanTimelineBilling = $_cdnTimelineBillingViewer instanceof \App\Models\Staff
-        && $_cdnTimelineBillingViewer->hasEffectiveSuperAdminPrivileges();
+        && $_cdnTimelineBillingViewer->canUseTimelineBilling();
     $cdnTimelineBillingStructure = $cdnCanTimelineBilling
         ? \App\Support\TimelineBillingSchedule::structure()
         : [];

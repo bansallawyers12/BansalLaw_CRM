@@ -3,6 +3,8 @@
     @php
         $_billingViewer = Auth::guard('admin')->user() ?? Auth::user();
         $_canTimelineBilling = $_billingViewer instanceof \App\Models\Staff
+            && $_billingViewer->canUseTimelineBilling();
+        $_isTimelineBillingSuperAdmin = $_billingViewer instanceof \App\Models\Staff
             && $_billingViewer->hasEffectiveSuperAdminPrivileges();
     @endphp
 
@@ -22,7 +24,11 @@
                         <h4 class="modal-title activity-feed-billing-panel__title" id="activity-feed-billing-title">Billing statement</h4>
                         <p class="activity-feed-billing-panel__meta">
                             <span class="activity-feed-billing-count" data-billing-selection-meta>0 lines selected</span>
+                            @if(!empty($_isTimelineBillingSuperAdmin))
                             <span class="activity-feed-billing-sa-badge">Super Admin</span>
+                            @else
+                            <span class="activity-feed-billing-sa-badge">Billing access</span>
+                            @endif
                         </p>
                     </div>
                     <div class="activity-feed-billing-panel__actions">

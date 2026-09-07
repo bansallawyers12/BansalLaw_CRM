@@ -28,6 +28,9 @@
     $canGrantCommunicationCheck = \App\Models\Staff::canGrantCommunicationCheckPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantTimelineBilling = \App\Models\Staff::canGrantTimelineBillingPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -271,6 +274,18 @@
                         <span>Can use Communication Check</span>
                     </label>
                     <small class="text-muted d-block mt-1">Shows Communication Check under Clients so this staff member can upload email/SMS/call screenshots and see Logged / Worked / Gap reports. Super Admin always has access when the feature is enabled.</small>
+                </div>
+                @endif
+
+                @if($canGrantTimelineBilling && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_use_timeline_billing'))
+                <div class="form-group">
+                    <input type="hidden" name="can_use_timeline_billing" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_use_timeline_billing" value="1"
+                            @checked(old('can_use_timeline_billing', $isEdit ? ($fetchedData->can_use_timeline_billing ?? false) : false))>
+                        <span>Can use Timeline Billing</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Shows Billing on the client Timeline tab so this staff member can calculate fees, print/share/email invoices, and manage the billing structure. Super Admin always has access.</small>
                 </div>
                 @endif
 

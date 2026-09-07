@@ -14,7 +14,7 @@ class TimelineBillingController extends Controller
 {
     public function rates(): JsonResponse
     {
-        if (! $this->actorIsSuperAdmin()) {
+        if (! $this->actorCanUseTimelineBilling()) {
             return response()->json(['status' => false, 'message' => config('constants.unauthorized')], 403);
         }
 
@@ -28,7 +28,7 @@ class TimelineBillingController extends Controller
 
     public function saveRates(Request $request): JsonResponse
     {
-        if (! $this->actorIsSuperAdmin()) {
+        if (! $this->actorCanUseTimelineBilling()) {
             return response()->json(['status' => false, 'message' => config('constants.unauthorized')], 403);
         }
 
@@ -62,10 +62,10 @@ class TimelineBillingController extends Controller
         ]);
     }
 
-    private function actorIsSuperAdmin(): bool
+    private function actorCanUseTimelineBilling(): bool
     {
         $actor = Auth::user();
 
-        return $actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges();
+        return $actor instanceof Staff && $actor->canUseTimelineBilling();
     }
 }
