@@ -189,6 +189,10 @@ function customValidate(formName, savetype = '')
 			$inputsToValidate = $formForValidate.find(':input[data-valid]');
 		}
 		flushTomSelectPendingCreates($formForValidate);
+		// TinyMCE keeps content in the editor until save — sync before reading .val()
+		if (typeof tinymce !== 'undefined' && typeof tinymce.triggerSave === 'function') {
+			tinymce.triggerSave();
+		}
 		if (formName === 'change_matter_assignee') {
 		}
 		$inputsToValidate.each(function(){
@@ -204,6 +208,7 @@ function customValidate(formName, savetype = '')
 					var isTomSelectEnhanced = !!(el && el.tomselect);
 					var isEnhancedSelect = isTomSelectEnhanced || $element.is('[data-crm-ts]');
 					var isMultiple = $element.prop('multiple');
+					var isTinyMceField = for_class.indexOf('tinymce-editor') !== -1;
 					
 					if(for_class.indexOf('multiselect_subject') != -1)
 						{
@@ -230,6 +235,15 @@ function customValidate(formName, savetype = '')
 					else
 						{
 							var rawVal = $(this).val();
+							// Prefer TinyMCE plain text so empty <p><br></p> still fails required
+							if (isTinyMceField && typeof tinymce !== 'undefined') {
+								var editorId = $element.attr('id');
+								var editor = editorId ? tinymce.get(editorId) : null;
+								if (editor) {
+									editor.save();
+									rawVal = editor.getContent({ format: 'text' }) || '';
+								}
+							}
 							var trimVal = $.trim(typeof rawVal === 'string' ? rawVal : (Array.isArray(rawVal) ? (rawVal[0] || '') : (rawVal || '')));
 							if (formName === 'change_matter_assignee' && (i + j) < 3) {
 							}
@@ -237,7 +251,15 @@ function customValidate(formName, savetype = '')
 								{
 									i++;
 									j++;
-									$(this).after(errorDisplay(requiredError));
+									if (isTinyMceField) {
+										var $editorWrap = $element.closest('.sa-note-modal__editor, .tox-tinymce').first();
+										if (!$editorWrap.length) {
+											$editorWrap = $element.next('.tox-tinymce');
+										}
+										($editorWrap.length ? $editorWrap : $element).after(errorDisplay(requiredError));
+									} else {
+										$(this).after(errorDisplay(requiredError));
+									}
 								}
 						}
 				}
