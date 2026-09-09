@@ -74,6 +74,44 @@ class MatterTaskReminderTest extends TestCase
     }
 
     #[Test]
+    public function staff_can_add_reminder_on_lead_without_matter(): void
+    {
+        $lead = Admin::factory()->create(['type' => 'lead', 'is_archived' => 0]);
+        $staff = Staff::factory()->superAdmin()->create([
+            'status' => 1,
+            'can_access_personal_calendar' => true,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $this->postJson(route('clients.matterTask.store'), [
+            'client_id' => $lead->id,
+            'title' => 'Follow up lead call',
+            'due_date' => '2026-09-15',
+            'kind' => 'reminder',
+        ])->assertOk()->assertJson([
+            'status' => true,
+            'data' => [
+                'item_kind' => 'reminder',
+                'title' => 'Follow up lead call',
+            ],
+        ]);
+
+        $this->assertDatabaseHas('staff_calendar_events', [
+            'title' => 'Follow up lead call',
+            'event_type' => 'reminder',
+            'client_id' => $lead->id,
+            'client_matter_id' => null,
+            'created_by_staff_id' => $staff->id,
+        ]);
+
+        $this->getJson(route('clients.matterTask.index', [
+            'client_id' => $lead->id,
+        ]))->assertOk()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('reminders.0.title', 'Follow up lead call');
+    }
+
+    #[Test]
     public function staff_without_calendar_access_cannot_add_reminder(): void
     {
         [$client, $matter] = $this->seedClientMatter();

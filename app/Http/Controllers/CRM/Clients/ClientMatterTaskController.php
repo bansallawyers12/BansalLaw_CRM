@@ -82,7 +82,18 @@ class ClientMatterTaskController extends Controller
 
         $matter = $this->resolveMatterFromRequest($request, $clientId);
         if (! $matter) {
-            return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
+            // Lead / client with no matter selected: reminders only (no matter tasks).
+            return response()->json([
+                'status' => true,
+                'data' => [],
+                'reminders' => $this->clientRemindersPayload($clientId, null),
+                'page' => 1,
+                'per_page' => 50,
+                'total' => 0,
+                'open_count' => 0,
+                'done_count' => 0,
+                'has_more' => false,
+            ]);
         }
 
         $perPage = (int) ($request->query('per_page') ?: config('crm.notes.matter_task_per_page', 50));
@@ -146,7 +157,7 @@ class ClientMatterTaskController extends Controller
         return response()->json([
             'status' => true,
             'data' => $data,
-            'reminders' => $this->matterRemindersPayload($matter),
+            'reminders' => $this->clientRemindersPayload((int) $matter->client_id, (int) $matter->id),
             'page' => $page,
             'per_page' => $perPage,
             'total' => $total,
@@ -227,9 +238,6 @@ class ClientMatterTaskController extends Controller
         $clientId = (int) $validated['client_id'];
         $this->ensureCrmRecordAccess($clientId);
         $matter = $this->resolveMatterFromRequest($request, $clientId);
-        if (! $matter) {
-            return response()->json(['status' => false, 'message' => 'Matter not found for this client. Select a matter before creating reminders.'], 422);
-        }
 
         $title = trim((string) $validated['title']);
         if ($title === '') {
@@ -253,8 +261,8 @@ class ClientMatterTaskController extends Controller
             'ends_at' => $endsAt,
             'is_all_day' => true,
             'calendar_type' => null,
-            'client_id' => $matter->client_id,
-            'client_matter_id' => $matter->id,
+            'client_id' => $clientId,
+            'client_matter_id' => $matter?->id,
             'notes' => null,
             'created_by_staff_id' => (int) $staff->id,
         ]);
@@ -391,11 +399,13 @@ class ClientMatterTaskController extends Controller
     }
 
     /**
+     * Reminders for a client/lead; optionally scoped to one matter.
+     *
      * @return list<array<string, mixed>>
      */
-    protected function matterRemindersPayload(ClientMatter $matter): array
+    protected function clientRemindersPayload(int $clientId, ?int $matterId = null): array
     {
-        if (! Schema::hasTable('staff_calendar_events')) {
+        if ($clientId < 1 || ! Schema::hasTable('staff_calendar_events')) {
             return [];
         }
 
@@ -405,8 +415,12 @@ class ClientMatterTaskController extends Controller
 
         $query = StaffCalendarEvent::query()
             ->with(['createdBy:id,first_name,last_name'])
-            ->where('client_matter_id', $matter->id)
+            ->where('client_id', $clientId)
             ->where('event_type', 'reminder');
+
+        if ($matterId !== null && $matterId > 0) {
+            $query->where('client_matter_id', $matterId);
+        }
 
         if ($hasStatus) {
             // Active upcoming reminders + completed ones (so Tasks tab mirrors calendar status).
@@ -432,6 +446,16 @@ class ClientMatterTaskController extends Controller
             ->map(fn (StaffCalendarEvent $event) => $this->reminderRowPayload($event))
             ->values()
             ->all();
+    }
+
+    /**
+     * @deprecated Use {@see clientRemindersPayload()}
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function matterRemindersPayload(ClientMatter $matter): array
+    {
+        return $this->clientRemindersPayload((int) $matter->client_id, (int) $matter->id);
     }
 
     /**

@@ -11,7 +11,9 @@
     @endphp
     <main class="main-content" id="dashboardRoot"
           data-clients-url="{{ url('/clients/get-allclients') }}"
-          data-personal-task-url="{{ route('clients.tasks.personal.store') }}">
+          data-personal-task-url="{{ route('clients.tasks.personal.store') }}"
+          data-matter-reminder-url="{{ route('clients.matterTask.store') }}"
+          data-personal-calendar-enabled="{{ auth('admin')->user() instanceof \App\Models\Staff && auth('admin')->user()->canAccessPersonalCalendar() ? '1' : '0' }}">
         <header class="dashboard-welcome-banner">
             <div class="dashboard-welcome-content">
                 <div class="dashboard-welcome-text">

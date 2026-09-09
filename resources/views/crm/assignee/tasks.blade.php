@@ -1456,7 +1456,7 @@ $(function () {
                     initTS(el, buildGetAllClientsTomSelectConfig({
                         url: '{{URL::to('/clients/get-allclients')}}',
                         dropdownParent: 'body',
-                        placeholder: 'Search client...'
+                        placeholder: 'Search client or lead...'
                     }));
                     var _tsW = el.tomselect && el.tomselect.wrapper;
                     if (_tsW) {
@@ -1834,16 +1834,182 @@ $(function () {
         });
     });
 
+    // Add My Task / Reminder — kind toggle inside popover
+    function syncAddTaskKindUI($root, kind) {
+        kind = kind === 'reminder' ? 'reminder' : 'task';
+        $root.toggleClass('is-reminder-mode', kind === 'reminder');
+        $root.find('.add-task-kind-input').val(kind);
+        $root.find('.add-task-kind-btn').each(function () {
+            var isActive = String($(this).data('add-task-kind')) === kind;
+            $(this).toggleClass('is-active', isActive).attr('aria-pressed', isActive ? 'true' : 'false');
+        });
+        var $remindGroup = $root.find('.add-task-remind-on-group');
+        if ($remindGroup.length) {
+            $remindGroup.prop('hidden', kind !== 'reminder');
+        }
+        var $hint = $root.find('.add-task-kind-hint');
+        if ($hint.length) {
+            $hint.text(
+                kind === 'reminder'
+                    ? ($hint.attr('data-hint-reminder') || '')
+                    : ($hint.attr('data-hint-task') || '')
+            );
+        }
+        $root.find('.add-task-client-label-text').text(
+            kind === 'reminder' ? 'Client / Lead' : 'Client / Lead (optional)'
+        );
+        $root.find('.add-task-note-label-text').text(kind === 'reminder' ? 'Reminder' : 'Task Description');
+        var $note = $root.find('#add_task_assignnote, #assignnote').first();
+        if ($note.length) {
+            $note.attr(
+                'placeholder',
+                kind === 'reminder'
+                    ? 'What should we remind you about?'
+                    : 'Enter task description... (type @ to tag staff)'
+            );
+            $note.attr('rows', kind === 'reminder' ? 3 : 4);
+        }
+        var $submitLabel = $root.find('.add-task-submit-label');
+        if ($submitLabel.length) {
+            $submitLabel.text(kind === 'reminder' ? 'Add Reminder' : 'Add My Task');
+        }
+        var $submitBtn = $root.find('.add-task-submit-btn, #add_my_task_submit, #add_my_task').first();
+        if ($submitBtn.length) {
+            var $icon = $submitBtn.find('i').first();
+            if ($icon.length) {
+                $icon.attr('class', kind === 'reminder' ? 'fa-solid fa-bell' : 'fa-solid fa-circle-plus');
+            }
+        }
+        var $title = $('.popover.add-my-task-popover .add-task-modal-title').first();
+        if ($title.length) {
+            $title.html(
+                kind === 'reminder'
+                    ? '<i class="fa-solid fa-bell"></i> Add Reminder'
+                    : '<i class="fa-solid fa-circle-plus"></i> Add New Task'
+            );
+        }
+        $root.find('.custom-error').remove();
+        $root.find('.error-message').text('');
+    }
+
+    function resolveAddTaskClientId($root) {
+        var $sel = $root.find('#add_task_client_select, #assign_client_id').first();
+        if (!$sel.length) {
+            return '';
+        }
+        var val = $sel.val();
+        var el = $sel[0];
+        if (el && el.tomselect && val) {
+            var opt = el.tomselect.options[val];
+            if (opt && opt.cid != null && String(opt.cid) !== '') {
+                return String(opt.cid);
+            }
+        }
+        return val ? String(val) : '';
+    }
+
+    $(document).on('click', '.add-task-kind-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $root = $(this).closest('.add-task-layout');
+        if (!$root.length) {
+            return;
+        }
+        syncAddTaskKindUI($root, String($(this).data('add-task-kind') || 'task'));
+    });
+
+    $(document).on('shown.bs.popover', '.add_my_task', function () {
+        var $root = $('.popover.add-my-task-popover .add-task-layout').first();
+        if ($root.length) {
+            syncAddTaskKindUI($root, 'task');
+        }
+    });
+
     // Add My Task submission
     $(document).on('click', '#add_my_task_submit', function() {
         $(".popuploader").show();
         var flag = true;
         var error = "";
         $(".custom-error").remove();
+        $('.error-message').text('');
 
         var $addRoot = $(this).closest('.popover').find('.add-task-layout').first();
         if (!$addRoot.length) {
             $addRoot = $('.popover.add-my-task-popover .add-task-layout').first();
+        }
+
+        var kind = String($addRoot.find('.add-task-kind-input').val() || 'task').toLowerCase();
+        if (kind === 'reminder') {
+            var clientId = resolveAddTaskClientId($addRoot);
+            var title = String($addRoot.find('#add_task_assignnote').val() || '').trim();
+            var dueDate = String($addRoot.find('#add_task_remind_on').val() || '').trim();
+
+            if (!clientId) {
+                $('.popuploader').hide();
+                $addRoot.find('#add_task_client_error').text('Select a client or lead.');
+                flag = false;
+            }
+            if (!title) {
+                $('.popuploader').hide();
+                $addRoot.find('#add_task_note_error').text('Reminder text is required.');
+                flag = false;
+            }
+            if (!dueDate) {
+                $('.popuploader').hide();
+                $addRoot.find('#add_task_remind_on_error').text('Choose a reminder date.');
+                flag = false;
+            }
+
+            if (!flag) {
+                $(".popuploader").hide();
+                return;
+            }
+
+            $.ajax({
+                type: 'post',
+                url: "{{ route('clients.matterTask.store') }}",
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                dataType: 'json',
+                data: {
+                    client_id: clientId,
+                    title: title,
+                    due_date: dueDate,
+                    kind: 'reminder',
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    $('.popuploader').hide();
+                    if (response && response.status) {
+                        $('.add_my_task').each(function() {
+                            try {
+                                $(this).popover('hide');
+                            } catch (e) { /* ignore */ }
+                        });
+                        $('.popover-backdrop').removeClass('show');
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.success({
+                                title: 'Reminder added',
+                                message: 'Saved to your personal calendar.',
+                                position: 'topRight'
+                            });
+                        } else {
+                            crmAlert('Reminder added to your personal calendar.');
+                        }
+                        if (table) { table.draw(false); }
+                    } else {
+                        crmAlert(response && response.message ? response.message : 'Could not add reminder.');
+                    }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    var msg = 'Failed to add reminder. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    crmAlert(msg);
+                }
+            });
+            return;
         }
 
         var selectedRemCat = [];

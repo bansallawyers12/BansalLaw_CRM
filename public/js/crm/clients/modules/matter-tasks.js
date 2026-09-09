@@ -85,11 +85,19 @@
         }
         var $hint = $('#cdn-matter-task-composer-hint');
         if ($hint.length) {
-            $hint.html(
-                kind === 'reminder'
-                    ? '<i class="fa-solid fa-bell" aria-hidden="true"></i> <strong>Reminder</strong> — saved to your personal calendar (My Calendar). A date is required.'
-                    : '<strong>Task</strong> — stays on this matter. Tick the checkbox when done.'
-            );
+            if (kind === 'reminder') {
+                $hint.html(
+                    '<i class="fa-solid fa-bell" aria-hidden="true"></i> <strong>Reminder</strong> — saved to your personal calendar (My Calendar). A date is required.'
+                );
+            } else if (!(matterId() || matterRef())) {
+                $hint.html(
+                    '<strong>Task</strong> needs a matter. Switch to <strong>Reminder</strong> to add something on your calendar for this lead/client.'
+                );
+            } else {
+                $hint.html(
+                    '<strong>Task</strong> — stays on this matter. Tick the checkbox when done.'
+                );
+            }
             $hint.toggleClass('is-reminder', kind === 'reminder');
         }
         $composer.toggleClass('is-reminder-mode', kind === 'reminder');
@@ -97,6 +105,7 @@
         if (fp && fp.altInput) {
             $(fp.altInput).attr('placeholder', kind === 'reminder' ? 'Remind on' : 'Due date');
         }
+        syncComposerLock();
     }
 
     function clientId() {
@@ -263,7 +272,11 @@
         if (!$inp.length || !$btn.length) {
             return;
         }
-        var unlocked = !!(clientId() && (matterId() || matterRef()));
+        var hasMatter = !!(matterId() || matterRef());
+        var isReminderKind = getComposerKind() === 'reminder';
+        var calendarOk = canUsePersonalCalendar();
+        // Reminders can be added on leads/clients without a matter; tasks still need a matter.
+        var unlocked = !!(clientId() && (hasMatter || (isReminderKind && calendarOk)));
         var busy = !!taskAddInFlight;
         $inp.prop('disabled', !unlocked || busy);
         $due.prop('disabled', !unlocked || busy);
@@ -282,7 +295,6 @@
         }
         $btn.prop('disabled', !unlocked || busy);
         if ($reminderKind.length) {
-            var calendarOk = canUsePersonalCalendar();
             $reminderKind.prop('disabled', !calendarOk);
             $reminderKind.toggleClass('is-locked', !calendarOk);
             $reminderKind.attr(
@@ -299,9 +311,12 @@
         var mid = matterId();
         var ref = matterRef();
         var storeUrl = urlMap().matterTaskStore;
-        var unlockedClass = !!(cid && (mid || ref) && storeUrl);
+        // Keep the composer interactive when reminders are allowed without a matter,
+        // so the Reminder card remains clickable even while Task fields stay disabled.
+        var unlockedClass = !!(cid && storeUrl && (mid || ref || calendarOk));
         $wrap.toggleClass('cdn-matter-tasks--locked', !unlockedClass);
         $wrap.toggleClass('cdn-matter-tasks--busy', busy);
+        $wrap.toggleClass('cdn-matter-tasks--needs-matter', !!(cid && !mid && !ref && !isReminderKind));
     }
 
     function clearDueDateInput() {
@@ -1049,7 +1064,7 @@
         var ref = matterRef();
         var indexUrl = urlMap().matterTaskIndex;
 
-        if (!cid || (!mid && !ref) || !indexUrl) {
+        if (!cid || !indexUrl) {
             return;
         }
         if (tasksLoading) {
@@ -1159,9 +1174,27 @@
 
         var ref = matterRef();
         if (!mid && !ref) {
-            $list.html(statusBlock('muted', '<p class="small mb-0">Select a matter to view its tasks.</p>'));
-            updateStats(0, 0);
+            // Lead / client with no matter: still load client-level reminders.
+            var indexUrlNoMatter = urlMap().matterTaskIndex;
+            if (!indexUrlNoMatter || !canUsePersonalCalendar()) {
+                $list.html(
+                    statusBlock(
+                        'muted',
+                        '<p class="small mb-0">Select a matter to view its tasks, or switch to Reminder to add calendar reminders for this lead/client.</p>'
+                    )
+                );
+                updateStats(0, 0);
+                syncComposerLock();
+                return;
+            }
             syncComposerLock();
+            tasksPage = 1;
+            tasksHasMore = false;
+            tasksRows = [];
+            reminderRows = [];
+            tasksOpenCount = 0;
+            tasksDoneCount = 0;
+            fetchTasksPage(1, false);
             return;
         }
 
@@ -1296,8 +1329,12 @@
                 notifyError(kind === 'reminder' ? 'Unable to add a reminder for this record.' : 'Unable to add a task for this record.');
                 return;
             }
-            if (!mid && !ref) {
-                notifyError(kind === 'reminder' ? 'Select a matter before adding a reminder.' : 'Select a matter before adding a task.');
+            if (kind !== 'reminder' && !mid && !ref) {
+                notifyError('Select a matter before adding a task.');
+                return;
+            }
+            if (kind === 'reminder' && !canUsePersonalCalendar()) {
+                notifyError('Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.');
                 return;
             }
 

@@ -347,7 +347,7 @@
 
                 <div class="mb-2">
                     <label class="form-label" for="importantEventClientSelect">
-                        Client <span class="text-muted fw-normal">(optional)</span>
+                        Client / Lead <span class="text-muted fw-normal">(optional)</span>
                     </label>
                     <input type="hidden" id="importantEventClientId" value="">
                     <input type="hidden" id="importantEventClientEncoded" value="">

@@ -7248,6 +7248,16 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   pointer-events: none;
 }
 
+/* Lead / no-matter: Task fields stay muted, but Reminder must remain clickable. */
+.cdn-matter-tasks--needs-matter:not(.cdn-matter-tasks--locked) .cdn-matter-task-composer__fields {
+  opacity: 0.7;
+}
+
+.cdn-matter-tasks--needs-matter:not(.cdn-matter-tasks--locked) .cdn-matter-task-composer__kinds-wrap {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .cdn-matter-task__list > .cdn-matter-task__status {
   margin-bottom: 0;
   padding: 0.35rem 0;
