@@ -720,28 +720,64 @@
         );
     }
 
+    function isReminderDone(it) {
+        if (!it) {
+            return false;
+        }
+        if (it.is_done === true || it.is_done === 1 || it.is_done === '1') {
+            return true;
+        }
+        var status = String(it.status || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_');
+        return status === 'completed';
+    }
+
+    function activeReminderCount() {
+        var count = 0;
+        for (var i = 0; i < reminderRows.length; i++) {
+            if (!isReminderDone(reminderRows[i])) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
     function buildReminderRowHtml(it) {
         var rowId = safeId(it.id);
         if (!rowId) {
             return '';
         }
+        var done = isReminderDone(it);
         var title = esc(it.title || '');
         var calendarHref = urlMap().dashboardCalendar || '';
         var html =
-            '<li class="cdn-matter-task__row is-reminder" data-id="' +
+            '<li class="cdn-matter-task__row is-reminder' +
+            (done ? ' is-done-row' : '') +
+            '" data-id="' +
             rowId +
-            '" data-item-kind="reminder">';
+            '" data-item-kind="reminder" data-reminder-status="' +
+            esc(String(it.status || (done ? 'completed' : 'scheduled'))) +
+            '">';
         html += '<div class="cdn-matter-task__row-main">';
         html += '<div class="cdn-matter-task__text">';
         html +=
-            '<div class="cdn-matter-task__label">' +
+            '<div class="cdn-matter-task__title-row">' +
+            '<div class="cdn-matter-task__label' +
+            (done ? ' is-done' : '') +
+            '">' +
             title +
-            '<span class="cdn-matter-task__badge"><i class="fa-regular fa-bell" aria-hidden="true"></i> Reminder</span></div>';
+            '<span class="cdn-matter-task__badge"><i class="fa-regular fa-bell" aria-hidden="true"></i> Reminder</span></div>' +
+            '<span class="cdn-matter-task__status-chip' +
+            (done ? ' is-done' : ' is-open') +
+            '">' +
+            (done ? 'Done' : 'Open') +
+            '</span></div>';
         html += rowMetaHtml(it);
         html += '</div>';
         html += '</div>';
         html += '<div class="cdn-matter-task__actions">';
-        if (calendarHref) {
+        if (calendarHref && !done) {
             html +=
                 '<a class="cdn-matter-task__action-link" href="' +
                 esc(calendarHref) +
@@ -812,7 +848,7 @@
         if (!$stats.length) {
             return;
         }
-        reminderCount = typeof reminderCount === 'number' ? reminderCount : reminderRows.length;
+        reminderCount = typeof reminderCount === 'number' ? reminderCount : activeReminderCount();
         var total = openCount + doneCount + reminderCount;
         if (total === 0) {
             $stats.text('');
@@ -842,14 +878,29 @@
             }
         }
 
-        var reminders = reminderRows || [];
+        var activeReminders = [];
+        var doneReminders = [];
+        var allReminders = reminderRows || [];
+        for (var ri = 0; ri < allReminders.length; ri++) {
+            if (isReminderDone(allReminders[ri])) {
+                doneReminders.push(allReminders[ri]);
+            } else {
+                activeReminders.push(allReminders[ri]);
+            }
+        }
+
         var openCount = stats && typeof stats.openCount === 'number' ? stats.openCount : open.length;
-        var doneCount = stats && typeof stats.doneCount === 'number' ? stats.doneCount : done.length;
+        var doneCount =
+            stats && typeof stats.doneCount === 'number'
+                ? stats.doneCount + doneReminders.length
+                : done.length + doneReminders.length;
         var reminderCount =
-            stats && typeof stats.reminderCount === 'number' ? stats.reminderCount : reminders.length;
+            stats && typeof stats.reminderCount === 'number'
+                ? stats.reminderCount
+                : activeReminders.length;
         updateStats(openCount, doneCount, reminderCount);
 
-        if (rows.length === 0 && reminders.length === 0) {
+        if (rows.length === 0 && allReminders.length === 0) {
             return statusBlock(
                 'empty',
                 '<div class="cdn-matter-task__empty">' +
@@ -861,19 +912,19 @@
         }
 
         var html = '';
-        if (reminders.length) {
+        if (activeReminders.length) {
             html += '<div class="cdn-matter-task__section cdn-matter-task__section--reminders">';
             html += '<h3 class="cdn-matter-task__section-title">Reminders</h3>';
             html += '<ul class="list-unstyled cdn-matter-task__ul mb-0">';
-            for (var r = 0; r < reminders.length; r++) {
-                html += buildReminderRowHtml(reminders[r]);
+            for (var r = 0; r < activeReminders.length; r++) {
+                html += buildReminderRowHtml(activeReminders[r]);
             }
             html += '</ul></div>';
         }
 
         if (open.length) {
             html += '<div class="cdn-matter-task__section">';
-            if (reminders.length) {
+            if (activeReminders.length) {
                 html += '<h3 class="cdn-matter-task__section-title">Tasks</h3>';
             }
             html += '<ul class="list-unstyled cdn-matter-task__ul mb-0">';
@@ -883,7 +934,7 @@
             html += '</ul></div>';
         }
 
-        if (done.length) {
+        if (done.length || doneReminders.length) {
             var doneOpen = false;
             try {
                 doneOpen = window.sessionStorage.getItem(DONE_PANEL_KEY) === '1';
@@ -891,17 +942,24 @@
                 doneOpen = false;
             }
             html += '<details class="cdn-matter-task__done-panel"' + (doneOpen ? ' open' : '') + '>';
-            html += '<summary class="cdn-matter-task__done-summary">Completed <span class="cdn-matter-task__done-count">(' + doneCount + ')</span></summary>';
+            html +=
+                '<summary class="cdn-matter-task__done-summary">Completed <span class="cdn-matter-task__done-count">(' +
+                doneCount +
+                ')</span></summary>';
             html += '<ul class="list-unstyled cdn-matter-task__ul cdn-matter-task__ul--done mb-0">';
+            for (var dr = 0; dr < doneReminders.length; dr++) {
+                html += buildReminderRowHtml(doneReminders[dr]);
+            }
             for (var d = 0; d < done.length; d++) {
                 html += buildRowHtml(done[d]);
             }
             html += '</ul></details>';
         }
 
-        if (!open.length && done.length && !reminders.length) {
+        if (!open.length && !activeReminders.length && (done.length || doneReminders.length)) {
             html =
-                '<p class="cdn-matter-task__all-done small text-muted mb-2">All tasks are complete.</p>' + html;
+                '<p class="cdn-matter-task__all-done small text-muted mb-2">All tasks and reminders are complete.</p>' +
+                html;
         }
 
         if (tasksHasMore) {
@@ -975,7 +1033,7 @@
             renderList(tasksRows, {
                 openCount: tasksOpenCount,
                 doneCount: tasksDoneCount,
-                reminderCount: reminderRows.length
+                reminderCount: activeReminderCount()
             })
         );
     }
@@ -1422,8 +1480,9 @@
                 }
                 var open = $('.cdn-matter-task__row:not(.is-done-row):not(.is-reminder)').length;
                 var done = $('.cdn-matter-task__row.is-done-row').length;
-                updateStats(open, done, reminderRows.length);
-                if (open + done + reminderRows.length === 0) {
+                var reminders = activeReminderCount();
+                updateStats(open, done, reminders);
+                if (open + done + reminders === 0) {
                     $('#cdn-matter-tasks .cdn-matter-task__list').html(renderList([]));
                 }
             }, 280);

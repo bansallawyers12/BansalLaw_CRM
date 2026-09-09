@@ -121,6 +121,50 @@ class MatterTaskReminderTest extends TestCase
             ->assertOk()
             ->assertJsonPath('status', true)
             ->assertJsonPath('reminders.0.title', 'Matter reminder')
-            ->assertJsonPath('reminders.0.item_kind', 'reminder');
+            ->assertJsonPath('reminders.0.item_kind', 'reminder')
+            ->assertJsonPath('reminders.0.is_done', false)
+            ->assertJsonPath('reminders.0.status', 'scheduled');
+    }
+
+    #[Test]
+    public function matter_tasks_index_marks_completed_reminders_as_done(): void
+    {
+        [$client, $matter] = $this->seedClientMatter();
+        $staff = Staff::factory()->superAdmin()->create(['status' => 1]);
+        $this->actingAs($staff, 'admin');
+
+        StaffCalendarEvent::create([
+            'title' => 'Finished reminder',
+            'event_type' => 'reminder',
+            'status' => 'completed',
+            'starts_at' => now()->addDays(2)->setTime(9, 0),
+            'ends_at' => now()->addDays(2)->setTime(9, 30),
+            'is_all_day' => true,
+            'client_id' => $client->id,
+            'client_matter_id' => $matter->id,
+            'created_by_staff_id' => $staff->id,
+        ]);
+
+        StaffCalendarEvent::create([
+            'title' => 'Cancelled reminder',
+            'event_type' => 'reminder',
+            'status' => 'cancelled',
+            'starts_at' => now()->addDays(3)->setTime(9, 0),
+            'ends_at' => now()->addDays(3)->setTime(9, 30),
+            'is_all_day' => true,
+            'client_id' => $client->id,
+            'client_matter_id' => $matter->id,
+            'created_by_staff_id' => $staff->id,
+        ]);
+
+        $response = $this->getJson(route('clients.matterTask.index', [
+            'client_id' => $client->id,
+            'matter_id' => $matter->id,
+        ]));
+
+        $response->assertOk()->assertJsonPath('status', true);
+        $reminders = collect($response->json('reminders') ?? []);
+        $this->assertTrue($reminders->contains(fn (array $row) => ($row['title'] ?? '') === 'Finished reminder' && ($row['is_done'] ?? false) === true));
+        $this->assertFalse($reminders->contains(fn (array $row) => ($row['title'] ?? '') === 'Cancelled reminder'));
     }
 }

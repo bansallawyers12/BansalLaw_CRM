@@ -8795,6 +8795,7 @@ body > .ts-dropdown {
 /* ============================================================
  * Client Overview tab only (#personaldetails-tab .cdn-overview)
  * Simple modern cards — docs/theme.md Powder Blue & Soft Gold
+ * Breakpoints: 1 → 2 → 3 → 4 columns by viewport width
  * ============================================================ */
 #personaldetails-tab .cdn-overview {
   display: grid !important;
@@ -8803,12 +8804,13 @@ body > .ts-dropdown {
   align-items: stretch !important;
 }
 
-/* Medium: 2 cards; odd last card spans full width */
+/* Tablet+: 2 cards (nice 2×2 when there are 4 overview cards) */
 @media (min-width: 768px) {
   #personaldetails-tab .cdn-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
+  /* Lone last card on an odd row spans full width */
   #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
@@ -8818,10 +8820,40 @@ body > .ts-dropdown {
 @media (min-width: 1200px) {
   #personaldetails-tab .cdn-overview {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
   }
 
   #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(odd) {
     grid-column: auto;
+  }
+
+  /* e.g. 4th card alone under a 3-up row → full width */
+  #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Extra large: 4 cards in one row */
+@media (min-width: 1400px) {
+  #personaldetails-tab .cdn-overview {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(3n + 1) {
+    grid-column: auto;
+  }
+
+  /* Lone 5th card under a full 4-up row */
+  #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(4n + 1) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Ultra-wide: keep 4 columns, slightly more breathing room */
+@media (min-width: 1800px) {
+  #personaldetails-tab .cdn-overview {
+    gap: 20px !important;
   }
 }
 
@@ -9025,7 +9057,8 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   font-size: 0.62rem;
 }
 
-@media (min-width: 1200px) and (max-width: 1399.98px) {
+/* Dense overview columns: keep verify badges compact */
+@media (min-width: 1200px) {
   #personaldetails-tab .cdn-overview .cdn-ov-verify-text {
     position: absolute;
     width: 1px;
@@ -9040,6 +9073,25 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
   #personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
     padding: 0.2rem 0.35rem;
+  }
+}
+
+/* Very wide: restore verify label text once cards are roomier */
+@media (min-width: 1800px) {
+  #personaldetails-tab .cdn-overview .cdn-ov-verify-text {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+    border: 0;
+  }
+
+  #personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
+    padding: 0.1rem 0.4rem;
   }
 }
 
@@ -9157,6 +9209,14 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 @media (min-width: 520px) {
   #personaldetails-tab .cdn-overview .cdn-ov-nested-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* In 4-up overview, keep field stacks single-column so cards stay readable */
+@media (min-width: 1400px) and (max-width: 1799.98px) {
+  #personaldetails-tab .cdn-overview .cdn-ov-card__body--grid,
+  #personaldetails-tab .cdn-overview .cdn-ov-nested-grid {
+    grid-template-columns: 1fr;
   }
 }
 

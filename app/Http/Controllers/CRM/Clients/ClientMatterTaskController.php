@@ -400,12 +400,32 @@ class ClientMatterTaskController extends Controller
         }
 
         $tz = (string) config('app.timezone');
+        $todayStart = Carbon::today($tz)->startOfDay();
+        $hasStatus = Schema::hasColumn('staff_calendar_events', 'status');
 
-        return StaffCalendarEvent::query()
+        $query = StaffCalendarEvent::query()
             ->with(['createdBy:id,first_name,last_name'])
             ->where('client_matter_id', $matter->id)
-            ->where('event_type', 'reminder')
-            ->where('starts_at', '>=', Carbon::today($tz)->startOfDay())
+            ->where('event_type', 'reminder');
+
+        if ($hasStatus) {
+            // Active upcoming reminders + completed ones (so Tasks tab mirrors calendar status).
+            $query->where(function ($q) use ($todayStart) {
+                $q->where(function ($active) use ($todayStart) {
+                    $active->where(function ($statusQ) {
+                        $statusQ->whereNull('status')
+                            ->orWhereNotIn('status', ['completed', 'cancelled']);
+                    })->where('starts_at', '>=', $todayStart);
+                })->orWhere('status', 'completed');
+            });
+        } else {
+            $query->where('starts_at', '>=', $todayStart);
+        }
+
+        return $query
+            ->orderByRaw($hasStatus
+                ? "CASE WHEN status = 'completed' THEN 1 ELSE 0 END"
+                : '0')
             ->orderBy('starts_at')
             ->orderBy('id')
             ->get()
@@ -422,6 +442,14 @@ class ClientMatterTaskController extends Controller
         $tz = (string) config('app.timezone');
         $start = $event->starts_at?->copy()->timezone($tz);
         $creator = $event->createdBy;
+        $status = 'scheduled';
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $raw = strtolower(trim((string) ($event->status ?? 'scheduled')));
+            if (in_array($raw, StaffCalendarEvent::STATUSES, true)) {
+                $status = $raw;
+            }
+        }
+        $isDone = $status === 'completed';
 
         return [
             'id' => (int) $event->id,
@@ -430,7 +458,9 @@ class ClientMatterTaskController extends Controller
             'title' => (string) $event->title,
             'due_date' => $start ? $start->toDateString() : null,
             'starts_at' => $start?->toIso8601String(),
-            'is_done' => false,
+            'status' => $status,
+            'status_label' => StaffCalendarEvent::STATUS_LABELS[$status] ?? ucfirst($status),
+            'is_done' => $isDone,
             'client_id' => $event->client_id,
             'client_matter_id' => $event->client_matter_id,
             'created_by' => $event->created_by_staff_id,
