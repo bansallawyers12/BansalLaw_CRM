@@ -26,17 +26,26 @@ class StaffPersonalCalendarFeedService
     ) {}
 
     /**
+     * Personal calendar feed for one staff member: only their bookings,
+     * reminders, follow-ups, hearings and deadlines.
+     *
      * @return list<array<string, mixed>>
      */
     public function eventsForStaffRequest(Staff $staff, Request $request): array
     {
+        $staffId = (int) $staff->id;
+        $tz = (string) config('app.timezone');
         $calendarType = $this->bookingCalendarTypeForStaff($staff);
 
         $events = array_merge(
             $calendarType
                 ? $this->websiteBookingsForCalendarType($calendarType, $request)
                 : $this->websiteBookings($staff, $request),
-            $this->bookingCalendarImportantEvents($calendarType ?? '', $request)
+            $this->staffCalendarEvents($staffId, $request, $calendarType),
+            $this->courtHearings($staffId, $request),
+            $this->actionDeadlines($staffId, $request, $tz),
+            $this->followUps($staffId, $request, $tz),
+            $this->matterDeadlines($staffId, $request, $tz)
         );
 
         $events = $this->deduplicateEvents($events);
@@ -229,15 +238,19 @@ class StaffPersonalCalendarFeedService
 
     public function countEventsForStaffRequest(Staff $staff, Request $request): int
     {
+        $staffId = (int) $staff->id;
         $calendarType = $this->bookingCalendarTypeForStaff($staff);
 
         $bookingCount = $calendarType
             ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
             : $this->countWebsiteBookings($staff, $request);
 
-        $importantCount = $this->countBookingCalendarImportantEvents($calendarType ?? '', $request);
-
-        return $bookingCount + $importantCount;
+        return $bookingCount
+            + $this->countStaffCalendarEvents($staffId, $request, $calendarType)
+            + $this->countCourtHearings($staffId, $request)
+            + $this->countActionDeadlines($staffId, $request)
+            + $this->countFollowUps($staffId, $request)
+            + $this->countMatterDeadlines($staffId, $request);
     }
 
     protected function countWebsiteBookingsForCalendarType(string $calendarType, Request $request): int
@@ -285,29 +298,82 @@ class StaffPersonalCalendarFeedService
         return (int) $query->count();
     }
 
-    protected function countBookingCalendarImportantEvents(string $calendarType, Request $request): int
+    protected function countStaffCalendarEvents(int $staffId, Request $request, ?string $calendarType = null): int
     {
-        $feedRequest = Request::create('/', 'GET', array_merge(
-            $request->query(),
-            $request->request->all(),
-            ['type' => $calendarType]
-        ));
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return 0;
+        }
 
-        return $this->staffCalendarFeed->countEventsForCalendarRequest($feedRequest);
+        $query = StaffCalendarEvent::query();
+        $this->applyPersonalStaffEventScope($query, $staffId, $calendarType);
+        StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
+        $this->applyDatetimeWindow($query, 'starts_at', $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countCourtHearings(int $staffId, Request $request): int
+    {
+        if (! Schema::hasTable('client_court_hearings')) {
+            return 0;
+        }
+
+        $query = ClientCourtHearing::query();
+        $this->applyPersonalCourtHearingScope($query, $staffId);
+        StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
+        $this->applyHearingDateWindow($query, $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countActionDeadlines(int $staffId, Request $request): int
+    {
+        $query = Note::query()
+            ->where('assigned_to', $staffId)
+            ->where('is_action', 1)
+            ->where('status', 0)
+            ->whereNotNull('note_deadline');
+
+        $this->applyDateColumnWindow($query, 'note_deadline', $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countFollowUps(int $staffId, Request $request): int
+    {
+        $query = Note::query()
+            ->where('assigned_to', $staffId)
+            ->where('is_action', 1)
+            ->where('status', 0)
+            ->whereNotNull('action_date');
+
+        $this->applyDatetimeWindow($query, 'action_date', $request);
+
+        return (int) $query->count();
+    }
+
+    protected function countMatterDeadlines(int $staffId, Request $request): int
+    {
+        $query = ClientMatter::query()
+            ->where('matter_status', 1)
+            ->whereNotNull('deadline')
+            ->where(function (Builder $q) use ($staffId) {
+                $q->where('sel_legal_practitioner', $staffId)
+                    ->orWhere('sel_person_responsible', $staffId)
+                    ->orWhere('sel_person_assisting', $staffId);
+            });
+
+        $this->applyDateColumnWindow($query, 'deadline', $request);
+
+        return (int) $query->count();
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @param  Builder<StaffCalendarEvent>  $query
      */
-    protected function staffCalendarEvents(int $staffId, Request $request): array
+    protected function applyPersonalStaffEventScope(Builder $query, int $staffId, ?string $calendarType = null): void
     {
-        if (! Schema::hasTable('staff_calendar_events')) {
-            return [];
-        }
-
-        $query = StaffCalendarEvent::query()->with(['client']);
-
-        $query->where(function (Builder $q) use ($staffId) {
+        $query->where(function (Builder $q) use ($staffId, $calendarType) {
             $q->where('created_by_staff_id', $staffId)
                 ->orWhere(function (Builder $inner) use ($staffId) {
                     $inner->whereNotNull('client_matter_id')
@@ -318,10 +384,41 @@ class StaffPersonalCalendarFeedService
                         ->whereNull('client_matter_id')
                         ->whereIn('client_id', $this->assignedClientIdsQuery($staffId));
                 });
-        });
 
+            // Booking-calendar owners also see events tagged to their shared calendar.
+            if (is_string($calendarType) && $calendarType !== '') {
+                $q->orWhere('calendar_type', $calendarType);
+            }
+        });
+    }
+
+    /**
+     * @param  Builder<ClientCourtHearing>  $query
+     */
+    protected function applyPersonalCourtHearingScope(Builder $query, int $staffId): void
+    {
+        $query->where(function (Builder $q) use ($staffId) {
+            $q->whereIn('client_matter_id', $this->assignedMatterIdsQuery($staffId))
+                ->orWhereIn('client_id', $this->assignedClientIdsQuery($staffId));
+        });
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function staffCalendarEvents(int $staffId, Request $request, ?string $calendarType = null): array
+    {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return [];
+        }
+
+        $query = StaffCalendarEvent::query()->with(['client']);
+        $this->applyPersonalStaffEventScope($query, $staffId, $calendarType);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyDatetimeWindow($query, 'starts_at', $request);
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->where('status', '!=', 'cancelled');
+        }
 
         return $query->orderBy('starts_at')->get()
             ->map(fn (StaffCalendarEvent $e) => $this->wrapStaffEvent(
@@ -342,12 +439,7 @@ class StaffPersonalCalendarFeedService
         }
 
         $query = ClientCourtHearing::query()->with(['client']);
-
-        $query->where(function (Builder $q) use ($staffId) {
-            $q->whereIn('client_matter_id', $this->assignedMatterIdsQuery($staffId))
-                ->orWhereIn('client_id', $this->assignedClientIdsQuery($staffId));
-        });
-
+        $this->applyPersonalCourtHearingScope($query, $staffId);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyHearingDateWindow($query, $request);
 
@@ -596,6 +688,59 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
+     * Open follow-ups / actions scheduled for this staff member (action_date).
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function followUps(int $staffId, Request $request, string $tz): array
+    {
+        $query = Note::query()
+            ->with(['client'])
+            ->where('assigned_to', $staffId)
+            ->where('is_action', 1)
+            ->where('status', 0)
+            ->whereNotNull('action_date');
+
+        $this->applyDatetimeWindow($query, 'action_date', $request);
+
+        return $query->orderBy('action_date')->get()
+            ->map(function (Note $note) use ($tz) {
+                $when = Carbon::parse($note->action_date, $tz);
+                $isAllDay = $when->format('H:i:s') === '00:00:00';
+                if ($isAllDay) {
+                    $when = $when->copy()->setTime(9, 0);
+                }
+                $clientName = $this->clientDisplayName($note->client);
+                $title = trim(($clientName ? $clientName . ' — ' : '') . ($note->title ?: 'Follow-up'));
+
+                return [
+                    'id' => 'followup-' . $note->id,
+                    'event_kind' => 'follow_up',
+                    'read_only' => true,
+                    'title' => $title,
+                    'event_type' => 'reminder',
+                    'appointment_datetime' => $when->toIso8601String(),
+                    'duration_minutes' => 30,
+                    'starts_at' => $when->toIso8601String(),
+                    'ends_at' => $when->copy()->addMinutes(30)->toIso8601String(),
+                    'is_all_day' => $isAllDay,
+                    'client_id' => $note->client_id,
+                    'client_id_encoded' => $note->client_id
+                        ? base64_encode(convert_uuencode((string) $note->client_id))
+                        : null,
+                    'client_name' => $clientName,
+                    'client_email' => $this->clientEmail($note->client),
+                    'notes' => $note->description,
+                    'status' => 'follow_up',
+                    'status_label' => 'Follow-up',
+                    'action_url' => route('assignee.tasks'),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     protected function matterDeadlines(int $staffId, Request $request, string $tz): array
@@ -830,6 +975,7 @@ class StaffPersonalCalendarFeedService
 
         $color = match ($kind) {
             'action', 'matter_deadline' => StaffCalendarFeedService::colorForEventType('deadline'),
+            'follow_up' => StaffCalendarFeedService::colorForEventType('reminder'),
             'court_hearing' => StaffCalendarFeedService::colorForEventType('court'),
             'website_booking' => $this->colorForBookingStatus((string) ($row['status'] ?? '')),
             default => StaffCalendarFeedService::colorForEventType($type),
@@ -838,7 +984,11 @@ class StaffPersonalCalendarFeedService
         $textColor = $kind === 'website_booking'
             ? (((string) ($row['status'] ?? '')) === 'pending' ? '#1A2C40' : '#fff')
             : StaffCalendarFeedService::textColorForEventType(
-                in_array($kind, ['action', 'matter_deadline'], true) ? 'deadline' : $type
+                match (true) {
+                    in_array($kind, ['action', 'matter_deadline'], true) => 'deadline',
+                    $kind === 'follow_up' => 'reminder',
+                    default => $type,
+                }
             );
 
         return [

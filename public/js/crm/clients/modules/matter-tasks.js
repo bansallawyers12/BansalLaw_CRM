@@ -24,8 +24,10 @@
     var tasksLoading = false;
     var taskAddInFlight = false;
     var tasksRows = [];
+    var reminderRows = [];
     var tasksOpenCount = 0;
     var tasksDoneCount = 0;
+    var composerKind = 'task';
 
     function cfg() {
         return window.ClientDetailConfig || {};
@@ -33,6 +35,68 @@
 
     function urlMap() {
         return cfg().urls || {};
+    }
+
+    function canUsePersonalCalendar() {
+        return cfg().urls && cfg().urls.personalCalendarEnabled === true;
+    }
+
+    function getComposerKind() {
+        var $composer = $('#cdn-matter-tasks .cdn-matter-task-composer');
+        var kind = ($composer.attr('data-composer-kind') || composerKind || 'task').toLowerCase();
+        return kind === 'reminder' ? 'reminder' : 'task';
+    }
+
+    function setComposerKind(kind) {
+        kind = kind === 'reminder' ? 'reminder' : 'task';
+        if (kind === 'reminder' && !canUsePersonalCalendar()) {
+            notifyError('Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.');
+            kind = 'task';
+        }
+        composerKind = kind;
+        var $composer = $('#cdn-matter-tasks .cdn-matter-task-composer');
+        $composer.attr('data-composer-kind', kind);
+        $composer.find('.cdn-matter-task-composer__kind').each(function () {
+            var isActive = String($(this).data('kind')) === kind;
+            $(this).toggleClass('is-active', isActive).attr('aria-pressed', isActive ? 'true' : 'false');
+        });
+        var $inp = $('#cdn-matter-task-title');
+        var $due = $('#cdn-matter-task-due');
+        var $dueLabel = $('#cdn-matter-task-due-label');
+        var $addLabel = $('#cdn-matter-task-add-label');
+        if (kind === 'reminder') {
+            $inp.attr('placeholder', 'Add a reminder…');
+            $due.attr('placeholder', 'Remind on').attr('aria-label', 'Remind on');
+            if ($dueLabel.length) {
+                $dueLabel.text('Remind on');
+            }
+            if ($addLabel.length) {
+                $addLabel.text('Add reminder');
+            }
+        } else {
+            $inp.attr('placeholder', 'Add a task…');
+            $due.attr('placeholder', 'Due date').attr('aria-label', 'Due date');
+            if ($dueLabel.length) {
+                $dueLabel.text('Due date');
+            }
+            if ($addLabel.length) {
+                $addLabel.text('Add task');
+            }
+        }
+        var $hint = $('#cdn-matter-task-composer-hint');
+        if ($hint.length) {
+            $hint.html(
+                kind === 'reminder'
+                    ? '<i class="fa-solid fa-bell" aria-hidden="true"></i> <strong>Reminder</strong> — saved to your personal calendar (My Calendar). A date is required.'
+                    : '<strong>Task</strong> — stays on this matter. Tick the checkbox when done.'
+            );
+            $hint.toggleClass('is-reminder', kind === 'reminder');
+        }
+        $composer.toggleClass('is-reminder-mode', kind === 'reminder');
+        var fp = getDueFlatpickr($due);
+        if (fp && fp.altInput) {
+            $(fp.altInput).attr('placeholder', kind === 'reminder' ? 'Remind on' : 'Due date');
+        }
     }
 
     function clientId() {
@@ -195,23 +259,49 @@
         var $inp = $('#cdn-matter-task-title');
         var $due = $('#cdn-matter-task-due');
         var $btn = $('#cdn-matter-task-add');
+        var $reminderKind = $('#cdn-matter-task-kind-reminder');
         if (!$inp.length || !$btn.length) {
             return;
+        }
+        var unlocked = !!(clientId() && (matterId() || matterRef()));
+        var busy = !!taskAddInFlight;
+        $inp.prop('disabled', !unlocked || busy);
+        $due.prop('disabled', !unlocked || busy);
+        var fp = getDueFlatpickr($due);
+        if (fp) {
+            if (!unlocked || busy) {
+                if (typeof fp.close === 'function') {
+                    fp.close();
+                }
+                if (fp.altInput) {
+                    fp.altInput.disabled = true;
+                }
+            } else if (fp.altInput) {
+                fp.altInput.disabled = false;
+            }
+        }
+        $btn.prop('disabled', !unlocked || busy);
+        if ($reminderKind.length) {
+            var calendarOk = canUsePersonalCalendar();
+            $reminderKind.prop('disabled', !calendarOk);
+            $reminderKind.toggleClass('is-locked', !calendarOk);
+            $reminderKind.attr(
+                'title',
+                calendarOk
+                    ? 'Add a reminder to your personal calendar (My Calendar)'
+                    : 'Ask a Super Admin to grant personal calendar access'
+            );
+            if (!calendarOk && getComposerKind() === 'reminder') {
+                setComposerKind('task');
+            }
         }
         var cid = clientId();
         var mid = matterId();
         var ref = matterRef();
         var storeUrl = urlMap().matterTaskStore;
-        var unlocked = !!(cid && (mid || ref) && storeUrl);
-        var busy = $wrap.hasClass('cdn-matter-tasks--busy');
-        $inp.prop('disabled', !unlocked || busy);
-        $due.prop('disabled', !unlocked || busy);
-        var fp = getDueFlatpickr($due);
-        if (fp && fp.altInput) {
-            fp.altInput.disabled = !unlocked || busy;
-        }
-        $btn.prop('disabled', !unlocked || busy);
-        $wrap.toggleClass('cdn-matter-tasks--locked', !unlocked);
+        var unlockedClass = !!(cid && (mid || ref) && storeUrl);
+        $wrap.toggleClass('cdn-matter-tasks--locked', !unlockedClass);
+        $wrap.toggleClass('cdn-matter-tasks--busy', busy);
     }
 
     function clearDueDateInput() {
@@ -596,24 +686,78 @@
         if (when) {
             parts.push(esc(when));
         }
+        var isReminder = it && it.item_kind === 'reminder';
         var dueLabel = formatDueDate(it.due_date);
+        var dueHtml = '';
         if (dueLabel) {
             var overdue = isDueDateOverdue(it.due_date, isTaskDone(it));
-            parts.push(
-                '<span class="cdn-matter-task__due' +
-                    (overdue ? ' is-overdue' : '') +
-                    '"><i class="fa-regular fa-calendar cdn-matter-task__due-icon" aria-hidden="true"></i>Due ' +
+            if (isReminder) {
+                dueHtml =
+                    '<span class="cdn-matter-task__remind"><i class="fa-regular fa-bell cdn-matter-task__due-icon" aria-hidden="true"></i>Remind ' +
                     esc(dueLabel) +
-                    '</span>'
-            );
+                    '</span>';
+            } else if (overdue) {
+                dueHtml =
+                    '<span class="cdn-matter-task__due is-overdue" title="Past due"><i class="fa-solid fa-triangle-exclamation cdn-matter-task__due-icon" aria-hidden="true"></i>Overdue · ' +
+                    esc(dueLabel) +
+                    '</span>';
+            } else {
+                dueHtml =
+                    '<span class="cdn-matter-task__due"><i class="fa-regular fa-calendar cdn-matter-task__due-icon" aria-hidden="true"></i>Due ' +
+                    esc(dueLabel) +
+                    '</span>';
+            }
         }
-        if (!parts.length) {
+        var metaBits = parts.length ? '<div class="cdn-matter-task__meta-line">' + parts.join(' · ') + '</div>' : '';
+        if (!metaBits && !dueHtml) {
             return '';
         }
-        return '<div class="cdn-matter-task__meta">' + parts.join(' · ') + '</div>';
+        return (
+            '<div class="cdn-matter-task__meta">' +
+            metaBits +
+            (dueHtml ? '<div class="cdn-matter-task__meta-due">' + dueHtml + '</div>' : '') +
+            '</div>'
+        );
+    }
+
+    function buildReminderRowHtml(it) {
+        var rowId = safeId(it.id);
+        if (!rowId) {
+            return '';
+        }
+        var title = esc(it.title || '');
+        var calendarHref = urlMap().dashboardCalendar || '';
+        var html =
+            '<li class="cdn-matter-task__row is-reminder" data-id="' +
+            rowId +
+            '" data-item-kind="reminder">';
+        html += '<div class="cdn-matter-task__row-main">';
+        html += '<div class="cdn-matter-task__text">';
+        html +=
+            '<div class="cdn-matter-task__label">' +
+            title +
+            '<span class="cdn-matter-task__badge"><i class="fa-regular fa-bell" aria-hidden="true"></i> Reminder</span></div>';
+        html += rowMetaHtml(it);
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="cdn-matter-task__actions">';
+        if (calendarHref) {
+            html +=
+                '<a class="cdn-matter-task__action-link" href="' +
+                esc(calendarHref) +
+                '" title="Open this reminder on My Calendar" aria-label="Open this reminder on My Calendar"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">My Calendar</span></a>';
+        }
+        html +=
+            '<button type="button" class="cdn-matter-task__del" title="Delete reminder" aria-label="Delete reminder"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>';
+        html += '</div>';
+        html += '</li>';
+        return html;
     }
 
     function buildRowHtml(it) {
+        if (it && it.item_kind === 'reminder') {
+            return buildReminderRowHtml(it);
+        }
         var rowId = safeId(it.id);
         if (!rowId) {
             return '';
@@ -624,7 +768,7 @@
         var noteId = safeId(it.note_id);
         var actionHref = urlMap().assigneeAction ? esc(actionPageUrl(noteId)) : '';
 
-        var html = '<li class="cdn-matter-task__row' + (done ? ' is-done-row' : '') + '" data-id="' + rowId + '"';
+        var html = '<li class="cdn-matter-task__row' + (done ? ' is-done-row' : '') + '" data-id="' + rowId + '" data-item-kind="task"';
         if (noteId) {
             html += ' data-note-id="' + noteId + '"';
         }
@@ -632,7 +776,20 @@
         html += '<div class="cdn-matter-task__row-main">';
         html += '<input type="checkbox" class="cdn-matter-task__cb" id="' + cbId + '"' + (done ? ' checked' : '') + ' />';
         html += '<div class="cdn-matter-task__text">';
-        html += '<label class="cdn-matter-task__label' + (done ? ' is-done' : '') + '" for="' + cbId + '">' + title + '</label>';
+        html +=
+            '<div class="cdn-matter-task__title-row">' +
+            '<label class="cdn-matter-task__label' +
+            (done ? ' is-done' : '') +
+            '" for="' +
+            cbId +
+            '">' +
+            title +
+            '</label>' +
+            '<span class="cdn-matter-task__status-chip' +
+            (done ? ' is-done' : ' is-open') +
+            '">' +
+            (done ? 'Done' : 'Open') +
+            '</span></div>';
         html += rowMetaHtml(it);
         html += '</div>';
         html += '</div>';
@@ -641,7 +798,7 @@
             html +=
                 '<a class="cdn-matter-task__action-link" href="' +
                 actionHref +
-                '" title="Open on Tasks page" aria-label="Open on Tasks page"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Tasks</span></a>';
+                '" title="Open this task on your My Tasks page" aria-label="Open this task on your My Tasks page" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">My Tasks</span></a>';
         }
         html +=
             '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>';
@@ -650,12 +807,13 @@
         return html;
     }
 
-    function updateStats(openCount, doneCount) {
+    function updateStats(openCount, doneCount, reminderCount) {
         var $stats = $('#cdn-matter-task-stats');
         if (!$stats.length) {
             return;
         }
-        var total = openCount + doneCount;
+        reminderCount = typeof reminderCount === 'number' ? reminderCount : reminderRows.length;
+        var total = openCount + doneCount + reminderCount;
         if (total === 0) {
             $stats.text('');
             return;
@@ -666,6 +824,9 @@
         }
         if (doneCount > 0) {
             parts.push(doneCount + ' done');
+        }
+        if (reminderCount > 0) {
+            parts.push(reminderCount + ' reminder' + (reminderCount === 1 ? '' : 's'));
         }
         $stats.text(parts.join(' · '));
     }
@@ -681,24 +842,40 @@
             }
         }
 
+        var reminders = reminderRows || [];
         var openCount = stats && typeof stats.openCount === 'number' ? stats.openCount : open.length;
         var doneCount = stats && typeof stats.doneCount === 'number' ? stats.doneCount : done.length;
-        updateStats(openCount, doneCount);
+        var reminderCount =
+            stats && typeof stats.reminderCount === 'number' ? stats.reminderCount : reminders.length;
+        updateStats(openCount, doneCount, reminderCount);
 
-        if (rows.length === 0) {
+        if (rows.length === 0 && reminders.length === 0) {
             return statusBlock(
                 'empty',
                 '<div class="cdn-matter-task__empty">' +
                     '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>' +
                     '<p class="cdn-matter-task__empty-title">No tasks yet</p>' +
-                    '<p class="cdn-matter-task__empty-hint">Add a task for this matter. Tasks you create here also appear on the <strong>Tasks</strong> page for follow-up.</p>' +
+                    '<p class="cdn-matter-task__empty-hint">Add a task for this matter, or switch to <strong>Reminder</strong> to put something on your personal calendar.</p>' +
                     '</div>'
             );
         }
 
         var html = '';
+        if (reminders.length) {
+            html += '<div class="cdn-matter-task__section cdn-matter-task__section--reminders">';
+            html += '<h3 class="cdn-matter-task__section-title">Reminders</h3>';
+            html += '<ul class="list-unstyled cdn-matter-task__ul mb-0">';
+            for (var r = 0; r < reminders.length; r++) {
+                html += buildReminderRowHtml(reminders[r]);
+            }
+            html += '</ul></div>';
+        }
+
         if (open.length) {
             html += '<div class="cdn-matter-task__section">';
+            if (reminders.length) {
+                html += '<h3 class="cdn-matter-task__section-title">Tasks</h3>';
+            }
             html += '<ul class="list-unstyled cdn-matter-task__ul mb-0">';
             for (var o = 0; o < open.length; o++) {
                 html += buildRowHtml(open[o]);
@@ -722,7 +899,7 @@
             html += '</ul></details>';
         }
 
-        if (!open.length && done.length) {
+        if (!open.length && done.length && !reminders.length) {
             html =
                 '<p class="cdn-matter-task__all-done small text-muted mb-2">All tasks are complete.</p>' + html;
         }
@@ -756,8 +933,12 @@
             return;
         }
         var id = pendingDelete.id;
+        var kind = pendingDelete.kind || 'task';
         var cid = clientId();
-        var base = taskBase();
+        var base =
+            kind === 'reminder'
+                ? urlMap().matterReminderDestroyBase || ''
+                : taskBase();
         if (pendingDelete.timer) {
             clearTimeout(pendingDelete.timer);
         }
@@ -784,7 +965,7 @@
                 }
             },
             error: function () {
-                notifyError('Could not delete task.');
+                notifyError(kind === 'reminder' ? 'Could not delete reminder.' : 'Could not delete task.');
             }
         });
     }
@@ -793,7 +974,8 @@
         $list.html(
             renderList(tasksRows, {
                 openCount: tasksOpenCount,
-                doneCount: tasksDoneCount
+                doneCount: tasksDoneCount,
+                reminderCount: reminderRows.length
             })
         );
     }
@@ -857,6 +1039,9 @@
                 }
                 if (typeof res.done_count === 'number') {
                     tasksDoneCount = res.done_count;
+                }
+                if (!append) {
+                    reminderRows = Array.isArray(res.reminders) ? res.reminders : [];
                 }
                 if (append) {
                     tasksRows = tasksRows.concat(pageRows);
@@ -934,6 +1119,7 @@
         tasksPage = 1;
         tasksHasMore = false;
         tasksRows = [];
+        reminderRows = [];
         tasksOpenCount = 0;
         tasksDoneCount = 0;
         fetchTasksPage(1, false);
@@ -1003,12 +1189,21 @@
             }
         });
 
+        $(document).on('click' + EVT, '.cdn-matter-task-composer__kind', function (e) {
+            e.preventDefault();
+            var kind = String($(this).data('kind') || 'task');
+            setComposerKind(kind);
+            syncComposerLock();
+            $('#cdn-matter-task-title').trigger('focus');
+        });
+
         $(document).on('click' + EVT, '#cdn-matter-task-add', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             if (taskAddInFlight) {
                 return;
             }
+            var kind = getComposerKind();
             var $inp = $('#cdn-matter-task-title');
             var $due = $('#cdn-matter-task-due');
             ensureDueDatePicker();
@@ -1020,16 +1215,31 @@
             if (dueDate === null) {
                 return;
             }
+            if (kind === 'reminder') {
+                if (!canUsePersonalCalendar()) {
+                    notifyError('Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.');
+                    return;
+                }
+                if (!dueDate) {
+                    markFieldInvalid($due);
+                    var fpDue = getDueFlatpickr($due);
+                    if (fpDue && fpDue.altInput) {
+                        markFieldInvalid($(fpDue.altInput));
+                    }
+                    notifyError('Choose a reminder date.');
+                    return;
+                }
+            }
             var cid = clientId();
             var mid = matterId();
             var ref = matterRef();
             var storeUrl = urlMap().matterTaskStore;
             if (!cid || !storeUrl) {
-                notifyError('Unable to add a task for this record.');
+                notifyError(kind === 'reminder' ? 'Unable to add a reminder for this record.' : 'Unable to add a task for this record.');
                 return;
             }
             if (!mid && !ref) {
-                notifyError('Select a matter before adding a task.');
+                notifyError(kind === 'reminder' ? 'Select a matter before adding a reminder.' : 'Select a matter before adding a task.');
                 return;
             }
 
@@ -1040,6 +1250,7 @@
             var storeData = {
                 client_id: cid,
                 title: title,
+                kind: kind,
                 _token: csrf()
             };
             if (dueDate) {
@@ -1173,6 +1384,7 @@
             }
             var $row = $btn.closest('.cdn-matter-task__row');
             var id = safeId($row.data('id'));
+            var kind = String($row.data('item-kind') || 'task') === 'reminder' ? 'reminder' : 'task';
             var cid = clientId();
             if (!id || !cid) {
                 return;
@@ -1181,10 +1393,12 @@
             if (pendingDelete) {
                 flushPendingDelete();
             }
-            var title = $row.find('.cdn-matter-task__label').text() || 'Task';
+            var title = $row.find('.cdn-matter-task__label').clone().children().remove().end().text() ||
+                $row.find('.cdn-matter-task__label').text() ||
+                (kind === 'reminder' ? 'Reminder' : 'Task');
             $row.addClass('cdn-matter-task__row--removing');
 
-            pendingDelete = { id: id, timer: null };
+            pendingDelete = { id: id, kind: kind, timer: null };
             pendingDelete.timer = setTimeout(function () {
                 flushPendingDelete(function () {
                     var $list = $('#cdn-matter-tasks .cdn-matter-task__list');
@@ -1201,14 +1415,25 @@
 
             setTimeout(function () {
                 $row.remove();
-                var open = $('.cdn-matter-task__row:not(.is-done-row)').length;
+                if (kind === 'reminder') {
+                    reminderRows = reminderRows.filter(function (row) {
+                        return safeId(row.id) !== id;
+                    });
+                }
+                var open = $('.cdn-matter-task__row:not(.is-done-row):not(.is-reminder)').length;
                 var done = $('.cdn-matter-task__row.is-done-row').length;
-                updateStats(open, done);
-                if (open + done === 0) {
+                updateStats(open, done, reminderRows.length);
+                if (open + done + reminderRows.length === 0) {
                     $('#cdn-matter-tasks .cdn-matter-task__list').html(renderList([]));
                 }
             }, 280);
         });
+    });
+
+    // Keep Reminder toggle in sync when tab HTML is injected.
+    $(function () {
+        setComposerKind(getComposerKind());
+        syncComposerLock();
     });
 
     window.MatterTaskList = { reload: reload, scheduleReload: scheduleReload };

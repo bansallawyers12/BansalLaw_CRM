@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\CRM\BookingAppointmentsController;
 use App\Models\AppointmentConsultant;
 use App\Models\BookingAppointment;
 use App\Models\ClientCourtHearing;
@@ -36,7 +35,7 @@ class AjayCalendarParityTest extends TestCase
     }
 
     #[Test]
-    public function ajay_dashboard_feed_matches_ajay_booking_calendar_scope(): void
+    public function ajay_personal_calendar_includes_own_bookings_and_tagged_events_only(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-22 10:00:00', 'Australia/Melbourne'));
         config([
@@ -68,6 +67,15 @@ class AjayCalendarParityTest extends TestCase
             'first_name' => 'Ajay',
             'last_name' => 'Tester',
             'email' => 'ajay.calendar@example.com',
+            'password' => bcrypt('password'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+
+        $otherStaff = Staff::create([
+            'first_name' => 'Sam',
+            'last_name' => 'Staff',
+            'email' => 'sam.staff@example.com',
             'password' => bcrypt('password'),
             'role' => 1,
             'status' => 1,
@@ -121,7 +129,8 @@ class AjayCalendarParityTest extends TestCase
             'status' => 'confirmed',
         ]);
 
-        $hearing = ClientCourtHearing::create([
+        // Unrelated hearing — not on Ajay's matters, so excluded from personal calendar.
+        ClientCourtHearing::create([
             'client_id' => 1,
             'hearing_date' => '2026-08-29',
             'hearing_time' => '14:00:00',
@@ -139,36 +148,45 @@ class AjayCalendarParityTest extends TestCase
             'calendar_type' => 'ajay',
         ]);
 
+        $personalReminder = StaffCalendarEvent::create([
+            'title' => 'Call client back',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-08-31 09:00:00',
+            'ends_at' => '2026-08-31 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $staff->id,
+        ]);
+
+        $otherPersonal = StaffCalendarEvent::create([
+            'title' => 'Sam private reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-08-31 11:00:00',
+            'ends_at' => '2026-08-31 11:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $otherStaff->id,
+        ]);
+
         $range = [
             'start' => '2026-08-22T00:00:00+10:00',
             'end' => '2026-09-01T00:00:00+10:00',
-            'type' => 'ajay',
         ];
 
         $dashboard = app(StaffPersonalCalendarFeedService::class)
             ->eventsForStaffRequest($staff, Request::create('/dashboard/calendar-events', 'GET', $range));
 
-        $bookingQuery = BookingAppointment::query()->with(['client', 'consultant']);
-        $bookingQuery->where('consultant_id', $consultant->id);
-        $bookingFeed = $this->buildBookingCalendarFeed(
-            Request::create('/booking/appointments', 'GET', array_merge($range, ['format' => 'calendar'])),
-            $bookingQuery
-        );
-
         $dashboardIds = $this->normalizedEventKeys($dashboard);
-        $bookingIds = $this->normalizedEventKeys($bookingFeed['data'] ?? []);
 
-        sort($dashboardIds);
-        sort($bookingIds);
-
-        $this->assertSame($bookingIds, $dashboardIds);
         $this->assertContains('booking:' . $confirmed->id, $dashboardIds);
-        $this->assertContains('court:' . $hearing->id, $dashboardIds);
         $this->assertContains('staff:' . $staffEvent->id, $dashboardIds);
+        $this->assertContains('staff:' . $personalReminder->id, $dashboardIds);
+        $this->assertNotContains('staff:' . $otherPersonal->id, $dashboardIds);
+        $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['event_kind'] ?? '') === 'court_hearing'));
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['status'] ?? '') === 'cancelled'));
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['status'] ?? '') === 'no_show'));
-        $this->assertFalse(collect($bookingFeed['data'] ?? [])->contains(
-            fn (array $row) => in_array(strtolower((string) ($row['status'] ?? '')), ['cancelled', 'no_show'], true)
+        $this->assertFalse(collect($dashboard)->contains(
+            fn (array $row) => ($row['booking_appointment_id'] ?? null) !== null
+                && (int) $row['booking_appointment_id'] !== (int) $confirmed->id
+                && ($row['event_kind'] ?? '') === 'website_booking'
         ));
     }
 
@@ -204,20 +222,6 @@ class AjayCalendarParityTest extends TestCase
 
         $this->assertSame((int) $allDay->id, $method->invoke($service, 9001, '2026-08-30', null));
         $this->assertSame((int) $timed->id, $method->invoke($service, 9001, '2026-08-30', '10:00'));
-    }
-
-    /**
-     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\BookingAppointment>  $query
-     * @return array{success: bool, data: list<array<string, mixed>>}
-     */
-    private function buildBookingCalendarFeed(Request $request, $query): array
-    {
-        $controller = app(BookingAppointmentsController::class);
-        $ref = new \ReflectionClass($controller);
-        $method = $ref->getMethod('buildCalendarFeedResponse');
-        $method->setAccessible(true);
-
-        return $method->invoke($controller, $request, $query);
     }
 
     /**

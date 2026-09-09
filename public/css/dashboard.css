@@ -755,6 +755,228 @@
     color: var(--text-color);
 }
 
+/* Personal calendar — reminder details (appointment-details layout) */
+.personal-reminder-detail-modal .appointment-detail-modal__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.personal-reminder-detail-modal .appointment-detail-modal__icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: #1e3d60;
+    color: #fff;
+}
+
+.personal-reminder-detail-modal .appointment-detail-modal__icon--reminder {
+    background: #d97706;
+}
+
+.personal-reminder-detail-modal .appointment-detail-modal__subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.personal-reminder-detail-modal .appointment-detail-modal__footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.personal-reminder-detail-modal .appointment-detail-modal__footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.personal-reminder-detail-modal .appt-detail-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 16px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    border: 1px solid #e2e8f0;
+}
+
+.personal-reminder-detail-modal .appt-detail-hero--reminder {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.04) 100%);
+    border-color: rgba(217, 119, 6, 0.22);
+}
+
+.personal-reminder-detail-modal .appt-detail-hero__client {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e3d60;
+    line-height: 1.3;
+}
+
+.personal-reminder-detail-modal .appt-detail-hero__when {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.personal-reminder-detail-modal .appt-detail-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.personal-reminder-detail-modal .appt-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+}
+
+.personal-reminder-detail-modal .appt-status-pill--reminder {
+    background: rgba(217, 119, 6, 0.14);
+    color: #b45309;
+    border-color: rgba(217, 119, 6, 0.28);
+}
+
+.personal-reminder-detail-modal .appt-status-pill--scheduled {
+    background: rgba(58, 111, 168, 0.12);
+    color: #3a6fa8;
+    border-color: rgba(58, 111, 168, 0.28);
+}
+
+.personal-reminder-detail-modal .appt-status-pill--confirmed {
+    background: rgba(30, 122, 82, 0.12);
+    color: #1e7a52;
+    border-color: rgba(30, 122, 82, 0.28);
+}
+
+.personal-reminder-detail-modal .appt-status-pill--completed {
+    background: rgba(58, 111, 168, 0.85);
+    color: #fff;
+    border-color: rgba(30, 61, 96, 0.35);
+}
+
+.personal-reminder-detail-modal .appt-status-pill--cancelled {
+    background: rgba(168, 48, 32, 0.1);
+    color: #a83020;
+    border-color: rgba(168, 48, 32, 0.25);
+}
+
+.personal-reminder-detail-modal .appt-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.personal-reminder-detail-modal .appt-action-buttons .btn {
+    font-weight: 600;
+}
+
+.personal-reminder-detail-modal .appt-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.personal-reminder-detail-modal .appt-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 100%;
+}
+
+.personal-reminder-detail-modal .appt-detail-item__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3a6fa8;
+    font-size: 13px;
+}
+
+.personal-reminder-detail-modal .appt-detail-item__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 3px;
+}
+
+.personal-reminder-detail-modal .appt-detail-item__value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.personal-reminder-detail-modal .appt-detail-item__value .booking-calendar-link {
+    color: #3a6fa8;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.personal-reminder-detail-modal .appt-detail-item__value .booking-calendar-link:hover {
+    text-decoration: underline;
+}
+
+.personal-reminder-detail-modal .appt-detail-section--actions {
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.personal-reminder-detail-modal .appt-detail-section__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+    margin: 0 0 12px;
+}
+
+@media (max-width: 767.98px) {
+    .personal-reminder-detail-modal .appt-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Main Content Styles */
 .main-content {
     flex-grow: 1;

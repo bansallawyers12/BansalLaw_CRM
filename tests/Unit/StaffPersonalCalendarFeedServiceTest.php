@@ -185,4 +185,19 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
         $this->assertSame('booking-12', $rows[0]['id']);
         $this->assertSame('court-5', $rows[1]['id']);
     }
+
+    #[Test]
+    public function to_full_calendar_event_colours_follow_ups_as_reminders(): void
+    {
+        $event = $this->service()->toFullCalendarEvent([
+            'id' => 'followup-3',
+            'title' => 'Jane — Call back',
+            'event_type' => 'reminder',
+            'event_kind' => 'follow_up',
+            'starts_at' => '2026-08-21T15:00:00+10:00',
+        ]);
+
+        $this->assertSame('#d97706', $event['backgroundColor']);
+        $this->assertContains('event-kind-follow_up', $event['classNames']);
+    }
 }

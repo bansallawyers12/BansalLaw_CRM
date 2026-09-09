@@ -48,7 +48,13 @@
     <div class="topbar-left">
         <div class="icon-group">
             <a href="{{route('dashboard')}}" class="icon-btn{{ $_navActive['dashboard'] ? ' active' : '' }}" title="Dashboard"@if($_navActive['dashboard']) aria-current="page"@endif><i class="fa-solid fa-tachometer-alt"></i></a>
+            @php
+                $canAccessPersonalCalendarNav = auth('admin')->user() instanceof \App\Models\Staff
+                    && auth('admin')->user()->canAccessPersonalCalendar();
+            @endphp
+            @if($canAccessPersonalCalendarNav)
             <a href="{{ route('dashboard') }}#myCalendarSection" class="icon-btn" title="My Calendar"><i class="fa-solid fa-calendar-days"></i></a>
+            @endif
             <a href="{{ route('signatures.index') }}" class="icon-btn{{ $_navActive['signatures'] ? ' active' : '' }}" title="Signature Dashboard"@if($_navActive['signatures']) aria-current="page"@endif><i class="fa-solid fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('booking.appointments.index') }}" class="icon-btn{{ $_navActive['booking'] ? ' active' : '' }}" title="Website Bookings" style="position: relative;"@if($_navActive['booking']) aria-current="page"@endif>

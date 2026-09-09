@@ -71,6 +71,14 @@
                         <span class="badge bg-secondary">No Assign by subject access</span>
                     @endif
                 </dd>
+                <dt>Personal calendar</dt>
+                <dd>
+                    @if($fetchedData->canAccessPersonalCalendar())
+                        <span class="badge bg-success">Can access personal calendar</span>
+                    @else
+                        <span class="badge bg-secondary">No personal calendar access</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>

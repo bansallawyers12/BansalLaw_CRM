@@ -64,6 +64,7 @@ class Staff extends Authenticatable
         'can_assign_emails_by_subject',
         'can_use_communication_check',
         'can_use_timeline_billing',
+        'can_access_personal_calendar',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
     ];
@@ -92,6 +93,7 @@ class Staff extends Authenticatable
         'can_assign_emails_by_subject' => 'boolean',
         'can_use_communication_check' => 'boolean',
         'can_use_timeline_billing' => 'boolean',
+        'can_access_personal_calendar' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
         'created_at' => 'datetime',
@@ -613,6 +615,47 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_use_timeline_billing ?? false);
+    }
+
+    /**
+     * Role IDs that may grant {@see canAccessPersonalCalendar()} to others.
+     * Default: native Super Admin (1) only.
+     */
+    public static function personalCalendarGrantRoleIds(): array
+    {
+        $ids = config('crm.personal_calendar_grant_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may toggle personal calendar access on staff records.
+     * Only native Super Admin (role 1) may grant this by default.
+     */
+    public static function canGrantPersonalCalendarPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::personalCalendarGrantRoleIds(), true);
+    }
+
+    /**
+     * Super Admin (including elevated), or staff with the per-user grant, may use
+     * the dashboard personal calendar (reminders, follow-ups, hearings, deadlines).
+     */
+    public function canAccessPersonalCalendar(): bool
+    {
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
+        return (bool) ($this->can_access_personal_calendar ?? false);
     }
 
     /**

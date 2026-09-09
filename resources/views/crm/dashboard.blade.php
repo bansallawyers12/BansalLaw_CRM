@@ -79,11 +79,13 @@
             />
         </section>
 
+        @if(!empty($canAccessPersonalCalendar))
         <x-dashboard.staff-calendar
             :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
             :timezone="$dashboardTz"
             :booking-calendar-type="$bookingCalendarType ?? null"
         />
+        @endif
 
         @include('crm.partials.access-approvals-dashboard')
 
@@ -191,6 +193,8 @@
         dashboardSummary: "{{ route('dashboard.summary') }}",
         calendarEvents: "{{ route('dashboard.calendar-events') }}",
         storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
+        updateCalendarEvent: "{{ url('/booking/api/calendar-events') }}",
+        destroyCalendarEvent: "{{ url('/booking/api/calendar-events') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
         dashboardTasks: "{{ route('dashboard.tasks') }}",
@@ -203,6 +207,8 @@
 <script src="{{ asset('js/dashboard.js') }}?v={{ @filemtime(public_path('js/dashboard.js')) ?: time() }}"></script>
 <script src="{{ asset('js/crm/dashboard/add-task-popover.js') }}?v={{ @filemtime(public_path('js/crm/dashboard/add-task-popover.js')) ?: time() }}"></script>
 <script src="{{ asset('js/crm/dashboard/dashboard-page.js') }}?v={{ @filemtime(public_path('js/crm/dashboard/dashboard-page.js')) ?: time() }}"></script>
+@if(!empty($canAccessPersonalCalendar))
 <script src="{{ asset('js/dashboard-calendar.js') }}?v={{ @filemtime(public_path('js/dashboard-calendar.js')) ?: time() }}"></script>
+@endif
 @endonce
 @endpush

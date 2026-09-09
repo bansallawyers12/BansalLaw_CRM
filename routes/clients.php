@@ -157,6 +157,9 @@ Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index']
 Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');
 Route::post('/clients/matter-tasks/{task}/update', [ClientMatterTaskController::class, 'update'])->name('clients.matterTask.update');
 Route::post('/clients/matter-tasks/{task}/delete', [ClientMatterTaskController::class, 'destroy'])->name('clients.matterTask.destroy');
+Route::post('/clients/matter-reminders/{event}/delete', [ClientMatterTaskController::class, 'destroyReminder'])
+    ->whereNumber('event')
+    ->name('clients.matterReminder.destroy');
 
 Route::post('/convert-activity-to-note', [ClientsController::class, 'convertActivityToNote'])->name('clients.convertActivityToNote');
 

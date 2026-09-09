@@ -48,25 +48,70 @@ class VisionExtractionService
             throw new \RuntimeException('Could not read screenshot.');
         }
 
-        $dataUrl = 'data:' . $mime . ';base64,' . base64_encode($bytes);
+        $base64 = base64_encode($bytes);
 
-        return $this->callVision($dataUrl);
+        return $this->callVision($mime, $base64);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function callVision(string $dataUrl): array
+    private function callVision(string $mime, string $base64): array
     {
-        $apiKey = config('services.openai.api_key');
-        if (empty($apiKey)) {
-            throw new \RuntimeException('OPENAI_API_KEY is not configured.');
+        $provider = $this->resolveProvider();
+
+        return match ($provider) {
+            'openai' => $this->callOpenAiVision($mime, $base64),
+            'gemini' => $this->callGeminiVision($mime, $base64),
+            default => throw new \RuntimeException('Unsupported vision provider: ' . $provider),
+        };
+    }
+
+    /**
+     * Prefer OpenAI when OPENAI_API_KEY is set; otherwise use Gemini if configured.
+     * Explicit COMMUNICATION_CHECK_VISION_PROVIDER=openai|gemini still wins.
+     */
+    private function resolveProvider(): string
+    {
+        $configured = strtolower(trim((string) config('crm.communication_check.vision_provider', 'gemini')));
+        if (in_array($configured, ['openai', 'gemini'], true)) {
+            return $configured;
         }
 
-        $model = (string) config('crm.communication_check.vision_model', 'gpt-4o-mini');
-        $timeout = (int) config('crm.communication_check.vision_timeout', 90);
+        // auto: prefer OpenAI when keyed, else Gemini
+        if (! empty(config('services.openai.api_key'))) {
+            return 'openai';
+        }
 
-        $system = <<<'PROMPT'
+        if (! empty(config('services.gemini.api_key'))) {
+            return 'gemini';
+        }
+
+        throw new \RuntimeException('No vision API key configured. Set GEMINI_API_KEY or OPENAI_API_KEY.');
+    }
+
+    private function resolveModel(string $provider): string
+    {
+        $model = trim((string) config('crm.communication_check.vision_model', ''));
+
+        if ($provider === 'openai') {
+            if ($model === '' || str_contains(strtolower($model), 'gemini')) {
+                return 'gpt-4o-mini';
+            }
+
+            return $model;
+        }
+
+        if ($model === '' || str_starts_with(strtolower($model), 'gpt-')) {
+            return 'gemini-flash-latest';
+        }
+
+        return $model;
+    }
+
+    private function systemPrompt(): string
+    {
+        return <<<'PROMPT'
 You extract communication metadata from screenshots for a law-firm CRM audit tool.
 Return ONLY valid JSON (no markdown) with this exact shape:
 {
@@ -90,6 +135,79 @@ Rules:
 - Do not decide whether staff handled the message.
 - If multiple messages appear, extract the most prominent / focused one.
 PROMPT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function callGeminiVision(string $mime, string $base64): array
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (empty($apiKey)) {
+            throw new \RuntimeException('GEMINI_API_KEY is not configured.');
+        }
+
+        $model = $this->resolveModel('gemini');
+        $timeout = (int) config('crm.communication_check.vision_timeout', 90);
+
+        $client = new Client([
+            'base_uri' => 'https://generativelanguage.googleapis.com/v1beta/',
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'X-goog-api-key' => $apiKey,
+            ],
+            'timeout' => $timeout,
+        ]);
+
+        $response = $client->post('models/' . rawurlencode($model) . ':generateContent', [
+            'json' => [
+                'systemInstruction' => [
+                    'parts' => [
+                        ['text' => $this->systemPrompt()],
+                    ],
+                ],
+                'contents' => [
+                    [
+                        'parts' => [
+                            [
+                                'inlineData' => [
+                                    'mimeType' => $mime,
+                                    'data' => $base64,
+                                ],
+                            ],
+                            [
+                                'text' => 'Extract communication fields from this screenshot.',
+                            ],
+                        ],
+                    ],
+                ],
+                'generationConfig' => [
+                    'temperature' => 0,
+                    'maxOutputTokens' => 800,
+                    'responseMimeType' => 'application/json',
+                ],
+            ],
+        ]);
+
+        $result = json_decode($response->getBody()->getContents(), true);
+        $content = (string) ($result['candidates'][0]['content']['parts'][0]['text'] ?? '');
+
+        return $this->decodeAndNormalize($content);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function callOpenAiVision(string $mime, string $base64): array
+    {
+        $apiKey = config('services.openai.api_key');
+        if (empty($apiKey)) {
+            throw new \RuntimeException('OPENAI_API_KEY is not configured.');
+        }
+
+        $model = $this->resolveModel('openai');
+        $timeout = (int) config('crm.communication_check.vision_timeout', 90);
+        $dataUrl = 'data:' . $mime . ';base64,' . $base64;
 
         $client = new Client([
             'base_uri' => 'https://api.openai.com/v1/',
@@ -107,7 +225,7 @@ PROMPT;
                 'max_tokens' => 800,
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
-                    ['role' => 'system', 'content' => $system],
+                    ['role' => 'system', 'content' => $this->systemPrompt()],
                     [
                         'role' => 'user',
                         'content' => [
@@ -130,7 +248,23 @@ PROMPT;
 
         $result = json_decode($response->getBody()->getContents(), true);
         $content = (string) ($result['choices'][0]['message']['content'] ?? '');
+
+        return $this->decodeAndNormalize($content);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeAndNormalize(string $content): array
+    {
         $decoded = json_decode($content, true);
+
+        if (! is_array($decoded)) {
+            // Gemini occasionally wraps JSON in fences despite responseMimeType.
+            if (preg_match('/\{.*\}/s', $content, $matches)) {
+                $decoded = json_decode($matches[0], true);
+            }
+        }
 
         if (! is_array($decoded)) {
             Log::warning('Communication check vision returned non-JSON', ['content' => mb_substr($content, 0, 500)]);

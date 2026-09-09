@@ -35,9 +35,14 @@ class DashboardController extends Controller
         $staff = Auth::guard('admin')->user();
 
         if ($staff instanceof Staff) {
+            $canAccessPersonalCalendar = $staff->canAccessPersonalCalendar();
+            $dashboardData['canAccessPersonalCalendar'] = $canAccessPersonalCalendar;
             $dashboardData['calendarStats'] = null;
-            $dashboardData['bookingCalendarType'] = $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff);
+            $dashboardData['bookingCalendarType'] = $canAccessPersonalCalendar
+                ? $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff)
+                : null;
         } else {
+            $dashboardData['canAccessPersonalCalendar'] = false;
             $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
             $dashboardData['bookingCalendarType'] = null;
         }
@@ -57,9 +62,9 @@ class DashboardController extends Controller
         $payload = $this->dashboardService->getRefreshSummary($user, $perPage, $fresh);
 
         $staff = $user instanceof Staff ? $user : null;
-        $payload['calendar_stats'] = $staff
+        $payload['calendar_stats'] = ($staff && $staff->canAccessPersonalCalendar())
             ? $this->personalCalendarFeed->statsForStaff($staff)
-            : ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
+            : null;
 
         return response()->json(array_merge(['success' => true], $payload));
     }
@@ -72,6 +77,13 @@ class DashboardController extends Controller
         $staff = Auth::guard('admin')->user();
         if (! $staff instanceof Staff) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (! $staff->canAccessPersonalCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
         }
 
         $rows = $this->personalCalendarFeed->eventsForStaffRequest($staff, $request);

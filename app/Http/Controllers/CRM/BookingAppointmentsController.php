@@ -331,6 +331,14 @@ class BookingAppointmentsController extends Controller
      */
     public function storeCalendarEvent(Request $request)
     {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff || ! $user->canAccessPersonalCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
             'event_type'       => 'required|in:' . implode(',', StaffCalendarEvent::TYPES),
@@ -349,7 +357,6 @@ class BookingAppointmentsController extends Controller
             return response()->json(['success' => false, 'message' => 'You do not have access to this client.'], 403);
         }
 
-        $user = Auth::guard('admin')->user();
         $isAllDay = (bool) ($validated['is_all_day'] ?? false);
         [$startsAt, $endsAt] = $this->normalizeStaffCalendarEventWindow(
             Carbon::parse($validated['starts_at'], config('app.timezone')),
@@ -366,6 +373,7 @@ class BookingAppointmentsController extends Controller
         $event = StaffCalendarEvent::create([
             'title'            => $validated['title'],
             'event_type'       => $validated['event_type'],
+            'status'           => 'scheduled',
             'starts_at'        => $startsAt,
             'ends_at'          => $endsAt,
             'is_all_day'       => $isAllDay,
@@ -386,12 +394,21 @@ class BookingAppointmentsController extends Controller
 
     public function updateCalendarEvent(Request $request, int $id)
     {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff || ! $user->canAccessPersonalCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
         $event = StaffCalendarEvent::findOrFail($id);
         $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
 
         $validated = $request->validate([
             'title'            => 'sometimes|required|string|max:255',
             'event_type'       => 'sometimes|required|in:' . implode(',', StaffCalendarEvent::TYPES),
+            'status'           => 'sometimes|required|in:' . implode(',', StaffCalendarEvent::STATUSES),
             'starts_at'        => 'sometimes|required|date',
             'ends_at'          => 'nullable|date',
             'is_all_day'       => 'sometimes|boolean',
@@ -408,6 +425,19 @@ class BookingAppointmentsController extends Controller
             && ! StaffClientVisibility::canAccessClientOrLead((int) $validated['client_id'])
         ) {
             return response()->json(['success' => false, 'message' => 'You do not have access to this client.'], 403);
+        }
+
+        // Status-only updates should not re-validate the existing date window.
+        $statusOnly = array_keys($validated) === ['status']
+            || (count($validated) === 1 && array_key_exists('status', $validated));
+
+        if ($statusOnly) {
+            $event->update(['status' => $validated['status']]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
+            ]);
         }
 
         $isAllDay = array_key_exists('is_all_day', $validated)
@@ -478,6 +508,14 @@ class BookingAppointmentsController extends Controller
 
     public function destroyCalendarEvent(int $id)
     {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff || ! $user->canAccessPersonalCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
         $event = StaffCalendarEvent::findOrFail($id);
         $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
         $event->delete();

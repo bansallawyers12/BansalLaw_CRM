@@ -8,8 +8,8 @@
     <div class="dashboard-calendar-card">
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
-                <h2>Calendar</h2>
-                <p class="dashboard-calendar-subtitle">Hearings, meetings and deadlines</p>
+                <h2>My Calendar</h2>
+                <p class="dashboard-calendar-subtitle">Your reminders, follow-ups, hearings and deadlines</p>
             </div>
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-stats" aria-label="Calendar summary">
@@ -152,7 +152,7 @@
     </div>
 </div>
 
-<!-- Event detail modal -->
+<!-- Event detail modal (simple for non-reminders) -->
 <div class="modal fade" id="personalEventDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -163,6 +163,38 @@
             <div class="modal-body" id="personalEventDetailBody"></div>
             <div class="modal-footer" id="personalEventDetailFooter">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Reminder details — appointment-details layout (personal calendar only) --}}
+<div class="modal fade booking-calendar-modal appointment-detail-modal personal-reminder-detail-modal" id="personalReminderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="appointment-detail-modal__heading">
+                    <span class="appointment-detail-modal__icon appointment-detail-modal__icon--reminder" aria-hidden="true">
+                        <i class="fa-regular fa-bell"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title mb-0" id="personalReminderDetailTitle">Reminder Details</h5>
+                        <p class="appointment-detail-modal__subtitle mb-0" id="personalReminderDetailSubtitle"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="personalReminderDetailBody"></div>
+            <div class="modal-footer appointment-detail-modal__footer">
+                <button type="button" class="btn btn-outline-danger d-none" id="personalReminderDeleteBtn">
+                    <i class="fa-solid fa-trash"></i> Delete Reminder
+                </button>
+                <div class="appointment-detail-modal__footer-actions ms-auto">
+                    <a href="#" class="btn btn-primary d-none" id="personalReminderOpenClient" target="_blank">
+                        <i class="fa-solid fa-user"></i> Open Client
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>

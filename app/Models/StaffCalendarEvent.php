@@ -9,9 +9,19 @@ class StaffCalendarEvent extends Model
 {
     public const TYPES = ['court', 'meeting', 'deadline', 'reminder', 'other'];
 
+    public const STATUSES = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+
+    public const STATUS_LABELS = [
+        'scheduled' => 'Scheduled',
+        'confirmed' => 'Confirmed',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+    ];
+
     protected $fillable = [
         'title',
         'event_type',
+        'status',
         'starts_at',
         'ends_at',
         'is_all_day',

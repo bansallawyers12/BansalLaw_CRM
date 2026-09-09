@@ -137,6 +137,13 @@
                         $(modalEl).modal('hide');
                     }
                     $renameChecklistTargetRow = null;
+                    var successMsg = obj.message || obj.data || 'Checklist renamed successfully';
+                    if (typeof window.showCrmFlash === 'function') {
+                        window.showCrmFlash(successMsg, 'success');
+                    } else if (typeof successMessage === 'function') {
+                        $('.custom-error-msg').html(successMessage(successMsg)).show();
+                        $('html, body').animate({ scrollTop: 0 }, 300);
+                    }
                 } else {
                     showRenameChecklistError(obj.message || 'Please try again');
                 }

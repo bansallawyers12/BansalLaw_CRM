@@ -8,6 +8,8 @@
     const CALENDAR_EL_ID = 'staffDashboardCalendar';
     const BOOKING_EVENTS_API = window.dashboardRoutes?.calendarEvents || '/dashboard/calendar-events';
     const STORE_EVENT_API = window.dashboardRoutes?.storeCalendarEvent || '/booking/api/calendar-events';
+    const UPDATE_EVENT_API = window.dashboardRoutes?.updateCalendarEvent || '/booking/api/calendar-events';
+    const DESTROY_EVENT_API = window.dashboardRoutes?.destroyCalendarEvent || '/booking/api/calendar-events';
 
     function calendarElTz() {
         var el = document.getElementById(CALENDAR_EL_ID);
@@ -86,6 +88,7 @@
         var kind = String((props && props.event_kind) || '');
         if (kind === 'court_hearing') return 'court';
         if (kind === 'action' || kind === 'matter_deadline') return 'deadline';
+        if (kind === 'follow_up') return 'reminder';
         var type = String((props && props.event_type) || 'other');
         if (kind === 'website_booking') return 'meeting';
         if (type === 'court' || type === 'meeting' || type === 'deadline' || type === 'reminder') {
@@ -95,6 +98,8 @@
     }
 
     function eventTypeLabel(props) {
+        var kind = String((props && props.event_kind) || '');
+        if (kind === 'follow_up') return 'Follow-up';
         switch (eventTypeKey(props)) {
             case 'court': return 'Court / Hearing';
             case 'meeting': return 'Meeting';
@@ -599,7 +604,476 @@
     }
     window.refreshUpcomingList = refreshUpcomingList;
 
-    function showEventDetail(props) {
+    function isReminderEvent(props) {
+        if (!props) return false;
+        var kind = String(props.event_kind || '');
+        var type = String(props.event_type || '').toLowerCase();
+        if (kind === 'follow_up') return false;
+        return type === 'reminder' || kind === 'reminder';
+    }
+
+    function escapeDetailHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatReminderWhenLabel(props, tz) {
+        var start = props.appointment_datetime || props.starts_at;
+        if (props.is_all_day) {
+            if (!start) return 'All day';
+            try {
+                return new Date(start).toLocaleDateString('en-AU', {
+                    timeZone: tz || calendarElTz(),
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                }) + ' · All day';
+            } catch (e) {
+                return 'All day';
+            }
+        }
+        if (!start) return '—';
+        try {
+            return new Date(start).toLocaleString('en-AU', {
+                timeZone: tz || calendarElTz(),
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+            });
+        } catch (e) {
+            return formatEventTime(start, tz, false);
+        }
+    }
+
+    function reminderDateInputValue(props, tz) {
+        var start = props.appointment_datetime || props.starts_at;
+        if (!start) return todayDateStr(tz);
+        try {
+            return new Date(start).toLocaleDateString('en-CA', { timeZone: tz || calendarElTz() });
+        } catch (e) {
+            return String(start).slice(0, 10);
+        }
+    }
+
+    function reminderTimeInputValue(props, tz) {
+        if (props.is_all_day) return '09:00';
+        var start = props.appointment_datetime || props.starts_at;
+        if (!start) return '09:00';
+        try {
+            return new Date(start).toLocaleTimeString('en-GB', {
+                timeZone: tz || calendarElTz(),
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        } catch (e) {
+            return '09:00';
+        }
+    }
+
+    function renderReminderDetailItem(icon, label, valueHtml) {
+        return (
+            '<div class="appt-detail-item">' +
+            '<div class="appt-detail-item__icon"><i class="fa-solid ' + icon + '"></i></div>' +
+            '<div class="appt-detail-item__content">' +
+            '<span class="appt-detail-item__label">' + escapeDetailHtml(label) + '</span>' +
+            '<div class="appt-detail-item__value">' + valueHtml + '</div>' +
+            '</div></div>'
+        );
+    }
+
+    /** Prefer persisted status; fall back to date-based lifecycle. */
+    function resolveReminderStatus(props, tz) {
+        var raw = String(props.status || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        var known = {
+            scheduled: 'SCHEDULED',
+            confirmed: 'CONFIRMED',
+            completed: 'COMPLETED',
+            cancelled: 'CANCELLED',
+        };
+        if (known[raw]) {
+            return { key: raw, label: known[raw] };
+        }
+        if (props.status_label) {
+            var fromLabel = String(props.status_label).toUpperCase();
+            if (fromLabel === 'REMINDER') {
+                // Older payloads used event_type as status — treat as scheduled.
+                return { key: 'scheduled', label: 'SCHEDULED' };
+            }
+            return {
+                key: String(props.status_label)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '_'),
+                label: fromLabel,
+            };
+        }
+
+        var zone = tz || calendarElTz();
+        var start = props.appointment_datetime || props.starts_at;
+        var todayStr;
+        try {
+            todayStr = new Date().toLocaleDateString('en-CA', { timeZone: zone });
+        } catch (e) {
+            todayStr = todayDateStr(zone);
+        }
+        if (!start) {
+            return { key: 'scheduled', label: 'SCHEDULED' };
+        }
+        var startStr;
+        try {
+            startStr = new Date(start).toLocaleDateString('en-CA', { timeZone: zone });
+        } catch (e2) {
+            startStr = String(start).slice(0, 10);
+        }
+        if (startStr < todayStr) {
+            return { key: 'completed', label: 'COMPLETED' };
+        }
+        if (startStr === todayStr) {
+            return { key: 'confirmed', label: 'DUE TODAY' };
+        }
+        return { key: 'scheduled', label: 'SCHEDULED' };
+    }
+
+    function renderReminderStatusPill(status) {
+        var key = String((status && status.key) || 'scheduled')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_');
+        var label = (status && status.label) || 'SCHEDULED';
+        return (
+            '<span class="appt-status-pill appt-status-pill--' +
+            escapeDetailHtml(key) +
+            '" data-reminder-status-pill="' +
+            escapeDetailHtml(key) +
+            '">' +
+            escapeDetailHtml(label) +
+            '</span>'
+        );
+    }
+
+    function refreshReminderCalendars() {
+        if (window.staffDashboardCalendar) {
+            window.staffDashboardCalendar.refetchEvents();
+        }
+        if (typeof window.refreshUpcomingList === 'function') {
+            window.refreshUpcomingList();
+        }
+    }
+
+    function updatePersonalReminderStatus(eventId, newStatus, triggerBtn) {
+        if (!eventId || !newStatus) return;
+        var label = String(newStatus).replace(/_/g, ' ');
+        if (!window.confirm('Change reminder status to "' + label + '"?')) {
+            return;
+        }
+        var btn = triggerBtn || null;
+        if (btn) btn.disabled = true;
+        fetch(UPDATE_EVENT_API + '/' + encodeURIComponent(eventId), {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            body: JSON.stringify({ status: newStatus }),
+        })
+            .then(function (res) {
+                return res.json().then(function (payload) {
+                    if (!res.ok || payload.success === false) {
+                        throw new Error(payload.message || 'Could not update status.');
+                    }
+                    if (newStatus === 'cancelled') {
+                        hideModalById('personalReminderDetailModal');
+                    } else {
+                        var next = resolveReminderStatus(payload.data || { status: newStatus });
+                        document
+                            .querySelectorAll('#personalReminderDetailModal [data-reminder-status-pill]')
+                            .forEach(function (el) {
+                                el.className = 'appt-status-pill appt-status-pill--' + next.key;
+                                el.setAttribute('data-reminder-status-pill', next.key);
+                                el.textContent = next.label;
+                            });
+                    }
+                    refreshReminderCalendars();
+                });
+            })
+            .catch(function (err) {
+                crmAlert(err.message || 'Could not update status.');
+            })
+            .finally(function () {
+                if (btn) btn.disabled = false;
+            });
+    }
+
+    function showModalById(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        } else if (typeof $ !== 'undefined') {
+            $('#' + id).modal('show');
+        }
+    }
+
+    function hideModalById(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var instance = bootstrap.Modal.getInstance(el);
+            if (instance) instance.hide();
+        } else if (typeof $ !== 'undefined') {
+            $('#' + id).modal('hide');
+        }
+    }
+
+    function showReminderDetail(props) {
+        var titleEl = document.getElementById('personalReminderDetailTitle');
+        var subtitleEl = document.getElementById('personalReminderDetailSubtitle');
+        var bodyEl = document.getElementById('personalReminderDetailBody');
+        var openClientEl = document.getElementById('personalReminderOpenClient');
+        var deleteBtn = document.getElementById('personalReminderDeleteBtn');
+        if (!titleEl || !bodyEl) {
+            showSimpleEventDetail(props);
+            return;
+        }
+
+        var tz = calendarElTz();
+        var eventId = props.staff_calendar_event_id || null;
+        var canManage = !props.read_only && !!eventId;
+        var clientName = props.client_name || '—';
+        var clientHtml = escapeDetailHtml(clientName);
+        if (props.client_id_encoded) {
+            clientHtml =
+                '<a href="/clients/detail/' +
+                escapeDetailHtml(props.client_id_encoded) +
+                '" class="booking-calendar-link" target="_blank" rel="noopener">' +
+                escapeDetailHtml(clientName) +
+                '</a>';
+        }
+
+        titleEl.textContent = 'Reminder Details';
+        if (subtitleEl) {
+            subtitleEl.textContent = props.title || 'Reminder';
+        }
+
+        var whenLabel = formatReminderWhenLabel(props, tz);
+        var dateVal = reminderDateInputValue(props, tz);
+        var timeVal = reminderTimeInputValue(props, tz);
+        var duration = props.duration_minutes || 30;
+        var statusInfo = resolveReminderStatus(props, tz);
+        var statusPillHtml = renderReminderStatusPill(statusInfo);
+
+        var managementHtml = '';
+        if (canManage) {
+            managementHtml =
+                '<section class="appt-detail-section appt-detail-section--actions">' +
+                '<h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule Date &amp; Time</h6>' +
+                '<div class="row g-3 align-items-end">' +
+                '<div class="col-md-4">' +
+                '<label class="form-label" for="personalReminderDate">Reminder date</label>' +
+                '<input type="date" class="form-control" id="personalReminderDate" value="' +
+                escapeDetailHtml(dateVal) +
+                '">' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                '<label class="form-label" for="personalReminderTime">Reminder time</label>' +
+                '<input type="time" class="form-control" id="personalReminderTime" value="' +
+                escapeDetailHtml(timeVal) +
+                '" min="09:00" max="18:00">' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                '<button type="button" class="btn btn-primary w-100" id="personalReminderUpdateBtn">' +
+                '<i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time</button>' +
+                '</div></div>' +
+                '<div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this reminder on your personal calendar.</div>' +
+                '</section>' +
+                '<section class="appt-detail-section appt-detail-section--actions">' +
+                '<h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>' +
+                '<div class="appt-action-buttons personal-reminder-status-actions" data-reminder-event-id="' +
+                escapeDetailHtml(String(eventId)) +
+                '">' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary" data-reminder-status="scheduled">' +
+                '<i class="fa-solid fa-clock"></i> Mark as Scheduled</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-success" data-reminder-status="confirmed">' +
+                '<i class="fa-solid fa-check"></i> Mark as Confirmed</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-primary" data-reminder-status="completed">' +
+                '<i class="fa-solid fa-circle-check"></i> Mark as Complete</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger" data-reminder-status="cancelled">' +
+                '<i class="fa-solid fa-xmark"></i> Mark as Cancelled</button>' +
+                '</div>' +
+                '</section>';
+        }
+
+        bodyEl.innerHTML =
+            '<div class="appt-detail-view">' +
+            '<div class="appt-detail-hero appt-detail-hero--reminder">' +
+            '<div class="appt-detail-hero__main">' +
+            '<div class="appt-detail-hero__client">' +
+            escapeDetailHtml(props.title || 'Reminder') +
+            '</div>' +
+            '<div class="appt-detail-hero__when"><i class="fa-solid fa-clock"></i> ' +
+            escapeDetailHtml(whenLabel) +
+            (duration ? ' · ' + escapeDetailHtml(String(duration)) + ' min' : '') +
+            '</div></div>' +
+            '<div class="appt-detail-hero__meta">' +
+            statusPillHtml +
+            '<span class="appt-status-pill appt-status-pill--reminder">REMINDER</span>' +
+            '</div></div>' +
+            '<div class="appt-detail-grid">' +
+            renderReminderDetailItem('fa-user', 'Client', clientHtml) +
+            renderReminderDetailItem('fa-envelope', 'Email', escapeDetailHtml(formatDetail(props.client_email))) +
+            renderReminderDetailItem('fa-phone', 'Phone', escapeDetailHtml(formatDetail(props.client_phone))) +
+            renderReminderDetailItem('fa-bell', 'Type', 'Reminder') +
+            renderReminderDetailItem('fa-calendar-day', 'Date &amp; Time', escapeDetailHtml(whenLabel)) +
+            renderReminderDetailItem('fa-location-dot', 'Location', escapeDetailHtml(formatDetail(props.location))) +
+            renderReminderDetailItem('fa-circle-check', 'Status', statusPillHtml) +
+            (props.notes
+                ? renderReminderDetailItem('fa-note-sticky', 'Notes', escapeDetailHtml(props.notes))
+                : '') +
+            '</div>' +
+            managementHtml +
+            '</div>';
+
+        if (openClientEl) {
+            if (props.client_id_encoded) {
+                openClientEl.href = '/clients/detail/' + props.client_id_encoded;
+                openClientEl.classList.remove('d-none');
+            } else {
+                openClientEl.classList.add('d-none');
+            }
+        }
+
+        if (deleteBtn) {
+            if (canManage) {
+                deleteBtn.classList.remove('d-none');
+                deleteBtn.onclick = function () {
+                    if (!window.confirm('Delete this reminder from your personal calendar?')) {
+                        return;
+                    }
+                    deleteBtn.disabled = true;
+                    fetch(DESTROY_EVENT_API + '/' + encodeURIComponent(eventId), {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken(),
+                        },
+                    })
+                        .then(function (res) {
+                            return res.json().then(function (payload) {
+                                if (!res.ok || payload.success === false) {
+                                    throw new Error(payload.message || 'Could not delete reminder.');
+                                }
+                                hideModalById('personalReminderDetailModal');
+                                if (window.staffDashboardCalendar) {
+                                    window.staffDashboardCalendar.refetchEvents();
+                                }
+                                if (typeof window.refreshUpcomingList === 'function') {
+                                    window.refreshUpcomingList();
+                                }
+                            });
+                        })
+                        .catch(function (err) {
+                            crmAlert(err.message || 'Could not delete reminder.');
+                        })
+                        .finally(function () {
+                            deleteBtn.disabled = false;
+                        });
+                };
+            } else {
+                deleteBtn.classList.add('d-none');
+                deleteBtn.onclick = null;
+            }
+        }
+
+        var updateBtn = document.getElementById('personalReminderUpdateBtn');
+        if (updateBtn && canManage) {
+                updateBtn.onclick = function () {
+                var dateEl = document.getElementById('personalReminderDate');
+                var timeEl = document.getElementById('personalReminderTime');
+                var date = dateEl ? dateEl.value : '';
+                var time = timeEl ? timeEl.value : '09:00';
+                if (!date) {
+                    crmAlert('Choose a reminder date.');
+                    return;
+                }
+                if (!time) time = '09:00';
+                var startsAt = date + 'T' + time + ':00';
+                var startDate = new Date(startsAt);
+                var endDate = new Date(startDate.getTime() + (duration || 30) * 60000);
+                var endsAt =
+                    endDate.getFullYear() +
+                    '-' +
+                    String(endDate.getMonth() + 1).padStart(2, '0') +
+                    '-' +
+                    String(endDate.getDate()).padStart(2, '0') +
+                    'T' +
+                    String(endDate.getHours()).padStart(2, '0') +
+                    ':' +
+                    String(endDate.getMinutes()).padStart(2, '0') +
+                    ':00';
+
+                updateBtn.disabled = true;
+                fetch(UPDATE_EVENT_API + '/' + encodeURIComponent(eventId), {
+                    method: 'PUT',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken(),
+                    },
+                    body: JSON.stringify({
+                        starts_at: startsAt,
+                        ends_at: endsAt,
+                        is_all_day: false,
+                        event_type: 'reminder',
+                    }),
+                })
+                    .then(function (res) {
+                        return res.json().then(function (payload) {
+                            if (!res.ok || payload.success === false) {
+                                throw new Error(payload.message || 'Could not update reminder.');
+                            }
+                            hideModalById('personalReminderDetailModal');
+                            refreshReminderCalendars();
+                        });
+                    })
+                    .catch(function (err) {
+                        crmAlert(err.message || 'Could not update reminder.');
+                    })
+                    .finally(function () {
+                        updateBtn.disabled = false;
+                    });
+            };
+        }
+
+        var statusActions = bodyEl.querySelector('.personal-reminder-status-actions');
+        if (statusActions && canManage) {
+            statusActions.querySelectorAll('[data-reminder-status]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    updatePersonalReminderStatus(
+                        eventId,
+                        btn.getAttribute('data-reminder-status'),
+                        btn
+                    );
+                });
+            });
+        }
+
+        showModalById('personalReminderDetailModal');
+    }
+
+    function showSimpleEventDetail(props) {
         var titleEl = document.getElementById('personalEventDetailTitle');
         var bodyEl = document.getElementById('personalEventDetailBody');
         var footerEl = document.getElementById('personalEventDetailFooter');
@@ -607,7 +1081,7 @@
 
         titleEl.textContent = props.title || 'Event Details';
 
-            var rows = [
+        var rows = [
             ['Type', props.status_label || props.event_type],
             ['Client', props.client_name],
             ['Email', props.client_email],
@@ -628,20 +1102,30 @@
 
         var clientLink = '';
         if (props.client_id_encoded) {
-            clientLink = '<a href="/clients/detail/' + props.client_id_encoded + '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-user"></i> Open Client</a> ';
+            clientLink =
+                '<a href="/clients/detail/' +
+                props.client_id_encoded +
+                '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-user"></i> Open Client</a> ';
         }
         if (props.action_url) {
-            clientLink += '<a href="' + props.action_url + '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-list-check"></i> View Tasks</a> ';
+            clientLink +=
+                '<a href="' +
+                props.action_url +
+                '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-list-check"></i> View Tasks</a> ';
         }
 
-        footerEl.innerHTML = clientLink +
-            '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+        footerEl.innerHTML =
+            clientLink + '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
 
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('personalEventDetailModal')).show();
-        } else if (typeof $ !== 'undefined') {
-            $('#personalEventDetailModal').modal('show');
+        showModalById('personalEventDetailModal');
+    }
+
+    function showEventDetail(props) {
+        if (isReminderEvent(props)) {
+            showReminderDetail(props);
+            return;
         }
+        showSimpleEventDetail(props);
     }
 
     function updateStats(stats) {

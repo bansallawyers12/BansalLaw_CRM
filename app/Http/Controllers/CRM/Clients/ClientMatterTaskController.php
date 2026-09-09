@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\CRM\Clients;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
-use App\Services\TaskTimelineService;
+use App\Models\Staff;
+use App\Models\StaffCalendarEvent;
 use App\Services\ClientMatterTaskSyncService;
+use App\Services\TaskTimelineService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+use Illuminate\Support\Facades\Schema;
 
 class ClientMatterTaskController extends Controller
 {
@@ -135,12 +138,15 @@ class ClientMatterTaskController extends Controller
                 $row['assignee'] = null;
             }
 
+            $row['item_kind'] = 'task';
+
             return $row;
         })->values();
 
         return response()->json([
             'status' => true,
             'data' => $data,
+            'reminders' => $this->matterRemindersPayload($matter),
             'page' => $page,
             'per_page' => $perPage,
             'total' => $total,
@@ -160,7 +166,13 @@ class ClientMatterTaskController extends Controller
             'matter_ref_no'     => 'nullable|string|max:50',
             'title'             => 'required|string|max:500',
             'due_date'          => 'nullable|date',
+            'kind'              => 'nullable|in:task,reminder',
         ]);
+
+        $kind = (string) ($validated['kind'] ?? 'task');
+        if ($kind === 'reminder') {
+            return $this->storeReminder($request, $validated);
+        }
 
         $clientId = (int) $validated['client_id'];
         $this->ensureCrmRecordAccess($clientId);
@@ -191,7 +203,68 @@ class ClientMatterTaskController extends Controller
 
         app(TaskTimelineService::class)->logTaskCreated($task, $matter);
 
-        return response()->json(['status' => true, 'data' => $task]);
+        $payload = $task->toArray();
+        $payload['item_kind'] = 'task';
+
+        return response()->json(['status' => true, 'data' => $payload]);
+    }
+
+    /**
+     * Create a personal-calendar reminder linked to this client/matter.
+     *
+     * @param  array{client_id: int|string, title: string, due_date?: mixed}  $validated
+     */
+    protected function storeReminder(Request $request, array $validated)
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canAccessPersonalCalendar()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
+        $clientId = (int) $validated['client_id'];
+        $this->ensureCrmRecordAccess($clientId);
+        $matter = $this->resolveMatterFromRequest($request, $clientId);
+        if (! $matter) {
+            return response()->json(['status' => false, 'message' => 'Matter not found for this client. Select a matter before creating reminders.'], 422);
+        }
+
+        $title = trim((string) $validated['title']);
+        if ($title === '') {
+            return response()->json(['status' => false, 'message' => 'Title is required'], 422);
+        }
+
+        $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
+        if ($dueYmd === '') {
+            return response()->json(['status' => false, 'message' => 'Choose a reminder date.'], 422);
+        }
+
+        $tz = (string) config('app.timezone');
+        $startsAt = Carbon::parse($dueYmd . ' 09:00:00', $tz);
+        $endsAt = $startsAt->copy()->addMinutes(30);
+
+        $event = StaffCalendarEvent::create([
+            'title' => $title,
+            'event_type' => 'reminder',
+            'status' => 'scheduled',
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'is_all_day' => true,
+            'calendar_type' => null,
+            'client_id' => $matter->client_id,
+            'client_matter_id' => $matter->id,
+            'notes' => null,
+            'created_by_staff_id' => (int) $staff->id,
+        ]);
+
+        $event->load(['createdBy:id,first_name,last_name']);
+
+        return response()->json([
+            'status' => true,
+            'data' => $this->reminderRowPayload($event),
+        ]);
     }
 
     public function update(Request $request, ClientMatterTask $task)
@@ -288,6 +361,88 @@ class ClientMatterTaskController extends Controller
         $task->delete();
 
         return response()->json(['status' => true]);
+    }
+
+    public function destroyReminder(Request $request, int $event)
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canAccessPersonalCalendar()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
+        $calendarEvent = StaffCalendarEvent::query()
+            ->whereKey($event)
+            ->where('event_type', 'reminder')
+            ->firstOrFail();
+
+        $this->ensureCrmRecordAccess((int) $calendarEvent->client_id);
+
+        $clientIdInput = (int) $request->input('client_id');
+        if ($clientIdInput > 0 && $clientIdInput !== (int) $calendarEvent->client_id) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $calendarEvent->delete();
+
+        return response()->json(['status' => true]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function matterRemindersPayload(ClientMatter $matter): array
+    {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return [];
+        }
+
+        $tz = (string) config('app.timezone');
+
+        return StaffCalendarEvent::query()
+            ->with(['createdBy:id,first_name,last_name'])
+            ->where('client_matter_id', $matter->id)
+            ->where('event_type', 'reminder')
+            ->where('starts_at', '>=', Carbon::today($tz)->startOfDay())
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (StaffCalendarEvent $event) => $this->reminderRowPayload($event))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function reminderRowPayload(StaffCalendarEvent $event): array
+    {
+        $tz = (string) config('app.timezone');
+        $start = $event->starts_at?->copy()->timezone($tz);
+        $creator = $event->createdBy;
+
+        return [
+            'id' => (int) $event->id,
+            'item_kind' => 'reminder',
+            'staff_calendar_event_id' => (int) $event->id,
+            'title' => (string) $event->title,
+            'due_date' => $start ? $start->toDateString() : null,
+            'starts_at' => $start?->toIso8601String(),
+            'is_done' => false,
+            'client_id' => $event->client_id,
+            'client_matter_id' => $event->client_matter_id,
+            'created_by' => $event->created_by_staff_id,
+            'created_at' => $event->created_at?->toIso8601String(),
+            'creator' => $creator ? [
+                'id' => (int) $creator->id,
+                'first_name' => $creator->first_name,
+                'last_name' => $creator->last_name,
+            ] : null,
+            'assignee' => null,
+            'note_id' => null,
+        ];
     }
 
     /**

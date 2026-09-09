@@ -275,13 +275,32 @@ class StaffCalendarFeedService
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
             'client_email' => $this->clientEmail($event->client),
+            'client_phone' => $this->clientPhone($event->client),
             'client_matter_id' => $event->client_matter_id,
             'location' => $location,
             'notes' => $event->notes,
-            'status'           => $event->event_type,
-            'status_label'     => ucfirst(str_replace('_', ' ', $event->event_type)),
+            'status'           => $this->staffEventStatus($event),
+            'status_label'     => $this->staffEventStatusLabel($event),
             'reminder_minutes' => $event->reminder_minutes,
         ];
+    }
+
+    protected function staffEventStatus(StaffCalendarEvent $event): string
+    {
+        $status = strtolower(trim((string) ($event->status ?? 'scheduled')));
+        if (! in_array($status, StaffCalendarEvent::STATUSES, true)) {
+            return 'scheduled';
+        }
+
+        return $status;
+    }
+
+    protected function staffEventStatusLabel(StaffCalendarEvent $event): string
+    {
+        $status = $this->staffEventStatus($event);
+
+        return StaffCalendarEvent::STATUS_LABELS[$status]
+            ?? ucfirst(str_replace('_', ' ', $status));
     }
 
     /**
@@ -365,6 +384,22 @@ class StaffCalendarFeedService
         $email = trim((string) ($client->email ?? ''));
 
         return $email !== '' ? $email : null;
+    }
+
+    protected function clientPhone(?Admin $client): ?string
+    {
+        if (! $client) {
+            return null;
+        }
+
+        $phone = trim((string) ($client->phone ?? ''));
+        if ($phone === '') {
+            return null;
+        }
+
+        $code = trim((string) ($client->country_code ?? ''));
+
+        return $code !== '' ? trim($code . ' ' . $phone) : $phone;
     }
 
     public static function colorForEventType(string $type): string
