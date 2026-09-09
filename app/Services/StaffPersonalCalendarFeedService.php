@@ -818,11 +818,14 @@ class StaffPersonalCalendarFeedService
                 : null,
             'client_name' => $clientName,
             'client_email' => $appointment->client_email ?: $this->clientEmail($appointment->client),
+            'client_phone' => $appointment->client_phone ?: $this->clientPhone($appointment->client),
             'location' => $appointment->location,
             'meeting_type' => $appointment->meeting_type,
+            'meeting_type_label' => $meetingTypeDisplay,
             'notes' => $appointment->enquiry_details,
             'status' => $status,
             'status_label' => $statusLabel,
+            'consultant_name' => optional($appointment->consultant)->name,
         ];
     }
 
@@ -832,7 +835,7 @@ class StaffPersonalCalendarFeedService
     protected function actionDeadlines(?int $staffId, Request $request, string $tz): array
     {
         $query = Note::query()
-            ->with(['client'])
+            ->with(['client', 'assignedStaff', 'clientMatter.matter'])
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('note_deadline');
@@ -846,9 +849,10 @@ class StaffPersonalCalendarFeedService
             ->map(function (Note $note) use ($tz) {
                 $deadline = Carbon::parse($note->note_deadline, $tz)->startOfDay()->setTime(9, 0);
                 $clientName = $this->clientDisplayName($note->client);
-                $title = trim(($clientName ? $clientName . ' — ' : '') . ($note->title ?: 'Task'));
+                $taskTitle = trim((string) ($note->title ?: 'Task'));
+                $title = trim(($clientName ? $clientName . ' — ' : '') . $taskTitle);
 
-                return [
+                return array_merge($this->noteSharedPayload($note), [
                     'id' => 'action-' . $note->id,
                     'event_kind' => 'action',
                     'read_only' => true,
@@ -859,17 +863,14 @@ class StaffPersonalCalendarFeedService
                     'starts_at' => $deadline->toIso8601String(),
                     'ends_at' => $deadline->copy()->addMinutes(30)->toIso8601String(),
                     'is_all_day' => true,
-                    'client_id' => $note->client_id,
-                    'client_id_encoded' => $note->client_id
-                        ? base64_encode(convert_uuencode((string) $note->client_id))
-                        : null,
                     'client_name' => $clientName,
-                    'client_email' => $this->clientEmail($note->client),
                     'notes' => $note->description,
                     'status' => 'action',
                     'status_label' => 'My Task',
+                    'task_title' => $taskTitle,
+                    'note_deadline' => $deadline->toDateString(),
                     'action_url' => route('assignee.tasks'),
-                ];
+                ]);
             })
             ->values()
             ->all();
@@ -883,7 +884,7 @@ class StaffPersonalCalendarFeedService
     protected function followUps(?int $staffId, Request $request, string $tz): array
     {
         $query = Note::query()
-            ->with(['client'])
+            ->with(['client', 'assignedStaff', 'clientMatter.matter'])
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('action_date');
@@ -901,9 +902,13 @@ class StaffPersonalCalendarFeedService
                     $when = $when->copy()->setTime(9, 0);
                 }
                 $clientName = $this->clientDisplayName($note->client);
-                $title = trim(($clientName ? $clientName . ' — ' : '') . ($note->title ?: 'Follow-up'));
+                $taskTitle = trim((string) ($note->title ?: 'Follow-up'));
+                $title = trim(($clientName ? $clientName . ' — ' : '') . $taskTitle);
+                $noteDeadline = $note->note_deadline
+                    ? Carbon::parse($note->note_deadline, $tz)->toDateString()
+                    : null;
 
-                return [
+                return array_merge($this->noteSharedPayload($note), [
                     'id' => 'followup-' . $note->id,
                     'event_kind' => 'follow_up',
                     'read_only' => true,
@@ -914,17 +919,14 @@ class StaffPersonalCalendarFeedService
                     'starts_at' => $when->toIso8601String(),
                     'ends_at' => $when->copy()->addMinutes(30)->toIso8601String(),
                     'is_all_day' => $isAllDay,
-                    'client_id' => $note->client_id,
-                    'client_id_encoded' => $note->client_id
-                        ? base64_encode(convert_uuencode((string) $note->client_id))
-                        : null,
                     'client_name' => $clientName,
-                    'client_email' => $this->clientEmail($note->client),
                     'notes' => $note->description,
                     'status' => 'follow_up',
                     'status_label' => 'Follow-up',
+                    'task_title' => $taskTitle,
+                    'note_deadline' => $noteDeadline,
                     'action_url' => route('assignee.tasks'),
-                ];
+                ]);
             })
             ->values()
             ->all();
@@ -973,10 +975,13 @@ class StaffPersonalCalendarFeedService
                         : null,
                     'client_name' => $clientName,
                     'client_email' => $this->clientEmail($matter->client),
+                    'client_phone' => $this->clientPhone($matter->client),
                     'client_matter_id' => $matter->id,
                     'matter_no' => $matter->client_unique_matter_no,
+                    'matter_title' => $matterLabel ?: null,
                     'status' => 'deadline',
                     'status_label' => 'Matter Deadline',
+                    'note_deadline' => $deadline->toDateString(),
                 ];
             })
             ->values()
@@ -1134,6 +1139,52 @@ class StaffPersonalCalendarFeedService
         $email = trim((string) ($client->email ?? ''));
 
         return $email !== '' ? $email : null;
+    }
+
+    protected function clientPhone(?Admin $client): ?string
+    {
+        if (! $client) {
+            return null;
+        }
+
+        $phone = trim((string) ($client->phone ?? ''));
+        if ($phone === '') {
+            return null;
+        }
+
+        $code = trim((string) ($client->country_code ?? ''));
+
+        return $code !== '' ? trim($code . ' ' . $phone) : $phone;
+    }
+
+    /**
+     * Shared client / matter / assignee fields for note-based calendar events.
+     *
+     * @return array<string, mixed>
+     */
+    protected function noteSharedPayload(Note $note): array
+    {
+        $assignee = $note->assignedStaff;
+        $matter = $note->resolvedClientMatter();
+        $matterTitle = $matter && $matter->relationLoaded('matter') && $matter->matter
+            ? \App\Models\Matter::displayTitleFromJoinedRow($matter->matter->title)
+            : null;
+
+        return [
+            'client_id' => $note->client_id,
+            'client_id_encoded' => $note->client_id
+                ? base64_encode(convert_uuencode((string) $note->client_id))
+                : null,
+            'client_email' => $this->clientEmail($note->client),
+            'client_phone' => $this->clientPhone($note->client) ?: (trim((string) ($note->mobile_number ?? '')) ?: null),
+            'assigned_to' => $note->assigned_to,
+            'assigned_to_name' => $assignee ? (string) $assignee->full_name : null,
+            'task_group' => $note->task_group ? (string) $note->task_group : null,
+            'client_matter_id' => $matter?->id,
+            'matter_no' => $note->matterReference(),
+            'matter_title' => $matterTitle ?: null,
+            'client_detail_url' => $note->clientDetailUrl(),
+        ];
     }
 
     protected function colorForBookingStatus(string $status): string

@@ -1182,49 +1182,258 @@
         showModalById('personalReminderDetailModal');
     }
 
+    function resolveEventDetailMeta(props) {
+        var kind = String((props && props.event_kind) || '').toLowerCase();
+        var type = String((props && props.event_type) || '').toLowerCase();
+        var label = (props && props.status_label) || '';
+
+        if (kind === 'follow_up' || (!kind && label === 'Follow-up')) {
+            return { key: 'follow_up', label: 'Follow-up', icon: 'fa-bell', heading: 'Follow-up Details' };
+        }
+        if (kind === 'court_hearing' || type === 'court') {
+            return { key: 'court_hearing', label: 'Court / Hearing', icon: 'fa-gavel', heading: 'Hearing Details' };
+        }
+        if (kind === 'matter_deadline') {
+            return { key: 'matter_deadline', label: 'Matter Deadline', icon: 'fa-flag', heading: 'Deadline Details' };
+        }
+        if (kind === 'action' || type === 'deadline') {
+            return { key: 'deadline', label: label || 'Deadline', icon: 'fa-flag', heading: 'Task Details' };
+        }
+        if (kind === 'website_booking' || type === 'meeting') {
+            return { key: 'meeting', label: label || 'Appointment', icon: 'fa-handshake', heading: 'Appointment Details' };
+        }
+        if (kind === 'staff_event') {
+            var typeLabel = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Event';
+            return { key: 'staff_event', label: label || typeLabel, icon: 'fa-calendar-day', heading: 'Event Details' };
+        }
+        return {
+            key: kind || type || 'event',
+            label: label || 'Event',
+            icon: 'fa-calendar-day',
+            heading: 'Event Details',
+        };
+    }
+
+    function renderEventDetailItem(icon, label, valueHtml, wide) {
+        return (
+            '<div class="appt-detail-item' +
+            (wide ? ' appt-detail-item--wide' : '') +
+            '">' +
+            '<div class="appt-detail-item__icon"><i class="fa-solid ' +
+            icon +
+            '"></i></div>' +
+            '<div class="appt-detail-item__content">' +
+            '<span class="appt-detail-item__label">' +
+            escapeDetailHtml(label) +
+            '</span>' +
+            '<div class="appt-detail-item__value">' +
+            valueHtml +
+            '</div>' +
+            '</div></div>'
+        );
+    }
+
+    function formatOptionalDetail(value) {
+        if (value == null || value === '') return null;
+        return String(value);
+    }
+
     function showSimpleEventDetail(props) {
         var titleEl = document.getElementById('personalEventDetailTitle');
+        var subtitleEl = document.getElementById('personalEventDetailSubtitle');
         var bodyEl = document.getElementById('personalEventDetailBody');
         var footerEl = document.getElementById('personalEventDetailFooter');
+        var iconEl = document.getElementById('personalEventDetailIcon');
+        var iconGlyph = document.getElementById('personalEventDetailIconGlyph');
         if (!titleEl || !bodyEl || !footerEl) return;
 
-        titleEl.textContent = props.title || 'Event Details';
-
-        var rows = [
-            ['Type', props.status_label || props.event_type],
-            ['Client', props.client_name],
-            ['Email', props.client_email],
-            ['When', formatEventTime(props.appointment_datetime || props.starts_at, calendarElTz(), props.is_all_day)],
-            ['Location', props.location],
-            ['Notes', props.notes],
-        ];
-
-        var html = '<dl class="dashboard-event-detail-list">';
-        rows.forEach(function (row) {
-            if (row[1]) {
-                html += '<dt>' + row[0] + '</dt><dd>' + formatDetail(row[1]) + '</dd>';
+        var meta = resolveEventDetailMeta(props || {});
+        var tz = calendarElTz();
+        var whenLabel = formatReminderWhenLabel(props, tz);
+        var duration = props.duration_minutes ? Number(props.duration_minutes) : null;
+        var clientName = props.client_name || '—';
+        var clientUrl = props.client_detail_url || null;
+        if (!clientUrl && props.client_id_encoded) {
+            clientUrl = '/clients/detail/' + props.client_id_encoded;
+            if (props.matter_no) {
+                clientUrl += '/' + encodeURIComponent(props.matter_no);
             }
-        });
-        html += '</dl>';
+        }
+        var clientHtml = escapeDetailHtml(clientName);
+        if (clientUrl && props.client_name) {
+            clientHtml =
+                '<a href="' +
+                escapeDetailHtml(clientUrl) +
+                '" class="booking-calendar-link" target="_blank" rel="noopener">' +
+                escapeDetailHtml(clientName) +
+                '</a>';
+        }
 
-        bodyEl.innerHTML = html;
+        titleEl.textContent = meta.heading;
+        if (subtitleEl) {
+            subtitleEl.textContent = props.title || meta.label;
+        }
+        if (iconEl) {
+            iconEl.className = 'appointment-detail-modal__icon appointment-detail-modal__icon--' + meta.key;
+        }
+        if (iconGlyph) {
+            iconGlyph.className = 'fa-solid ' + meta.icon;
+        }
 
-        var clientLink = '';
-        if (props.client_id_encoded) {
-            clientLink =
-                '<a href="/clients/detail/' +
-                props.client_id_encoded +
-                '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-user"></i> Open Client</a> ';
+        var typePill =
+            '<span class="appt-status-pill appt-status-pill--' +
+            escapeDetailHtml(meta.key) +
+            '">' +
+            escapeDetailHtml(String(meta.label).toUpperCase()) +
+            '</span>';
+        var statusRaw = formatOptionalDetail(props.status_label);
+        var statusPill = '';
+        if (statusRaw && String(statusRaw).toLowerCase() !== String(meta.label).toLowerCase()) {
+            var statusKey = String(statusRaw)
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_');
+            statusPill =
+                '<span class="appt-status-pill appt-status-pill--' +
+                escapeDetailHtml(statusKey) +
+                '">' +
+                escapeDetailHtml(String(statusRaw).toUpperCase()) +
+                '</span>';
+        }
+
+        var items = [];
+        items.push(renderEventDetailItem('fa-tag', 'Type', escapeDetailHtml(meta.label)));
+        if (props.task_title) {
+            items.push(renderEventDetailItem('fa-list-check', 'Task', escapeDetailHtml(props.task_title)));
+        }
+        if (props.task_group) {
+            items.push(renderEventDetailItem('fa-folder', 'Category', escapeDetailHtml(props.task_group)));
+        }
+        if (props.client_name) {
+            items.push(renderEventDetailItem('fa-user', 'Client', clientHtml));
+        }
+        if (props.client_email) {
+            items.push(
+                renderEventDetailItem(
+                    'fa-envelope',
+                    'Email',
+                    '<a href="mailto:' +
+                        escapeDetailHtml(props.client_email) +
+                        '" class="booking-calendar-link">' +
+                        escapeDetailHtml(props.client_email) +
+                        '</a>'
+                )
+            );
+        }
+        if (props.client_phone) {
+            var phone = String(props.client_phone);
+            items.push(
+                renderEventDetailItem(
+                    'fa-phone',
+                    'Phone',
+                    '<a href="tel:' +
+                        escapeDetailHtml(phone.replace(/\s+/g, '')) +
+                        '" class="booking-calendar-link">' +
+                        escapeDetailHtml(phone) +
+                        '</a>'
+                )
+            );
+        }
+        if (props.assigned_to_name) {
+            items.push(renderEventDetailItem('fa-user-check', 'Assigned to', escapeDetailHtml(props.assigned_to_name)));
+        }
+        if (props.matter_no || props.matter_title) {
+            var matterBits = [];
+            if (props.matter_no) matterBits.push(props.matter_no);
+            if (props.matter_title) matterBits.push(props.matter_title);
+            items.push(renderEventDetailItem('fa-briefcase', 'Matter', escapeDetailHtml(matterBits.join(' · '))));
+        }
+        items.push(renderEventDetailItem('fa-calendar-day', 'When', escapeDetailHtml(whenLabel)));
+        if (duration && !props.is_all_day) {
+            items.push(renderEventDetailItem('fa-hourglass-half', 'Duration', escapeDetailHtml(String(duration) + ' min')));
+        }
+        if (props.note_deadline) {
+            items.push(renderEventDetailItem('fa-flag', 'Deadline', escapeDetailHtml(props.note_deadline)));
+        }
+        if (props.location || props.court_name) {
+            items.push(
+                renderEventDetailItem(
+                    'fa-location-dot',
+                    props.court_name ? 'Court' : 'Location',
+                    escapeDetailHtml(props.location || props.court_name)
+                )
+            );
+        }
+        if (props.hearing_type) {
+            items.push(renderEventDetailItem('fa-gavel', 'Hearing type', escapeDetailHtml(props.hearing_type)));
+        }
+        if (props.case_number) {
+            items.push(renderEventDetailItem('fa-hashtag', 'Case number', escapeDetailHtml(props.case_number)));
+        }
+        if (props.judge_name) {
+            items.push(renderEventDetailItem('fa-scale-balanced', 'Judge', escapeDetailHtml(props.judge_name)));
+        }
+        if (props.meeting_type_label || props.meeting_type) {
+            var meetingLabel = props.meeting_type_label || String(props.meeting_type).replace(/_/g, ' ');
+            items.push(renderEventDetailItem('fa-video', 'Meeting type', escapeDetailHtml(meetingLabel)));
+        }
+        if (props.consultant_name) {
+            items.push(renderEventDetailItem('fa-user-tie', 'Consultant', escapeDetailHtml(props.consultant_name)));
+        }
+        if (statusRaw) {
+            items.push(renderEventDetailItem('fa-circle-check', 'Status', statusPill || escapeDetailHtml(statusRaw)));
+        }
+        if (props.notes) {
+            items.push(
+                renderEventDetailItem(
+                    'fa-note-sticky',
+                    'Notes',
+                    '<div class="appt-detail-item__value--muted">' + escapeDetailHtml(props.notes) + '</div>',
+                    true
+                )
+            );
+        }
+
+        bodyEl.innerHTML =
+            '<div class="appt-detail-view">' +
+            '<div class="appt-detail-hero appt-detail-hero--' +
+            escapeDetailHtml(meta.key) +
+            '">' +
+            '<div class="appt-detail-hero__main">' +
+            '<div class="appt-detail-hero__client">' +
+            escapeDetailHtml(props.title || meta.label) +
+            '</div>' +
+            '<div class="appt-detail-hero__when"><i class="fa-solid fa-clock"></i> ' +
+            escapeDetailHtml(whenLabel) +
+            (duration && !props.is_all_day ? ' · ' + escapeDetailHtml(String(duration)) + ' min' : '') +
+            '</div></div>' +
+            '<div class="appt-detail-hero__meta">' +
+            typePill +
+            statusPill +
+            '</div></div>' +
+            '<div class="appt-detail-grid">' +
+            items.join('') +
+            '</div></div>';
+
+        var footerActions = '';
+        if (clientUrl) {
+            footerActions +=
+                '<a href="' +
+                escapeDetailHtml(clientUrl) +
+                '" class="btn btn-primary btn-sm" target="_blank" rel="noopener">' +
+                '<i class="fa-solid fa-user"></i> Open Client</a> ';
         }
         if (props.action_url) {
-            clientLink +=
+            footerActions +=
                 '<a href="' +
-                props.action_url +
-                '" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-list-check"></i> View Tasks</a> ';
+                escapeDetailHtml(props.action_url) +
+                '" class="btn btn-outline-primary btn-sm">' +
+                '<i class="fa-solid fa-list-check"></i> View Tasks</a> ';
         }
-
         footerEl.innerHTML =
-            clientLink + '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+            '<div class="appointment-detail-modal__footer-actions ms-auto">' +
+            footerActions +
+            '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>' +
+            '</div>';
 
         showModalById('personalEventDetailModal');
     }

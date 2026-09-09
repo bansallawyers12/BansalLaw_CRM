@@ -353,6 +353,7 @@ class StaffCalendarFeedService
             'client_id_encoded' => $encodedClientId,
             'client_name' => $clientName,
             'client_email' => $this->clientEmail($hearing->client),
+            'client_phone' => $this->clientPhone($hearing->client),
             'client_matter_id' => $hearing->client_matter_id,
             'court_name' => $courtName,
             'case_number' => $hearing->case_number,

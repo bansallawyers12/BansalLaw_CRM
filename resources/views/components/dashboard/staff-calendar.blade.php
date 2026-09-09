@@ -176,24 +176,34 @@
     </div>
 </div>
 
-<!-- Event detail modal (simple for non-reminders) -->
-<div class="modal fade" id="personalEventDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<!-- Event detail modal (follow-ups, hearings, deadlines, bookings, staff events) -->
+<div class="modal fade booking-calendar-modal appointment-detail-modal personal-calendar-detail-modal personal-event-detail-modal" id="personalEventDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="personalEventDetailTitle">Event Details</h5>
+                <div class="appointment-detail-modal__heading">
+                    <span class="appointment-detail-modal__icon" id="personalEventDetailIcon" aria-hidden="true">
+                        <i class="fa-solid fa-calendar-day" id="personalEventDetailIconGlyph"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title mb-0" id="personalEventDetailTitle">Event Details</h5>
+                        <p class="appointment-detail-modal__subtitle mb-0" id="personalEventDetailSubtitle"></p>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="personalEventDetailBody"></div>
-            <div class="modal-footer" id="personalEventDetailFooter">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer appointment-detail-modal__footer" id="personalEventDetailFooter">
+                <div class="appointment-detail-modal__footer-actions ms-auto">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 {{-- Reminder details — appointment-details layout (personal calendar only) --}}
-<div class="modal fade booking-calendar-modal appointment-detail-modal personal-reminder-detail-modal" id="personalReminderDetailModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade booking-calendar-modal appointment-detail-modal personal-calendar-detail-modal personal-reminder-detail-modal" id="personalReminderDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
