@@ -105,7 +105,7 @@
                     <div class="card-header-action">
                         @if(!empty($canManagePersonalEvents))
                         <button type="button" class="btn btn-sm btn-success me-2" id="btnAddImportantEvent">
-                            <i class="fa-solid fa-plus"></i> Add Important Event
+                            <i class="fa-solid fa-plus"></i> {{ ($calendarMode ?? 'booking') === 'personal' ? 'Add Reminder' : 'Add Important Event' }}
                         </button>
                         @endif
                         <button type="button" onclick="location.reload()" class="btn btn-sm btn-primary booking-calendar-page__refresh">
@@ -150,6 +150,25 @@
 
                     <!-- Legend -->
                     <div class="calendar-legend-panel">
+                        @if(($calendarMode ?? 'booking') === 'personal')
+                        <div class="calendar-legend-group">
+                            <span class="calendar-legend-group__label">Your items</span>
+                            <div class="calendar-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color event-reminder"></div>
+                                    <span>Reminder</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-other"></div>
+                                    <span>Other</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-reminder"></div>
+                                    <span>Follow-up (added by you)</span>
+                                </div>
+                            </div>
+                        </div>
+                        @else
                         <div class="calendar-legend-group">
                             <span class="calendar-legend-group__label">Bookings</span>
                             <div class="calendar-legend">
@@ -204,6 +223,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Calendar -->
@@ -266,7 +286,7 @@
                     </span>
                     <div>
                         <h5 class="modal-title mb-0" id="importantEventModalTitle">Add Important Event</h5>
-                        <p class="important-event-modal__subtitle mb-0">Court, meetings, deadlines — plus your own reminders &amp; other items</p>
+                        <p class="important-event-modal__subtitle mb-0">{{ ($calendarMode ?? 'booking') === 'personal' ? 'Reminders and other items you add yourself' : 'Court, meetings, deadlines — plus your own reminders & other items' }}</p>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -283,11 +303,16 @@
                     <div class="col-4">
                         <label class="form-label" for="importantEventType">Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="importantEventType">
-                            <option value="court">Court</option>
-                            <option value="meeting" selected>Meeting</option>
-                            <option value="deadline">Deadline</option>
-                            <option value="reminder">Reminder</option>
-                            <option value="other">Other</option>
+                            @if(($calendarMode ?? 'booking') === 'personal')
+                                <option value="reminder" selected>Reminder</option>
+                                <option value="other">Other</option>
+                            @else
+                                <option value="court">Court</option>
+                                <option value="meeting" selected>Meeting</option>
+                                <option value="deadline">Deadline</option>
+                                <option value="reminder">Reminder</option>
+                                <option value="other">Other</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -2466,7 +2491,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetImportantEventForm() {
         document.getElementById('importantEventId').value = '';
         document.getElementById('importantEventTitle').value = '';
-        document.getElementById('importantEventType').value = 'meeting';
+        document.getElementById('importantEventType').value =
+            BOOKING_CALENDAR_MODE === 'personal' ? 'reminder' : 'meeting';
         document.getElementById('importantEventDate').value = '';
         document.getElementById('importantEventStartTime').value = IMPORTANT_EVENT_TIME_MIN;
         document.getElementById('importantEventEndTime').value = '10:00';
@@ -2481,7 +2507,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('importantEventReminder').value = '';
         document.getElementById('importantEventNotes').value = '';
         document.getElementById('importantEventDeleteBtn').classList.add('d-none');
-        document.getElementById('importantEventModalTitle').textContent = 'Add Important Event';
+        document.getElementById('importantEventModalTitle').textContent =
+            BOOKING_CALENDAR_MODE === 'personal' ? 'Add Reminder' : 'Add Important Event';
         impEventDestroyClientTs();
     }
 

@@ -105,4 +105,23 @@ return [
         'kpi_cache_ttl_seconds' => (int) env('WEBSITE_BOOKINGS_KPI_CACHE_SECONDS', 90),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Personal calendar feed resets (per staff)
+    |--------------------------------------------------------------------------
+    |
+    | On that staff member's personal booking calendar only, hide staff events
+    | and note follow-ups created before cleared_at. New items still appear.
+    | Matching requires staff_id plus first/last name (safety against id drift).
+    |
+    */
+    'personal_calendar_cleared' => [
+        [
+            'staff_id' => (int) env('BOOKING_PERSONAL_CAL_CLEAR_STAFF_ID', 39),
+            'first_name' => env('BOOKING_PERSONAL_CAL_CLEAR_FIRST', 'Khushi'),
+            'last_name' => env('BOOKING_PERSONAL_CAL_CLEAR_LAST', 'Sangroya'),
+            'cleared_at' => env('BOOKING_PERSONAL_CAL_CLEAR_AT', '2026-09-09 19:30:00'),
+        ],
+    ],
+
 ];

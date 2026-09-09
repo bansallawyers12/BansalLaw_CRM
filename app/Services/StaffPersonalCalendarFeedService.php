@@ -12,6 +12,7 @@ use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Services\Booking\BookingCalendarExternalFeed;
 use App\Services\Booking\StaffCalendarFeedService;
+use App\Support\PersonalCalendarFeedReset;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Exception;
@@ -101,7 +102,19 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        return $this->followUps((int) $staff->id, $request, (string) config('app.timezone'));
+        $isPersonal = (string) $request->get('type') === 'personal';
+        $createdAfter = $isPersonal
+            ? PersonalCalendarFeedReset::clearedAtForStaff($staff)
+            : null;
+
+        return $this->followUps(
+            (int) $staff->id,
+            $request,
+            (string) config('app.timezone'),
+            $createdAfter,
+            // Personal calendar: only follow-ups this staff added themselves (not assigned by others).
+            $isPersonal
+        );
     }
 
     /**
@@ -896,17 +909,30 @@ class StaffPersonalCalendarFeedService
     /**
      * Open follow-ups / actions scheduled for this staff member (action_date).
      *
+     * @param  bool  $createdBySelfOnly  When true, only notes this staff created (user_id), not tasks assigned by others.
      * @return list<array<string, mixed>>
      */
-    protected function followUps(?int $staffId, Request $request, string $tz): array
-    {
+    protected function followUps(
+        ?int $staffId,
+        Request $request,
+        string $tz,
+        ?Carbon $createdAfter = null,
+        bool $createdBySelfOnly = false
+    ): array {
         $query = Note::query()
             ->with(['client', 'assignedStaff', 'clientMatter.matter'])
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('action_date');
         if ($staffId !== null) {
-            $query->where('assigned_to', $staffId);
+            if ($createdBySelfOnly) {
+                $query->where('user_id', $staffId);
+            } else {
+                $query->where('assigned_to', $staffId);
+            }
+        }
+        if ($createdAfter) {
+            $query->where('created_at', '>=', $createdAfter);
         }
 
         $this->applyDatetimeWindow($query, 'action_date', $request);

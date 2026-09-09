@@ -34,6 +34,7 @@ class Kernel extends ConsoleKernel
         
         // Activity Cleanup Commands
         '\App\Console\Commands\CleanupActivityDescriptions',
+        '\App\Console\Commands\ClearPersonalCalendarLegacyItems',
         
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',

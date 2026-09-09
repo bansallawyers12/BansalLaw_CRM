@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Note;
 use App\Models\Staff;
+use App\Models\StaffCalendarEvent;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +24,12 @@ class PersonalCalendarAccessTest extends TestCase
             ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function createStaff(array $attrs = []): Staff
@@ -271,5 +280,203 @@ class PersonalCalendarAccessTest extends TestCase
 
         $this->get(route('booking.appointments.calendar.staff', ['staff' => $noAccess->id]))
             ->assertNotFound();
+    }
+
+    #[Test]
+    public function personal_calendar_cleared_at_hides_legacy_events_and_follow_ups(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-09 16:00:00', 'Australia/Melbourne'));
+
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'email' => 'admin.clear.calendar@example.com',
+            'can_access_personal_calendar' => true,
+        ]);
+        $khushi = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.clear.calendar@example.com',
+        ]);
+
+        config([
+            'booking_calendar.personal_calendar_cleared' => [[
+                'staff_id' => $khushi->id,
+                'first_name' => 'Khushi',
+                'last_name' => 'Sangroya',
+                'cleared_at' => '2026-09-09 15:00:00',
+            ]],
+        ]);
+
+        $legacyEvent = StaffCalendarEvent::create([
+            'title' => 'Old reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-10 09:00:00',
+            'ends_at' => '2026-09-10 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+        $legacyEvent->forceFill(['created_at' => '2026-09-01 10:00:00'])->saveQuietly();
+
+        $newEvent = StaffCalendarEvent::create([
+            'title' => 'New reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-11 09:00:00',
+            'ends_at' => '2026-09-11 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+
+        $legacyFollowUp = Note::create([
+            'client_id' => null,
+            'user_id' => $khushi->id,
+            'title' => 'Old follow-up',
+            'description' => 'legacy',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'action_date' => '2026-09-12 09:00:00',
+        ]);
+        $legacyFollowUp->forceFill(['created_at' => '2026-09-01 11:00:00'])->saveQuietly();
+
+        $newFollowUp = Note::create([
+            'client_id' => null,
+            'user_id' => $khushi->id,
+            'title' => 'New follow-up',
+            'description' => 'fresh',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'action_date' => '2026-09-13 09:00:00',
+        ]);
+
+        $this->actingAs($viewer, 'admin');
+
+        $response = $this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $khushi->id,
+            'start' => '2026-09-09T00:00:00+10:00',
+            'end' => '2026-09-20T00:00:00+10:00',
+        ]))->assertOk()->assertJsonPath('success', true);
+
+        $ids = collect($response->json('data') ?? [])->pluck('id')->map(fn ($id) => (string) $id)->all();
+
+        $this->assertContains('staff-cal-' . $newEvent->id, $ids);
+        $this->assertContains('followup-' . $newFollowUp->id, $ids);
+        $this->assertNotContains('staff-cal-' . $legacyEvent->id, $ids);
+        $this->assertNotContains('followup-' . $legacyFollowUp->id, $ids);
+    }
+
+    #[Test]
+    public function personal_calendar_shows_only_self_created_reminders_other_and_follow_ups(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
+
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'email' => 'admin.self.only.calendar@example.com',
+            'can_access_personal_calendar' => true,
+        ]);
+        $khushi = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.self.only.calendar@example.com',
+        ]);
+        $other = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'email' => 'other.self.only.calendar@example.com',
+        ]);
+
+        config(['booking_calendar.personal_calendar_cleared' => []]);
+
+        $ownReminder = StaffCalendarEvent::create([
+            'title' => 'Own reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-12 09:00:00',
+            'ends_at' => '2026-09-12 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+        $ownMeeting = StaffCalendarEvent::create([
+            'title' => 'Own meeting should hide',
+            'event_type' => 'meeting',
+            'starts_at' => '2026-09-12 11:00:00',
+            'ends_at' => '2026-09-12 11:30:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+        $ownCourt = StaffCalendarEvent::create([
+            'title' => 'Own court should hide',
+            'event_type' => 'court',
+            'starts_at' => '2026-09-12 14:00:00',
+            'ends_at' => '2026-09-12 15:00:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+        $otherReminder = StaffCalendarEvent::create([
+            'title' => 'Other staff reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-12 16:00:00',
+            'ends_at' => '2026-09-12 16:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $other->id,
+            'status' => 'scheduled',
+        ]);
+
+        $selfFollowUp = Note::create([
+            'client_id' => null,
+            'user_id' => $khushi->id,
+            'title' => 'Self follow-up',
+            'description' => 'mine',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'action_date' => '2026-09-13 09:00:00',
+        ]);
+        $assignedByOther = Note::create([
+            'client_id' => null,
+            'user_id' => $other->id,
+            'title' => 'Assigned by other',
+            'description' => 'not mine',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'action_date' => '2026-09-14 09:00:00',
+        ]);
+
+        $this->actingAs($viewer, 'admin');
+
+        $ids = collect($this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $khushi->id,
+            'start' => '2026-09-10T00:00:00+10:00',
+            'end' => '2026-09-20T00:00:00+10:00',
+        ]))->assertOk()->json('data') ?? [])->pluck('id')->map(fn ($id) => (string) $id)->all();
+
+        $this->assertContains('staff-cal-' . $ownReminder->id, $ids);
+        $this->assertContains('followup-' . $selfFollowUp->id, $ids);
+        $this->assertNotContains('staff-cal-' . $ownMeeting->id, $ids);
+        $this->assertNotContains('staff-cal-' . $ownCourt->id, $ids);
+        $this->assertNotContains('staff-cal-' . $otherReminder->id, $ids);
+        $this->assertNotContains('followup-' . $assignedByOther->id, $ids);
     }
 }

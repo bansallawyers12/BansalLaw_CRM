@@ -423,6 +423,15 @@ class BookingAppointmentsController extends Controller
         }
 
         $eventType = (string) $validated['event_type'];
+        if ((string) $request->get('type') === 'personal'
+            && ! in_array($eventType, ['reminder', 'other'], true)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendars only accept reminders and other items you add yourself.',
+            ], 422);
+        }
+
         $calendarType = $validated['calendar_type'] ?? null;
         // Reminder/other are personal — always tag to the calendar being viewed when possible.
         if (in_array($eventType, ['reminder', 'other'], true) && ($calendarType === null || $calendarType === '')) {
@@ -500,6 +509,17 @@ class BookingAppointmentsController extends Controller
             'notes'            => 'nullable|string|max:5000',
             'reminder_minutes' => 'nullable|integer|min:0|max:20160',
         ]);
+
+        if (
+            (string) $request->get('type') === 'personal'
+            && array_key_exists('event_type', $validated)
+            && ! in_array((string) $validated['event_type'], ['reminder', 'other'], true)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendars only accept reminders and other items you add yourself.',
+            ], 422);
+        }
 
         if (
             array_key_exists('client_id', $validated) && ! empty($validated['client_id'])

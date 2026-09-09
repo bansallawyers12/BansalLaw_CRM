@@ -7,6 +7,7 @@ use App\Models\ClientCourtHearing;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Support\CalendarEventText;
+use App\Support\PersonalCalendarFeedReset;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Exception;
@@ -127,7 +128,7 @@ class StaffCalendarFeedService
     }
 
     /**
-     * Personal staff calendar: events created by that staff member (any type).
+     * Personal staff calendar: only self-created reminder/other (no court/meeting/deadline/email sync).
      *
      * @return list<array<string, mixed>>
      */
@@ -143,7 +144,13 @@ class StaffCalendarFeedService
 
         $query = StaffCalendarEvent::query()
             ->with(['client'])
-            ->where('created_by_staff_id', $ownerStaffId);
+            ->where('created_by_staff_id', $ownerStaffId)
+            ->whereIn('event_type', ['reminder', 'other']);
+
+        $clearedAt = PersonalCalendarFeedReset::clearedAtForStaffId($ownerStaffId);
+        if ($clearedAt) {
+            $query->where('created_at', '>=', $clearedAt);
+        }
 
         $this->restrictStaffCalendarEventQuery($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
