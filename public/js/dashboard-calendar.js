@@ -37,17 +37,17 @@
         }
         var value = select.value;
         if (value === 'all') {
-            el.textContent = 'All staff appointments, hearings, reminders and deadlines';
+            el.textContent = 'All staff appointments, hearings and deadlines';
             return;
         }
         if (value && value !== 'self') {
             var label = select.options[select.selectedIndex]
                 ? select.options[select.selectedIndex].text
                 : 'Staff';
-            el.textContent = label + ' — appointments, hearings, reminders and deadlines';
+            el.textContent = label + ' — appointments, hearings and deadlines';
             return;
         }
-        el.textContent = 'Your reminders, follow-ups, hearings and deadlines';
+        el.textContent = 'Your appointments, hearings and deadlines';
     }
 
     function refreshCalendarStaffView() {

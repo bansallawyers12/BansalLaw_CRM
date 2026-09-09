@@ -178,7 +178,7 @@ class AjayCalendarParityTest extends TestCase
 
         $this->assertContains('booking:' . $confirmed->id, $dashboardIds);
         $this->assertContains('staff:' . $staffEvent->id, $dashboardIds);
-        $this->assertContains('staff:' . $personalReminder->id, $dashboardIds);
+        $this->assertNotContains('staff:' . $personalReminder->id, $dashboardIds);
         $this->assertNotContains('staff:' . $otherPersonal->id, $dashboardIds);
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['event_kind'] ?? '') === 'court_hearing'));
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['status'] ?? '') === 'cancelled'));
@@ -188,6 +188,16 @@ class AjayCalendarParityTest extends TestCase
                 && (int) $row['booking_appointment_id'] !== (int) $confirmed->id
                 && ($row['event_kind'] ?? '') === 'website_booking'
         ));
+
+        $this->actingAs($staff, 'admin');
+        $bookingFeed = app(\App\Services\Booking\StaffCalendarFeedService::class)
+            ->eventsForCalendarRequest(Request::create('/booking/api/appointments', 'GET', array_merge($range, [
+                'type' => 'ajay',
+            ])));
+        $bookingIds = collect($bookingFeed)->pluck('staff_calendar_event_id')->filter()->map(fn ($id) => (int) $id)->all();
+        $this->assertContains((int) $personalReminder->id, $bookingIds);
+        $this->assertNotContains((int) $otherPersonal->id, $bookingIds);
+        $this->assertContains((int) $staffEvent->id, $bookingIds);
     }
 
     #[Test]

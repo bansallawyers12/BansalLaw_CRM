@@ -71,12 +71,40 @@
                         <i class="fa-solid fa-list me-2"></i> All Bookings
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                        <i class="fa-solid fa-calendar-days me-2"></i> Ajay
-                    </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                        <i class="fa-solid fa-calendar-days me-2"></i> Michael
-                    </a>
+                    @php
+                        $_bookingNavStaff = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
+                        $_bookingNavSeenTypes = [];
+                    @endphp
+                    @forelse($_bookingNavStaff as $_navStaff)
+                        @php
+                            $_navCalType = $_navStaff['booking_calendar_type'] ?? null;
+                            if (is_string($_navCalType) && $_navCalType !== '') {
+                                $_bookingNavSeenTypes[$_navCalType] = true;
+                            }
+                            $_navCalHref = in_array($_navCalType, ['ajay', 'kunal'], true)
+                                ? route('booking.appointments.calendar', ['type' => $_navCalType])
+                                : route('booking.appointments.calendar.staff', ['staff' => $_navStaff['id']]);
+                        @endphp
+                        <a class="dropdown-item" href="{{ $_navCalHref }}">
+                            <i class="fa-solid fa-calendar-days me-2"></i> {{ $_navStaff['name'] }}
+                        </a>
+                    @empty
+                        <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
+                            <i class="fa-solid fa-calendar-days me-2"></i> Ajay
+                        </a>
+                        <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
+                            <i class="fa-solid fa-calendar-days me-2"></i> Michael
+                        </a>
+                    @endforelse
+                    @if(!empty($_bookingNavStaff))
+                        @foreach(['ajay' => 'Ajay', 'kunal' => 'Michael'] as $_fallbackType => $_fallbackLabel)
+                            @if(empty($_bookingNavSeenTypes[$_fallbackType]))
+                                <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => $_fallbackType]) }}">
+                                    <i class="fa-solid fa-calendar-days me-2"></i> {{ $_fallbackLabel }} calendar
+                                </a>
+                            @endif
+                        @endforeach
+                    @endif
                     @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">

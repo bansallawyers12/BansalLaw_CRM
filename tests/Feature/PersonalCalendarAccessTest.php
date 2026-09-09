@@ -223,4 +223,53 @@ class PersonalCalendarAccessTest extends TestCase
         $this->assertContains($withAccess->id, $ids);
         $this->assertNotContains($withoutAccess->id, $ids);
     }
+
+    #[Test]
+    public function staff_with_calendar_access_can_open_personal_booking_calendar_page(): void
+    {
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'first_name' => 'Admin',
+            'email' => 'admin.khushi.calendar@example.com',
+        ]);
+        $khushi = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.calendar@example.com',
+        ]);
+        $this->actingAs($viewer, 'admin');
+
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $khushi->id]))
+            ->assertOk()
+            ->assertSee('Khushi Sangroya', false)
+            ->assertSee('Personal calendar', false);
+
+        $this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $khushi->id,
+            'start' => now()->toIso8601String(),
+            'end' => now()->addMonth()->toIso8601String(),
+        ]))->assertOk()->assertJsonPath('success', true);
+    }
+
+    #[Test]
+    public function staff_without_calendar_access_personal_page_returns_not_found(): void
+    {
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'email' => 'admin.no.calendar.page@example.com',
+        ]);
+        $noAccess = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => false,
+            'email' => 'no.page.calendar@example.com',
+        ]);
+        $this->actingAs($viewer, 'admin');
+
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $noAccess->id]))
+            ->assertNotFound();
+    }
 }

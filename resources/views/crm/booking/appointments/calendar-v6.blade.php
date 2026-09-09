@@ -13,19 +13,85 @@
     <div class="row">
         <div class="col-12">
             <!-- Back and Calendar Type Navigation -->
-            <div class="mb-3">
+            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 <a href="{{ route('booking.appointments.index') }}" class="btn btn-sm btn-secondary">
                     <i class="fa-solid fa-arrow-left"></i> Back to List
                 </a>
-                <div class="btn-group ms-2" role="group">
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
-                       class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fa-solid fa-calendar-days"></i> Ajay
-                    </a>
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
-                       class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fa-solid fa-calendar-days"></i> Michael
-                    </a>
+                @php
+                    $calendarMode = $calendarMode ?? 'booking';
+                    $calendarStaffId = $calendarStaffId ?? null;
+                    $canManagePersonalEvents = $canManagePersonalEvents ?? true;
+                    $bookingPageStaffOptions = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
+                    $bookingPageCurrentLabel = $calendarTitle ?? ($type === 'kunal' ? 'Michael' : ucfirst((string) $type));
+                    if ($calendarMode === 'booking') {
+                        foreach ($bookingPageStaffOptions as $opt) {
+                            if (($opt['booking_calendar_type'] ?? null) === $type) {
+                                $bookingPageCurrentLabel = $opt['name'];
+                                break;
+                            }
+                        }
+                    }
+                @endphp
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="bookingCalendarStaffMenu"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-calendar-days"></i> {{ $bookingPageCurrentLabel }}
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="bookingCalendarStaffMenu">
+                        <li>
+                            <a class="dropdown-item" href="{{ route('booking.appointments.index') }}">
+                                <i class="fa-solid fa-list me-2"></i> All Bookings
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        @forelse($bookingPageStaffOptions as $opt)
+                            @php
+                                $optType = $opt['booking_calendar_type'] ?? null;
+                                $optHref = in_array($optType, ['ajay', 'kunal'], true)
+                                    ? route('booking.appointments.calendar', ['type' => $optType])
+                                    : route('booking.appointments.calendar.staff', ['staff' => $opt['id']]);
+                                $isActive = ($calendarMode === 'booking' && $optType === $type)
+                                    || ($calendarMode === 'personal' && (int) ($opt['id'] ?? 0) === (int) $calendarStaffId);
+                            @endphp
+                            <li>
+                                <a class="dropdown-item{{ $isActive ? ' active' : '' }}" href="{{ $optHref }}">
+                                    <i class="fa-solid fa-calendar-days me-2"></i> {{ $opt['name'] }}
+                                </a>
+                            </li>
+                        @empty
+                            <li>
+                                <a class="dropdown-item{{ $type === 'ajay' ? ' active' : '' }}"
+                                   href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
+                                    <i class="fa-solid fa-calendar-days me-2"></i> Ajay
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item{{ $type === 'kunal' ? ' active' : '' }}"
+                                   href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
+                                    <i class="fa-solid fa-calendar-days me-2"></i> Michael
+                                </a>
+                            </li>
+                        @endforelse
+                        @php $seenTypes = collect($bookingPageStaffOptions)->pluck('booking_calendar_type')->filter()->all(); @endphp
+                        @foreach(['ajay' => 'Ajay', 'kunal' => 'Michael'] as $fallbackType => $fallbackLabel)
+                            @if(!in_array($fallbackType, $seenTypes, true))
+                                <li>
+                                    <a class="dropdown-item{{ $calendarMode === 'booking' && $type === $fallbackType ? ' active' : '' }}"
+                                       href="{{ route('booking.appointments.calendar', ['type' => $fallbackType]) }}">
+                                        <i class="fa-solid fa-calendar-days me-2"></i> {{ $fallbackLabel }} calendar
+                                    </a>
+                                </li>
+                            @endif
+                        @endforeach
+                        @if(auth('admin')->user() instanceof \App\Models\Staff && auth('admin')->user()->hasEffectiveSuperAdminPrivileges())
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">
+                                    <i class="fa-solid fa-rotate me-2"></i> Sync Status
+                                </a>
+                            </li>
+                        @endif
+                    </ul>
                 </div>
             </div>
 
@@ -34,12 +100,14 @@
                     <h4>
                         <i class="fa-solid fa-calendar-days me-2"></i>
                         {{ $calendarTitle }}
-                        <small class="text-muted">(Website Bookings - v6)</small>
+                        <small class="text-muted">{{ $calendarMode === 'personal' ? '(Personal calendar)' : '(Website Bookings - v6)' }}</small>
                     </h4>
                     <div class="card-header-action">
+                        @if(!empty($canManagePersonalEvents))
                         <button type="button" class="btn btn-sm btn-success me-2" id="btnAddImportantEvent">
                             <i class="fa-solid fa-plus"></i> Add Important Event
                         </button>
+                        @endif
                         <button type="button" onclick="location.reload()" class="btn btn-sm btn-primary booking-calendar-page__refresh">
                             <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
@@ -198,7 +266,7 @@
                     </span>
                     <div>
                         <h5 class="modal-title mb-0" id="importantEventModalTitle">Add Important Event</h5>
-                        <p class="important-event-modal__subtitle mb-0">Court dates, meetings, deadlines &amp; reminders</p>
+                        <p class="important-event-modal__subtitle mb-0">Court, meetings, deadlines — plus your own reminders &amp; other items</p>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -270,8 +338,16 @@
                     <div class="col-6">
                         <label class="form-label" for="importantEventCalendarScope">Calendar</label>
                         <select class="form-select" id="importantEventCalendarScope">
-                            <option value="{{ $type }}">This calendar ({{ $calendarTitle }})</option>
-                            <option value="">Ajay &amp; Michael</option>
+                            @if(($calendarMode ?? 'booking') === 'personal')
+                                <option value="">Personal</option>
+                                <option value="ajay">Ajay Calendar</option>
+                                <option value="kunal">Michael Calendar</option>
+                            @else
+                                <option value="{{ $type }}">This calendar ({{ $calendarTitle }})</option>
+                                <option value="ajay">Ajay Calendar</option>
+                                <option value="kunal">Michael Calendar</option>
+                                <option value="">Personal / both</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -395,12 +471,16 @@ function sleepMs(ms) {
  * FullCalendar feed: retry transient failures; accept rows when API sets success:false but still returns data[].
  */
 async function fetchBookingCalendarEvents(fetchInfo) {
-    const url = '{{ route("booking.api.appointments") }}?' + new URLSearchParams({
-        type: '{{ $type }}',
+    const params = {
+        type: BOOKING_CALENDAR_TYPE,
         start: fetchInfo.startStr,
         end: fetchInfo.endStr,
         format: 'calendar'
-    });
+    };
+    if (BOOKING_CALENDAR_MODE === 'personal' && BOOKING_CALENDAR_STAFF_ID) {
+        params.staff_id = String(BOOKING_CALENDAR_STAFF_ID);
+    }
+    const url = '{{ route("booking.api.appointments") }}?' + new URLSearchParams(params);
     const maxAttempts = 5;
     let lastError = null;
 
@@ -450,6 +530,8 @@ async function fetchBookingCalendarEvents(fetchInfo) {
 
 const BOOKING_CALENDAR_STAT_KEYS = ['this_month', 'today', 'upcoming', 'pending', 'paid', 'no_show'];
 const BOOKING_CALENDAR_TYPE = @json($type);
+const BOOKING_CALENDAR_MODE = @json($calendarMode ?? 'booking');
+const BOOKING_CALENDAR_STAFF_ID = @json($calendarStaffId ?? null);
 
 const IMPORTANT_EVENT_COLORS = {
     court: { bg: '#5c3d8f', border: '#5c3d8f', text: '#fff', className: 'event-court' },
@@ -489,7 +571,12 @@ function mapImportantCalendarRow(apt) {
  * Re-fetch header KPIs after SSR (cold appointment API / auth cache) with retries.
  */
 async function refreshBookingCalendarStats() {
-    const url = '{{ route("booking.api.calendar-stats", ["type" => $type]) }}' + '?_=' + Date.now();
+    @php
+        $bookingCalendarStatsUrl = (($calendarMode ?? 'booking') === 'personal' && ! empty($calendarStaffId))
+            ? route('booking.api.calendar-stats.staff', ['staff' => $calendarStaffId])
+            : route('booking.api.calendar-stats', ['type' => in_array($type, ['ajay', 'kunal'], true) ? $type : 'ajay']);
+    @endphp
+    const url = @json($bookingCalendarStatsUrl) + '?_=' + Date.now();
     const maxAttempts = 5;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -630,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Transform appointments to FullCalendar v6 event format
                 const events = rows.map(apt => {
-                    if (apt.event_kind === 'staff_event' || apt.event_kind === 'court_hearing') {
+                    if (apt.event_kind === 'staff_event' || apt.event_kind === 'court_hearing' || apt.event_kind === 'follow_up') {
                         return mapImportantCalendarRow(apt);
                     }
 
@@ -723,8 +810,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (eventKind === 'staff_event') {
-                openImportantEventModalForEdit(props);
+            if (eventKind === 'staff_event' || eventKind === 'follow_up') {
+                showStaffImportantEventModal(event, props);
                 return;
             }
             
@@ -1057,6 +1144,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!editBtn || !saveBtn || !cancelBtn) {
             return;
         }
+        editBtn.onclick = null;
+        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Appointment';
         if (mode === 'view') {
             editBtn.classList.remove('d-none');
             saveBtn.classList.add('d-none');
@@ -1771,6 +1860,476 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#eventModal').modal('show');
     }
 
+    let _activeStaffEventProps = null;
+
+    function staffEventTypeLabel(props) {
+        if ((props.event_kind || '') === 'follow_up') {
+            return props.status_label || 'Follow-up';
+        }
+        const type = String(props.event_type || 'other').toLowerCase();
+        const map = {
+            court: 'Court / Hearing',
+            meeting: 'Meeting',
+            deadline: 'Deadline',
+            reminder: 'Reminder',
+            other: 'Other',
+        };
+        return map[type] || (props.status_label || type);
+    }
+
+    function staffEventCalendarLabel(props) {
+        const scope = String(props.calendar_type || '');
+        if (scope === 'ajay') return 'Ajay';
+        if (scope === 'kunal') return 'Michael';
+        return 'Personal';
+    }
+
+    const STAFF_EVENT_REMINDER_OPTIONS = [
+        { value: '', label: 'No reminder' },
+        { value: '10', label: '10 minutes before' },
+        { value: '15', label: '15 minutes before' },
+        { value: '30', label: '30 minutes before' },
+        { value: '60', label: '1 hour before' },
+        { value: '120', label: '2 hours before' },
+        { value: '1440', label: '1 day before' },
+        { value: '2880', label: '2 days before' },
+        { value: '10080', label: '1 week before' },
+    ];
+
+    function buildStaffEventReminderOptions(selected) {
+        const current = selected == null || selected === '' || Number(selected) <= 0 ? '' : String(selected);
+        return STAFF_EVENT_REMINDER_OPTIONS.map(function (opt) {
+            return (
+                '<option value="' +
+                escapeHtml(opt.value) +
+                '"' +
+                (current === opt.value ? ' selected' : '') +
+                '>' +
+                escapeHtml(opt.label) +
+                '</option>'
+            );
+        }).join('');
+    }
+
+    function staffEventFormattedWhen(props) {
+        const startIso = props.appointment_datetime || props.starts_at;
+        if (!startIso) return '—';
+        const utcDate = new Date(startIso);
+        if (props.is_all_day) {
+            return utcDate.toLocaleDateString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+            }) + ' · All day';
+        }
+        return utcDate.toLocaleString('en-AU', {
+            timeZone: 'Australia/Melbourne',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
+    }
+
+    function staffEventDurationMinutes(props) {
+        if (props.duration_minutes) return Number(props.duration_minutes);
+        if (props.starts_at && props.ends_at) {
+            const mins = Math.round((new Date(props.ends_at) - new Date(props.starts_at)) / 60000);
+            if (mins > 0 && mins < 1440) return mins;
+        }
+        return props.is_all_day ? null : 60;
+    }
+
+    function showStaffImportantEventModal(event, props) {
+        _activeStaffEventProps = Object.assign({}, props);
+        const isFollowUp = (props.event_kind || '') === 'follow_up';
+        const eventId = props.staff_calendar_event_id || null;
+        const canManage = !isFollowUp && !props.read_only && !!eventId;
+        const typeKey = isFollowUp ? 'reminder' : String(props.event_type || 'other').toLowerCase();
+        const style = getImportantEventStyle(typeKey);
+        const typeLabel = staffEventTypeLabel(props);
+        const whenLabel = staffEventFormattedWhen(props);
+        const duration = staffEventDurationMinutes(props);
+        const slotKey = String(event.id || eventId || 'staff').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const start = new Date(props.appointment_datetime || props.starts_at || Date.now());
+        const melbourneDate = start.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+        const melbourneTime = props.is_all_day
+            ? '09:00'
+            : start.toLocaleTimeString('en-US', {
+                timeZone: 'Australia/Melbourne',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+
+        let clientHtml = escapeHtml(formatCalendarDetail(props.client_name));
+        if (props.client_id_encoded && props.client_name) {
+            clientHtml =
+                '<a href="/clients/detail/' +
+                escapeHtml(props.client_id_encoded) +
+                '" target="_blank" class="booking-calendar-link">' +
+                escapeHtml(props.client_name) +
+                '</a>';
+        }
+
+        const statusRaw = props.status_label || props.status || typeLabel;
+        const statusKey = String(props.status || typeKey).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+        const managementSection = canManage
+            ? `
+                <section class="appt-detail-section appt-detail-section--actions">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule Date &amp; Time</h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label" for="staffEventDate-${slotKey}">Event date</label>
+                            <input type="date" class="form-control" id="staffEventDate-${slotKey}" value="${escapeHtml(melbourneDate)}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="staffEventTime-${slotKey}">Event time</label>
+                            <input type="time" class="form-control" id="staffEventTime-${slotKey}" value="${escapeHtml(melbourneTime)}" min="09:00" max="18:00" ${props.is_all_day ? 'disabled' : ''}>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="rescheduleStaffCalendarEvent('${slotKey}', ${Number(eventId)}, ${duration || 60}, ${props.is_all_day ? 'true' : 'false'})">
+                                <i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar.</div>
+                </section>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <section class="appt-detail-section appt-detail-section--actions h-100">
+                            <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
+                            <div class="appt-action-buttons">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'scheduled', this)">
+                                    <i class="fa-solid fa-clock"></i> Mark as Scheduled
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'confirmed', this)">
+                                    <i class="fa-solid fa-check"></i> Mark as Confirmed
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'completed', this)">
+                                    <i class="fa-solid fa-circle-check"></i> Mark as Complete
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'cancelled', this)">
+                                    <i class="fa-solid fa-xmark"></i> Mark as Cancelled
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-md-6">
+                        <section class="appt-detail-section appt-detail-section--actions h-100">
+                            <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
+                            <label class="form-label" for="staffEventCalendarSelect-${slotKey}">Calendar</label>
+                            <select class="form-select" id="staffEventCalendarSelect-${slotKey}" onchange="updateStaffCalendarEventCalendarType(${Number(eventId)}, this.value, this)">
+                                <option value="" ${!props.calendar_type ? 'selected' : ''}>Personal</option>
+                                <option value="ajay" ${props.calendar_type === 'ajay' ? 'selected' : ''}>Ajay Calendar (ajay)</option>
+                                <option value="kunal" ${props.calendar_type === 'kunal' ? 'selected' : ''}>Michael Calendar (kunal)</option>
+                            </select>
+                            <div class="form-text"><i class="fa-solid fa-circle-info"></i> Moves this event to the selected calendar.</div>
+                        </section>
+                    </div>
+                </div>
+                <section class="appt-detail-section appt-detail-section--actions">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-bell"></i> Reminder</h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label" for="staffEventReminderSelect-${slotKey}">Reminder before</label>
+                            <select class="form-select" id="staffEventReminderSelect-${slotKey}" onchange="updateStaffCalendarEventReminder(${Number(eventId)}, this.value, this)">
+                                ${buildStaffEventReminderOptions(props.reminder_minutes)}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-text mb-0"><i class="fa-solid fa-circle-info"></i> Pop-up before the event starts.</div>
+                        </div>
+                    </div>
+                </section>`
+            : (isFollowUp
+                ? `<div class="appt-detail-tip"><i class="fa-solid fa-circle-info"></i><span>Follow-ups come from Tasks. Open the client or tasks list to manage them.</span></div>`
+                : '');
+
+        const notesHtml = props.notes
+            ? renderApptDetailItem(
+                'fa-note-sticky',
+                'Notes',
+                '<div style="white-space:pre-wrap;font-weight:500;color:var(--text-muted)">' +
+                    escapeHtml(props.notes) +
+                    '</div>'
+            ).replace('class="appt-detail-item"', 'class="appt-detail-item" style="grid-column:1/-1"')
+            : '';
+
+        document.getElementById('eventModalBody').innerHTML = `
+            <div class="appt-detail-view">
+                <div class="appt-detail-hero appt-detail-hero--${escapeHtml(typeKey)}">
+                    <div class="appt-detail-hero__main">
+                        <div class="appt-detail-hero__client">${escapeHtml(props.title || typeLabel)}</div>
+                        <div class="appt-detail-hero__when">
+                            <i class="fa-solid fa-clock"></i>
+                            ${escapeHtml(whenLabel)}${duration ? ' · ' + escapeHtml(String(duration)) + ' min' : ''}
+                        </div>
+                    </div>
+                    <div class="appt-detail-hero__meta">
+                        ${renderApptStatusPill(typeKey, typeLabel)}
+                        ${renderApptStatusPill(statusKey, String(statusRaw).toUpperCase(), 'staffEventStatusPill')}
+                    </div>
+                </div>
+                <div class="appt-detail-grid">
+                    ${renderApptDetailItem('fa-user', 'Client', clientHtml)}
+                    ${renderApptDetailItem('fa-envelope', 'Email', escapeHtml(formatCalendarDetail(props.client_email)))}
+                    ${renderApptDetailItem('fa-phone', 'Phone', escapeHtml(formatCalendarDetail(props.client_phone)))}
+                    ${renderApptDetailItem('fa-tag', 'Type', escapeHtml(typeLabel))}
+                    ${renderApptDetailItem('fa-calendar-day', 'Date & Time', escapeHtml(whenLabel))}
+                    ${duration ? renderApptDetailItem('fa-hourglass-half', 'Duration', escapeHtml(String(duration) + ' minutes')) : ''}
+                    ${renderApptDetailItem('fa-location-dot', 'Location', escapeHtml(formatCalendarDetail(props.location)))}
+                    ${renderApptDetailItem('fa-calendar-days', 'Calendar', escapeHtml(staffEventCalendarLabel(props)))}
+                    ${props.assigned_to_name ? renderApptDetailItem('fa-user-check', 'Assigned to', escapeHtml(props.assigned_to_name)) : ''}
+                    ${props.matter_no || props.matter_title ? renderApptDetailItem('fa-briefcase', 'Matter', escapeHtml([props.matter_no, props.matter_title].filter(Boolean).join(' · '))) : ''}
+                    ${renderApptDetailItem('fa-circle-check', 'Status', renderApptStatusPill(statusKey, String(statusRaw).toUpperCase()))}
+                    ${notesHtml}
+                </div>
+                ${managementSection}
+            </div>
+        `;
+
+        setEventModalHeader({
+            title: 'Event Details',
+            subtitle: typeLabel,
+            iconHtml: typeKey === 'court'
+                ? '<i class="fa-solid fa-gavel"></i>'
+                : typeKey === 'reminder' || isFollowUp
+                    ? '<i class="fa-regular fa-bell"></i>'
+                    : '<i class="fa-solid fa-calendar-check"></i>',
+            iconBg: style.bg,
+            iconColor: style.text === '#1A2C40' ? '#1A2C40' : '#fff',
+        });
+
+        setEventModalCourtHearingFooter('hidden');
+        const editBtn = document.getElementById('courtHearingEditBtn');
+        if (editBtn) {
+            if (canManage) {
+                editBtn.classList.remove('d-none');
+                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Event';
+                editBtn.onclick = function () {
+                    $('#eventModal').modal('hide');
+                    setTimeout(function () {
+                        openImportantEventModalForEdit(_activeStaffEventProps || props);
+                    }, 200);
+                };
+            } else {
+                editBtn.classList.add('d-none');
+                editBtn.onclick = null;
+                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Appointment';
+            }
+        }
+
+        const vfd = document.getElementById('viewFullDetails');
+        if (props.client_id_encoded || props.client_detail_url) {
+            vfd.classList.remove('d-none');
+            vfd.href = props.client_detail_url || ('/clients/detail/' + props.client_id_encoded);
+            vfd.innerHTML = '<i class="fa-solid fa-user"></i> Open Client';
+            vfd.target = '_blank';
+        } else if (props.action_url) {
+            vfd.classList.remove('d-none');
+            vfd.href = props.action_url;
+            vfd.innerHTML = '<i class="fa-solid fa-list-check"></i> View Tasks';
+            vfd.target = '_self';
+        } else {
+            vfd.classList.add('d-none');
+        }
+
+        $('#eventModal').modal('show');
+    }
+
+    window.updateStaffCalendarEventStatus = async function (eventId, status, btn) {
+        if (!eventId || !status) return;
+        const label = String(status).replace(/_/g, ' ');
+        const confirmed =
+            typeof window.crmConfirm === 'function'
+                ? await window.crmConfirm({
+                      title: 'Change status?',
+                      text: 'Change event status to "' + label + '"?',
+                      confirmText: 'Yes, change',
+                      icon: 'question',
+                  })
+                : window.confirm('Change event status to "' + label + '"?');
+        if (!confirmed) return;
+        if (btn) btn.disabled = true;
+        try {
+            const response = await fetch(BOOKING_WEB_BASE + '/api/calendar-events/' + eventId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ status: status }),
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.message || 'Could not update status.');
+            }
+            $('#eventModal').modal('hide');
+            if (window.calendar) window.calendar.refetchEvents();
+            void refreshBookingCalendarStats();
+            if (typeof iziToast !== 'undefined') {
+                iziToast.success({ title: 'Updated', message: 'Status changed to "' + label + '".', position: 'topRight' });
+            }
+        } catch (err) {
+            crmAlert(err.message || 'Could not update status.');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    };
+
+    window.updateStaffCalendarEventCalendarType = async function (eventId, calendarType, selectEl) {
+        if (!eventId) return;
+        const previous = selectEl ? selectEl.getAttribute('data-previous') : null;
+        if (selectEl && previous === null) {
+            selectEl.setAttribute('data-previous', selectEl.value);
+        }
+        try {
+            const response = await fetch(BOOKING_WEB_BASE + '/api/calendar-events/' + eventId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    calendar_type: calendarType === '' ? null : calendarType,
+                }),
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.message || 'Could not change calendar.');
+            }
+            if (_activeStaffEventProps) {
+                _activeStaffEventProps.calendar_type = calendarType === '' ? null : calendarType;
+            }
+            if (selectEl) {
+                selectEl.setAttribute('data-previous', selectEl.value);
+            }
+            if (window.calendar) window.calendar.refetchEvents();
+            void refreshBookingCalendarStats();
+            if (typeof iziToast !== 'undefined') {
+                iziToast.success({
+                    title: 'Updated',
+                    message: 'Calendar type updated.',
+                    position: 'topRight',
+                });
+            }
+        } catch (err) {
+            if (selectEl && selectEl.getAttribute('data-previous') != null) {
+                selectEl.value = selectEl.getAttribute('data-previous');
+            }
+            crmAlert(err.message || 'Could not change calendar.');
+        }
+    };
+
+    window.updateStaffCalendarEventReminder = async function (eventId, reminderValue, selectEl) {
+        if (!eventId) return;
+        const minutes =
+            reminderValue === '' || reminderValue == null ? null : parseInt(String(reminderValue), 10);
+        try {
+            const response = await fetch(BOOKING_WEB_BASE + '/api/calendar-events/' + eventId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    reminder_minutes: Number.isFinite(minutes) && minutes > 0 ? minutes : null,
+                }),
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.message || 'Could not update reminder.');
+            }
+            if (_activeStaffEventProps) {
+                _activeStaffEventProps.reminder_minutes =
+                    Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+            }
+            bookingCalReminderClearCache(eventId);
+            if (typeof iziToast !== 'undefined') {
+                iziToast.success({
+                    title: 'Updated',
+                    message: 'Reminder preference updated.',
+                    position: 'topRight',
+                });
+            }
+        } catch (err) {
+            if (selectEl && _activeStaffEventProps) {
+                selectEl.value =
+                    _activeStaffEventProps.reminder_minutes != null
+                        ? String(_activeStaffEventProps.reminder_minutes)
+                        : '';
+            }
+            crmAlert(err.message || 'Could not update reminder.');
+        }
+    };
+
+    window.rescheduleStaffCalendarEvent = async function (slotKey, eventId, durationMinutes, isAllDay) {
+        if (!eventId) return;
+        const dateEl = document.getElementById('staffEventDate-' + slotKey);
+        const timeEl = document.getElementById('staffEventTime-' + slotKey);
+        const date = dateEl ? dateEl.value : '';
+        let time = timeEl ? timeEl.value : '09:00';
+        if (!date) {
+            crmAlert('Choose an event date.');
+            return;
+        }
+        if (!time) time = '09:00';
+        const startsAt = melbourneIsoFromDateAndTime(date, time, !!isAllDay);
+        let endsAt = null;
+        if (!isAllDay) {
+            const startDate = new Date(date + 'T' + time + ':00');
+            const endDate = new Date(startDate.getTime() + (durationMinutes || 60) * 60000);
+            const endTime =
+                String(endDate.getHours()).padStart(2, '0') +
+                ':' +
+                String(endDate.getMinutes()).padStart(2, '0');
+            endsAt = melbourneIsoFromDateAndTime(date, endTime, false);
+        }
+        try {
+            const response = await fetch(BOOKING_WEB_BASE + '/api/calendar-events/' + eventId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    starts_at: startsAt,
+                    ends_at: endsAt,
+                    is_all_day: !!isAllDay,
+                }),
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.message || 'Could not reschedule.');
+            }
+            $('#eventModal').modal('hide');
+            if (window.calendar) window.calendar.refetchEvents();
+            void refreshBookingCalendarStats();
+            if (typeof iziToast !== 'undefined') {
+                iziToast.success({ title: 'Updated', message: 'Date & time updated.', position: 'topRight' });
+            }
+        } catch (err) {
+            crmAlert(err.message || 'Could not reschedule.');
+        }
+    };
+
     /* ─── Important-Event Modal: TomSelect client picker ─────────────────── */
     const IMP_CLIENT_URL = @json(url('/clients/get-allclients'));
     let _impEventTsInstance = null;
@@ -1917,7 +2476,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('importantEventClientId').value = '';
         document.getElementById('importantEventClientEncoded').value = '';
         document.getElementById('importantEventLocation').value = '';
-        document.getElementById('importantEventCalendarScope').value = BOOKING_CALENDAR_TYPE;
+        document.getElementById('importantEventCalendarScope').value =
+            BOOKING_CALENDAR_MODE === 'personal' ? '' : BOOKING_CALENDAR_TYPE;
         document.getElementById('importantEventReminder').value = '';
         document.getElementById('importantEventNotes').value = '';
         document.getElementById('importantEventDeleteBtn').classList.add('d-none');
@@ -2028,19 +2588,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const scope    = document.getElementById('importantEventCalendarScope').value;
         const clientId = document.getElementById('importantEventClientId').value;
         const reminder = document.getElementById('importantEventReminder').value;
+        const eventType = document.getElementById('importantEventType').value;
+        let calendarType = scope === '' ? null : scope;
+        // Reminder/other stay on this booking calendar for the logged-in creator only.
+        if ((eventType === 'reminder' || eventType === 'other') && !calendarType) {
+            calendarType = BOOKING_CALENDAR_MODE === 'personal' ? null : BOOKING_CALENDAR_TYPE;
+        }
+        if (BOOKING_CALENDAR_MODE === 'personal') {
+            // Personal calendars are owned by created_by_staff_id, not ajay/kunal scope.
+            calendarType = null;
+        }
 
         const payload = {
             title:            title,
-            event_type:       document.getElementById('importantEventType').value,
+            event_type:       eventType,
             starts_at:        startsAt,
             ends_at:          endsAt,
             is_all_day:       allDay,
-            calendar_type:    scope === '' ? null : scope,
+            calendar_type:    calendarType,
             client_id:        clientId ? parseInt(clientId, 10) : null,
             location:         (document.getElementById('importantEventLocation').value || '').trim() || null,
             notes:            (document.getElementById('importantEventNotes').value || '').trim() || null,
             reminder_minutes: reminder ? parseInt(reminder, 10) : null,
         };
+        if (BOOKING_CALENDAR_MODE === 'personal' && BOOKING_CALENDAR_STAFF_ID) {
+            payload.type = 'personal';
+            payload.staff_id = BOOKING_CALENDAR_STAFF_ID;
+        }
 
         const eventId = document.getElementById('importantEventId').value;
         const isEdit  = eventId !== '';
@@ -2212,9 +2786,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(bookingCalPollReminders, BOOKING_CAL_REMINDER_POLL_MS);
 
     /* ─── Button / checkbox wiring ───────────────────────────────────────── */
-    document.getElementById('btnAddImportantEvent').addEventListener('click', function () {
-        openImportantEventModalForCreate('', '');
-    });
+    const btnAddImportantEvent = document.getElementById('btnAddImportantEvent');
+    if (btnAddImportantEvent) {
+        btnAddImportantEvent.addEventListener('click', function () {
+            openImportantEventModalForCreate('', '');
+        });
+    }
     document.getElementById('importantEventSaveBtn').addEventListener('click', saveImportantEvent);
     document.getElementById('importantEventDeleteBtn').addEventListener('click', deleteImportantEvent);
     document.getElementById('importantEventAllDay').addEventListener('change', function () {
@@ -3706,6 +4283,27 @@ document.addEventListener('DOMContentLoaded', function() {
 .appt-detail-hero--booking {
     background: linear-gradient(135deg, rgba(30, 61, 96, 0.08) 0%, rgba(58, 111, 168, 0.05) 100%);
     border-color: rgba(30, 61, 96, 0.15);
+}
+
+.appt-detail-hero--reminder,
+.appt-detail-hero--follow_up {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.04) 100%);
+    border-color: rgba(217, 119, 6, 0.22);
+}
+
+.appt-detail-hero--meeting {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.03) 100%);
+    border-color: rgba(13, 110, 253, 0.2);
+}
+
+.appt-detail-hero--deadline {
+    background: linear-gradient(135deg, rgba(192, 57, 43, 0.1) 0%, rgba(192, 57, 43, 0.03) 100%);
+    border-color: rgba(192, 57, 43, 0.2);
+}
+
+.appt-detail-hero--other {
+    background: linear-gradient(135deg, rgba(94, 122, 144, 0.12) 0%, rgba(94, 122, 144, 0.04) 100%);
+    border-color: rgba(94, 122, 144, 0.22);
 }
 
 .appt-detail-hero--compact {

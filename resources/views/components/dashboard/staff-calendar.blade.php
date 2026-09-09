@@ -13,9 +13,9 @@
                 <h2>My Calendar</h2>
                 <p class="dashboard-calendar-subtitle" id="dashboardCalendarSubtitle">
                     @if(!empty($canFilterCalendarStaff))
-                        All staff appointments, hearings, reminders and deadlines
+                        All staff appointments, hearings and deadlines
                     @else
-                        Your reminders, follow-ups, hearings and deadlines
+                        Your appointments, hearings and deadlines
                     @endif
                 </p>
             </div>
@@ -113,10 +113,9 @@
                         <button type="button" class="pe-modal__chip is-active" data-type="meeting">Meeting</button>
                         <button type="button" class="pe-modal__chip" data-type="court">Court</button>
                         <button type="button" class="pe-modal__chip" data-type="deadline">Deadline</button>
-                        <button type="button" class="pe-modal__chip" data-type="reminder">Reminder</button>
-                        <button type="button" class="pe-modal__chip" data-type="other">Other</button>
                     </div>
                     <input type="hidden" id="personalEventType" value="meeting">
+                    <p class="form-text mb-0 mt-1">Reminders, follow-ups and other personal items are added on the booking calendars (Ajay / Michael).</p>
                 </div>
 
                 <div class="pe-modal__row">

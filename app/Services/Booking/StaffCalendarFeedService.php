@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Models\Admin;
 use App\Models\ClientCourtHearing;
+use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Support\CalendarEventText;
 use App\Support\StaffClientVisibility;
@@ -11,6 +12,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class StaffCalendarFeedService
@@ -27,6 +29,14 @@ class StaffCalendarFeedService
         $type = (string) $request->get('type', '');
         $startOfToday = Carbon::today(config('app.timezone'));
         $includePast = (bool) config('booking_calendar.include_past_in_visible_range', false);
+
+        if ($type === 'personal') {
+            $ownerId = (int) $request->get('staff_id', 0);
+
+            return $ownerId > 0
+                ? $this->personalStaffEventsPayload($request, $ownerId, $startOfToday, $includePast)
+                : [];
+        }
 
         $staffEvents = $this->staffEventsPayload($request, $type, $startOfToday, $includePast);
         $courtEvents = $this->courtHearingsPayload($request, $startOfToday, $includePast);
@@ -68,6 +78,7 @@ class StaffCalendarFeedService
         }
 
         $this->restrictStaffCalendarEventQuery($query);
+        $this->applyPersonalReminderOtherOwnership($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {
             $query->whereNotIn('status', ['cancelled', 'completed']);
@@ -91,6 +102,59 @@ class StaffCalendarFeedService
         $this->applyHearingDateWindow($query, $request, $startOfToday, $includePast);
 
         return (int) $query->count();
+    }
+
+    /**
+     * Reminder/other: only the logged-in creator. Court/meeting/deadline: shared on the calendar.
+     *
+     * @param  Builder<StaffCalendarEvent>  $query
+     */
+    protected function applyPersonalReminderOtherOwnership(Builder $query): void
+    {
+        $user = Auth::guard('admin')->user();
+        $userId = $user instanceof Staff ? (int) $user->id : 0;
+
+        $query->where(function (Builder $q) use ($userId) {
+            $q->whereIn('event_type', ['court', 'meeting', 'deadline']);
+
+            if ($userId > 0) {
+                $q->orWhere(function (Builder $inner) use ($userId) {
+                    $inner->whereIn('event_type', ['reminder', 'other'])
+                        ->where('created_by_staff_id', $userId);
+                });
+            }
+        });
+    }
+
+    /**
+     * Personal staff calendar: events created by that staff member (any type).
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function personalStaffEventsPayload(
+        Request $request,
+        int $ownerStaffId,
+        Carbon $startOfToday,
+        bool $includePast
+    ): array {
+        if (! Schema::hasTable('staff_calendar_events') || $ownerStaffId < 1) {
+            return [];
+        }
+
+        $query = StaffCalendarEvent::query()
+            ->with(['client'])
+            ->where('created_by_staff_id', $ownerStaffId);
+
+        $this->restrictStaffCalendarEventQuery($query);
+        $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->whereNotIn('status', ['cancelled', 'completed']);
+        }
+
+        return $query->orderBy('starts_at')->get()
+            ->map(fn (StaffCalendarEvent $e) => $this->payloadFromStaffEvent($e))
+            ->values()
+            ->all();
     }
 
     /**
@@ -142,6 +206,7 @@ class StaffCalendarFeedService
         }
 
         $this->restrictStaffCalendarEventQuery($query);
+        $this->applyPersonalReminderOtherOwnership($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {
             $query->whereNotIn('status', ['cancelled', 'completed']);

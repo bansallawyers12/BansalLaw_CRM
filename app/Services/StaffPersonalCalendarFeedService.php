@@ -84,9 +84,24 @@ class StaffPersonalCalendarFeedService
             ->map(fn (Staff $s) => [
                 'id' => (int) $s->id,
                 'name' => trim(($s->first_name ?? '') . ' ' . ($s->last_name ?? '')) ?: ('Staff #' . $s->id),
+                'booking_calendar_type' => $this->bookingCalendarTypeForStaff($s),
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Follow-ups for one staff member (used by booking calendars, not dashboard).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function followUpsForStaff(?Staff $staff, Request $request): array
+    {
+        if (! $staff) {
+            return [];
+        }
+
+        return $this->followUps((int) $staff->id, $request, (string) config('app.timezone'));
     }
 
     /**
@@ -140,12 +155,12 @@ class StaffPersonalCalendarFeedService
                 ? $this->websiteBookingsForCalendarType($calendarType, $request)
                 : $this->websiteBookings($staff, $request));
 
+        // Reminder / other / follow-up live on booking calendars only (self-created).
         $events = array_merge(
             $bookings,
             $this->staffCalendarEvents($staffId, $request, $calendarType),
             $this->courtHearings($staffId, $request),
             $this->actionDeadlines($staffId, $request, $tz),
-            $this->followUps($staffId, $request, $tz),
             $this->matterDeadlines($staffId, $request, $tz)
         );
 
@@ -381,7 +396,6 @@ class StaffPersonalCalendarFeedService
             + $this->countStaffCalendarEvents($staffId, $request, $calendarType)
             + $this->countCourtHearings($staffId, $request)
             + $this->countActionDeadlines($staffId, $request)
-            + $this->countFollowUps($staffId, $request)
             + $this->countMatterDeadlines($staffId, $request);
     }
 
@@ -475,6 +489,7 @@ class StaffPersonalCalendarFeedService
 
         $query = StaffCalendarEvent::query();
         $this->applyPersonalStaffEventScope($query, $staffId, $calendarType);
+        $query->whereNotIn('event_type', ['reminder', 'other']);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyDatetimeWindow($query, 'starts_at', $request);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {
@@ -600,6 +615,8 @@ class StaffPersonalCalendarFeedService
 
         $query = StaffCalendarEvent::query()->with(['client']);
         $this->applyPersonalStaffEventScope($query, $staffId, $calendarType);
+        // Personal reminder/other belong on booking calendars, not the dashboard widget.
+        $query->whereNotIn('event_type', ['reminder', 'other']);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyDatetimeWindow($query, 'starts_at', $request);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {

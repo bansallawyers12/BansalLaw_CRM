@@ -32,6 +32,9 @@ Route::controller(BookingAppointmentsController::class)
         Route::redirect('/calendar/education', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/tourist', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/adelaide', '/booking/calendar/ajay', 301);
+        Route::get('/calendar/staff/{staff}', 'calendarForStaff')
+            ->name('appointments.calendar.staff')
+            ->whereNumber('staff');
         Route::get('/calendar/{type}', 'calendar')
             ->name('appointments.calendar')
             ->whereIn('type', ['ajay', 'kunal']);
@@ -83,6 +86,9 @@ Route::controller(BookingAppointmentsController::class)
         Route::match(['get', 'post'], '/api/appointments', 'getAppointments')
             ->name('api.appointments');
 
+        Route::get('/api/calendar-stats/staff/{staff}', 'calendarStatsJsonForStaff')
+            ->name('api.calendar-stats.staff')
+            ->whereNumber('staff');
         Route::get('/api/calendar-stats/{type}', 'calendarStatsJson')
             ->name('api.calendar-stats')
             ->whereIn('type', ['ajay', 'kunal']);

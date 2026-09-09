@@ -14,6 +14,7 @@ use App\Services\BansalAppointmentSync\AppointmentSyncService;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookingCalendarExternalFeed;
 use App\Services\Booking\StaffCalendarFeedService;
+use App\Services\StaffPersonalCalendarFeedService;
 use App\Models\StaffCalendarEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -35,22 +36,46 @@ class BookingAppointmentsController extends Controller
 
     protected StaffCalendarFeedService $staffCalendarFeed;
 
+    protected StaffPersonalCalendarFeedService $personalCalendarFeed;
+
     public function __construct(
         AppointmentSyncService $syncService,
         BansalApiClient $bansalApiClient,
         BookingCalendarExternalFeed $calendarExternalFeed,
-        StaffCalendarFeedService $staffCalendarFeed
+        StaffCalendarFeedService $staffCalendarFeed,
+        StaffPersonalCalendarFeedService $personalCalendarFeed
     ) {
         $this->middleware('auth:admin');
         $this->syncService = $syncService;
         $this->bansalApiClient = $bansalApiClient;
         $this->calendarExternalFeed = $calendarExternalFeed;
         $this->staffCalendarFeed = $staffCalendarFeed;
+        $this->personalCalendarFeed = $personalCalendarFeed;
     }
 
     protected function assertBookingAppointmentAccess(BookingAppointment $appointment): void
     {
         StaffClientVisibility::abortUnlessMayAccessBookingAppointment($appointment);
+    }
+
+    /**
+     * Reminder/other events are personal — only the creator may update or delete them.
+     */
+    protected function abortUnlessMayManagePersonalStaffEvent(StaffCalendarEvent $event, Staff $user): void
+    {
+        if (! in_array((string) $event->event_type, ['reminder', 'other'], true)) {
+            return;
+        }
+
+        if ((int) ($event->created_by_staff_id ?? 0) === (int) $user->id) {
+            return;
+        }
+
+        if ($user->hasEffectiveSuperAdminPrivileges()) {
+            return;
+        }
+
+        abort(403, 'Only the person who added this reminder can change it.');
     }
 
     /**
@@ -177,12 +202,39 @@ class BookingAppointmentsController extends Controller
 
         try {
             $extra = $this->staffCalendarFeed->eventsForCalendarRequest($request);
+            $followUpStaff = $this->resolveCalendarFeedOwnerStaff($request);
+            if ($followUpStaff) {
+                $extra = array_merge(
+                    $extra,
+                    $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request)
+                );
+            }
             $response['data'] = array_merge($response['data'] ?? [], $extra);
         } catch (Exception $e) {
             Log::warning('Important calendar events merge failed', ['error' => $e->getMessage()]);
         }
 
         return $response;
+    }
+
+    /**
+     * Owner for personal reminder/follow-up rows on a booking calendar feed.
+     */
+    protected function resolveCalendarFeedOwnerStaff(Request $request): ?Staff
+    {
+        if ((string) $request->get('type') === 'personal') {
+            $id = (int) $request->get('staff_id', 0);
+            if ($id < 1) {
+                return null;
+            }
+            $staff = Staff::query()->where('id', $id)->where('status', 1)->first();
+
+            return ($staff && $staff->canAccessPersonalCalendar()) ? $staff : null;
+        }
+
+        $user = Auth::guard('admin')->user();
+
+        return $user instanceof Staff ? $user : null;
     }
 
     protected function buildCalendarFeedResponse(Request $request, Builder $query): array
@@ -370,20 +422,48 @@ class BookingAppointmentsController extends Controller
             return response()->json(['success' => false, 'message' => $error], 422);
         }
 
+        $eventType = (string) $validated['event_type'];
+        $calendarType = $validated['calendar_type'] ?? null;
+        // Reminder/other are personal — always tag to the calendar being viewed when possible.
+        if (in_array($eventType, ['reminder', 'other'], true) && ($calendarType === null || $calendarType === '')) {
+            $reqType = (string) $request->get('type', '');
+            if (in_array($reqType, ['ajay', 'kunal'], true)) {
+                $calendarType = $reqType;
+            }
+        }
+        if ((string) $request->get('type') === 'personal') {
+            $calendarType = null;
+        }
+
+        $createdByStaffId = (int) $user->id;
+        if ((string) $request->get('type') === 'personal') {
+            $ownerId = (int) $request->get('staff_id', 0);
+            if (
+                $ownerId > 0
+                && $ownerId !== $createdByStaffId
+                && $user->hasEffectiveSuperAdminPrivileges()
+            ) {
+                $owner = Staff::query()->where('id', $ownerId)->where('status', 1)->first();
+                if ($owner && $owner->canAccessPersonalCalendar()) {
+                    $createdByStaffId = $ownerId;
+                }
+            }
+        }
+
         $event = StaffCalendarEvent::create([
             'title'            => $validated['title'],
-            'event_type'       => $validated['event_type'],
+            'event_type'       => $eventType,
             'status'           => 'scheduled',
             'starts_at'        => $startsAt,
             'ends_at'          => $endsAt,
             'is_all_day'       => $isAllDay,
-            'calendar_type'    => $validated['calendar_type'] ?? null,
+            'calendar_type'    => $calendarType,
             'client_id'        => $validated['client_id'] ?? null,
             'client_matter_id' => $validated['client_matter_id'] ?? null,
             'location'         => $validated['location'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'reminder_minutes' => isset($validated['reminder_minutes']) ? (int) $validated['reminder_minutes'] : null,
-            'created_by_staff_id' => $user ? (int) $user->id : null,
+            'created_by_staff_id' => $createdByStaffId,
         ]);
 
         return response()->json([
@@ -404,6 +484,7 @@ class BookingAppointmentsController extends Controller
 
         $event = StaffCalendarEvent::findOrFail($id);
         $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
+        $this->abortUnlessMayManagePersonalStaffEvent($event, $user);
 
         $validated = $request->validate([
             'title'            => 'sometimes|required|string|max:255',
@@ -518,6 +599,7 @@ class BookingAppointmentsController extends Controller
 
         $event = StaffCalendarEvent::findOrFail($id);
         $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
+        $this->abortUnlessMayManagePersonalStaffEvent($event, $user);
         $event->delete();
 
         return response()->json(['success' => true]);
@@ -998,6 +1080,19 @@ class BookingAppointmentsController extends Controller
             return $this->crmBookingsListFromDatabase($request);
         }
 
+        // Personal staff calendar: no website bookings — only that staff member's events / follow-ups.
+        if ($request->get('format') === 'calendar' && (string) $request->get('type') === 'personal') {
+            $owner = $this->resolveCalendarFeedOwnerStaff($request);
+            if (! $owner) {
+                return response()->json(['success' => false, 'message' => 'Staff calendar not found.'], 404);
+            }
+
+            return response()->json($this->mergeImportantEventsIntoCalendarFeed([
+                'success' => true,
+                'data' => [],
+            ], $request));
+        }
+
         $query = BookingAppointment::with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
@@ -1174,6 +1269,21 @@ class BookingAppointmentsController extends Controller
         return response()->json(['success' => true, 'data' => $stats]);
     }
 
+    public function calendarStatsJsonForStaff(int $staff)
+    {
+        $target = $this->findPersonalCalendarStaffOrAbort($staff);
+
+        try {
+            $stats = $this->personalCalendarHeaderStatsForStaff($target);
+        } catch (Exception $e) {
+            Log::error('calendarStatsJsonForStaff failed', ['staff' => $staff, 'error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['success' => true, 'data' => $stats]);
+    }
+
     /**
      * Calendar view by type
      */
@@ -1211,9 +1321,115 @@ class BookingAppointmentsController extends Controller
         $stats = $this->calendarHeaderStatsForType($type);
 
         $consultants = AppointmentConsultant::active()->get();
+        $calendarMode = 'booking';
+        $calendarStaffId = null;
+        $canManagePersonalEvents = true;
 
         // Use FullCalendar v6 version
-        return view('crm.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats', 'consultants'));
+        return view('crm.booking.appointments.calendar-v6', compact(
+            'type',
+            'appointments',
+            'calendarTitle',
+            'stats',
+            'consultants',
+            'calendarMode',
+            'calendarStaffId',
+            'canManagePersonalEvents'
+        ));
+    }
+
+    /**
+     * Personal calendar for a staff member with calendar access (reminders / follow-ups / other).
+     */
+    public function calendarForStaff(int $staff)
+    {
+        $target = $this->findPersonalCalendarStaffOrAbort($staff);
+        $viewer = Auth::guard('admin')->user();
+        if (! $viewer instanceof Staff || ! $viewer->canAccessPersonalCalendar()) {
+            abort(403, 'Personal calendar access has not been granted.');
+        }
+
+        $type = 'personal';
+        $calendarMode = 'personal';
+        $calendarStaffId = (int) $target->id;
+        $calendarTitle = trim(($target->first_name ?? '') . ' ' . ($target->last_name ?? '')) ?: ('Staff #' . $target->id);
+        $stats = $this->personalCalendarHeaderStatsForStaff($target);
+        $appointments = collect();
+        $consultants = AppointmentConsultant::active()->get();
+        $canManagePersonalEvents = (int) $viewer->id === (int) $target->id
+            || $viewer->hasEffectiveSuperAdminPrivileges();
+
+        return view('crm.booking.appointments.calendar-v6', compact(
+            'type',
+            'appointments',
+            'calendarTitle',
+            'stats',
+            'consultants',
+            'calendarMode',
+            'calendarStaffId',
+            'canManagePersonalEvents'
+        ));
+    }
+
+    protected function findPersonalCalendarStaffOrAbort(int $staffId): Staff
+    {
+        $target = Staff::query()->where('id', $staffId)->where('status', 1)->first();
+        if (! $target || ! $target->canAccessPersonalCalendar()) {
+            abort(404, 'Staff calendar not found.');
+        }
+
+        return $target;
+    }
+
+    /**
+     * @return array{this_month: int, today: int, upcoming: int, pending: int, paid: int, no_show: int}
+     */
+    protected function personalCalendarHeaderStatsForStaff(Staff $staff): array
+    {
+        $tz = config('app.timezone');
+        $today = Carbon::today($tz);
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth()->addDay();
+        $now = Carbon::now($tz);
+
+        $base = Request::create('/', 'GET', [
+            'type' => 'personal',
+            'staff_id' => $staff->id,
+            'start' => $monthStart->toIso8601String(),
+            'end' => $monthEnd->toIso8601String(),
+        ]);
+        $monthEvents = $this->staffCalendarFeed->eventsForCalendarRequest($base);
+        $monthFollowUps = $this->personalCalendarFeed->followUpsForStaff($staff, $base);
+        $monthRows = array_merge($monthEvents, $monthFollowUps);
+
+        $todayCount = 0;
+        $upcomingCount = 0;
+        foreach ($monthRows as $row) {
+            $start = $row['starts_at'] ?? $row['appointment_datetime'] ?? null;
+            if (! $start) {
+                continue;
+            }
+            try {
+                $dt = Carbon::parse($start, $tz);
+            } catch (Exception) {
+                continue;
+            }
+            if ($dt->isSameDay($today)) {
+                $todayCount++;
+            }
+            if ($dt->gte($now)) {
+                $upcomingCount++;
+            }
+        }
+
+        return [
+            'this_month' => count($monthRows),
+            'today' => $todayCount,
+            'upcoming' => $upcomingCount,
+            'pending' => 0,
+            'paid' => 0,
+            'no_show' => 0,
+        ];
     }
 
     /**
