@@ -204,11 +204,12 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function super_admin_individual_staff_list_only_includes_calendar_access(): void
+    public function staff_calendar_list_excludes_super_admin_and_staff_without_access(): void
     {
         $super = $this->createStaff([
             'role' => 1,
-            'first_name' => 'Super',
+            'first_name' => 'Admin',
+            'last_name' => 'One',
             'email' => 'super.list.calendar@example.com',
         ]);
         $withAccess = $this->createStaff([
@@ -228,7 +229,7 @@ class PersonalCalendarAccessTest extends TestCase
         $options = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
         $ids = collect($options)->pluck('id')->all();
 
-        $this->assertContains($super->id, $ids);
+        $this->assertNotContains($super->id, $ids);
         $this->assertContains($withAccess->id, $ids);
         $this->assertNotContains($withoutAccess->id, $ids);
     }

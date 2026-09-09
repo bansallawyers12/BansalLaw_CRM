@@ -67,17 +67,17 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * @return list<array{id: int, name: string}>
+     * Staff calendars shown in booking nav / calendar switcher.
+     * Native Super Admin (role 1) is omitted — e.g. "Admin One" is not a personal calendar entry.
+     *
+     * @return list<array{id: int, name: string, booking_calendar_type: ?string}>
      */
     public function staffFilterOptions(): array
     {
         return Staff::query()
             ->where('status', 1)
-            ->where(function ($q) {
-                // Super Admin always has calendar access; others need the grant flag.
-                $q->where('role', 1)
-                    ->orWhere('can_access_personal_calendar', true);
-            })
+            ->where('role', '!=', 1)
+            ->where('can_access_personal_calendar', true)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'role', 'can_access_personal_calendar'])
