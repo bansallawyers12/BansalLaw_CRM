@@ -58,26 +58,19 @@
 
     <div class="cdn-ov-card__body">
     @if($matterCount === 0)
-    <p class="text-muted mb-0" style="font-size:13px;">
+    <p class="cdn-ov-empty">
         @if($canAddClientMatter)
-            No active matters yet. Use <strong>Add</strong> to add one.
+            No active matters yet. Use <strong>Add</strong> to create one.
         @else
             No active matters yet.
         @endif
     </p>
     @else
     @if($matterCount > 1)
-    <p class="text-muted mb-2" style="font-size:13px;">
-        Click a matter to switch the active matter for this client.
-    </p>
+    <p class="cdn-ov-matters-hint">Click a matter to switch the active matter for this client.</p>
     @endif
 
-    <div class="client-matter-list-grid client-matter-list-grid--header">
-        <span class="client-matter-list-col client-matter-list-col--matter">Matter</span>
-        <span class="client-matter-list-col client-matter-list-col--party">Party</span>
-        <span class="client-matter-list-col client-matter-list-col--role">Role</span>
-    </div>
-
+    <div class="cdn-ov-matter-list">
     @foreach($clientMattersList as $cmRow)
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
@@ -100,50 +93,69 @@
 
                         return [
                             'name' => $name !== '' ? $name : 'Unnamed party',
-                            'role' => $roleRaw !== '' ? ($roleLabels[$roleRaw] ?? $roleRaw) : '—',
+                            'role' => $roleRaw !== '' ? ($roleLabels[$roleRaw] ?? $roleRaw) : '',
                         ];
                     })
                     ->values()
                 : collect();
 
-            if ($parties->isEmpty()) {
-                $parties = collect([['name' => '—', 'role' => '—']]);
-            }
-
             $isCurrent = $matterNo !== '' && $matterNo === $currentMatterRef;
             $matterUrl = $matterNo !== ''
                 ? route('clients.detail', [$clientDetailEncodeId, $matterNo, $clientDetailTab])
                 : null;
+            $ourRole = '';
+            if ($__sch::hasColumn('client_matters', 'our_party_role')) {
+                $ourRoleRaw = trim((string) ($cmRow->our_party_role ?? ''));
+                if ($ourRoleRaw !== '') {
+                    $ourRole = $roleLabels[$ourRoleRaw] ?? $ourRoleRaw;
+                }
+            }
         @endphp
 
-        @foreach($parties as $party)
-            <div class="client-matter-list-grid client-matter-list-row{{ $isCurrent ? ' client-matter-list-row--current' : '' }}{{ ! $loop->parent->first && $loop->first ? ' client-matter-list-row--matter-start' : '' }}"
-                 @if($matterUrl && ! $isCurrent)
-                 role="button"
-                 tabindex="0"
-                 data-matter-url="{{ $matterUrl }}"
-                 @endif>
-                <span class="client-matter-list-col client-matter-list-col--matter">
-                    @if($loop->first)
-                        {{ $matterRefLabel }}
-                        @if($isCurrent)
-                            <span class="badge badge-light ml-1" style="font-size:11px;font-weight:600;color:#1a73e8;">Current</span>
-                            @if($canCloseClientMatter)
-                                <button type="button"
-                                        class="client-matter-list-close-btn"
-                                        title="Close this matter"
-                                        aria-label="Close this matter"
-                                        data-matter-id="{{ $cmRow->id }}"
-                                        onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">Close</button>
-                            @endif
+        <div class="cdn-ov-matter-item{{ $isCurrent ? ' is-current' : '' }}"
+             @if($matterUrl && ! $isCurrent)
+             role="button"
+             tabindex="0"
+             data-matter-url="{{ $matterUrl }}"
+             @endif>
+            <div class="cdn-ov-matter-item__top">
+                <div class="cdn-ov-matter-item__ref">{{ $matterRefLabel }}</div>
+                <div class="cdn-ov-matter-item__actions">
+                    @if($isCurrent)
+                        <span class="cdn-ov-matter-chip is-current">Current</span>
+                        @if($canCloseClientMatter)
+                            <button type="button"
+                                    class="client-matter-list-close-btn"
+                                    title="Close this matter"
+                                    aria-label="Close this matter"
+                                    data-matter-id="{{ $cmRow->id }}"
+                                    onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">Close</button>
                         @endif
+                    @else
+                        <span class="cdn-ov-matter-chip">Switch</span>
                     @endif
-                </span>
-                <span class="client-matter-list-col client-matter-list-col--party">{{ $party['name'] }}</span>
-                <span class="client-matter-list-col client-matter-list-col--role">{{ $party['role'] }}</span>
+                </div>
             </div>
-        @endforeach
+            @if($ourRole !== '')
+                <div class="cdn-ov-matter-item__meta"><span>Our role</span> {{ $ourRole }}</div>
+            @endif
+            @if($parties->isNotEmpty())
+                <ul class="cdn-ov-matter-item__parties">
+                    @foreach($parties as $party)
+                        <li>
+                            <strong>{{ $party['name'] }}</strong>
+                            @if(($party['role'] ?? '') !== '')
+                                <span>{{ $party['role'] }}</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="cdn-ov-matter-item__empty-parties">No other parties linked</p>
+            @endif
+        </div>
     @endforeach
+    </div>
     @endif
     </div>
 </div>
@@ -156,15 +168,15 @@
         cursor: pointer;
     }
     #clientMattersListCard .client-matter-list-close-btn {
-        margin-left: 8px;
-        padding: 2px 8px;
+        margin-left: 0;
+        padding: 0.2rem 0.55rem;
         border: 1px solid rgba(211, 47, 47, 0.25);
         border-radius: 999px;
         background: rgba(211, 47, 47, 0.08);
         color: #b91c1c;
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 1.4;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.3;
         cursor: pointer;
         vertical-align: middle;
     }
@@ -175,45 +187,6 @@
     #clientMattersListCard .client-matter-list-close-btn:focus-visible {
         outline: 2px solid #dc2626;
         outline-offset: 2px;
-    }
-    #clientMattersListCard .client-matter-list-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 0.9fr);
-        gap: 4px 12px;
-        align-items: start;
-        padding: 4px 8px;
-        margin: 0 -8px;
-    }
-    #clientMattersListCard .client-matter-list-grid--header {
-        margin-bottom: 4px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #e9ecef;
-        font-size: 12px;
-        font-weight: 600;
-        color: #6c757d;
-    }
-    #clientMattersListCard .client-matter-list-col--party {
-        font-weight: 600;
-    }
-    #clientMattersListCard .client-matter-list-col--role {
-        font-size: 12px;
-        color: #666;
-    }
-    #clientMattersListCard .client-matter-list-row--matter-start {
-        margin-top: 6px;
-        padding-top: 8px;
-        border-top: 1px dashed #e9ecef;
-    }
-    #clientMattersListCard .client-matter-list-row--current {
-        background: #f0f7ff;
-        border-radius: 6px;
-    }
-    #clientMattersListCard .client-matter-list-row[data-matter-url] {
-        cursor: pointer;
-    }
-    #clientMattersListCard .client-matter-list-row[data-matter-url]:hover {
-        background: #f8f9fa;
-        border-radius: 6px;
     }
 </style>
 
@@ -237,7 +210,7 @@
         if (event.target.closest('.client-matter-list-add-btn, .client-matter-list-close-btn')) {
             return;
         }
-        var row = event.target.closest('.client-matter-list-row[data-matter-url]');
+        var row = event.target.closest('.cdn-ov-matter-item[data-matter-url]');
         if (!row) {
             return;
         }
@@ -248,7 +221,10 @@
         if (event.key !== 'Enter' && event.key !== ' ') {
             return;
         }
-        var row = event.target.closest('.client-matter-list-row[data-matter-url]');
+        if (event.target.closest('.client-matter-list-add-btn, .client-matter-list-close-btn')) {
+            return;
+        }
+        var row = event.target.closest('.cdn-ov-matter-item[data-matter-url]');
         if (!row) {
             return;
         }

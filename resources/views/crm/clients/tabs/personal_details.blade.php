@@ -20,17 +20,17 @@
                                 <h3>Personal Information</h3>
                             </div>
                         </header>
-                        <div class="cdn-ov-card__body">
+                        <div class="cdn-ov-card__body cdn-ov-card__body--grid">
                         <div class="cdn-ov-field">
                             <span class="cdn-ov-field__label">Age / Date of Birth</span>
                             <span class="cdn-ov-field__value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDobTick = '<i class="fa-regular fa-circle cdn-ov-unverified"></i>';
+                                    $verifiedDobTick = '<span class="cdn-ov-verify-badge is-unverified" title="Date of birth not verified">Not verified</span>';
                                     if ($detailHasDobVerifiedCol) {
                                         $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                         if ($verifiedDob) {
-                                            $verifiedDobTick = '<i class="fa-solid fa-circle-check cdn-ov-verified"></i>';
+                                            $verifiedDobTick = '<span class="cdn-ov-verify-badge is-verified" title="Date of birth verified"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span>';
                                         }
                                     }
                                     
@@ -45,12 +45,14 @@
                                         }
                                     }
                                     ?>
-                                    <span id="ageDobToggle" style="cursor: pointer;" 
+                                    <span id="ageDobToggle"
+                                          title="Click to switch between age and date of birth"
                                           data-age="<?php echo htmlspecialchars($fetchedData->age); ?>" 
                                           data-dob="<?php echo htmlspecialchars($formattedDob); ?>">
                                         <span class="display-age"><?php echo $fetchedData->age; ?></span>
                                         <span class="display-dob" style="display: none;"><?php echo $formattedDob; ?></span>
                                         <?php echo $verifiedDobTick; ?>
+                                        <span class="cdn-ov-toggle-hint">(click to toggle)</span>
                                     </span>
                                 <?php
                                 } else {
@@ -83,7 +85,7 @@
                             </span>
                         </div>
 
-                        <div class="cdn-ov-field">
+                        <div class="cdn-ov-field cdn-ov-field--full">
                             <span class="cdn-ov-field__label">Client Email</span>
                             <span class="cdn-ov-field__value">
                                 <?php
@@ -105,16 +107,16 @@
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                             // Show verification status for ALL email types
                                             if ( $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
                                             } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
                                             }
                                         } else {
                                             // For emails without type, still show verification status if available
                                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
                                             } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
                                             }
                                         }
                                     }
@@ -125,7 +127,7 @@
                             </span>
                         </div>
 
-                        <div class="cdn-ov-field">
+                        <div class="cdn-ov-field cdn-ov-field--full">
                             <span class="cdn-ov-field__label">Client Phone</span>
                             <span class="cdn-ov-field__value">
                                 <?php
@@ -155,16 +157,16 @@
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
                                             } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-solid fa-circle-check cdn-ov-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"></i></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
                                             } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <i class="fa-regular fa-circle cdn-ov-unverified" title="Not verified"></i></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
                                             }
                                         }
                                     }
@@ -188,7 +190,7 @@
                         }
                         ?>
 
-                        <div class="cdn-ov-field">
+                        <div class="cdn-ov-field cdn-ov-field--full">
                             <span class="cdn-ov-field__label">Address</span>
                             <span class="cdn-ov-field__value">
                                 <?php
@@ -284,11 +286,11 @@
                                 $overviewClientMatterId = (int) $matter_dis_ref_info_arr->id;
                             }
                             ?>
-                        <article class="card cdn-ov-card">
+                        <article class="card cdn-ov-card cdn-ov-card--matter">
                             <header class="cdn-ov-card__head">
                                 <div class="cdn-ov-card__title">
-                                    <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user-group"></i></span>
-                                    <h3>Matter assignee</h3>
+                                    <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
+                                    <h3>Matter team &amp; details</h3>
                                 </div>
                                 @if($overviewClientMatterId)
                                 <a class="cdn-ov-card__action changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">
@@ -301,6 +303,8 @@
                                 @endif
                             </header>
                             <div class="cdn-ov-card__body">
+                            <p class="cdn-ov-section-label">Team</p>
+                            <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
                             <div class="cdn-ov-field">
                                 <span class="cdn-ov-field__label">Principal Solicitor</span>
                                 <span class="cdn-ov-field__value">
@@ -363,16 +367,7 @@
                                 </span>
                             </div>
                             </div>
-                        </article>
 
-                        <article class="card cdn-ov-card">
-                            <header class="cdn-ov-card__head">
-                                <div class="cdn-ov-card__title">
-                                    <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
-                                    <h3>Matter Details</h3>
-                                </div>
-                            </header>
-                            <div class="cdn-ov-card__body">
                             @php
                                 $mdRows = [];
                                 if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
@@ -424,8 +419,11 @@
                                     }
                                 }
                             @endphp
-                            @forelse($mdRows as $mdRow)
-                            <div class="cdn-ov-field">
+                            <p class="cdn-ov-section-label">Case details</p>
+                            @if(count($mdRows) > 0)
+                            <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
+                            @foreach($mdRows as $mdRow)
+                            <div class="cdn-ov-field{{ $mdRow['label'] === 'Case detail' ? ' cdn-ov-field--full' : '' }}">
                                 @if($mdRow['label'] !== '')
                                 <span class="cdn-ov-field__label">{{ $mdRow['label'] }}</span>
                                 <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
@@ -433,9 +431,11 @@
                                 <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
                                 @endif
                             </div>
-                            @empty
-                            <p class="cdn-ov-empty">No matter details recorded yet. Use <strong>Edit details</strong> on Matter assignee to add subtype, dates, or case notes.</p>
-                            @endforelse
+                            @endforeach
+                            </div>
+                            @else
+                            <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
+                            @endif
                             @if($linkedOtherParties->isNotEmpty())
                                 <div class="cdn-ov-field">
                                     <span class="cdn-ov-field__label">Other parties</span>

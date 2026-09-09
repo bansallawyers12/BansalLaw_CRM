@@ -8794,10 +8794,19 @@ body > .ts-dropdown {
 
 /* ============================================================
  * Client Overview tab only (#personaldetails-tab .cdn-overview)
- * Simple modern cards Ã‚Â— docs/theme.md Powder Blue & Soft Gold
+ * Simple modern cards — docs/theme.md Powder Blue & Soft Gold
  * ============================================================ */
 #personaldetails-tab .cdn-overview {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
   gap: 16px !important;
+  align-items: start !important;
+}
+
+@media (min-width: 900px) {
+  #personaldetails-tab .cdn-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 #personaldetails-tab .cdn-overview > .cdn-ov-card.card,
@@ -8812,6 +8821,8 @@ body > .ts-dropdown {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: auto !important;
+  align-self: start;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__head {
@@ -8888,13 +8899,13 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__body--grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 12px 16px;
 }
 
 @media (min-width: 520px) {
@@ -8954,13 +8965,39 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview .cdn-ov-contact-line {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-contact-line:last-child {
   margin-bottom: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-verify-badge.is-verified {
+  background: rgba(30, 122, 82, 0.12);
+  color: #1e7a52;
+  border: 1px solid rgba(30, 122, 82, 0.28);
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-verify-badge.is-unverified {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-verified {
@@ -8971,6 +9008,20 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-unverified {
   color: var(--text-muted, #5e7a90) !important;
   font-size: 0.85rem !important;
+}
+
+#personaldetails-tab .cdn-overview #ageDobToggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+#personaldetails-tab .cdn-overview #ageDobToggle .cdn-ov-toggle-hint {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__foot {
@@ -8984,9 +9035,13 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview .cdn-ov-empty {
   margin: 0;
+  padding: 0.75rem 0.85rem;
   color: var(--text-muted, #5e7a90);
   font-size: 0.875rem;
   line-height: 1.45;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-party-list {
@@ -8999,7 +9054,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   margin-top: 0.4rem;
 }
 
-/* Overview cards Ã‚Â— action can be <a> or <button> */
+/* Overview cards — action can be <a> or <button> */
 #personaldetails-tab .cdn-overview .cdn-ov-card__action.btn,
 #personaldetails-tab .cdn-overview button.cdn-ov-card__action {
   background: var(--card-bg, #fff) !important;
@@ -9025,4 +9080,146 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body,
 #personaldetails-tab .cdn-overview #conflictPartiesCard .cdn-ov-card__body {
   padding-top: 14px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-section-label {
+  margin: 0.15rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-section-label:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-nested-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 14px;
+}
+
+@media (min-width: 520px) {
+  #personaldetails-tab .cdn-overview .cdn-ov-nested-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matters-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d7e3f0;
+  border-radius: 10px;
+  background: #fff;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item.is-current {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item[data-matter-url] {
+  cursor: pointer;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item[data-matter-url]:hover {
+  background: #f8fafc;
+  border-color: #3a6fa8;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__ref {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e3d60;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-chip.is-current {
+  background: rgba(58, 111, 168, 0.12);
+  color: #1e3d60;
+  border-color: rgba(58, 111, 168, 0.28);
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__meta {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__meta span {
+  color: #64748b;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__parties {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__parties li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__parties li + li {
+  margin-top: 0.2rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__parties strong {
+  color: #1e3d60;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-item__empty-parties {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
 }
