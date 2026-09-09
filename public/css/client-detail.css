@@ -8803,9 +8803,17 @@ body > .ts-dropdown {
   align-items: start !important;
 }
 
-@media (min-width: 900px) {
+/* Medium: 2 cards */
+@media (min-width: 768px) {
   #personaldetails-tab .cdn-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Large: 3 cards */
+@media (min-width: 1200px) {
+  #personaldetails-tab .cdn-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
 
