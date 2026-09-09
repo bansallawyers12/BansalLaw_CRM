@@ -97,8 +97,11 @@ function initializeEventHandlers() {
     $(document).on('click', '#dashboardConfirmTaskCompletion', function() {
         if (dashboardPendingTaskId) {
             var notes = $('#dashboardCompletionNotes').val();
+            var taskId = dashboardPendingTaskId;
+            var uniqueGroupId = dashboardPendingUniqueGroupId;
+            dashboardCompletionConfirmed = true;
             $('#dashboardCompletionNotesModal').modal('hide');
-            completeTask(dashboardPendingTaskId, dashboardPendingUniqueGroupId, notes);
+            completeTask(taskId, uniqueGroupId, notes);
             dashboardPendingTaskId = null;
             dashboardPendingUniqueGroupId = null;
         }
@@ -106,6 +109,10 @@ function initializeEventHandlers() {
 
     // Clear pending completion when modal is closed without completing
     $(document).on('hidden.bs.modal', '#dashboardCompletionNotesModal', function() {
+        if (!dashboardCompletionConfirmed) {
+            resetTaskCompleteCheckbox(dashboardPendingTaskId);
+        }
+        dashboardCompletionConfirmed = false;
         dashboardPendingTaskId = null;
         dashboardPendingUniqueGroupId = null;
     });
@@ -240,7 +247,7 @@ function showNotification(message, type = 'info') {
 
 // Open Task Detail Panel
 window.openTaskDetail = function(taskId) {
-    const taskItem = $(`[data-task-id="${taskId}"]`);
+    const taskItem = $(`.todo-task-item[data-task-id="${taskId}"]`).first();
     if (!taskItem.length) return;
     
     const panel = $('#taskDetailPanel');
@@ -293,9 +300,31 @@ window.closeTaskDetail = function() {
 // Pending task completion (stored when modal opens)
 var dashboardPendingTaskId = null;
 var dashboardPendingUniqueGroupId = null;
+var dashboardCompletionConfirmed = false;
+
+function taskCompleteCheckbox(taskId) {
+    if (!taskId) {
+        return $();
+    }
+    return $('#task-' + taskId);
+}
+
+function resetTaskCompleteCheckbox(taskId) {
+    var $cb = taskCompleteCheckbox(taskId);
+    if ($cb.length) {
+        $cb.prop('checked', false);
+    }
+    var $detail = $('#taskDetailComplete');
+    if ($detail.length && String($('#taskDetailPanel').data('taskId')) === String(taskId)) {
+        $detail.prop('checked', false);
+    }
+}
 
 // Handle Task Complete from Checkbox - open completion notes modal
 window.handleTaskComplete = function(taskId, uniqueGroupId) {
+    // Keep unchecked until the user confirms in the modal (avoids "done + overdue" stuck state).
+    resetTaskCompleteCheckbox(taskId);
+    dashboardCompletionConfirmed = false;
     dashboardPendingTaskId = taskId;
     dashboardPendingUniqueGroupId = uniqueGroupId;
     $('#dashboardCompletionNotes').val('');
@@ -305,8 +334,10 @@ window.handleTaskComplete = function(taskId, uniqueGroupId) {
 // Complete Task from Detail Panel - open completion notes modal
 window.completeTaskFromDetail = function() {
     const panel = $('#taskDetailPanel');
+    dashboardCompletionConfirmed = false;
     dashboardPendingTaskId = panel.data('taskId');
     dashboardPendingUniqueGroupId = panel.data('uniqueGroupId');
+    resetTaskCompleteCheckbox(dashboardPendingTaskId);
     $('#dashboardCompletionNotes').val('');
     $('#dashboardCompletionNotesModal').modal('show');
 };
@@ -337,7 +368,7 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                 closeTaskDetail();
                 
                 // Animate task removal
-                const taskItem = $(`[data-task-id="${taskId}"]`);
+                const taskItem = $(`.todo-task-item[data-task-id="${taskId}"]`);
                 taskItem.css('opacity', '0.5');
                 setTimeout(() => {
                     taskItem.fadeOut(300, function() {
@@ -351,11 +382,13 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
                     window.refreshCrmNavPendingTaskCount();
                 }
             } else {
+                resetTaskCompleteCheckbox(taskId);
                 showNotification(response.message || 'Failed to complete task', 'error');
             }
         },
         error: function(xhr, status, error) {
             $('.popuploader').hide();
+            resetTaskCompleteCheckbox(taskId);
             console.error('Error completing task:', error);
             showNotification('An error occurred while completing the task', 'error');
         }
@@ -364,7 +397,7 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
 
 // Open Extend Modal from Task Item
 window.openExtendModal = function(taskId) {
-    const taskItem = $(`[data-task-id="${taskId}"]`);
+    const taskItem = $(`.todo-task-item[data-task-id="${taskId}"]`).first();
     if (!taskItem.length) return;
 
     const data = taskItem.data();

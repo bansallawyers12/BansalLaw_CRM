@@ -3,20 +3,18 @@
 @php
     $client = $note->client;
     
-    // Handle tasks with and without deadlines
+    // Handle tasks with and without deadlines (date-only: due today is not overdue)
     if ($note->note_deadline) {
-        $deadline = new DateTime($note->note_deadline);
-        $today = new DateTime();
-        $isOverdue = $deadline < $today;
+        $deadline = \Carbon\Carbon::parse($note->note_deadline)->startOfDay();
+        $today = \Carbon\Carbon::today();
+        $isOverdue = $deadline->lt($today);
         
         if ($isOverdue) {
-            $interval = $today->diff($deadline);
-            $daysOverdue = $interval->days;
+            $daysOverdue = (int) $deadline->diffInDays($today);
             $daysLeftText = $daysOverdue . ' day' . ($daysOverdue != 1 ? 's' : '') . ' overdue';
             $urgencyClass = 'overdue';
         } else {
-            $interval = $today->diff($deadline);
-            $daysLeft = $interval->days;
+            $daysLeft = (int) $today->diffInDays($deadline);
             
             if ($daysLeft == 0) {
                 $daysLeftText = 'Today';
@@ -32,7 +30,7 @@
                 $urgencyClass = 'upcoming';
             }
         }
-        $deadlineFormatted = \Carbon\Carbon::parse($note->note_deadline)->format('Y-m-d');
+        $deadlineFormatted = $deadline->format('Y-m-d');
     } else {
         // Task without deadline
         $daysLeftText = 'No deadline';
@@ -76,7 +74,7 @@
                id="task-{{ $note->id }}"
                class="task-complete-checkbox"
                aria-label="Mark task complete"
-               onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, {{ $uniqueGroupIdSafe }})">
+               onclick="event.stopPropagation(); this.checked = false; handleTaskComplete({{ $note->id }}, {{ $uniqueGroupIdSafe }})">
         <label for="task-{{ $note->id }}" class="visually-hidden">Mark task complete</label>
     </div>
     

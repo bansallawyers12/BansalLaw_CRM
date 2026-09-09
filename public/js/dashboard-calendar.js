@@ -11,6 +11,83 @@
     const UPDATE_EVENT_API = window.dashboardRoutes?.updateCalendarEvent || '/booking/api/calendar-events';
     const DESTROY_EVENT_API = window.dashboardRoutes?.destroyCalendarEvent || '/booking/api/calendar-events';
 
+    function calendarStaffViewValue() {
+        var el = document.getElementById('dashboardCalendarStaffView');
+        if (!el) {
+            return 'self';
+        }
+        return el.value ? String(el.value) : 'all';
+    }
+
+    function appendCalendarStaffViewParam(url) {
+        var select = document.getElementById('dashboardCalendarStaffView');
+        if (!select) {
+            return url;
+        }
+        // Always send for Super Admin so "My calendar" is not overridden by the all-staff default.
+        url.searchParams.set('staff_view', calendarStaffViewValue());
+        return url;
+    }
+
+    function updateCalendarSubtitle() {
+        var el = document.getElementById('dashboardCalendarSubtitle');
+        var select = document.getElementById('dashboardCalendarStaffView');
+        if (!el || !select) {
+            return;
+        }
+        var value = select.value;
+        if (value === 'all') {
+            el.textContent = 'All staff appointments, hearings, reminders and deadlines';
+            return;
+        }
+        if (value && value !== 'self') {
+            var label = select.options[select.selectedIndex]
+                ? select.options[select.selectedIndex].text
+                : 'Staff';
+            el.textContent = label + ' — appointments, hearings, reminders and deadlines';
+            return;
+        }
+        el.textContent = 'Your reminders, follow-ups, hearings and deadlines';
+    }
+
+    function refreshCalendarStaffView() {
+        try {
+            window.localStorage.setItem('dashboardCalendarStaffView', calendarStaffViewValue());
+        } catch (e) {
+            // ignore
+        }
+        updateCalendarSubtitle();
+        if (window.staffDashboardCalendar) {
+            window.staffDashboardCalendar.refetchEvents();
+        }
+        if (typeof window.refreshUpcomingList === 'function') {
+            window.refreshUpcomingList();
+        }
+    }
+
+    function bindCalendarStaffFilter() {
+        var select = document.getElementById('dashboardCalendarStaffView');
+        if (!select || select.dataset.bound === '1') {
+            return;
+        }
+        select.dataset.bound = '1';
+        try {
+            var saved = window.localStorage.getItem('dashboardCalendarStaffView');
+            if (saved) {
+                var hasOption = Array.prototype.some.call(select.options, function (opt) {
+                    return opt.value === saved;
+                });
+                if (hasOption) {
+                    select.value = saved;
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+        select.addEventListener('change', refreshCalendarStaffView);
+        updateCalendarSubtitle();
+    }
+
     function calendarElTz() {
         var el = document.getElementById(CALENDAR_EL_ID);
         return (el && el.getAttribute('data-timezone')) || 'Australia/Melbourne';
@@ -494,6 +571,7 @@
             url.searchParams.set('start', chunkStart + 'T00:00:00');
             url.searchParams.set('end', chunkEnd + 'T00:00:00');
             url.searchParams.set('include_stats', '0');
+            appendCalendarStaffViewParam(url);
 
             var response = await fetch(url.toString(), {
                 credentials: 'same-origin',
@@ -1574,6 +1652,8 @@
         var tz = calendarEl.getAttribute('data-timezone') || 'Australia/Melbourne';
 
         waitForFullCalendar(function () {
+            bindCalendarStaffFilter();
+
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [
                     FullCalendarPlugins.dayGridPlugin,
@@ -1634,6 +1714,7 @@
                         url.searchParams.set('start', fetchInfo.startStr);
                         url.searchParams.set('end', fetchInfo.endStr);
                         url.searchParams.set('include_stats', '1');
+                        appendCalendarStaffViewParam(url);
 
                         var response = await fetch(url.toString(), {
                             credentials: 'same-origin',

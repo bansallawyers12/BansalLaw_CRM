@@ -150,6 +150,44 @@
     flex-wrap: wrap;
 }
 
+.dashboard-calendar-staff-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.dashboard-calendar-staff-label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted-color, #5e7a90);
+    white-space: nowrap;
+}
+
+.dashboard-calendar-staff-select {
+    min-width: 12.5rem;
+    max-width: 18rem;
+    height: 36px;
+    padding: 0 2rem 0 0.75rem;
+    border: 1px solid var(--border-color, #c8dcef);
+    border-radius: 8px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235e7a90' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 0.7rem center;
+    background-size: 12px 8px;
+    color: var(--primary-color, #1e3d60);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    appearance: none;
+    cursor: pointer;
+}
+
+.dashboard-calendar-staff-select:focus {
+    outline: none;
+    border-color: var(--sidebar-active, #3a6fa8);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+}
+
 .dashboard-calendar-stats {
     display: flex;
     gap: 8px;

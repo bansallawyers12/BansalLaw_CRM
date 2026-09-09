@@ -41,10 +41,18 @@ class DashboardController extends Controller
             $dashboardData['bookingCalendarType'] = $canAccessPersonalCalendar
                 ? $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff)
                 : null;
+            $canFilterCalendarStaff = $canAccessPersonalCalendar
+                && $this->personalCalendarFeed->canFilterStaffCalendar($staff);
+            $dashboardData['canFilterCalendarStaff'] = $canFilterCalendarStaff;
+            $dashboardData['calendarStaffOptions'] = $canFilterCalendarStaff
+                ? $this->personalCalendarFeed->staffFilterOptions()
+                : [];
         } else {
             $dashboardData['canAccessPersonalCalendar'] = false;
             $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
             $dashboardData['bookingCalendarType'] = null;
+            $dashboardData['canFilterCalendarStaff'] = false;
+            $dashboardData['calendarStaffOptions'] = [];
         }
 
         return view('crm.dashboard', $dashboardData);
@@ -63,7 +71,7 @@ class DashboardController extends Controller
 
         $staff = $user instanceof Staff ? $user : null;
         $payload['calendar_stats'] = ($staff && $staff->canAccessPersonalCalendar())
-            ? $this->personalCalendarFeed->statsForStaff($staff)
+            ? $this->personalCalendarFeed->statsForViewer($staff, $request)
             : null;
 
         return response()->json(array_merge(['success' => true], $payload));
@@ -86,7 +94,7 @@ class DashboardController extends Controller
             ], 403);
         }
 
-        $rows = $this->personalCalendarFeed->eventsForStaffRequest($staff, $request);
+        $rows = $this->personalCalendarFeed->eventsForViewerRequest($staff, $request);
         $events = array_map(
             fn (array $row) => $this->personalCalendarFeed->toFullCalendarEvent($row),
             $rows
@@ -97,7 +105,8 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data' => $events,
-            'stats' => $includeStats ? $this->personalCalendarFeed->statsForStaff($staff) : null,
+            'stats' => $includeStats ? $this->personalCalendarFeed->statsForViewer($staff, $request) : null,
+            'staff_view' => $this->personalCalendarFeed->resolveCalendarView($staff, $request)['mode'],
         ]);
     }
 

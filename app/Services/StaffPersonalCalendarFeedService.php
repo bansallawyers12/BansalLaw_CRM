@@ -33,14 +33,115 @@ class StaffPersonalCalendarFeedService
      */
     public function eventsForStaffRequest(Staff $staff, Request $request): array
     {
-        $staffId = (int) $staff->id;
+        return $this->buildEventsForStaffScope($staff, $request);
+    }
+
+    /**
+     * Viewer-aware feed: Super Admin may request all staff or one staff via staff_view.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function eventsForViewerRequest(Staff $viewer, Request $request): array
+    {
+        $view = $this->resolveCalendarView($viewer, $request);
+
+        if ($view['mode'] === 'all') {
+            return $this->buildEventsForStaffScope(null, $request);
+        }
+
+        return $this->buildEventsForStaffScope($view['staff'], $request);
+    }
+
+    /**
+     * Whether this viewer may switch between My / All / Individual staff calendars.
+     */
+    public function canFilterStaffCalendar(Staff $viewer): bool
+    {
+        if ($viewer->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        // Native Super Admin role even if elevation helpers are unavailable.
+        return (int) ($viewer->role ?? 0) === 1;
+    }
+
+    /**
+     * @return list<array{id: int, name: string}>
+     */
+    public function staffFilterOptions(): array
+    {
+        return Staff::query()
+            ->where('status', 1)
+            ->where(function ($q) {
+                // Super Admin always has calendar access; others need the grant flag.
+                $q->where('role', 1)
+                    ->orWhere('can_access_personal_calendar', true);
+            })
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'role', 'can_access_personal_calendar'])
+            ->filter(fn (Staff $s) => $s->canAccessPersonalCalendar())
+            ->map(fn (Staff $s) => [
+                'id' => (int) $s->id,
+                'name' => trim(($s->first_name ?? '') . ' ' . ($s->last_name ?? '')) ?: ('Staff #' . $s->id),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{mode: 'self'|'all'|'staff', staff: Staff|null}
+     */
+    public function resolveCalendarView(Staff $viewer, Request $request): array
+    {
+        if (! $this->canFilterStaffCalendar($viewer)) {
+            return ['mode' => 'self', 'staff' => $viewer];
+        }
+
+        // Super Admin default is firm-wide so the dashboard matches the old “see everything” calendar.
+        if (! $request->has('staff_view') || $request->input('staff_view') === null || $request->input('staff_view') === '') {
+            return ['mode' => 'all', 'staff' => null];
+        }
+
+        $raw = strtolower(trim((string) $request->input('staff_view')));
+        if ($raw === 'self' || $raw === 'me') {
+            return ['mode' => 'self', 'staff' => $viewer];
+        }
+
+        if ($raw === 'all') {
+            return ['mode' => 'all', 'staff' => null];
+        }
+
+        $id = (int) $raw;
+        if ($id < 1) {
+            return ['mode' => 'all', 'staff' => null];
+        }
+
+        $target = Staff::query()->where('id', $id)->where('status', 1)->first();
+        if (! $target || ! $target->canAccessPersonalCalendar()) {
+            return ['mode' => 'all', 'staff' => null];
+        }
+
+        return ['mode' => 'staff', 'staff' => $target];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function buildEventsForStaffScope(?Staff $staff, Request $request): array
+    {
+        $staffId = $staff ? (int) $staff->id : null;
         $tz = (string) config('app.timezone');
-        $calendarType = $this->bookingCalendarTypeForStaff($staff);
+        $calendarType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+
+        $bookings = $staffId === null
+            ? $this->websiteBookingsAll($request)
+            : ($calendarType
+                ? $this->websiteBookingsForCalendarType($calendarType, $request)
+                : $this->websiteBookings($staff, $request));
 
         $events = array_merge(
-            $calendarType
-                ? $this->websiteBookingsForCalendarType($calendarType, $request)
-                : $this->websiteBookings($staff, $request),
+            $bookings,
             $this->staffCalendarEvents($staffId, $request, $calendarType),
             $this->courtHearings($staffId, $request),
             $this->actionDeadlines($staffId, $request, $tz),
@@ -209,41 +310,72 @@ class StaffPersonalCalendarFeedService
      */
     public function statsForStaff(Staff $staff): array
     {
+        return $this->statsForViewer($staff, new Request(['staff_view' => 'self']));
+    }
+
+    /**
+     * @return array{today: int, this_week: int, overdue_actions: int}
+     */
+    public function statsForViewer(Staff $viewer, Request $request): array
+    {
         $tz = config('app.timezone');
         $today = Carbon::today($tz);
         $weekEnd = $today->copy()->endOfWeek();
-        $staffId = (int) $staff->id;
+        $view = $this->resolveCalendarView($viewer, $request);
+        $targetStaff = $view['mode'] === 'all' ? null : ($view['staff'] ?? $viewer);
+        $staffId = $targetStaff ? (int) $targetStaff->id : null;
 
-        $todayRequest = new Request([
+        $todayRequest = new Request(array_merge($request->all(), [
             'start' => $today->toIso8601String(),
             'end' => $today->copy()->addDay()->toIso8601String(),
-        ]);
-        $weekRequest = new Request([
+        ]));
+        $weekRequest = new Request(array_merge($request->all(), [
             'start' => $today->toIso8601String(),
             'end' => $weekEnd->copy()->addDay()->toIso8601String(),
-        ]);
+        ]));
+
+        $overdueQuery = Note::query()
+            ->where('is_action', 1)
+            ->where('status', 0)
+            ->whereNotNull('note_deadline')
+            ->whereDate('note_deadline', '<', $today->toDateString());
+        if ($staffId !== null) {
+            $overdueQuery->where('assigned_to', $staffId);
+        }
 
         return [
-            'today' => $this->countEventsForStaffRequest($staff, $todayRequest),
-            'this_week' => $this->countEventsForStaffRequest($staff, $weekRequest),
-            'overdue_actions' => Note::query()
-                ->where('assigned_to', $staffId)
-                ->where('is_action', 1)
-                ->where('status', 0)
-                ->whereNotNull('note_deadline')
-                ->whereDate('note_deadline', '<', $today->toDateString())
-                ->count(),
+            'today' => $this->countEventsForViewerRequest($viewer, $todayRequest),
+            'this_week' => $this->countEventsForViewerRequest($viewer, $weekRequest),
+            'overdue_actions' => (int) $overdueQuery->count(),
         ];
     }
 
     public function countEventsForStaffRequest(Staff $staff, Request $request): int
     {
-        $staffId = (int) $staff->id;
-        $calendarType = $this->bookingCalendarTypeForStaff($staff);
+        return $this->countEventsForStaffScope($staff, $request);
+    }
 
-        $bookingCount = $calendarType
-            ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
-            : $this->countWebsiteBookings($staff, $request);
+    public function countEventsForViewerRequest(Staff $viewer, Request $request): int
+    {
+        $view = $this->resolveCalendarView($viewer, $request);
+
+        if ($view['mode'] === 'all') {
+            return $this->countEventsForStaffScope(null, $request);
+        }
+
+        return $this->countEventsForStaffScope($view['staff'], $request);
+    }
+
+    protected function countEventsForStaffScope(?Staff $staff, Request $request): int
+    {
+        $staffId = $staff ? (int) $staff->id : null;
+        $calendarType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+
+        $bookingCount = $staffId === null
+            ? $this->countWebsiteBookingsAll($request)
+            : ($calendarType
+                ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
+                : $this->countWebsiteBookings($staff, $request));
 
         return $bookingCount
             + $this->countStaffCalendarEvents($staffId, $request, $calendarType)
@@ -298,7 +430,44 @@ class StaffPersonalCalendarFeedService
         return (int) $query->count();
     }
 
-    protected function countStaffCalendarEvents(int $staffId, Request $request, ?string $calendarType = null): int
+    protected function countWebsiteBookingsAll(Request $request): int
+    {
+        if (! Schema::hasTable('booking_appointments')) {
+            return 0;
+        }
+
+        $query = BookingAppointment::query()
+            ->whereNotIn('status', ['cancelled', 'no_show']);
+
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+        $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
+
+        return (int) $query->count();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function websiteBookingsAll(Request $request): array
+    {
+        if (! Schema::hasTable('booking_appointments')) {
+            return [];
+        }
+
+        $query = BookingAppointment::query()
+            ->with(['client', 'consultant'])
+            ->whereNotIn('status', ['cancelled', 'no_show']);
+
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+        $this->applyDatetimeWindow($query, 'appointment_datetime', $request);
+
+        return $query->orderBy('appointment_datetime')->get()
+            ->map(fn (BookingAppointment $appointment) => $this->payloadFromBookingAppointment($appointment))
+            ->values()
+            ->all();
+    }
+
+    protected function countStaffCalendarEvents(?int $staffId, Request $request, ?string $calendarType = null): int
     {
         if (! Schema::hasTable('staff_calendar_events')) {
             return 0;
@@ -315,7 +484,7 @@ class StaffPersonalCalendarFeedService
         return (int) $query->count();
     }
 
-    protected function countCourtHearings(int $staffId, Request $request): int
+    protected function countCourtHearings(?int $staffId, Request $request): int
     {
         if (! Schema::hasTable('client_court_hearings')) {
             return 0;
@@ -329,42 +498,48 @@ class StaffPersonalCalendarFeedService
         return (int) $query->count();
     }
 
-    protected function countActionDeadlines(int $staffId, Request $request): int
+    protected function countActionDeadlines(?int $staffId, Request $request): int
     {
         $query = Note::query()
-            ->where('assigned_to', $staffId)
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('note_deadline');
+        if ($staffId !== null) {
+            $query->where('assigned_to', $staffId);
+        }
 
         $this->applyDateColumnWindow($query, 'note_deadline', $request);
 
         return (int) $query->count();
     }
 
-    protected function countFollowUps(int $staffId, Request $request): int
+    protected function countFollowUps(?int $staffId, Request $request): int
     {
         $query = Note::query()
-            ->where('assigned_to', $staffId)
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('action_date');
+        if ($staffId !== null) {
+            $query->where('assigned_to', $staffId);
+        }
 
         $this->applyDatetimeWindow($query, 'action_date', $request);
 
         return (int) $query->count();
     }
 
-    protected function countMatterDeadlines(int $staffId, Request $request): int
+    protected function countMatterDeadlines(?int $staffId, Request $request): int
     {
         $query = ClientMatter::query()
             ->where('matter_status', 1)
-            ->whereNotNull('deadline')
-            ->where(function (Builder $q) use ($staffId) {
+            ->whereNotNull('deadline');
+        if ($staffId !== null) {
+            $query->where(function (Builder $q) use ($staffId) {
                 $q->where('sel_legal_practitioner', $staffId)
                     ->orWhere('sel_person_responsible', $staffId)
                     ->orWhere('sel_person_assisting', $staffId);
             });
+        }
 
         $this->applyDateColumnWindow($query, 'deadline', $request);
 
@@ -374,8 +549,12 @@ class StaffPersonalCalendarFeedService
     /**
      * @param  Builder<StaffCalendarEvent>  $query
      */
-    protected function applyPersonalStaffEventScope(Builder $query, int $staffId, ?string $calendarType = null): void
+    protected function applyPersonalStaffEventScope(Builder $query, ?int $staffId, ?string $calendarType = null): void
     {
+        if ($staffId === null) {
+            return;
+        }
+
         $query->where(function (Builder $q) use ($staffId, $calendarType) {
             $q->where('created_by_staff_id', $staffId)
                 ->orWhere(function (Builder $inner) use ($staffId) {
@@ -398,8 +577,12 @@ class StaffPersonalCalendarFeedService
     /**
      * @param  Builder<ClientCourtHearing>  $query
      */
-    protected function applyPersonalCourtHearingScope(Builder $query, int $staffId): void
+    protected function applyPersonalCourtHearingScope(Builder $query, ?int $staffId): void
     {
+        if ($staffId === null) {
+            return;
+        }
+
         $query->where(function (Builder $q) use ($staffId) {
             $q->whereIn('client_matter_id', $this->assignedMatterIdsQuery($staffId))
                 ->orWhereIn('client_id', $this->assignedClientIdsQuery($staffId));
@@ -409,7 +592,7 @@ class StaffPersonalCalendarFeedService
     /**
      * @return list<array<string, mixed>>
      */
-    protected function staffCalendarEvents(int $staffId, Request $request, ?string $calendarType = null): array
+    protected function staffCalendarEvents(?int $staffId, Request $request, ?string $calendarType = null): array
     {
         if (! Schema::hasTable('staff_calendar_events')) {
             return [];
@@ -435,7 +618,7 @@ class StaffPersonalCalendarFeedService
     /**
      * @return list<array<string, mixed>>
      */
-    protected function courtHearings(int $staffId, Request $request): array
+    protected function courtHearings(?int $staffId, Request $request): array
     {
         if (! Schema::hasTable('client_court_hearings')) {
             return [];
@@ -646,14 +829,16 @@ class StaffPersonalCalendarFeedService
     /**
      * @return list<array<string, mixed>>
      */
-    protected function actionDeadlines(int $staffId, Request $request, string $tz): array
+    protected function actionDeadlines(?int $staffId, Request $request, string $tz): array
     {
         $query = Note::query()
             ->with(['client'])
-            ->where('assigned_to', $staffId)
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('note_deadline');
+        if ($staffId !== null) {
+            $query->where('assigned_to', $staffId);
+        }
 
         $this->applyDateColumnWindow($query, 'note_deadline', $request);
 
@@ -695,14 +880,16 @@ class StaffPersonalCalendarFeedService
      *
      * @return list<array<string, mixed>>
      */
-    protected function followUps(int $staffId, Request $request, string $tz): array
+    protected function followUps(?int $staffId, Request $request, string $tz): array
     {
         $query = Note::query()
             ->with(['client'])
-            ->where('assigned_to', $staffId)
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('action_date');
+        if ($staffId !== null) {
+            $query->where('assigned_to', $staffId);
+        }
 
         $this->applyDatetimeWindow($query, 'action_date', $request);
 
@@ -746,17 +933,19 @@ class StaffPersonalCalendarFeedService
     /**
      * @return list<array<string, mixed>>
      */
-    protected function matterDeadlines(int $staffId, Request $request, string $tz): array
+    protected function matterDeadlines(?int $staffId, Request $request, string $tz): array
     {
         $query = ClientMatter::query()
             ->with(['client', 'matter'])
             ->where('matter_status', 1)
-            ->whereNotNull('deadline')
-            ->where(function (Builder $q) use ($staffId) {
+            ->whereNotNull('deadline');
+        if ($staffId !== null) {
+            $query->where(function (Builder $q) use ($staffId) {
                 $q->where('sel_legal_practitioner', $staffId)
                     ->orWhere('sel_person_responsible', $staffId)
                     ->orWhere('sel_person_assisting', $staffId);
             });
+        }
 
         $this->applyDateColumnWindow($query, 'deadline', $request);
 

@@ -103,4 +103,124 @@ class PersonalCalendarAccessTest extends TestCase
                 'success' => false,
             ]);
     }
+
+    #[Test]
+    public function non_super_admin_cannot_force_all_staff_calendar_view(): void
+    {
+        $staff = $this->createStaff(['can_access_personal_calendar' => true]);
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->getJson(route('dashboard.calendar-events', [
+            'start' => now()->toIso8601String(),
+            'end' => now()->addWeek()->toIso8601String(),
+            'staff_view' => 'all',
+        ]));
+
+        $response->assertOk()->assertJson([
+            'success' => true,
+            'staff_view' => 'self',
+        ]);
+    }
+
+    #[Test]
+    public function super_admin_defaults_to_all_staff_calendar_view(): void
+    {
+        $staff = $this->createStaff([
+            'role' => 1,
+            'first_name' => 'Super',
+            'email' => 'super.default.calendar@example.com',
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $this->getJson(route('dashboard.calendar-events', [
+            'start' => now()->toIso8601String(),
+            'end' => now()->addWeek()->toIso8601String(),
+        ]))
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'staff_view' => 'all',
+            ]);
+    }
+
+    #[Test]
+    public function super_admin_can_request_all_staff_calendar_view(): void
+    {
+        $staff = $this->createStaff([
+            'role' => 1,
+            'can_access_personal_calendar' => false,
+            'first_name' => 'Super',
+            'email' => 'super.all.calendar@example.com',
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $this->getJson(route('dashboard.calendar-events', [
+            'start' => now()->toIso8601String(),
+            'end' => now()->addWeek()->toIso8601String(),
+            'staff_view' => 'all',
+        ]))
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'staff_view' => 'all',
+            ]);
+    }
+
+    #[Test]
+    public function super_admin_can_request_individual_staff_calendar_view(): void
+    {
+        $super = $this->createStaff([
+            'role' => 1,
+            'first_name' => 'Super',
+            'email' => 'super.pick.calendar@example.com',
+        ]);
+        $other = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Other',
+            'email' => 'other.pick.calendar@example.com',
+        ]);
+        $this->actingAs($super, 'admin');
+
+        $this->getJson(route('dashboard.calendar-events', [
+            'start' => now()->toIso8601String(),
+            'end' => now()->addWeek()->toIso8601String(),
+            'staff_view' => $other->id,
+        ]))
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'staff_view' => 'staff',
+            ]);
+    }
+
+    #[Test]
+    public function super_admin_individual_staff_list_only_includes_calendar_access(): void
+    {
+        $super = $this->createStaff([
+            'role' => 1,
+            'first_name' => 'Super',
+            'email' => 'super.list.calendar@example.com',
+        ]);
+        $withAccess = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'WithAccess',
+            'email' => 'with.access.calendar@example.com',
+        ]);
+        $withoutAccess = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => false,
+            'first_name' => 'NoAccess',
+            'email' => 'no.access.calendar@example.com',
+        ]);
+        $this->actingAs($super, 'admin');
+
+        $options = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
+        $ids = collect($options)->pluck('id')->all();
+
+        $this->assertContains($super->id, $ids);
+        $this->assertContains($withAccess->id, $ids);
+        $this->assertNotContains($withoutAccess->id, $ids);
+    }
 }

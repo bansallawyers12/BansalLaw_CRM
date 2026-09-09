@@ -2,6 +2,8 @@
     'stats' => ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0],
     'timezone' => config('app.timezone'),
     'bookingCalendarType' => null,
+    'canFilterCalendarStaff' => false,
+    'calendarStaffOptions' => [],
 ])
 
 <section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
@@ -9,9 +11,31 @@
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
                 <h2>My Calendar</h2>
-                <p class="dashboard-calendar-subtitle">Your reminders, follow-ups, hearings and deadlines</p>
+                <p class="dashboard-calendar-subtitle" id="dashboardCalendarSubtitle">
+                    @if(!empty($canFilterCalendarStaff))
+                        All staff appointments, hearings, reminders and deadlines
+                    @else
+                        Your reminders, follow-ups, hearings and deadlines
+                    @endif
+                </p>
             </div>
             <div class="dashboard-calendar-header-right">
+                @if(!empty($canFilterCalendarStaff))
+                    <div class="dashboard-calendar-staff-filter">
+                        <label class="dashboard-calendar-staff-label" for="dashboardCalendarStaffView">View</label>
+                        <select id="dashboardCalendarStaffView" class="dashboard-calendar-staff-select" title="View calendar for">
+                            <option value="all" selected>All staff</option>
+                            <option value="self">My calendar</option>
+                            @if(!empty($calendarStaffOptions))
+                                <optgroup label="Individual staff">
+                                    @foreach($calendarStaffOptions as $opt)
+                                        <option value="{{ (int) ($opt['id'] ?? 0) }}">{{ $opt['name'] ?? ('Staff #' . ($opt['id'] ?? '')) }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                        </select>
+                    </div>
+                @endif
                 <div class="dashboard-calendar-stats" aria-label="Calendar summary">
                     <div class="dashboard-cal-stat dashboard-cal-stat--today" title="Upcoming items today">
                         <span class="dashboard-cal-stat-value" id="calStatToday">{{ is_array($stats) ? ($stats['today'] ?? 0) : '—' }}</span>
