@@ -26,11 +26,11 @@
                             <span class="cdn-ov-field__value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDobTick = '<span class="cdn-ov-verify-badge is-unverified" title="Date of birth not verified">Not verified</span>';
+                                    $verifiedDobTick = '<span class="cdn-ov-verify-badge is-unverified" title="Date of birth not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span>';
                                     if ($detailHasDobVerifiedCol) {
                                         $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                         if ($verifiedDob) {
-                                            $verifiedDobTick = '<span class="cdn-ov-verify-badge is-verified" title="Date of birth verified"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span>';
+                                            $verifiedDobTick = '<span class="cdn-ov-verify-badge is-verified" title="Date of birth verified"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span>';
                                         }
                                     }
                                     
@@ -44,19 +44,22 @@
                                             $formattedDob = 'N/A';
                                         }
                                     }
+                                    $ageRaw = trim((string) $fetchedData->age);
+                                    $preferDob = $formattedDob !== 'N/A' && preg_match('/^0\s+years?\s+0\s+months?$/i', $ageRaw);
                                     ?>
                                     <span id="ageDobToggle"
+                                          class="cdn-ov-age-toggle"
                                           title="Click to switch between age and date of birth"
-                                          data-age="<?php echo htmlspecialchars($fetchedData->age); ?>" 
+                                          data-age="<?php echo htmlspecialchars($ageRaw); ?>" 
                                           data-dob="<?php echo htmlspecialchars($formattedDob); ?>">
-                                        <span class="display-age"><?php echo $fetchedData->age; ?></span>
-                                        <span class="display-dob" style="display: none;"><?php echo $formattedDob; ?></span>
+                                        <span class="display-age"<?php echo $preferDob ? ' style="display: none;"' : ''; ?>><?php echo e($ageRaw); ?></span>
+                                        <span class="display-dob"<?php echo $preferDob ? '' : ' style="display: none;"'; ?>><?php echo e($formattedDob); ?></span>
+                                        <i class="fa-solid fa-right-left cdn-ov-toggle-icon" aria-hidden="true"></i>
                                         <?php echo $verifiedDobTick; ?>
-                                        <span class="cdn-ov-toggle-hint">(click to toggle)</span>
                                     </span>
                                 <?php
                                 } else {
-                                    echo 'N/A';
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 } ?>
                             </span>
                         </div>
@@ -68,7 +71,7 @@
                                 if ( isset($fetchedData->gender) && $fetchedData->gender != '') {
                                     echo $fetchedData->gender;
                                 } else {
-                                    echo 'N/A';
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 } ?>
                             </span>
                         </div>
@@ -80,7 +83,7 @@
                                 if ( isset($fetchedData->marital_status) && $fetchedData->marital_status != '') {
                                     echo $fetchedData->marital_status;
                                 } else {
-                                    echo 'N/A';
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 } ?>
                             </span>
                         </div>
@@ -107,22 +110,22 @@
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                             // Show verification status for ALL email types
                                             if ( $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
                                             } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
                                             }
                                         } else {
                                             // For emails without type, still show verification status if available
                                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
                                             } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
+                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
                                             }
                                         }
                                     }
                                     echo $emailStr;
                                 } else {
-                                    echo "N/A";
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 }?>
                             </span>
                         </div>
@@ -157,22 +160,22 @@
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
                                             } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified</span></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
                                             } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified">Not verified</span></span>';
+                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
                                             }
                                         }
                                     }
                                     echo $phonenoStr;
                                 } else {
-                                    echo "N/A";
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 }?>
                             </span>
                         </div>
@@ -209,10 +212,10 @@
                                     } elseif (!empty($address_Info->address)) {
                                         echo $address_Info->address;
                                     } else {
-                                        echo 'N/A';
+                                        echo '<span class="cdn-ov-na">N/A</span>';
                                     }
                                 } else {
-                                    echo 'N/A';
+                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 }
                                 ?>
                             </span>

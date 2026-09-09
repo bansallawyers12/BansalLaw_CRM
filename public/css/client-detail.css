@@ -8800,13 +8800,17 @@ body > .ts-dropdown {
   display: grid !important;
   grid-template-columns: 1fr !important;
   gap: 16px !important;
-  align-items: start !important;
+  align-items: stretch !important;
 }
 
-/* Medium: 2 cards */
+/* Medium: 2 cards; odd last card spans full width */
 @media (min-width: 768px) {
   #personaldetails-tab .cdn-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -8814,6 +8818,10 @@ body > .ts-dropdown {
 @media (min-width: 1200px) {
   #personaldetails-tab .cdn-overview {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #personaldetails-tab .cdn-overview > .cdn-ov-card:last-child:nth-child(odd) {
+    grid-column: auto;
   }
 }
 
@@ -8829,8 +8837,8 @@ body > .ts-dropdown {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: auto !important;
-  align-self: start;
+  height: 100%;
+  align-self: stretch;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__head {
@@ -8907,7 +8915,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__body--grid {
@@ -8938,9 +8946,9 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
 
 #personaldetails-tab .cdn-overview .cdn-ov-field__label,
 #personaldetails-tab .cdn-overview .cdn-ov-field .field-label {
-  color: var(--text-muted, #5e7a90) !important;
-  font-size: 0.72rem !important;
-  font-weight: 600 !important;
+  color: #4b6480 !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0 !important;
@@ -8950,7 +8958,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
 #personaldetails-tab .cdn-overview .cdn-ov-field__value,
 #personaldetails-tab .cdn-overview .cdn-ov-field .field-value {
   color: var(--text-dark, #1a2c40) !important;
-  font-size: 0.9375rem !important;
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
   text-align: left !important;
   word-break: break-word;
@@ -8971,11 +8979,16 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   text-decoration: underline !important;
 }
 
+#personaldetails-tab .cdn-overview .cdn-ov-na {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
 #personaldetails-tab .cdn-overview .cdn-ov-contact-line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 6px;
 }
 
@@ -8986,10 +8999,10 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.12rem 0.45rem;
+  gap: 0.2rem;
+  padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1.2;
@@ -9003,9 +9016,51 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-verify-badge.is-unverified {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: #64748b;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-verify-badge i {
+  font-size: 0.62rem;
+}
+
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  #personaldetails-tab .cdn-overview .cdn-ov-verify-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  #personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
+    padding: 0.2rem 0.35rem;
+  }
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-age-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.1rem 0.15rem;
+  margin: -0.1rem -0.15rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-age-toggle:hover {
+  background: rgba(58, 111, 168, 0.08);
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-toggle-icon {
+  font-size: 0.7rem;
+  color: #64748b;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-verified {
@@ -9016,20 +9071,6 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-unverified {
   color: var(--text-muted, #5e7a90) !important;
   font-size: 0.85rem !important;
-}
-
-#personaldetails-tab .cdn-overview #ageDobToggle {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-}
-
-#personaldetails-tab .cdn-overview #ageDobToggle .cdn-ov-toggle-hint {
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: #64748b;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__foot {
@@ -9129,6 +9170,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+  flex: 1 1 auto;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item {
@@ -9137,6 +9179,10 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   border-radius: 10px;
   background: #fff;
   transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+#personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body {
+  min-height: 100%;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item.is-current {
