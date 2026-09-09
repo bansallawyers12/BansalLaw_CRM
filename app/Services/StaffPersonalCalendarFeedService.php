@@ -308,6 +308,9 @@ class StaffPersonalCalendarFeedService
         $this->applyPersonalStaffEventScope($query, $staffId, $calendarType);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyDatetimeWindow($query, 'starts_at', $request);
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->whereNotIn('status', ['cancelled', 'completed']);
+        }
 
         return (int) $query->count();
     }
@@ -417,7 +420,7 @@ class StaffPersonalCalendarFeedService
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyDatetimeWindow($query, 'starts_at', $request);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {
-            $query->where('status', '!=', 'cancelled');
+            $query->whereNotIn('status', ['cancelled', 'completed']);
         }
 
         return $query->orderBy('starts_at')->get()

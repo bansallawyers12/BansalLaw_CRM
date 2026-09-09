@@ -69,6 +69,9 @@ class StaffCalendarFeedService
 
         $this->restrictStaffCalendarEventQuery($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->whereNotIn('status', ['cancelled', 'completed']);
+        }
 
         return (int) $query->count();
     }
@@ -140,6 +143,9 @@ class StaffCalendarFeedService
 
         $this->restrictStaffCalendarEventQuery($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->whereNotIn('status', ['cancelled', 'completed']);
+        }
 
         return $query->orderBy('starts_at')->get()
             ->map(fn (StaffCalendarEvent $e) => $this->payloadFromStaffEvent($e))

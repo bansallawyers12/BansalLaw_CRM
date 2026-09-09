@@ -769,48 +769,68 @@
     function updatePersonalReminderStatus(eventId, newStatus, triggerBtn) {
         if (!eventId || !newStatus) return;
         var label = String(newStatus).replace(/_/g, ' ');
-        if (!window.confirm('Change reminder status to "' + label + '"?')) {
-            return;
-        }
-        var btn = triggerBtn || null;
-        if (btn) btn.disabled = true;
-        fetch(UPDATE_EVENT_API + '/' + encodeURIComponent(eventId), {
-            method: 'PUT',
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrfToken(),
-            },
-            body: JSON.stringify({ status: newStatus }),
-        })
-            .then(function (res) {
-                return res.json().then(function (payload) {
-                    if (!res.ok || payload.success === false) {
-                        throw new Error(payload.message || 'Could not update status.');
-                    }
-                    if (newStatus === 'cancelled') {
-                        hideModalById('personalReminderDetailModal');
-                    } else {
-                        var next = resolveReminderStatus(payload.data || { status: newStatus });
-                        document
-                            .querySelectorAll('#personalReminderDetailModal [data-reminder-status-pill]')
-                            .forEach(function (el) {
-                                el.className = 'appt-status-pill appt-status-pill--' + next.key;
-                                el.setAttribute('data-reminder-status-pill', next.key);
-                                el.textContent = next.label;
-                            });
-                    }
-                    refreshReminderCalendars();
+        var confirmPromise =
+            typeof window.crmConfirm === 'function'
+                ? window.crmConfirm({
+                      title: 'Change status?',
+                      text: 'Change reminder status to "' + label + '"?',
+                      confirmText: 'Yes, change',
+                      icon: 'question',
+                  })
+                : Promise.resolve(false);
+
+        confirmPromise.then(function (confirmed) {
+            if (!confirmed) return;
+            var btn = triggerBtn || null;
+            if (btn) btn.disabled = true;
+            fetch(UPDATE_EVENT_API + '/' + encodeURIComponent(eventId), {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: JSON.stringify({ status: newStatus }),
+            })
+                .then(function (res) {
+                    return res.json().then(function (payload) {
+                        if (!res.ok || payload.success === false) {
+                            throw new Error(payload.message || 'Could not update status.');
+                        }
+                        var removesFromCalendar =
+                            newStatus === 'cancelled' || newStatus === 'completed';
+                        if (removesFromCalendar) {
+                            hideModalById('personalReminderDetailModal');
+                        } else {
+                            var next = resolveReminderStatus(payload.data || { status: newStatus });
+                            document
+                                .querySelectorAll('#personalReminderDetailModal [data-reminder-status-pill]')
+                                .forEach(function (el) {
+                                    el.className = 'appt-status-pill appt-status-pill--' + next.key;
+                                    el.setAttribute('data-reminder-status-pill', next.key);
+                                    el.textContent = next.label;
+                                });
+                        }
+                        refreshReminderCalendars();
+                        var successMsg = removesFromCalendar
+                            ? 'Reminder marked as ' + label + ' and removed from your calendar.'
+                            : 'Reminder status updated to "' + label + '".';
+                        if (typeof window.crmToast === 'function') {
+                            window.crmToast(successMsg, 'success');
+                        } else if (typeof crmAlert === 'function') {
+                            crmAlert(successMsg);
+                        }
+                    });
+                })
+                .catch(function (err) {
+                    crmAlert(err.message || 'Could not update status.');
+                })
+                .finally(function () {
+                    if (btn) btn.disabled = false;
                 });
-            })
-            .catch(function (err) {
-                crmAlert(err.message || 'Could not update status.');
-            })
-            .finally(function () {
-                if (btn) btn.disabled = false;
-            });
+        });
     }
 
     function showModalById(id) {
@@ -932,7 +952,7 @@
             renderReminderDetailItem('fa-envelope', 'Email', escapeDetailHtml(formatDetail(props.client_email))) +
             renderReminderDetailItem('fa-phone', 'Phone', escapeDetailHtml(formatDetail(props.client_phone))) +
             renderReminderDetailItem('fa-bell', 'Type', 'Reminder') +
-            renderReminderDetailItem('fa-calendar-day', 'Date &amp; Time', escapeDetailHtml(whenLabel)) +
+            renderReminderDetailItem('fa-calendar-day', 'Date & Time', escapeDetailHtml(whenLabel)) +
             renderReminderDetailItem('fa-location-dot', 'Location', escapeDetailHtml(formatDetail(props.location))) +
             renderReminderDetailItem('fa-circle-check', 'Status', statusPillHtml) +
             (props.notes
@@ -955,39 +975,50 @@
             if (canManage) {
                 deleteBtn.classList.remove('d-none');
                 deleteBtn.onclick = function () {
-                    if (!window.confirm('Delete this reminder from your personal calendar?')) {
-                        return;
-                    }
-                    deleteBtn.disabled = true;
-                    fetch(DESTROY_EVENT_API + '/' + encodeURIComponent(eventId), {
-                        method: 'DELETE',
-                        credentials: 'same-origin',
-                        headers: {
-                            Accept: 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': csrfToken(),
-                        },
-                    })
-                        .then(function (res) {
-                            return res.json().then(function (payload) {
-                                if (!res.ok || payload.success === false) {
-                                    throw new Error(payload.message || 'Could not delete reminder.');
-                                }
-                                hideModalById('personalReminderDetailModal');
-                                if (window.staffDashboardCalendar) {
-                                    window.staffDashboardCalendar.refetchEvents();
-                                }
-                                if (typeof window.refreshUpcomingList === 'function') {
-                                    window.refreshUpcomingList();
-                                }
+                    var confirmPromise =
+                        typeof window.crmConfirm === 'function'
+                            ? window.crmConfirm({
+                                  title: 'Delete reminder?',
+                                  text: 'Delete this reminder from your personal calendar?',
+                                  confirmText: 'Yes, delete',
+                                  confirmColor: '#c0392b',
+                                  icon: 'warning',
+                              })
+                            : Promise.resolve(false);
+
+                    confirmPromise.then(function (confirmed) {
+                        if (!confirmed) return;
+                        deleteBtn.disabled = true;
+                        fetch(DESTROY_EVENT_API + '/' + encodeURIComponent(eventId), {
+                            method: 'DELETE',
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken(),
+                            },
+                        })
+                            .then(function (res) {
+                                return res.json().then(function (payload) {
+                                    if (!res.ok || payload.success === false) {
+                                        throw new Error(payload.message || 'Could not delete reminder.');
+                                    }
+                                    hideModalById('personalReminderDetailModal');
+                                    if (window.staffDashboardCalendar) {
+                                        window.staffDashboardCalendar.refetchEvents();
+                                    }
+                                    if (typeof window.refreshUpcomingList === 'function') {
+                                        window.refreshUpcomingList();
+                                    }
+                                });
+                            })
+                            .catch(function (err) {
+                                crmAlert(err.message || 'Could not delete reminder.');
+                            })
+                            .finally(function () {
+                                deleteBtn.disabled = false;
                             });
-                        })
-                        .catch(function (err) {
-                            crmAlert(err.message || 'Could not delete reminder.');
-                        })
-                        .finally(function () {
-                            deleteBtn.disabled = false;
-                        });
+                    });
                 };
             } else {
                 deleteBtn.classList.add('d-none');
