@@ -4346,7 +4346,8 @@ success: function(response) {
             if(delhref == 'deletenote'){
                 deleteUrl = window.ClientDetailConfig.urls.deleteNote;
             } else {
-                deleteUrl = window.ClientDetailConfig.urls.admin + '/documents/delete';
+                deleteUrl = (window.ClientDetailConfig.urls.deleteDocs)
+                    || (window.ClientDetailConfig.urls.admin + '/documents/delete');
             }
 
             $.ajax({
@@ -4356,6 +4357,8 @@ success: function(response) {
                 type:'POST',
 
                 dataType:'json',
+
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
 
                 data:{note_id:notid},
 

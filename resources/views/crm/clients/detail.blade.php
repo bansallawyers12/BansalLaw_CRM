@@ -1747,6 +1747,7 @@ $(document).ready(function() {
             createNote: '{{ URL::to("/create-note") }}',
             getNoteDetail: '{{ URL::to("/getnotedetail") }}',
             deleteNote: '{{ URL::to("/deletenote") }}',
+            deleteDocs: '{{ route("clients.documents.deletedocs") }}',
             checkStarClient: '{{ route("check.star.client") }}',
             getInfoByReceiptId: '{{ URL::to("/clients/getInfoByReceiptId") }}',
             notPickedCall: '{{ URL::to("/not-picked-call") }}',

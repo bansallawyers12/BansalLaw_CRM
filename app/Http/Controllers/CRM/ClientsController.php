@@ -4184,68 +4184,6 @@ class ClientsController extends Controller
     }
 
     /**
-     * Test Python Accounting Processing
-     * 
-     * This is a test endpoint to experiment with Python-based accounting processing
-     * Can be used to test data export, analytics, report generation, etc.
-     */
-    public function testPythonAccounting(Request $request)
-    {
-        try {
-            $clientId = $request->input('client_id');
-            $matterId = $request->input('matter_id');
-            $processingType = $request->input('processing_type', 'analytics'); // analytics, export, report
-            
-            // Get accounting data
-            $clientReceipts = DB::table('account_client_receipts')
-                ->where('client_id', $clientId)
-                ->where('client_matter_id', $matterId)
-                ->get();
-            
-            $startTime = microtime(true);
-            
-            // Prepare data for Python service
-            $accountingData = [
-                'client_id' => $clientId,
-                'matter_id' => $matterId,
-                'receipts' => $clientReceipts->toArray(),
-                'processing_type' => $processingType
-            ];
-            
-            // TODO: Call Python service for processing
-            // Example:
-            // $pythonService = app(\App\Services\PythonService::class);
-            // $result = $pythonService->processAccountingData($accountingData);
-            
-            // For now, return mock response
-            $endTime = microtime(true);
-            $processingTime = ($endTime - $startTime) * 1000; // Convert to milliseconds
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Test completed successfully',
-                'data' => [
-                    'processing_time_ms' => round($processingTime, 2),
-                    'records_count' => $clientReceipts->count(),
-                    'processing_type' => $processingType,
-                    'php_processing' => true,
-                    'python_service_available' => false, // Will be true when Python service is integrated
-                ],
-                'note' => 'This is a test endpoint. Integrate with Python service for actual processing.'
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Test Python Accounting Error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error during test processing',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Update office assignment for a matter
      * POST /matters/update-office
      */

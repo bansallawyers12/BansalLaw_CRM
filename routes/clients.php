@@ -191,7 +191,7 @@ Route::post('/documents/upload-matter-document', [ClientDocumentsController::cla
 Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument'])
     ->middleware('extend.video.upload');
 Route::post('/documents/rename', [ClientDocumentsController::class, 'renamedoc'])->name('clients.documents.renamedoc');
-Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
+Route::post('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
 // BUGFIX #3: Add move document feature
 Route::post('/documents/move', [ClientDocumentsController::class, 'moveDocument'])->name('clients.documents.moveDocument');
 // BUGFIX #3: Get visa categories for a specific matter
@@ -221,9 +221,6 @@ Route::post('/documents/reload-folder-list', [ClientDocumentsController::class, 
 /*---------- Client Invoices & Receipts ----------*/
 Route::get('/clients/saveaccountreport/{id}', [ClientAccountsController::class, 'saveaccountreport'])->name('clients.saveaccountreport');
 Route::post('/clients/saveaccountreport', [ClientAccountsController::class, 'saveaccountreport'])->name('clients.saveaccountreport.update');
-
-/* Test Route for Python Processing */
-Route::post('/clients/test-python-accounting', [ClientsController::class, 'testPythonAccounting'])->name('clients.test-python-accounting');
 
 Route::get('/clients/saveinvoicereport/{id}', [ClientAccountsController::class, 'saveinvoicereport'])->name('clients.saveinvoicereport');
 Route::post('/clients/saveinvoicereport', [ClientAccountsController::class, 'saveinvoicereport'])->name('clients.saveinvoicereport.update');
