@@ -61,8 +61,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| CLI-1 | **High** | `routes/clients.php` L44–45 | **Overlapping client edit routes:** `GET clients/edit/{id}` (`clients.edit`) and `Route::match(['get','post'], 'clients/edit/{id?}')` (`clients.update`) share the same URI pattern. Laravel resolves GET to the first registered route; `clients.update` name may not match actual GET behavior. |
-| CLI-2 | Medium | `public/js/crm/clients/detail-main.js` | **50+ `alert()` calls** for errors/success (uploads, documents, invoices, pins). Blocks UI thread; poor mobile/accessibility UX. Toastify/SweetAlert2 already loaded in layout but not used consistently. |
+| CLI-1 | **High** | `routes/clients.php` | ~~Overlapping client edit routes: GET `clients.edit` and GET\|POST `clients.update` shared the same URI.~~ **Fixed:** `clients.edit` is GET-only; `clients.update` is POST-only (`/clients/edit/{id?}`). |
+| CLI-2 | Medium | `public/js/crm/clients/detail-main.js` | ~~50+ native `alert()` calls.~~ **Fixed:** detail-main uses `crmAlert`/`crmToast` (native `alert` removed); companion detail scripts (`matter-reopen-actions`, `timeline-billing`) no longer fall back to `window.alert`. |
 | CLI-3 | Medium | `resources/views/crm/clients/invoicelist.blade.php` ~L1575–1587 | Void-invoice success path appends **`debug_info` reversal counts into `alert()`** shown to end users — developer diagnostics in production UI. |
 | CLI-4 | Medium | `public/js/crm/clients/detail-main.js`; `docs/MODULE_OPTIMIZATION_REVIEW.md` §11 | **`detail-main.js` remains a very large monolith** with incomplete progressive extraction. Increases bug surface and page load time on client detail. |
 | CLI-5 | Medium | `cmr-bugs.md` §1.3 | Client merge marked **Partial** — may omit edge tables. Merge wizard may show success while some related data is not migrated. |

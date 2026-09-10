@@ -462,7 +462,7 @@
     function emailBillingStructure() {
         var $emailModal = $('#emailmodal');
         if (!$emailModal.length) {
-            window.alert('Compose Email is not available on this page.');
+            window.crmAlert('Compose Email is not available on this page.');
             return;
         }
 
@@ -473,7 +473,7 @@
         var feeState = readFeeLines();
         var disbRows = readDisbursements();
         if (!feeState.detailLines.length && !disbRows.length) {
-            window.alert('No selected fee lines found. In Billing, click Reload, keep lines selected, then click Email again.');
+            window.crmAlert('No selected fee lines found. In Billing, click Reload, keep lines selected, then click Email again.');
             return;
         }
 
@@ -557,7 +557,7 @@
         var html = buildStructureReportHtml();
         var win = window.open('', '_blank', 'noopener,noreferrer,width=960,height=720');
         if (!win) {
-            window.alert('Please allow pop-ups to print the billing structure.');
+            window.crmAlert('Please allow pop-ups to print the billing structure.');
             return;
         }
         win.document.open();

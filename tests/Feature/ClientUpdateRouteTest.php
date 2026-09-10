@@ -24,6 +24,25 @@ class ClientUpdateRouteTest extends TestCase
     }
 
     #[Test]
+    public function get_and_post_clients_edit_use_distinct_named_routes(): void
+    {
+        $this->assertSame(url('/clients/edit/abc'), route('clients.edit', ['id' => 'abc']));
+        $this->assertSame(url('/clients/edit'), route('clients.update'));
+        $this->assertSame(url('/clients/edit/abc'), route('clients.update', ['id' => 'abc']));
+
+        $router = app('router');
+        $get = $router->getRoutes()->match(
+            \Illuminate\Http\Request::create('/clients/edit/abc', 'GET')
+        );
+        $post = $router->getRoutes()->match(
+            \Illuminate\Http\Request::create('/clients/edit/abc', 'POST')
+        );
+
+        $this->assertSame('clients.edit', $get->getName());
+        $this->assertSame('clients.update', $post->getName());
+    }
+
+    #[Test]
     public function post_clients_edit_accepts_raw_numeric_route_id(): void
     {
         $admin = Staff::create([

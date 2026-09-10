@@ -81,8 +81,8 @@
                 var msg = (data && data.message) || 'Failed to reopen matter.';
                 if (typeof window.crmAlert === 'function') {
                     window.crmAlert(msg);
-                } else {
-                    window.alert(msg);
+                } else if (typeof window.crmToast === 'function') {
+                    window.crmToast(msg, 'error');
                 }
                 if (buttonEl) {
                     buttonEl.disabled = false;
@@ -92,8 +92,8 @@
             .catch(function () {
                 if (typeof window.crmAlert === 'function') {
                     window.crmAlert('An error occurred. Please try again.');
-                } else {
-                    window.alert('An error occurred. Please try again.');
+                } else if (typeof window.crmToast === 'function') {
+                    window.crmToast('An error occurred. Please try again.', 'error');
                 }
                 if (buttonEl) {
                     buttonEl.disabled = false;

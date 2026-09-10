@@ -1987,7 +1987,7 @@ success: function(response) {
 
             // Display the clean value in an alert
 
-            //alert(clean_note_description);
+
 
 
 
@@ -2492,7 +2492,7 @@ success: function(response) {
 
                     }  else {
 
-                        //alert('Please select matter from matter drop down.');
+
 
                         $(target).find('.note_col').each(function() {
 
@@ -2508,7 +2508,7 @@ success: function(response) {
 
 
 
-            else if (target === '#migrationdocuments') { //alert('migrationdocuments');
+            else if (target === '#migrationdocuments') {
 
                 if ($('.general_matter_checkbox_client_detail').is(':checked')) {
 
@@ -2540,7 +2540,7 @@ success: function(response) {
 
                     }  else {
 
-                        //alert('Please select matter from matter drop down.');
+
 
                         $(target).find('.drow').each(function() {
 
@@ -3806,7 +3806,7 @@ success: function(response) {
 
             var clientName = window.ClientDetailConfig.clientFirstName || 'client';
 
-            clientName = clientName.charAt(0).toUpperCase() + clientName.slice(1).toLowerCase(); //alert(clientName);
+            clientName = clientName.charAt(0).toUpperCase() + clientName.slice(1).toLowerCase();
 
 
 
@@ -3898,7 +3898,7 @@ success: function(response) {
 
 
 
-            var client_id = window.ClientDetailConfig.clientId; //alert(site_url);
+            var client_id = window.ClientDetailConfig.clientId;
 
             $.ajax({
 
@@ -3922,7 +3922,7 @@ success: function(response) {
 
 
 
-        //alert('ready');
+
 
         $('#feather-icon').click(function(){
 
@@ -3982,7 +3982,7 @@ success: function(response) {
 
 
 
-        //alert(left_upper_height+'==='+left_section_lower+'==='+total_left+'==='+right_section_height);
+
 
         if(right_section_height >total_left ){ 
 
@@ -5510,7 +5510,7 @@ success: function(response) {
 
         $(document).delegate('.complete_session', 'click', function(){
 
-            var client_id = $(this).attr('data-clientid'); //alert(client_id);
+            var client_id = $(this).attr('data-clientid');
 
             if(client_id !=""){
 
@@ -5769,9 +5769,9 @@ success: function(response) {
 
         $(document).delegate('.selecttemplate', 'change', function(){
 
-            var client_id = $(this).data('clientid'); //alert(client_id);
+            var client_id = $(this).data('clientid');
 
-            var client_firstname = $(this).data('clientfirstname'); //alert(client_firstname);
+            var client_firstname = $(this).data('clientfirstname');
 
             if (client_firstname) {
 
@@ -5779,7 +5779,7 @@ success: function(response) {
 
             }
 
-            var client_reference_number = $(this).data('clientreference_number'); //alert(client_reference_number);
+            var client_reference_number = $(this).data('clientreference_number');
 
             var company_name = window.__CRM_APP_NAME__ || '';
 
