@@ -54,9 +54,9 @@ Status key (2026-08-07):
 - **Now:** Calls `ensureCrmRecordAccess` on both `merge_from` and `merge_into`.
 
 ### 1.3 Medium — Merge omits core CRM data (matters, trust, invoices, personal details)
-- **Status:** Partial
-- **Files:** `ClientsController::merge_records`
-- **Now:** Migrates matters, receipts, relationships, qualifications, emails, contacts, addresses, activities, and related sets. Edge tables may still be incomplete — confirm against product checklist before treating as fully closed.
+- **Status:** Fixed
+- **Files:** `ClientsController::merge_records`, `App\Services\ClientMergeService`, `clients-listing-spa.js`
+- **Now:** Migrates core + edge tables (`note_attachments`, `documents`/`notes`/`front_desk` `lead_id`, `booking_appointments.user_id`, `companies.contact_person_id`, opposing-party FKs, optional visa checklist refs). Unique `companies.admin_id` and opposing-party collisions are resolved (merge/delete). Listing merge UI only shows success when JSON `status` is true.
 
 ### 1.4 Critical — Document download via `filelink` skips access control
 - **Status:** Fixed

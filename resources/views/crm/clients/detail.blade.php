@@ -1666,16 +1666,19 @@ $(document).ready(function() {
         'noteterm' => [$cdnJsWithVer('js/crm/clients/modules/notes.js')],
         'clientaction' => [$cdnJsWithVer('js/crm/clients/modules/matter-tasks.js')],
         'personaldocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/document-preview.js'),
             $cdnJsWithVer('js/crm/clients/modules/documents.js'),
             $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
             $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
         ],
         'matterdocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/document-preview.js'),
             $cdnJsWithVer('js/crm/clients/modules/documents.js'),
             $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
             $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
         ],
         'notuseddocuments' => [
+            $cdnJsWithVer('js/crm/clients/modules/document-preview.js'),
             $cdnJsWithVer('js/crm/clients/modules/documents.js'),
             $cdnJsWithVer('js/crm/clients/modules/checklist.js'),
             $cdnJsWithVer('js/crm/clients/modules/subtabs.js'),
@@ -1838,6 +1841,8 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/flatpickr-helpers.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/editor-helpers.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/dom-helpers.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/document-preview.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/document-preview.js')) ?: time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/client-tags.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/client-tags.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}?v={{ @filemtime(public_path('js/crm/clients/modules/send-to-client.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/tab-lazy-load.js') }}?v={{ @filemtime(public_path('js/crm/clients/tab-lazy-load.js')) ?: time() }}"></script>
 @foreach ($cdnActiveLazyPaths as $cdnScriptPath)

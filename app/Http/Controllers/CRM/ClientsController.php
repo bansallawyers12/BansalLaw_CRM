@@ -75,6 +75,7 @@ use App\Services\Sms\UnifiedSmsManager;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
 use App\Services\ClientImportService;
+use App\Services\ClientMergeService;
 use App\Services\LeadSpreadsheetImportService;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -2707,48 +2708,8 @@ class ClientsController extends Controller
                 // 2. Soft-delete the SOURCE record (merge_from), NOT the survivor (merge_into)
                 DB::table('admins')->where('id', $fromId)->update(['is_deleted' => now()]);
 
-                // 3. Migrate all client-referencing tables atomically
-                $tablesToMigrate = [
-                    'client_matters' => ['client_id'],
-                    'account_client_receipts' => ['client_id'],
-                    'account_all_invoice_receipts' => ['client_id'],
-                    'client_emails' => ['client_id', 'admin_id'],
-                    'client_contacts' => ['client_id', 'admin_id'],
-                    'client_addresses' => ['client_id', 'admin_id'],
-                    'client_conflict_checks' => ['client_id'],
-                    'client_conflict_parties' => ['client_id'],
-                    'client_court_hearings' => ['client_id'],
-                    'client_legal_forms' => ['client_id'],
-                    'client_matter_tasks' => ['client_id'],
-                    'activities_logs' => ['client_id'],
-                    'notes' => ['client_id'],
-                    'documents' => ['client_id'],
-                    'appointments' => ['client_id'],
-                    'booking_appointments' => ['client_id'],
-                    'quotations' => ['client_id'],
-                    'email_logs' => ['client_id'],
-                    'checkin_logs' => ['client_id'],
-                    'front_desk_check_ins' => ['client_id', 'admin_id'],
-                    'company_directors' => ['director_client_id'],
-                    'companies' => ['admin_id'],
-                    'email_verifications' => ['client_id'],
-                    'phone_verifications' => ['client_id'],
-                    'personal_document_types' => ['client_id'],
-                    'visa_document_types' => ['client_id'],
-                    'sms_logs' => ['client_id'],
-                    'staff_calendar_events' => ['client_id'],
-                    'client_access_grants' => ['admin_id'],
-                ];
-
-                foreach ($tablesToMigrate as $tableName => $cols) {
-                    if (Schema::hasTable($tableName)) {
-                        foreach ($cols as $col) {
-                            if (Schema::hasColumn($tableName, $col)) {
-                                DB::table($tableName)->where($col, $fromId)->update([$col => $toId]);
-                            }
-                        }
-                    }
-                }
+                // 3. Migrate client-referencing tables (incl. edge FKs / unique-safe remaps)
+                app(ClientMergeService::class)->migrateRelatedRecords($fromId, $toId);
 
                 DB::commit();
                 $response['status'] = true;

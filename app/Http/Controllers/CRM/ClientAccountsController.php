@@ -4492,11 +4492,13 @@ class ClientAccountsController extends Controller
            $response['message'] = 'Invoice voided successfully. (Note: No fee transfers found to reverse - invoice may not have been paid from client funds)';
        }
        
-       // Add debug info
-       $response['debug_info'] = [
-           'total_reversals' => $totalReversalsCreated,
-           'voided_receipts' => count($clickedReceiptIds)
-       ];
+       // Diagnostics for developers only (APP_DEBUG). Never required by the UI.
+       if (config('app.debug')) {
+           $response['debug_info'] = [
+               'total_reversals' => $totalReversalsCreated,
+               'voided_receipts' => count($clickedReceiptIds)
+           ];
+       }
       } else {
        $response['status']     =     true;
        $response['message']    =    'No record was updated.';

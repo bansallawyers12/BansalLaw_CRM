@@ -1560,31 +1560,29 @@ jQuery(document).ready(function($){
         if ( clickedReceiptIds.length > 0)
         {
             var mergeStr = "Are you sure want to void these invoice?";
-            if (confirm(mergeStr)) {
+            var runVoid = function () {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/void_invoice",
+                    url:"{{ route('client.void_invoice') }}",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds},
                     success: function(response){
                         // Parse response if it's a string (fallback for older jQuery versions)
                         var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                        //location.reload(true);
-                        
+
                         if(obj.status){
-                            var debugMsg = '';
-                            if(obj.debug_info){
-                                debugMsg = '\n\nDebug: ' + obj.debug_info.total_reversals + ' reversals created';
+                            // Keep diagnostics in the console only — never show debug_info to end users.
+                            if (obj.debug_info && typeof console !== 'undefined' && console.debug) {
+                                console.debug('void_invoice debug_info', obj.debug_info);
                             }
-                            
+
                             if(obj.reversals_created > 0){
                                 // If fee transfers were voided, reload the page to show updated balances
-                                crmAlert(obj.message + debugMsg + '\n\nReloading page to show updated balances...');
+                                crmAlert((obj.message || 'Invoice voided successfully.') + '\n\nReloading page to show updated balances...');
                                 window.location.reload();
                                 return;
                             } else {
-                                // No fee transfers found - just show message
-                                crmAlert(obj.message + debugMsg);
+                                crmAlert(obj.message || 'Invoice voided successfully.');
                             }
                         }
                         
@@ -1607,6 +1605,21 @@ jQuery(document).ready(function($){
                         $('.listing-container .custom-error-msg').addClass('alert alert-success');
                     }
                 });
+            };
+
+            if (typeof window.crmConfirm === 'function') {
+                window.crmConfirm({
+                    title: 'Void invoice',
+                    text: mergeStr,
+                    confirmText: 'Void',
+                    cancelText: 'Cancel'
+                }).then(function (ok) {
+                    if (ok) {
+                        runVoid();
+                    }
+                });
+            } else if (window.confirm(mergeStr)) {
+                runVoid();
             }
         } else {
             crmAlert('Please select atleast 1 invoice.');

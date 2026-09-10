@@ -203,7 +203,7 @@
 - Progressive modules under `public/js/crm/clients/modules/` + `tab-lazy-load.js`
 
 **Remaining (optional)**
-- `detail-main.js` is still a large monolith (incremental extraction continues)
+- `detail-main.js` remains large; document preview → `modules/document-preview.js`, tags UI → `modules/client-tags.js` (CLI-4). Continue extracting other cohesive blocks (compose/email upload, Google Review).
 - `appointments.js` stays eager-loaded (booking modal usable from any tab)
 
 ---

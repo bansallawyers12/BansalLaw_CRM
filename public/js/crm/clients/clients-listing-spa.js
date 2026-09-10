@@ -474,7 +474,20 @@
                     url: cfg().routes.mergeRecords,
                     headers: { 'X-CSRF-TOKEN': cfg().csrfToken },
                     data: { merge_from: clickedIds[0], merge_into: clickedIds[1] },
-                    success: function () {
+                    success: function (response) {
+                        var obj = (typeof response === 'string')
+                            ? (function () { try { return JSON.parse(response); } catch (e) { return {}; } })()
+                            : (response || {});
+
+                        if (!obj.status) {
+                            clientsSwalAlert({
+                                icon: 'error',
+                                title: 'Merge failed',
+                                text: obj.message || ('Could not merge ' + recordTypeLabelPlural() + '.')
+                            });
+                            return;
+                        }
+
                         removeClientRow(clickedIds[0]);
                         resetSelectionState();
                         $root().find('.cb-element').prop('checked', false);
@@ -482,15 +495,22 @@
                         clientsSwalAlert({
                             icon: 'success',
                             title: 'Merged',
-                            text: recordTypeLabel() + ' records merged successfully.',
+                            text: obj.message || (recordTypeLabel() + ' records merged successfully.'),
                             timer: 2000
                         });
                     },
-                    error: function () {
+                    error: function (xhr) {
+                        var msg = 'Could not merge ' + recordTypeLabelPlural() + '.';
+                        try {
+                            var err = xhr && xhr.responseJSON;
+                            if (err && err.message) {
+                                msg = err.message;
+                            }
+                        } catch (e) { /* ignore */ }
                         clientsSwalAlert({
                             icon: 'error',
                             title: 'Merge failed',
-                            text: 'Could not merge ' + recordTypeLabelPlural() + '.'
+                            text: msg
                         });
                     }
                 });
