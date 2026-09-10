@@ -657,26 +657,6 @@
                 @endforelse
             </div>
             <div class="insights-card">
-                <h4>
-                    Quality Mix
-                    <span class="badge">Quality Distribution</span>
-                </h4>
-                @forelse($leadsByQuality as $row)
-                    <div class="list-item">
-                        <span>{{ $row->lead_quality ?? 'Unrated' }}</span>
-                        <strong style="font-size: 18px;">{{ number_format($row->total) }}</strong>
-                    </div>
-                @empty
-                    <div class="empty-state">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                            <path d="M8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
-                        </svg>
-                        <div>No quality ratings available</div>
-                    </div>
-                @endforelse
-            </div>
-            <div class="insights-card">
                 <h4>Monthly Intake</h4>
                 <div class="chart-container">
                     <canvas id="leadMonthlyChart"></canvas>
@@ -702,7 +682,6 @@
                                 <th>Lead</th>
                                 <th>Service</th>
                                 <th>Status</th>
-                                <th>Quality</th>
                                 <th>Captured</th>
                             </tr>
                         </thead>
@@ -716,7 +695,6 @@
                                             {{ ucfirst($lead->status ?? 'unknown') }}
                                         </span>
                                     </td>
-                                    <td>{{ $lead->lead_quality ?? 'Unrated' }}</td>
                                     <td>{{ Carbon\Carbon::parse($lead->created_at)->format('d M Y') }}</td>
                                 </tr>
                             @endforeach

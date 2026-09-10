@@ -68,11 +68,11 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 | CLI-5 | Medium | `cmr-bugs.md` §1.3 | ~~Client merge omitted edge tables; UI showed success without checking `status`.~~ **Fixed:** `ClientMergeService` migrates note attachments, lead_id/user_id mirrors, companies contact person + unique admin_id merge, opposing-party FKs, visa checklist refs; listing SPA respects `status:false`. |
 | CLI-6 | Medium | `app/Http/Controllers/CRM/ClientsController.php`; `routes/clients.php` | ~~`POST /clients/test-python-accounting` returned mock JSON (`python_service_available: false`).~~ **Fixed:** route and `testPythonAccounting` method removed. |
 | CLI-7 | Medium | `routes/clients.php`; `detail-main.js` | ~~`GET /documents/delete` allowed destructive delete via GET.~~ **Fixed:** route is `POST` only; client detail delete uses named URL + CSRF header. |
-| CLI-8 | Low | `public/js/crm/clients/detail-main.js` ~L2374–2523 | Dead JS branches for **`migrationdocuments` tab** — tab removed from `$cdnTabIncludes` but handlers remain. |
-| CLI-9 | Low | `resources/views/crm/clients/detail.blade.php` | Comments reference deprecated **Service Taken**, **Education**, **Interested Services** features. UI cleaned but comments indicate incomplete doc/JS cleanup. |
-| CLI-10 | Low | `docs/ADMINS_TABLE_COLUMNS.md` | **`rating` column marked for deletion** but client-rating CSS remains in layouts; insights may show “No quality ratings available.” Orphaned UI. |
-| CLI-11 | Low | `resources/views/crm/clients/modals/financial.blade.php`, `addclientmodal.blade.php` | Commission Invoice, General Invoice, Payment Details, payment-schedule flows **removed**; verify no stray menu links in custom deployments. |
-| CLI-12 | Positive | `resources/views/crm/clients/tabs/_lazy_tab_shell.blade.php`, `tab-lazy-load.js` | Lazy tabs show spinner and error text on failure — good pattern for account and other heavy tabs. |
+| CLI-8 | Low | `public/js/crm/clients/detail-main.js`; `modules/subtabs.js` | ~~Dead JS branches for `migrationdocuments` tab.~~ **Fixed:** removed obsolete matter-filter / tab-click handlers; matter docs still use `add_migration_doc` modal. |
+| CLI-9 | Low | `resources/views/crm/clients/detail.blade.php` | ~~Comments for deprecated Service Taken / Education / Interested Services.~~ **Fixed:** removed stale comments and unused `getInterestedService*` ClientDetailConfig URLs. |
+| CLI-10 | Low | layouts + insights + rating route | ~~Orphaned `client-rating` CSS and empty quality ratings UI after `rating`/`lead_quality` drops.~~ **Fixed:** removed CSS, Quality Mix card, rating click handler, and no-op `/change-client-status` route. |
+| CLI-11 | Low | `modals/financial.blade.php`, `addclientmodal.blade.php` | ~~Verify no stray Commission/General Invoice / Payment Details links.~~ **Fixed:** confirmed no live UI; cleaned leftover removal comments. |
+| CLI-12 | Positive | `tabs/_lazy_tab_shell.blade.php`, `tab-lazy-load.js` | Lazy tabs show spinner and error text on failure — good pattern; no change needed. |
 
 ---
 

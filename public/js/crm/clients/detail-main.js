@@ -1493,32 +1493,6 @@ success: function(response) {
 
             }
 
-            else if( activeTab == 'documentalls' && activeSubTab == 'migrationdocuments') {
-
-                if(selectedMatter != "" ) {
-
-                    $('#migrationdocuments-subtab .migdocumnetlist1').find('.drow').each(function() {
-
-                        if ($(this).data('matterid') == selectedMatter) {
-
-                            $(this).show();
-
-                        } else {
-
-                            $(this).hide();
-
-                        }
-
-                    });
-
-                }  else {
-
-                    $(this).hide();
-
-                }
-
-            }
-
 
 
 
@@ -1534,13 +1508,7 @@ success: function(response) {
 
             }
 
-            else if( activeTab.attr('id') == 'migrationdocuments-tab' ) {
-
-                // Trigger click on the active tab
-
-                activeTab.trigger('click');
-
-            }*/
+*/
 
         });
 
@@ -1627,55 +1595,6 @@ success: function(response) {
                 }
 
             }
-
-
-
-            else if (target === '#migrationdocuments') {
-
-                if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-
-                    selectedMatter = $('.general_matter_checkbox_client_detail').val();
-
-                } else {
-
-                    selectedMatter = $('#sel_matter_id_client_detail').val();
-
-                }
-
-                if(target == '#migrationdocuments' ){
-
-                    if(selectedMatter != "" ) {
-
-                        $(target).find('.drow').each(function() {
-
-                            if ($(this).data('matterid') == selectedMatter) {
-
-                                $(this).show();
-
-                            } else {
-
-                                $(this).hide();
-
-                            }
-
-                        });
-
-                    }  else {
-
-
-
-                        $(target).find('.drow').each(function() {
-
-                            $(this).hide();
-
-                        });
-
-                    }
-
-                }
-
-            }
-
 
 
 
@@ -4799,56 +4718,6 @@ success: function(response) {
                     var _ts = (typeof getTomSelectInstance === 'function') ? getTomSelectInstance($templateSelect[0]) : null;
                     if (_ts) { _ts.setValue(String(templateId), true); }
                     $templateSelect.val(templateId).trigger('change');
-
-                }
-
-            });
-
-        });
-
-
-
-        $(document).delegate('.change_client_status', 'click', function(e){
-
-
-
-            var v = $(this).attr('rating');
-
-            $('.change_client_status').removeClass('active');
-
-            $(this).addClass('active');
-
-
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.changeClientStatus,
-
-                type:'GET',
-
-                dataType:'json',
-
-                data:{id:window.ClientDetailConfig.clientId,rating:v},
-
-                success: function(response){
-
-                    var res = safeParseJsonResponse(response);
-                    if (!res) return;
-                    if(res.status){
-
-
-
-                        $('.custom-error-msg').html('<span class="alert alert-success">'+res.message+'</span>');
-
-                        getallactivities();
-
-                    }else{
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">'+response.message+'</span>');
-
-                    }
-
-
 
                 }
 

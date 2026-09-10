@@ -640,7 +640,6 @@
         }
         .client-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #dee2e6; }
         .client-header h1 { font-size: 1.8em; font-weight: 600; color: #212529; margin: 0; }
-        .client-rating { display: inline-block; background-color: #e9ecef; color: #495057; padding: 3px 8px; font-size: 0.8em; border-radius: 4px; margin-left: 10px; vertical-align: middle; }
         .client-status { display: flex; align-items: center; gap: 15px; }
         .status-badge { background-color: #cfe2ff; color: #0d6efd; padding: 5px 10px; border-radius: 15px; font-weight: 500; font-size: 0.9em; }
         .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500; transition: background-color 0.2s ease, box-shadow 0.2s ease; }

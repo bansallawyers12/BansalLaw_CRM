@@ -8,8 +8,6 @@
 
 <!-- All Task-Related Modals removed - old Task system no longer used -->
 
-<!-- Education Modal removed - education system deprecated (replaced by ClientQualification) -->
-
 <!-- Financial & Invoicing Modals moved to resources/views/Admin/clients/modals/financial.blade.php -->
 @include('crm.clients.modals.financial')
 
@@ -31,13 +29,7 @@
 <!-- Appointment Booking Modal -->
 @include('crm.clients.modals.appointment')
 
-<!-- Financial modals: Commission/General Invoice removed (broken /create-invoice flow); Payment Details etc. in modals/financial.blade.php -->
-
 <!-- Create Application Note Modal moved to resources/views/Admin/clients/modals/notes.blade.php -->
-
-<!-- Checklist modals (create_checklist, openeducationdocsmodal, openmigrationdocsmodal) removed - now in modals/checklists.blade.php -->
-
-{{-- payment-schedules.blade.php REMOVED - Create Invoice from Schedule flow unused (no payment schedule list, no /create-invoice route) --}}
 
 <!-- Email modals (matteremailmodal, uploadmail, uploadAndFetchMailModel, uploadSentAndFetchMailModel) in modals/emails.blade.php -->
 

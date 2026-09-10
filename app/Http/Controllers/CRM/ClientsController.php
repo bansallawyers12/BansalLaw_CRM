@@ -522,7 +522,6 @@ class ClientsController extends Controller
             'recentMatters' => $recentMatters,
             'leadStats' => $leadStats,
             'leadsByStatus' => $leadsByStatus,
-            'leadsByQuality' => collect(), // lead_quality column removed
             'leadMonthlyGrowth' => $leadMonthlyGrowth,
             'recentLeads' => $recentLeads,
         ]);
@@ -2540,24 +2539,6 @@ class ClientsController extends Controller
 
 			return response()->json($response);
 		}
-	}
-
-	public function updateclientstatus(Request $request){
-		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists()){
-			if (! StaffClientVisibility::canAccessClientOrLead((int) $request->id, Auth::user())) {
-				$response['status'] = false;
-				$response['message'] = config('constants.unauthorized');
-				echo json_encode($response);
-				return;
-			}
-			// rating column dropped Phase 4 - no-op
-			$response['status'] 	= 	true;
-			$response['message']	=	'You\'ve successfully updated your client\'s information.';
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
 	}
 
 	public function uploadmail(Request $request){

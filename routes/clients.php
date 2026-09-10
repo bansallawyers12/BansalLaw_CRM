@@ -169,7 +169,6 @@ Route::post('/convert-activity-to-note', [ClientsController::class, 'convertActi
 Route::get('/archived', [ClientsController::class, 'archived'])->name('clients.archived');
 Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clients.archive');
 Route::post('/unarchive/{id}', [ClientsController::class, 'unarchive'])->name('clients.unarchive');
-Route::get('/change-client-status', [ClientsController::class, 'updateclientstatus'])->name('clients.updateclientstatus');
 Route::get('/get-activities', [ClientsController::class, 'activities'])->name('clients.activities');
 Route::get('/clients/timeline-billing-rates', [TimelineBillingController::class, 'rates'])->name('clients.timeline-billing-rates');
 Route::post('/clients/timeline-billing-rates', [TimelineBillingController::class, 'saveRates'])->name('clients.timeline-billing-rates.save');

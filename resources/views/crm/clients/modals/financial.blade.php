@@ -1,6 +1,3 @@
-{{-- Commission Invoice & General Invoice modals REMOVED - /create-invoice route and createInvoice controller do not exist --}}
-{{-- Payment Details modal (addpaymentmodal) REMOVED - no UI opened it; invoice/payment-store route and /get-invoices do not exist --}}
-
 <!-- Edit Client Funds Ledger Entry Modal -->
 <div class="modal fade" id="editLedgerModal" tabindex="-1" role="dialog" aria-labelledby="editLedgerModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">

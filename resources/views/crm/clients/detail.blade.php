@@ -988,8 +988,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 	</div>
 </div>
 
-{{-- interest_service_view modal REMOVED - Interested Services feature deprecated (no UI triggers) --}}
-
 <div id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
@@ -1055,8 +1053,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 		</div>
 	</div>
 </div>
-
-<!-- confirmEducationModal removed - education system deprecated -->
 
 <div id="confirmcompleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
@@ -1173,12 +1169,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 .tag-pill-remove:hover { opacity: 1; }
 .tag-input-inline { flex: 1; min-width: 120px; border: none; outline: none; font-size: 14px; background: transparent; }
 </style>
-
-{{-- Service Taken Modal - REMOVED --}}
-{{-- Feature deprecated - client_service_takens table does not exist --}}
-{{-- Table was for tracking Migration/Education services taken by clients --}}
-{{-- Model clientServiceTaken.php deleted - no database backing --}}
-{{-- Routes still exist but will fail: createservicetaken, removeservicetaken, getservicetaken --}}
 
 <div class="modal fade" id="inbox_reassignemail_modal">
 	<div class="modal-dialog modal-lg">
@@ -1762,14 +1752,11 @@ $(document).ready(function() {
             updateSessionCompleted: '{{ URL::to("/clients/update-session-completed") }}',
             viewNoteDetail: '{{ URL::to("/viewnotedetail") }}',
             viewMatterNote: '{{ URL::to("/viewmatternote") }}',
-            changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
             getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
             deleteChecklist: '{{ route("clients.documents.deleteChecklist") }}',
-            getInterestedService: '{{ URL::to("/getintrestedservice") }}',
-            getInterestedServiceEdit: '{{ URL::to("/getintrestedserviceedit") }}',
             fetchClientMatterAssignee: '{{ URL::to("/clients/fetchClientMatterAssignee") }}',
             // Stage mutations: POST + CSRF only. Prefer Workflow-tab named routes for UI actions.
             updateStage: '{{ route("clients.matter.update-next-stage") }}',

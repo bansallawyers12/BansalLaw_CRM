@@ -1,5 +1,5 @@
 /**
- * Subtabs module - Document/Notes/Form subtab switching (inbox, sent, migrationdocuments, notes, personal, visa, form generation)
+ * Subtabs module - Document/Notes/Form subtab switching (inbox, sent, notes, personal, visa, form generation)
  * Extracted from detail-main.js - Phase 3i refactoring.
  * Requires: jQuery, ClientDetailConfig
  *
@@ -77,20 +77,6 @@
                 });
             } else {
                 $(this).hide();
-            }
-        }
-
-        if (subtabId == 'migrationdocuments') {
-            if (selectedMatter != "") {
-                $('#migrationdocuments-subtab .migdocumnetlist1').find('.drow').each(function() {
-                    if ($(this).data('matterid') == selectedMatter) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            } else {
-                $('#migrationdocuments-subtab .migdocumnetlist1').find('.drow').hide();
             }
         }
 
