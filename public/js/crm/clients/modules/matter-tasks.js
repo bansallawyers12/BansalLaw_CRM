@@ -16,7 +16,6 @@
 
     var reloadTimer = null;
     var pendingDelete = null;
-    var UNDO_MS = 6000;
     var DONE_PANEL_KEY = 'cdn-matter-tasks-done-open';
     var EVT = '.cdnMatterTasks';
     var tasksPage = 1;
@@ -198,40 +197,6 @@
             iziToast.error({ message: msg, position: 'topRight' });
         } else {
             crmAlert(msg);
-        }
-    }
-
-    function notifyUndo(title, onUndo) {
-        var label = esc(title || 'Task');
-        if (typeof iziToast !== 'undefined' && typeof iziToast.show === 'function') {
-            iziToast.destroy();
-            iziToast.show({
-                title: 'Task removed',
-                message: label,
-                position: 'topRight',
-                timeout: UNDO_MS,
-                close: true,
-                progressBar: true,
-                displayMode: 2,
-                buttons: [
-                    [
-                        '<button type="button"><b>Undo</b></button>',
-                        function (instance, toast) {
-                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                            if (typeof onUndo === 'function') {
-                                onUndo();
-                            }
-                        },
-                        true
-                    ]
-                ]
-            });
-            return;
-        }
-        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.info === 'function') {
-            window.crmNotify.info({
-                message: (title || 'Task') + ' removed. Refresh the tab if you need to restore it.'
-            });
         }
     }
 
@@ -994,16 +959,6 @@
         return html;
     }
 
-    function cancelPendingDelete() {
-        if (!pendingDelete) {
-            return;
-        }
-        if (pendingDelete.timer) {
-            clearTimeout(pendingDelete.timer);
-        }
-        pendingDelete = null;
-    }
-
     function flushPendingDelete(onComplete) {
         if (!pendingDelete) {
             if (typeof onComplete === 'function') {
@@ -1491,44 +1446,72 @@
                 return;
             }
 
-            if (pendingDelete) {
-                flushPendingDelete();
-            }
-            var title = $row.find('.cdn-matter-task__label').clone().children().remove().end().text() ||
+            var title =
+                $row.find('.cdn-matter-task__label').clone().children().remove().end().text() ||
                 $row.find('.cdn-matter-task__label').text() ||
                 (kind === 'reminder' ? 'Reminder' : 'Task');
-            $row.addClass('cdn-matter-task__row--removing');
+            title = String(title || '').replace(/\s+/g, ' ').trim();
 
-            pendingDelete = { id: id, kind: kind, timer: null };
-            pendingDelete.timer = setTimeout(function () {
+            var ask =
+                typeof window.crmConfirm === 'function'
+                    ? window.crmConfirm({
+                          title: kind === 'reminder' ? 'Delete reminder?' : 'Delete task?',
+                          text:
+                              'Delete "' +
+                              title +
+                              '"? This cannot be undone.',
+                          confirmText: kind === 'reminder' ? 'Yes, delete reminder' : 'Yes, delete task',
+                          cancelText: 'Cancel',
+                          icon: 'warning',
+                          confirmColor: '#b91c1c'
+                      })
+                    : Promise.resolve(window.confirm('Delete "' + title + '"?'));
+
+            ask.then(function (ok) {
+                if (!ok) {
+                    return;
+                }
+
+                if (pendingDelete) {
+                    flushPendingDelete();
+                }
+
+                $btn.prop('disabled', true);
+                $row.addClass('cdn-matter-task__row--removing');
+
+                pendingDelete = { id: id, kind: kind, timer: null };
                 flushPendingDelete(function () {
+                    if (kind === 'reminder') {
+                        reminderRows = reminderRows.filter(function (row) {
+                            return safeId(row.id) !== id;
+                        });
+                    } else {
+                        tasksRows = tasksRows.filter(function (row) {
+                            return safeId(row.id) !== id;
+                        });
+                    }
+                    $row.remove();
+                    var open = $('.cdn-matter-task__row:not(.is-done-row):not(.is-reminder)').length;
+                    var done = $('.cdn-matter-task__row.is-done-row').length;
+                    var reminders = activeReminderCount();
+                    updateStats(open, done, reminders);
                     var $list = $('#cdn-matter-tasks .cdn-matter-task__list');
-                    if ($list.find('.cdn-matter-task__row').length === 0) {
+                    if (open + done + reminders === 0 || $list.find('.cdn-matter-task__row').length === 0) {
                         $list.html(renderList([]));
                     }
+                    if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.success === 'function') {
+                        window.crmNotify.success({
+                            message: (kind === 'reminder' ? 'Reminder' : 'Task') + ' deleted.'
+                        });
+                    } else if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({
+                            title: 'Deleted',
+                            message: (kind === 'reminder' ? 'Reminder' : 'Task') + ' deleted.',
+                            position: 'topRight'
+                        });
+                    }
                 });
-            }, UNDO_MS);
-
-            notifyUndo(title, function () {
-                cancelPendingDelete();
-                reload();
             });
-
-            setTimeout(function () {
-                $row.remove();
-                if (kind === 'reminder') {
-                    reminderRows = reminderRows.filter(function (row) {
-                        return safeId(row.id) !== id;
-                    });
-                }
-                var open = $('.cdn-matter-task__row:not(.is-done-row):not(.is-reminder)').length;
-                var done = $('.cdn-matter-task__row.is-done-row').length;
-                var reminders = activeReminderCount();
-                updateStats(open, done, reminders);
-                if (open + done + reminders === 0) {
-                    $('#cdn-matter-tasks .cdn-matter-task__list').html(renderList([]));
-                }
-            }, 280);
         });
     });
 
