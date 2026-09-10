@@ -162,10 +162,6 @@
                                     <div class="legend-color event-other"></div>
                                     <span>Other</span>
                                 </div>
-                                <div class="legend-item">
-                                    <div class="legend-color event-reminder"></div>
-                                    <span>Follow-up (added by you)</span>
-                                </div>
                             </div>
                         </div>
                         @else
@@ -503,6 +499,7 @@ async function fetchBookingCalendarEvents(fetchInfo) {
         format: 'calendar'
     };
     if (BOOKING_CALENDAR_MODE === 'personal' && BOOKING_CALENDAR_STAFF_ID) {
+        params.type = 'personal';
         params.staff_id = String(BOOKING_CALENDAR_STAFF_ID);
     }
     const url = '{{ route("booking.api.appointments") }}?' + new URLSearchParams(params);

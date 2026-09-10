@@ -92,7 +92,7 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * Follow-ups for one staff member (used by booking calendars, not dashboard).
+     * Follow-ups for one staff member (booking calendars only — not personal staff calendars).
      *
      * @return list<array<string, mixed>>
      */
