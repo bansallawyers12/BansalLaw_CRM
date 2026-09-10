@@ -871,6 +871,8 @@ class DashboardService
 
         app(\App\Services\ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteData, true);
 
+        $actorId = $user ? (int) $user->id : (int) Auth::id();
+
         if ($noteData->client_id) {
             $assigneeName = 'N/A';
             if ($noteData->assigned_to) {
@@ -887,7 +889,7 @@ class DashboardService
                 $description .= 'data-activity-id="" ';
                 $description .= 'data-activity-subject="Completion Notes" ';
                 $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
-                $description .= 'data-activity-created-by="' . Auth::id() . '" ';
+                $description .= 'data-activity-created-by="' . $actorId . '" ';
                 $description .= 'data-activity-created-at="' . now() . '" ';
                 $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
                 $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
@@ -897,16 +899,26 @@ class DashboardService
 
             ActivitiesLog::create([
                 'client_id' => $noteData->client_id,
-                'created_by' => Auth::id(),
+                'created_by' => $actorId,
                 'subject' => 'completed task for ' . $assigneeName,
                 'description' => $description,
                 'activity_type' => 'activity',
-                'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
+                'use_for' => ($actorId != $noteData->assigned_to) ? $noteData->assigned_to : null,
                 'followup_date' => $noteData->updated_at,
                 'task_group' => $noteData->task_group ?? null,
                 'task_status' => 1,
                 'pin' => 0,
             ]);
+        }
+
+        if ($user) {
+            $this->forgetPendingOpenTaskCountCache($user);
+        }
+        if (!empty($noteData->assigned_to)) {
+            $assigneeStaff = \App\Models\Staff::find($noteData->assigned_to);
+            if ($assigneeStaff) {
+                $this->forgetPendingOpenTaskCountCache($assigneeStaff);
+            }
         }
 
         return ['success' => true, 'message' => 'Task completed successfully'];

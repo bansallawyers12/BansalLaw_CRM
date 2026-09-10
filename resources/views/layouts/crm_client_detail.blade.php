@@ -9,6 +9,7 @@
     <meta name="keyword" content="CRM">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="current-user-id" content="{{ optional(auth('admin')->user())->id }}">
+    <meta name="crm-fetch-notifications-url" content="{{ route('dashboard.fetch-notifications') }}">
     <title>{{ config('app.name') }} | @yield('title', 'Client Details')</title>
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     @include('components.bootstrap5-assets')
@@ -2291,7 +2292,7 @@
 
         function loadOfficeVisitNotifications() {
             $.ajax({
-                url: "{{url('/fetch-office-visit-notifications')}}",
+                url: "{{ route('dashboard.fetch-office-visit-notifications') }}",
                 method: "GET",
                 dataType: "json",
                 success: function(data) {
@@ -2371,7 +2372,7 @@
             // Check database status every 5 seconds to see if task is no longer waiting
             var statusCheckInterval = setInterval(function() {
                 $.ajax({
-                    url: "{{url('/check-checkin-status')}}",
+                    url: "{{ route('dashboard.check-checkin-status') }}",
                     method: "GET",
                     data: { checkin_id: notification.checkin_id },
                     success: function(response) {
@@ -2395,7 +2396,7 @@
                 
                 // Mark notification as seen
                 $.ajax({
-                    url: "{{url('/mark-notification-seen')}}",
+                    url: "{{ route('dashboard.mark-notification-seen') }}",
                     method: "POST",
                     data: {
                         notification_id: notificationId,
@@ -2418,7 +2419,7 @@
             }
             
             $.ajax({
-                    url: "{{url('/update-checkin-status')}}",
+                    url: "{{ route('dashboard.update-checkin-status') }}",
                 method: "POST",
                 data: {
                     checkin_id: checkinId,

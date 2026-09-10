@@ -192,6 +192,8 @@
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <script src="{{ asset('js/components/task-description-mentions.js') }}?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
 <script>
+    // dashboard.js = task complete / extend / detail panel
+    // dashboard-page.js = summary refresh, infinite scroll, filters, toasts
     window.dashboardRoutes = {
         dashboard: "{{ route('dashboard') }}",
         dashboardSummary: "{{ route('dashboard.summary') }}",

@@ -50,10 +50,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 |----|----------|----------|-------|
 | DASH-1 | **High** | `public/js/dashboard.js`; route `/dashboard` | ~~Empty-state called undefined `openCreateTaskModal()`.~~ **Fixed:** dynamic empty-state uses `.add_my_task` + `DashboardAddTaskPopover.init()` (same as static empty state / header Add). |
 | DASH-2 | Medium | `resources/views/components/dashboard/task-item.blade.php`, `public/js/dashboard.js` | ~~Task rows used `onclick` without keyboard/a11y affordances.~~ **Fixed:** content has `role="button"` + `tabindex="0"` + Enter/Space handler; checkbox/action buttons have accessible names; hover actions show on `:focus-within`. |
-| DASH-3 | Medium | `public/js/crm/dashboard/dashboard-page.js` ~L246–440 | Infinite scroll and refresh failures log to `console.error` only — **no user-visible toast** when “Load more” or dashboard refresh fails. |
-| DASH-4 | Low | `resources/views/crm/dashboard.blade.php` | Loads both legacy `public/js/dashboard.js` and newer `public/js/crm/dashboard/dashboard-page.js`. Split responsibility increases regression risk (see DASH-1). |
-| DASH-5 | Medium | `routes/web.php` L96 vs L258 | **Two different `completeTask` handlers:** `DashboardController@completeTask` (`dashboard.tasks.complete`) vs `AssigneeController@completeTask` (`tasks.complete`). Potential inconsistent task-completion behavior depending on which endpoint the UI calls. |
-| DASH-6 | Medium | `routes/web.php` L98–104 vs L243–247 | **Duplicate notification/check-in endpoints:** named `/dashboard/*` routes and unnamed legacy root URLs (`/fetch-notification`, `/mark-notification-seen`, `/check-checkin-status`). Legacy GET `/check-checkin-status` vs POST `/dashboard/check-checkin-status`. |
+| DASH-3 | Medium | `public/js/crm/dashboard/dashboard-page.js` | ~~Infinite scroll and refresh failures log to `console.error` only — no user-visible toast.~~ **Fixed:** load-more failures toast (debounced); refresh already toasted and now consistent. |
+| DASH-4 | Low | `resources/views/crm/dashboard.blade.php` | ~~Loads both legacy `dashboard.js` and newer `dashboard-page.js` with unclear ownership.~~ **Fixed:** ownership comments in Blade + both JS entry files (no risky merge). |
+| DASH-5 | Medium | `routes/web.php` L96 vs L258 | ~~Two different `completeTask` handlers with divergent logic.~~ **Fixed:** `AssigneeController@completeTask` delegates to `DashboardService::completeTask` (same as dashboard); response includes both `success` and legacy `status`. |
+| DASH-6 | Medium | `routes/web.php` L98–104 vs L243–247 | ~~Duplicate notification/check-in endpoints; GET vs POST mismatch for check-in status.~~ **Fixed:** layouts + Vite poller use named `dashboard.*` routes; check-in status accepts GET+POST; legacy root URLs kept as aliases. |
 
 ---
 

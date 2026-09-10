@@ -1,11 +1,27 @@
 /**
- * Dashboard page: AJAX refresh, infinite scroll, filters, toast helpers.
+ * Dashboard page shell (AJAX).
+ * Owns: KPI/summary refresh, My Tasks + Recent Activity infinite scroll,
+ * todo filters, toast/loading helpers, refresh button / Alt+R.
+ * Does NOT own: task complete/extend/detail panel (see public/js/dashboard.js).
  */
 (function () {
     'use strict';
 
     function cfg() {
         return window.dashboardRoutes || {};
+    }
+
+    /** Avoid toast spam when scroll keeps retrying a failed load. */
+    var lastLoadMoreToastAt = 0;
+    function toastLoadMoreFailure(message) {
+        var now = Date.now();
+        if (now - lastLoadMoreToastAt < 5000) {
+            return;
+        }
+        lastLoadMoreToastAt = now;
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, 'error');
+        }
     }
 
     function formatCount(n) {
@@ -224,9 +240,15 @@
                 },
                 credentials: 'same-origin'
             })
-                .then(function (res) { return res.json(); })
+                .then(function (res) {
+                    if (!res.ok) {
+                        throw new Error('HTTP ' + res.status);
+                    }
+                    return res.json();
+                })
                 .then(function (data) {
                     if (!data || !data.success) {
+                        toastLoadMoreFailure('Could not load more tasks. Please try again.');
                         return;
                     }
                     if (data.html) {
@@ -245,6 +267,7 @@
                 })
                 .catch(function (err) {
                     console.error('My Tasks load more failed', err);
+                    toastLoadMoreFailure('Could not load more tasks. Please try again.');
                 })
                 .finally(function () {
                     isLoading = false;
@@ -321,9 +344,15 @@
                 },
                 credentials: 'same-origin'
             })
-                .then(function (res) { return res.json(); })
+                .then(function (res) {
+                    if (!res.ok) {
+                        throw new Error('HTTP ' + res.status);
+                    }
+                    return res.json();
+                })
                 .then(function (data) {
                     if (!data || !data.success) {
+                        toastLoadMoreFailure('Could not load more activity. Please try again.');
                         return;
                     }
                     if (data.html) {
@@ -341,6 +370,7 @@
                 })
                 .catch(function (err) {
                     console.error('Recent matter activity load more failed', err);
+                    toastLoadMoreFailure('Could not load more activity. Please try again.');
                 })
                 .finally(function () {
                     isLoading = false;

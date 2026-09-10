@@ -58,7 +58,9 @@ window.updateNotificationBell = function (count, options = {}) {
 
     function fetchCount() {
         if (document.visibilityState === 'hidden') return;
-        fetch('/fetch-notification', {
+        const fetchUrl = document.querySelector('meta[name="crm-fetch-notifications-url"]')?.content
+            || '/dashboard/fetch-notifications';
+        fetch(fetchUrl, {
             method: 'GET',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'include'

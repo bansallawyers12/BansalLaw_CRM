@@ -162,119 +162,43 @@ class AssigneeController extends Controller
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
-    //Update action to be complete
+    //Update action to be complete (shared logic with dashboard.tasks.complete)
     public function completeTask(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
         $data = $request->all();
-        $noteId = $data['id'] ?? 0;
-        $uniqueGroupId = trim((string)($data['unique_group_id'] ?? ''));
+        $noteId = (int) ($data['id'] ?? 0);
+        $uniqueGroupId = trim((string) ($data['unique_group_id'] ?? ''));
+        $completionNotes = isset($data['completion_notes']) ? (string) $data['completion_notes'] : null;
 
-        $noteData = Note::find($noteId);
-        if (!$noteData) {
-            return response()->json(['status' => false, 'message' => 'Task not found']);
+        if ($noteId <= 0) {
+            return response()->json([
+                'success' => false,
+                'status' => false,
+                'message' => 'Task not found',
+            ]);
         }
 
-        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndTasks($user)) {
-            $uid = (int) $user->id;
-            $notesToCheck = collect([$noteData]);
-            if ($uniqueGroupId !== '') {
-                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)
-                    ->where('unique_group_id', '!=', '')
-                    ->whereNotNull('unique_group_id')
-                    ->get();
-                if ($groupNotes->isNotEmpty()) {
-                    $notesToCheck = $groupNotes;
-                }
-            }
+        $result = app(DashboardService::class)->completeTask(
+            $noteId,
+            $uniqueGroupId,
+            $completionNotes,
+            $user
+        );
 
-            foreach ($notesToCheck as $checkNote) {
-                $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
-                if (!$isAssigneeOrOwner) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
-                }
-                if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
-                }
-            }
+        $ok = (bool) ($result['success'] ?? false);
+        $message = (string) ($result['message'] ?? ($ok ? 'Task completed successfully' : 'Please try again'));
+        $statusCode = 200;
+        if (!$ok && str_contains(strtolower($message), 'unauthorized')) {
+            $statusCode = 403;
         }
 
-        $updated = 0;
-        if ($uniqueGroupId !== '') {
-            $updated = Note::where('unique_group_id', $uniqueGroupId)
-                ->where('unique_group_id', '!=', '')
-                ->whereNotNull('assigned_to')
-                ->whereNotNull('unique_group_id')
-                ->update(['status' => '1']);
-        }
-        if ($updated === 0) {
-            $updated = Note::where('id', $noteId)->update(['status' => '1']);
-        }
-        if ($updated) {
-            $note_data = Note::where('id', $data['id'])->first();
-            if($note_data){
-                $admin_data = Staff::where('id',$note_data['assigned_to'])->first();
-                if($admin_data){
-                    $assignee_name = $admin_data['first_name']." ".$admin_data['last_name'];
-                } else {
-                    $assignee_name = 'N/A';
-                }
-                
-                // Prepare description with completion notes (completion notes appear first)
-                $description = '';
-                if (!empty($data['completion_notes'])) {
-                    $description .= '<p>';
-                    $description .= '<i class="fa-solid fa-ellipsis-vertical convert-activity-to-note" ';
-                    $description .= 'style="cursor: pointer; color: #6c757d;" ';
-                    $description .= 'title="Convert to Note" ';
-                    $description .= 'data-activity-id="" ';
-                    $description .= 'data-activity-subject="Completion Notes" ';
-                    $description .= 'data-activity-description="'.htmlspecialchars($data['completion_notes'], ENT_QUOTES).'" ';
-                    $description .= 'data-activity-created-by="'.($user?->id ?? 0).'" ';
-                    $description .= 'data-activity-created-at="'.now().'" ';
-                    $description .= 'data-client-id="'.$note_data['client_id'].'"></i></p>';
-                    $description .= '<p>'.nl2br(htmlspecialchars($data['completion_notes'])).'</p>';
-                    $description .= '<hr>';
-                }
-                $description .= '<p>'.@$note_data['description'].'</p>';
-
-                $taskGroup = $note_data['task_group'] ?? '';
-                $objs = new ActivitiesLog;
-                $objs->client_id = $note_data['client_id'];
-                $objs->created_by = $user?->id ?? 0;
-                $objs->subject = 'completed task for '.@$assignee_name;
-                $objs->description = $description;
-                if(($user?->id ?? 0) != @$note_data['assigned_to']){
-                    $objs->use_for = @$note_data['assigned_to'];
-                } else {
-                    $objs->use_for = null;
-                }
-                $objs->followup_date = @$note_data['updated_at'];
-                $objs->task_group = $taskGroup;
-                $objs->task_status = 1;
-                $objs->pin = 0;
-                $objs->activity_type = 'activity';
-                $objs->save();
-
-                app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($note_data, true);
-            }
-            $dashboardService = app(\App\Services\DashboardService::class);
-            if ($user) {
-                $dashboardService->forgetPendingOpenTaskCountCache($user);
-            }
-            if (! empty($note_data['assigned_to'])) {
-                $assigneeStaff = Staff::find($note_data['assigned_to']);
-                if ($assigneeStaff) {
-                    $dashboardService->forgetPendingOpenTaskCountCache($assigneeStaff);
-                }
-            }
-            $response['status'] 	= 	true;
-            $response['message']	=	'Task completed successfully';
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-        }
-        return response()->json($response);
+        // Include both `success` (dashboard) and `status` (legacy assignee UIs).
+        return response()->json([
+            'success' => $ok,
+            'status' => $ok,
+            'message' => $message,
+        ], $statusCode);
     }
 
     //Update action to be not complete

@@ -100,7 +100,8 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
     Route::get('/dashboard/fetch-in-person-waiting-count', [CRMUtilityController::class, 'fetchInPersonWaitingCount'])->name('dashboard.fetch-in-person-waiting-count');
     Route::get('/dashboard/fetch-total-activity-count', [CRMUtilityController::class, 'fetchTotalActivityCount'])->name('dashboard.fetch-total-activity-count');
-    Route::post('/dashboard/check-checkin-status', [DashboardController::class, 'checkCheckinStatus'])->name('dashboard.check-checkin-status');
+    // Accept GET (legacy pollers) and POST (canonical) for check-in status.
+    Route::match(['get', 'post'], '/dashboard/check-checkin-status', [DashboardController::class, 'checkCheckinStatus'])->name('dashboard.check-checkin-status');
     Route::post('/dashboard/update-checkin-status', [DashboardController::class, 'updateCheckinStatus'])->name('dashboard.update-checkin-status');
 
     /*---------- General Admin Routes ----------*/
@@ -239,11 +240,11 @@ Route::middleware(['auth:admin'])->group(function () {
     /*---------- Audit Logs ----------*/
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
 
-    /*---------- Notifications ----------*/
+    /*---------- Notifications (legacy URL aliases → same handlers as dashboard.*) ----------*/
     Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);
     Route::get('/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications']);
     Route::post('/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen']);
-    Route::get('/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
+    Route::match(['get', 'post'], '/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
     Route::post('/update-checkin-status', [DashboardController::class, 'updateCheckinStatus']);
     Route::get('/all-notifications', [CRMUtilityController::class, 'allnotification'])->name('crm.all-notifications');
     Route::get('/fetch-InPersonWaitingCount', [CRMUtilityController::class, 'fetchInPersonWaitingCount']);

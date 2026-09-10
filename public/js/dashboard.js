@@ -1,4 +1,7 @@
 // Dashboard JavaScript
+// Owns: greeting clock, task complete/extend deadline, task detail side panel,
+// and related modals. Page refresh / infinite scroll live in
+// public/js/crm/dashboard/dashboard-page.js (loaded after this file).
 $(document).ready(function() {
     // Check if required objects are defined
     if (typeof window.dashboardRoutes === 'undefined') {
