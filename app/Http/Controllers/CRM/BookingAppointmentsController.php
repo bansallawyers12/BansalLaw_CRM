@@ -209,6 +209,8 @@ class BookingAppointmentsController extends Controller
                     $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request)
                 );
             }
+            // Collapse note follow-ups that also exist as personal reminders (same client + day + title).
+            $extra = $this->personalCalendarFeed->deduplicateBookingFeedEvents($extra);
             $response['data'] = array_merge($response['data'] ?? [], $extra);
         } catch (Exception $e) {
             Log::warning('Important calendar events merge failed', ['error' => $e->getMessage()]);

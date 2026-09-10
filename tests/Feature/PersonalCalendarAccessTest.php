@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Note;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
@@ -479,5 +480,82 @@ class PersonalCalendarAccessTest extends TestCase
         $this->assertNotContains('staff-cal-' . $ownCourt->id, $ids);
         $this->assertNotContains('staff-cal-' . $otherReminder->id, $ids);
         $this->assertNotContains('followup-' . $assignedByOther->id, $ids);
+    }
+
+    #[Test]
+    public function personal_calendar_collapses_multi_assignee_follow_up_notes(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
+
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'email' => 'admin.followup.dedupe@example.com',
+            'can_access_personal_calendar' => true,
+        ]);
+        $khushi = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.followup.dedupe@example.com',
+        ]);
+        $michael = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'email' => 'michael.followup.dedupe@example.com',
+        ]);
+        $client = Admin::factory()->create([
+            'type' => 'client',
+            'first_name' => 'Rakesh',
+            'last_name' => 'Kumar',
+            'is_archived' => 0,
+        ]);
+
+        config(['booking_calendar.personal_calendar_cleared' => []]);
+
+        $groupId = 'group_followup_dedupe_test';
+        $selfCopy = Note::create([
+            'client_id' => $client->id,
+            'user_id' => $khushi->id,
+            'title' => '',
+            'description' => 'Lead follow-up',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'unique_group_id' => $groupId,
+            'action_date' => '2026-09-24 00:00:00',
+        ]);
+        Note::create([
+            'client_id' => $client->id,
+            'user_id' => $khushi->id,
+            'title' => '',
+            'description' => 'Lead follow-up',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $michael->id,
+            'status' => 0,
+            'pin' => 0,
+            'unique_group_id' => $groupId,
+            'action_date' => '2026-09-24 00:00:00',
+        ]);
+
+        $this->actingAs($viewer, 'admin');
+
+        $ids = collect($this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $khushi->id,
+            'start' => '2026-09-01T00:00:00+10:00',
+            'end' => '2026-09-30T00:00:00+10:00',
+        ]))->assertOk()->json('data') ?? [])
+            ->filter(fn ($row) => ($row['event_kind'] ?? '') === 'follow_up')
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
+        $this->assertSame(['followup-' . $selfCopy->id], $ids);
     }
 }

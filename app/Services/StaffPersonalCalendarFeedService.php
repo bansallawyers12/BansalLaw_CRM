@@ -193,6 +193,17 @@ class StaffPersonalCalendarFeedService
      * @param  list<array<string, mixed>>  $events
      * @return list<array<string, mixed>>
      */
+    public function deduplicateBookingFeedEvents(array $events): array
+    {
+        return $this->deduplicateEvents($events);
+    }
+
+    /**
+     * Remove duplicate rows from merged booking + staff/court feeds.
+     *
+     * @param  list<array<string, mixed>>  $events
+     * @return list<array<string, mixed>>
+     */
     protected function deduplicateEvents(array $events): array
     {
         $byCanonical = [];
@@ -273,13 +284,25 @@ class StaffPersonalCalendarFeedService
 
         $kind = (string) ($row['event_kind'] ?? '');
         $type = (string) ($row['event_type'] ?? '');
+        $clientId = (string) ($row['client_id'] ?? '0');
+        $day = substr($start, 0, 10);
+        $title = mb_strtolower(trim((string) ($row['title'] ?? '')));
+
+        // Follow-ups and personal reminders often represent the same action.
+        if ($kind === 'follow_up'
+            || ($kind === 'staff_event' && in_array($type, ['reminder', 'other'], true))) {
+            if ($clientId === '' || $clientId === '0' || $title === '') {
+                return null;
+            }
+
+            return 'personal-action|' . $clientId . '|' . $day . '|' . $title;
+        }
 
         if (! in_array($kind, ['website_booking', 'staff_event', 'court_hearing'], true)
             && ! in_array($type, ['meeting', 'court'], true)) {
             return null;
         }
 
-        $clientId = (string) ($row['client_id'] ?? '0');
         $minute = substr($start, 0, 16);
 
         return $clientId . '|' . $minute . '|' . ($type !== '' ? $type : $kind);
@@ -293,8 +316,9 @@ class StaffPersonalCalendarFeedService
     protected function pickPreferredEvent(array $a, array $b): array
     {
         $priority = [
-            'website_booking' => 3,
-            'court_hearing' => 2,
+            'website_booking' => 4,
+            'court_hearing' => 3,
+            'follow_up' => 2,
             'staff_event' => 1,
         ];
 
@@ -937,7 +961,26 @@ class StaffPersonalCalendarFeedService
 
         $this->applyDatetimeWindow($query, 'action_date', $request);
 
-        return $query->orderBy('action_date')->get()
+        $notes = $query->orderBy('action_date')->orderBy('id')->get();
+
+        // Multi-assignee actions create one Note per assignee with the same unique_group_id.
+        // Personal calendars filter by creator (user_id), so collapse to one calendar row per group.
+        if ($createdBySelfOnly && $staffId !== null) {
+            $notes = $notes
+                ->groupBy(function (Note $note) {
+                    $group = trim((string) ($note->unique_group_id ?? ''));
+
+                    return $group !== '' ? $group : ('note-' . (int) $note->id);
+                })
+                ->map(function ($group) use ($staffId) {
+                    /** @var \Illuminate\Support\Collection<int, Note> $group */
+                    return $group->firstWhere('assigned_to', $staffId)
+                        ?? $group->sortBy('id')->first();
+                })
+                ->values();
+        }
+
+        return $notes
             ->map(function (Note $note) use ($tz) {
                 $when = Carbon::parse($note->action_date, $tz);
                 $isAllDay = $when->format('H:i:s') === '00:00:00';

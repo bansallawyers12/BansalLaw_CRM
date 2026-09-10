@@ -572,15 +572,27 @@ function getImportantEventStyle(eventType) {
 
 function mapImportantCalendarRow(apt) {
     const style = getImportantEventStyle(apt.event_type || 'other');
-    const endTime = apt.ends_at || apt.appointment_datetime;
+    const allDay = !!apt.is_all_day;
+    let start = apt.appointment_datetime || apt.starts_at;
+    let end = apt.ends_at || apt.appointment_datetime;
+    // FullCalendar all-day end is exclusive; timed ISO ends can spill into the next day.
+    if (allDay && start) {
+        const startDay = String(start).slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(startDay)) {
+            start = startDay;
+            const next = new Date(startDay + 'T00:00:00');
+            next.setDate(next.getDate() + 1);
+            end = next.toISOString().slice(0, 10);
+        }
+    }
     const readOnly = apt.event_kind === 'court_hearing' || apt.read_only === true;
 
     return {
         id: String(apt.id),
         title: apt.title || 'Event',
-        start: apt.appointment_datetime || apt.starts_at,
-        end: endTime,
-        allDay: !!apt.is_all_day,
+        start: start,
+        end: end,
+        allDay: allDay,
         backgroundColor: style.bg,
         borderColor: style.border,
         textColor: style.text,
