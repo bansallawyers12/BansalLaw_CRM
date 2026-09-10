@@ -50,8 +50,8 @@
     $clientCode = $client && $client->client_id ? $client->client_id : '';
     $clientId = $client ? (string) $client->id : '';
 
-    // Safely encode data for attributes
-    $descriptionEncoded = htmlspecialchars($note->description, ENT_QUOTES, 'UTF-8');
+    // Safely encode data for attributes (single Blade escape; collapse newlines)
+    $descriptionForAttr = preg_replace("/\r\n|\r|\n/", ' ', (string) ($note->description ?? '')) ?? '';
     $uniqueGroupIdSafe = $note->unique_group_id ? json_encode($note->unique_group_id) : 'null';
     $clientDetailUrl = $client ? route('clients.detail', base64_encode(convert_uuencode($client->id))) : '';
 @endphp
@@ -63,7 +63,7 @@
     data-client-detail-url="{{ $clientDetailUrl }}"
     data-client-name="{{ e($clientName) }}"
     data-client-code="{{ e($clientCode) }}"
-    data-description="{{ $descriptionEncoded }}"
+    data-description="{{ $descriptionForAttr }}"
     data-deadline="{{ $note->note_deadline ?? '' }}"
     data-deadline-formatted="{{ $deadlineFormatted }}"
     data-assigned-to="{{ e($assignedName) }}"

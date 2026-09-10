@@ -1711,7 +1711,7 @@
     @stack('datatables')
     @stack('tinymce')
     @include('components.flatpickr-scripts')
-    <script src="{{asset('js/crm-flatpickr.js')}}"></script>
+    <script src="{{asset('js/crm-flatpickr.js')}}?v={{ @filemtime(public_path('js/crm-flatpickr.js')) ?: time() }}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{asset('js/ts-init.js')}}?v={{ @filemtime(public_path('js/ts-init.js')) ?: time() }}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>

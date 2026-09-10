@@ -12,6 +12,32 @@
  * Example: CRM_Flatpickr.initStandard('.my-date-field');
  */
 
+/**
+ * True flatpickr instance for an input.
+ * Never use jQuery .data('flatpickr') when the element has data-flatpickr="…" —
+ * jQuery treats that attribute as the cached value (e.g. string "standard"),
+ * which is not the picker instance and breaks .setDate().
+ */
+function crmGetFlatpickrInstance(el) {
+    if (!el) {
+        return null;
+    }
+    var node = el.nodeType === 1 ? el : (el.jquery ? el[0] : null);
+    if (!node) {
+        return null;
+    }
+    if (node._flatpickr && typeof node._flatpickr.setDate === 'function') {
+        return node._flatpickr;
+    }
+    var cached = jQuery(node).data('crmFlatpickr');
+    if (cached && typeof cached.setDate === 'function') {
+        return cached;
+    }
+    return null;
+}
+
+window.crmGetFlatpickrInstance = crmGetFlatpickrInstance;
+
 window.CRM_Flatpickr = {
     /**
      * Standard single date picker (DD/MM/YYYY format)
@@ -49,8 +75,8 @@ window.CRM_Flatpickr = {
             var $this = $(this);
             var element = this;
             
-            // Skip if already initialized
-            if ($this.data('flatpickr')) {
+            // Skip if already initialized (use native instance — not data-flatpickr attr)
+            if (crmGetFlatpickrInstance(element)) {
                 return;
             }
             
@@ -68,7 +94,7 @@ window.CRM_Flatpickr = {
                 $this.trigger('change');
             });
             
-            $this.data('flatpickr', fp);
+            $this.data('crmFlatpickr', fp);
         });
         
     },
@@ -115,7 +141,7 @@ window.CRM_Flatpickr = {
             var $this = $(this);
             var element = this;
 
-            if ($this.data('flatpickr')) {
+            if (crmGetFlatpickrInstance(element)) {
                 return;
             }
 
@@ -130,7 +156,7 @@ window.CRM_Flatpickr = {
                 $this.trigger('change');
             });
 
-            $this.data('flatpickr', fp);
+            $this.data('crmFlatpickr', fp);
         });
 
     },
@@ -158,7 +184,7 @@ window.CRM_Flatpickr = {
             var $this = $(this);
             var element = this;
             
-            if ($this.data('flatpickr')) {
+            if (crmGetFlatpickrInstance(element)) {
                 return;
             }
             
@@ -182,7 +208,7 @@ window.CRM_Flatpickr = {
                 $this.trigger('change');
             });
             
-            $this.data('flatpickr', fp);
+            $this.data('crmFlatpickr', fp);
         });
         
     },
@@ -220,7 +246,7 @@ window.CRM_Flatpickr = {
             var $this = $(this);
             var element = this;
             
-            if ($this.data('flatpickr')) {
+            if (crmGetFlatpickrInstance(element)) {
                 return;
             }
             
@@ -235,7 +261,7 @@ window.CRM_Flatpickr = {
                 $this.trigger('change');
             });
             
-            $this.data('flatpickr', fp);
+            $this.data('crmFlatpickr', fp);
         });
         
     },
@@ -271,7 +297,7 @@ window.CRM_Flatpickr = {
             var $this = $(this);
             var element = this;
             
-            if ($this.data('flatpickr')) {
+            if (crmGetFlatpickrInstance(element)) {
                 return;
             }
             
@@ -304,7 +330,7 @@ window.CRM_Flatpickr = {
                 $this.trigger('change');
             });
             
-            $this.data('flatpickr', fp);
+            $this.data('crmFlatpickr', fp);
         });
         
     },

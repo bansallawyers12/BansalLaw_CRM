@@ -152,17 +152,28 @@ function extendDeadline() {
             },
             success: function(response) {
                 $('.popuploader').hide();
+                if (response && response.success === false) {
+                    showNotification(response.message || 'Failed to extend deadline.', 'error');
+                    return;
+                }
                 $('#extend_note_popup').modal('hide');
-                showNotification('Deadline extended successfully!', 'success');
+                showNotification((response && response.message) || 'Deadline extended successfully!', 'success');
                 if (typeof window.refreshDashboard === 'function') {
                     setTimeout(function () { window.refreshDashboard(); }, 400);
                 } else {
                     setTimeout(function () { location.reload(); }, 1000);
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 $('.popuploader').hide();
-                showNotification('Failed to extend deadline.', 'error');
+                var msg = 'Failed to extend deadline.';
+                if (xhr && xhr.responseJSON) {
+                    msg = xhr.responseJSON.message
+                        || (xhr.responseJSON.errors
+                            ? Object.values(xhr.responseJSON.errors).flat().join(' ')
+                            : msg);
+                }
+                showNotification(msg, 'error');
             }
         });
     } else {
@@ -398,18 +409,30 @@ function completeTask(taskId, uniqueGroupId, completionNotes) {
 // Open Extend Modal from Task Item
 window.openExtendModal = function(taskId) {
     const taskItem = $(`.todo-task-item[data-task-id="${taskId}"]`).first();
-    if (!taskItem.length) return;
+    if (!taskItem.length) {
+        showNotification('Task not found', 'error');
+        return;
+    }
 
-    const data = taskItem.data();
-    const description = stripHtml(data.description);
-    const deadline = data.deadlineFormatted || data.deadline || '';
+    const description = stripHtml(taskItem.attr('data-description') || '');
+    const deadline = taskItem.attr('data-deadline-formatted')
+        || taskItem.attr('data-deadline')
+        || '';
+    const uniqueGroupId = taskItem.attr('data-unique-group-id') || '';
 
     $('#note_id').val(taskId);
-    $('#unique_group_id').val(data.uniqueGroupId);
+    $('#unique_group_id').val(uniqueGroupId);
     $('#assignnote').val(description);
-    setNoteDeadlineInput(deadline);
 
     closeTaskDetail();
+
+    try {
+        setNoteDeadlineInput(deadline);
+    } catch (err) {
+        console.warn('setNoteDeadlineInput failed', err);
+        $('#note_deadline').val(noteDeadlineToDdMmYyyy(deadline));
+    }
+
     $('#extend_note_popup').modal('show');
 };
 
@@ -422,17 +445,23 @@ window.openAddDeadlineModal = function(taskId) {
 window.extendTaskFromDetail = function() {
     const panel = $('#taskDetailPanel');
     const taskId = panel.data('taskId');
-    const uniqueGroupId = panel.data('uniqueGroupId');
+    const uniqueGroupId = panel.data('uniqueGroupId') || '';
     const description = panel.data('description');
     const deadline = panel.data('deadlineFormatted') || panel.data('deadline');
 
     $('#note_id').val(taskId);
-    $('#unique_group_id').val(uniqueGroupId);
+    $('#unique_group_id').val(uniqueGroupId || '');
     $('#assignnote').val(stripHtml(description));
-    setNoteDeadlineInput(deadline);
 
-    // Close detail panel and open modal
     closeTaskDetail();
+
+    try {
+        setNoteDeadlineInput(deadline);
+    } catch (err) {
+        console.warn('setNoteDeadlineInput failed', err);
+        $('#note_deadline').val(noteDeadlineToDdMmYyyy(deadline));
+    }
+
     $('#extend_note_popup').modal('show');
 };
 
@@ -483,8 +512,11 @@ function updateTaskCount() {
 
 // Helper Functions
 function stripHtml(html) {
+    if (html == null || html === '') {
+        return '';
+    }
     const tmp = document.createElement('div');
-    tmp.innerHTML = html;
+    tmp.innerHTML = String(html);
     return tmp.textContent || tmp.innerText || '';
 }
 
@@ -533,11 +565,20 @@ function setNoteDeadlineInput(value) {
     if (!$el.length) {
         return;
     }
-    if (typeof CRM_Flatpickr !== 'undefined' && !$el.data('flatpickr')) {
+    // Prefer native _flatpickr / crmFlatpickr — never trust .data('flatpickr')
+    // when the input has data-flatpickr="standard" (jQuery returns that string).
+    var fp = (typeof window.crmGetFlatpickrInstance === 'function')
+        ? window.crmGetFlatpickrInstance($el)
+        : (($el[0] && $el[0]._flatpickr) || null);
+
+    if (!fp && typeof CRM_Flatpickr !== 'undefined') {
         CRM_Flatpickr.initStandard($el);
+        fp = (typeof window.crmGetFlatpickrInstance === 'function')
+            ? window.crmGetFlatpickrInstance($el)
+            : (($el[0] && $el[0]._flatpickr) || null);
     }
-    var fp = $el.data('flatpickr');
-    if (fp) {
+
+    if (fp && typeof fp.setDate === 'function') {
         if (display) {
             fp.setDate(display, true);
         } else {

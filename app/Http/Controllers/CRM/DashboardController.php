@@ -207,7 +207,7 @@ class DashboardController extends Controller
         try {
             $this->validate($request, [
                 'note_id' => 'required|integer',
-                'unique_group_id' => 'required|string',
+                'unique_group_id' => 'nullable|string',
                 'description' => 'required|string',
                 'note_deadline' => 'required|date'
             ]);
