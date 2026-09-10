@@ -1422,7 +1422,9 @@ class BookingAppointmentsController extends Controller
         ]);
         $monthEvents = $this->staffCalendarFeed->eventsForCalendarRequest($base);
         $monthFollowUps = $this->personalCalendarFeed->followUpsForStaff($staff, $base);
-        $monthRows = array_merge($monthEvents, $monthFollowUps);
+        $monthRows = $this->personalCalendarFeed->deduplicateBookingFeedEvents(
+            array_merge($monthEvents, $monthFollowUps)
+        );
 
         $todayCount = 0;
         $upcomingCount = 0;

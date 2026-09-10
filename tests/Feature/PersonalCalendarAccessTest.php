@@ -557,5 +557,70 @@ class PersonalCalendarAccessTest extends TestCase
             ->all();
 
         $this->assertSame(['followup-' . $selfCopy->id], $ids);
+
+        $this->getJson(route('booking.api.calendar-stats.staff', ['staff' => $khushi->id]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.this_month', 1)
+            ->assertJsonPath('data.upcoming', 1);
+    }
+
+    #[Test]
+    public function personal_calendar_stats_match_deduped_feed_when_reminder_and_follow_up_overlap(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
+
+        $viewer = $this->createStaff([
+            'role' => 1,
+            'email' => 'admin.stats.dedupe@example.com',
+            'can_access_personal_calendar' => true,
+        ]);
+        $khushi = $this->createStaff([
+            'role' => 16,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.stats.dedupe@example.com',
+        ]);
+        $client = Admin::factory()->create([
+            'type' => 'client',
+            'first_name' => 'Rakesh',
+            'last_name' => 'Kumar',
+            'is_archived' => 0,
+        ]);
+
+        config(['booking_calendar.personal_calendar_cleared' => []]);
+
+        Note::create([
+            'client_id' => $client->id,
+            'user_id' => $khushi->id,
+            'title' => '',
+            'description' => 'Lead follow-up',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $khushi->id,
+            'status' => 0,
+            'pin' => 0,
+            'unique_group_id' => 'group_stats_dedupe',
+            'action_date' => '2026-09-25 00:00:00',
+        ]);
+        StaffCalendarEvent::create([
+            'title' => 'Rakesh Kumar — Follow-up',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-25 09:00:00',
+            'ends_at' => '2026-09-25 09:30:00',
+            'is_all_day' => true,
+            'client_id' => $client->id,
+            'created_by_staff_id' => $khushi->id,
+            'status' => 'scheduled',
+        ]);
+
+        $this->actingAs($viewer, 'admin');
+
+        $this->getJson(route('booking.api.calendar-stats.staff', ['staff' => $khushi->id]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.this_month', 1)
+            ->assertJsonPath('data.upcoming', 1);
     }
 }
