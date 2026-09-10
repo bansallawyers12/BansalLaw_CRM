@@ -162,6 +162,10 @@
                                     <div class="legend-color event-other"></div>
                                     <span>Other</span>
                                 </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-reminder"></div>
+                                    <span>Follow-up (added by you)</span>
+                                </div>
                             </div>
                         </div>
                         @else

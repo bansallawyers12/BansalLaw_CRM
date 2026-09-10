@@ -372,14 +372,13 @@ class PersonalCalendarAccessTest extends TestCase
         $ids = collect($response->json('data') ?? [])->pluck('id')->map(fn ($id) => (string) $id)->all();
 
         $this->assertContains('staff-cal-' . $newEvent->id, $ids);
+        $this->assertContains('followup-' . $newFollowUp->id, $ids);
         $this->assertNotContains('staff-cal-' . $legacyEvent->id, $ids);
-        // Personal calendars no longer surface note/task follow-ups (My Tasks only).
-        $this->assertNotContains('followup-' . $newFollowUp->id, $ids);
         $this->assertNotContains('followup-' . $legacyFollowUp->id, $ids);
     }
 
     #[Test]
-    public function personal_calendar_shows_only_self_created_reminders_and_other(): void
+    public function personal_calendar_shows_only_self_created_reminders_other_and_follow_ups(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
 
@@ -476,7 +475,7 @@ class PersonalCalendarAccessTest extends TestCase
         ]))->assertOk()->json('data') ?? [])->pluck('id')->map(fn ($id) => (string) $id)->all();
 
         $this->assertContains('staff-cal-' . $ownReminder->id, $ids);
-        $this->assertNotContains('followup-' . $selfFollowUp->id, $ids);
+        $this->assertContains('followup-' . $selfFollowUp->id, $ids);
         $this->assertNotContains('staff-cal-' . $ownMeeting->id, $ids);
         $this->assertNotContains('staff-cal-' . $ownCourt->id, $ids);
         $this->assertNotContains('staff-cal-' . $otherReminder->id, $ids);
@@ -484,7 +483,7 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function personal_calendar_does_not_include_note_follow_ups(): void
+    public function personal_calendar_collapses_multi_assignee_follow_up_notes(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
 
@@ -557,14 +556,13 @@ class PersonalCalendarAccessTest extends TestCase
             ->values()
             ->all();
 
-        $this->assertSame([], $ids);
-        $this->assertNotContains('followup-' . $selfCopy->id, $ids);
+        $this->assertSame(['followup-' . $selfCopy->id], $ids);
 
         $this->getJson(route('booking.api.calendar-stats.staff', ['staff' => $khushi->id]))
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.this_month', 0)
-            ->assertJsonPath('data.upcoming', 0);
+            ->assertJsonPath('data.this_month', 1)
+            ->assertJsonPath('data.upcoming', 1);
     }
 
     #[Test]

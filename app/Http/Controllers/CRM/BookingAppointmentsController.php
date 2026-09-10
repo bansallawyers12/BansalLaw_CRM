@@ -202,16 +202,14 @@ class BookingAppointmentsController extends Controller
 
         try {
             $extra = $this->staffCalendarFeed->eventsForCalendarRequest($request);
-            // Personal staff calendars: only reminders/other the owner added via Add Reminder.
-            // Note/task follow-ups stay on My Tasks — they are not "added on this calendar".
-            if ((string) $request->get('type') !== 'personal') {
-                $followUpStaff = $this->resolveCalendarFeedOwnerStaff($request);
-                if ($followUpStaff) {
-                    $extra = array_merge(
-                        $extra,
-                        $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request)
-                    );
-                }
+            $followUpStaff = $this->resolveCalendarFeedOwnerStaff($request);
+            if ($followUpStaff) {
+                // Personal calendars: followUpsForStaff keeps only notes this staff created (user_id).
+                // Booking calendars: follow-ups assigned to the logged-in staff.
+                $extra = array_merge(
+                    $extra,
+                    $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request)
+                );
             }
             // Collapse note follow-ups that also exist as personal reminders (same client + day + title).
             $extra = $this->personalCalendarFeed->deduplicateBookingFeedEvents($extra);
@@ -1425,7 +1423,10 @@ class BookingAppointmentsController extends Controller
             'end' => $monthEnd->toIso8601String(),
         ]);
         $monthEvents = $this->staffCalendarFeed->eventsForCalendarRequest($base);
-        $monthRows = $this->personalCalendarFeed->deduplicateBookingFeedEvents($monthEvents);
+        $monthFollowUps = $this->personalCalendarFeed->followUpsForStaff($staff, $base);
+        $monthRows = $this->personalCalendarFeed->deduplicateBookingFeedEvents(
+            array_merge($monthEvents, $monthFollowUps)
+        );
 
         $todayCount = 0;
         $upcomingCount = 0;

@@ -92,7 +92,7 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * Follow-ups for one staff member (booking calendars only — not personal staff calendars).
+     * Follow-ups for one staff member (booking calendars + personal: self-created only).
      *
      * @return list<array<string, mixed>>
      */
@@ -933,7 +933,7 @@ class StaffPersonalCalendarFeedService
     /**
      * Open follow-ups / actions scheduled for this staff member (action_date).
      *
-     * @param  bool  $createdBySelfOnly  When true, only notes this staff created (user_id), not tasks assigned by others.
+     * @param  bool  $createdBySelfOnly  When true, only notes this staff created and assigned to themselves.
      * @return list<array<string, mixed>>
      */
     protected function followUps(
@@ -950,7 +950,8 @@ class StaffPersonalCalendarFeedService
             ->whereNotNull('action_date');
         if ($staffId !== null) {
             if ($createdBySelfOnly) {
-                $query->where('user_id', $staffId);
+                // Personal calendar: only follow-ups this staff created and assigned to themselves.
+                $query->where('user_id', $staffId)->where('assigned_to', $staffId);
             } else {
                 $query->where('assigned_to', $staffId);
             }
