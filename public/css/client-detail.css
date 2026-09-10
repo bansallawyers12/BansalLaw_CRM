@@ -8883,6 +8883,21 @@ body > .ts-dropdown {
   align-self: stretch;
 }
 
+/* Keep overview cards to a consistent viewport height; long content scrolls inside */
+@media (min-width: 768px) {
+  #personaldetails-tab .cdn-overview > .cdn-ov-card.card,
+  #personaldetails-tab .cdn-overview .cdn-ov-card.card {
+    max-height: 26.5rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  #personaldetails-tab .cdn-overview > .cdn-ov-card.card,
+  #personaldetails-tab .cdn-overview .cdn-ov-card.card {
+    max-height: 28rem;
+  }
+}
+
 #personaldetails-tab .cdn-overview .cdn-ov-card__head {
   display: flex;
   align-items: center;
@@ -8958,6 +8973,29 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
   flex-direction: column;
   gap: 12px;
   flex: 1 1 auto;
+  min-height: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__body--scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58, 111, 168, 0.45) transparent;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__body--scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__body--scroll::-webkit-scrollbar-thumb {
+  background: rgba(58, 111, 168, 0.35);
+  border-radius: 999px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__body--scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__body--grid {
@@ -9157,12 +9195,129 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview .cdn-ov-party-list {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.875rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-party-list li + li {
-  margin-top: 0.4rem;
+  margin-top: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-block__head .cdn-ov-section-label {
+  flex: 1 1 auto;
+  margin: 0;
+  padding-top: 0.35rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: rgba(58, 111, 168, 0.12);
+  color: var(--navy, #1e3d60);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-scroll {
+  max-height: 11.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58, 111, 168, 0.45) transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 0.55rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-scroll:focus-visible {
+  outline: 2px solid rgba(58, 111, 168, 0.45);
+  outline-offset: 1px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-scroll--parties {
+  max-height: 10.5rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-scroll--matters {
+  max-height: 16rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-party-item {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d7e3f0;
+  border-radius: 9px;
+  background: #fff;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-party-item__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-party-item__name {
+  color: var(--navy, #1e3d60);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-party-item__role {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(58, 111, 168, 0.1);
+  color: #334155;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-party-item__meta {
+  margin-top: 0.3rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-field__value--stack,
+#personaldetails-tab .cdn-overview .cdn-ov-field__value:has(.cdn-ov-contact-line) {
+  max-height: 7.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
 }
 
 /* Overview cards — action can be <a> or <button> */
@@ -9204,10 +9359,22 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   color: #64748b;
 }
 
-#personaldetails-tab .cdn-overview .cdn-ov-section-label:first-child {
+#personaldetails-tab .cdn-overview .cdn-ov-section-label:first-child,
+#personaldetails-tab .cdn-overview .cdn-ov-block:first-child .cdn-ov-section-label,
+#personaldetails-tab .cdn-overview .cdn-ov-block__head .cdn-ov-section-label {
   margin-top: 0;
   padding-top: 0;
   border-top: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-block + .cdn-ov-block {
+  margin-top: 0.15rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-block .cdn-ov-section-label {
+  margin-top: 0;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-nested-grid {
@@ -9239,25 +9406,132 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-matter-list {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0;
   flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #e2e8f0;
 }
 
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row {
+  position: relative;
+  padding: 0.7rem 0.55rem 0.7rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid #e8eef5;
+  border-radius: 0;
+  background: transparent;
+  transition: background 0.12s ease;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-current {
+  background: rgba(58, 111, 168, 0.06);
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-current::before {
+  background: var(--sidebar-active, #3a6fa8);
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-switchable {
+  cursor: pointer;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-switchable:hover,
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-switchable:focus-visible {
+  background: #f8fafc;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row.is-switchable:focus-visible {
+  outline: 2px solid rgba(58, 111, 168, 0.4);
+  outline-offset: -2px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
+  min-width: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__ref {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e3d60;
+  letter-spacing: 0.01em;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__role {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-status {
+  color: var(--navy, #1e3d60);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-status.is-muted {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__parties {
+  margin: 0.28rem 0 0;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-row__parties.is-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Legacy matter-item selectors kept for safety if cached markup appears */
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item {
-  padding: 0.75rem 0.85rem;
-  border: 1px solid #d7e3f0;
-  border-radius: 10px;
-  background: #fff;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  padding: 0.7rem 0.55rem;
+  border: 0;
+  border-bottom: 1px solid #e8eef5;
+  border-radius: 0;
+  background: transparent;
 }
 
 #personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body {
-  min-height: 100%;
+  min-height: 0;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item.is-current {
-  background: #eff6ff;
-  border-color: #93c5fd;
+  background: rgba(58, 111, 168, 0.06);
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item[data-matter-url] {
@@ -9266,7 +9540,6 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item[data-matter-url]:hover {
   background: #f8fafc;
-  border-color: #3a6fa8;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item__top {
@@ -9292,20 +9565,21 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-matter-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  border: 0;
+  text-transform: uppercase;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-chip.is-current {
-  background: rgba(58, 111, 168, 0.12);
+  background: transparent;
   color: #1e3d60;
-  border-color: rgba(58, 111, 168, 0.28);
+  border: 0;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item__meta {

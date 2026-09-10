@@ -20,7 +20,7 @@
                                 <h3>Personal Information</h3>
                             </div>
                         </header>
-                        <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+                        <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
                         <div class="cdn-ov-field">
                             <span class="cdn-ov-field__label">Age / Date of Birth</span>
                             <span class="cdn-ov-field__value">
@@ -305,7 +305,8 @@
                                 </a>
                                 @endif
                             </header>
-                            <div class="cdn-ov-card__body">
+                            <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
+                            <section class="cdn-ov-block">
                             <p class="cdn-ov-section-label">Team</p>
                             <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
                             <div class="cdn-ov-field">
@@ -370,6 +371,7 @@
                                 </span>
                             </div>
                             </div>
+                            </section>
 
                             @php
                                 $mdRows = [];
@@ -422,6 +424,7 @@
                                     }
                                 }
                             @endphp
+                            <section class="cdn-ov-block">
                             <p class="cdn-ov-section-label">Case details</p>
                             @if(count($mdRows) > 0)
                             <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
@@ -439,10 +442,14 @@
                             @else
                             <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
                             @endif
+                            </section>
                             @if($linkedOtherParties->isNotEmpty())
-                                <div class="cdn-ov-field">
-                                    <span class="cdn-ov-field__label">Other parties</span>
-                                    <div class="cdn-ov-field__value">
+                                <section class="cdn-ov-block cdn-ov-block--parties">
+                                    <div class="cdn-ov-block__head">
+                                        <p class="cdn-ov-section-label">Other parties</p>
+                                        <span class="cdn-ov-count">{{ $linkedOtherParties->count() }}</span>
+                                    </div>
+                                    <div class="cdn-ov-scroll cdn-ov-scroll--parties" tabindex="0" role="region" aria-label="Other parties">
                                         <ul class="cdn-ov-party-list">
                                             @foreach($linkedOtherParties as $opp)
                                                 @php
@@ -459,20 +466,24 @@
                                                         $opp->rep_phone ?? null,
                                                     ]);
                                                 @endphp
-                                                <li>
-                                                    <strong>{{ $opp->name }}</strong>
-                                                    @if($oppRoleLabel)<span class="text-muted"> — {{ $oppRoleLabel }}</span>@endif
+                                                <li class="cdn-ov-party-item">
+                                                    <div class="cdn-ov-party-item__main">
+                                                        <strong class="cdn-ov-party-item__name">{{ $opp->name }}</strong>
+                                                        @if($oppRoleLabel)
+                                                            <span class="cdn-ov-party-item__role">{{ $oppRoleLabel }}</span>
+                                                        @endif
+                                                    </div>
                                                     @if($repParts !== [])
-                                                        <br><small class="text-muted">Rep: {{ implode(' · ', $repParts) }}</small>
+                                                        <div class="cdn-ov-party-item__meta">Rep: {{ implode(' · ', $repParts) }}</div>
                                                     @endif
                                                     @if(! empty($opp->rep_notes))
-                                                        <br><small class="text-muted">{{ $opp->rep_notes }}</small>
+                                                        <div class="cdn-ov-party-item__meta">{{ $opp->rep_notes }}</div>
                                                     @endif
                                                 </li>
                                             @endforeach
                                         </ul>
                                     </div>
-                                </div>
+                                </section>
                             @endif
                             </div>
                         </article>

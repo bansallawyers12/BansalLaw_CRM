@@ -13,7 +13,7 @@
         </a>
         @endif
     </header>
-    <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+    <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
         <div class="cdn-ov-field">
             <span class="cdn-ov-field__label">Company Name</span>
             <span class="cdn-ov-field__value">{{ optional($fetchedData->company)->company_name ?? 'N/A' }}</span>
@@ -84,10 +84,10 @@
             <h3>Contact Information</h3>
         </div>
     </header>
-    <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+    <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
         <div class="cdn-ov-field">
             <span class="cdn-ov-field__label">Phone</span>
-            <span class="cdn-ov-field__value">
+            <span class="cdn-ov-field__value cdn-ov-field__value--stack">
                 <?php
                 if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
                     $companyContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')
@@ -129,7 +129,7 @@
 
         <div class="cdn-ov-field">
             <span class="cdn-ov-field__label">Email</span>
-            <span class="cdn-ov-field__value">
+            <span class="cdn-ov-field__value cdn-ov-field__value--stack">
                 <?php
                 if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
                     $companyEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')
@@ -175,7 +175,7 @@
                 <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i> View Profile
             </a>
         </header>
-        <div class="cdn-ov-card__body cdn-ov-card__body--grid">
+        <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
             <div class="cdn-ov-field">
                 <span class="cdn-ov-field__label">Name</span>
                 <span class="cdn-ov-field__value">

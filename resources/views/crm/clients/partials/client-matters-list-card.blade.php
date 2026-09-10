@@ -44,6 +44,9 @@
         <div class="cdn-ov-card__title">
             <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></span>
             <h3>Client Matters</h3>
+            @if($matterCount > 0)
+                <span class="cdn-ov-count" title="Active matters">{{ $matterCount }}</span>
+            @endif
         </div>
         @if($canAddClientMatter)
             <button type="button"
@@ -56,7 +59,7 @@
         @endif
     </header>
 
-    <div class="cdn-ov-card__body">
+    <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
     @if($matterCount === 0)
     <p class="cdn-ov-empty">
         @if($canAddClientMatter)
@@ -67,10 +70,11 @@
     </p>
     @else
     @if($matterCount > 1)
-    <p class="cdn-ov-matters-hint">Click a matter to switch the active matter for this client.</p>
+    <p class="cdn-ov-matters-hint">Select a row to switch the active matter.</p>
     @endif
 
-    <div class="cdn-ov-matter-list">
+    <div class="cdn-ov-scroll cdn-ov-scroll--matters" tabindex="0" role="region" aria-label="Client matters">
+    <ul class="cdn-ov-matter-list" role="list">
     @foreach($clientMattersList as $cmRow)
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
@@ -110,19 +114,34 @@
                     $ourRole = $roleLabels[$ourRoleRaw] ?? $ourRoleRaw;
                 }
             }
+            $partySummary = $parties->map(function ($party) {
+                $label = (string) ($party['name'] ?? '');
+                $role = trim((string) ($party['role'] ?? ''));
+                if ($role !== '') {
+                    $label .= ' · ' . $role;
+                }
+
+                return $label;
+            })->filter()->values();
         @endphp
 
-        <div class="cdn-ov-matter-item{{ $isCurrent ? ' is-current' : '' }}"
-             @if($matterUrl && ! $isCurrent)
-             role="button"
-             tabindex="0"
-             data-matter-url="{{ $matterUrl }}"
-             @endif>
-            <div class="cdn-ov-matter-item__top">
-                <div class="cdn-ov-matter-item__ref">{{ $matterRefLabel }}</div>
-                <div class="cdn-ov-matter-item__actions">
+        <li class="cdn-ov-matter-row{{ $isCurrent ? ' is-current' : '' }}{{ ($matterUrl && ! $isCurrent) ? ' is-switchable' : '' }}"
+            @if($isCurrent) aria-current="true" @endif
+            @if($matterUrl && ! $isCurrent)
+            role="button"
+            tabindex="0"
+            data-matter-url="{{ $matterUrl }}"
+            @endif>
+            <div class="cdn-ov-matter-row__main">
+                <div class="cdn-ov-matter-row__identity">
+                    <span class="cdn-ov-matter-row__ref">{{ $matterRefLabel }}</span>
+                    @if($ourRole !== '')
+                        <span class="cdn-ov-matter-row__role">{{ $ourRole }}</span>
+                    @endif
+                </div>
+                <div class="cdn-ov-matter-row__actions">
                     @if($isCurrent)
-                        <span class="cdn-ov-matter-chip is-current">Current</span>
+                        <span class="cdn-ov-matter-status">Current</span>
                         @if($canCloseClientMatter)
                             <button type="button"
                                     class="client-matter-list-close-btn"
@@ -132,29 +151,18 @@
                                     onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">Close</button>
                         @endif
                     @else
-                        <span class="cdn-ov-matter-chip">Switch</span>
+                        <span class="cdn-ov-matter-status is-muted">Switch</span>
                     @endif
                 </div>
             </div>
-            @if($ourRole !== '')
-                <div class="cdn-ov-matter-item__meta"><span>Our role</span> {{ $ourRole }}</div>
-            @endif
-            @if($parties->isNotEmpty())
-                <ul class="cdn-ov-matter-item__parties">
-                    @foreach($parties as $party)
-                        <li>
-                            <strong>{{ $party['name'] }}</strong>
-                            @if(($party['role'] ?? '') !== '')
-                                <span>{{ $party['role'] }}</span>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
+            @if($partySummary->isNotEmpty())
+                <p class="cdn-ov-matter-row__parties">{{ $partySummary->implode(' · ') }}</p>
             @else
-                <p class="cdn-ov-matter-item__empty-parties">No other parties linked</p>
+                <p class="cdn-ov-matter-row__parties is-empty">No other parties linked</p>
             @endif
-        </div>
+        </li>
     @endforeach
+    </ul>
     </div>
     @endif
     </div>
@@ -169,20 +177,22 @@
     }
     #clientMattersListCard .client-matter-list-close-btn {
         margin-left: 0;
-        padding: 0.2rem 0.55rem;
-        border: 1px solid rgba(211, 47, 47, 0.25);
-        border-radius: 999px;
-        background: rgba(211, 47, 47, 0.08);
+        padding: 0.15rem 0.5rem;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
         color: #b91c1c;
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 700;
         line-height: 1.3;
         cursor: pointer;
-        vertical-align: middle;
+        text-decoration: underline;
+        text-underline-offset: 2px;
     }
     #clientMattersListCard .client-matter-list-close-btn:hover {
-        background: rgba(211, 47, 47, 0.14);
         color: #991b1b;
+        background: rgba(211, 47, 47, 0.06);
+        text-decoration: none;
     }
     #clientMattersListCard .client-matter-list-close-btn:focus-visible {
         outline: 2px solid #dc2626;
@@ -210,7 +220,7 @@
         if (event.target.closest('.client-matter-list-add-btn, .client-matter-list-close-btn')) {
             return;
         }
-        var row = event.target.closest('.cdn-ov-matter-item[data-matter-url]');
+        var row = event.target.closest('.cdn-ov-matter-row[data-matter-url]');
         if (!row) {
             return;
         }
@@ -224,7 +234,7 @@
         if (event.target.closest('.client-matter-list-add-btn, .client-matter-list-close-btn')) {
             return;
         }
-        var row = event.target.closest('.cdn-ov-matter-item[data-matter-url]');
+        var row = event.target.closest('.cdn-ov-matter-row[data-matter-url]');
         if (!row) {
             return;
         }
