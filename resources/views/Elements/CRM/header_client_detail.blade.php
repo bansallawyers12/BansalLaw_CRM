@@ -53,7 +53,7 @@
                     && auth('admin')->user()->canAccessPersonalCalendar();
             @endphp
             @if($canAccessPersonalCalendarNav)
-            <a href="{{ route('dashboard') }}#myCalendarSection" class="icon-btn" title="My Calendar"><i class="fa-solid fa-calendar-days"></i></a>
+            <a href="{{ route('booking.appointments.calendar.staff', ['staff' => auth('admin')->id()]) }}" class="icon-btn" title="My Calendar"><i class="fa-solid fa-calendar-days"></i></a>
             @endif
             <a href="{{ route('signatures.index') }}" class="icon-btn{{ $_navActive['signatures'] ? ' active' : '' }}" title="Signature Dashboard"@if($_navActive['signatures']) aria-current="page"@endif><i class="fa-solid fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">

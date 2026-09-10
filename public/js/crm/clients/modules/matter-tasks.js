@@ -765,7 +765,13 @@
         }
         var done = isReminderDone(it);
         var title = esc(it.title || '');
-        var calendarHref = urlMap().dashboardCalendar || '';
+        var calendarHref = urlMap().personalCalendar || urlMap().dashboardCalendar || '';
+        if (calendarHref && it && it.due_date) {
+            calendarHref +=
+                (calendarHref.indexOf('?') >= 0 ? '&' : '?') +
+                'date=' +
+                encodeURIComponent(String(it.due_date));
+        }
         var html =
             '<li class="cdn-matter-task__row is-reminder' +
             (done ? ' is-done-row' : '') +

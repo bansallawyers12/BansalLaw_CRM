@@ -1656,6 +1656,9 @@ $(document).ready(function() {
         && $_cdnTimelineBillingViewer->canUseTimelineBilling();
     $cdnCanPersonalCalendar = $_cdnTimelineBillingViewer instanceof \App\Models\Staff
         && $_cdnTimelineBillingViewer->canAccessPersonalCalendar();
+    $cdnPersonalCalendarUrl = $cdnCanPersonalCalendar
+        ? route('booking.appointments.calendar.staff', ['staff' => $_cdnTimelineBillingViewer->id])
+        : null;
     $cdnTimelineBillingStructure = $cdnCanTimelineBilling
         ? \App\Support\TimelineBillingSchedule::structure()
         : [];
@@ -1780,6 +1783,7 @@ $(document).ready(function() {
             matterReminderDestroyBase: '{{ url("/clients/matter-reminders") }}',
             assigneeAction: '{{ route("assignee.tasks") }}',
             dashboardCalendar: '{{ route("dashboard") }}#myCalendarSection',
+            personalCalendar: @json($cdnPersonalCalendarUrl),
             personalCalendarEnabled: @json(!empty($cdnCanPersonalCalendar)),
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',

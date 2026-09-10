@@ -152,7 +152,7 @@ class StaffCalendarFeedService
             $query->where('created_at', '>=', $clearedAt);
         }
 
-        $this->restrictStaffCalendarEventQuery($query);
+        // Own personal reminders always belong on this calendar — do not hide by client allocation.
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
         if (Schema::hasColumn('staff_calendar_events', 'status')) {
             $query->whereNotIn('status', ['cancelled', 'completed']);

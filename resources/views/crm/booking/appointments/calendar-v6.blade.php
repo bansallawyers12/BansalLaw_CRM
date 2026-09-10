@@ -678,6 +678,17 @@ document.addEventListener('DOMContentLoaded', function() {
         let bookingCalDidEmptyRefetch = false;
 
         // Initialize FullCalendar v6
+        const bookingCalDateParam = (function () {
+            try {
+                var raw = new URLSearchParams(window.location.search).get('date');
+                if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                    return null;
+                }
+                return raw;
+            } catch (e) {
+                return null;
+            }
+        })();
         const calendar = new FullCalendar.Calendar(calendarEl, {
         plugins: [
             FullCalendarPlugins.dayGridPlugin,
@@ -688,6 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initial view and header
         initialView: 'dayGridMonth',
+        initialDate: bookingCalDateParam || undefined,
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',

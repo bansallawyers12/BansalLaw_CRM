@@ -71,6 +71,20 @@ class MatterTaskReminderTest extends TestCase
             'client_matter_id' => $matter->id,
             'created_by_staff_id' => $staff->id,
         ]);
+
+        $eventId = (int) StaffCalendarEvent::query()
+            ->where('title', 'Call Vantage Legal')
+            ->where('created_by_staff_id', $staff->id)
+            ->value('id');
+
+        $this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $staff->id,
+            'start' => '2026-09-01T00:00:00+10:00',
+            'end' => '2026-09-30T00:00:00+10:00',
+        ]))->assertOk()
+            ->assertJsonFragment(['id' => 'staff-cal-' . $eventId]);
     }
 
     #[Test]
