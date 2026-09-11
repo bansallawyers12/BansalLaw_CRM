@@ -7,14 +7,40 @@
     'use strict';
     if (!$) return;
 
+    function notifyInvoiceError(message) {
+        var msg = message || 'Something went wrong. Please try again.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+            window.crmNotify.error({ message: msg });
+            return;
+        }
+        if (typeof window.crmAlert === 'function') {
+            window.crmAlert(msg);
+            return;
+        }
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(msg, 'error');
+        }
+    }
+
+    function setInvoiceSelectError(message) {
+        var optionHtml = '<option value="">' + (message || 'Error loading invoices') + '</option>';
+        $('#office_receipt_form .invoice_no_cls').html(optionHtml);
+        $('#client_receipt_form .invoice_no_cls').html(optionHtml);
+    }
+
     function listOfInvoice() {
-        var client_id = window.ClientDetailConfig.clientId;
+        var cfg = window.ClientDetailConfig || {};
+        var client_id = cfg.clientId;
         var selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked') ?
             $('.general_matter_checkbox_client_detail').val() : $('#sel_matter_id_client_detail').val();
+        if (!cfg.urls || !cfg.urls.listOfInvoice) {
+            setInvoiceSelectError('Invoice list unavailable');
+            notifyInvoiceError('Invoice list is not configured on this page. Please refresh.');
+            return;
+        }
         $.ajax({
             type: 'post',
-            url: window.ClientDetailConfig.urls.listOfInvoice,
-            sync: true,
+            url: cfg.urls.listOfInvoice,
             dataType: 'json',
             data: { client_id: client_id, selectedMatter: selectedMatter },
             success: function(response) {
@@ -28,29 +54,33 @@
                     }
                     $('#office_receipt_form .invoice_no_cls').html(obj.record_get || '<option value="">No invoices found</option>');
                     $('#client_receipt_form .invoice_no_cls').html(obj.record_get || '<option value="">No invoices found</option>');
-                } catch(e) {
-                    console.error('Failed to parse JSON response from listOfInvoice:', e);
-                    console.error('Response received:', response);
-                    $('#office_receipt_form .invoice_no_cls').html('<option value="">Error loading invoices</option>');
-                    $('#client_receipt_form .invoice_no_cls').html('<option value="">Error loading invoices</option>');
+                } catch (e) {
+                    setInvoiceSelectError('Error loading invoices');
+                    notifyInvoiceError('Could not load the invoice list. Please try again or refresh the page.');
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('AJAX error in listOfInvoice:', status, error);
-                $('#office_receipt_form .invoice_no_cls').html('<option value="">Failed to load invoices</option>');
-                $('#client_receipt_form .invoice_no_cls').html('<option value="">Failed to load invoices</option>');
+            error: function() {
+                setInvoiceSelectError('Failed to load invoices');
+                notifyInvoiceError('Could not load the invoice list. Please try again or refresh the page.');
             }
         });
     }
 
     function loadInvoicesForQuickReceipt(matterId, preSelectInvoice) {
-        var token = (window.ClientDetailConfig && window.ClientDetailConfig.csrfToken) || $('meta[name="csrf-token"]').attr('content');
+        var cfg = window.ClientDetailConfig || {};
+        var token = cfg.csrfToken || $('meta[name="csrf-token"]').attr('content');
+        if (!cfg.urls || !cfg.urls.getInvoicesByMatter) {
+            $('#office_receipt_form .productitem_office tr.clonedrow_office').first().find('select.invoice_no_cls')
+                .html('<option value="">Invoice list unavailable</option>');
+            notifyInvoiceError('Invoice list is not configured on this page. Please refresh.');
+            return $.Deferred().reject().promise();
+        }
         return $.ajax({
             type: 'POST',
-            url: window.ClientDetailConfig.urls.getInvoicesByMatter,
+            url: cfg.urls.getInvoicesByMatter,
             data: {
                 client_matter_id: matterId,
-                client_id: window.ClientDetailConfig.clientId,
+                client_id: cfg.clientId,
                 _token: token
             }
         }).done(function(response) {
@@ -68,10 +98,10 @@
                     );
                 });
             }
-        }).fail(function(xhr) {
-            console.error('Failed to load invoices for Quick Receipt:', xhr);
+        }).fail(function() {
             $('#office_receipt_form .productitem_office tr.clonedrow_office').first().find('select.invoice_no_cls')
                 .html('<option value="">Error loading invoices</option>');
+            notifyInvoiceError('Could not load invoices for Quick Receipt. You can still enter the amount manually.');
         });
     }
 

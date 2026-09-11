@@ -384,10 +384,13 @@ function initAccountTabScripts() {
                 }
             },
             error: function(xhr) {
-                console.error('❌ Failed to load invoices:', xhr);
-                console.error('Response:', xhr.responseText);
                 var $select = $('#office_receipt_form').find('select[name="invoice_no[]"]');
                 $select.html('<option value="">Error loading invoices</option>');
+                if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+                    window.crmNotify.error({ message: 'Could not load invoices for this office receipt. You can still enter the receipt without linking an invoice.' });
+                } else if (typeof window.crmAlert === 'function') {
+                    window.crmAlert('Could not load invoices for this office receipt. You can still enter the receipt without linking an invoice.');
+                }
             }
         });
     }
@@ -503,8 +506,10 @@ function initAccountTabScripts() {
             setTimeout(function() {
                 window.populateQuickReceiptOfficeForm(invoiceData);
             }, 100);
-        } else {
-            console.error('populateQuickReceiptOfficeForm is not available');
+        } else if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+            window.crmNotify.error({ message: 'Quick Receipt helper is not available. Please refresh the page.' });
+        } else if (typeof window.crmAlert === 'function') {
+            window.crmAlert('Quick Receipt helper is not available. Please refresh the page.');
         }
         
         // Add a badge to indicate this is from Quick Receipt
@@ -513,15 +518,33 @@ function initAccountTabScripts() {
         $modal.find('.modal-header').prepend('<span class="badge bg-success" style="margin-right: 10px;"><i class="fa-solid fa-bolt"></i> QUICK RECEIPT</span>');
         
         // SOLUTION 5: Validate modal is available before opening
-        if (typeof $modal.modal !== 'function') {
-            console.error('❌ Bootstrap modal not available');
-            crmAlert('Error: Modal plugin not loaded. Please refresh the page.');
+        var modalEl = $modal[0];
+        var opened = false;
+        if (typeof $modal.modal === 'function') {
+            $modal.modal('show');
+            opened = true;
+        } else if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            opened = true;
+        }
+        if (!opened) {
+            if (typeof window.crmConfirm === 'function') {
+                window.crmConfirm({
+                    title: 'Receipt form unavailable',
+                    text: 'The receipt dialog could not be opened. Reload the page and try again?',
+                    confirmText: 'Reload page',
+                    cancelText: 'Cancel',
+                    icon: 'warning'
+                }).then(function(ok) {
+                    if (ok) {
+                        window.location.reload();
+                    }
+                });
+            } else if (typeof window.crmAlert === 'function') {
+                window.crmAlert('Error: Modal plugin not loaded. Please refresh the page.');
+            }
             return;
         }
-        
-        // Open the modal
-        $modal.modal('show');
-    });
     
     // Remove Quick Receipt badge when modal closes
     $('#createreceiptmodal').on('hidden.bs.modal', function() {

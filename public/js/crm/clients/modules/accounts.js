@@ -161,6 +161,56 @@
     window.clientLedgerBalanceAmount = clientLedgerBalanceAmount;
     window.renderClientFundsLedger = renderClientFundsLedger;
 
+    function notifyAccountError(message) {
+        var msg = message || 'Something went wrong. Please try again.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+            window.crmNotify.error({ message: msg });
+            return;
+        }
+        if (typeof window.crmAlert === 'function') {
+            window.crmAlert(msg);
+            return;
+        }
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(msg, 'error');
+        }
+    }
+
+    function offerPageReload(title, text) {
+        if (typeof window.crmConfirm === 'function') {
+            return window.crmConfirm({
+                title: title || 'Reload page?',
+                text: text || 'Reload this page and try again?',
+                confirmText: 'Reload page',
+                cancelText: 'Cancel',
+                icon: 'warning'
+            }).then(function(ok) {
+                if (ok) {
+                    window.location.reload();
+                }
+                return ok;
+            });
+        }
+        notifyAccountError(text || 'Please refresh the page and try again.');
+        return Promise.resolve(false);
+    }
+
+    function showCreateReceiptModal($modal) {
+        if (!$modal || !$modal.length) {
+            return false;
+        }
+        if (typeof $modal.modal === 'function') {
+            $modal.modal('show');
+            return true;
+        }
+        var el = $modal[0];
+        if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+            return true;
+        }
+        return false;
+    }
+
     function resolveAccountMatterIdForEntry() {
         if (typeof window.resolveAccountMatterId === 'function') {
             return window.resolveAccountMatterId();
@@ -209,9 +259,9 @@
                 }
             },
             error: function(xhr) {
-                console.error('Failed to load invoices for office receipt:', xhr);
                 $('#office_receipt_form').find('select[name="invoice_no[]"]')
                     .html('<option value="">Error loading invoices</option>');
+                notifyAccountError('Could not load invoices for this office receipt. You can still enter the receipt without linking an invoice.');
             }
         });
     }
@@ -238,14 +288,10 @@
                 };
 
                 if (!$modal.length) {
-                    console.error('Modal element #createreceiptmodal not found in DOM');
-                    crmAlert('Error: Receipt modal not found. Please refresh the page.');
-                    return;
-                }
-
-                if (typeof $modal.modal !== 'function') {
-                    console.error('Bootstrap modal plugin not loaded');
-                    crmAlert('Error: Modal plugin not available. Please refresh the page.');
+                    offerPageReload(
+                        'Receipt form unavailable',
+                        'The receipt dialog is missing from this page. Reload to continue?'
+                    );
                     return;
                 }
 
@@ -294,9 +340,20 @@
                     } else if (receiptType === '2') {
                         $('#client_matter_id_office').val(selectedMatter);
                     }
-                }, 100);
 
-                $modal.modal('show');
+                    if (showCreateReceiptModal($modal)) {
+                        return;
+                    }
+                    // One delayed retry if Bootstrap/jQuery shim was not ready yet.
+                    setTimeout(function() {
+                        if (!showCreateReceiptModal($modal)) {
+                            offerPageReload(
+                                'Receipt form unavailable',
+                                'The receipt dialog could not be opened. Reload the page and try again?'
+                            );
+                        }
+                    }, 250);
+                }, 100);
             });
     }
 
@@ -368,12 +425,33 @@
 
         var cfg = window.ClientDetailConfig || {};
         var url = (cfg.urls && cfg.urls.accountTabHtml) ? cfg.urls.accountTabHtml : '';
+
+        function showAccountTabLoadError(message) {
+            var msg = message || 'Failed to load account ledger.';
+            notifyAccountError(msg + ' You can retry below or refresh the page.');
+            $body.html(
+                '<div class="account-tab-load-error text-center py-5" role="alert">' +
+                    '<p class="text-danger mb-3">' + $('<div>').text(msg).html() + '</p>' +
+                    '<button type="button" class="btn btn-outline-primary btn-sm js-retry-account-tab-load">' +
+                        '<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry' +
+                    '</button>' +
+                '</div>'
+            );
+        }
+
         if (!url) {
-            $body.html('<div class="text-center py-5 text-danger">Failed to load account ledger. Please refresh the page.</div>');
+            showAccountTabLoadError('Account ledger is not configured on this page.');
             return;
         }
 
         $body.data('loading', true);
+        $body.html(
+            '<div class="account-tab-lazy-placeholder text-center py-5" role="status">' +
+                '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>' +
+                '<p class="text-muted mb-0 mt-2">Loading account ledger…</p>' +
+            '</div>'
+        );
+
         $.ajax({
             url: url,
             type: 'GET',
@@ -387,13 +465,24 @@
                 $(document).trigger('accountTabContentLoaded');
             },
             error: function() {
-                $body.html('<div class="text-center py-5 text-danger">Failed to load account ledger. Please try again.</div>');
+                showAccountTabLoadError('Failed to load account ledger.');
             },
             complete: function() {
                 $body.data('loading', false);
             }
         });
     };
+
+    $(document).on('click', '.js-retry-account-tab-load', function(e) {
+        e.preventDefault();
+        var $body = $('#account-tab-body');
+        if (!$body.length) {
+            return;
+        }
+        $body.attr('data-loaded', '0');
+        $body.removeData('loading');
+        window.ClientAccountsTab.loadIfNeeded();
+    });
 
     $(document).ready(function() {
         ensureAccountEntryButtonsBound();

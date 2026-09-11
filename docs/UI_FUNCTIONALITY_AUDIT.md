@@ -109,10 +109,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| FIN-1 | Medium | `public/js/crm/clients/modules/accounts.js` ~L241–248 | Office receipt modal missing → **`alert()`** “Please refresh” — no graceful recovery or retry. |
-| FIN-2 | Medium | `public/js/crm/clients/modules/invoices.js` ~L32–39 | JSON parse / AJAX failures → **`console.error` only** when loading invoice lists for Quick Receipt. User sees empty/stale data. |
-| FIN-3 | Medium | `resources/views/crm/clients/tabs/account.blade.php` | Account ledger lazy-loads — failure handling depends on `accounts.js` injecting error HTML; inconsistent with toast patterns elsewhere. |
-| FIN-4 | Low | Removed invoice flows | Commission Invoice, General Invoice, Payment Details removed from modals. Ensure training materials don’t reference removed flows. |
+| FIN-1 | Fixed | `public/js/crm/clients/modules/accounts.js` | Receipt modal open uses Bootstrap 5 fallback + one retry; missing/unopenable modal offers **Reload** via `crmConfirm` instead of a dead-end alert. |
+| FIN-2 | Fixed | `public/js/crm/clients/modules/invoices.js` | Quick Receipt / invoice-list parse & AJAX failures toast via `crmNotify`/`crmAlert` (select still shows error option). |
+| FIN-3 | Fixed | `public/js/crm/clients/modules/accounts.js` | Account tab lazy-load failures toast via `crmNotify`/`crmAlert` and show an in-tab **Retry** control (not error HTML alone). |
+| FIN-4 | Fixed | Removed invoice flows | Verified: no live UI, README, or training docs reference Commission Invoice / General Invoice / Payment Details. Use Trust Account Entry, Office Receipt, or Tax Invoice only. Legacy table updated. |
 
 *For money integrity (void invoice, fee transfers, booking payments), see `cmr-bugs.md` Areas 6 and 14 — many marked Fixed as of 2026-08-22.*
 
@@ -249,7 +249,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 | Service Taken | Deprecated | `detail.blade.php` comment |
 | Lead assignment (assignee column) | Deprecated | Routes still active; controller redirects with info message |
 | Appointment system (legacy) | Deprecated | `console.warn` in `detail-main.js`, `custom-form-validation.js` |
-| Commission/General Invoice, Payment Details | Removed | Modal comments in financial views |
+| Commission/General Invoice, Payment Details | Removed | No UI/training remnants; staff use Trust Account Entry, Office Receipt, or Tax Invoice |
 | Migration documents tab | Removed | Dead JS in `detail-main.js` |
 | Trust compliance (VLSB) | Module removed 2026-08-22 | See `cmr-bugs.md` obsolete items |
 
@@ -265,7 +265,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 
 ### P1 — UX consistency
 5. Replace **`alert()`-heavy flows** — **Done (2026-09-02):** `crmAlert` + Toastify/`crmNotify` across former alert call sites (X-5 / Appendix A).
-6. Add **user-visible errors** for silent AJAX failures (DASH-3, EMAIL-2, FIN-2).
+6. Add **user-visible errors** for silent AJAX failures (DASH-3, EMAIL-2). ~~FIN-2 / FIN-3~~ **Done.**
 7. Remove **debug surfaces** from production UI (void-invoice `debug_info`, signing debug panels) (CLI-3, DOC-5). PDF preview renamed (DOC-1 Fixed).
 
 ### P2 — Accessibility & performance

@@ -29,6 +29,8 @@ This document lists remaining changes to complete the migration from "applicatio
 
 **Status:** All features removed. Payment schedule setup, Create Invoice from schedule, Commission Invoice, Edit/Add payment schedule, and workflow checklist upload no longer exist.
 
+**Staff training:** Do not reference Commission Invoice, General Invoice, or Payment Details. Current Account-tab flows are Trust Account Entry, Direct Office Receipt, and Tax Invoice only.
+
 ---
 
 ## 3. CacheService: Rename Keys
