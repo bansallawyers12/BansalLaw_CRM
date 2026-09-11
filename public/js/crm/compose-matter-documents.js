@@ -10,6 +10,21 @@
             .replace(/'/g, '&#39;');
     }
 
+    function notifyComposeMatterDocumentsError(message) {
+        var msg = message || 'Could not load matter documents for this email.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+            window.crmNotify.error({ message: msg });
+            return;
+        }
+        if (typeof window.crmAlert === 'function') {
+            window.crmAlert(msg);
+            return;
+        }
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(msg, 'error');
+        }
+    }
+
     function renderComposeMatterDocuments(docs) {
         var $section = $('#compose-matter-documents-section');
         var $tbody = $('#compose-matter-documents-tbody');
@@ -39,6 +54,22 @@
         $section.show();
     }
 
+    function showComposeMatterDocumentsLoadError() {
+        var $section = $('#compose-matter-documents-section');
+        var $tbody = $('#compose-matter-documents-tbody');
+        if (!$section.length || !$tbody.length) {
+            return;
+        }
+        $tbody.html(
+            '<tr class="compose-matter-documents-error">' +
+                '<td colspan="3" class="text-danger">' +
+                    'Could not load matter documents. You can still compose the email without attaching them, or try again.' +
+                '</td>' +
+            '</tr>'
+        );
+        $section.show();
+    }
+
     function loadComposeMatterDocuments(params) {
         var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getComposeDefaults)
             || (window.ClientsListingSpaConfig && window.ClientsListingSpaConfig.routes && window.ClientsListingSpaConfig.routes.getComposeDefaults)
@@ -48,7 +79,11 @@
             $('#emailmodal .checklistfile-document-cb').prop('checked', false);
             return res;
         }).fail(function () {
-            renderComposeMatterDocuments([]);
+            // Keep the section visible with an error row — do not silently wipe as "no documents".
+            showComposeMatterDocumentsLoadError();
+            notifyComposeMatterDocumentsError(
+                'Could not load matter documents for compose. Check your connection and try again.'
+            );
         });
     }
 

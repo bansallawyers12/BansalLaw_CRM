@@ -46,7 +46,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/matter/view/{id}', [MatterController::class, 'view'])->name('matter.view');
         Route::put('/matter/{id}', [MatterController::class, 'update'])->name('matter.update');
         
-        // Email Labels routes
+        // Email Labels catalog CRUD (CRM mail UI lists/applies via /email-labels)
         Route::get('/email-labels', [EmailLabelController::class, 'index'])->name('emaillabels.index');
         Route::get('/email-labels/create', [EmailLabelController::class, 'create'])->name('emaillabels.create');
         Route::post('/email-labels/store', [EmailLabelController::class, 'store'])->name('emaillabels.store');

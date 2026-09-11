@@ -127,10 +127,10 @@ Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])-
 Route::post('/email-logs/{id}/delete', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete-post');
 Route::post('/mail/enhance', [ClientsController::class, 'enhanceMessage'])->name('mail.enhance');
 
-/*---------- Email Labels Management ----------*/
+/*---------- Email Labels (CRM runtime: list / apply / remove on email logs) ----------*/
+/* Label create/edit catalog: adminconsole.features.emaillabels.* */
 Route::prefix('email-labels')->name('email-labels.')->group(function () {
     Route::get('/', [EmailLabelController::class, 'index'])->name('index');
-    Route::post('/', [EmailLabelController::class, 'store'])->name('store');
     Route::post('/apply', [EmailLabelController::class, 'apply'])->name('apply');
     Route::delete('/remove', [EmailLabelController::class, 'remove'])->name('remove');
 });

@@ -1,50 +1,5 @@
 // Outlook-style Email Interface Logic
-
-function crmOutlookSanitizeUploadFilename(filename, preferredExtension) {
-    if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
-        return window.crmSanitizeEmailUploadFilename(filename, preferredExtension);
-    }
-    if (!filename || typeof filename !== 'string') {
-        return 'email_' + Date.now() + '.' + (preferredExtension || 'eml');
-    }
-    var lastDot = filename.lastIndexOf('.');
-    var extension = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
-    if (!extension && preferredExtension) {
-        extension = String(preferredExtension).toLowerCase().replace(/[^a-z0-9]/g, '');
-    }
-    var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
-    var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
-    sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
-    if (!sanitizedName) {
-        sanitizedName = 'email_' + Date.now();
-    }
-    var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
-    if (sanitizedFilename.length > 255) {
-        var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
-        if (maxNameLength > 0) {
-            sanitizedName = sanitizedName.slice(0, maxNameLength);
-            sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
-        } else {
-            sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
-        }
-    }
-    return sanitizedFilename;
-}
-
-function crmOutlookEmailUpload403Message(responseText, status) {
-    if (typeof window.crmEmailUpload403Message === 'function') {
-        return window.crmEmailUpload403Message(responseText, status);
-    }
-    if (status !== 403) {
-        return null;
-    }
-    var text = responseText || '';
-    var isHtml = /<html[\s>]/i.test(text) || /<!DOCTYPE/i.test(text);
-    if (isHtml || text.indexOf('Forbidden') !== -1) {
-        return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
-    }
-    return 'Access denied. You may not have permission to upload emails for this client.';
-}
+// Shared helpers load first via email-upload-filename.js / crm/emails/matter-context.js.
 
 function crmInitOutlookEmailsInterface() {
     const outlookContainer = document.getElementById('outlookContainer');
@@ -2777,7 +2732,9 @@ function crmInitOutlookEmailsInterface() {
         async function previewEmailAttachments(file) {
             const formData = new FormData();
             const extMatch = (file.name || '').toLowerCase().match(/\.(msg|eml)$/);
-            const safeName = crmOutlookSanitizeUploadFilename(file.name, extMatch ? extMatch[1] : 'eml');
+            const safeName = (typeof window.crmSanitizeEmailUploadFilename === 'function')
+                ? window.crmSanitizeEmailUploadFilename(file.name, extMatch ? extMatch[1] : 'eml')
+                : file.name;
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
@@ -3215,7 +3172,9 @@ function crmInitOutlookEmailsInterface() {
         function buildOutlookUploadFormData(file, forceUpload, attachmentStorage) {
             const formData = new FormData();
             const extMatch = (file.name || '').toLowerCase().match(/\.(msg|eml)$/);
-            const safeName = crmOutlookSanitizeUploadFilename(file.name, extMatch ? extMatch[1] : 'eml');
+            const safeName = (typeof window.crmSanitizeEmailUploadFilename === 'function')
+                ? window.crmSanitizeEmailUploadFilename(file.name, extMatch ? extMatch[1] : 'eml')
+                : file.name;
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
@@ -3251,7 +3210,9 @@ function crmInitOutlookEmailsInterface() {
                 result = responseText ? JSON.parse(responseText) : {};
             } catch (parseError) {
                 if (response.status === 403) {
-                    const wafMsg = crmOutlookEmailUpload403Message(responseText, response.status);
+                    const wafMsg = (typeof window.crmEmailUpload403Message === 'function')
+                        ? window.crmEmailUpload403Message(responseText, response.status)
+                        : null;
                     throw new Error(wafMsg || 'The server blocked this upload (security filter).');
                 }
                 throw new Error('The server returned an invalid response. Please refresh the page and try again.');
@@ -3259,7 +3220,9 @@ function crmInitOutlookEmailsInterface() {
 
             if (!response.ok) {
                 if (response.status === 403) {
-                    const wafMsg = crmOutlookEmailUpload403Message(responseText, response.status);
+                    const wafMsg = (typeof window.crmEmailUpload403Message === 'function')
+                        ? window.crmEmailUpload403Message(responseText, response.status)
+                        : null;
                     throw new Error(wafMsg || (result.message || 'Upload failed (HTTP 403).'));
                 }
                 let errorMsg = result.message || ('Upload failed (HTTP ' + response.status + ').');

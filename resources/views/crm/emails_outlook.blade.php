@@ -209,7 +209,7 @@
             <div class="list-filters-drawer__inner">
                 <div class="search-box search-box--compact list-toolbar__search">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                    <input type="text" id="searchInput" placeholder="Search emails...">
+                    @include('crm.partials.email-search-input')
                 </div>
         @endif
 
@@ -308,7 +308,7 @@
         <div class="client-mail-filters client-mail-filters--compact">
             <div class="search-box search-box--compact list-toolbar__search client-mail-filters__search">
                 <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                <input type="search" id="searchInput" placeholder="Search emails..." autocomplete="off" aria-label="Search emails">
+                @include('crm.partials.email-search-input')
             </div>
             <div class="list-filters-drawer list-filters-drawer--client" id="clientListFilters">
                 <div class="list-filters-drawer__inner">
@@ -368,7 +368,7 @@
             <div class="list-header-row">
                 <div class="search-box">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                    <input type="text" id="searchInput" placeholder="Search emails...">
+                    @include('crm.partials.email-search-input')
                 </div>
             </div>
             <div class="list-header-filters">

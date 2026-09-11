@@ -859,6 +859,11 @@ $(document).ready(function() {
 
                 $('.popuploader').show();
 
+                // Keep matter locked with a loading placeholder until matters load successfully.
+                $('#reassign_client_matter_id').html('<option value="">Loading matters…</option>');
+                initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
+                setDisabledTS('#reassign_client_matter_id', true);
+
                 $.ajaxSetup({
 
                     headers: {
@@ -884,7 +889,15 @@ success: function(response) {
                         $('.popuploader').hide();
 
                         var obj = safeParseJsonResponse(response);
-                        if (!obj) return;
+                        if (!obj) {
+                            $('#reassign_client_matter_id').html('<option value="">Select a client first</option>');
+                            initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
+                            setDisabledTS('#reassign_client_matter_id', true);
+                            if (typeof crmAlert === 'function') {
+                                crmAlert('Could not load matters for this client. Please try again.');
+                            }
+                            return;
+                        }
                         var matterlist = '<option value="">Select Client Matter</option>';
 
                         $.each(obj.clientMatetrs, function(index, subArray) {
@@ -897,16 +910,26 @@ success: function(response) {
 
                         // Reinit Tom Select so it picks up the new options
                         initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
+                        setDisabledTS('#reassign_client_matter_id', false);
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
+                        $('#reassign_client_matter_id').html('<option value="">Select a client first</option>');
+                        initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
+                        setDisabledTS('#reassign_client_matter_id', true);
+                        if (typeof crmAlert === 'function') {
+                            crmAlert('Could not load matters for this client. Please try again.');
+                        }
                     }
 
                 });
 
-                // Enable matter dropdown immediately while AJAX loads new options
-                setDisabledTS('#reassign_client_matter_id', false);
-
             } else {
 
+                $('#reassign_client_matter_id').html('<option value="">Select a client first</option>');
+                initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
                 setDisabledTS('#reassign_client_matter_id', true);
 
             }
@@ -975,6 +998,10 @@ success: function(response) {
 
                 $('.popuploader').show();
 
+                $('#reassign_sent_client_matter_id').html('<option value="">Loading matters…</option>');
+                initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
+                setDisabledTS('#reassign_sent_client_matter_id', true);
+
                 $.ajaxSetup({
 
                     headers: {
@@ -1000,7 +1027,15 @@ success: function(response) {
                         $('.popuploader').hide();
 
                         var obj = safeParseJsonResponse(response);
-                        if (!obj) return;
+                        if (!obj) {
+                            $('#reassign_sent_client_matter_id').html('<option value="">Select a client first</option>');
+                            initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
+                            setDisabledTS('#reassign_sent_client_matter_id', true);
+                            if (typeof crmAlert === 'function') {
+                                crmAlert('Could not load matters for this client. Please try again.');
+                            }
+                            return;
+                        }
                         var matterlist = '<option value="">Select Client Matter</option>';
 
                         $.each(obj.clientMatetrs, function(index, subArray) {
@@ -1013,16 +1048,26 @@ success: function(response) {
 
                         // Reinit Tom Select so it picks up the new options
                         initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
+                        setDisabledTS('#reassign_sent_client_matter_id', false);
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
+                        $('#reassign_sent_client_matter_id').html('<option value="">Select a client first</option>');
+                        initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
+                        setDisabledTS('#reassign_sent_client_matter_id', true);
+                        if (typeof crmAlert === 'function') {
+                            crmAlert('Could not load matters for this client. Please try again.');
+                        }
                     }
 
                 });
 
-                // Enable matter dropdown immediately while AJAX loads new options
-                setDisabledTS('#reassign_sent_client_matter_id', false);
-
             } else {
 
+                $('#reassign_sent_client_matter_id').html('<option value="">Select a client first</option>');
+                initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
                 setDisabledTS('#reassign_sent_client_matter_id', true);
 
             }

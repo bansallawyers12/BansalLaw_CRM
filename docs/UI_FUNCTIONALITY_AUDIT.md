@@ -132,11 +132,11 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| EMAIL-1 | Medium | `public/js/outlook_emails.js`; `docs/MODULE_OPTIMIZATION_REVIEW.md` §12 | **`outlook_emails.js` / `emails.js` remain large monoliths** — performance and maintainability debt on primary email UI. |
-| EMAIL-2 | Medium | `public/js/crm/compose-matter-documents.js` ~L50–52 | Compose attachment load **`.fail()` silently clears** matter document list — user sees empty attachments with no error when API fails. |
-| EMAIL-3 | Low | `resources/views/crm/emails_outlook.blade.php` | Three `#searchInput` definitions in mutually exclusive `@if` branches — valid per render but fragile for maintenance. |
-| EMAIL-4 | Low | `resources/views/crm/clients/detail.blade.php` ~L1152, L1196 | Inbox/sent **reassign matter `<select>` starts disabled** until client chosen — intentional; may appear broken if JS init fails. |
-| EMAIL-5 | Medium | `routes/clients.php` L128–133 vs `routes/adminconsole.php` L50–54 | **Duplicate email-label systems:** CRM `/email-labels/*` vs Admin Console `/adminconsole/features/email-labels/*` — different controllers. Potential inconsistent labels in UI. |
+| EMAIL-1 | Fixed | `outlook_emails.js`, `emails.js`, shared email JS | Removed duplicate upload sanitize/403 helpers from the monoliths (use `email-upload-filename.js`). Shared modules already load first (`matter-context.js`, `email-delete-confirm.js`). Further extraction remains optional. |
+| EMAIL-2 | Fixed | `public/js/crm/compose-matter-documents.js` | Compose matter-document load failures toast via `crmNotify`/`crmAlert` and show an error row — no longer silently clear as empty. |
+| EMAIL-3 | Fixed | `crm/partials/email-search-input.blade.php`; `emails_outlook.blade.php` | Single shared `#searchInput` partial included from all layout branches. |
+| EMAIL-4 | Fixed | `clients/detail.blade.php`; `detail-main.js` | Reassign matter selects show “Select a client first” hint; enable only after matters load; AJAX errors re-lock + `crmAlert`. |
+| EMAIL-5 | Fixed | CRM vs Admin `EmailLabelController`; `EmailLabelCatalogService` | Split clarified: Admin Console owns catalog CRUD; CRM `/email-labels` is list/apply/remove only (removed unused CRM `store`). Shared listing via `EmailLabelCatalogService`. |
 
 ---
 
@@ -265,13 +265,13 @@ These features were removed or deprecated; verify staff training and bookmarks d
 
 ### P1 — UX consistency
 5. Replace **`alert()`-heavy flows** — **Done (2026-09-02):** `crmAlert` + Toastify/`crmNotify` across former alert call sites (X-5 / Appendix A).
-6. Add **user-visible errors** for silent AJAX failures (DASH-3, EMAIL-2). ~~FIN-2 / FIN-3~~ **Done.**
+6. Add **user-visible errors** for silent AJAX failures (DASH-3). ~~FIN-2 / FIN-3 / EMAIL-2~~ **Done.**
 7. Remove **debug surfaces** from production UI (void-invoice `debug_info`, signing debug panels) (CLI-3, DOC-5). PDF preview renamed (DOC-1 Fixed).
 
 ### P2 — Accessibility & performance
 8. Accessibility pass: landmarks, skip link, modal labels, keyboard task list (X-2, X-3, DASH-2, TASK-2).
 9. Plan **DataTables migration** per `MODULE_OPTIMIZATION_REVIEW.md` (X-4).
-10. Continue **JS modularization** (`detail-main.js`, `outlook_emails.js`).
+10. Continue **JS modularization** (`detail-main.js`; email list/reading/compose blocks still in `outlook_emails.js` / `emails.js` after EMAIL-1 helper cleanup).
 
 ### P3 — Hygiene
 11. Remove dead UI (assignee modals, migrationdocuments JS, viewDocument stub, orphan modal files).

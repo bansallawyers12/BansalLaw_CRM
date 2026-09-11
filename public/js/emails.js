@@ -217,29 +217,8 @@
         if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
             return window.crmSanitizeEmailUploadFilename(filename);
         }
-        if (!filename || typeof filename !== 'string') {
-            return 'email_' + Date.now() + '.msg';
-        }
-        const lastDot = filename.lastIndexOf('.');
-        let extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
-        const nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
-        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
-        sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
-        if (!sanitizedName) {
-            sanitizedName = 'email_' + Date.now();
-        }
-        extension = extension.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
-        if (sanitizedFilename.length > 255) {
-            const maxNameLength = 255 - extension.length - (extension ? 1 : 0);
-            if (maxNameLength > 0) {
-                sanitizedName = sanitizedName.slice(0, maxNameLength);
-                sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
-            } else {
-                sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
-            }
-        }
-        return sanitizedFilename;
+        // Shared helper missing (script order) — last-resort pass-through.
+        return filename || ('email_' + Date.now() + '.msg');
     }
 
     function buildEmailUploadFormData(file, clientId, matterId, csrfToken, forceUpload) {

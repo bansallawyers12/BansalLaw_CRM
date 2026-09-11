@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 
+/**
+ * Admin Console catalog CRUD for email labels.
+ *
+ * CRM mail UI uses App\Http\Controllers\CRM\EmailLabelController for list/apply/remove only.
+ */
 class EmailLabelController extends Controller
 {
     /**

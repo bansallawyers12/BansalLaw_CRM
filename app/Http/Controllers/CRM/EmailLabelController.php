@@ -4,36 +4,37 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
-use App\Models\EmailLabel;
 use App\Models\EmailLog;
+use App\Services\Email\EmailLabelCatalogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * CRM runtime API for email labels on the mail UI.
+ *
+ * Create/edit of label definitions lives in Admin Console
+ * (adminconsole.features.emaillabels.*). This controller only lists active
+ * labels and applies/removes them on email logs.
+ */
 class EmailLabelController extends Controller
 {
     use EnsuresCrmRecordAccess;
 
-    public function __construct()
-    {
+    public function __construct(
+        private readonly EmailLabelCatalogService $emailLabelCatalog
+    ) {
         $this->middleware('auth:admin');
     }
 
     /**
-     * Get all labels (system + staff's custom)
+     * Get all labels visible to the current staff member (system + their custom).
      */
     public function index()
     {
         try {
-            $labels = EmailLabel::where(function($query) {
-                $query->where('user_id', Auth::id())
-                      ->orWhereNull('user_id'); // System labels
-            })
-            ->active()
-            ->orderBy('type', 'desc') // System first
-            ->orderBy('name')
-            ->get();
+            $labels = $this->emailLabelCatalog->listVisibleForStaff(Auth::id());
 
             return response()->json([
                 'success' => true,
@@ -44,76 +45,6 @@ class EmailLabelController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch labels'
-            ], 500);
-        }
-    }
-
-    /**
-     * Create custom label
-     */
-    public function store(Request $request)
-    {
-        try {
-            $userId = Auth::id();
-            
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    function ($attribute, $value, $fail) use ($userId) {
-                        // Check if label name already exists for this staff member
-                        $exists = EmailLabel::where('user_id', $userId)
-                            ->where('name', $value)
-                            ->where('is_active', true)
-                            ->exists();
-                        
-                        if ($exists) {
-                            $fail('A label with this name already exists.');
-                        }
-                    }
-                ],
-                'color' => [
-                    'required',
-                    'string',
-                    'regex:/^#[0-9A-Fa-f]{6}$/'
-                ],
-                'icon' => 'nullable|string|max:50',
-                'description' => 'nullable|string|max:500',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $label = EmailLabel::create([
-                'user_id' => $userId,
-                'name' => $request->name,
-                'color' => $request->color,
-                'type' => 'custom',
-                'icon' => $request->icon ?? 'fa-solid fa-tag',
-                'description' => $request->description,
-                'is_active' => true,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Label created successfully',
-                'label' => $label
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to create label', [
-                'error' => $e->getMessage(),
-                'user_id' => Auth::id(),
-                'request' => $request->all()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create label: ' . $e->getMessage()
             ], 500);
         }
     }

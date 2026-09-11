@@ -599,7 +599,8 @@ Prefix: `/adminconsole` — restricted to roles in `CRM_ADMIN_CONSOLE_ROLE_IDS` 
 | Matter document types | `/matter-document-type` | `adminconsole.features.matterdocumenttype.*` |
 | Document checklists | `/document-checklist` | `adminconsole.features.documentchecklist.*` |
 | Email accounts | `/emails` | `adminconsole.features.emails.*` |
-| Email labels | `/email-labels` | `adminconsole.features.emaillabels.*` |
+| Email labels (catalog CRUD) | `/adminconsole/features/email-labels` | `adminconsole.features.emaillabels.*` |
+| Email labels (CRM apply API) | `/email-labels` (GET list, POST apply, DELETE remove) | `email-labels.*` |
 | CRM email templates | `/crm-email-template` | `adminconsole.features.crmemailtemplate.*` |
 | Matter email templates | `/matter-email-template` | `adminconsole.features.matteremailtemplate.*` |
 | Matter other email templates | `/matter-other-email-template` | `adminconsole.features.matterotheremailtemplate.*` |

@@ -220,7 +220,7 @@
 - Asset cache busting uses `filemtime()` for `outlook_emails.css` / `outlook_emails.js`
 
 **Remaining (optional)**
-- `outlook_emails.js` / `emails.js` remain large monoliths (incremental extraction continues)
+- `outlook_emails.js` / `emails.js` remain large; continue extracting cohesive blocks (list chrome, reading pane, compose). Shared upload helpers live in `email-upload-filename.js`; matter resolution in `crm/emails/matter-context.js`; delete confirm in `email-delete-confirm.js`. Duplicate inlined upload sanitize/403 helpers removed from the monoliths (EMAIL-1).
 
 ---
 
