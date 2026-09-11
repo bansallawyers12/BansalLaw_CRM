@@ -5,56 +5,7 @@
 
 {{-- 1. Add Application Modal - REMOVED (orphaned, no UI trigger; matters created via client_matters sync) --}}
 
-{{-- 2. Discontinue Matter Modal --}}
-<!-- Discontinue Matter Modal -->
-<div class="modal fade custom_modal" id="discon_application" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Discontinue Matter</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<form method="post" action="{{URL::to('/crm/matter/discontinue')}}" name="discontinue_matter" id="discontinue_matter" autocomplete="off" enctype="multipart/form-data">
-				@csrf
-				<input type="hidden" name="diapp_id" value="">
-					<div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label for="workflow">Discontinue Reason <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control workflow" id="workflow" name="workflow">
-									<option value="">Please Select</option>
-									<option value="Change of Matter">Change of Matter</option>
-									<option value="Error by Team Member">Error by Team Member</option>
-									<option value="Financial Difficulties">Financial Difficulties</option>
-									<option value="Loss of competitor">Loss of competitor</option>
-									<option value="Other Reasons">Other Reasons</option>
-
-								</select>
-								<span class="custom-error workflow_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label>Notes <span class="span_req">*</span></label>
-								<textarea data-valid="required"  class="form-control" name="note"></textarea>
-
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('discontinue_matter')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
+{{-- 2. Legacy #discon_application modal REMOVED (MAT-1) — use #discontinue-matter-modal → POST /clients/matter/discontinue --}}
 
 {{-- 2a. Decision Received Modal (Granted/Refused/Withdrawn + note) --}}
 <div class="modal fade custom_modal" id="decision-received-modal" tabindex="-1" role="dialog" aria-labelledby="decisionReceivedModalLabel" aria-hidden="true">
@@ -248,38 +199,7 @@
 	</div>
 </div>
 
-{{-- 3. Revert Discontinued Matter Modal --}}
-<div class="modal fade custom_modal" id="revert_matter" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Revert Discontinued Matter</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<form method="post" action="{{URL::to('/crm/matter/revert')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
-				@csrf
-				<input type="hidden" name="revapp_id" value="">
-					<div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-								<label>Notes <span class="span_req">*</span></label>
-								<textarea data-valid="required"  class="form-control" name="note"></textarea>
-
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('revertapplication')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
+{{-- 3. Legacy #revert_matter modal REMOVED (MAT-2) — use POST /clients/matter/reopen via matter-reopen-actions.js --}}
 
 {{-- 4. Add Interested Service Modal - REMOVED --}}
 {{-- Feature deprecated: no UI triggers, routes, or controllers remain. --}}

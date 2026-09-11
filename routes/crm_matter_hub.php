@@ -10,6 +10,7 @@ use App\Http\Controllers\CRM\ClientMatterHubController;
 Route::get('/crm/matter/logs', [ClientMatterHubController::class, 'getMatterLogs']);
 Route::get('/crm/matter/list', [ClientMatterHubController::class, 'getapplications']);
 
+// Legacy aliases — thin adapters onto preferred /clients/matter/discontinue|reopen.
 Route::post('/crm/matter/discontinue', [ClientMatterHubController::class, 'discontinueMatter']);
 Route::post('/crm/matter/revert', [ClientMatterHubController::class, 'revertMatter']);
 

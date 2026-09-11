@@ -1423,52 +1423,47 @@ class ClientMatterHubController extends Controller
 		}
 	}
 
-	public function discontinueMatter(Request $request){
-		$obj = ClientMatter::find($request->diapp_id ?? $request->client_matter_id);
-		if (!$obj) {
-			echo json_encode(['status' => false, 'message' => 'Matter not found']);
-			return;
+	/**
+	 * Legacy adapter for POST /crm/matter/discontinue.
+	 * Maps old form fields onto the preferred discontinueClientMatter flow.
+	 */
+	public function discontinueMatter(Request $request)
+	{
+		if (! $request->filled('matter_id')) {
+			$request->merge([
+				'matter_id' => $request->input('diapp_id') ?? $request->input('client_matter_id'),
+			]);
 		}
-		$this->ensureCrmRecordAccess((int) $obj->client_id);
-		$user = Auth::user();
-		if (! ($user instanceof Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->canCloseDiscontinueMatter()))) {
-			echo json_encode(['status' => false, 'message' => 'Unauthorized']);
-			return;
+		if (! $request->filled('discontinue_reason')) {
+			$request->merge([
+				'discontinue_reason' => $request->input('workflow', 'Discontinued'),
+			]);
 		}
-		$obj->matter_status = 0;
-		$obj->closed_by = Auth::guard('admin')->id() ?? Auth::id();
-		$obj->discontinue_reason = $request->workflow ?? 'Discontinued';
-		$obj->discontinue_notes = $request->note ?? '';
-		$saved = $obj->save();
-		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
+		if (! $request->filled('discontinue_notes') && $request->has('note')) {
+			$request->merge([
+				'discontinue_notes' => (string) $request->input('note', ''),
+			]);
+		}
+
+		return $this->discontinueClientMatter($request);
 	}
 
-	public function revertMatter(Request $request){
-		$obj = ClientMatter::with('workflowStage')->find($request->revapp_id ?? $request->client_matter_id);
-		if (!$obj) {
-			echo json_encode(['status' => false, 'message' => 'Matter not found']);
-			return;
+	/**
+	 * Legacy adapter for POST /crm/matter/revert.
+	 * Maps old form fields onto the preferred reopenClientMatter flow.
+	 */
+	public function revertMatter(Request $request)
+	{
+		if (! $request->filled('matter_id')) {
+			$request->merge([
+				'matter_id' => $request->input('revapp_id') ?? $request->input('client_matter_id'),
+			]);
 		}
-		$this->ensureCrmRecordAccess((int) $obj->client_id);
-		$user = Auth::user();
-		if (! ($user instanceof Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->canCloseDiscontinueMatter()))) {
-			echo json_encode(['status' => false, 'message' => 'Unauthorized']);
-			return;
+		if (! $request->filled('source')) {
+			$request->merge(['source' => 'legacy_revert']);
 		}
-		$obj->matter_status = 1;
-		$obj->closed_by = null;
-		$obj->discontinue_reason = null;
-		$obj->discontinue_notes = null;
-		$obj->reopen_requested_by = null;
-		$saved = $obj->save();
-		$stage = $obj->workflowStage;
-		$workflowId = $stage->workflow_id ?? $obj->workflow_id;
-		$stages = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-		$idx = $stages->search(fn($s) => $s->id == ($stage->id ?? 0)) + 1;
-		$width = $stages->count() > 0 ? round(($idx / $stages->count()) * 100) : 0;
-		$lastStage = $stages->last();
-		$displayback = $lastStage && $stage && $lastStage->name == $stage->name;
-		echo json_encode(['status' => $saved, 'width' => $width, 'displaycomplete' => $displayback, 'message' => $saved ? 'Matter successfully reverted.' : 'Please try again']);
+
+		return $this->reopenClientMatter($request);
 	}
 
 	public function application_ownership(Request $request){

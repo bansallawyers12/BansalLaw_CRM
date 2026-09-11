@@ -80,8 +80,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| MAT-1 | **High** | `routes/matter_workflow.php` L23 vs `routes/crm_matter_hub.php` L13 | **Two discontinue flows:** `POST /clients/matter/discontinue` (validated JSON, completion checklist) vs `POST /crm/matter/discontinue` (legacy params `diapp_id`, echo JSON). UI may call either depending on age of JS. |
-| MAT-2 | **High** | `routes/matter_workflow.php` L24 vs `routes/crm_matter_hub.php` L14 | **Two reopen flows:** `POST /clients/matter/reopen` vs `POST /crm/matter/revert`. Inconsistent behavior and error handling. |
+| MAT-1 | Fixed | `routes/matter_workflow.php` / `crm_matter_hub.php` | **Two discontinue flows unified:** UI uses `POST /clients/matter/discontinue` (checklist + JSON). Legacy `POST /crm/matter/discontinue` is a thin adapter; orphan `#discon_application` modal/JS removed. |
+| MAT-2 | Fixed | `routes/matter_workflow.php` / `crm_matter_hub.php` | **Two reopen flows unified:** UI uses `POST /clients/matter/reopen`. Legacy `POST /crm/matter/revert` adapts to reopen; orphan `#revert_matter` modal/JS removed. |
 | MAT-3 | Medium | `app/Http/Controllers/CRM/ClientMatterHubController.php` ~L1104–1144 | `getMatterLogs` emits **HTML via PHP inline** while other endpoints return JSON. TODO: refactor to JSON + frontend render. Harder to test; brittle architecture. |
 | MAT-4 | Medium | `routes/crm_matter_hub.php` L11, L24 | **Application vs matter naming:** `/crm/matter/list` → `getapplications()`; `/crm/matter/ownership` → `application_ownership()`. Confusing for developers and support. |
 | MAT-5 | Medium | `routes/crm_matter_hub.php` L20 | `GET /crm/matter/updateintake` — **no-op stub** (“Date field removed with applications table”). Dead route if still linked from old UI. |

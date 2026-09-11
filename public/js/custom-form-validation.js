@@ -1924,84 +1924,8 @@ function customValidate(formName, savetype = '')
 							}
 						});
 					// ajaxinvoicepaymentform REMOVED - addpaymentmodal and invoice/payment-store route removed (unused)
-					}else if(formName == 'discontinue_matter'){
-							var client_id = $('#discontinue_matter input[name="client_id"]').val();
-						var myform = document.getElementById('discontinue_matter');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#discon_application').modal('hide');
-								if(obj.status){
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									 $('.ifdiscont').hide();
-									 $('.revertapp').show();
-									$('.matterstatus').html('Discontinued');
-
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-
-					}else if(formName == 'revertapplication'){
-						var appliid = $('#revertapplication input[name="revapp_id"]').val();
-						var myform = document.getElementById('revertapplication');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#revert_matter').modal('hide');
-								if(obj.status){
-
-									$.ajax({
-										url: site_url+'/crm/matter/logs',
-										type:'GET',
-										data:{id: appliid},
-										success: function(responses){
-
-											$('#accordion').html(responses);
-										}
-									});
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-								$('.progress-circle span').html(obj.width+' %');
-				var over = '';
-				if(obj.width > 50){
-					over = '50';
-				}
-				$("#progresscir").removeClass();
-				$("#progresscir").addClass('progress-circle');
-				$("#progresscir").addClass('prgs_'+obj.width);
-				$("#progresscir").addClass('over_'+over);
-									 $('.ifdiscont').show();
-									$('.completestage').show();
-									 $('.nextstage').hide();
-									 $('.revertapp').hide();
-									 $('.matterstatus').html('In Progress');
-
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-
+					// Legacy discontinue_matter / revertapplication (MAT-1/MAT-2) removed —
+					// prefer #discontinue-matter-form → /clients/matter/discontinue and matter-reopen-actions.js → /clients/matter/reopen.
 					}else if(formName == 'xmatter_ownership'){
 
 						var myform = document.getElementById('xmatter_ownership');
