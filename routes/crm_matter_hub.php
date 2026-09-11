@@ -7,8 +7,11 @@ use App\Http\Controllers\CRM\ClientMatterHubController;
 | CRM matter utilities: logs, notes, mail, ownership, documents.
 */
 
-Route::get('/crm/matter/logs', [ClientMatterHubController::class, 'getMatterLogs']);
-Route::get('/crm/matter/list', [ClientMatterHubController::class, 'getapplications']);
+Route::get('/crm/matter/logs', [ClientMatterHubController::class, 'getMatterLogs'])
+    ->name('crm.matter.logs');
+// Matter select options (formerly getapplications — application-era name).
+Route::get('/crm/matter/list', [ClientMatterHubController::class, 'listClientMatters'])
+    ->name('crm.matter.list');
 
 // Legacy aliases — thin adapters onto preferred /clients/matter/discontinue|reopen.
 Route::post('/crm/matter/discontinue', [ClientMatterHubController::class, 'discontinueMatter']);
@@ -22,6 +25,8 @@ Route::get('/crm/matter/updateintake', [ClientMatterHubController::class, 'updat
 Route::get('/crm/matter/updatedates', [ClientMatterHubController::class, 'updatedates']);
 Route::get('/crm/matter/updateexpectwin', [ClientMatterHubController::class, 'updateexpectwin']);
 
-Route::post('/crm/matter/ownership', [ClientMatterHubController::class, 'application_ownership']);
+// Ownership ratio stub (formerly application_ownership — application-era name).
+Route::post('/crm/matter/ownership', [ClientMatterHubController::class, 'updateMatterOwnership'])
+    ->name('crm.matter.ownership');
 
 Route::get('/crm/matter/document-categories-for-move', [ClientMatterHubController::class, 'getDocumentCategoriesForMove']);

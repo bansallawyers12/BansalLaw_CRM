@@ -82,6 +82,76 @@ function crmSendMailNotify(message, type, title) {
     }
 }
 
+function matterLogsEscapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderMatterLogsAccordionHtml(payload) {
+    var stages = (payload && payload.stages) || [];
+    var matterId = payload && payload.matter_id ? String(payload.matter_id) : '';
+    var html = '';
+    for (var i = 0; i < stages.length; i++) {
+        var stage = stages[i] || {};
+        var slug = matterLogsEscapeHtml(stage.slug || ('stage-' + i));
+        var name = matterLogsEscapeHtml(stage.name || '');
+        var classes = matterLogsEscapeHtml(stage.css_classes || '');
+        var activities = stage.activities || [];
+        html += '<div class="accordion cus_accrodian">';
+        html += '<div class="accordion-header collapsed ' + classes + '" role="button" data-toggle="collapse" data-target="#' + slug + '_accor" aria-expanded="false">';
+        html += '<h4>' + name + '</h4>';
+        html += '<div class="accord_hover">';
+        html += '<a title="Add Note" class="openappnote" data-app-type="' + name + '" data-id="' + matterLogsEscapeHtml(matterId) + '" href="javascript:;"><i class="fa-solid fa-file-lines"></i></a>';
+        html += '<a data-app-type="' + name + '" title="Compose Mail" data-id="' + matterLogsEscapeHtml(matterId) + '" data-email="" data-name="" class="openclientemail" href="javascript:;"><i class="fa-solid fa-envelope"></i></a>';
+        html += '</div></div>';
+        html += '<div class="accordion-body collapse" id="' + slug + '_accor" data-parent="#accordion">';
+        html += '<div class="activity_list">';
+        for (var j = 0; j < activities.length; j++) {
+            var activity = activities[j] || {};
+            html += '<div class="activity_col"><div class="activity_txt_time">';
+            html += '<span class="span_txt"><b>' + matterLogsEscapeHtml(activity.created_by_name || 'System') + '</b> ' + matterLogsEscapeHtml(activity.description || '') + '</span>';
+            html += '<span class="span_time">' + matterLogsEscapeHtml(activity.created_at_label || '') + '</span>';
+            html += '</div>';
+            if (activity.subject) {
+                html += '<div class="app_description"><div class="app_card"><div class="app_title">' + matterLogsEscapeHtml(activity.subject) + '</div></div>';
+                if (activity.description) {
+                    html += '<div class="log_desc">' + matterLogsEscapeHtml(activity.description) + '</div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+        html += '</div></div></div>';
+    }
+    return html;
+}
+
+function refreshMatterLogsAccordion(matterId) {
+    if (!matterId || typeof site_url === 'undefined' || typeof $ === 'undefined') {
+        return;
+    }
+    if (!$('#accordion').length) {
+        return;
+    }
+    $.ajax({
+        url: site_url + '/crm/matter/logs',
+        type: 'GET',
+        dataType: 'json',
+        headers: { Accept: 'application/json' },
+        data: { id: matterId },
+        success: function (payload) {
+            if (!payload || payload.status === false) {
+                return;
+            }
+            $('#accordion').html(renderMatterLogsAccordionHtml(payload));
+        }
+    });
+}
+
 function crmShowEmailUploadModalError(response) {
     $('.popuploader').hide();
     var message = crmBuildEmailUploadFailureMessage(response);
@@ -440,15 +510,7 @@ function customValidate(formName, savetype = '')
 								var obj = $.parseJSON(response);
 								if(obj.status){
 									$('#create_matternote').modal('hide');
-									$.ajax({
-										url: site_url+'/crm/matter/logs',
-										type:'GET',
-										data:{id: noteid},
-										success: function(responses){
-
-											$('#accordion').html(responses);
-										}
-									});
+									refreshMatterLogsAccordion(noteid);
 								}else{
 									$('#create_matternote .customerror').html('<span class="alert alert-danger">'+obj.message+'</span>');
 
@@ -1926,32 +1988,7 @@ function customValidate(formName, savetype = '')
 					// ajaxinvoicepaymentform REMOVED - addpaymentmodal and invoice/payment-store route removed (unused)
 					// Legacy discontinue_matter / revertapplication (MAT-1/MAT-2) removed —
 					// prefer #discontinue-matter-form → /clients/matter/discontinue and matter-reopen-actions.js → /clients/matter/reopen.
-					}else if(formName == 'xmatter_ownership'){
-
-						var myform = document.getElementById('xmatter_ownership');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#matter_ownership').modal('hide');
-								if(obj.status){
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-									$('.matter_ownership').attr('data-ration',obj.ratio);
-								}else{
-									crmToast(obj.message, obj.status ? 'success' : 'error');
-
-								}
-							}
-						});
-
+					// xmatter_ownership handler REMOVED (MAT-4) — ownership ratio field removed with applications table.
 					}else if(formName == 'saleforcast'){
 
 						var myform = document.getElementById('saleforcast');
@@ -2135,15 +2172,7 @@ function customValidate(formName, savetype = '')
 										}
 									});
 
-									$.ajax({
-										url: site_url+'/crm/matter/logs',
-										type:'GET',
-										data:{id: noteid},
-										success: function(responses){
-
-											$('#accordion').html(responses);
-										}
-									});
+									refreshMatterLogsAccordion(noteid);
 
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
@@ -2181,15 +2210,7 @@ function customValidate(formName, savetype = '')
 										}
 									});
 
-									$.ajax({
-										url: site_url+'/crm/matter/logs',
-										type:'GET',
-										data:{id: noteid},
-										success: function(responses){
-
-											$('#accordion').html(responses);
-										}
-									});
+									refreshMatterLogsAccordion(noteid);
 
 								}else{
 									$('.custom-error-msg').html('');

@@ -1188,85 +1188,116 @@ class ClientMatterHubController extends Controller
 		}
 	}
 
-	// LEGACY METHOD - Still used by some JavaScript but outputs HTML directly (old pattern)
-	// TODO: Refactor to return JSON and handle rendering in frontend
-	public function getMatterLogs(Request $request){
-		$id = $request->id ?? $request->client_matter_id;
+	/**
+	 * Matter workflow stage logs for the client detail accordion.
+	 * Returns JSON; frontend renders HTML (MAT-3).
+	 */
+	public function getMatterLogs(Request $request)
+	{
+		$id = $request->input('id') ?? $request->input('client_matter_id');
 		$clientMatter = ClientMatter::with('workflowStage')->find($id);
 
-		if (!$clientMatter || !$clientMatter->workflowStage) {
-			return response()->json(['error' => 'Matter not found'], 404);
+		if (! $clientMatter || ! $clientMatter->workflowStage) {
+			return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
 		}
 
 		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
 
 		$workflowId = $clientMatter->workflowStage->workflow_id ?? $clientMatter->workflow_id;
 		$currentStage = $clientMatter->workflowStage;
-		$stagesquery = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-		foreach($stagesquery as $stages){
-			$stage1 = '';
+		$stages = WorkflowStage::query()
+			->when($workflowId, fn ($q) => $q->where('workflow_id', $workflowId))
+			->orderByRaw('COALESCE(sort_order, id) ASC')
+			->get();
 
-			$workflowstagess = \App\Models\WorkflowStage::where('name', $currentStage->name)->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->first();
+		$workflowStageMatch = WorkflowStage::query()
+			->where('name', $currentStage->name)
+			->when($workflowId, fn ($q) => $q->where('workflow_id', $workflowId))
+			->first();
 
-			$prevdata = $workflowstagess ? \App\Models\WorkflowStage::where('id', '<', $workflowstagess->id)->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) DESC')->get() : collect();
-			$stagearray = array();
-			foreach($prevdata as $pre){
-				$stagearray[] = $pre->id;
+		$previousStageIds = $workflowStageMatch
+			? WorkflowStage::query()
+				->where('id', '<', $workflowStageMatch->id)
+				->when($workflowId, fn ($q) => $q->where('workflow_id', $workflowId))
+				->pluck('id')
+				->all()
+			: [];
+
+		$stageNames = $stages->pluck('name')->filter()->values()->all();
+		$activitiesQuery = ActivitiesLog::query()
+			->where('client_id', $clientMatter->client_id)
+			->where('use_for', 'matter')
+			->orderByDesc('created_at');
+
+		if ($stageNames !== []) {
+			$activitiesQuery->where(function ($q) use ($stageNames) {
+				foreach ($stageNames as $name) {
+					$q->orWhere('subject', 'like', '%Stage: ' . $name . '%');
+				}
+			});
+		} else {
+			$activitiesQuery->whereRaw('1 = 0');
+		}
+
+		$activities = $activitiesQuery->get();
+		$staffById = Staff::query()
+			->whereIn('id', $activities->pluck('created_by')->filter()->unique()->all())
+			->get(['id', 'first_name', 'last_name'])
+			->keyBy('id');
+
+		$activitiesByStage = [];
+		foreach ($stageNames as $name) {
+			$activitiesByStage[$name] = [];
+		}
+		foreach ($activities as $log) {
+			$subject = (string) ($log->subject ?? '');
+			foreach ($stageNames as $name) {
+				if (str_contains($subject, 'Stage: ' . $name)) {
+					$staff = $staffById->get($log->created_by);
+					$activitiesByStage[$name][] = [
+						'id' => (int) $log->id,
+						'created_by_name' => $staff
+							? trim((string) ($staff->first_name ?? ''))
+							: 'System',
+						'subject' => (string) ($log->subject ?? ''),
+						'description' => (string) ($log->description ?? ''),
+						'created_at' => optional($log->created_at)?->toIso8601String(),
+						'created_at_label' => $log->created_at
+							? date('d D, M Y h:i A', strtotime((string) $log->created_at))
+							: '',
+					];
+					break;
+				}
+			}
+		}
+
+		$payloadStages = [];
+		foreach ($stages as $stage) {
+			$classes = [];
+			if (in_array($stage->id, $previousStageIds, true) || (int) $clientMatter->matter_status === 0) {
+				$classes[] = 'app_green';
+			}
+			if ($currentStage->name === $stage->name && (int) $clientMatter->matter_status === 1) {
+				$classes[] = 'app_blue';
 			}
 
-			if(in_array($stages->id, $stagearray)){
-				$stage1 = 'app_green';
-			}
-			if($clientMatter->matter_status == 0){
-				$stage1 = 'app_green';
-			}
-			$stagname = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $stages->name)));
-			?>
+			$payloadStages[] = [
+				'id' => (int) $stage->id,
+				'name' => (string) $stage->name,
+				'slug' => Str::slug((string) $stage->name),
+				'css_classes' => implode(' ', $classes),
+				'is_current' => $currentStage->name === $stage->name && (int) $clientMatter->matter_status === 1,
+				'activities' => $activitiesByStage[$stage->name] ?? [],
+			];
+		}
 
-			<div class="accordion cus_accrodian">
-				<div class="accordion-header collapsed <?php echo $stage1; ?> <?php if($currentStage->name == $stages->name && $clientMatter->matter_status == 1){ echo  'app_blue'; }  ?>" role="button" data-toggle="collapse" data-target="#<?php echo $stagname; ?>_accor" aria-expanded="false">
-					<h4><?php echo $stages->name; ?></h4>
-					<div class="accord_hover">
-						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa-solid fa-file-lines"></i></a>
-						<!-- opendocnote REMOVED - workflow checklist upload flow dead (no modal, no handler) -->
-						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa-solid fa-envelope"></i></a>
-					</div>
-				</div>
-				<?php
-				$applicationlists = \App\Models\ActivitiesLog::where('client_id', $clientMatter->client_id)
-					->where('use_for', 'matter')
-					->where('subject', 'like', '%Stage: ' . $stages->name . '%')
-					->orderby('created_at', 'DESC')->get();
-				?>
-				<div class="accordion-body collapse" id="<?php echo $stagname; ?>_accor" data-parent="#accordion" style="">
-					<div class="activity_list">
-					<?php foreach($applicationlists as $applicationlist){
-						$staff = \App\Models\Staff::where('id',$applicationlist->created_by)->first();
-					?>
-						<div class="activity_col">
-							<div class="activity_txt_time">
-								<span class="span_txt"><b><?php echo e($staff ? $staff->first_name : 'System'); ?></b> <?php echo e($applicationlist->description); ?></span>
-								<span class="span_time"><?php echo date('d D, M Y h:i A', strtotime($applicationlist->created_at)); ?></span>
-							</div>
-							<?php if($applicationlist->subject != ''){ ?>
-							<div class="app_description">
-								<div class="app_card">
-									<div class="app_title"><?php echo e($applicationlist->subject); ?></div>
-								</div>
-								<?php if($applicationlist->description != ''){ ?>
-								<div class="log_desc">
-									<?php echo e($applicationlist->description); ?>
-								</div>
-								<?php } ?>
-							</div>
-							<?php } ?>
-						</div>
-					<?php } ?>
-					</div>
-				</div>
-			</div>
-		<?php } ?>
-		<?php
+		return response()->json([
+			'status' => true,
+			'matter_id' => (int) $clientMatter->id,
+			'matter_status' => (int) $clientMatter->matter_status,
+			'current_stage' => (string) $currentStage->name,
+			'stages' => $payloadStages,
+		]);
 	}
 
 	public function addNote(Request $request){
@@ -1466,9 +1497,23 @@ class ClientMatterHubController extends Controller
 		return $this->reopenClientMatter($request);
 	}
 
-	public function application_ownership(Request $request){
-		// ratio was on applications - client_matters does not have ratio
-		echo json_encode(['status' => true, 'message' => 'Ownership ratio field removed with applications table.', 'ratio' => $request->ratio ?? 0]);
+	/**
+	 * Matter ownership ratio stub (applications.ratio removed).
+	 * Preferred name for former application_ownership().
+	 */
+	public function updateMatterOwnership(Request $request)
+	{
+		return response()->json([
+			'status' => true,
+			'message' => 'Ownership ratio field removed with applications table.',
+			'ratio' => $request->input('ratio', 0),
+		]);
+	}
+
+	/** @deprecated Use updateMatterOwnership() */
+	public function application_ownership(Request $request)
+	{
+		return $this->updateMatterOwnership($request);
 	}
 
 	// Removed legacy method: saleforcast
@@ -1499,23 +1544,49 @@ class ClientMatterHubController extends Controller
 	// 	return $pdf->stream('application.pdf');
 	// }
 
-	public function getapplications(Request $request){
-		$client_id = (int) $request->client_id;
-		if ($client_id > 0) {
-			$this->ensureCrmRecordAccess($client_id);
+	/**
+	 * Client matter options for select dropdowns.
+	 * Preferred name for former getapplications().
+	 */
+	public function listClientMatters(Request $request)
+	{
+		$clientId = (int) $request->input('client_id');
+		if ($clientId > 0) {
+			$this->ensureCrmRecordAccess($clientId);
 		}
-		$matters = ClientMatter::where('client_id', '=', $client_id)->orderBy('id','desc')->get();
-		ob_start();
-		?>
-		<option value="">Choose Matter</option>
-		<?php
-		foreach($matters as $matter){
-			$label = $matter->client_unique_matter_no ?? 'Matter #' . $matter->id;
-			?>
-		<option value="<?php echo $matter->id; ?>"><?php echo e($label); ?></option>
-			<?php
+
+		$matters = ClientMatter::query()
+			->where('client_id', $clientId)
+			->orderByDesc('id')
+			->get(['id', 'client_unique_matter_no']);
+
+		$options = $matters->map(function (ClientMatter $matter) {
+			return [
+				'id' => (int) $matter->id,
+				'label' => $matter->client_unique_matter_no ?: ('Matter #' . $matter->id),
+			];
+		})->values()->all();
+
+		// Legacy callers expected raw <option> HTML when Accept is not JSON.
+		if (! $request->expectsJson() && ! str_contains((string) $request->header('Accept'), 'application/json')) {
+			$html = '<option value="">Choose Matter</option>';
+			foreach ($options as $option) {
+				$html .= '<option value="' . e((string) $option['id']) . '">' . e((string) $option['label']) . '</option>';
+			}
+
+			return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
 		}
-		return ob_get_clean();
+
+		return response()->json([
+			'status' => true,
+			'matters' => $options,
+		]);
+	}
+
+	/** @deprecated Use listClientMatters() */
+	public function getapplications(Request $request)
+	{
+		return $this->listClientMatters($request);
 	}
 
 

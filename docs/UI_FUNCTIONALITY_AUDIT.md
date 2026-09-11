@@ -82,8 +82,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 |----|----------|----------|-------|
 | MAT-1 | Fixed | `routes/matter_workflow.php` / `crm_matter_hub.php` | **Two discontinue flows unified:** UI uses `POST /clients/matter/discontinue` (checklist + JSON). Legacy `POST /crm/matter/discontinue` is a thin adapter; orphan `#discon_application` modal/JS removed. |
 | MAT-2 | Fixed | `routes/matter_workflow.php` / `crm_matter_hub.php` | **Two reopen flows unified:** UI uses `POST /clients/matter/reopen`. Legacy `POST /crm/matter/revert` adapts to reopen; orphan `#revert_matter` modal/JS removed. |
-| MAT-3 | Medium | `app/Http/Controllers/CRM/ClientMatterHubController.php` ~L1104–1144 | `getMatterLogs` emits **HTML via PHP inline** while other endpoints return JSON. TODO: refactor to JSON + frontend render. Harder to test; brittle architecture. |
-| MAT-4 | Medium | `routes/crm_matter_hub.php` L11, L24 | **Application vs matter naming:** `/crm/matter/list` → `getapplications()`; `/crm/matter/ownership` → `application_ownership()`. Confusing for developers and support. |
+| MAT-3 | Fixed | `ClientMatterHubController::getMatterLogs` | Matter logs now return **JSON**; `custom-form-validation.js` renders accordion HTML via `refreshMatterLogsAccordion`. |
+| MAT-4 | Fixed | `routes/crm_matter_hub.php` | Renamed handlers to `listClientMatters` / `updateMatterOwnership` (legacy aliases kept). Named routes `crm.matter.list` / `crm.matter.ownership`. Dead ownership-ratio modal removed. |
 | MAT-5 | Medium | `routes/crm_matter_hub.php` L20 | `GET /crm/matter/updateintake` — **no-op stub** (“Date field removed with applications table”). Dead route if still linked from old UI. |
 | MAT-6 | Medium | `routes/matter_workflow.php` L13–18 | Legacy POST `/updatestage`, `/completestage`, `/updatebackstage` alongside preferred `/clients/matter/*` routes. Dual maintenance burden. |
 | MAT-7 | Low | Same controller ~L1144 | Comment: **`opendocnote` / workflow checklist upload flow dead** (no modal, no handler). Dead affordance if icon markup remains. |
