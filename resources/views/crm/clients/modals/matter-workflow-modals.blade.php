@@ -1,13 +1,6 @@
-{{-- ========================================
-    MATTER-RELATED MODALS (Workflow)
-    This file contains matter modals for the client detail page
-    ======================================== --}}
+{{-- Matter workflow modals for client detail (decision, discontinue/complete, change workflow) --}}
 
-{{-- 1. Add Application Modal - REMOVED (orphaned, no UI trigger; matters created via client_matters sync) --}}
-
-{{-- 2. Legacy #discon_application modal REMOVED (MAT-1) — use #discontinue-matter-modal → POST /clients/matter/discontinue --}}
-
-{{-- 2a. Decision Received Modal (Granted/Refused/Withdrawn + note) --}}
+{{-- Decision Received (Granted/Refused/Withdrawn + note) --}}
 <div class="modal fade custom_modal" id="decision-received-modal" tabindex="-1" role="dialog" aria-labelledby="decisionReceivedModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -55,7 +48,7 @@
 	</div>
 </div>
 
-{{-- 2b. Discontinue Matter Modal (for Workflow tab - client_matters) --}}
+{{-- Discontinue Matter (Workflow tab — client_matters) --}}
 @php
     $discontinueMatterList = collect();
     if (isset($fetchedData) && $fetchedData && ! empty($fetchedData->id)) {
@@ -169,7 +162,7 @@
 	</div>
 </div>
 
-{{-- 2c. Change Workflow Modal (for existing matters; stacked above Update Stage when opened from it) --}}
+{{-- Change Workflow (existing matters; may stack above Update Stage) --}}
 <div class="modal fade custom_modal" id="change-workflow-modal" tabindex="-1" role="dialog" aria-labelledby="changeWorkflowModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered change-workflow-modal-dialog">
 		<div class="modal-content">
@@ -198,9 +191,3 @@
 		</div>
 	</div>
 </div>
-
-{{-- 3. Legacy #revert_matter modal REMOVED (MAT-2) — use POST /clients/matter/reopen via matter-reopen-actions.js --}}
-
-{{-- 4. Add Interested Service Modal - REMOVED --}}
-{{-- Feature deprecated: no UI triggers, routes, or controllers remain. --}}
-

@@ -84,11 +84,11 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 | MAT-2 | Fixed | `routes/matter_workflow.php` / `crm_matter_hub.php` | **Two reopen flows unified:** UI uses `POST /clients/matter/reopen`. Legacy `POST /crm/matter/revert` adapts to reopen; orphan `#revert_matter` modal/JS removed. |
 | MAT-3 | Fixed | `ClientMatterHubController::getMatterLogs` | Matter logs now return **JSON**; `custom-form-validation.js` renders accordion HTML via `refreshMatterLogsAccordion`. |
 | MAT-4 | Fixed | `routes/crm_matter_hub.php` | Renamed handlers to `listClientMatters` / `updateMatterOwnership` (legacy aliases kept). Named routes `crm.matter.list` / `crm.matter.ownership`. Dead ownership-ratio modal removed. |
-| MAT-5 | Medium | `routes/crm_matter_hub.php` L20 | `GET /crm/matter/updateintake` — **no-op stub** (“Date field removed with applications table”). Dead route if still linked from old UI. |
-| MAT-6 | Medium | `routes/matter_workflow.php` L13–18 | Legacy POST `/updatestage`, `/completestage`, `/updatebackstage` alongside preferred `/clients/matter/*` routes. Dual maintenance burden. |
-| MAT-7 | Low | Same controller ~L1144 | Comment: **`opendocnote` / workflow checklist upload flow dead** (no modal, no handler). Dead affordance if icon markup remains. |
-| MAT-8 | Low | `resources/views/crm/clients/tabs/workflow.blade.php` | Duplicate IDs `workflow-set-deadline` / `workflow-deadline-date` in modal vs inline branches (mutually exclusive per `$workflowInModal` — not a live bug but confusing for JS). |
-| MAT-9 | Low | `resources/views/crm/clients/modals/applications.blade.php` | **Add Application / Interested Service modals removed** — file mostly comments. Orphan artifact. |
+| MAT-5 | Fixed | `routes/crm_matter_hub.php` | Removed dead `GET /crm/matter/updateintake`, `updatedates`, `updateexpectwin` (no-op / unauthenticated deadline GETs). Deadline updates use `POST /clients/matter/update-deadline`. |
+| MAT-6 | Fixed | `routes/matter_workflow.php` | Legacy `POST /updatestage`, `/completestage`, `/updatebackstage` are thin adapters onto preferred `/clients/matter/*` handlers. Unused `ClientDetailConfig` stage URL keys removed. |
+| MAT-7 | Fixed | `ClientMatterHubController` / workflow UI | **`opendocnote` / checklist upload already removed** — no live markup or handlers remain (JSON matter logs only). |
+| MAT-8 | Fixed | `resources/views/crm/clients/tabs/workflow.blade.php` | Deadline checkbox/date IDs are unique per branch (`-modal` / `-inline`); JS binds via those IDs under `#workflow-tab`. |
+| MAT-9 | Fixed | `resources/views/crm/clients/modals/matter-workflow-modals.blade.php` | Renamed from `applications.blade.php`; stripped stale Add Application / Interested Service comments. Live matter workflow modals kept; include updated in `addclientmodal`. |
 
 ---
 
@@ -245,7 +245,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 | Feature | Status | UI/JS remnants |
 |---------|--------|----------------|
 | Education system | Deprecated | Modal comments in `addclientmodal.blade.php`, `editclientmodal.blade.php` |
-| Interested Services | Deprecated | `applications.blade.php`, `detail-main.js` comments |
+| Interested Services | Deprecated | Removed from matter-workflow modals; residual comments may remain in `detail-main.js` |
 | Service Taken | Deprecated | `detail.blade.php` comment |
 | Lead assignment (assignee column) | Deprecated | Routes still active; controller redirects with info message |
 | Appointment system (legacy) | Deprecated | `console.warn` in `detail-main.js`, `custom-form-validation.js` |

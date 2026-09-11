@@ -9,7 +9,8 @@ use App\Http\Controllers\CRM\ClientMatterWorkflowController;
 
 Route::post('/crm/matter/load-matter-upsert', [ClientMatterWorkflowController::class, 'loadMatterUpsert']);
 
-// Legacy stage mutation URLs: POST only (CSRF). GET is rejected without mutating state.
+// Legacy stage mutation URLs: POST adapters onto preferred /clients/matter/* handlers.
+// GET is rejected without mutating state (old bookmarks / CSRF-less probes).
 Route::get('/updatestage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);
 Route::get('/completestage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);
 Route::get('/updatebackstage', [ClientMatterWorkflowController::class, 'rejectStageMutationGet']);

@@ -54,107 +54,51 @@ class ClientMatterHubController extends Controller
 		]);
 	}
 
-	public function completestage(Request $request){
-		$matterId = $request->id ?? $request->client_matter_id;
-		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
-		if (!$clientMatter) {
-			echo json_encode(['status' => false, 'message' => 'Matter not found']);
-			return;
+	/**
+	 * Legacy POST /completestage → preferred discontinueClientMatter (reason Completed).
+	 */
+	public function completestage(Request $request)
+	{
+		if (! $request->filled('matter_id')) {
+			$request->merge([
+				'matter_id' => $request->input('id') ?? $request->input('client_matter_id'),
+			]);
 		}
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
-		$stageName = $clientMatter->workflowStage?->name ?? '';
-		$clientMatter->matter_status = 0; // Discontinued/completed
-		$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
-		$clientMatter->discontinue_reason = 'Completed';
-		$saved = $clientMatter->save();
-		if ($saved) {
-			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Matter has been successfully completed.'];
-		} else {
-			$response = ['status' => false, 'message' => 'Please try again'];
+		if (! $request->filled('discontinue_reason')) {
+			$request->merge([
+				'discontinue_reason' => \App\Support\MatterCompletionChecklist::REASON_COMPLETED_LEGACY,
+			]);
 		}
-		echo json_encode($response);
+
+		return $this->discontinueClientMatter($request);
 	}
 
-	public function updatestage(Request $request){
-		$matterId = $request->id ?? $request->client_matter_id;
-		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
-		if (!$clientMatter || !$clientMatter->workflowStage) {
-			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
-			return;
+	/**
+	 * Legacy POST /updatestage → preferred updateClientMatterNextStage.
+	 */
+	public function updatestage(Request $request)
+	{
+		if (! $request->filled('matter_id')) {
+			$request->merge([
+				'matter_id' => $request->input('id') ?? $request->input('client_matter_id'),
+			]);
 		}
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
-		$currentStage = $clientMatter->workflowStage;
-		$workflowId = $currentStage->workflow_id ?? $clientMatter->workflow_id;
-		$nextStage = WorkflowStage::where('id', '>', $currentStage->id)
-			->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))
-			->orderByRaw('COALESCE(sort_order, id) ASC')->first();
-		if (!$nextStage) {
-			echo json_encode(['status' => false, 'message' => 'No next stage']);
-			return;
-		}
-		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-		$nextIndex = $stages->search(fn($s) => $s->id == $nextStage->id) + 1;
-		$width = $stages->count() > 0 ? round(($nextIndex / $stages->count()) * 100) : 0;
-		$clientMatter->workflow_stage_id = $nextStage->id;
-		$saved = $clientMatter->save();
-		if ($saved) {
-			$comments = 'moved the stage from <b>' . e($currentStage->name) . '</b> to <b>' . e($nextStage->name) . '</b>';
-			$obj = new ActivitiesLog;
-			$obj->client_id = $clientMatter->client_id;
-			$obj->created_by = Auth::user()->id;
-			$obj->subject = 'Stage: ' . $currentStage->name;
-			$obj->description = $comments;
-			$obj->activity_type = 'stage';
-			$obj->use_for = 'matter';
-			$obj->save();
-			$lastStage = $stages->last();
-			$displayback = $lastStage && $lastStage->name == $nextStage->name;
-			$response = ['status' => true, 'stage' => $nextStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Matter has been successfully moved to next stage.'];
-		} else {
-			$response = ['status' => false, 'message' => 'Please try again'];
-		}
-		echo json_encode($response);
+
+		return $this->updateClientMatterNextStage($request);
 	}
 
-	public function updatebackstage(Request $request){
-		$matterId = $request->id ?? $request->client_matter_id;
-		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
-		if (!$clientMatter || !$clientMatter->workflowStage) {
-			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
-			return;
+	/**
+	 * Legacy POST /updatebackstage → preferred updateClientMatterPreviousStage.
+	 */
+	public function updatebackstage(Request $request)
+	{
+		if (! $request->filled('matter_id')) {
+			$request->merge([
+				'matter_id' => $request->input('id') ?? $request->input('client_matter_id'),
+			]);
 		}
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
-		$currentStage = $clientMatter->workflowStage;
-		$workflowId = $currentStage->workflow_id ?? $clientMatter->workflow_id;
-		$prevStage = WorkflowStage::where('id', '<', $currentStage->id)
-			->when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))
-			->orderByRaw('COALESCE(sort_order, id) DESC')->first();
-		if (!$prevStage) {
-			echo json_encode(['status' => false, 'message' => '']);
-			return;
-		}
-		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('workflow_id', $workflowId))->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-		$prevIndex = $stages->search(fn($s) => $s->id == $prevStage->id) + 1;
-		$width = $stages->count() > 0 ? round(($prevIndex / $stages->count()) * 100) : 0;
-		$clientMatter->workflow_stage_id = $prevStage->id;
-		$saved = $clientMatter->save();
-		if ($saved) {
-			$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
-			$obj = new ActivitiesLog;
-			$obj->client_id = $clientMatter->client_id;
-			$obj->created_by = Auth::user()->id;
-			$obj->subject = 'Stage: ' . $currentStage->name;
-			$obj->description = $comments;
-			$obj->activity_type = 'stage';
-			$obj->use_for = 'matter';
-			$obj->save();
-			$lastStage = $stages->last();
-			$displayback = $lastStage && $lastStage->name == $prevStage->name;
-			$response = ['status' => true, 'stage' => $prevStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Matter has been successfully moved to previous stage.'];
-		} else {
-			$response = ['status' => false, 'message' => 'Please try again'];
-		}
-		echo json_encode($response);
+
+		return $this->updateClientMatterPreviousStage($request);
 	}
 
 	/**
@@ -1418,40 +1362,6 @@ class ClientMatterHubController extends Controller
 			}
 
 		echo json_encode($response);
-	}
-
-	public function updateintake(Request $request){
-		// intakedate was on applications table which has been removed
-		echo json_encode(['status' => true, 'message' => 'Date field removed with applications table.']);
-	}
-
-	public function updateexpectwin(Request $request){
-		// expect_win_date was on applications table - use client_matters.deadline instead
-		$obj = ClientMatter::find($request->appid ?? $request->client_matter_id);
-		if ($obj && Schema::hasColumn('client_matters', 'deadline')) {
-			$obj->deadline = $request->from;
-			$saved = $obj->save();
-			echo json_encode(['status' => $saved, 'message' => $saved ? 'Date successfully updated.' : 'Please try again']);
-		} else {
-			echo json_encode(['status' => true, 'message' => 'Date field migrated to matter deadline.']);
-		}
-	}
-
-	public function updatedates(Request $request){
-		// start_date/end_date were on applications - use client_matters.deadline
-		$obj = ClientMatter::find($request->appid ?? $request->client_matter_id);
-		if ($obj && Schema::hasColumn('client_matters', 'deadline')) {
-			$obj->deadline = $request->from;
-			$saved = $obj->save();
-			if ($saved) {
-				$d = $obj->deadline ? date_parse($obj->deadline) : null;
-				echo json_encode(['status' => true, 'message' => 'Date successfully updated.', 'dates' => $d ? ['date' => sprintf('%02d', $d['day']), 'month' => date('M', strtotime($obj->deadline)), 'year' => $d['year']] : []]);
-			} else {
-				echo json_encode(['status' => false, 'message' => 'Please try again']);
-			}
-		} else {
-			echo json_encode(['status' => true, 'message' => 'Date fields migrated to matter.']);
-		}
 	}
 
 	/**

@@ -21,10 +21,6 @@ Route::post('/create-app-note', [ClientMatterHubController::class, 'addNote']);
 Route::get('/crm/matter/notes', [ClientMatterHubController::class, 'getMatterNotes']);
 Route::post('/crm/matter/sendmail', [ClientMatterHubController::class, 'sendMatterMail']);
 
-Route::get('/crm/matter/updateintake', [ClientMatterHubController::class, 'updateintake']);
-Route::get('/crm/matter/updatedates', [ClientMatterHubController::class, 'updatedates']);
-Route::get('/crm/matter/updateexpectwin', [ClientMatterHubController::class, 'updateexpectwin']);
-
 // Ownership ratio stub (formerly application_ownership — application-era name).
 Route::post('/crm/matter/ownership', [ClientMatterHubController::class, 'updateMatterOwnership'])
     ->name('crm.matter.ownership');

@@ -1,5 +1,5 @@
-<!-- All Application-Related Modals moved to resources/views/Admin/clients/modals/applications.blade.php -->
-@include('crm.clients.modals.applications')
+{{-- Matter workflow modals (decision / discontinue / complete / change workflow) --}}
+@include('crm.clients.modals.matter-workflow-modals')
 
 <!-- Appointment Modal moved to resources/views/Admin/clients/modals/appointment.blade.php -->
 

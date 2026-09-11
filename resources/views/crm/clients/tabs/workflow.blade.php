@@ -1,6 +1,10 @@
 {{-- Workflow tab: matter stages, deadlines, discontinue/reopen (server-rendered + JS) --}}
 @php
     $workflowInModal = $workflowInModal ?? false;
+    // Unique IDs per branch (modal vs inline) so getElementById is unambiguous (MAT-8).
+    $workflowDeadlineSuffix = $workflowInModal ? 'modal' : 'inline';
+    $workflowSetDeadlineId = 'workflow-set-deadline-' . $workflowDeadlineSuffix;
+    $workflowDeadlineDateId = 'workflow-deadline-date-' . $workflowDeadlineSuffix;
 @endphp
 <div class="tab-pane {{ $workflowInModal ? 'workflow-in-modal' : '' }}" id="workflow-tab">
     <div class="card full-width workflow-tab-container">
@@ -157,14 +161,14 @@
                                         <div class="cdn-workflow-modal__check-main">
                                             @if(empty($isClosedMatterView))
                                                 <label class="cdn-workflow-modal__check-toggle">
-                                                    <input type="checkbox" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                                    <input type="checkbox" id="{{ $workflowSetDeadlineId }}" data-matter-id="{{ $workflowSelectedMatter->id }}"
                                                         {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
                                                     <span class="cdn-workflow-modal__check-box" aria-hidden="true"></span>
                                                     <span class="cdn-workflow-modal__check-label">Set deadline</span>
                                                 </label>
                                                 <div class="workflow-deadline-date-wrapper" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
-                                                    <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
-                                                    <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
+                                                    <label for="{{ $workflowDeadlineDateId }}" class="sr-only">Deadline Date</label>
+                                                    <input type="date" class="form-control form-control-sm" id="{{ $workflowDeadlineDateId }}"
                                                         value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
                                                         data-matter-id="{{ $workflowSelectedMatter->id }}">
                                                 </div>
@@ -228,13 +232,13 @@
                                 <div class="form-group mb-0">
                                     @if(empty($isClosedMatterView))
                                     <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                        <input type="checkbox" class="form-check-input" id="{{ $workflowSetDeadlineId }}" data-matter-id="{{ $workflowSelectedMatter->id }}"
                                             {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="workflow-set-deadline">Set Deadline</label>
+                                        <label class="form-check-label" for="{{ $workflowSetDeadlineId }}">Set Deadline</label>
                                     </div>
                                     <div class="workflow-deadline-date-wrapper mt-2" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
-                                        <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
-                                        <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
+                                        <label for="{{ $workflowDeadlineDateId }}" class="sr-only">Deadline Date</label>
+                                        <input type="date" class="form-control form-control-sm" id="{{ $workflowDeadlineDateId }}"
                                             value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
                                             data-matter-id="{{ $workflowSelectedMatter->id }}"
                                             style="max-width: 180px;">
@@ -331,10 +335,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Workflow tab: Set Deadline checkbox - toggle date picker
-        var setDeadlineCb = document.getElementById('workflow-set-deadline');
-        var deadlineDateWrapper = document.querySelector('.workflow-deadline-date-wrapper');
-        var deadlineDateInput = document.getElementById('workflow-deadline-date');
+        // Workflow tab: Set Deadline checkbox - toggle date picker (IDs unique per modal/inline branch)
+        var setDeadlineCb = document.getElementById(@json($workflowSetDeadlineId));
+        var deadlineDateWrapper = document.querySelector('#workflow-tab .workflow-deadline-date-wrapper');
+        var deadlineDateInput = document.getElementById(@json($workflowDeadlineDateId));
         if (setDeadlineCb && deadlineDateWrapper && deadlineDateInput) {
             setDeadlineCb.addEventListener('click', function(e) {
                 e.stopPropagation();

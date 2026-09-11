@@ -1725,10 +1725,6 @@ $(document).ready(function() {
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
             deleteChecklist: '{{ route("clients.documents.deleteChecklist") }}',
             fetchClientMatterAssignee: '{{ URL::to("/clients/fetchClientMatterAssignee") }}',
-            // Stage mutations: POST + CSRF only. Prefer Workflow-tab named routes for UI actions.
-            updateStage: '{{ route("clients.matter.update-next-stage") }}',
-            completeStage: '{{ URL::to("/completestage") }}',
-            updateBackStage: '{{ route("clients.matter.update-previous-stage") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',

@@ -28,8 +28,8 @@ class ClientMatterWorkflowController extends Controller
 
     /**
      * GET handlers for legacy stage mutation URLs: no state change.
-     * Mutations are POST-only (CSRF) via updatestage / completestage / updatebackstage
-     * or the Workflow-tab routes clients.matter.update-next-stage / update-previous-stage.
+     * Mutations are POST-only (CSRF) and delegate to preferred
+     * clients.matter.update-next-stage / update-previous-stage / discontinue.
      */
     public function rejectStageMutationGet(Request $request)
     {
