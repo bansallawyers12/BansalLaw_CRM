@@ -1993,17 +1993,73 @@ document.addEventListener('DOMContentLoaded', function() {
         return props.is_all_day ? null : 60;
     }
 
-    function showStaffImportantEventModal(event, props) {
-        _activeStaffEventProps = Object.assign({}, props);
+    function parseFollowUpNoteId(props, event) {
+        if (props && props.note_id) {
+            const fromProp = parseInt(String(props.note_id), 10);
+            if (Number.isFinite(fromProp) && fromProp > 0) return fromProp;
+        }
+        const rawId = String((props && props.id) || (event && event.id) || '');
+        const match = rawId.match(/^followup-(\d+)$/i);
+        if (!match) return null;
+        const parsed = parseInt(match[1], 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    async function ensureFollowUpStaffCalendarEvent(noteId) {
+        const response = await fetch(
+            BOOKING_WEB_BASE + '/api/calendar-events/from-follow-up/' + encodeURIComponent(String(noteId)),
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            }
+        );
+        const payload = await response.json().catch(function () { return {}; });
+        if (!response.ok || payload.success === false || !payload.data) {
+            throw new Error((payload && payload.message) || 'Could not prepare follow-up for editing.');
+        }
+        return payload.data;
+    }
+
+    async function showStaffImportantEventModal(event, props) {
+        props = Object.assign({}, props || {});
         const isFollowUp = (props.event_kind || '') === 'follow_up';
-        const eventId = props.staff_calendar_event_id || null;
-        const canManage = !isFollowUp && !props.read_only && !!eventId;
+        let eventId = props.staff_calendar_event_id || null;
+        const noteId = isFollowUp ? parseFollowUpNoteId(props, event) : null;
+
+        if (isFollowUp && !props.read_only && noteId && !eventId) {
+            try {
+                const ensured = await ensureFollowUpStaffCalendarEvent(noteId);
+                props = Object.assign(props, ensured || {}, {
+                    event_kind: 'follow_up',
+                    note_id: noteId,
+                    id: props.id || ('followup-' + noteId),
+                });
+                eventId = props.staff_calendar_event_id || null;
+                if (!eventId && ensured && ensured.staff_calendar_event_id) {
+                    eventId = ensured.staff_calendar_event_id;
+                    props.staff_calendar_event_id = eventId;
+                }
+            } catch (err) {
+                crmAlert(err.message || 'Could not open follow-up management.');
+                return;
+            }
+        }
+
+        _activeStaffEventProps = Object.assign({}, props);
+        const canManage = !props.read_only && !!eventId;
         const typeKey = isFollowUp ? 'reminder' : String(props.event_type || 'other').toLowerCase();
         const style = getImportantEventStyle(typeKey);
         const typeLabel = staffEventTypeLabel(props);
         const whenLabel = staffEventFormattedWhen(props);
         const duration = staffEventDurationMinutes(props);
-        const slotKey = String(event.id || eventId || 'staff').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const slotKey = String(event.id || eventId || noteId || 'staff').replace(/[^a-zA-Z0-9_-]/g, '_');
         const start = new Date(props.appointment_datetime || props.starts_at || Date.now());
         const melbourneDate = start.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
         const melbourneTime = props.is_all_day
@@ -2047,7 +2103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                     </div>
-                    <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar.</div>
+                    <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar${isFollowUp ? ' and the linked task' : ''}.</div>
                 </section>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -2096,9 +2152,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </section>`
-            : (isFollowUp
-                ? `<div class="appt-detail-tip"><i class="fa-solid fa-circle-info"></i><span>Follow-ups come from Tasks. Open the client or tasks list to manage them.</span></div>`
-                : '');
+            : '';
 
         const notesHtml = props.notes
             ? renderApptDetailItem(

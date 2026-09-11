@@ -16,12 +16,15 @@ use App\Services\Booking\BookingCalendarExternalFeed;
 use App\Services\Booking\StaffCalendarFeedService;
 use App\Services\StaffPersonalCalendarFeedService;
 use App\Models\StaffCalendarEvent;
+use App\Models\Note;
+use App\Services\ClientMatterTaskSyncService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Exception;
 use Carbon\Carbon;
 use App\Support\StaffClientVisibility;
@@ -75,7 +78,85 @@ class BookingAppointmentsController extends Controller
             return;
         }
 
+        // Follow-up-backed reminders: assignee / creator of the source task may manage them.
+        if (! empty($event->source_note_id)) {
+            $note = Note::query()->find((int) $event->source_note_id);
+            if ($note) {
+                $uid = (int) $user->id;
+                if ((int) $note->assigned_to === $uid || (int) $note->user_id === $uid) {
+                    return;
+                }
+            }
+        }
+
         abort(403, 'Only the person who added this reminder can change it.');
+    }
+
+    protected function abortUnlessMayManageFollowUpNote(Note $note, Staff $user): void
+    {
+        if ($user->hasEffectiveSuperAdminPrivileges()) {
+            return;
+        }
+
+        $uid = (int) $user->id;
+        if ((int) $note->assigned_to === $uid || (int) $note->user_id === $uid) {
+            if ($note->client_id && ! StaffClientVisibility::canAccessClientOrLead((int) $note->client_id, $user)) {
+                abort(403, 'You do not have access to this follow-up.');
+            }
+
+            return;
+        }
+
+        abort(403, 'You do not have access to this follow-up.');
+    }
+
+    /**
+     * Keep the source task Note aligned when a follow-up-backed calendar event changes.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    protected function syncFollowUpNoteFromCalendarEvent(StaffCalendarEvent $event, array $validated): void
+    {
+        if (empty($event->source_note_id) || ! Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
+            return;
+        }
+
+        $note = Note::query()->find((int) $event->source_note_id);
+        if (! $note || ! (int) $note->is_action) {
+            return;
+        }
+
+        $noteUpdates = [];
+
+        if (array_key_exists('starts_at', $validated) && $validated['starts_at']) {
+            $noteUpdates['action_date'] = Carbon::parse($validated['starts_at'], config('app.timezone'));
+        }
+
+        if (array_key_exists('notes', $validated)) {
+            $noteUpdates['description'] = $validated['notes'];
+        }
+
+        if (array_key_exists('status', $validated)) {
+            $status = (string) $validated['status'];
+            if (in_array($status, ['completed', 'cancelled'], true)) {
+                $noteUpdates['status'] = '1';
+            } elseif (in_array($status, ['scheduled', 'confirmed'], true)) {
+                $noteUpdates['status'] = '0';
+            }
+        }
+
+        if ($noteUpdates === []) {
+            return;
+        }
+
+        $note->update($noteUpdates);
+
+        if (array_key_exists('status', $noteUpdates)) {
+            app(ClientMatterTaskSyncService::class)->syncCompletionFromNote(
+                $note->fresh() ?? $note,
+                (string) $noteUpdates['status'] === '1'
+            );
+        }
     }
 
     /**
@@ -538,6 +619,7 @@ class BookingAppointmentsController extends Controller
 
         if ($statusOnly) {
             $event->update(['status' => $validated['status']]);
+            $this->syncFollowUpNoteFromCalendarEvent($event, $validated);
 
             return response()->json([
                 'success' => true,
@@ -567,10 +649,65 @@ class BookingAppointmentsController extends Controller
         $validated['is_all_day'] = $isAllDay;
 
         $event->update($validated);
+        $this->syncFollowUpNoteFromCalendarEvent($event, $validated);
 
         return response()->json([
             'success' => true,
             'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
+        ]);
+    }
+
+    /**
+     * Create (or return) a staff calendar event linked to a task follow-up Note.
+     */
+    public function ensureCalendarEventFromFollowUp(Request $request, int $noteId)
+    {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff || ! $user->canAccessPersonalCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personal calendar access has not been granted. Ask a Super Admin to enable it on your staff profile.',
+            ], 403);
+        }
+
+        $note = Note::query()
+            ->with(['client'])
+            ->whereKey($noteId)
+            ->where('is_action', 1)
+            ->whereNotNull('action_date')
+            ->first();
+
+        if (! $note) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Follow-up not found.',
+            ], 404);
+        }
+
+        $this->abortUnlessMayManageFollowUpNote($note, $user);
+
+        try {
+            $event = $this->staffCalendarFeed->ensureStaffCalendarEventFromFollowUpNote($note, $user);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Could not prepare follow-up for calendar management.',
+            ], 422);
+        }
+
+        $payload = $this->staffCalendarFeed->payloadFromStaffEvent($event);
+        $payload['event_kind'] = 'follow_up';
+        $payload['note_id'] = (int) $note->id;
+        $payload['id'] = 'followup-' . $note->id;
+        $payload['status_label'] = $payload['status_label'] ?? 'Follow-up';
+        $payload['action_url'] = route('assignee.tasks');
+        if ($note->client_id) {
+            $payload['client_detail_url'] = $note->clientDetailUrl();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $payload,
         ]);
     }
 

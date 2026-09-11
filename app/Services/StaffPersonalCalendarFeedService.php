@@ -981,8 +981,20 @@ class StaffPersonalCalendarFeedService
                 ->values();
         }
 
+        $linkedEvents = collect();
+        if (
+            Schema::hasTable('staff_calendar_events')
+            && Schema::hasColumn('staff_calendar_events', 'source_note_id')
+            && $notes->isNotEmpty()
+        ) {
+            $linkedEvents = StaffCalendarEvent::query()
+                ->whereIn('source_note_id', $notes->pluck('id')->all())
+                ->get()
+                ->keyBy(fn (StaffCalendarEvent $event) => (int) $event->source_note_id);
+        }
+
         return $notes
-            ->map(function (Note $note) use ($tz) {
+            ->map(function (Note $note) use ($tz, $linkedEvents) {
                 $when = Carbon::parse($note->action_date, $tz);
                 $isAllDay = $when->format('H:i:s') === '00:00:00';
                 if ($isAllDay) {
@@ -995,10 +1007,41 @@ class StaffPersonalCalendarFeedService
                     ? Carbon::parse($note->note_deadline, $tz)->toDateString()
                     : null;
 
+                /** @var StaffCalendarEvent|null $linked */
+                $linked = $linkedEvents->get((int) $note->id);
+                if ($linked && in_array((string) $linked->status, ['completed', 'cancelled'], true)) {
+                    // Management already closed the linked calendar event; keep tasks list in sync.
+                    return null;
+                }
+
+                $status = 'follow_up';
+                $statusLabel = 'Follow-up';
+                $calendarType = null;
+                $reminderMinutes = null;
+                $staffEventId = null;
+
+                if ($linked) {
+                    $staffEventId = (int) $linked->id;
+                    $calendarType = $linked->calendar_type;
+                    $reminderMinutes = $linked->reminder_minutes;
+                    $linkedPayload = $this->staffCalendarFeed->payloadFromStaffEvent($linked);
+                    $status = (string) ($linkedPayload['status'] ?? 'scheduled');
+                    $statusLabel = (string) ($linkedPayload['status_label'] ?? 'Scheduled');
+                    if ($linked->starts_at) {
+                        $when = Carbon::parse($linked->starts_at, $tz);
+                        $isAllDay = (bool) $linked->is_all_day;
+                        if ($isAllDay && $when->format('H:i:s') === '00:00:00') {
+                            $when = $when->copy()->setTime(9, 0);
+                        }
+                    }
+                }
+
                 return array_merge($this->noteSharedPayload($note), [
                     'id' => 'followup-' . $note->id,
                     'event_kind' => 'follow_up',
-                    'read_only' => true,
+                    'note_id' => (int) $note->id,
+                    'staff_calendar_event_id' => $staffEventId,
+                    'read_only' => false,
                     'title' => $title,
                     'event_type' => 'reminder',
                     'appointment_datetime' => $when->toIso8601String(),
@@ -1006,15 +1049,18 @@ class StaffPersonalCalendarFeedService
                     'starts_at' => $when->toIso8601String(),
                     'ends_at' => $when->copy()->addMinutes(30)->toIso8601String(),
                     'is_all_day' => $isAllDay,
+                    'calendar_type' => $calendarType,
                     'client_name' => $clientName,
                     'notes' => $note->description,
-                    'status' => 'follow_up',
-                    'status_label' => 'Follow-up',
+                    'status' => $status,
+                    'status_label' => $statusLabel,
+                    'reminder_minutes' => $reminderMinutes,
                     'task_title' => $taskTitle,
                     'note_deadline' => $noteDeadline,
                     'action_url' => route('assignee.tasks'),
                 ]);
             })
+            ->filter()
             ->values()
             ->all();
     }

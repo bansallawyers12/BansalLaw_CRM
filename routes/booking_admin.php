@@ -96,6 +96,9 @@ Route::controller(BookingAppointmentsController::class)
         Route::get('/api/calendar-events/reminders', 'pendingReminders')
             ->name('api.calendar-events.reminders');
         Route::post('/api/calendar-events', 'storeCalendarEvent')->name('api.calendar-events.store');
+        Route::post('/api/calendar-events/from-follow-up/{noteId}', 'ensureCalendarEventFromFollowUp')
+            ->name('api.calendar-events.from-follow-up')
+            ->whereNumber('noteId');
         Route::put('/api/calendar-events/{id}', 'updateCalendarEvent')
             ->name('api.calendar-events.update')
             ->whereNumber('id');

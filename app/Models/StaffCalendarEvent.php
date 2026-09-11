@@ -33,6 +33,7 @@ class StaffCalendarEvent extends Model
         'reminder_minutes',
         'reminder_sent_at',
         'created_by_staff_id',
+        'source_note_id',
     ];
 
     protected $casts = [
@@ -56,5 +57,10 @@ class StaffCalendarEvent extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'created_by_staff_id');
+    }
+
+    public function sourceNote(): BelongsTo
+    {
+        return $this->belongsTo(Note::class, 'source_note_id');
     }
 }

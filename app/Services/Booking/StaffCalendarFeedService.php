@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Models\Admin;
 use App\Models\ClientCourtHearing;
+use App\Models\Note;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Support\CalendarEventText;
@@ -147,6 +148,11 @@ class StaffCalendarFeedService
             ->where('created_by_staff_id', $ownerStaffId)
             ->whereIn('event_type', ['reminder', 'other']);
 
+        // Follow-up-backed events stay on the follow-up calendar row (avoid duplicates).
+        if (Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
+            $query->whereNull('source_note_id');
+        }
+
         $clearedAt = PersonalCalendarFeedReset::clearedAtForStaffId($ownerStaffId);
         if ($clearedAt) {
             $query->where('created_at', '>=', $clearedAt);
@@ -212,6 +218,11 @@ class StaffCalendarFeedService
             });
         }
 
+        // Follow-up-backed events stay on the follow-up calendar row (avoid duplicates).
+        if (Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
+            $query->whereNull('source_note_id');
+        }
+
         $this->restrictStaffCalendarEventQuery($query);
         $this->applyPersonalReminderOtherOwnership($query);
         $this->applyDatetimeWindow($query, 'starts_at', $request, $startOfToday, $includePast);
@@ -223,6 +234,84 @@ class StaffCalendarFeedService
             ->map(fn (StaffCalendarEvent $e) => $this->payloadFromStaffEvent($e))
             ->values()
             ->all();
+    }
+
+    /**
+     * Ensure a StaffCalendarEvent exists for a task follow-up Note so the booking
+     * calendar can reuse reminder management (reschedule / status / calendar / reminder).
+     */
+    public function ensureStaffCalendarEventFromFollowUpNote(Note $note, ?Staff $actor = null): StaffCalendarEvent
+    {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            throw new Exception('Staff calendar events are not available.');
+        }
+
+        $existing = null;
+        if (Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
+            $existing = StaffCalendarEvent::query()
+                ->where('source_note_id', (int) $note->id)
+                ->first();
+        }
+
+        $note->loadMissing(['client']);
+
+        $tz = config('app.timezone');
+        $when = $note->action_date
+            ? Carbon::parse($note->action_date, $tz)
+            : Carbon::now($tz);
+        $isAllDay = $when->format('H:i:s') === '00:00:00';
+        if ($isAllDay) {
+            $when = $when->copy()->setTime(9, 0);
+        }
+        $endsAt = $when->copy()->addMinutes(30);
+
+        $clientName = trim((string) ($this->clientDisplayName($note->client) ?? ''));
+        $taskTitle = trim((string) ($note->title ?: 'Follow-up'));
+        $title = trim(($clientName !== '' ? $clientName . ' — ' : '') . $taskTitle);
+
+        $ownerStaffId = (int) ($note->assigned_to ?: $note->user_id ?: ($actor?->id ?? 0));
+        if ($ownerStaffId < 1 && $actor) {
+            $ownerStaffId = (int) $actor->id;
+        }
+
+        if ($existing) {
+            // Keep open events aligned with the live task date when reopened for management.
+            if (! in_array((string) $existing->status, ['completed', 'cancelled'], true)) {
+                $existing->fill([
+                    'title' => $title !== '' ? $title : $existing->title,
+                    'starts_at' => $when,
+                    'ends_at' => $endsAt,
+                    'is_all_day' => $isAllDay,
+                    'client_id' => $note->client_id ?: $existing->client_id,
+                    'client_matter_id' => $note->matter_id ?: $existing->client_matter_id,
+                    'notes' => $note->description ?: $existing->notes,
+                ]);
+                $existing->save();
+            }
+
+            return $existing->fresh(['client']) ?? $existing;
+        }
+
+        $attrs = [
+            'title' => $title !== '' ? $title : 'Follow-up',
+            'event_type' => 'reminder',
+            'status' => 'scheduled',
+            'starts_at' => $when,
+            'ends_at' => $endsAt,
+            'is_all_day' => $isAllDay,
+            'calendar_type' => null,
+            'client_id' => $note->client_id ?: null,
+            'client_matter_id' => $note->matter_id ?: null,
+            'location' => null,
+            'notes' => $note->description,
+            'reminder_minutes' => null,
+            'created_by_staff_id' => $ownerStaffId > 0 ? $ownerStaffId : null,
+        ];
+        if (Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
+            $attrs['source_note_id'] = (int) $note->id;
+        }
+
+        return StaffCalendarEvent::create($attrs)->fresh(['client']);
     }
 
     /**

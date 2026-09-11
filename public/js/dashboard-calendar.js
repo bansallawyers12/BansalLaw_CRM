@@ -686,8 +686,43 @@
         if (!props) return false;
         var kind = String(props.event_kind || '');
         var type = String(props.event_type || '').toLowerCase();
-        if (kind === 'follow_up') return false;
-        return type === 'reminder' || kind === 'reminder';
+        return type === 'reminder' || kind === 'reminder' || kind === 'follow_up';
+    }
+
+    function parseFollowUpNoteId(props) {
+        if (props && props.note_id) {
+            var fromProp = parseInt(String(props.note_id), 10);
+            if (Number.isFinite(fromProp) && fromProp > 0) return fromProp;
+        }
+        var rawId = String((props && props.id) || '');
+        var match = rawId.match(/^followup-(\d+)$/i);
+        if (!match) return null;
+        var parsed = parseInt(match[1], 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    async function ensureFollowUpStaffCalendarEvent(noteId) {
+        var response = await fetch(
+            UPDATE_EVENT_API + '/from-follow-up/' + encodeURIComponent(String(noteId)),
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            }
+        );
+        var payload = await response.json().catch(function () {
+            return {};
+        });
+        if (!response.ok || payload.success === false || !payload.data) {
+            throw new Error((payload && payload.message) || 'Could not prepare follow-up for editing.');
+        }
+        return payload.data;
     }
 
     function escapeDetailHtml(value) {
@@ -932,7 +967,31 @@
         }
     }
 
-    function showReminderDetail(props) {
+    async function showReminderDetail(props) {
+        props = Object.assign({}, props || {});
+        var isFollowUp = String(props.event_kind || '') === 'follow_up';
+        var noteId = isFollowUp ? parseFollowUpNoteId(props) : null;
+        var eventId = props.staff_calendar_event_id || null;
+
+        if (isFollowUp && !props.read_only && noteId && !eventId) {
+            try {
+                var ensured = await ensureFollowUpStaffCalendarEvent(noteId);
+                props = Object.assign(props, ensured || {}, {
+                    event_kind: 'follow_up',
+                    note_id: noteId,
+                    id: props.id || ('followup-' + noteId),
+                });
+                eventId = props.staff_calendar_event_id || null;
+                if (!eventId && ensured && ensured.staff_calendar_event_id) {
+                    eventId = ensured.staff_calendar_event_id;
+                    props.staff_calendar_event_id = eventId;
+                }
+            } catch (err) {
+                crmAlert(err.message || 'Could not open follow-up management.');
+                return;
+            }
+        }
+
         var titleEl = document.getElementById('personalReminderDetailTitle');
         var subtitleEl = document.getElementById('personalReminderDetailSubtitle');
         var bodyEl = document.getElementById('personalReminderDetailBody');
@@ -944,7 +1003,6 @@
         }
 
         var tz = calendarElTz();
-        var eventId = props.staff_calendar_event_id || null;
         var canManage = !props.read_only && !!eventId;
         var clientName = props.client_name || '—';
         var clientHtml = escapeDetailHtml(clientName);
