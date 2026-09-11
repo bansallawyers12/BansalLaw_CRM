@@ -108,7 +108,7 @@
                         <label>Other parties <small class="text-muted">(optional)</small></label>
                         <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Run conflict check on Personal Details before engaging.</p>
                         <div id="quick_add_opposing_parties_wrap" class="mb-2"></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="quick_add_opposing_party_btn" onclick="typeof quickAddOpposingPartyRow==='function'&&quickAddOpposingPartyRow(event)">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="quick_add_opposing_party_btn">
                             <i class="fa-solid fa-plus"></i> Add other party
                         </button>
                     </div>

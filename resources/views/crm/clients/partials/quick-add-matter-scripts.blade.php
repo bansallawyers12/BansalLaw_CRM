@@ -154,6 +154,8 @@
     function bindQuickAddOpposingPartyButton() {
         var addBtn = document.getElementById('quick_add_opposing_party_btn');
         if (!addBtn || addBtn.dataset.oppPartyBound === '1') return;
+        // Avoid double-add if a leftover inline onclick is present on the markup.
+        addBtn.removeAttribute('onclick');
         addBtn.dataset.oppPartyBound = '1';
         addBtn.addEventListener('click', quickAddOpposingPartyRow);
     }
