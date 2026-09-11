@@ -122,9 +122,9 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| LEAD-1 | **High** | `routes/web.php` L192–194 → `LeadAssignmentController.php` L28–31, L81 | **`assign` and `bulkAssign` return “Lead assignment has been deprecated.”** Routes still registered. UI or bookmarks hitting these show info flash instead of functional assignment. |
-| LEAD-2 | Low | `resources/views/crm/leads/edit.blade.php` ~L469 | OTP **Resend** button starts disabled until countdown. If countdown JS fails, resend stays disabled with no fallback message. |
-| LEAD-3 | Low | README vs `routes/web.php` | README documents `GET /leads/convert` but route is **`POST /leads/convert`**. Documentation drift. |
+| LEAD-1 | Fixed | `routes/web.php`, `LeadAssignmentController`, `leads/index` | Removed deprecated `POST /leads/assign` and `/bulk-assign` plus orphan Assign Lead modal. Ownership uses **Assigned to** on lead/client detail; `GET /leads/assignable-staff` kept. |
+| LEAD-2 | Fixed | `public/js/clients/edit-client.js` | OTP Resend: null-safe timer, safety timeout, and re-enable on send failure so Resend is not stuck disabled if countdown JS fails. |
+| LEAD-3 | Fixed | `README.md` | Documented `POST /leads/convert` (was incorrectly listed as GET). Removed retired assign/bulk-assign rows. |
 
 ---
 
@@ -247,7 +247,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 | Education system | Deprecated | Modal comments in `addclientmodal.blade.php`, `editclientmodal.blade.php` |
 | Interested Services | Deprecated | Removed from matter-workflow modals; residual comments may remain in `detail-main.js` |
 | Service Taken | Deprecated | `detail.blade.php` comment |
-| Lead assignment (assignee column) | Deprecated | Routes still active; controller redirects with info message |
+| Lead assignment (legacy assign modal) | Removed | Use **Assigned to** on lead/client detail; `POST /leads/assign` / bulk-assign removed |
 | Appointment system (legacy) | Deprecated | `console.warn` in `detail-main.js`, `custom-form-validation.js` |
 | Commission/General Invoice, Payment Details | Removed | No UI/training remnants; staff use Trust Account Entry, Office Receipt, or Tax Invoice |
 | Migration documents tab | Removed | Dead JS in `detail-main.js` |
@@ -261,7 +261,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 1. ~~**DASH-1** — Wire empty-state “Add task” to `.add_my_task` popover or implement `openCreateTaskModal`.~~ **Done.**
 2. **MAT-1 / MAT-2** — Consolidate matter discontinue/reopen to `/clients/matter/*` only; update all JS callers.
 3. **CLI-1** — Resolve `clients.edit` vs `clients.update` route overlap.
-4. **LEAD-1** — Remove or replace deprecated lead assignment routes with clear UI messaging.
+4. ~~**LEAD-1** — Remove or replace deprecated lead assignment routes with clear UI messaging.~~ **Done.**
 
 ### P1 — UX consistency
 5. Replace **`alert()`-heavy flows** — **Done (2026-09-02):** `crmAlert` + Toastify/`crmNotify` across former alert call sites (X-5 / Appendix A).

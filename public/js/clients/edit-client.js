@@ -1827,8 +1827,17 @@ $(document).ready(function() {
         document.getElementById('otpPhoneDisplay').textContent = fullPhone;
         document.getElementById('otpVerificationModal').style.display = 'block';
         
-        // Clear any previous messages
+        // Clear any previous messages / timers from a prior attempt
         hideOTPMessages();
+        clearOTPTimers();
+        const resendBtn = document.getElementById('resendOTPBtn');
+        if (resendBtn) {
+            resendBtn.disabled = true;
+        }
+        const resendTimerDisplay = document.getElementById('resendTimer');
+        if (resendTimerDisplay) {
+            resendTimerDisplay.style.display = 'none';
+        }
         
         // Clear OTP inputs
         clearOTPInputs();
@@ -1871,6 +1880,7 @@ $(document).ready(function() {
                 startResendTimer(30);
             } else {
                 showOTPErrorMessage(data.message || 'Failed to send verification code');
+                enableResendOTP();
             }
         })
         .catch(error => {
@@ -1878,6 +1888,7 @@ $(document).ready(function() {
             // Show error message from server if available, otherwise generic message
             const errorMessage = error.data?.message || 'Network error. Please try again.';
             showOTPErrorMessage(errorMessage);
+            enableResendOTP();
         });
     }
 
@@ -2068,28 +2079,85 @@ $(document).ready(function() {
     }
 
     /**
+     * Re-enable Resend when countdown cannot run or send/resend failed.
+     */
+    function enableResendOTP(message) {
+        const resendBtn = document.getElementById('resendOTPBtn');
+        const resendTimerDisplay = document.getElementById('resendTimer');
+        if (resendTimer) {
+            clearInterval(resendTimer);
+            resendTimer = null;
+        }
+        if (resendBtn) {
+            resendBtn.disabled = false;
+        }
+        if (resendTimerDisplay) {
+            resendTimerDisplay.style.display = 'none';
+        }
+        if (message) {
+            showOTPErrorMessage(message);
+        }
+    }
+
+    /**
      * Start resend timer
      */
     function startResendTimer(seconds) {
-        let timeLeft = seconds;
         const resendBtn = document.getElementById('resendOTPBtn');
         const resendTimerDisplay = document.getElementById('resendTimer');
         const countdownElement = document.getElementById('resendCountdown');
-        
-        resendBtn.disabled = true;
-        resendTimerDisplay.style.display = 'inline';
-        
-        resendTimer = setInterval(() => {
-            countdownElement.textContent = timeLeft;
-            
-            if (timeLeft <= 0) {
+
+        if (!resendBtn) {
+            return;
+        }
+
+        try {
+            if (resendTimer) {
                 clearInterval(resendTimer);
-                resendBtn.disabled = false;
-                resendTimerDisplay.style.display = 'none';
+                resendTimer = null;
             }
-            
-            timeLeft--;
-        }, 1000);
+
+            let timeLeft = Math.max(0, parseInt(seconds, 10) || 0);
+            resendBtn.disabled = true;
+            if (resendTimerDisplay) {
+                resendTimerDisplay.style.display = 'inline';
+            }
+            if (countdownElement) {
+                countdownElement.textContent = String(timeLeft);
+            }
+
+            if (timeLeft <= 0) {
+                enableResendOTP();
+                return;
+            }
+
+            // Absolute fallback if the interval never fires (JS error / tab freeze edge cases).
+            const safetyMs = (timeLeft + 2) * 1000;
+            const safetyId = setTimeout(function () {
+                if (resendBtn.disabled) {
+                    enableResendOTP('Resend is available again. You can request a new code now.');
+                }
+            }, safetyMs);
+
+            resendTimer = setInterval(function () {
+                timeLeft -= 1;
+                if (countdownElement) {
+                    countdownElement.textContent = String(Math.max(0, timeLeft));
+                }
+                if (timeLeft <= 0) {
+                    clearTimeout(safetyId);
+                    clearInterval(resendTimer);
+                    resendTimer = null;
+                    resendBtn.disabled = false;
+                    if (resendTimerDisplay) {
+                        resendTimerDisplay.style.display = 'none';
+                    }
+                }
+            }, 1000);
+        } catch (err) {
+            console.error('Resend timer failed:', err);
+            enableResendOTP('Resend timer could not start. You can request a new code now.');
+        }
     }
 
     /**

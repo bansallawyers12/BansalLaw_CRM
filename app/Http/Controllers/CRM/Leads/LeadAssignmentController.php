@@ -3,7 +3,6 @@ namespace App\Http\Controllers\CRM\Leads;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Staff;
 use App\Models\Lead;
@@ -23,16 +22,8 @@ class LeadAssignmentController extends Controller
     }
 
     /**
-     * Assign lead to staff/agent (deprecated - assignee column removed)
-     */
-    public function assign(Request $request) 
-    {
-        return redirect()->back()->with('info', 'Lead assignment has been deprecated.');
-    }
-
-    /**
-     * Get assignable staff for leads
-     * Only lead owner can access
+     * Get assignable staff for leads (used by lead ownership / Assigned-to UI).
+     * Legacy POST /leads/assign and /bulk-assign were removed — use Assigned to on the lead/client detail card.
      */
     public function getAssignableStaff(Request $request)
     {
@@ -59,26 +50,6 @@ class LeadAssignmentController extends Controller
         return response()->json(
             app(LeadFormDataService::class)->assignableStaff(true)->values()
         );
-    }
-
-    /**
-     * Bulk assign leads to staff
-     * Only super admin can perform bulk assignments
-     */
-    public function bulkAssign(Request $request)
-    {
-        $actor = Auth::user();
-        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
-            return redirect()->back()->with('error', 'Only super admin can perform bulk assignments');
-        }
-        
-        $requestData = $request->all();
-        
-        if(!isset($requestData['lead_ids']) || !isset($requestData['assign_to'])) {
-            return redirect()->back()->with('error', 'Missing required data');
-        }
-
-        return redirect()->back()->with('info', 'Lead assignment has been deprecated.');
     }
 
     /**

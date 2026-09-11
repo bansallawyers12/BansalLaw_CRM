@@ -394,10 +394,8 @@ All routes below require a valid staff session unless noted.
 | GET | `/leads/history/{id}` | `leads.history` |
 | GET | `/leads/{id}/edit` | `leads.edit` |
 | PUT/PATCH | `/leads/{id}` | `leads.update` / `leads.patch` |
-| POST | `/leads/assign` | `leads.assign` |
-| POST | `/leads/bulk-assign` | `leads.bulk_assign` |
 | GET | `/leads/assignable-staff` | `leads.assignable_staff` |
-| GET | `/leads/convert` | `leads.convert` |
+| POST | `/leads/convert` | `leads.convert` |
 | POST | `/leads/convert-single` | `leads.convert_single` |
 | POST | `/leads/bulk-convert` | `leads.bulk_convert` |
 | GET | `/leads/conversion-stats` | `leads.conversion_stats` |

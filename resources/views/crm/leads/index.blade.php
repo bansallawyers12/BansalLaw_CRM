@@ -1074,40 +1074,6 @@
     </section>
 </div>
 
-<div class="modal fade" id="assignlead_modal">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                  <h4 class="modal-title">Assign Lead</h4>
-                  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-            </div>
-            <form action="{{ url('leads/assign') }}" method="POST" name="add-assign" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
-    @csrf
-    <div class="modal-body">
-        <div class="form-group row">
-            <div class="col-sm-12">
-                <input id="mlead_id" name="mlead_id" type="hidden" value="">
-                <select name="assignto" class="form-control crm-ts-plain " style="width: 100%;">
-                    <option value="">Select</option>
-                    @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $ulist)
-                    <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button type="submit" class="btn btn-primary" onClick='customValidate("add-assign")'>
-            <i class="fa-solid fa-floppy-disk"></i> Assign Lead
-        </button>
-    </div>
-</form>
-        </div>
-    </div>
-</div>
-
 <!-- Import Lead Modal -->
 <div id="importLeadModal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="importLeadModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -1459,21 +1425,6 @@ jQuery(function ($) {
     @if ($errors->has('import_file'))
         $('#importLeadModal').modal('show');
     @endif
-
-    $(document).on('shown.bs.modal', '#assignlead_modal', function () {
-        var modalEl = this;
-        var sel = modalEl.querySelector('select[name="assignto"]');
-        if (!sel) return;
-        if (typeof destroyTS === 'function') destroyTS(sel);
-        if (typeof initTS === 'function') {
-            initTS(sel, { create: false, allowEmptyOption: true, dropdownParent: modalEl });
-        }
-    });
-
-    $(document).on('hidden.bs.modal', '#assignlead_modal', function () {
-        var sel = this.querySelector('select[name="assignto"]');
-        if (sel && typeof destroyTS === 'function') destroyTS(sel);
-    });
 });
 </script>
 @endpush

@@ -189,9 +189,7 @@ Route::middleware(['auth:admin'])->group(function () {
         Route::put('/{id}', [LeadController::class, 'update'])->name('update');
         Route::patch('/{id}', [LeadController::class, 'update'])->name('patch');
 
-        // Assignment operations
-        Route::post('/assign', [LeadAssignmentController::class, 'assign'])->name('assign');
-        Route::post('/bulk-assign', [LeadAssignmentController::class, 'bulkAssign'])->name('bulk_assign');
+        // Staff list for lead ownership (Assigned to on client/lead detail)
         Route::get('/assignable-staff', [LeadAssignmentController::class, 'getAssignableStaff'])->name('assignable_staff');
 
         // Conversion operations
