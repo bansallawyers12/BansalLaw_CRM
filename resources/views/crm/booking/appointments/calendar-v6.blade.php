@@ -227,7 +227,13 @@
                     </div>
 
                     <!-- Calendar -->
-                    <div class="calendar-v6-wrapper">
+                    <div class="calendar-v6-wrapper" id="bookingCalendarWrapper">
+                        <div id="bookingCalendarLoader" class="calendar-v6-loader" role="status" aria-live="polite" aria-busy="true">
+                            <div class="calendar-v6-loader__panel">
+                                <span class="calendar-v6-loader__spinner" aria-hidden="true"></span>
+                                <span class="calendar-v6-loader__text">Loading calendar events…</span>
+                            </div>
+                        </div>
                         <div id="calendar" class="calendar-v6-container"></div>
                     </div>
                 </div>
@@ -464,12 +470,28 @@ function waitForFullCalendar(callback, maxAttempts = 100) {
         } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
             console.error('❌ FullCalendar v6 not loaded after waiting. Please rebuild assets: npm run build');
+            setBookingCalendarLoading(false);
             const calendarEl = document.getElementById('calendar');
             if (calendarEl) {
                 calendarEl.innerHTML = '<div class="alert alert-danger">FullCalendar v6 failed to load. Please refresh the page or rebuild assets.</div>';
             }
         }
     }, 100);
+}
+
+function setBookingCalendarLoading(isLoading) {
+    const loader = document.getElementById('bookingCalendarLoader');
+    const wrapper = document.getElementById('bookingCalendarWrapper');
+    if (!loader) return;
+    if (isLoading) {
+        loader.classList.remove('is-hidden');
+        loader.setAttribute('aria-busy', 'true');
+        if (wrapper) wrapper.classList.add('is-loading');
+    } else {
+        loader.classList.add('is-hidden');
+        loader.setAttribute('aria-busy', 'false');
+        if (wrapper) wrapper.classList.remove('is-loading');
+    }
 }
 
 // Make consultants available to JavaScript
@@ -834,6 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 console.error('Error loading events:', error);
+                setBookingCalendarLoading(false);
                 failureCallback(error);
                 if (typeof iziToast !== 'undefined' && iziToast.error) {
                     iziToast.error({
@@ -1090,8 +1113,9 @@ document.addEventListener('DOMContentLoaded', function() {
             openImportantEventModalForCreate(dateStr, timeStr);
         },
         
-        // Loading indicator — one automatic refetch if the first completed load has no events (flaky API / cold auth)
+        // Loading indicator — overlay while events fetch; one empty-state refetch on first load
         loading: function(isLoading) {
+            setBookingCalendarLoading(!!isLoading);
             if (isLoading) {
                 return;
             }
@@ -3851,6 +3875,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .calendar-v6-wrapper {
+    position: relative;
+    min-height: 520px;
     padding: 4px;
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -3860,6 +3886,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .calendar-v6-wrapper .calendar-v6-container {
     padding: 8px 12px 12px;
+}
+
+.calendar-v6-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(248, 250, 252, 0.78);
+    backdrop-filter: blur(1px);
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.calendar-v6-loader.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.calendar-v6-loader__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(30, 61, 96, 0.12);
+    color: var(--navy);
+}
+
+.calendar-v6-loader__spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid rgba(30, 61, 96, 0.15);
+    border-top-color: var(--navy, #1e3d60);
+    border-radius: 50%;
+    animation: bookingCalSpin 0.75s linear infinite;
+}
+
+.calendar-v6-loader__text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy, #1e3d60);
+}
+
+@keyframes bookingCalSpin {
+    to { transform: rotate(360deg); }
 }
 
 /* Modals — same title treatment as page header (theme.md Top Bar) */
