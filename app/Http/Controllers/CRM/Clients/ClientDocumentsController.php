@@ -2552,19 +2552,28 @@ class ClientDocumentsController extends Controller
         $documentId = $request->input('document_id');
         $filename = $request->input('filename', 'downloaded.pdf');
         $s3Key = null;
+        $wantsJson = $request->expectsJson() || $request->ajax();
+
+        $jsonError = function (string $message, int $status) use ($wantsJson) {
+            if ($wantsJson) {
+                return response()->json(['status' => false, 'message' => $message], $status);
+            }
+
+            return abort($status, $message);
+        };
 
         try {
             if ($documentId) {
                 $document = Document::find($documentId);
                 if (! $document) {
-                    return abort(404, 'Document not found');
+                    return $jsonError('Document not found', 404);
                 }
                 if (! $this->staffCanAccessDocument($document)) {
-                    return abort(403);
+                    return $jsonError('Unauthorized', 403);
                 }
                 $s3Key = $this->resolveS3KeyForDocument($document);
                 if ($s3Key === null) {
-                    return abort(404, 'File not found in S3');
+                    return $jsonError('File not found in storage', 404);
                 }
                 $filename = $document->myfile_key ? basename((string) $document->myfile_key) : basename($s3Key);
                 if (str_contains($s3Key, 'personal/')) {
@@ -2573,12 +2582,12 @@ class ClientDocumentsController extends Controller
             } else {
                 $fileUrl = $request->input('filelink');
                 if (! $fileUrl) {
-                    return abort(400, 'Missing file URL or document ID');
+                    return $jsonError('Missing file URL or document ID', 400);
                 }
 
                 $parsed = parse_url($fileUrl);
                 if (! isset($parsed['path'])) {
-                    return abort(400, 'Invalid S3 URL format');
+                    return $jsonError('Invalid file URL format', 400);
                 }
 
                 $path = (string) $parsed['path'];
@@ -2595,7 +2604,7 @@ class ClientDocumentsController extends Controller
                     }
                 }
                 if (! $this->s3ObjectExistsLenient($s3Key)) {
-                    return abort(404, 'File not found in S3');
+                    return $jsonError('File not found in storage', 404);
                 }
 
                 $matchingDoc = Document::where('document', $s3Key)
@@ -2609,7 +2618,7 @@ class ClientDocumentsController extends Controller
                 if ($matchingDoc) {
                     $clientId = (int) ($matchingDoc->client_id ?? $matchingDoc->lead_id);
                     if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
-                        return abort(403, 'Unauthorized');
+                        return $jsonError('Unauthorized', 403);
                     }
                 } else {
                     $pathSegments = explode('/', $s3Key);
@@ -2624,10 +2633,10 @@ class ClientDocumentsController extends Controller
 
                     if ($admin) {
                         if (! StaffClientVisibility::canAccessClientOrLead((int) $admin->id)) {
-                            return abort(403, 'Unauthorized');
+                            return $jsonError('Unauthorized', 403);
                         }
                     } else {
-                        return abort(403, 'Unauthorized');
+                        return $jsonError('Unauthorized', 403);
                     }
                 }
             }
@@ -2635,6 +2644,14 @@ class ClientDocumentsController extends Controller
             $mime = $this->mimeTypeForS3Key($s3Key);
 
             if (! $this->documentsDiskUsesS3Driver()) {
+                if ($wantsJson) {
+                    return response()->json([
+                        'status' => true,
+                        'use_form' => true,
+                        'filename' => $filename,
+                    ]);
+                }
+
                 return $this->s3Disk()->download($s3Key, $filename, [
                     'Content-Type' => $mime,
                 ]);
@@ -2644,16 +2661,24 @@ class ClientDocumentsController extends Controller
                 $s3Key,
                 now()->addMinutes(5),
                 [
-                    'ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', '\\"', $filename) . '"',
+                    'ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', '\"', $filename) . '"',
                     'ResponseContentType' => $mime,
                 ]
             );
+
+            if ($wantsJson) {
+                return response()->json([
+                    'status' => true,
+                    'url' => $tempUrl,
+                    'filename' => $filename,
+                ]);
+            }
 
             return redirect()->away($tempUrl);
         } catch (\Exception $e) {
             Log::error('S3 download error: ' . $e->getMessage());
 
-            return abort(500, 'Error generating download link');
+            return $jsonError('Error generating download link', 500);
         }
     }
 

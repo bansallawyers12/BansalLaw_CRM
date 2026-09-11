@@ -28,7 +28,7 @@ Bansal Law CRM is a large Laravel monolith with **255+ Blade views**, heavy jQue
 4. **Incomplete features exposed in UI or API** — bulk SMS (501), Python accounting test endpoint, document viewer stub.
 5. **Accessibility gaps** — missing landmarks, empty `aria-labelledby`, keyboard-inaccessible task rows.
 6. **Performance/maintainability** — monolithic JS files (`detail-main.js`, `outlook_emails.js`), DataTables lock-in, massive inline CSS in layouts.
-7. **Debug surfaces in production UI** — `/debug-pdf-page` used for document preview, debug panels on signing pages, `debug_info` in void-invoice alerts.
+7. **Debug surfaces in production UI** — signing debug panels, `debug_info` in void-invoice alerts (PDF page preview renamed off `/debug-pdf-page`).
 
 For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ items still Open/Open* as of 2026-08-07). This document focuses on **UI and user-facing functionality**.
 
@@ -96,10 +96,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| DOC-1 | Medium | `resources/views/crm/documents/edit.blade.php`, `modals/checklists.blade.php` | PDF page preview uses **`/debug-pdf-page/{id}/{page}`** with comment “temporary fix.” Auth-gated per `cmr-bugs.md` but debug-oriented naming in production UI. |
-| DOC-2 | Medium | `routes/documents.php` | **Same URI patterns, different auth scopes:** e.g. `GET /documents/{id}/download-signed` registered for both public and admin groups. Route registration order may shadow staff admin paths. |
-| DOC-3 | Medium | `routes/documents.php` L133–159 vs README L339 | Public `GET /documents/{id?}` documented as **stub** (redirect home). Public signing uses token-validated routes — general documents index is non-functional. |
-| DOC-4 | Medium | `public/js/crm/clients/modules/documents.js` | Download failures use `alert()`; some errors only `console.error` before alert. |
+| DOC-1 | Fixed | `resources/views/crm/documents/edit.blade.php`, `modals/checklists.blade.php` | Staff PDF preview uses **`GET /documents/{id}/preview-page/{page}`** (`documents.preview.page` → `DocumentController::getPage`). Removed `/debug-pdf-page` closure. |
+| DOC-2 | Fixed | `routes/documents.php` | Staff download/reminder URIs moved to **`/crm/documents/...`** so they no longer share paths with public token routes. Admin document routes register before public signing paths. |
+| DOC-3 | Fixed | `routes/documents.php`, `PublicDocumentController` | Removed non-functional public `GET /documents/{id?}` stub (`public.documents.index`). Public signing remains token-only via `/sign/{id}/{token}`. |
+| DOC-4 | Fixed | `public/js/crm/clients/modules/documents.js`, `ClientDocumentsController::download_document` | Downloads use AJAX + JSON; failures toast via `crmNotify`/`crmAlert` (no silent `console.error`). Local disk falls back to form POST. |
 | DOC-5 | Low | `resources/views/documents/sign.blade.php`, `crm/documents/sign.blade.php` | Hidden **Debug Info** panel + `toggleDebug()` still ship (display:none). Clutters signing UI; risk if toggled in support scenarios. |
 | DOC-6 | Low | `resources/views/crm/signatures/show.blade.php` ~L1478–1479 | `viewDocument()` shows **`alert('Document viewer feature coming soon!')`** — stub with no HTML caller found. Planned viewer never built. |
 
@@ -266,7 +266,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 ### P1 — UX consistency
 5. Replace **`alert()`-heavy flows** — **Done (2026-09-02):** `crmAlert` + Toastify/`crmNotify` across former alert call sites (X-5 / Appendix A).
 6. Add **user-visible errors** for silent AJAX failures (DASH-3, EMAIL-2, FIN-2).
-7. Remove **debug surfaces** from production UI (`debug-pdf-page`, void-invoice `debug_info`, signing debug panels) (CLI-3, DOC-1, DOC-5).
+7. Remove **debug surfaces** from production UI (void-invoice `debug_info`, signing debug panels) (CLI-3, DOC-5). PDF preview renamed (DOC-1 Fixed).
 
 ### P2 — Accessibility & performance
 8. Accessibility pass: landmarks, skip link, modal labels, keyboard task list (X-2, X-3, DASH-2, TASK-2).

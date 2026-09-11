@@ -299,7 +299,7 @@
 
                 $('#signature-placement-loading').hide();
                 $('#signature-placement-content').show();
-                $('#sig-preview-image').attr('src', '/debug-pdf-page/' + docId + '/1');
+                $('#sig-preview-image').attr('src', '/documents/' + docId + '/preview-page/1');
 
                 if (sigState.pdfPages > 1) {
                     $('#signature-page-nav').show();
@@ -344,7 +344,7 @@
         function sigSwitchPage(p) {
             if (p < 1 || p > sigState.pdfPages) return;
             sigState.currentPage = p;
-            $('#sig-preview-image').attr('src', '/debug-pdf-page/' + sigState.documentId + '/' + p);
+            $('#sig-preview-image').attr('src', '/documents/' + sigState.documentId + '/preview-page/' + p);
             updateSigPageInfo();
             updateSigPreview();
         }

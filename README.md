@@ -336,7 +336,6 @@ Within `routes/web.php`:
 |--------|-----|------|
 | GET | `/sign/{id}/{token}` | `public.documents.sign` |
 | POST | `/documents/{document}/sign` | `public.documents.submitSignatures` |
-| GET | `/documents/{id?}` | `public.documents.index` (stub: redirects home; use email signing link) |
 | GET | `/documents/{id}/page/{page}` | `public.documents.page` |
 | GET | `/documents/{id}/download-signed` | `public.documents.download.signed` |
 | GET | `/documents/{id}/download-signed-and-thankyou` | `public.documents.download_and_thankyou` |
@@ -584,7 +583,7 @@ Legacy GET bookmarks (`/action`, `/action_completed`, `/action/list`, `/action/c
 | Signature dashboard | `auth:admin` | `/signatures`, `/signatures/create`, `/signatures/{id}` |
 | Admin document CRUD | `auth:admin` | `/documents/create`, `POST /documents`, `/documents/{id}/edit`, `PATCH /documents/{id}` |
 | Admin signing ops | `auth:admin` | `POST /documents/{document}/send-signing-link`, `GET /documents/{document}/sign` |
-| Admin signed PDF | `auth:admin` | `/documents/{id}/preview-signed`, `/documents/{id}/download-signed` |
+| Admin signed PDF | `auth:admin` | `/documents/{id}/preview-signed`, `/crm/documents/{id}/download-signed`, `/documents/{id}/preview-page/{page}` |
 
 ---
 

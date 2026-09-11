@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CRM\DocumentController as AdminDocumentController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\CRM\SignatureDashboardController;
@@ -21,8 +19,11 @@ use App\Http\Controllers\CRM\SignatureDashboardController;
 | 6. Admin views completed document in admin panel
 |
 | ROUTE ORGANIZATION:
-| - Admin routes: /documents/* and /signatures/* (auth:admin required)
-| - Public routes: /sign/* and /documents/* (token-based validation)
+| - Staff (auth:admin) registered first so /documents/create and similar
+|   are not swallowed by the public /documents/{id?} stub.
+| - Public token routes keep stable /documents/* and /sign/* URIs for email links.
+| - Staff download/reminder URIs that would collide with public paths use
+|   the /crm/documents/* prefix (DOC-2).
 |
 */
 
@@ -30,141 +31,8 @@ use App\Http\Controllers\CRM\SignatureDashboardController;
 |--------------------------------------------------------------------------
 | ADMIN DOCUMENT MANAGEMENT ROUTES
 |--------------------------------------------------------------------------
-| Prefix: None (routes at root level)
 | Middleware: auth:admin
 | Route Names: documents.* and signatures.*
-*/
-
-// Admin routes group begins
-Route::middleware('auth:admin')->group(function () {
-
-// Debug route for PDF page generation (protected by auth:admin)
-Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
-    // Clear any output buffers to prevent corruption
-    if (ob_get_level()) {
-        ob_end_clean();
-    }
-    
-    try {
-        $document = \App\Models\Document::findOrFail($id);
-        $url = $document->myfile;
-        $tmpPdfPath = null;
-        $isLocalFile = false;
-        
-        // Check if URL is a full S3 URL or local path
-        if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
-            $parsed = parse_url($url);
-            $s3Key = isset($parsed['path']) ? ltrim(urldecode($parsed['path']), '/') : null;
-            if ($s3Key && Storage::disk('s3')->exists($s3Key)) {
-                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
-            }
-        } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
-            $tmpPdfPath = storage_path('app/public/' . $url);
-            $isLocalFile = true;
-        } else {
-            // Fallback: same as DocumentController - Admin.client_id + doc_type + myfile_key
-            if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                $admin = \App\Models\Admin::where('id', $document->client_id)->select('client_id')->first();
-                if ($admin && $admin->client_id) {
-                    $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
-                    if (! Storage::disk('s3')->exists($s3Key) && str_contains($s3Key, '/matter/')) {
-                        $alt = str_replace('/matter/', '/visa/', $s3Key);
-                        if (Storage::disk('s3')->exists($alt)) {
-                            $s3Key = $alt;
-                        }
-                    }
-                    if (Storage::disk('s3')->exists($s3Key)) {
-                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                        file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
-                    }
-                }
-            }
-        }
-        
-        if ($tmpPdfPath && file_exists($tmpPdfPath)) {
-            $pdfService = app(\App\Services\PythonPDFService::class);
-            if ($pdfService->isHealthy()) {
-                $result = $pdfService->convertPageToImage($tmpPdfPath, $page, 150);
-                
-                // Clean up temp file (only if it was created from S3, not local file)
-                if (!$isLocalFile) {
-                    @unlink($tmpPdfPath);
-                }
-                
-                if ($result && ($result['success'] ?? false)) {
-                    $imageData = base64_decode(explode(',', $result['image_data'])[1]);
-                    
-                    // Return raw binary response with proper headers
-                    return response($imageData, 200, [
-                        'Content-Type' => 'image/png',
-                        'Content-Length' => strlen($imageData),
-                        'Cache-Control' => 'public, max-age=3600',
-                    ]);
-                }
-            }
-            
-            // Clean up on failure
-            if (!$isLocalFile && file_exists($tmpPdfPath)) {
-                @unlink($tmpPdfPath);
-            }
-        }
-        
-        return response()->json(['error' => 'Failed to generate image', 'document_id' => $id, 'page' => $page], 500);
-    } catch (\Exception $e) {
-        Log::error('Debug route error', ['error' => $e->getMessage(), 'document_id' => $id, 'page' => $page]);
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-})->name('debug.pdf.page');
-
-}); // End of admin routes group
-
-/*
-|--------------------------------------------------------------------------
-| PUBLIC DOCUMENT SIGNING ROUTES
-|--------------------------------------------------------------------------
-| No authentication required - access controlled by token validation
-| Route Names: public.documents.*
-|
-| These routes allow clients to sign documents via email links without
-| requiring login. Security is handled through unique tokens sent via email.
-*/
-
-/*---------- Public Signing Interface ----------*/
-Route::get('/sign/{id}/{token}', [PublicDocumentController::class, 'sign'])
-    ->name('public.documents.sign');
-
-Route::post('/documents/{document}/sign', [PublicDocumentController::class, 'submitSignatures'])
-    ->name('public.documents.submitSignatures');
-
-/*---------- Public Document Viewing ----------*/
-Route::get('/documents/{id}/page/{page}', [PublicDocumentController::class, 'getPage'])
-    ->name('public.documents.page');
-
-Route::get('/documents/{id?}', [PublicDocumentController::class, 'index'])
-    ->name('public.documents.index');
-
-/*---------- Public Download & Thank You ----------*/
-Route::get('/documents/{id}/download-signed', [PublicDocumentController::class, 'downloadSigned'])
-    ->name('public.documents.download.signed');
-
-Route::get('/documents/{id}/download-signed-and-thankyou', [PublicDocumentController::class, 'downloadSignedAndThankyou'])
-    ->name('public.documents.download_and_thankyou');
-
-Route::get('/documents/thankyou/{id?}', [PublicDocumentController::class, 'thankyou'])
-    ->name('public.documents.thankyou');
-
-/*---------- Public Reminder ----------*/
-Route::post('/documents/{document}/send-reminder', [PublicDocumentController::class, 'sendReminder'])
-    ->name('public.documents.sendReminder');
-
-/*
-||--------------------------------------------------------------------------
-|| ADMIN DOCUMENT MANAGEMENT ROUTES (After public routes to avoid conflicts)
-||--------------------------------------------------------------------------
-|| Prefix: None (routes at root level)
-|| Middleware: auth:admin
-|| Route Names: documents.* and signatures.*
 */
 
 Route::middleware('auth:admin')->group(function () {
@@ -177,16 +45,24 @@ Route::post('/documents', [AdminDocumentController::class, 'store'])
     ->name('documents.store');
 
 Route::get('/documents/{id}/edit', [AdminDocumentController::class, 'edit'])
+    ->whereNumber('id')
     ->name('documents.edit');
 
 Route::patch('/documents/{id}', [AdminDocumentController::class, 'update'])
+    ->whereNumber('id')
     ->name('documents.update');
 
 Route::get('/documents/{id}/signature-placement-data', [AdminDocumentController::class, 'getSignaturePlacementData'])
+    ->whereNumber('id')
     ->name('documents.signature-placement-data');
 
+// Staff PDF page preview for signature placement (replaces /debug-pdf-page — DOC-1)
+Route::get('/documents/{id}/preview-page/{page}', [AdminDocumentController::class, 'getPage'])
+    ->whereNumber(['id', 'page'])
+    ->name('documents.preview.page');
+
 /*---------- Admin Signing & Reminder Operations ----------*/
-Route::post('/documents/{document}/send-reminder', [AdminDocumentController::class, 'sendReminder'])
+Route::post('/crm/documents/{document}/send-reminder', [AdminDocumentController::class, 'sendReminder'])
     ->name('documents.sendReminder');
 
 Route::post('/documents/{document}/send-signing-link', [AdminDocumentController::class, 'sendSigningLink'])
@@ -197,12 +73,15 @@ Route::get('/documents/{document}/sign', [AdminDocumentController::class, 'showS
 
 /*---------- Admin Document Viewing & Download ----------*/
 Route::get('/documents/{id}/preview-signed', [AdminDocumentController::class, 'previewSigned'])
+    ->whereNumber('id')
     ->name('documents.preview.signed');
 
-Route::get('/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
+Route::get('/crm/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
+    ->whereNumber('id')
     ->name('documents.download.signed');
 
-Route::get('/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
+Route::get('/crm/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
+    ->whereNumber('id')
     ->name('documents.download_and_thankyou');
 
 /*---------- Signature Dashboard Routes ----------*/
@@ -236,3 +115,43 @@ Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getCl
 
 }); // End of admin routes group
 
+/*
+|--------------------------------------------------------------------------
+| PUBLIC DOCUMENT SIGNING ROUTES
+|--------------------------------------------------------------------------
+| No authentication required - access controlled by token validation
+| Route Names: public.documents.*
+|
+| These routes allow clients to sign documents via email links without
+| requiring login. Security is handled through unique tokens sent via email.
+*/
+
+/*---------- Public Signing Interface ----------*/
+Route::get('/sign/{id}/{token}', [PublicDocumentController::class, 'sign'])
+    ->name('public.documents.sign');
+
+Route::post('/documents/{document}/sign', [PublicDocumentController::class, 'submitSignatures'])
+    ->name('public.documents.submitSignatures');
+
+/*---------- Public Document Viewing ----------*/
+Route::get('/documents/{id}/page/{page}', [PublicDocumentController::class, 'getPage'])
+    ->whereNumber(['id', 'page'])
+    ->name('public.documents.page');
+
+/*---------- Public Download & Thank You ----------*/
+Route::get('/documents/{id}/download-signed', [PublicDocumentController::class, 'downloadSigned'])
+    ->whereNumber('id')
+    ->name('public.documents.download.signed');
+
+Route::get('/documents/{id}/download-signed-and-thankyou', [PublicDocumentController::class, 'downloadSignedAndThankyou'])
+    ->whereNumber('id')
+    ->name('public.documents.download_and_thankyou');
+
+Route::get('/documents/thankyou/{id?}', [PublicDocumentController::class, 'thankyou'])
+    ->name('public.documents.thankyou');
+
+/*---------- Public Reminder ----------*/
+Route::post('/documents/{document}/send-reminder', [PublicDocumentController::class, 'sendReminder'])
+    ->name('public.documents.sendReminder');
+
+// No public GET /documents index — signing is token-only via /sign/{id}/{token} (DOC-3).

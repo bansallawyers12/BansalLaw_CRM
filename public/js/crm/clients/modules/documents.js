@@ -9,6 +9,21 @@
 
     var $renameFileTargetRow = null;
 
+    function notifyDocumentsError(message) {
+        var msg = message || 'Something went wrong. Please try again.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
+            window.crmNotify.error({ message: msg });
+            return;
+        }
+        if (typeof window.crmAlert === 'function') {
+            window.crmAlert(msg);
+            return;
+        }
+        if (typeof window.showCrmFlash === 'function') {
+            window.showCrmFlash(msg, 'error');
+        }
+    }
+
     function folderUpdateErrorMessage(xhr, fallback) {
         if (xhr.responseJSON && xhr.responseJSON.message) {
             return xhr.responseJSON.message;
@@ -57,7 +72,7 @@
 
         var modalEl = document.getElementById('renameFolderModal');
         if (!modalEl) {
-            console.error('Rename folder modal not available');
+            notifyDocumentsError('Rename folder dialog is not available. Please refresh the page.');
             return false;
         }
 
@@ -66,7 +81,7 @@
         } else if (typeof $.fn.modal === 'function') {
             $(modalEl).modal('show');
         } else {
-            console.error('Rename folder modal not available');
+            notifyDocumentsError('Rename folder dialog is not available. Please refresh the page.');
             return false;
         }
 
@@ -200,14 +215,14 @@
     function openRenameFileModal($drow) {
         var $parent = getDocRowFromDrow($drow);
         if (!$parent.length) {
-            console.error('Document row not found');
+            notifyDocumentsError('Could not find that document row. Please refresh and try again.');
             return false;
         }
 
         var docId = $parent.data('id');
         var fileName = $parent.data('name');
         if (!docId || !fileName) {
-            console.error('Document id or name not found');
+            notifyDocumentsError('Document details are missing. Please refresh and try again.');
             return false;
         }
 
@@ -219,7 +234,7 @@
 
         var modalEl = document.getElementById('renameFileModal');
         if (!modalEl) {
-            console.error('Rename file modal not available');
+            notifyDocumentsError('Rename file dialog is not available. Please refresh the page.');
             return false;
         }
 
@@ -228,7 +243,7 @@
         } else if (typeof $.fn.modal === 'function') {
             $(modalEl).modal('show');
         } else {
-            console.error('Rename file modal not available');
+            notifyDocumentsError('Rename file dialog is not available. Please refresh the page.');
             return false;
         }
         setTimeout(function() {
@@ -294,12 +309,10 @@
                     }
                 } else {
                     showRenameFileError(obj.message || 'Please try again');
-                    console.error('Failed to rename document:', obj.message);
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('Ajax error:', error);
-                showRenameFileError('An error occurred while saving');
+            error: function(xhr) {
+                showRenameFileError(folderUpdateErrorMessage(xhr, 'An error occurred while saving'));
             },
             complete: function() {
                 $saveBtn.prop('disabled', false);
@@ -421,21 +434,7 @@
         });
 
         // ---- Download Document ----
-        $(document).on('click', '.download-file', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var $this = $(this);
-            // Read from current DOM attributes so updated values after rename are used (jQuery .data() caches and would return old URL)
-            var documentId = $this.attr('data-document-id') || $this.data('documentId');
-            var filelink = $this.attr('data-filelink') || $this.data('filelink');
-            var filename = $this.attr('data-filename') || $this.data('filename');
-            if ((!documentId && !filelink) || !filename) {
-                console.error('Missing file info - documentId:', documentId, 'filelink:', filelink, 'filename:', filename);
-                crmAlert('Missing file info. Please try again.');
-                return false;
-            }
-            $this.html('<i class="fa-solid fa-spinner fa-spin"></i> Downloading...');
-            $this.prop('disabled', true);
+        function submitClassicDownloadForm(documentId, filelink, filename) {
             var form = $('<form>', {
                 method: 'POST',
                 action: window.ClientDetailConfig.urls.downloadDocument,
@@ -444,9 +443,7 @@
             });
             var token = $('meta[name="csrf-token"]').attr('content');
             if (!token) {
-                console.error('CSRF token not found');
-                crmAlert('Security token not found. Please refresh the page and try again.');
-                $this.html('Download').prop('disabled', false);
+                notifyDocumentsError('Security token not found. Please refresh the page and try again.');
                 return false;
             }
             form.append($('<input>', { type: 'hidden', name: '_token', value: token }));
@@ -457,17 +454,92 @@
             }
             form.append($('<input>', { type: 'hidden', name: 'filename', value: filename }));
             $('body').append(form);
-            try {
-                form[0].submit();
-                setTimeout(function() {
-                    $this.html('Download').prop('disabled', false);
-                }, 2000);
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                crmAlert('Error initiating download. Please try again.');
-                $this.html('Download').prop('disabled', false);
-            }
+            form[0].submit();
             setTimeout(function() { form.remove(); }, 1000);
+            return true;
+        }
+
+        $(document).on('click', '.download-file', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $this = $(this);
+            // Read from current DOM attributes so updated values after rename are used (jQuery .data() caches and would return old URL)
+            var documentId = $this.attr('data-document-id') || $this.data('documentId');
+            var filelink = $this.attr('data-filelink') || $this.data('filelink');
+            var filename = $this.attr('data-filename') || $this.data('filename');
+            if ((!documentId && !filelink) || !filename) {
+                notifyDocumentsError('Missing file info. Please try again.');
+                return false;
+            }
+            if (!window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.downloadDocument) {
+                notifyDocumentsError('Download is not configured on this page. Please refresh.');
+                return false;
+            }
+
+            var originalHtml = $this.html();
+            $this.html('<i class="fa-solid fa-spinner fa-spin"></i> Downloading...');
+            $this.prop('disabled', true);
+
+            var token = $('meta[name="csrf-token"]').attr('content');
+            if (!token) {
+                notifyDocumentsError('Security token not found. Please refresh the page and try again.');
+                $this.html(originalHtml).prop('disabled', false);
+                return false;
+            }
+
+            var postData = { _token: token, filename: filename };
+            if (documentId) {
+                postData.document_id = documentId;
+            } else {
+                postData.filelink = filelink;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: window.ClientDetailConfig.urls.downloadDocument,
+                data: postData,
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(resp) {
+                    if (resp && resp.url) {
+                        var link = document.createElement('a');
+                        link.href = resp.url;
+                        link.target = '_blank';
+                        link.rel = 'noopener';
+                        if (resp.filename || filename) {
+                            link.setAttribute('download', resp.filename || filename);
+                        }
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        return;
+                    }
+                    if (resp && resp.use_form) {
+                        if (!submitClassicDownloadForm(documentId, filelink, filename)) {
+                            notifyDocumentsError('Could not start download. Please try again.');
+                        }
+                        return;
+                    }
+                    notifyDocumentsError((resp && resp.message) ? resp.message : 'Download failed. Please try again.');
+                },
+                error: function(xhr) {
+                    var msg = 'Download failed. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (xhr.status === 403) {
+                        msg = 'You do not have permission to download this file.';
+                    } else if (xhr.status === 404) {
+                        msg = 'File not found.';
+                    }
+                    notifyDocumentsError(msg);
+                },
+                complete: function() {
+                    $this.html(originalHtml || 'Download').prop('disabled', false);
+                }
+            });
             return false;
         });
 

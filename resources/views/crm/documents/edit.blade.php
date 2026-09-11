@@ -252,7 +252,7 @@
                     <div class="preview-container" id="preview-container">
                         <img
                             id="preview-image"
-                            src="{{ url('debug-pdf-page/' . $document->id . '/1') }}"
+                            src="{{ route('documents.preview.page', ['id' => $document->id, 'page' => 1]) }}"
                             alt="Document Preview"
                             style="max-width: 100%; height: auto; display: block;"
                         >
@@ -388,10 +388,10 @@
             // Update navigation buttons
             updateNavigationState();
             
-            // Update preview image with debug route (temporary fix)
+            // Update preview image via staff page-preview route
             const documentId = {{ $document->id }};
             const img = document.getElementById('preview-image');
-            img.src = `{{ url('debug-pdf-page') }}/${documentId}/${pageNumber}`;
+            img.src = `{{ url('/documents') }}/${documentId}/preview-page/${pageNumber}`;
             
             // Wait for image load to update preview (ensures correct dimensions)
             img.onload = function() {

@@ -1338,19 +1338,6 @@ class PublicDocumentController extends Controller
         }
     }
 
-    /**
-     * Show document index (optional)
-     * 
-     * @param int|null $id Document ID
-     * @return \Illuminate\View\View
-     */
-    public function index($id = null)
-    {
-        // This is typically not used for public access
-        // Redirect to home or show error
-        return redirect('/')->with('info', 'Please use the link provided in your email.');
-    }
-
     // ==================== Private Helper Methods ====================
 
     /**
