@@ -1,8 +1,22 @@
 # Plan: Rename "User" to Client/Staff Terminology
 
-**Status:** Phases 1–3 **COMPLETED**. Phases 4–5 **PLANNING ONLY** — do not apply until approved.  
+**Status:** Phases 1–3 **COMPLETED**. Phases 4–5 **BLOCKED / PLANNING ONLY** — do not create or run column-rename migrations until the gate below is signed off.  
 **Created:** 2026-02-14  
-**Last Updated:** 2026-02-14
+**Last Updated:** 2026-09-12
+
+### Hard gate (ADMIN-4)
+
+Phases 4–5 rename DB columns (`user_id` → `staff_id` / `client_id`). Applying migrations **without** shipping matching model/controller/query updates in the **same release** will break CRM UI and routes.
+
+**Do not proceed until all are true:**
+
+1. Product/engineering written approval to schedule a maintenance window.
+2. Full DB backup verified restorable.
+3. Phase 4 migration files and Phase 5 code changes land in **one PR / one deploy** (never migrations-only).
+4. Phase 6 test checklist has owners assigned before merge.
+5. Repo still contains **zero** Phase 4 rename migrations under `database/migrations/` (verified 2026-09-12: none present).
+
+Until then, Phases 4–5 remain documentation only.
 
 ---
 
@@ -13,9 +27,9 @@
 | 1 | Code-only (variables, UI text, comments) | ✅ COMPLETED |
 | 2 | JS/CSS identifiers (Assign Staff modal) | ✅ COMPLETED |
 | 3 | Route/view rename (staff-login-analytics) | ✅ COMPLETED |
-| 4 | Database migrations (column renames) | 📋 PLANNED — DO NOT APPLY |
-| 5 | Codebase update for new column names | 📋 PLANNED — DO NOT APPLY |
-| 6 | Testing | Pending |
+| 4 | Database migrations (column renames) | 🚫 BLOCKED — DO NOT APPLY |
+| 5 | Codebase update for new column names | 🚫 BLOCKED — DO NOT APPLY (same release as Phase 4 only) |
+| 6 | Testing | Pending (required before Phase 4–5 merge) |
 
 ---
 
@@ -168,9 +182,16 @@ Update jQuery/JS event handlers that reference the button:
 
 ## Phase 4: Database Column Renames (Migrations)
 
-**⚠️ DO NOT APPLY — PLANNING ONLY**
+**🚫 BLOCKED — PLANNING ONLY. Do not add migration files to `database/migrations/` until the Hard gate above is satisfied.**
 
-Column renames require migrations and will affect all code that reads/writes these columns. Execute only during a maintenance window with full backup.
+Column renames require migrations and will affect all code that reads/writes these columns. Execute only during a maintenance window with full backup, **in the same deploy as Phase 5**.
+
+### 4.0 Same-release rule
+
+| Allowed | Not allowed |
+|---------|-------------|
+| One PR with Phase 4 migrations **and** Phase 5 code | Migrations merged alone |
+| Deploy after Phase 6 checklist owners sign off | Partial table renames “to try it out” |
 
 ### 4.1 Pre-Migration Verification
 
@@ -399,7 +420,7 @@ Run the FK verification query and adjust each migration accordingly.
 
 ## Phase 5: Full Codebase Update After Migrations
 
-**⚠️ DO NOT APPLY — PLANNING ONLY**
+**🚫 BLOCKED — PLANNING ONLY. Must ship in the same release as Phase 4 migrations.**
 
 Apply these changes **in the same release** as Phase 4 migrations. The code must use the new column names *after* migrations have run.
 
@@ -569,7 +590,7 @@ If verification query in 4.1 shows `client_matters` has no `user_id` column:
 | 5 | Codebase update for new column names | Medium |
 | 6 | Testing | — |
 
-**Recommended approach:** Phases 1–3 are done. For Phase 4–5: schedule maintenance window, run migrations, deploy Phase 5 code changes, verify.
+**Recommended approach:** Phases 1–3 are done. Phases 4–5 stay **blocked** until the Hard gate is signed off. Then: schedule maintenance window, land migrations + Phase 5 code together, verify Phase 6.
 
 ### Phase 4–5 Execution Order
 

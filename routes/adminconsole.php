@@ -112,9 +112,11 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/matter-document-type/edit/{id}', [MatterDocumentTypeController::class, 'edit'])->name('matterdocumenttype.edit');
         Route::put('/matter-document-type/{id}', [MatterDocumentTypeController::class, 'update'])->name('matterdocumenttype.update');
 
-        // Legacy admin URLs (renamed from visa-document-type)
+        // Legacy visa-document-type URLs (pre matter rename). Keep permanent redirects for
+        // bookmarks; in-app nav uses matterdocumenttype.* only (see AdminConsoleRoutesTest).
         Route::get('/visa-document-type', fn () => redirect()->route('adminconsole.features.matterdocumenttype.index', [], 301));
         Route::get('/visa-document-type/create', fn () => redirect()->route('adminconsole.features.matterdocumenttype.create', [], 301));
+        Route::get('/visa-document-type/view/{id}', fn (string $id) => redirect()->route('adminconsole.features.matterdocumenttype.view', ['id' => $id], 301));
         Route::get('/visa-document-type/edit/{id}', fn (string $id) => redirect()->route('adminconsole.features.matterdocumenttype.edit', ['id' => $id], 301));
         
         // Document Checklist routes
@@ -140,7 +142,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
             Route::get('/send', [SmsSendController::class, 'create'])->name('send.create');
             Route::post('/send', [SmsSendController::class, 'send'])->name('send');
             Route::post('/send/template', [SmsSendController::class, 'sendFromTemplate'])->name('send.template');
-            Route::post('/send/bulk', [SmsSendController::class, 'sendBulk'])->name('send.bulk');
             
             // SMS Templates
             Route::resource('templates', SmsTemplateController::class);

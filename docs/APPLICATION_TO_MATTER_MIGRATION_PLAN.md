@@ -54,17 +54,15 @@ This document lists remaining changes to complete the migration from "applicatio
 
 ## 4. Admin Roles: APPLICATIONS → Matters / Client Portal
 
-**Current state:** Role create/edit UI shows "APPLICATIONS" section with permissions like "Can create applications".
+**Status:** Done (2026-09-12)
 
-**File:** `resources/views/AdminConsole/system/roles/create.blade.php` (and edit if exists)
+**Was:** Role create/edit UI showed "APPLICATIONS" section / legacy select-all CSS class.
 
-**Migration steps:**
-1. Change accordion header "APPLICATIONS" → "MATTERS" or "CLIENT PORTAL".
-2. Update labels: "Can create applications" → "Can create matters", etc.
-3. Keep `module_access[34]`, etc.—only change display labels.
-4. Check role edit view and any role/permission seeders.
+**Now:** Accordion header and permission copy use **Matters** (`Can create matters`, etc.). Select-all/deselect CSS class renamed `applications` → `matters`. Permission IDs (`module_access[34]` …) unchanged.
 
-**Risk:** Low – UI only; backend permission IDs unchanged.
+**File:** `resources/views/AdminConsole/system/roles/partials/permissions-accordion.blade.php`
+
+**Risk:** Low – UI/class only; backend permission IDs unchanged.
 
 ---
 

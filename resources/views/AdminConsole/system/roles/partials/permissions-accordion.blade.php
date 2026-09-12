@@ -124,15 +124,15 @@
         </div>
         <div class="accordion-body collapse" id="{{ $fieldPrefix }}_panel_8" data-bs-parent="#{{ $accordionId }}">
             <div class="select_toggle">
-                <button type="button" data-class="applications" class="btn btn-sm btn-primary roles-select-all">Select all</button>
-                <button type="button" data-class="applications" class="btn btn-sm btn-outline-secondary roles-deselect-all">Deselect all</button>
+                <button type="button" data-class="matters" class="btn btn-sm btn-primary roles-select-all">Select all</button>
+                <button type="button" data-class="matters" class="btn btn-sm btn-outline-secondary roles-deselect-all">Deselect all</button>
             </div>
             <ul class="roles-perm-list">
-                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[34]" class="applications" @checked($permChecked(34))> Can create matters.</label></li>
-                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[35]" class="applications" @checked($permChecked(35))> Can delete matters.</label></li>
-                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[40]" class="applications" @checked($permChecked(40))> Can view/edit assigned and added matter by the users of primary office.</label></li>
-                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[41]" class="applications" @checked($permChecked(41))> Can view/edit assigned and added matter by the users of secondary office.</label></li>
-                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[45]" class="applications" @checked($permChecked(45))> Can reopen discontinued matters.</label></li>
+                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[34]" class="matters" @checked($permChecked(34))> Can create matters.</label></li>
+                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[35]" class="matters" @checked($permChecked(35))> Can delete matters.</label></li>
+                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[40]" class="matters" @checked($permChecked(40))> Can view/edit assigned and added matter by the users of primary office.</label></li>
+                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[41]" class="matters" @checked($permChecked(41))> Can view/edit assigned and added matter by the users of secondary office.</label></li>
+                <li><label class="roles-perm-item"><input type="checkbox" name="module_access[45]" class="matters" @checked($permChecked(45))> Can reopen discontinued matters.</label></li>
             </ul>
         </div>
     </div>

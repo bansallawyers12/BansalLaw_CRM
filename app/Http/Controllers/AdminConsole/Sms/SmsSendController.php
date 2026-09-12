@@ -141,22 +141,4 @@ class SmsSendController extends Controller
 
         return response()->json($result);
     }
-
-    /**
-     * Send bulk SMS
-     */
-    public function sendBulk(Request $request)
-    {
-        // TODO: Implement bulk SMS feature
-        // Will support:
-        // - Multiple phone numbers
-        // - CSV upload
-        // - Template usage
-        // - Scheduling
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Bulk SMS feature coming soon'
-        ], 501);
-    }
 }

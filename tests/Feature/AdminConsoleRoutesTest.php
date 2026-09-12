@@ -162,6 +162,28 @@ class AdminConsoleRoutesTest extends TestCase
     }
 
     #[Test]
+    public function legacy_visa_document_type_urls_redirect_to_matter_document_type(): void
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $this->get('/adminconsole/features/visa-document-type')
+            ->assertRedirect(route('adminconsole.features.matterdocumenttype.index'))
+            ->assertStatus(301);
+
+        $this->get('/adminconsole/features/visa-document-type/create')
+            ->assertRedirect(route('adminconsole.features.matterdocumenttype.create'))
+            ->assertStatus(301);
+
+        $this->get('/adminconsole/features/visa-document-type/view/42')
+            ->assertRedirect(route('adminconsole.features.matterdocumenttype.view', ['id' => 42]))
+            ->assertStatus(301);
+
+        $this->get('/adminconsole/features/visa-document-type/edit/42')
+            ->assertRedirect(route('adminconsole.features.matterdocumenttype.edit', ['id' => 42]))
+            ->assertStatus(301);
+    }
+
+    #[Test]
     public function adminconsole_forms_submit_to_correct_routes()
     {
         $this->actingAs($this->admin, 'admin');

@@ -166,10 +166,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| ADMIN-1 | **High** | `app/Http/Controllers/AdminConsole/Sms/SmsSendController.php` ~L148–160; `routes/adminconsole.php` L143 | **`POST .../sms/send/bulk` returns HTTP 501** “Bulk SMS feature coming soon” with TODO (CSV, scheduling). No Blade UI found — API stub only unless external client calls it. |
-| ADMIN-2 | Low | `docs/APPLICATION_TO_MATTER_MIGRATION_PLAN.md` | Role UI may still show legacy **“APPLICATIONS”** permission labels while backend uses matters. |
-| ADMIN-3 | Low | `routes/adminconsole.php` L115–118 | `/adminconsole/features/visa-document-type*` → `matterdocumenttype.*` (301). Visa→matter migration debt in URLs. |
-| ADMIN-4 | Low | `docs/PLAN_USER_TO_CLIENT_STAFF_RENAME.md` | Phases 4–5 (DB column renames) planning only — future UI/route breakage if applied without full checklist. |
+| ADMIN-1 | Fixed | `SmsSendController`; `routes/adminconsole.php` | Removed unused `POST .../sms/send/bulk` 501 stub (no Blade/UI consumers). Single/template send endpoints remain. |
+| ADMIN-2 | Fixed | `permissions-accordion.blade.php`; `APPLICATION_TO_MATTER_MIGRATION_PLAN.md` §4 | Matters section already used matter labels; renamed leftover `applications` select-all CSS class → `matters`. Migration plan §4 marked Done. |
+| ADMIN-3 | Fixed | `routes/adminconsole.php` (legacy visa-document-type) | Confirmed intentional 301 bookmark redirects to `matterdocumenttype.*`; added missing view redirect; `AdminConsoleRoutesTest` asserts 301. In-app nav already uses matter routes. |
+| ADMIN-4 | Fixed | `docs/PLAN_USER_TO_CLIENT_STAFF_RENAME.md` | Phases 4–5 marked **BLOCKED** with hard gate (same-release migrations+code, approval, backup, no stray migration files). Risk mitigated as documentation/process; no Phase 4 migrations present in repo. |
 
 ---
 
