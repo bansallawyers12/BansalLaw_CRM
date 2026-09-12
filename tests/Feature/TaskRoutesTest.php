@@ -45,10 +45,10 @@ class TaskRoutesTest extends TestCase
 
         $this->actingAs($staff, 'admin');
 
-        $this->get('/action')->assertRedirect('/tasks');
-        $this->get('/action_completed')->assertRedirect('/tasks/completed');
-        $this->get('/action/list')->assertRedirect('/tasks/list');
-        $this->get('/action/counts')->assertRedirect('/tasks/counts');
+        $this->get('/action')->assertRedirect('/tasks')->assertStatus(301);
+        $this->get('/action_completed')->assertRedirect('/tasks/completed')->assertStatus(301);
+        $this->get('/action/list')->assertRedirect('/tasks/list')->assertStatus(301);
+        $this->get('/action/counts')->assertRedirect('/tasks/counts')->assertStatus(301);
     }
 
     #[Test]
@@ -86,7 +86,9 @@ class TaskRoutesTest extends TestCase
         $response = $this->getJson('/tasks/list');
 
         $response->assertOk();
-        $this->assertStringContainsString('Tasks list route test', json_encode($response->json()));
+        $response->assertJsonPath('has_more', false);
+        $this->assertArrayHasKey('html', $response->json());
+        $this->assertStringContainsString('Tasks list route test', (string) $response->json('html'));
     }
 
     #[Test]
@@ -94,8 +96,9 @@ class TaskRoutesTest extends TestCase
     {
         $list = $this->getJson('/tasks/list');
         $list->assertUnauthorized();
-        $list->assertJsonPath('data', []);
-        $list->assertJsonPath('recordsTotal', 0);
+        $list->assertJsonPath('html', '');
+        $list->assertJsonPath('total', 0);
+        $list->assertJsonPath('has_more', false);
 
         $counts = $this->getJson('/tasks/counts');
         $counts->assertUnauthorized();

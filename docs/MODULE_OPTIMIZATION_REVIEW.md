@@ -323,7 +323,7 @@
 
 | Surface | Backend | Frontend |
 |--------|---------|----------|
-| Assignee tasks (`crm/assignee/tasks`) | `AssigneeController` → `DataTables::of($query)` (also uses Spatie sorts nearby) | `.yajra-datatable` + `serverSide: true` |
+| Assignee tasks (`crm/assignee/tasks`) | `AssigneeController::tasks` — Spatie paginate + `spa`/`infinite` HTML JSON (legacy `/tasks/list` returns same infinite contract) | `tasks-spa.js` infinite-scroll SPA (no DataTables) |
 | Booking appointments list | `BookingAppointmentsController` → `DataTables::of($query)` | DataTables AJAX consumer |
 | Client detail checklist / compose attachments | Client-side only | `#mychecklist-datatable` via `detail-main.js` / detail Blade |
 | Legacy forms | — | `custom-form-validation.js` → `#my-datatable` |
@@ -336,7 +336,7 @@ Shared assets: `public/js/datatables.min.js`, `dataTables.bootstrap5.min.js`, `c
 3. **Do not** introduce another jQuery table plugin.
 
 **Suggested migration order**
-1. Assignee tasks (largest Yajra surface; Spatie sorts already partially wired).
+1. ~~Assignee tasks~~ (done — Spatie + `tasks-spa.js`; `/tasks/list` is Spatie HTML JSON compat, not Yajra).
 2. Booking appointments list endpoint (calendar path already returns non-DataTables JSON).
 3. Client checklist table (client-side DataTable — easiest to replace with Alpine/`x-for`).
 4. Remove `require-datatables` from client detail once checklist is gone.

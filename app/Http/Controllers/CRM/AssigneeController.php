@@ -23,8 +23,6 @@ use Illuminate\Support\Facades\Log;
 use App\Services\TaskTimelineService;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\DashboardService;
-use Yajra\DataTables\Facades\DataTables;
-use App\Helpers\Utf8Helper;
 use App\Helpers\SortableHelper;
 use Illuminate\Support\Facades\URL;
 
@@ -530,298 +528,147 @@ class AssigneeController extends Controller
         return $counts;
     }
 
-    public function tasks() {
-        return view('crm.assignee.tasks');
-    }
-
-    public function getTasks(Request $request)
+    public function tasks(Request $request)
     {
-        try {
-                // Select specific columns from the notes table, using the correct column name 'user_id'
-                $query = Note::select([
-                        'notes.id',
-                        'notes.user_id', // Changed from 'created_by' to 'user_id'
-                        'notes.client_id',
-                        'notes.matter_id',
-                        'notes.assigned_to',
-                        'notes.status',
-                        'notes.type',
-                        'notes.is_action',
-                        'notes.action_date',
-                        'notes.task_group',
-                        'notes.description',
-                        'notes.unique_group_id',
-                        'notes.created_at'
-                    ])
-                    ->with(['noteStaff', 'noteClient.company', 'assigned_staff', 'clientMatter'])
-                    ->where('notes.status', '<>', '1')
-                    ->where('notes.type', 'client')
-                    ->where('notes.is_action', 1);
+        $filter = strtolower(trim((string) $request->input('filter', 'all')));
+        if ($filter === '') {
+            $filter = 'all';
+        }
 
-                // Check if staff member is authenticated and has proper role
-                if (Auth::check() && ! $this->viewerSeesAllTasks()) {
-                    $query->where('notes.assigned_to', Auth::user()->id);
-                }
+        $search = trim((string) $request->input('q', ''));
+        if ($search === '' && $request->filled('note_id')) {
+            $search = trim((string) $request->input('note_id'));
+        }
+        // Legacy DataTables search payload (compat for /tasks/list)
+        if ($search === '' && is_array($request->input('search'))) {
+            $search = trim((string) ($request->input('search.value') ?? ''));
+        } elseif ($search === '' && is_string($request->input('search'))) {
+            $search = trim((string) $request->input('search'));
+        }
 
-                // Apply filter based on tab
-                if ($request->filter && $request->filter != 'all') {
-                    if ($request->filter == 'assigned_by_me') {
-                        $query->where('notes.user_id', Auth::user()->id);
-                    } elseif ($request->filter == 'completed') {
-                        $query->where('notes.status', '1');
-                    } else {
-                        // Handle special cases for filter keys that use underscores (convert to correct task_group value)
-                        $actionGroup = $request->filter;
-                        if ($actionGroup == 'personal_action') {
-                            $query->whereIn('notes.task_group', ['Personal Task', 'Personal Action']);
-                        } elseif ($actionGroup == 'follow_up') {
-                            $query->whereIn('notes.task_group', ['Follow Up', 'Follow up']);
-                        } else {
-                            $query->where('notes.task_group', ucfirst($actionGroup));
-                        }
-                    }
-                }
+        $query = Note::query()
+            ->select([
+                'notes.id',
+                'notes.user_id',
+                'notes.client_id',
+                'notes.matter_id',
+                'notes.assigned_to',
+                'notes.status',
+                'notes.type',
+                'notes.is_action',
+                'notes.action_date',
+                'notes.task_group',
+                'notes.description',
+                'notes.unique_group_id',
+                'notes.created_at',
+            ])
+            ->with(['noteStaff', 'noteClient.company', 'assigned_staff', 'clientMatter'])
+            ->where('notes.status', '<>', '1')
+            ->where('notes.type', 'client')
+            ->where('notes.is_action', 1);
 
-                // Note: Search functionality is now handled by Yajra DataTables filterColumn() definitions
-                // The custom 'd.search' parameter from frontend is handled by DataTables' built-in search
+        if (Auth::check() && ! $this->viewerSeesAllTasks()) {
+            $query->where('notes.assigned_to', Auth::user()->id);
+        }
 
-                // Apply sorting — default: no due date first, then earliest → latest
-                $orderDirection = in_array($request->input('order.0.dir'), ['asc', 'desc'])
-                    ? $request->input('order.0.dir')
-                    : 'asc';
+        $this->applyOpenTasksFilter($query, $filter);
+        $this->applyOpenTasksSearch($query, $search);
+        $this->applyOpenTasksSort($query, $request);
 
-                if ($request->has('order')) {
-                    $orderColumnIndex = (int) $request->order[0]['column'];
-                    $columns = $request->columns;
+        $perPage = 20;
+        $assignees = $query->paginate($perPage)->appends(
+            $request->except('page', 'infinite', 'spa')
+        );
+        $i = ((int) $request->input('page', 1) - 1) * $perPage;
+        $taskGroupCounts = $this->getOpenTaskGroupCounts();
 
-                    $columnName = $columns[$orderColumnIndex]['name'] ?? '';
+        $viewData = [
+            'assignees' => $assignees,
+            'filter' => $filter,
+            'search' => $search,
+            'taskGroupCounts' => $taskGroupCounts,
+            'i' => $i,
+        ];
 
-                    // Map DataTables column names to database columns
-                    switch ($columnName) {
-                        case 'assigner_name':
-                            $query->leftJoin('staff as assigner_staff', 'notes.user_id', '=', 'assigner_staff.id')
-                                ->orderByRaw("COALESCE(assigner_staff.first_name, '') " . $orderDirection . ", COALESCE(assigner_staff.last_name, '') " . $orderDirection);
-                            break;
-                        case 'client_reference':
-                            $query->leftJoin('admins as client_admins', 'notes.client_id', '=', 'client_admins.id')
-                                ->leftJoin('companies as action_client_companies', 'action_client_companies.admin_id', '=', 'client_admins.id')
-                                ->orderByRaw(
-                                    'LOWER(COALESCE(NULLIF(TRIM(action_client_companies.company_name), \'\'), '
-                                    . $this->sqlConcatWithSpace('client_admins.first_name', 'client_admins.last_name')
-                                    . ')) ' . $orderDirection
-                                );
-                            break;
-                        case 'assign_date':
-                            $this->orderTasksByDueDate($query, $orderDirection);
-                            break;
-                        case 'task_group':
-                            $query->orderBy('notes.task_group', $orderDirection);
-                            break;
-                        case 'note_description':
-                            $query->orderBy('notes.description', $orderDirection);
-                            break;
-                        default:
-                            $this->orderTasksByDueDate($query, 'asc');
-                            break;
-                    }
-                } else {
-                    $this->orderTasksByDueDate($query, 'asc');
-                }
-
-                $dataTable = DataTables::of($query)
-                    ->addIndexColumn()
-                    ->addColumn('done_action', function($data) {
-                        return '<button type="button" class="action-done-btn complete_task"'
-                            .' data-id="'.$data->id.'"'
-                            .' data-unique_group_id="'.e((string) ($data->unique_group_id ?? '')).'"'
-                            .' data-bs-toggle="tooltip" title="Mark complete" aria-label="Mark complete">'
-                            .'<i class="fa-solid fa-check" aria-hidden="true"></i>'
-                            .'</button>';
-                    })
-                    ->addColumn('assigner_name', function($data) {
-                        try {
-                            $name = 'N/P';
-                            // Query actions created by client (e.g. client-submitted items): show client name as assigner
-                            if (isset($data->task_group) && (string) $data->task_group === 'Query' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
-                                $portalLabel = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
-                                $name = $portalLabel !== '' ? $portalLabel : 'N/P';
-                            } elseif ($data->noteStaff) {
-                                $firstName = Utf8Helper::safeSanitize($data->noteStaff->first_name ?? '');
-                                $lastName = Utf8Helper::safeSanitize($data->noteStaff->last_name ?? '');
-                                $name = trim($firstName . ' ' . $lastName) ?: 'N/P';
-                            }
-                            return '<span class="action-assigner">'.e($name).'</span>';
-                        } catch (\Exception $e) {
-                            return '<span class="action-assigner">N/P</span>';
-                        }
-                    })
-                    ->addColumn('client_reference', function($data) {
-                        try {
-                            if ($data->noteClient && $data->client_id) {
-                                $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id ?? '');
-                                $label = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
-                                if ($label === '') {
-                                    $label = trim(Utf8Helper::safeSanitize($data->noteClient->first_name ?? '') . ' ' . Utf8Helper::safeSanitize($data->noteClient->last_name ?? ''));
-                                }
-                                $matterRef = Utf8Helper::safeSanitize($data->matterReference() ?? '');
-                                $detailUrl = $data->clientDetailUrl() ?: url('/clients/detail/' . base64_encode(convert_uuencode($data->client_id)));
-                                $linkLabel = $matterRef !== '' ? $matterRef : $clientId;
-                                $client_name = '<div class="action-client-cell">';
-                                $client_name .= '<span class="action-client-name">'.e($label).'</span>';
-                                $client_name .= '<a class="action-client-matter" href="'.e($detailUrl).'" target="_blank">'.e($linkLabel).'</a>';
-                                if ($matterRef !== '' && $clientId !== '') {
-                                    $client_name .= '<span class="action-client-id">'.e($clientId).'</span>';
-                                }
-                                $client_name .= '</div>';
-                            } else {
-                                // Personal Task - no client assigned (theme: theme.md navy / page-bg tint)
-                                $client_name = '<span class="action-badge-personal">Personal Task</span>';
-                            }
-                            return $client_name;
-                        } catch (\Exception $e) {
-                            return 'N/P';
-                        }
-                    })
-                    ->addColumn('assign_date', function($data) {
-                        try {
-                            $date = $data->action_date ? date('d/m/Y', strtotime($data->action_date)) : 'N/P';
-                            return '<span class="action-date">'.e($date).'</span>';
-                        } catch (\Exception $e) {
-                            return '<span class="action-date">N/P</span>';
-                        }
-                    })
-                    ->addColumn('task_group', function($data) {
-                        try {
-                            $group = $data->task_group ? Utf8Helper::safeSanitize($data->task_group) : 'N/P';
-                            $slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $group), '-'));
-                            return '<span class="action-type-badge action-type-'.e($slug).'">'.e($group).'</span>';
-                        } catch (\Exception $e) {
-                            return 'N/P';
-                        }
-                    })
-                    ->addColumn('note_description', function($data) {
-                        try {
-                            if (isset($data->description) && $data->description != "") {
-                                // Use Utf8Helper for consistent UTF-8 handling
-                                $sanitized_description = Utf8Helper::safeSanitize($data->description);
-                                $safe_display_text = htmlspecialchars($sanitized_description, ENT_QUOTES, 'UTF-8');
-                                
-                                if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
-                                    // For data attribute: use HTML encoding to prevent XSS
-                                    $encoded_for_attr = $safe_display_text;
-                                    // For display: use safe truncation with HTML encoding
-                                    $truncated_desc = htmlspecialchars(Utf8Helper::safeTruncate($sanitized_description, 190, ''), ENT_QUOTES, 'UTF-8');
-                                    $final_desc = '<div class="action-note">'.$truncated_desc.' <button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button></div>';
-                                } else {
-                                    $final_desc = '<div class="action-note">'.$safe_display_text.'</div>';
-                                }
-                            } else {
-                                $final_desc = "N/P";
-                            }
-                            return $final_desc;
-                        } catch (\Exception $e) {
-                            return "N/P";
-                        }
-                    })
-                    ->addColumn('action', function($list) {
-                        try {
-                            $actionBtn = '';
-                            $current_date1 = $list->action_date ?: date('Y-m-d');
-
-                            // Update Task button - available for all tasks including Personal Tasks
-                            // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
-                            $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
-                            $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
-                            
-                            // For personal actions, client_id will be null, so use empty string for encoded value
-                            $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
-                            $detailUrl = $list->clientDetailUrl();
-                            $matterRef = htmlspecialchars($list->matterReference() ?? '', ENT_QUOTES, 'UTF-8');
-                            $matterUrl = htmlspecialchars($detailUrl ?? '', ENT_QUOTES, 'UTF-8');
-                            $clientLabelRaw = '';
-                            if ($list->noteClient) {
-                                $clientLabelRaw = trim($list->noteClient->company_name_or_personal_name ?? '');
-                                if ($clientLabelRaw === '') {
-                                    $clientLabelRaw = trim(($list->noteClient->first_name ?? '') . ' ' . ($list->noteClient->last_name ?? ''));
-                                }
-                            }
-                            $clientLabel = htmlspecialchars(Utf8Helper::safeSanitize($clientLabelRaw), ENT_QUOTES, 'UTF-8');
-                            if ($detailUrl) {
-                                $actionBtn .= '<a href="'.e($detailUrl).'" target="_blank" class="btn btn-sm btn-info" title="Open matter"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></a>';
-                            }
-                            
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" data-matterref="'.$matterRef.'" data-matterurl="'.$matterUrl.'" data-clientlabel="'.$clientLabel.'" class="btn btn-sm btn-primary update_task" data-role="popover" title="Update task"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
-
-                            // Delete button removed from action tab
-
-                            return '<div class="action-row-btns">'.$actionBtn.'</div>';
-                        } catch (\Exception $e) {
-                            return '';
-                        }
-                    })
-                    ->rawColumns(['done_action', 'assigner_name', 'client_reference', 'assign_date', 'task_group', 'note_description', 'action'])
-                    // Define how to filter computed columns
-                    ->filterColumn('assigner_name', function($query, $keyword) {
-                        $keywordLower = strtolower($keyword);
-                        $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
-                        $query->whereHas('noteStaff', function($q) use ($keywordLower, $nameConcat) {
-                            $q->where(function($subQ) use ($keywordLower, $nameConcat) {
-                                $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
-                                     ->orWhereRaw("LOWER(first_name) LIKE ?", ["%{$keywordLower}%"])
-                                     ->orWhereRaw("LOWER(last_name) LIKE ?", ["%{$keywordLower}%"]);
-                            });
-                        });
-                    })
-                    ->filterColumn('assignee_name', function($query, $keyword) {
-                        $keywordLower = strtolower($keyword);
-                        $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
-                        $query->whereHas('assignedStaff', function($q) use ($keywordLower, $nameConcat) {
-                            $q->where(function($subQ) use ($keywordLower, $nameConcat) {
-                                $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
-                                     ->orWhereRaw("LOWER(first_name) LIKE ?", ["%{$keywordLower}%"])
-                                     ->orWhereRaw("LOWER(last_name) LIKE ?", ["%{$keywordLower}%"]);
-                            });
-                        });
-                    })
-                    ->filterColumn('client_reference', function($query, $keyword) {
-                        $keywordLower = strtolower($keyword);
-                        $query->whereHas('noteClient', function($q) use ($keywordLower) {
-                            $q->whereRaw('LOWER(client_id) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereHas('company', function ($cq) use ($keywordLower) {
-                                  $cq->whereRaw('LOWER(company_name) LIKE ?', ['%' . $keywordLower . '%']);
-                              });
-                        });
-                    });
-
-                // Get the response and ensure UTF-8 encoding
-                $response = $dataTable->make(true);
-
-                // Set proper UTF-8 headers
-                if ($response instanceof \Illuminate\Http\JsonResponse) {
-                    $response->header('Content-Type', 'application/json; charset=utf-8');
-                }
-
-                return $response;
-        } catch (\Exception $e) {
-            Log::error('Error in getAction: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
+        if ($request->boolean('infinite') || ($request->ajax() && ! $request->boolean('spa'))) {
+            $html = view('crm.assignee.tasks.partials.open_rows', array_merge($viewData, [
+                'appendOnly' => true,
+            ]))->render();
 
             return response()->json([
-                'draw' => intval($request->get('draw')),
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0,
-                'data' => [],
-                'error' => 'An error occurred while processing the request'
-            ], 500);
+                'html' => $html,
+                'filter' => $filter,
+                'q' => $search,
+                'current_page' => $assignees->currentPage(),
+                'last_page' => $assignees->lastPage(),
+                'per_page' => $assignees->perPage(),
+                'from' => $assignees->firstItem() ?: 0,
+                'to' => $assignees->lastItem() ?: 0,
+                'total' => $assignees->total(),
+                'has_more' => $assignees->hasMorePages(),
+                'next_page' => $assignees->hasMorePages()
+                    ? ($assignees->currentPage() + 1)
+                    : null,
+                'counts' => $taskGroupCounts,
+            ]);
         }
+
+        if ($request->boolean('spa')) {
+            $html = view('crm.assignee.tasks.partials.open_spa_body', array_merge($viewData, [
+                'appendOnly' => false,
+            ]))->render();
+
+            $pushQuery = $request->except('spa', 'infinite', 'page');
+            if (($pushQuery['filter'] ?? 'all') === 'all') {
+                unset($pushQuery['filter']);
+            }
+            if (($pushQuery['q'] ?? '') === '') {
+                unset($pushQuery['q']);
+            }
+            $pushUrl = route('assignee.tasks', $pushQuery);
+
+            return response()->json([
+                'html' => $html,
+                'filter' => $filter,
+                'q' => $search,
+                'current_page' => $assignees->currentPage(),
+                'last_page' => $assignees->lastPage(),
+                'per_page' => $assignees->perPage(),
+                'from' => $assignees->firstItem() ?: 0,
+                'to' => $assignees->lastItem() ?: 0,
+                'total' => $assignees->total(),
+                'has_more' => $assignees->hasMorePages(),
+                'loaded' => $assignees->count(),
+                'url' => $pushUrl,
+                'counts' => $taskGroupCounts,
+            ]);
+        }
+
+        return view('crm.assignee.tasks', $viewData);
+    }
+
+    /**
+     * Compat endpoint for legacy /tasks/list bookmarks and redirects.
+     * Returns the same Spatie paginator HTML JSON as GET /tasks?infinite=1 (not Yajra).
+     */
+    public function getTasks(Request $request)
+    {
+        $request->merge(['infinite' => 1]);
+
+        return $this->tasks($request);
     }
 
     public function getTaskCounts(Request $request)
+    {
+        return response()->json($this->getOpenTaskGroupCounts());
+    }
+
+    /**
+     * Open-task badge counts by filter tab.
+     *
+     * @return array<string, int>
+     */
+    private function getOpenTaskGroupCounts(): array
     {
         $counts = [
             'all' => 0,
@@ -851,7 +698,102 @@ class AssigneeController extends Controller
         $counts['personal_action'] = (clone $query)->whereIn('task_group', ['Personal Task', 'Personal Action'])->count();
         $counts['follow_up'] = (clone $query)->whereIn('task_group', ['Follow Up', 'Follow up'])->count();
 
-        return response()->json($counts);
+        return $counts;
+    }
+
+    private function applyOpenTasksFilter($query, string $filter): void
+    {
+        if ($filter === '' || $filter === 'all') {
+            return;
+        }
+
+        if ($filter === 'assigned_by_me') {
+            $query->where('notes.user_id', Auth::user()->id);
+
+            return;
+        }
+
+        if ($filter === 'completed') {
+            $query->where('notes.status', '1');
+
+            return;
+        }
+
+        if ($filter === 'personal_action') {
+            $query->whereIn('notes.task_group', ['Personal Task', 'Personal Action']);
+
+            return;
+        }
+
+        if ($filter === 'follow_up') {
+            $query->whereIn('notes.task_group', ['Follow Up', 'Follow up']);
+
+            return;
+        }
+
+        $query->where('notes.task_group', ucfirst($filter));
+    }
+
+    private function applyOpenTasksSearch($query, string $keyword): void
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') {
+            return;
+        }
+
+        $keywordLower = mb_strtolower($keyword, 'UTF-8');
+        $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
+
+        $query->where(function ($outer) use ($keyword, $keywordLower, $nameConcat) {
+            if (ctype_digit($keyword)) {
+                $outer->orWhere('notes.id', (int) $keyword);
+            }
+
+            $outer->orWhereRaw('LOWER(notes.description) LIKE ?', ['%'.$keywordLower.'%'])
+                ->orWhereRaw('LOWER(COALESCE(notes.task_group, \'\')) LIKE ?', ['%'.$keywordLower.'%'])
+                ->orWhereHas('noteStaff', function ($q) use ($keywordLower, $nameConcat) {
+                    $q->where(function ($subQ) use ($keywordLower, $nameConcat) {
+                        $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
+                            ->orWhereRaw('LOWER(first_name) LIKE ?', ["%{$keywordLower}%"])
+                            ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$keywordLower}%"]);
+                    });
+                })
+                ->orWhereHas('assigned_staff', function ($q) use ($keywordLower, $nameConcat) {
+                    $q->where(function ($subQ) use ($keywordLower, $nameConcat) {
+                        $subQ->whereRaw("LOWER({$nameConcat}) LIKE ?", ["%{$keywordLower}%"])
+                            ->orWhereRaw('LOWER(first_name) LIKE ?', ["%{$keywordLower}%"])
+                            ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$keywordLower}%"]);
+                    });
+                })
+                ->orWhereHas('noteClient', function ($q) use ($keywordLower) {
+                    $q->whereRaw('LOWER(client_id) LIKE ?', ['%'.$keywordLower.'%'])
+                        ->orWhereRaw('LOWER(first_name) LIKE ?', ['%'.$keywordLower.'%'])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.$keywordLower.'%'])
+                        ->orWhereHas('company', function ($cq) use ($keywordLower) {
+                            $cq->whereRaw('LOWER(company_name) LIKE ?', ['%'.$keywordLower.'%']);
+                        });
+                });
+        });
+    }
+
+    private function applyOpenTasksSort($query, Request $request): void
+    {
+        $sort = (string) $request->input('sort', '');
+
+        if ($sort === 'task_group' || $sort === '-task_group') {
+            $query->orderBy('notes.task_group', str_starts_with($sort, '-') ? 'desc' : 'asc');
+
+            return;
+        }
+
+        if ($sort === 'action_date' || $sort === '-action_date') {
+            $this->orderTasksByDueDate($query, str_starts_with($sort, '-') ? 'desc' : 'asc');
+
+            return;
+        }
+
+        // Default (and assign_date alias): missing due dates first, then earliest → latest
+        $this->orderTasksByDueDate($query, 'asc');
     }
 
     /**

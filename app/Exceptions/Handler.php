@@ -76,15 +76,30 @@ class Handler extends ExceptionHandler
 		$hasBearerToken = $request->hasHeader('Authorization') && 
 						  str_starts_with($request->header('Authorization', ''), 'Bearer ');
 		
-		// AJAX DataTables loaders must not receive an HTML redirect (invalid JSON → client error).
+		// AJAX open-tasks loaders must not receive an HTML redirect (invalid JSON → client error).
 		if ($request->is('tasks/list') || $request->is('action/list')) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Unauthenticated.',
-				'draw' => (int) $request->input('draw', 0),
-				'recordsTotal' => 0,
-				'recordsFiltered' => 0,
-				'data' => [],
+				'html' => '',
+				'current_page' => 1,
+				'last_page' => 1,
+				'per_page' => 20,
+				'from' => 0,
+				'to' => 0,
+				'total' => 0,
+				'has_more' => false,
+				'next_page' => null,
+				'counts' => [
+					'all' => 0,
+					'call' => 0,
+					'checklist' => 0,
+					'review' => 0,
+					'query' => 0,
+					'urgent' => 0,
+					'personal_action' => 0,
+					'follow_up' => 0,
+				],
 			], 401);
 		}
 

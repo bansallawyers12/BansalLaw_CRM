@@ -264,9 +264,6 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::delete('/destroy_to_me/{note_id}', [AssigneeController::class, 'destroy_to_me'])->name('assignee.destroy_to_me'); //assigned to me
     Route::get('/tasks/completed', [AssigneeController::class, 'tasksCompleted'])->name('assignee.tasks.completed');
 
-    Route::redirect('/action', '/tasks', 301);
-    Route::redirect('/action_completed', '/tasks/completed', 301);
-
     Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
     Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
 
@@ -284,6 +281,10 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/tasks', [AssigneeController::class, 'tasks'])->name('assignee.tasks');
     Route::get('/tasks/list', [AssigneeController::class, 'getTasks'])->name('tasks.list');
 
+    // Legacy /action* URLs (pre-rename). Keep permanent redirects for staff bookmarks;
+    // in-app links use /tasks* only (see TaskRoutesTest).
+    Route::redirect('/action', '/tasks', 301);
+    Route::redirect('/action_completed', '/tasks/completed', 301);
     Route::redirect('/action/list', '/tasks/list', 301);
     Route::redirect('/action/counts', '/tasks/counts', 301);
 

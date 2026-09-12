@@ -4,7 +4,6 @@
 
 @section('content')
 <style>
-#openassigneview .modal-body ul.navbar-nav li .dropdown-menu{transform: none!important; top:40px!important;}
 .sort_col a { color: #212529 !important; font-weight: 700 !important;}
 </style>
 <!-- Main Content -->
@@ -249,15 +248,6 @@
 			</div>
 		</div>
 	</section>
-</div>
-<!-- Assign Modal -->
-
-<div class="modal fade custom_modal" id="openassigneview" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content taskview">
-
-		</div>
-	</div>
 </div>
 
 <!-- Task Completion Notes Modal — docs/theme.md (public/css/crm-theme.css) -->

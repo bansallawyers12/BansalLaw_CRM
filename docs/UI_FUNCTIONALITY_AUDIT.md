@@ -144,10 +144,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| TASK-1 | Low | `resources/views/crm/assignee/*.blade.php` | **Reassign / assignee-detail flows removed** but `#openassigneview` **modal shells remain** in multiple views — dead DOM. |
-| TASK-2 | Medium | Same assignee views | Modals use **`aria-labelledby=""`** (empty) — WCAG dialog labeling failure. |
-| TASK-3 | Medium | `resources/views/crm/assignee/tasks.blade.php` | Still includes **DataTables** — contributes to jQuery/DataTables lock-in and page weight. |
-| TASK-4 | Low | `routes/web.php` L268–289 | Legacy `/action*` → `/tasks*` redirects (301). Old bookmarks may still exist in staff workflows. |
+| TASK-1 | Fixed | `resources/views/crm/assignee/*.blade.php` | Removed dead `#openassigneview` reassign modal shells and related CSS. |
+| TASK-2 | Fixed | Same assignee views | Empty `aria-labelledby=""` removed with the dead modals; remaining `completionNotesModal` keeps a proper label. |
+| TASK-3 | Fixed | `resources/views/crm/assignee/tasks.blade.php` | Migrated off Yajra/DataTables to Spatie paginator + HTML partials + `tasks-spa.js` infinite-scroll SPA (same pattern as completed tasks). |
+| TASK-4 | Fixed | `routes/web.php` (legacy `/action*` block) | Confirmed intentional 301 bookmark compatibility; redirects grouped next to `/tasks*`; in-app links already use `/tasks*`; `TaskRoutesTest` asserts 301. |
 
 ---
 
@@ -208,8 +208,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 |----|----------|----------|-------|
 | X-1 | Medium | `resources/views/layouts/crm_client_detail.blade.php` | **Massive inline CSS** (~2700+ lines including `<style>` block). Cache-unfriendly, hard to maintain; high page weight despite responsive `@media` rules. |
 | X-2 | Medium | All three layouts (`crm-login`, `crm_client_detail`, `crm_client_detail_dashboard`) | **No skip link**, **no `<main role="main">` landmark** — screen reader navigation suffers across CRM. |
-| X-3 | Medium | Multiple modals (assignee views, `crm/clients/modals/emails.blade.php`) | **`aria-labelledby=""`** empty on dialogs — WCAG failure. |
-| X-4 | Medium | `docs/MODULE_OPTIMIZATION_REVIEW.md` §309–347 | **DataTables + jQuery lock-in** flagged as Blocking for modernization; still loaded on client detail + assignee tasks. Hurts performance; blocks lighter list UIs. |
+| X-3 | Medium | `crm/clients/modals/emails.blade.php` (assignee `#openassigneview` shells removed in TASK-1/2) | **`aria-labelledby=""`** empty on email upload dialogs — WCAG failure. |
+| X-4 | Medium | `docs/MODULE_OPTIMIZATION_REVIEW.md` §309–347 | **DataTables + jQuery lock-in** flagged as Blocking for modernization; still loaded on client detail. Assignee open tasks migrated to SPA (TASK-3). Hurts performance; blocks lighter list UIs. |
 | X-5 | Medium → **Fixed** | Codebase-wide | Native `alert()` / `window.alert()` replaced with **`crmAlert()`** (Toastify via `crmNotify`/`crmToast`; SweetAlert2 fallback). See Appendix A. |
 | X-6 | Medium | Codebase-wide | **`console.error` only** in `dashboard-page.js`, `sidebar-tabs.js`, `invoices.js`, `compose-matter-documents.js` — silent failures for users. |
 | X-7 | Low | `public/js/crm/clients/utils/dom-helpers.js` ~L259 | `@deprecated adjustMatterDocumentsPanelHeight` alias still present. |
@@ -269,7 +269,7 @@ These features were removed or deprecated; verify staff training and bookmarks d
 7. Remove **debug surfaces** from production UI (void-invoice `debug_info`, signing debug panels) (CLI-3, DOC-5). PDF preview renamed (DOC-1 Fixed).
 
 ### P2 — Accessibility & performance
-8. Accessibility pass: landmarks, skip link, modal labels, keyboard task list (X-2, X-3, DASH-2, TASK-2).
+8. Accessibility pass: landmarks, skip link, modal labels, keyboard task list (X-2, X-3, DASH-2). ~~TASK-2~~ **Done.**
 9. Plan **DataTables migration** per `MODULE_OPTIMIZATION_REVIEW.md` (X-4).
 10. Continue **JS modularization** (`detail-main.js`; email list/reading/compose blocks still in `outlook_emails.js` / `emails.js` after EMAIL-1 helper cleanup).
 

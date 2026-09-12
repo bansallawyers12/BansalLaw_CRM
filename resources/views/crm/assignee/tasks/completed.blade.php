@@ -468,12 +468,6 @@
     </section>
 </div>
 
-<!-- Assign Modal -->
-<div class="modal fade custom_modal" id="openassigneview" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content taskview"></div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')

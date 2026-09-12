@@ -1,15 +1,44 @@
 @extends('layouts.crm_client_detail')
-@include('components.require-datatables')
 @section('title', 'Tasks')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/task-list.css') }}?v={{ @filemtime(public_path('css/task-list.css')) ?: time() }}">
+<style>
+    #open-tasks-spa-root.is-spa-loading #open-tasks-spa-content {
+        opacity: 0.55;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
+    .open-tasks-spa-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    .open-tasks-spa-loading.d-none { display: none !important; }
+</style>
 @endsection
 
 @section('content')
-<div class="listing-container assignee-action-page">
+@php
+    $filter = $filter ?? 'all';
+    $search = $search ?? '';
+    $assignees = $assignees ?? collect();
+    $taskGroupCounts = $taskGroupCounts ?? [];
+    $i = $i ?? 0;
+@endphp
+<div class="listing-container assignee-action-page" id="open-tasks-spa-root"
+     data-base-url="{{ route('assignee.tasks') }}"
+     data-filter="{{ $filter }}"
+     data-q="{{ $search }}"
+     data-infinite-scroll="1">
     <section class="listing-section">
         <div class="listing-section-body">
             <div class="server-error">
@@ -38,8 +67,7 @@
                             'staffMembers' => \App\Models\Staff::where('status', 1)->orderby('first_name', 'ASC')->get(),
                         ])
                     </template>
-                    {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Tom Select. --}}
-                    {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Tom Select without dropdownParent). --}}
+                    {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5. --}}
                             <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
                                 <i class="fa-solid fa-plus"></i> Add My Task
                             </button>
@@ -48,58 +76,24 @@
                 </div>
 
                 <div class="card-body">
-                    <div class="action-toolbar">
-                        <div class="tabs">
-                            <button type="button" class="tab-button active" data-filter="all">All <span class="badge" id="all-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="call">Call <span class="badge" id="call-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="checklist">Checklist <span class="badge" id="checklist-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="personal_action">Personal Task <span class="badge" id="personal-task-count">0</span></button>
-                            <button type="button" class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
-                        </div>
-                        <div class="action-search">
-                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                            <input type="text" id="searchInput" placeholder="Search tasks..." aria-label="Search tasks">
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table yajra-datatable">
-                            <thead>
-                                <tr>
-                                    <th data-column="DT_RowIndex">#</th>
-                                    <th data-column="done">Done</th>
-                                    <th data-column="assigner_name">Assigner</th>
-                                    <th data-column="client_reference">Client / Matter</th>
-                                    <th data-column="assign_date">Date</th>
-                                    <th data-column="task_group">Type</th>
-                                    <th data-column="note_description">Note</th>
-                                    <th data-column="action">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="actionInfiniteLoader" class="action-infinite-loader" hidden aria-live="polite">
+                    <div id="openTasksSpaLoading" class="open-tasks-spa-loading d-none" aria-live="polite" aria-busy="false">
                         <span class="action-infinite-loader__spinner" aria-hidden="true"></span>
-                        <span>Loading more tasks...</span>
+                        <span>Updating list...</span>
                     </div>
-                    <div id="actionScrollSentinel" class="action-scroll-sentinel" aria-hidden="true"></div>
-                    <div id="actionScrollInfo" class="action-scroll-info">Showing 0 of 0 entries</div>
+                    <div id="open-tasks-spa-content">
+                        @include('crm.assignee.tasks.partials.open_spa_body', [
+                            'assignees' => $assignees,
+                            'filter' => $filter,
+                            'search' => $search,
+                            'taskGroupCounts' => $taskGroupCounts,
+                            'i' => $i,
+                            'appendOnly' => false,
+                        ])
+                    </div>
                 </div>
             </div>
         </div>
     </section>
-</div>
-
-<!-- Assign Modal -->
-<div class="modal fade custom_modal" id="openassigneview" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content taskview"></div>
-    </div>
 </div>
 
 <!-- Task Completion Notes Modal -->
@@ -833,8 +827,17 @@
         max-width: 100% !important;
     }
 </style>
+<script src="{{ asset('js/crm/assignee/tasks-spa.js') }}?v={{ @filemtime(public_path('js/crm/assignee/tasks-spa.js')) ?: time() }}"></script>
 <script type="text/javascript">
 $(function () {
+    function spaReload() {
+        if (window.OpenTasksSpa && typeof window.OpenTasksSpa.reload === 'function') {
+            window.OpenTasksSpa.reload();
+        } else {
+            location.reload();
+        }
+    }
+
     var actionAddTaskTpl = document.getElementById('action-add-task-popover-template');
     var actionAddTaskHtml = (actionAddTaskTpl && actionAddTaskTpl.innerHTML) ? String(actionAddTaskTpl.innerHTML).trim() : '';
     if (!actionAddTaskHtml && document.querySelector('.add_my_task')) {
@@ -899,381 +902,6 @@ $(function () {
         }
         $(this).popover(popoverOpts);
     });
-
-    var ACTION_PAGE_SIZE = 20;
-    var actionScrollState = {
-        ready: false,
-        loadingMore: false,
-        hasMore: true,
-        total: 0,
-        loaded: 0,
-        drawCounter: 0,
-        seenIds: {}
-    };
-
-    function getActionListFilter() {
-        var $activeTab = $('.tabs .tab-button.active');
-        return $activeTab.length ? ($activeTab.data('filter') || 'all') : 'all';
-    }
-
-    function applyActionListRequestData(d, start) {
-        d.filter = getActionListFilter();
-        d.search = d.search || {};
-        d.search.value = $('#searchInput').val() || '';
-        d.start = typeof start === 'number' ? start : 0;
-        d.length = ACTION_PAGE_SIZE;
-        return d;
-    }
-
-    function getActionRowId(row) {
-        if (!row) {
-            return '';
-        }
-        if (row.id != null && row.id !== '') {
-            return String(row.id);
-        }
-        var html = String(row.done_action || '');
-        var match = html.match(/data-id="(\d+)"/);
-        return match ? match[1] : '';
-    }
-
-    function rememberActionRowIds(rows) {
-        (rows || []).forEach(function(row) {
-            var id = getActionRowId(row);
-            if (id) {
-                actionScrollState.seenIds[id] = true;
-            }
-        });
-    }
-
-    function getActionAjaxParams(start) {
-        var params = {
-            draw: actionScrollState.drawCounter + 1,
-            start: parseInt(start, 10) || 0,
-            length: ACTION_PAGE_SIZE,
-            filter: getActionListFilter(),
-            search: {
-                value: $('#searchInput').val() || '',
-                regex: false
-            },
-            order: [{ column: 4, dir: 'asc' }],
-            columns: []
-        };
-
-        if (table) {
-            var order = table.order();
-            if (order && order.length) {
-                params.order = order.map(function(item) {
-                    return { column: item[0], dir: item[1] };
-                });
-            }
-            var settings = table.settings()[0];
-            params.columns = (settings.aoColumns || []).map(function(col, idx) {
-                return {
-                    data: col.data != null ? col.data : (col.mData != null ? col.mData : idx),
-                    name: col.name != null ? col.name : (col.sName || ''),
-                    searchable: col.searchable != null ? col.searchable : !!col.bSearchable,
-                    orderable: col.orderable != null ? col.orderable : !!col.bSortable,
-                    search: { value: '', regex: false }
-                };
-            });
-        }
-
-        actionScrollState.drawCounter = params.draw;
-        return params;
-    }
-
-    function buildActionRowHtml(row, rowNumber) {
-        return '<tr data-action-id="' + getActionRowId(row) + '">'
-            + '<td>' + rowNumber + '</td>'
-            + '<td>' + (row.done_action || '') + '</td>'
-            + '<td>' + (row.assigner_name || '') + '</td>'
-            + '<td>' + (row.client_reference || '') + '</td>'
-            + '<td>' + (row.assign_date || '') + '</td>'
-            + '<td>' + (row.task_group || '') + '</td>'
-            + '<td>' + (row.note_description || '') + '</td>'
-            + '<td>' + (row.action || '') + '</td>'
-            + '</tr>';
-    }
-
-    function appendActionRows(rows) {
-        if (!rows || !rows.length) {
-            return 0;
-        }
-        var startNumber = actionScrollState.loaded;
-        var appended = 0;
-        var html = '';
-        rows.forEach(function(row) {
-            var id = getActionRowId(row);
-            if (id && actionScrollState.seenIds[id]) {
-                return;
-            }
-            if (id) {
-                actionScrollState.seenIds[id] = true;
-            }
-            html += buildActionRowHtml(row, startNumber + appended + 1);
-            appended += 1;
-        });
-        if (!appended) {
-            return 0;
-        }
-        var $tbody = $('.assignee-action-page .yajra-datatable tbody');
-        $tbody.append(html);
-
-        $tbody.find('tr').slice(-appended).find('[data-bs-toggle="popover"]')
-            .not('.update_task')
-            .not('.add_my_task')
-            .popover({
-                html: true,
-                sanitize: false,
-                trigger: 'click',
-                placement: 'bottom',
-                boundary: 'viewport',
-                container: 'body'
-            });
-        return appended;
-    }
-
-    function updateActionScrollInfo() {
-        var loaded = actionScrollState.loaded;
-        var total = actionScrollState.total;
-        var text = loaded > 0
-            ? ('Showing 1–' + loaded + ' of ' + total + (total === 1 ? ' entry' : ' entries'))
-            : (total > 0 ? ('Showing 0 of ' + total + ' entries') : 'Showing 0 of 0 entries');
-        $('#actionScrollInfo').text(text);
-    }
-
-    function setActionInfiniteLoader(visible) {
-        $('#actionInfiniteLoader').prop('hidden', !visible);
-    }
-
-    function resetActionScrollState() {
-        actionScrollState.ready = false;
-        actionScrollState.loadingMore = false;
-        actionScrollState.hasMore = true;
-        actionScrollState.total = 0;
-        actionScrollState.loaded = 0;
-        actionScrollState.seenIds = {};
-        setActionInfiniteLoader(false);
-        updateActionScrollInfo();
-    }
-
-    function syncActionScrollStateFromJson(json, appendCount) {
-        var batchCount = (json && json.data) ? json.data.length : 0;
-        actionScrollState.total = json ? (json.recordsFiltered || 0) : 0;
-        if (typeof appendCount === 'number') {
-            actionScrollState.loaded += appendCount;
-        } else {
-            actionScrollState.loaded = batchCount;
-            rememberActionRowIds(json && json.data);
-        }
-        actionScrollState.hasMore = actionScrollState.loaded < actionScrollState.total;
-        actionScrollState.ready = actionScrollState.loaded > 0 || actionScrollState.total === 0;
-        if (json && json.draw) {
-            actionScrollState.drawCounter = parseInt(json.draw, 10) || actionScrollState.drawCounter;
-        }
-        updateActionScrollInfo();
-    }
-
-    function maybeFillActionViewport() {
-        if (!actionScrollState.ready || !table || actionScrollState.loadingMore || !actionScrollState.hasMore) {
-            return;
-        }
-        var sentinel = document.getElementById('actionScrollSentinel');
-        if (!sentinel) {
-            return;
-        }
-        var rect = sentinel.getBoundingClientRect();
-        if (rect.top <= window.innerHeight + 120) {
-            loadMoreActions();
-        }
-    }
-
-    function loadMoreActions() {
-        if (!actionScrollState.ready || !table || actionScrollState.loadingMore || !actionScrollState.hasMore) {
-            return;
-        }
-        var start = actionScrollState.loaded;
-        if (start < ACTION_PAGE_SIZE) {
-            return;
-        }
-
-        actionScrollState.loadingMore = true;
-        setActionInfiniteLoader(true);
-
-        var params = getActionAjaxParams(start);
-
-        $.ajax({
-            url: "{{ route('tasks.list') }}",
-            type: 'GET',
-            data: params,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                Accept: 'application/json'
-            },
-            success: function(json) {
-                if (json && json.data && json.data.length) {
-                    var appended = appendActionRows(json.data);
-                    syncActionScrollStateFromJson(json, appended);
-                    if (!appended) {
-                        actionScrollState.hasMore = false;
-                    }
-                } else {
-                    actionScrollState.hasMore = false;
-                    updateActionScrollInfo();
-                }
-            },
-            error: function(xhr) {
-                var st = xhr && xhr.status;
-                if (st === 401 || st === 419 || st === 403) {
-                    window.location.reload();
-                    return;
-                }
-                console.error('Action infinite scroll error:', st, xhr && xhr.responseText);
-            },
-            complete: function() {
-                actionScrollState.loadingMore = false;
-                setActionInfiniteLoader(false);
-                window.requestAnimationFrame(maybeFillActionViewport);
-            }
-        });
-    }
-
-    var actionInfiniteScrollBound = false;
-
-    function bindActionInfiniteScroll() {
-        if (actionInfiniteScrollBound) {
-            return;
-        }
-        actionInfiniteScrollBound = true;
-
-        var sentinel = document.getElementById('actionScrollSentinel');
-        if (!sentinel) {
-            return;
-        }
-
-        if ('IntersectionObserver' in window) {
-            var observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        loadMoreActions();
-                    }
-                });
-            }, {
-                root: null,
-                rootMargin: '240px 0px',
-                threshold: 0
-            });
-            observer.observe(sentinel);
-        }
-
-        $(window).on('scroll.actionInfinite resize.actionInfinite', function() {
-            maybeFillActionViewport();
-        });
-    }
-
-    var table = ($.fn.DataTable && $('.yajra-datatable').length)
-        ? $('.yajra-datatable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: "{{ route('tasks.list') }}",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                Accept: 'application/json'
-            },
-            data: function(d) {
-                applyActionListRequestData(d, 0);
-            },
-            error: function(xhr, error, thrown) {
-                var st = xhr && xhr.status;
-                // Expired CSRF/session or auth: Laravel often returns HTML; reload sends user to login
-                if (st === 401 || st === 419 || st === 403) {
-                    window.location.reload();
-                    return;
-                }
-                console.error('DataTables Ajax Error:', error, thrown, st, xhr && xhr.responseURL);
-                if (xhr && xhr.responseText && xhr.responseText.includes('Malformed UTF-8')) {
-                    console.warn('UTF-8 encoding issue detected. Please refresh the page.');
-                }
-            }
-        },
-        columns: [
-            {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-            {data: 'done_action', name: 'done', orderable: false, searchable: false},
-            {data: 'assigner_name', name: 'assigner_name', orderable: true, searchable: true},
-            {data: 'client_reference', name: 'client_reference', orderable: true, searchable: true},
-            {data: 'assign_date', name: 'assign_date', orderable: true, searchable: true},
-            {data: 'task_group', name: 'task_group', orderable: true, searchable: true},
-            {data: 'note_description', name: 'note_description', orderable: true, searchable: true},
-            {data: 'action', name: 'action', orderable: false, searchable: false}
-        ],
-        drawCallback: function() {
-            // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
-            $('[data-bs-toggle="popover"]').not('.update_task').not('.add_my_task').popover({
-                html: true,
-                sanitize: false,
-                trigger: 'click',
-                placement: 'bottom',
-                boundary: 'viewport',
-                container: 'body'
-            });
-
-            // Update badge counts
-            updateBadgeCounts();
-        },
-        layout: {
-            topStart: null,
-            topEnd: null,
-            bottomStart: null,
-            bottomEnd: null
-        },
-        paging: true,
-        lengthChange: false,
-        pageLength: ACTION_PAGE_SIZE,
-        order: [[4, 'asc']],
-        responsive: false,
-        autoWidth: false,
-        language: {
-            emptyTable: 'No open tasks found',
-            zeroRecords: 'No matching tasks found'
-        }
-    }) : null;
-
-    if (table) {
-        table.on('preXhr.dt', function() {
-            if (!actionScrollState.loadingMore) {
-                resetActionScrollState();
-            }
-        });
-
-        table.on('xhr.dt', function(e, settings, json) {
-            if (!actionScrollState.loadingMore) {
-                syncActionScrollStateFromJson(json, false);
-                bindActionInfiniteScroll();
-                window.requestAnimationFrame(maybeFillActionViewport);
-            }
-        });
-    }
-
-    // Search functionality
-    var actionSearchTimer = null;
-    $('#searchInput').on('keyup', function() {
-        clearTimeout(actionSearchTimer);
-        actionSearchTimer = setTimeout(function() {
-            if (table) { table.ajax.reload(); }
-        }, 300);
-    });
-
-    // Deep link from client Tasks tab (note_id query param)
-    (function () {
-        var params = new URLSearchParams(window.location.search);
-        var noteId = params.get('note_id');
-        if (noteId && /^\d+$/.test(noteId)) {
-            $('#searchInput').val(noteId);
-            if (table) { table.ajax.reload(); }
-        }
-    })();
 
     // Helper function to escape HTML to prevent XSS
     function escapeHtml(text) {
@@ -1523,7 +1151,7 @@ $(function () {
         }
     });
 
-    // Update badge counts
+    // Update badge counts (fallback; SPA responses also refresh counts)
     function updateBadgeCounts() {
         $.ajax({
             url: "{{ route('tasks.counts') }}",
@@ -1534,14 +1162,12 @@ $(function () {
             },
             success: function(data) {
                 if (data && typeof data === 'object') {
-                    $('#all-count').text(data.all || 0);
-                    $('#call-count').text(data.call || 0);
-                    $('#checklist-count').text(data.checklist || 0);
-                    $('#review-count').text(data.review || 0);
-                    $('#query-count').text(data.query || 0);
-                    $('#urgent-count').text(data.urgent || 0);
-                    $('#personal-task-count').text(data.personal_action || 0);
-                    $('#follow-up-count').text(data.follow_up || 0);
+                    Object.keys(data).forEach(function(key) {
+                        if (key === 'unauthenticated') {
+                            return;
+                        }
+                        $('#open-tasks-spa-root [data-count-key="' + key + '"]').text(data[key] || 0);
+                    });
                     if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
                         window.refreshCrmNavPendingTaskCount();
                     }
@@ -1559,15 +1185,8 @@ $(function () {
         });
     }
 
-    // Filter by tabs (scoped to .tabs only — Add My Task must not have .tab-button or each click reloads the grid and tears down the popover)
-    $('.tabs .tab-button').on('click', function() {
-        $('.tabs .tab-button').removeClass('active');
-        $(this).addClass('active');
-        if (table) { table.ajax.reload(); }
-    });
-
     // Handle Update Task button click
-    $('.yajra-datatable').on('click', '.update_task', function() {
+    $(document).on('click', '#open-tasks-spa-root .update_task', function() {
         var $button = $(this);
         var assignedTo = $button.data('assignedto') || '';
         var noteId = $button.data('noteid') || '';
@@ -1632,12 +1251,6 @@ $(function () {
         }).popover('show');
     });
 
-    // Re-initialize popovers after DataTable redraw
-    $(document).on('draw.dt', '.yajra-datatable', function() {
-        // Destroy existing popovers
-        $('.btn_readmore').popover('dispose');
-    });
-
     // Handle Update Task submission
     $(document).on('click', '#updateTask', function() {
         var $popover = $(this).closest('.popover');
@@ -1687,8 +1300,7 @@ $(function () {
                 task_group: taskGroup
             },
             success: function(response) {
-                $('.update_task').popover('hide');
-                if (table) { table.draw(false); }
+                spaReload();
                 if (typeof iziToast !== 'undefined') {
                     iziToast.success({ title: 'Updated', message: 'Task updated successfully.', position: 'topRight', timeout: 3000 });
                 }
@@ -1707,7 +1319,7 @@ $(function () {
     });
 
     // Delete record
-    $('.yajra-datatable').on('click', '.deleteNote', function(e) {
+    $(document).on('click', '#open-tasks-spa-root .deleteNote', function(e) {
         e.preventDefault();
         $.ajaxSetup({
             headers: {
@@ -1731,7 +1343,7 @@ $(function () {
                 dataType: 'json',
                 data: {method: '_DELETE', submit: true}
             }).done(function(data) {
-                if (table) { table.draw(false); }
+                spaReload();
                 if (typeof iziToast !== 'undefined') {
                     iziToast.success({ title: 'Deleted', message: 'Task deleted.', position: 'topRight', timeout: 2500 });
                 }
@@ -1752,7 +1364,7 @@ $(function () {
     var currentTaskId = null;
     var currentTaskGroupId = null;
     
-    $('.yajra-datatable').on('click', '.complete_task', function() {
+    $('.assignee-action-page').on('click', '.complete_task', function() {
         var row_id = $(this).attr('data-id');
         var row_unique_group_id = $(this).attr('data-unique_group_id') || '';
         
@@ -1805,8 +1417,8 @@ $(function () {
                 currentTaskId = null;
                 currentTaskGroupId = null;
                 
-                // Reload table
-                if (table) { table.draw(false); }
+                // Reload list
+                spaReload();
                 if (typeof updateBadgeCounts === 'function') {
                     updateBadgeCounts();
                 } else if (typeof window.refreshCrmNavPendingTaskCount === 'function') {
@@ -1995,7 +1607,7 @@ $(function () {
                         } else {
                             crmAlert('Reminder added to your personal calendar.');
                         }
-                        if (table) { table.draw(false); }
+                        spaReload();
                     } else {
                         crmAlert(response && response.message ? response.message : 'Could not add reminder.');
                     }
@@ -2054,10 +1666,10 @@ $(function () {
                             } catch (e) { /* ignore */ }
                         });
                         $('.popover-backdrop').removeClass('show');
-                        if (table) { table.draw(false); }
+                        spaReload();
                     } else {
                         crmAlert(response && response.message ? response.message : 'An error occurred');
-                        if (table) { table.draw(false); }
+                        spaReload();
                     }
                 },
                 error: function(xhr, status, error) {

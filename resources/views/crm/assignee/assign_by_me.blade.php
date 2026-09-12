@@ -282,22 +282,19 @@
         color: #fff !important;
     }
 
-    /* Assign / task modals render outside .listing-container */
-    #openassigneview .modal-content,
+    /* Task modals render outside .listing-container */
     .custom_modal .modal-content {
         border-radius: 10px;
         border: 1px solid var(--border, #c8dcef);
         box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
     }
 
-    #openassigneview .modal-header,
     .custom_modal .modal-header {
         background: var(--page-bg, #f0f6ff) !important;
         border-bottom: 1px solid var(--border, #c8dcef) !important;
         color: var(--navy, #1e3d60) !important;
     }
 
-    #openassigneview .modal-body,
     .custom_modal .modal-body {
         padding: 20px;
     }
@@ -380,15 +377,6 @@
             </div>
         </div>
     </section>
-</div>
-
-<!-- Assign Modal -->
-<div class="modal fade custom_modal" id="openassigneview" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content taskview">
-            <!-- Modal content will be loaded dynamically -->
-        </div>
-    </div>
 </div>
 
 <!-- Task Completion Notes Modal â€” markup + tokens match action page (public/css/crm-theme.css) -->
