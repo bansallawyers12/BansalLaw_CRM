@@ -809,7 +809,28 @@
         }
     }
 
+    function detailValueIsAvailable(valueHtml) {
+        var raw = valueHtml == null ? '' : String(valueHtml).trim();
+        var textOnly = raw
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        var normalized = textOnly.toLowerCase();
+        return !(
+            !textOnly ||
+            normalized === 'n/a' ||
+            normalized === 'na' ||
+            normalized === 'null' ||
+            normalized === 'undefined' ||
+            normalized === '-'
+        );
+    }
+
     function renderReminderDetailItem(icon, label, valueHtml) {
+        if (!detailValueIsAvailable(valueHtml)) {
+            return '';
+        }
         return (
             '<div class="appt-detail-item">' +
             '<div class="appt-detail-item__icon"><i class="fa-solid ' + icon + '"></i></div>' +
@@ -1291,6 +1312,9 @@
     }
 
     function renderEventDetailItem(icon, label, valueHtml, wide) {
+        if (!detailValueIsAvailable(valueHtml)) {
+            return '';
+        }
         return (
             '<div class="appt-detail-item' +
             (wide ? ' appt-detail-item--wide' : '') +

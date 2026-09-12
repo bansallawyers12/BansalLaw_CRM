@@ -245,7 +245,7 @@
 
 <!-- Event Detail Modal (scoped styles: .booking-calendar-modal — portaled next to body) -->
 <div class="modal fade booking-calendar-modal appointment-detail-modal" id="eventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" id="eventModalDialog" role="document">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" id="eventModalDialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="appointment-detail-modal__heading">
@@ -971,9 +971,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="form-text"><i class="fa-solid fa-circle-info"></i> Changes sync with the public booking website when linked.</div>
                     </section>
-                    <div class="row g-3 align-items-start">
-                        <div class="col-md-6">
-                            <section class="appt-detail-section appt-detail-section--actions">
+                    <div class="row g-3 appt-detail-actions-row">
+                        <div class="col-md-6 d-flex">
+                            <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
                                 <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>
                                 <div class="appt-action-buttons">
                                     <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed', this)">
@@ -999,8 +999,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </section>
                         </div>
-                        <div class="col-md-6">
-                            <section class="appt-detail-section appt-detail-section--actions">
+                        <div class="col-md-6 d-flex">
+                            <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
                                 <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change calendar</h6>
                                 <label class="form-label" for="consultantSelect-${slotKey}">Consultant</label>
                                 <select class="form-select" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
@@ -1394,6 +1394,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderApptDetailItem(icon, label, valueHtml) {
+        const raw = valueHtml == null ? '' : String(valueHtml).trim();
+        const textOnly = raw
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        const normalized = textOnly.toLowerCase();
+        if (
+            !textOnly ||
+            normalized === 'n/a' ||
+            normalized === 'na' ||
+            normalized === 'null' ||
+            normalized === 'undefined' ||
+            normalized === '-'
+        ) {
+            return '';
+        }
         return `
             <div class="appt-detail-item">
                 <div class="appt-detail-item__icon"><i class="fa-solid ${icon}"></i></div>
@@ -2133,9 +2150,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar${isFollowUp ? ' and the linked task' : ''}.</div>
                 </section>
-                <div class="row g-3 align-items-start">
-                    <div class="col-md-6">
-                        <section class="appt-detail-section appt-detail-section--actions">
+                <div class="row g-3 appt-detail-actions-row">
+                    <div class="col-md-6 d-flex">
+                        <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
                             <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
                             <div class="appt-action-buttons">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'scheduled', this)">
@@ -2153,8 +2170,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </section>
                     </div>
-                    <div class="col-md-6">
-                        <section class="appt-detail-section appt-detail-section--actions">
+                    <div class="col-md-6 d-flex">
+                        <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
                             <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
                             <label class="form-label" for="staffEventCalendarSelect-${slotKey}">Calendar</label>
                             <select class="form-select" id="staffEventCalendarSelect-${slotKey}" onchange="updateStaffCalendarEventCalendarType(${Number(eventId)}, this.value, this)">
@@ -4728,6 +4745,23 @@ document.addEventListener('DOMContentLoaded', function() {
     border: 1px solid var(--border);
     border-radius: 10px;
     margin-bottom: 12px;
+}
+
+/* Side-by-side action cards (status + calendar) share equal height */
+.appt-detail-actions-row {
+    margin-bottom: 12px;
+}
+
+.appt-detail-actions-row > [class*="col-"] {
+    display: flex;
+}
+
+.appt-detail-actions-row .appt-detail-section--actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    margin-bottom: 0;
 }
 
 .appt-detail-section__title {

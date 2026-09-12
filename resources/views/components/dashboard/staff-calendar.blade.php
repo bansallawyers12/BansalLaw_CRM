@@ -177,7 +177,7 @@
 
 <!-- Event detail modal (follow-ups, hearings, deadlines, bookings, staff events) -->
 <div class="modal fade booking-calendar-modal appointment-detail-modal personal-calendar-detail-modal personal-event-detail-modal" id="personalEventDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="appointment-detail-modal__heading">
@@ -203,7 +203,7 @@
 
 {{-- Reminder details — appointment-details layout (personal calendar only) --}}
 <div class="modal fade booking-calendar-modal appointment-detail-modal personal-calendar-detail-modal personal-reminder-detail-modal" id="personalReminderDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="appointment-detail-modal__heading">
