@@ -65,6 +65,25 @@
         margin-bottom: 16px;
         font-size: 13px;
     }
+    .cc-local-banner p { margin: 0 0 8px; }
+    .cc-local-banner p:last-child { margin-bottom: 0; }
+    .cc-local-banner a { color: #1e3d60; font-weight: 600; text-decoration: underline; }
+    .cc-call-tip {
+        background: rgba(221, 234, 248, 0.55);
+        border: 1px solid rgba(30, 61, 96, 0.14);
+        color: var(--navy, #1e3d60);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+    .cc-call-tip strong { font-weight: 700; }
+    .cc-call-tip ol {
+        margin: 6px 0 0;
+        padding-left: 1.25rem;
+    }
+    .cc-call-tip a { color: var(--navy, #1e3d60); font-weight: 600; }
     .cc-loading-overlay {
         display: none;
         position: fixed;
@@ -99,14 +118,29 @@
                         <h4 class="mb-1">Communication Check</h4>
                         <small class="text-muted">
                             Upload email, SMS, or call (Recents) screenshots → extract → match CRM → Logged / Worked / Gap.
-                            Calls only match logged Call Actions (no PBX yet). Assistive only; human confirms.
+                            Assistive only; a human must confirm before using results for accountability.
                         </small>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="cc-local-banner">
-                        <strong>Assistive only.</strong>
-                        Super Admin (or staff granted access) can run this tool. Confirm results in CRM before treating as staff accountability fact. Vision may misread dates and numbers.
+                    <div class="cc-local-banner" role="note">
+                        <p><strong>Assistive only.</strong>
+                        Super Admin (or staff granted access) can run this tool. Confirm results in CRM before treating as staff accountability fact. Vision may misread dates and numbers.</p>
+                    </div>
+
+                    <div class="cc-call-tip" role="note">
+                        <strong>Phone / Recents checks (no PBX yet).</strong>
+                        Call screenshots match <em>logged Call Actions</em> (and related call notes) by phone + time window — not live phone system CDRs.
+                        <ol>
+                            <li>After a call, log a <strong>Call</strong> task/action on the matter (include the client phone when possible).</li>
+                            <li>Upload the Recents screenshot here and run Extract &amp; Match.</li>
+                            <li>Treat Gaps as “not logged in CRM” until you confirm — not as proof the call never happened.</li>
+                        </ol>
+                        <p class="mb-0 mt-2">
+                            Open
+                            <a href="{{ route('assignee.tasks', ['filter' => 'call']) }}">Tasks → Call</a>
+                            to review or complete Call Actions.
+                        </p>
                     </div>
 
                     <div id="cc-upload-panel">

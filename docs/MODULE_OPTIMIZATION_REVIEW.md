@@ -75,7 +75,7 @@
 
 **Gaps**
 - `ClientsController` still owns emails, appointments, export, Outlook (further splits planned)
-- Non-overview tabs that include conflict UI will need a small AJAX bundle if opened without a full reload
+- ~~Non-overview tabs that include conflict UI will need a small AJAX bundle if opened without a full reload~~ **Fixed (2026-09-12):** conflict-parties card script is inline in the partial (with rebind guard) so `tab-lazy-load.js` `executeScripts` runs it when Personal Details is AJAX-loaded.
 
 ---
 

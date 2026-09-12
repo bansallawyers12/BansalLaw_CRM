@@ -438,11 +438,13 @@
 
 @include('crm.clients.partials.conflict-check-history-detail')
 
-@push('scripts')
+{{-- Inline (not @push): must ship inside AJAX tab HTML so tab-lazy-load executeScripts can bind. --}}
 <script>
 (function () {
     var card = document.getElementById('conflictPartiesCard');
     if (!card) return;
+    if (card.getAttribute('data-cp-bound') === '1') return;
+    card.setAttribute('data-cp-bound', '1');
 
     var viewEl = document.getElementById('conflictPartiesView');
     var editModal = document.getElementById('conflictPartiesEditModal');
@@ -1274,4 +1276,3 @@
     }
 })();
 </script>
-@endpush

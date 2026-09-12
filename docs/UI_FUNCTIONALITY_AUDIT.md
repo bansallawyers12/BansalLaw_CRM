@@ -177,9 +177,9 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| COMM-1 | Medium | `resources/views/crm/communication-check/index.blade.php` ~L100–109 | Banner states tool is **assistive only**; calls match logged Call Actions only (**no PBX**). Sets correct expectations but limits usefulness for phone workflows. |
-| COMM-2 | Low | `docs/MODULE_OPTIMIZATION_REVIEW.md` §3 | Non-overview tabs with conflict UI may need **AJAX bundle** if opened without full reload — potential script load gap. |
-| COMM-3 | Positive | `resources/views/crm/clients/partials/conflict-parties-card.blade.php` | Phase 5 UX (force clear, access-gated links) appears implemented. |
+| COMM-1 | Fixed | `resources/views/crm/communication-check/index.blade.php` | Clarified assistive scope and added actionable **Phone / Recents** tip (log Call Actions, match by phone+time, link to Tasks → Call). Still no PBX; usefulness improved via workflow guidance. |
+| COMM-2 | Fixed | `conflict-parties-card.blade.php`; `MODULE_OPTIMIZATION_REVIEW.md` §3 | Conflict UI script no longer `@push`ed (missing from AJAX tab HTML); inline + `data-cp-bound` so lazy Personal Details binds correctly. |
+| COMM-3 | Confirmed | `conflict-parties-card.blade.php` | Phase 5 UX verified: force-clear override panel + access-locked match links present. |
 
 ---
 
