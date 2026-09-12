@@ -60,7 +60,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 | Module | Description |
 |--------|-------------|
 | **Booking / Appointments** | FullCalendar-based scheduling (Melbourne office), consultant calendars, reminders, status updates, sync dashboard; service/location mapping via `BookingCatalogue` |
-| **SMS** | Twilio and Cellcast providers; templates, bulk send, webhooks (Admin Console) |
+| **SMS** | Cellcast provider; templates, bulk send, delivery/incoming webhooks (Admin Console) |
 | **Phone/Email Verification** | OTP and token-based verification on client contact records |
 
 ### Administration (Admin Console)
@@ -202,7 +202,6 @@ Versions below match the current `composer.lock` / `package.json` (Jul 2026). Re
 | `phpoffice/phpword` | 1.4.0 | DOCX document generation |
 | `phpoffice/phpspreadsheet` | 5.9.0 | Spreadsheet import/export |
 | `stripe/stripe-php` | 21.0.0 | Payment processing |
-| `twilio/sdk` | 8.11.6 | SMS (Twilio provider) |
 | `webklex/php-imap` | 6.2.0 | IMAP inbox sync |
 | `spatie/laravel-query-builder` | 7.3.0 | API query filtering |
 | `yajra/laravel-datatables-oracle` | 13.1.5 | Server-side DataTables |
@@ -246,7 +245,7 @@ Versions below match the current `composer.lock` / `package.json` (Jul 2026). Re
 | **Queue** | Database or Redis (`QUEUE_CONNECTION`) |
 | **Mail** | AWS SES (system default), Zoho SMTP (staff compose); see `config/mail_routing.php` |
 | **Notifications** | In-app broadcasts + polling (not WebSocket/Reverb) |
-| **SMS** | Twilio and Cellcast |
+| **SMS** | Cellcast (`UnifiedSmsManager` / `CellcastProvider`) |
 | **Python Services** | `python_services/` — DOCX→PDF conversion, email upload parsing (default `http://localhost:5002`) |
 | **Build** | Vite (`npm run build` / `npm run dev`) |
 
@@ -267,7 +266,7 @@ Routes are loaded by `App\Providers\RouteServiceProvider`:
 | `routes/health.php` | `mapHealthRoutes()` | **None** | `/up` always reachable (ALB / CodeDeploy) |
 | `routes/api.php` | `mapApiRoutes()` | `api` + `/api` prefix | Stateless JSON API |
 | `routes/web.php` | `mapWebRoutes()` | `web` | Main CRM; includes nested requires |
-| `routes/sms.php` | `mapSmsRoutes()` | `web` only | Public SMS webhooks (no auth) |
+| `routes/sms.php` | `mapSmsRoutes()` | `api` (no `/api` prefix) | Public Cellcast SMS webhooks (no auth, no CSRF) |
 | `routes/console.php` | Laravel kernel | — | Scheduled Artisan commands |
 
 Within `routes/web.php`:
@@ -295,7 +294,7 @@ Within `routes/web.php`:
 | `routes/office_visits.php` | `/office-visits/*`, `/checkin` | Walk-in queue management |
 | `routes/documents.php` | `/sign/*`, `/signatures/*`, `/documents/*` | E-signature workflow, public signing, admin document CRUD |
 | `routes/api.php` | `/api/*` | Public booking API, service-account tokens, Stripe PaymentIntents |
-| `routes/sms.php` | `/webhooks/sms/*` | Twilio / Cellcast inbound webhooks (public) |
+| `routes/sms.php` | `/webhooks/sms/*` | Cellcast status + incoming webhooks (public) |
 | `routes/health.php` | `/up` | Health check (zero middleware) |
 
 ### Middleware reference
@@ -306,7 +305,7 @@ Within `routes/web.php`:
 | `web` | All browser routes (session, CSRF) |
 | `auth:admin` | CRM staff session (`Staff` model via `admin` guard) |
 | `adminconsole` | Admin Console only (roles in `config('crm.admin_console_role_ids')`, default 1, 12, 17) |
-| `api` | `/api/*` routes in `routes/api.php` |
+| `api` | `/api/*` (`routes/api.php`) and SMS webhooks (`routes/sms.php`, no `/api` prefix) |
 | `auth:sanctum` | `/api/payments/create-payment-intent` |
 | `auth` | `/clear-cache` (default guard: `admin`) |
 | `can:trigger-manual-sync` | `POST /booking/sync/manual` |
@@ -344,10 +343,10 @@ Within `routes/web.php`:
 
 #### SMS webhooks (`routes/sms.php`)
 
+Loaded with `api` middleware (stateless, no CSRF). Cellcast is the only registered webhook provider.
+
 | Method | URI | Name |
 |--------|-----|------|
-| POST | `/webhooks/sms/twilio/status` | `webhooks.sms.twilio.status` |
-| POST | `/webhooks/sms/twilio/incoming` | `webhooks.sms.twilio.incoming` |
 | POST | `/webhooks/sms/cellcast/status` | `webhooks.sms.cellcast.status` |
 | POST | `/webhooks/sms/cellcast/incoming` | `webhooks.sms.cellcast.incoming` |
 

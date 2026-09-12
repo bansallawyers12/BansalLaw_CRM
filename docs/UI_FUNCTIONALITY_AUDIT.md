@@ -197,8 +197,8 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| SMS-1 | Medium | README vs `routes/sms.php` | **README drift:** documents Twilio webhooks but routes only register **Cellcast** webhooks. |
-| SMS-2 | Medium | README vs `RouteServiceProvider.php` | README says `sms.php` uses `web` middleware; actual registration uses **`api` middleware** (no CSRF — correct for webhooks but docs wrong). |
+| SMS-1 | Fixed | README vs `routes/sms.php` | README webhook table and SMS overview now document **Cellcast only** (Twilio webhook rows and provider claims removed). |
+| SMS-2 | Fixed | README vs `RouteServiceProvider.php` | README route registration + middleware reference now state `sms.php` uses **`api`** middleware (no CSRF; no `/api` URI prefix). |
 
 ---
 
