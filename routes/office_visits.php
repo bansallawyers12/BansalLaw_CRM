@@ -3,11 +3,18 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\OfficeVisitController;
 
-Route::get('/office-visits', fn () => redirect()->route('officevisits.waiting'))->name('officevisits.index');
-Route::get('/office-visits/waiting', [OfficeVisitController::class, 'waiting'])->name('officevisits.waiting');
-Route::get('/office-visits/attending', [OfficeVisitController::class, 'attending'])->name('officevisits.attending');
-Route::get('/office-visits/completed', [OfficeVisitController::class, 'completed'])->name('officevisits.completed');
-Route::get('/office-visits/create', [OfficeVisitController::class, 'create'])->name('officevisits.create');
+/*
+| Office visits (queue) vs front-desk check-in (wizard)
+| - Front desk `/front-desk/checkin` creates CheckinLog rows.
+| - This module manages waiting → attending → completed for those rows.
+| - Legacy `/office-visits/create` redirects to the front-desk wizard.
+*/
+
+Route::get('/office-visits', fn () => redirect()->route('office-visits.waiting'))->name('office-visits.index');
+Route::get('/office-visits/waiting', [OfficeVisitController::class, 'waiting'])->name('office-visits.waiting');
+Route::get('/office-visits/attending', [OfficeVisitController::class, 'attending'])->name('office-visits.attending');
+Route::get('/office-visits/completed', [OfficeVisitController::class, 'completed'])->name('office-visits.completed');
+Route::redirect('/office-visits/create', '/front-desk/checkin', 301)->name('office-visits.create');
 
 Route::post('/checkin', [OfficeVisitController::class, 'checkin']);
 Route::get('/get-checkin-detail', [OfficeVisitController::class, 'getcheckin']);

@@ -28,7 +28,7 @@
         'dashboard' => $_routeName === 'dashboard' || str_starts_with($_routeName, 'dashboard.'),
         'signatures' => str_starts_with($_routeName, 'signatures.'),
         'booking' => str_starts_with($_routeName, 'booking.'),
-        'officevisits' => str_starts_with($_routeName, 'officevisits.'),
+        'officevisits' => str_starts_with($_routeName, 'office-visits.'),
         'frontdesk' => str_starts_with($_routeName, 'front-desk.checkin'),
         'tasks' => $_routeName === 'assignee.tasks' || str_starts_with($_routeName, 'assignee.tasks.'),
         'unassigned' => $_navUnassigned,
@@ -113,7 +113,7 @@
                     @endif
                 </div>
             </div>
-            <a href="{{route('officevisits.waiting')}}" class="icon-btn{{ $_navActive['officevisits'] ? ' active' : '' }}" title="In Person"@if($_navActive['officevisits']) aria-current="page"@endif><i class="fa-solid fa-user-check"></i></a>
+            <a href="{{route('office-visits.waiting')}}" class="icon-btn{{ $_navActive['officevisits'] ? ' active' : '' }}" title="In Person"@if($_navActive['officevisits']) aria-current="page"@endif><i class="fa-solid fa-user-check"></i></a>
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
             <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn{{ $_navActive['frontdesk'] ? ' active' : '' }}" title="Front-Desk Check-In"@if($_navActive['frontdesk']) aria-current="page"@endif><i class="fa-solid fa-clipboard-check"></i></a>
             @endif

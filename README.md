@@ -500,10 +500,10 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 
 | Method | URI | Name |
 |--------|-----|------|
-| GET | `/office-visits/waiting` | `officevisits.waiting` |
-| GET | `/office-visits/attending` | `officevisits.attending` |
-| GET | `/office-visits/completed` | `officevisits.completed` |
-| GET | `/office-visits/create` | `officevisits.create` |
+| GET | `/office-visits/waiting` | `office-visits.waiting` |
+| GET | `/office-visits/attending` | `office-visits.attending` |
+| GET | `/office-visits/completed` | `office-visits.completed` |
+| GET | `/office-visits/create` | `office-visits.create` (301 → `/front-desk/checkin`) |
 | POST | `/checkin` | — |
 | POST | `/attend_session` | — |
 | POST | `/complete_session` | — |

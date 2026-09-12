@@ -187,9 +187,9 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| OV-1 | Low | `routes/web.php` L231–237 vs `routes/office_visits.php` | **Parallel check-in flows:** front-desk wizard (`/front-desk/checkin/*`) and office-visits module. Staff may use either; behavior should stay aligned. |
-| OV-2 | Low | `routes/office_visits.php` L6–10 | Route names `officevisits.*` (no hyphen) while URIs use `/office-visits`. Naming inconsistency. |
-| OV-3 | Verify | `cmr-bugs.md` §14.17 | Office-visit detail XSS marked Fixed — verify in browser during QA. |
+| OV-1 | Fixed | `routes/web.php`; `routes/office_visits.php`; office-visits + front-desk UI | Documented complementary roles (wizard creates, In Person queues). Legacy `/office-visits/create` 301s to front-desk wizard; both UIs cross-link. |
+| OV-2 | Fixed | `routes/office_visits.php` | Route names renamed `officevisits.*` → `office-visits.*` to match `/office-visits` URIs; callers + README updated. |
+| OV-3 | Verified | `OfficeVisitController::getcheckin`; `SecurityBugFixes14Test::test_14_17_*` | Re-ran XSS escape coverage; user-controlled detail fields remain `e()` / `htmlspecialchars()` escaped. |
 
 ---
 

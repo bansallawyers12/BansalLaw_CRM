@@ -227,6 +227,7 @@ Route::middleware(['auth:admin'])->group(function () {
     require __DIR__ . '/booking_admin.php';
 
     /*---------- Front-Desk Check-In Wizard ----------*/
+    // Creates CheckinLog rows; office-visits module manages the queue (see routes/office_visits.php).
     Route::prefix('front-desk/checkin')->name('front-desk.checkin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'index'])->name('index');
         Route::post('/lookup', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'lookupContact'])->name('lookup');

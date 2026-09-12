@@ -30,16 +30,21 @@
 	border-bottom: 1px solid var(--border) !important;
 	padding: 1rem 1.25rem !important;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
 	gap: 12px;
 	flex-wrap: wrap;
 }
 .office-visits-page .ov-shell > .card > .card-header h4 {
-	color: var(--navy) !important;
-	font-weight: 700;
-	font-size: 1.15rem;
-	margin: 0;
+    color: var(--navy) !important;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0;
+}
+.office-visits-page .ov-shell > .card > .card-header small {
+    display: block;
+    max-width: 42rem;
+    line-height: 1.4;
 }
 .office-visits-page .ov-shell > .card > .card-body {
 	padding: 1.25rem !important;
@@ -367,7 +372,10 @@
 				<div class="col-12">
 					<div class="card ov-shell">
 						<div class="card-header">
-							<h4>In Person</h4>
+							<div>
+								<h4 class="mb-1">In Person</h4>
+								<small class="text-muted">Queue for arrivals already checked in. Use <strong>Create In Person</strong> (front-desk wizard) to add a visit — both flows share the same check-in records.</small>
+							</div>
 							<div class="card-header-action">
 								<a href="{{ route('front-desk.checkin.index') }}" class="btn ov-create-btn">Create In Person</a>
 							</div>

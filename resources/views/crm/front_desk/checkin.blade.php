@@ -417,7 +417,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
     x-data="frontDeskCheckIn({
         baseUrl: @js(url('/front-desk/checkin')),
         csrf: @js(csrf_token()),
-        waitingUrl: @js(route('officevisits.waiting')),
+        waitingUrl: @js(route('office-visits.waiting')),
     })"
     x-cloak
 >
@@ -425,7 +425,9 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
     <div class="fd-card">
         <div class="fd-card-header">
             <h4><i class="fa-solid fa-clipboard-check me-2"></i>Front-Desk Check-In</h4>
-            <p>Record a client or walk-in arrival at the front desk</p>
+            <p>Record a client or walk-in arrival. After submit, manage the visit in
+                <a href="{{ route('office-visits.waiting') }}">In Person</a>
+                (waiting → attending → completed).</p>
         </div>
         <div class="fd-card-body">
 
