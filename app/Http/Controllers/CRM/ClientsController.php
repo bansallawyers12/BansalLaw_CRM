@@ -4523,10 +4523,10 @@ class ClientsController extends Controller
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
-                'is_paid' => ($serviceId == 2) ? false : (($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false')),
+                'is_paid' => false,
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
             ];
 
             // Call Bansal API to create appointment and get real bansal_appointment_id
@@ -4604,8 +4604,7 @@ class ClientsController extends Controller
                 ? $staffActorId
                 : null;
 
-            // Create booking appointment
-            $isPaymentCompleted = ($requestData['payment_status'] ?? '') === 'completed' || (!empty($requestData['is_paid']) && $requestData['is_paid'] !== 'false');
+            // Create booking appointment — paid status only after verified payment checkout
             $appointment = BookingAppointment::create([
                 'bansal_appointment_id' => $bansalAppointmentId,
                 'order_hash' => null, // No payment for manually created appointments
@@ -4634,14 +4633,12 @@ class ClientsController extends Controller
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 
-                'status' => ($serviceId == 2) 
-                    ? 'confirmed' 
-                    : ($isPaymentCompleted ? 'paid' : 'pending'),
-                'confirmed_at' => ($serviceId == 2) ? now() : ($isPaymentCompleted ? now() : null),
-                'is_paid' => ($serviceId == 2) ? false : $isPaymentCompleted,
+                'status' => ($serviceId == 2) ? 'confirmed' : 'pending',
+                'confirmed_at' => ($serviceId == 2) ? now() : null,
+                'is_paid' => false,
                 'amount' => $amount,
                 'final_amount' => $amount,
-                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? ($isPaymentCompleted ? 'completed' : 'pending')),
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
                 
                 // Boolean fields with default values
                 'confirmation_email_sent' => false,

@@ -787,12 +787,12 @@ Status key (2026-08-07):
 ### 14.10 High — Paid bookings created with `is_paid = true` before payment
 - **Status:** Fixed
 - **Files:** `ClientsController::addAppointmentBook`, `PublicBookingController::addAppointmentWithoutLogin`, `PublicBookingController::addAppointment`, `SecurityBugFixes14Test`
-- **Now:** Paid bookings (`serviceId != 2` / non-free consultations) are created with `is_paid = false`, `payment_status = 'pending'`, and `status = 'pending'`. Only upon verified completion of payment checkout (or explicit admin payment completion) is `is_paid` set to `true`, `payment_status = 'completed'`, and `status = 'paid'`. Free appointments (`serviceId == 2`) remain `is_paid = false` with `status = 'confirmed'`.
+- **Now:** Paid bookings are created with `is_paid = false`, `payment_status = 'pending'`, and `status = 'pending'` regardless of client-supplied paid flags. Only verified payment checkout (or explicit staff payment completion) sets paid. Free appointments (`serviceId == 2`) remain unpaid with `status = 'confirmed'`. Re-verified 2026-09-12 (spoofed `is_paid`/`payment_status` ignored).
 
 ### 14.11 High — `recordPaymentByIntent` weak ownership when metadata empty
 - **Status:** Fixed
 - **Files:** `StripePaymentService::recordPaymentByIntent`, `SecurityBugFixes14Test`
-- **Now:** Enforces multi-layer ownership validation. If `appointment_id` is present in metadata, it must match the target appointment. If `appointment_id` metadata is missing, it verifies client ownership via `metadata.client_id`, `metadata.client_email`, or Stripe customer/receipt billing email matching the target appointment's client before allowing the payment intent to attach.
+- **Now:** Requires `appointment_id` or `bansal_appointment_id` in PaymentIntent metadata and rejects attach when missing or mismatched. Email/client_id-only fallback removed (2026-09-12 residual close-out).
 
 ### 14.12 High — Logged-in booking ignores Bansal slot-unavailable and still creates locally
 - **Status:** Fixed
@@ -847,7 +847,7 @@ Status key (2026-08-07):
 
 ## Suggested fix priority (documentation only — updated 2026-08-22)
 
-1. **Booking / payments:** Require PI metadata `appointment_id` (or equivalent) always; close #14.11; audit #14.10 paid-before-charge paths.
+1. **Booking / payments:** ~~Require PI metadata `appointment_id` (or equivalent) always; close #14.11; audit #14.10 paid-before-charge paths.~~ **Done (2026-09-12):** metadata `appointment_id`/`bansal_appointment_id` required; create paths ignore spoofed paid flags.
 2. **Client funds ledger:** QA remaining `ClientAccountsController` money paths (#6.1–#6.8, #14.2–#14.6); VLSB trust compliance items (#6.9, #14.1, #14.7, #14.8) are obsolete.
 3. **ACL sweep:** Apply `canAccessClientOrLead` / `ensureCrmRecordAccess` to notes/tasks/docs/email preview-delete/dashboard/assignee complete/convert paths; redact locked global search (#12.2).
 4. **Utilities:** Further restrict `/delete_action` / `/update_action` (super-admin only + narrower allowlists) (#9.7–9.9).

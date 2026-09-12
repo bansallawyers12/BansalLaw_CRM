@@ -1909,7 +1909,30 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Update appointment date and time.
+     * Update appointment date and time only (list modal / AJAX).
+     * Preserves meeting type and preferred language from the existing record,
+     * then delegates to update() for validation, slot checks, and Bansal sync.
+     */
+    public function updateDatetime(Request $request, $id)
+    {
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
+
+        $request->validate([
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required|date_format:H:i',
+        ]);
+
+        $request->merge([
+            'meeting_type' => $appointment->meeting_type ?: 'in_person',
+            'preferred_language' => $appointment->preferred_language ?: 'English',
+        ]);
+
+        return $this->update($request, $id);
+    }
+
+    /**
+     * Update appointment date/time, meeting type, and preferred language (full edit form).
      */
     public function update(Request $request, $id)
     {

@@ -27,11 +27,14 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.json')
             ->whereNumber('id');
 
+        // Legacy calendar type URLs (pre ajay/kunal-only). Keep permanent redirects
+        // for bookmarks; in-app nav uses ajay|kunal|staff only (see BookingLegacyCalendarRedirectTest).
         Route::redirect('/calendar/paid', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/jrp', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/education', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/tourist', '/booking/calendar/ajay', 301);
         Route::redirect('/calendar/adelaide', '/booking/calendar/ajay', 301);
+
         Route::get('/calendar/staff/{staff}', 'calendarForStaff')
             ->name('appointments.calendar.staff')
             ->whereNumber('staff');
@@ -55,7 +58,7 @@ Route::controller(BookingAppointmentsController::class)
             return redirect()->route('booking.appointments.show', ['id' => $id]);
         })->whereNumber('id');
 
-        Route::post('/appointments/{id}/update-datetime', 'update')
+        Route::post('/appointments/{id}/update-datetime', 'updateDatetime')
             ->name('appointments.update-datetime')
             ->whereNumber('id');
 

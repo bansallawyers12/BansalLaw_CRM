@@ -289,6 +289,31 @@
     color: var(--navy);
 }
 
+.booking-appointments-page .ba-sync-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border: 1px solid rgba(30, 61, 96, 0.14);
+    border-radius: 10px;
+    background: rgba(221, 234, 248, 0.45);
+    color: var(--navy);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.booking-appointments-page .ba-sync-note__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--navy);
+    opacity: 0.85;
+}
+
+.booking-appointments-page .ba-sync-note strong {
+    font-weight: 700;
+}
+
 /* Table panel */
 .booking-appointments-page .ba-table-panel {
     border: 1px solid var(--border);
@@ -722,6 +747,21 @@
                         </form>
                     </div>
 
+                    <div class="ba-sync-note" role="note">
+                        <i class="fa-solid fa-circle-info ba-sync-note__icon" aria-hidden="true"></i>
+                        <p class="mb-0">
+                            <strong>Greyed-out View / Edit / Quick Actions</strong>
+                            mean that booking is not linked to a CRM appointment yet
+                            (no synced record). Use
+                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                                <strong>Manual Sync</strong> or check <strong>Sync Status</strong>;
+                            @else
+                                sync (ask a Super Admin / sync-capable role);
+                            @endif
+                            tooltips on disabled buttons confirm this.
+                        </p>
+                    </div>
+
                     <div class="ba-table-panel">
                         <div class="table-responsive">
                             <table class="table table-hover" id="appointments-table">
@@ -735,7 +775,7 @@
                                         <th>Description</th>
                                         <th>Status</th>
                                         <th>Payment</th>
-                                        <th width="124">Actions</th>
+                                        <th width="124" title="View, edit, and quick actions require a synced CRM appointment">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="appointments-table-body">
@@ -929,16 +969,17 @@ function buildAppointmentRowHtml(row, rowNumber) {
 
     const showUrl = row.show_url || '';
     const editUrl = row.edit_url || '';
+    const unsyncedTitle = 'Not synced to CRM yet — View, Edit, and Quick Actions unlock after sync';
     const viewBtn = showUrl
         ? ('<a href="' + escapeHtml(showUrl) + '" class="ba-action ba-action--view" title="View in CRM"><i class="fa-solid fa-eye"></i></a>')
-        : ('<button type="button" class="ba-action" disabled title="Not synced to CRM yet"><i class="fa-solid fa-eye"></i></button>');
+        : ('<button type="button" class="ba-action" disabled title="' + unsyncedTitle + '" aria-label="' + unsyncedTitle + '"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>');
     const editBtn = editUrl
         ? ('<a href="' + escapeHtml(editUrl) + '" class="ba-action ba-action--edit" title="Edit in CRM"><i class="fa-solid fa-pen-to-square"></i></a>')
-        : ('<button type="button" class="ba-action" disabled title="Not synced to CRM yet"><i class="fa-solid fa-pen-to-square"></i></button>');
+        : ('<button type="button" class="ba-action" disabled title="' + unsyncedTitle + '" aria-label="' + unsyncedTitle + '"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>');
     const crmId = row.crm_appointment_id;
     const quickBtn = crmId
         ? ('<button type="button" class="ba-action ba-action--quick quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fa-solid fa-bolt"></i></button>')
-        : ('<button type="button" class="ba-action" disabled title="Requires synced CRM record"><i class="fa-solid fa-bolt"></i></button>');
+        : ('<button type="button" class="ba-action" disabled title="' + unsyncedTitle + '" aria-label="' + unsyncedTitle + '"><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>');
 
     return (
         '<tr class="appointment-data-row">' +

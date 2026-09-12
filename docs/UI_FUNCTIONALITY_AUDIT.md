@@ -155,10 +155,10 @@ For security, ACL, CSRF, and money-path issues, see **`cmr-bugs.md`** (~80+ item
 
 | ID | Severity | Location | Issue |
 |----|----------|----------|-------|
-| BOOK-1 | Medium | `resources/views/crm/booking/appointments/index.blade.php` ~L934–941 | View/Edit/Quick actions **render disabled** with tooltip “Not synced to CRM yet” when `bansal_appointment_id` missing. Correct guard but staff may perceive list as broken without header explanation. |
-| BOOK-2 | Low | `routes/booking_admin.php` L30–34 | Five legacy calendar type URLs → `/booking/calendar/ajay` (301). |
-| BOOK-3 | Low | `routes/booking_admin.php` L18–19 vs L55–57 | `POST .../update-datetime` and `PUT .../appointments/{id}` both call `update` — duplicate update paths. |
-| BOOK-4 | Low | `cmr-bugs.md` Area 14 | Many booking/payment bugs marked Fixed; **residual QA** recommended on paid-before-charge and metadata ownership paths. |
+| BOOK-1 | Fixed | `resources/views/crm/booking/appointments/index.blade.php` | Added page note explaining greyed-out View/Edit/Quick Actions mean the booking is not synced to CRM yet; disabled buttons share a clearer tooltip/`aria-label`. Guard unchanged. |
+| BOOK-2 | Fixed | `routes/booking_admin.php` (legacy calendar redirects) | Confirmed intentional 301 bookmark compatibility to `/booking/calendar/ajay`; comment + `BookingLegacyCalendarRedirectTest` asserts 301. In-app links already use `ajay`/`kunal`/staff. |
+| BOOK-3 | Fixed | `routes/booking_admin.php`; `BookingAppointmentsController::updateDatetime` | `POST .../update-datetime` now calls dedicated `updateDatetime` (date/time only; merges existing meeting type/language) instead of sharing the full PUT `update` entrypoint. |
+| BOOK-4 | Fixed | Area 14 residual (`14.10`/`14.11`) | Public/CRM create paths ignore client-supplied `is_paid`/`payment_status=completed`; `recordPaymentByIntent` requires `appointment_id` (or bansal id) in PI metadata; tests + `cmr-bugs.md` residual checklist updated. |
 
 ---
 

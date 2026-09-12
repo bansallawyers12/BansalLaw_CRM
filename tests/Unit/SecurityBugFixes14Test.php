@@ -79,6 +79,9 @@ class SecurityBugFixes14Test extends TestCase
             'preferred_language' => 1, // English
             'description' => 'Legal matter needing consultation',
             'timezone' => 'Australia/Melbourne',
+            // Spoofed paid flags must be ignored until verified checkout
+            'is_paid' => true,
+            'payment_status' => 'completed',
         ]);
 
         $response = $publicBookingController->addAppointmentWithoutLogin($request);

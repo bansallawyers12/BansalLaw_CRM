@@ -447,36 +447,29 @@ class StripePaymentService
             $metaClientId = $paymentIntent->metadata->client_id ?? null;
             $receiptEmail = $paymentIntent->receipt_email ?? ($paymentIntent->charges->data[0]->billing_details->email ?? null);
 
-            // Strong ownership validation:
-            // 1. If appointment ID is in metadata, it MUST match this appointment
-            if (!empty($metaAppId)) {
-                if ((string) $metaAppId !== (string) $appointment->id && (string) $metaAppId !== (string) $appointment->bansal_appointment_id) {
-                    return [
-                        'success' => false,
-                        'data' => [],
-                        'message' => 'PaymentIntent metadata does not match this appointment.',
-                    ];
-                }
-            } else {
-                // 2. When appointment_id is missing from metadata, ensure client ownership by client_id or client_email
-                $hasMatchingClient = false;
-                if (!empty($metaClientId) && (int) $metaClientId === (int) $appointment->client_id) {
-                    $hasMatchingClient = true;
-                }
-                if (!empty($metaClientEmail) && strtolower(trim($metaClientEmail)) === strtolower(trim($appointment->client_email))) {
-                    $hasMatchingClient = true;
-                }
-                if (!empty($receiptEmail) && !empty($appointment->client_email) && strtolower(trim($receiptEmail)) === strtolower(trim($appointment->client_email))) {
-                    $hasMatchingClient = true;
-                }
+            // Require appointment id in PaymentIntent metadata (no email-only attach).
+            if (empty($metaAppId)) {
+                Log::warning('Record payment: missing appointment_id metadata', [
+                    'appointment_id' => $appointment->id,
+                    'payment_intent_id' => $paymentIntent->id,
+                    'meta_client_id' => $metaClientId,
+                    'meta_client_email' => $metaClientEmail,
+                    'receipt_email' => $receiptEmail,
+                ]);
 
-                if (!$hasMatchingClient) {
-                    return [
-                        'success' => false,
-                        'data' => [],
-                        'message' => 'PaymentIntent ownership cannot be verified for this appointment.',
-                    ];
-                }
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'PaymentIntent metadata must include appointment_id.',
+                ];
+            }
+
+            if ((string) $metaAppId !== (string) $appointment->id && (string) $metaAppId !== (string) $appointment->bansal_appointment_id) {
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'PaymentIntent metadata does not match this appointment.',
+                ];
             }
 
             // Avoid duplicate record for same PaymentIntent
