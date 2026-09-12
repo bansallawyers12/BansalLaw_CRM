@@ -730,22 +730,12 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Timed personal/staff events must stay within 9:00 AM – 6:00 PM.
+     * Timed personal/staff events must stay within Mon–Fri 9:00 AM – 6:00 PM.
+     * All-day events are still blocked on weekends.
      */
     protected function staffCalendarEventOutsideBusinessHoursMessage(Carbon $startsAt, Carbon $endsAt, bool $isAllDay): ?string
     {
-        if ($isAllDay) {
-            return null;
-        }
-
-        $startMinutes = ((int) $startsAt->format('H') * 60) + (int) $startsAt->format('i');
-        $endMinutes = ((int) $endsAt->format('H') * 60) + (int) $endsAt->format('i');
-
-        if ($startMinutes < (9 * 60) || $endMinutes > (18 * 60) || $endMinutes <= $startMinutes) {
-            return 'Events can only be booked between 9:00 AM and 6:00 PM.';
-        }
-
-        return null;
+        return \App\Support\CalendarScheduleConstraints::staffEventMessage($startsAt, $endsAt, $isAllDay);
     }
 
     public function destroyCalendarEvent(int $id)

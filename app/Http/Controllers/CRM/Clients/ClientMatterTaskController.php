@@ -10,6 +10,7 @@ use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\TaskTimelineService;
+use App\Support\CalendarScheduleConstraints;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -197,13 +198,18 @@ class ClientMatterTaskController extends Controller
             return response()->json(['status' => false, 'message' => 'Title is required'], 422);
         }
 
+        $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
+        if ($dueYmd !== '' && ($weekendMsg = CalendarScheduleConstraints::weekendMessageIfAny($dueYmd))) {
+            return response()->json(['status' => false, 'message' => $weekendMsg], 422);
+        }
+
         $maxSort = (int) ClientMatterTask::where('client_matter_id', $matter->id)->max('sort_order');
 
         $task = new ClientMatterTask;
         $task->client_matter_id = $matter->id;
         $task->client_id        = $matter->client_id;
         $task->title            = $title;
-        $task->due_date         = ! empty($validated['due_date']) ? $validated['due_date'] : null;
+        $task->due_date         = $dueYmd !== '' ? $dueYmd : null;
         $task->is_done          = false;
         $task->sort_order       = $maxSort + 1;
         $task->created_by       = Auth::user()->id;
@@ -247,6 +253,10 @@ class ClientMatterTaskController extends Controller
         $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
         if ($dueYmd === '') {
             return response()->json(['status' => false, 'message' => 'Choose a reminder date.'], 422);
+        }
+
+        if ($weekendMsg = CalendarScheduleConstraints::weekendMessageIfAny($dueYmd)) {
+            return response()->json(['status' => false, 'message' => $weekendMsg], 422);
         }
 
         $tz = (string) config('app.timezone');
@@ -323,6 +333,9 @@ class ClientMatterTaskController extends Controller
             $newDue = ($rawDue !== null && trim((string) $rawDue) !== '') ? $rawDue : null;
             $oldDue = $task->due_date ? $task->due_date->format('Y-m-d') : '';
             $newDueStr = $this->normalizeDueDateYmd($newDue);
+            if ($newDueStr !== '' && ($weekendMsg = CalendarScheduleConstraints::weekendMessageIfAny($newDueStr))) {
+                return response()->json(['status' => false, 'message' => $weekendMsg], 422);
+            }
             if ($oldDue !== $newDueStr) {
                 $timelineChanges['Due date'] = [
                     'old' => $oldDue !== '' ? date('d/m/Y', strtotime($oldDue)) : '',

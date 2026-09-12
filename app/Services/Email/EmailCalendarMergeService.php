@@ -7,6 +7,7 @@ use App\Models\EmailCalendarLink;
 use App\Models\EmailLog;
 use App\Models\StaffCalendarEvent;
 use App\Support\CalendarEventText;
+use App\Support\CalendarScheduleConstraints;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -446,6 +447,11 @@ class EmailCalendarMergeService
             throw new \InvalidArgumentException('Calendar event is missing a start time.');
         }
 
+        // Do not auto-create staff/calendar items on Saturday or Sunday.
+        if (CalendarScheduleConstraints::isWeekend($startsAt)) {
+            throw new \InvalidArgumentException(CalendarScheduleConstraints::WEEKEND_MESSAGE);
+        }
+
         if ($this->calendarTypeForEvent($event['event_type']) === EmailCalendarLink::TYPE_COURT_HEARING
             && ! empty($emailLog->client_id)
         ) {
@@ -518,6 +524,10 @@ class EmailCalendarMergeService
         $isAllDay = (bool) ($event['is_all_day'] ?? false);
         $title = $this->cleanStaffEventTitle((string) ($event['title'] ?? ''), (string) ($event['event_type'] ?? 'meeting'));
         $location = CalendarEventText::sanitizeLocation($event['location'] ?? null);
+
+        if (CalendarScheduleConstraints::isWeekend($startsAt)) {
+            throw new \InvalidArgumentException(CalendarScheduleConstraints::WEEKEND_MESSAGE);
+        }
 
         $existingStaffId = $this->findExistingStaffEventId(
             null,

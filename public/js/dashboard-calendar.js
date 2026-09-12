@@ -93,6 +93,24 @@
         return (el && el.getAttribute('data-timezone')) || 'Australia/Melbourne';
     }
 
+    function isWeekendYmd(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') {
+            return false;
+        }
+        var parts = String(dateStr).slice(0, 10).split('-');
+        if (parts.length < 3) {
+            return false;
+        }
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        var d = parseInt(parts[2], 10);
+        if (!y || !m || !d) {
+            return false;
+        }
+        var day = new Date(y, m - 1, d).getDay();
+        return day === 0 || day === 6;
+    }
+
     function calendarElTzBookingType() {
         var el = document.getElementById(CALENDAR_EL_ID);
         var type = el && el.getAttribute('data-booking-calendar-type');
@@ -1832,6 +1850,11 @@
                 return;
             }
 
+            if (isWeekendYmd(date)) {
+                showError('Weekends (Saturday and Sunday) are not available. Please select a weekday (Monday–Friday).');
+                return;
+            }
+
             if (isPastDateStr(date, calendarElTz())) {
                 showError('Please choose today or a future date.');
                 return;
@@ -2021,6 +2044,12 @@
                 dateClick: function (info) {
                     focusUpcomingDate(info.dateStr);
                     if (isPastDateStr(info.dateStr, tz)) {
+                        return;
+                    }
+                    if (isWeekendYmd(info.dateStr)) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Weekends (Saturday and Sunday) are not available. Please select a weekday.', 'warning');
+                        }
                         return;
                     }
                     var dateInput = document.getElementById('personalEventDate');

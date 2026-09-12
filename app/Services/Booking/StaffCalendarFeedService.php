@@ -8,6 +8,7 @@ use App\Models\Note;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
 use App\Support\CalendarEventText;
+use App\Support\CalendarScheduleConstraints;
 use App\Support\PersonalCalendarFeedReset;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class StaffCalendarFeedService
 {
@@ -264,6 +266,10 @@ class StaffCalendarFeedService
             $when = $when->copy()->setTime(9, 0);
         }
         $endsAt = $when->copy()->addMinutes(30);
+
+        if ($message = CalendarScheduleConstraints::staffEventMessage($when, $endsAt, $isAllDay)) {
+            throw ValidationException::withMessages(['action_date' => $message]);
+        }
 
         $clientName = trim((string) ($this->clientDisplayName($note->client) ?? ''));
         $taskTitle = trim((string) ($note->title ?: 'Follow-up'));

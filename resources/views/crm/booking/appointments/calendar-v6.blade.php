@@ -1100,10 +1100,14 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#eventModal').modal('show');
         },
         
-        // Date click — add important event on selected day
+        // Date click — add important event on selected weekday only
         dateClick: function(info) {
             const d = info.date;
             const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+            if (isBookingCalendarWeekendYmd(dateStr)) {
+                showAlert('warning', 'Weekends (Saturday and Sunday) are not available. Please select a weekday.');
+                return;
+            }
             const timeStr = d.toLocaleTimeString('en-US', {
                 timeZone: 'Australia/Melbourne',
                 hour12: false,
@@ -2415,6 +2419,10 @@ document.addEventListener('DOMContentLoaded', function() {
             crmAlert('Choose an event date.');
             return;
         }
+        if (isBookingCalendarWeekendYmd(date)) {
+            warnBookingCalendarWeekend();
+            return;
+        }
         if (!time) time = '09:00';
         const startsAt = melbourneIsoFromDateAndTime(date, time, !!isAllDay);
         let endsAt = null;
@@ -2515,6 +2523,36 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ─── Form helpers ─────────────────────────────────────────────────── */
     var IMPORTANT_EVENT_TIME_MIN = '09:00';
     var IMPORTANT_EVENT_TIME_MAX = '18:00';
+    var BOOKING_CALENDAR_WEEKEND_MSG = 'Weekends (Saturday and Sunday) are not available. Please select a weekday (Monday–Friday).';
+
+    function isBookingCalendarWeekendYmd(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') {
+            return false;
+        }
+        var parts = dateStr.split('-');
+        if (parts.length < 3) {
+            return false;
+        }
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        var d = parseInt(parts[2], 10);
+        if (!y || !m || !d) {
+            return false;
+        }
+        // Local calendar date (avoid UTC shift from Date.parse('YYYY-MM-DD'))
+        var day = new Date(y, m - 1, d).getDay();
+        return day === 0 || day === 6;
+    }
+
+    function warnBookingCalendarWeekend() {
+        if (typeof iziToast !== 'undefined' && iziToast.warning) {
+            iziToast.warning({ title: 'Weekday required', message: BOOKING_CALENDAR_WEEKEND_MSG, position: 'topRight' });
+        } else if (typeof showAlert === 'function') {
+            showAlert('warning', BOOKING_CALENDAR_WEEKEND_MSG);
+        } else {
+            crmAlert(BOOKING_CALENDAR_WEEKEND_MSG);
+        }
+    }
 
     function importantEventTimeToMinutes(timeStr) {
         if (!timeStr || typeof timeStr !== 'string') {
@@ -2696,6 +2734,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 crmAlert('Title and date are required.');
             }
+            return;
+        }
+        if (isBookingCalendarWeekendYmd(dateStr)) {
+            warnBookingCalendarWeekend();
             return;
         }
         const allDay   = document.getElementById('importantEventAllDay').checked;
@@ -2924,6 +2966,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     document.getElementById('importantEventSaveBtn').addEventListener('click', saveImportantEvent);
     document.getElementById('importantEventDeleteBtn').addEventListener('click', deleteImportantEvent);
+    document.getElementById('importantEventDate').addEventListener('change', function () {
+        if (isBookingCalendarWeekendYmd(this.value)) {
+            warnBookingCalendarWeekend();
+            this.value = '';
+        }
+    });
     document.getElementById('importantEventAllDay').addEventListener('change', function () {
         const disabled = this.checked;
         document.getElementById('importantEventStartTime').disabled = disabled;
