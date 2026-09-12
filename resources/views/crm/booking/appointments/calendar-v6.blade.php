@@ -971,9 +971,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="form-text"><i class="fa-solid fa-circle-info"></i> Changes sync with the public booking website when linked.</div>
                     </section>
-                    <div class="row g-3">
+                    <div class="row g-3 align-items-start">
                         <div class="col-md-6">
-                            <section class="appt-detail-section appt-detail-section--actions h-100">
+                            <section class="appt-detail-section appt-detail-section--actions">
                                 <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>
                                 <div class="appt-action-buttons">
                                     <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed', this)">
@@ -1000,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </section>
                         </div>
                         <div class="col-md-6">
-                            <section class="appt-detail-section appt-detail-section--actions h-100">
+                            <section class="appt-detail-section appt-detail-section--actions">
                                 <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change calendar</h6>
                                 <label class="form-label" for="consultantSelect-${slotKey}">Consultant</label>
                                 <select class="form-select" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
@@ -2129,9 +2129,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar${isFollowUp ? ' and the linked task' : ''}.</div>
                 </section>
-                <div class="row g-3">
+                <div class="row g-3 align-items-start">
                     <div class="col-md-6">
-                        <section class="appt-detail-section appt-detail-section--actions h-100">
+                        <section class="appt-detail-section appt-detail-section--actions">
                             <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
                             <div class="appt-action-buttons">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateStaffCalendarEventStatus(${Number(eventId)}, 'scheduled', this)">
@@ -2150,7 +2150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </section>
                     </div>
                     <div class="col-md-6">
-                        <section class="appt-detail-section appt-detail-section--actions h-100">
+                        <section class="appt-detail-section appt-detail-section--actions">
                             <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
                             <label class="form-label" for="staffEventCalendarSelect-${slotKey}">Calendar</label>
                             <select class="form-select" id="staffEventCalendarSelect-${slotKey}" onchange="updateStaffCalendarEventCalendarType(${Number(eventId)}, this.value, this)">
@@ -4405,6 +4405,48 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /* Appointment detail modal */
+/*
+ * Event Details (#eventModal only):
+ * - Keep clear gap from viewport top/bottom (BS5 --bs-modal-margin + padding)
+ * - Size to content (don't force full viewport height — that stretched side cards)
+ */
+#eventModal {
+    --bs-modal-margin: 2.75rem;
+    padding: 2.75rem 0;
+}
+
+#eventModal .modal-dialog {
+    margin: 0 auto !important;
+    max-height: calc(100vh - 5.5rem);
+}
+
+#eventModal .modal-dialog-centered {
+    min-height: 0 !important;
+}
+
+#eventModal .modal-dialog-scrollable {
+    height: auto !important;
+    max-height: calc(100vh - 5.5rem);
+}
+
+#eventModal .modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 5.5rem);
+    height: auto;
+}
+
+@media (max-width: 576px) {
+    #eventModal {
+        --bs-modal-margin: 1.25rem;
+        padding: 1.25rem 0;
+    }
+
+    #eventModal .modal-dialog,
+    #eventModal .modal-dialog-scrollable,
+    #eventModal .modal-dialog-scrollable .modal-content {
+        max-height: calc(100vh - 2.5rem);
+    }
+}
+
 .appointment-detail-modal__heading {
     display: flex;
     align-items: flex-start;
