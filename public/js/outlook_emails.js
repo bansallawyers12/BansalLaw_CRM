@@ -7072,7 +7072,9 @@ function crmInitOutlookEmailsInterface() {
             const matters = group.matters || [];
             const reason = group.matched_by === 'client_name'
                 ? 'Matched by client name — choose a matter, then select emails to assign.'
-                : 'Client ID found — choose a matter, then select emails to assign.';
+                : (group.matched_by === 'recipient_email'
+                    ? 'Matched by To/Cc/Bcc email — choose a matter, then select emails to assign.'
+                    : 'Client ID found — choose a matter, then select emails to assign.');
             const options = matters.map(function (matter) {
                 const label = (matter.matter_no || ('Matter #' + matter.id))
                     + (matter.matter_title ? ' — ' + matter.matter_title : '')

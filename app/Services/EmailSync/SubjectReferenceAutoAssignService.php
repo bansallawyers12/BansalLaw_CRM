@@ -19,7 +19,8 @@ class SubjectReferenceAutoAssignService
     }
 
     /**
-     * Assign unassigned synced emails whose subject contains a unique client id + matter no.
+     * Assign unassigned synced emails matched by client/matter refs, To/Cc/Bcc
+     * client or lead emails, or a unique name in subject/body with one assignable matter.
      */
     public function assignMatchingUnassignedEmails(int $limit = 300): int
     {
@@ -128,9 +129,7 @@ class SubjectReferenceAutoAssignService
             ->where(function ($clientQuery) {
                 $clientQuery->whereNull('client_id')
                     ->orWhere('client_id', 0);
-            })
-            ->whereNotNull('subject')
-            ->where('subject', '!=', '');
+            });
 
         IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
         $query->where('sync_assignment_status', 'unassigned');
@@ -164,11 +163,13 @@ class SubjectReferenceAutoAssignService
                 }
                 $processed++;
 
-                $subject = (string) $emailLog->subject;
-                $text = $subject . "\n"
-                    . mb_substr(strip_tags((string) ($emailLog->message ?? '')), 0, 2000);
+                $subject = (string) ($emailLog->subject ?? '');
+                $bodyPreview = mb_substr(strip_tags((string) ($emailLog->message ?? '')), 0, 2000);
+                $text = $subject . "\n" . $bodyPreview;
 
-                $pair = $this->matchingService->findUniqueClientMatterAssignment($text);
+                $pair = $subject !== ''
+                    ? $this->matchingService->findUniqueClientMatterAssignment($text)
+                    : null;
                 if ($pair && ! empty($pair['client_id']) && ! empty($pair['client_matter_id'])) {
                     if ($staff && ! StaffClientVisibility::canAccessClientOrLead((int) $pair['client_id'], $staff)) {
                         $skipped++;
@@ -210,20 +211,37 @@ class SubjectReferenceAutoAssignService
                     continue;
                 }
 
-                if (! $collectNeedsMatter) {
-                    $skipped++;
-                    continue;
+                $client = null;
+                $matchedBy = '';
+
+                $recipientClient = $this->matchingService->findUniqueClientByRecipientEmails([
+                    'to_mail' => (string) ($emailLog->to_mail ?? ''),
+                    'cc' => (string) ($emailLog->cc ?? ''),
+                    'bcc' => (string) ($emailLog->bcc ?? ''),
+                ]);
+                if ($recipientClient) {
+                    $client = $recipientClient;
+                    $matchedBy = 'recipient_email';
                 }
 
-                $client = $this->matchingService->findUniqueClientByReference($text);
-                $matchedBy = 'client_id';
-                if (! $client) {
+                if (! $client && $text !== "\n") {
+                    $refClient = $this->matchingService->findUniqueClientByReference($text);
+                    if ($refClient) {
+                        $client = $refClient;
+                        $matchedBy = 'client_id';
+                    }
+                }
+
+                if (! $client && $text !== "\n") {
                     if ($this->matchingService->extractClientReferences($text) !== []) {
                         $skipped++;
                         continue;
                     }
-                    $client = $this->matchingService->findUniqueClientByName($subject);
-                    $matchedBy = 'client_name';
+                    $nameClient = $this->matchingService->findUniqueClientByName($text);
+                    if ($nameClient) {
+                        $client = $nameClient;
+                        $matchedBy = 'client_name';
+                    }
                 }
 
                 if (! $client) {
@@ -243,8 +261,8 @@ class SubjectReferenceAutoAssignService
                     continue;
                 }
 
-                // One active matter (or only one matter total) → treat like a ready pair;
-                // staff still confirms checkboxes, but does not pick a matter.
+                // Exactly one active matter (or only one matter total) → auto-assign.
+                // Multiple active matters → manual (needs_matter when collecting).
                 $uniqueMatter = $this->matchingService->resolveUniqueAssignableMatter($matters);
                 if ($uniqueMatter !== null) {
                     $matterId = (int) ($uniqueMatter['id'] ?? 0);
@@ -291,6 +309,11 @@ class SubjectReferenceAutoAssignService
                     } else {
                         $skipped++;
                     }
+                    continue;
+                }
+
+                if (! $collectNeedsMatter) {
+                    $skipped++;
                     continue;
                 }
 

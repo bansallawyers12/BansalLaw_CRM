@@ -63,8 +63,34 @@ class EmailMatchingService
             $this->addCandidate($candidates, $match);
         }
 
-        foreach ($this->matchByEmailAddresses($recipientAddresses, 70, 'recipient_email') as $match) {
+        // To/Cc/Bcc client/lead hits are strong enough to auto-assign when unique.
+        foreach ($this->matchByEmailAddresses($recipientAddresses, 85, 'recipient_email') as $match) {
             $this->addCandidate($candidates, $match);
+        }
+
+        // Unique client/lead full name in subject or body + unique assignable matter.
+        if (! $uniquePair) {
+            $nameClient = $this->findUniqueClientByName($searchText);
+            if ($nameClient) {
+                $uniqueMatter = $this->resolveUniqueAssignableMatter(
+                    $this->listMattersForClient((int) $nameClient['client_id'])
+                );
+                if ($uniqueMatter !== null && (int) ($uniqueMatter['id'] ?? 0) > 0) {
+                    $this->addCandidate($candidates, $this->formatCandidate(
+                        (int) $nameClient['client_id'],
+                        (int) $uniqueMatter['id'],
+                        (string) ($nameClient['client_ref'] ?? ''),
+                        (string) ($nameClient['client_name'] ?? ''),
+                        (string) ($nameClient['email'] ?? ''),
+                        (string) ($uniqueMatter['matter_no'] ?? ''),
+                        (string) ($uniqueMatter['matter_title'] ?? ''),
+                        (string) ($nameClient['record_type'] ?? 'client'),
+                        82,
+                        'client_name',
+                        ! empty($uniqueMatter['matter_active'])
+                    ));
+                }
+            }
         }
 
         $suggestions = array_values($candidates);
@@ -318,20 +344,20 @@ class EmailMatchingService
         StaffClientVisibility::restrictAdminEloquentQuery($adminMatches);
 
         foreach ($adminMatches->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')->get() as $client) {
-            $matter = $this->resolveMatterForClient((int) $client->id);
+            $matter = $this->resolveUniqueMatterForClient((int) $client->id);
 
             $matches[] = $this->formatCandidate(
                 (int) $client->id,
-                $matter ? (int) $matter->id : 0,
+                $matter ? (int) $matter['id'] : 0,
                 (string) $client->client_id,
                 trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
                 (string) ($client->email ?? ''),
-                $matter ? (string) $matter->client_unique_matter_no : '',
-                $matter ? (string) ($matter->matter_title ?? '') : '',
+                $matter ? (string) $matter['matter_no'] : '',
+                $matter ? (string) ($matter['matter_title'] ?? '') : '',
                 (string) $client->type,
-                $confidence,
+                $matter ? $confidence : max(50, $confidence - 20),
                 $matchedBy,
-                $matter ? (int) $matter->matter_status === 1 : false
+                $matter ? ! empty($matter['matter_active']) : false
             );
         }
 
@@ -360,24 +386,47 @@ class EmailMatchingService
         )->get();
 
         foreach ($rows as $row) {
-            $matter = $this->resolveMatterForClient((int) $row->client_id);
+            $matter = $this->resolveUniqueMatterForClient((int) $row->client_id);
 
             $matches[] = $this->formatCandidate(
                 (int) $row->client_id,
-                $matter ? (int) $matter->id : 0,
+                $matter ? (int) $matter['id'] : 0,
                 (string) $row->client_ref,
                 trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
                 (string) ($row->matched_email ?: $row->primary_email),
-                $matter ? (string) $matter->client_unique_matter_no : '',
-                $matter ? (string) ($matter->matter_title ?? '') : '',
+                $matter ? (string) $matter['matter_no'] : '',
+                $matter ? (string) ($matter['matter_title'] ?? '') : '',
                 (string) $row->record_type,
-                $confidence,
+                $matter ? $confidence : max(50, $confidence - 20),
                 $matchedBy,
-                $matter ? (int) $matter->matter_status === 1 : false
+                $matter ? ! empty($matter['matter_active']) : false
             );
         }
 
         return $matches;
+    }
+
+    /**
+     * Prefer a unique assignable matter for auto-assignment.
+     * Multiple active matters return null so staff must choose manually.
+     *
+     * @return array{id: int, matter_no: string, matter_title: string, matter_active: bool}|null
+     */
+    private function resolveUniqueMatterForClient(int $clientId, array $preferredMatterRefs = []): ?array
+    {
+        if ($preferredMatterRefs !== []) {
+            $preferred = $this->resolveMatterForClient($clientId, $preferredMatterRefs);
+            if ($preferred) {
+                return [
+                    'id' => (int) $preferred->id,
+                    'matter_no' => (string) ($preferred->client_unique_matter_no ?? ''),
+                    'matter_title' => (string) ($preferred->matter_title ?? ''),
+                    'matter_active' => (int) ($preferred->matter_status ?? 0) === 1,
+                ];
+            }
+        }
+
+        return $this->resolveUniqueAssignableMatter($this->listMattersForClient($clientId));
     }
 
     private function resolveMatterForClient(int $clientId, array $preferredMatterRefs = []): ?object
@@ -600,15 +649,110 @@ class EmailMatchingService
     }
 
     /**
-     * Unique client whose full name appears in the subject (no client id required).
+     * Unique client/lead whose email appears in To, Cc, or Bcc (not From).
+     *
+     * @param  list<string>|array<string, mixed>  $recipientsOrParsed
+     * @return array<string, mixed>|null
+     */
+    public function findUniqueClientByRecipientEmails(array $recipientsOrParsed): ?array
+    {
+        $addresses = $this->normalizeRecipientAddressList($recipientsOrParsed);
+        if ($addresses === []) {
+            return null;
+        }
+
+        $matches = $this->matchByEmailAddresses($addresses, 85, 'recipient_email');
+        $uniqueClients = [];
+        foreach ($matches as $match) {
+            $clientId = (int) ($match['client_id'] ?? 0);
+            if ($clientId > 0) {
+                $uniqueClients[$clientId] = $match;
+            }
+        }
+
+        if (count($uniqueClients) !== 1) {
+            return null;
+        }
+
+        $match = array_values($uniqueClients)[0];
+
+        return [
+            'client_id' => (int) $match['client_id'],
+            'client_ref' => (string) ($match['client_ref'] ?? ''),
+            'client_name' => (string) ($match['client_name'] ?? ''),
+            'email' => (string) ($match['email'] ?? ''),
+            'record_type' => (string) ($match['record_type'] ?? 'client'),
+            'client_matter_id' => (int) ($match['client_matter_id'] ?? 0),
+            'matter_no' => (string) ($match['matter_no'] ?? ''),
+            'matter_title' => (string) ($match['matter_title'] ?? ''),
+            'matched_by' => 'recipient_email',
+        ];
+    }
+
+    /**
+     * @param  list<string>|array<string, mixed>  $recipientsOrParsed
+     * @return list<string>
+     */
+    public function normalizeRecipientAddressList(array $recipientsOrParsed): array
+    {
+        if ($recipientsOrParsed === []) {
+            return [];
+        }
+
+        $isListOfEmails = array_is_list($recipientsOrParsed)
+            && ! array_key_exists('to_recipients', $recipientsOrParsed)
+            && ! array_key_exists('to_mail', $recipientsOrParsed)
+            && ! array_key_exists('cc', $recipientsOrParsed)
+            && ! array_key_exists('bcc', $recipientsOrParsed);
+
+        if ($isListOfEmails) {
+            return $this->extractEmailAddresses([
+                'to_recipients' => $recipientsOrParsed,
+            ]);
+        }
+
+        return $this->extractEmailAddresses([
+            'to_recipients' => $this->recipientFieldAsList(
+                $recipientsOrParsed['to_recipients'] ?? $recipientsOrParsed['to_mail'] ?? []
+            ),
+            'cc_recipients' => $this->recipientFieldAsList(
+                $recipientsOrParsed['cc_recipients'] ?? $recipientsOrParsed['cc'] ?? []
+            ),
+            'bcc_recipients' => $this->recipientFieldAsList(
+                $recipientsOrParsed['bcc_recipients'] ?? $recipientsOrParsed['bcc'] ?? []
+            ),
+            'recipients' => $this->recipientFieldAsList($recipientsOrParsed['recipients'] ?? []),
+        ]);
+    }
+
+    /**
+     * @param  mixed  $value
+     * @return list<mixed>
+     */
+    private function recipientFieldAsList(mixed $value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values($value);
+        }
+
+        return [(string) $value];
+    }
+
+    /**
+     * Unique client whose full name appears in the subject or body (no client id required).
      *
      * @return array<string, mixed>|null
      */
-    public function findUniqueClientByName(string $subject): ?array
+    public function findUniqueClientByName(string $text): ?array
     {
         $hits = [];
+        $subjectLine = trim((string) (explode("\n", $text, 2)[0] ?? ''));
 
-        foreach ($this->extractNameCandidates($subject) as $candidate) {
+        foreach ($this->extractNameCandidates($subjectLine) as $candidate) {
             $key = strtolower($candidate);
             foreach ($this->clientNameIndex()[$key] ?? [] as $client) {
                 $hits[(int) $client->id] = $client;
@@ -616,7 +760,7 @@ class EmailMatchingService
         }
 
         if ($hits === []) {
-            $haystack = strtolower(preg_replace('/\s+/', ' ', $subject) ?? $subject);
+            $haystack = strtolower(preg_replace('/\s+/', ' ', $text) ?? $text);
             foreach ($this->clientNameIndex() as $fullName => $clients) {
                 if (! str_contains($fullName, ' ') || strlen($fullName) < 8) {
                     continue;

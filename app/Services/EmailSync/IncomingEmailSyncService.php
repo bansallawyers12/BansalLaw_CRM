@@ -653,9 +653,10 @@ class IncomingEmailSyncService
             }
 
             $bestMatch = $match['best'] ?? null;
-            // Auto-assign only on clear high-confidence matches. Ambiguous / sub-80
-            // email hits stay unassigned for manual review instead of guessing.
+            // Auto-assign only on clear high-confidence matches with a unique matter.
+            // Ambiguous clients or multiple active matters stay unassigned for manual review.
             $isAutoAssigned = ! empty($bestMatch['client_id'])
+                && ! empty($bestMatch['client_matter_id'])
                 && ! empty($match['is_high_confidence'])
                 && empty($match['is_ambiguous']);
 

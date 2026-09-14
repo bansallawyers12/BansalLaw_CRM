@@ -82,6 +82,33 @@ class EmailMatchingSubjectReferenceTest extends TestCase
     }
 
     #[Test]
+    public function it_extracts_recipient_emails_from_to_cc_bcc_fields(): void
+    {
+        $service = new EmailMatchingService();
+
+        $addresses = $service->normalizeRecipientAddressList([
+            'to_mail' => 'Client One <client@example.com>',
+            'cc' => 'other@example.org, firm@bansallawyers.com.au',
+            'bcc' => 'hidden@example.net',
+        ]);
+
+        $this->assertContains('client@example.com', $addresses);
+        $this->assertContains('other@example.org', $addresses);
+        $this->assertContains('hidden@example.net', $addresses);
+    }
+
+    #[Test]
+    public function it_does_not_auto_resolve_when_multiple_active_matters_exist(): void
+    {
+        $service = new EmailMatchingService();
+
+        $this->assertNull($service->resolveUniqueAssignableMatter([
+            ['id' => 1, 'matter_no' => 'CRM_1', 'matter_active' => true],
+            ['id' => 2, 'matter_no' => 'CRM_2', 'matter_active' => true],
+        ]));
+    }
+
+    #[Test]
     public function it_resolves_unique_matter_when_client_has_only_one_matter(): void
     {
         $service = new EmailMatchingService();
