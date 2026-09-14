@@ -108,9 +108,17 @@
                             <i class="fa-solid fa-plus"></i> {{ ($calendarMode ?? 'booking') === 'personal' ? 'Add Reminder' : 'Add Important Event' }}
                         </button>
                         @endif
-                        <button type="button" onclick="location.reload()" class="btn btn-sm btn-primary booking-calendar-page__refresh">
-                            <i class="fa-solid fa-rotate"></i> Refresh
+                        <button type="button"
+                                id="btnRefreshBookingCalendar"
+                                class="btn btn-sm btn-primary booking-calendar-page__refresh"
+                                aria-busy="false">
+                            <i class="fa-solid fa-rotate" aria-hidden="true"></i> Refresh
                         </button>
+                        <span id="bookingCalendarRefreshStatus"
+                              class="booking-calendar-page__refresh-status"
+                              role="status"
+                              aria-live="polite"
+                              hidden></span>
                     </div>
                 </div>
                 <div class="card-body">
@@ -3279,6 +3287,131 @@ document.addEventListener('DOMContentLoaded', function() {
             openImportantEventModalForCreate('', '');
         });
     }
+
+    /**
+     * AJAX refresh: refetch calendar events + header stats (no full page reload).
+     * Shows button spinner + existing calendar overlay loader while records load.
+     */
+    async function refreshBookingCalendarAjax() {
+        const btn = document.getElementById('btnRefreshBookingCalendar');
+        const statusEl = document.getElementById('bookingCalendarRefreshStatus');
+        if (btn && btn.classList.contains('is-refreshing')) {
+            return;
+        }
+
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.classList.add('is-refreshing');
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Refreshing…';
+        }
+        if (statusEl) {
+            statusEl.hidden = false;
+            statusEl.textContent = 'Updating calendar records…';
+        }
+
+        const loaderText = document.querySelector('#bookingCalendarLoader .calendar-v6-loader__text');
+        const previousLoaderText = loaderText ? loaderText.textContent : '';
+        if (loaderText) {
+            loaderText.textContent = 'Refreshing calendar records…';
+        }
+        setBookingCalendarLoading(true);
+
+        const waitForEventsRefetch = function () {
+            return new Promise(function (resolve) {
+                if (!calendar || typeof calendar.refetchEvents !== 'function') {
+                    resolve();
+                    return;
+                }
+                let settled = false;
+                const finish = function () {
+                    if (settled) return;
+                    settled = true;
+                    try {
+                        if (typeof calendar.off === 'function') {
+                            calendar.off('eventsSet', onEventsSet);
+                        }
+                    } catch (e) { /* ignore */ }
+                    resolve();
+                };
+                const onEventsSet = function () {
+                    finish();
+                };
+                try {
+                    if (typeof calendar.on === 'function') {
+                        calendar.on('eventsSet', onEventsSet);
+                    }
+                    calendar.refetchEvents();
+                } catch (e) {
+                    finish();
+                    return;
+                }
+                // Safety net if eventsSet never fires (empty / cached / error)
+                setTimeout(finish, 12000);
+            });
+        };
+
+        try {
+            await Promise.all([
+                refreshBookingCalendarStats(),
+                waitForEventsRefetch(),
+            ]);
+            if (typeof bookingCalPollReminders === 'function') {
+                void bookingCalPollReminders();
+            }
+            if (statusEl) {
+                statusEl.textContent = 'Calendar updated';
+            }
+            if (typeof iziToast !== 'undefined' && iziToast.success) {
+                iziToast.success({
+                    title: 'Refreshed',
+                    message: 'Calendar records updated.',
+                    position: 'topRight',
+                    timeout: 2200,
+                });
+            }
+        } catch (err) {
+            if (statusEl) {
+                statusEl.textContent = 'Refresh failed';
+            }
+            if (typeof iziToast !== 'undefined' && iziToast.error) {
+                iziToast.error({
+                    title: 'Refresh failed',
+                    message: (err && err.message) ? err.message : 'Could not refresh calendar.',
+                    position: 'topRight',
+                    timeout: 4000,
+                });
+            }
+        } finally {
+            if (loaderText && previousLoaderText) {
+                loaderText.textContent = previousLoaderText;
+            }
+            // FullCalendar loading callback also toggles this; ensure overlay clears after manual refresh
+            setBookingCalendarLoading(false);
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('is-refreshing');
+                btn.setAttribute('aria-busy', 'false');
+                btn.innerHTML = originalHtml || '<i class="fa-solid fa-rotate" aria-hidden="true"></i> Refresh';
+            }
+            if (statusEl) {
+                setTimeout(function () {
+                    statusEl.hidden = true;
+                    statusEl.textContent = '';
+                }, 1800);
+            }
+        }
+    }
+
+    window.refreshBookingCalendarAjax = refreshBookingCalendarAjax;
+
+    const btnRefreshBookingCalendar = document.getElementById('btnRefreshBookingCalendar');
+    if (btnRefreshBookingCalendar) {
+        btnRefreshBookingCalendar.addEventListener('click', function () {
+            void refreshBookingCalendarAjax();
+        });
+    }
     document.getElementById('importantEventSaveBtn').addEventListener('click', saveImportantEvent);
     document.getElementById('importantEventDeleteBtn').addEventListener('click', deleteImportantEvent);
     document.getElementById('importantEventDate').addEventListener('change', function () {
@@ -4013,6 +4146,36 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: var(--sidebar-active) !important;
     border-color: var(--sidebar-active) !important;
     color: #fff !important;
+}
+
+.booking-calendar-page .booking-calendar-page__refresh:disabled,
+.booking-calendar-page .booking-calendar-page__refresh.is-refreshing {
+    opacity: 0.85;
+    cursor: wait;
+}
+
+.booking-calendar-page .card-header-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.booking-calendar-page .booking-calendar-page__refresh-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sidebar-active, #3a6fa8);
+}
+
+.booking-calendar-page .booking-calendar-page__refresh-status[hidden] {
+    display: none !important;
 }
 
 .booking-calendar-page .btn-secondary {
