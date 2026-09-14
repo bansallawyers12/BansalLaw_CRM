@@ -28,6 +28,7 @@ class Kernel extends ConsoleKernel
         
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
+        '\App\Console\Commands\RepairMissingInvoices',
         
         // Client Age Management Commands
         '\App\Console\Commands\UpdateClientAges',

@@ -948,7 +948,14 @@ class ClientAccountsController extends Controller
     {
         try {
             $requestData = $request->all();
-            
+            $response = [
+                'requestData' => [],
+                'status' => false,
+                'message' => 'Please try again',
+                'function_type' => $requestData['function_type'] ?? 'add',
+                'total_balance_amount' => 0,
+            ];
+
             // Validate required fields
             if (empty($requestData['client_id'])) {
                 return response()->json([
@@ -960,102 +967,121 @@ class ClientAccountsController extends Controller
             }
 
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
-            
-            if( $requestData['function_type'] == 'add')
-        {
-            if(isset($requestData['trans_date'])){
-                //Generate unique receipt id
+
+            if (($requestData['function_type'] ?? '') == 'add') {
+            if (empty($requestData['trans_date']) || ! is_array($requestData['trans_date'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'At least one invoice line with a transaction date is required.',
+                    'requestData' => [],
+                    'function_type' => 'add',
+                    'total_balance_amount' => 0,
+                ], 422);
+            }
+
+            $clientId = (int) $requestData['client_id'];
+            $matterId = $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
+            if ($matterId === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Please select a matter before creating an invoice.',
+                    'requestData' => [],
+                    'function_type' => 'add',
+                    'total_balance_amount' => 0,
+                ], 422);
+            }
+
+            $invoiceNo = ! empty($requestData['invoice_no']) ? trim((string) $requestData['invoice_no']) : null;
+
+            $created = DB::transaction(function () use ($requestData, $clientId, $matterId, $invoiceNo) {
                 $receipt_id = $this->getNextReceiptId(3);
-                $finalArr = array();
+                $invoiceNo = $invoiceNo ?: $this->createInvoiceNumber('INV');
+                $finalArr = [];
                 $totalWithdrawAmount = 0;
-                for($i=0; $i<count($requestData['trans_date']); $i++){
-                    $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
-                    $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
-                    $finalArr[$i]['trans_no'] = $requestData['invoice_no'];
-                    $finalArr[$i]['gst_included'] = $requestData['gst_included'][$i];
-                    $finalArr[$i]['payment_type'] = $requestData['payment_type'][$i];
-                    $finalArr[$i]['description'] = $requestData['description'][$i];
-                    $finalArr[$i]['withdraw_amount'] = $requestData['withdraw_amount'][$i];
-                    $finalArr[$i]['balance_amount'] = $requestData['withdraw_amount'][$i];
-                    $finalArr[$i]['invoice_no'] = $requestData['invoice_no'];
-                    $finalArr[$i]['save_type'] = $requestData['save_type'];
-                    $finalArr[$i]['receipt_id'] = $receipt_id;
-   
-                    $invoice_status = 1; //paid
-                    $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
-   
-                    $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
-                        'client_id' =>  $requestData['client_id'],
-                        'receipt_id'=>  $receipt_id,
+                $invoice_status = 1; // adjust invoices are treated as paid
+                $staffId = $this->staffActorId();
+                $now = date('Y-m-d H:i:s');
+
+                for ($i = 0; $i < count($requestData['trans_date']); $i++) {
+                    $withdrawAmount = floatval($requestData['withdraw_amount'][$i]);
+                    $lineId = AccountAllInvoiceReceipt::insertGetId([
+                        'user_id' => $staffId,
+                        'client_id' => $clientId,
+                        'client_matter_id' => $matterId,
+                        'receipt_id' => $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
                         'trans_date' => $requestData['trans_date'][$i],
                         'entry_date' => $requestData['entry_date'][$i],
                         'gst_included' => $requestData['gst_included'][$i],
                         'payment_type' => $requestData['payment_type'][$i],
-                        'trans_no' => !empty($requestData['invoice_no']) ? $requestData['invoice_no'] : null,
+                        'trans_no' => $invoiceNo,
                         'description' => $requestData['description'][$i],
-                        'withdraw_amount' => $requestData['withdraw_amount'][$i],
-                        'invoice_no' => !empty($requestData['invoice_no']) ? $requestData['invoice_no'] : null,
+                        'withdraw_amount' => $withdrawAmount,
+                        'invoice_no' => $invoiceNo,
                         'save_type' => $requestData['save_type'],
                         'invoice_status' => $invoice_status,
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s')
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ]);
-                    $finalArr[$i]['id'] = $lastInsertId;
-   
-                    //Save to activity log
-                    $subject = 'added invoice.Reference no- '.$requestData['invoice_no'];
-                    $objs = new ActivitiesLog;
-                    $objs->client_id = $requestData['client_id'];
-                    $objs->created_by = Auth::user()->id;
-                    $objs->description = '';
-                    $objs->subject = $subject;
-                    $objs->task_status = 0;
-                    $objs->pin = 0;
-                    $objs->save();
-   
-                    $amount11 = floatval($requestData['withdraw_amount'][$i]);
-                    $totalWithdrawAmount += $amount11;
-                } //end for loop
-   
-                //main table 'account_client_receipts' entry
-                $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
-                    'client_id' =>  $requestData['client_id'],
-                    'receipt_id'=>  $receipt_id,
+
+                    $finalArr[$i] = [
+                        'id' => $lineId,
+                        'trans_date' => $requestData['trans_date'][$i],
+                        'entry_date' => $requestData['entry_date'][$i],
+                        'trans_no' => $invoiceNo,
+                        'gst_included' => $requestData['gst_included'][$i],
+                        'payment_type' => $requestData['payment_type'][$i],
+                        'description' => $requestData['description'][$i],
+                        'withdraw_amount' => $withdrawAmount,
+                        'balance_amount' => $withdrawAmount,
+                        'invoice_no' => $invoiceNo,
+                        'save_type' => $requestData['save_type'],
+                        'receipt_id' => $receipt_id,
+                        'client_matter_id' => $matterId,
+                        'invoice_status' => $invoice_status,
+                    ];
+                    $totalWithdrawAmount += $withdrawAmount;
+                }
+
+                $lastInsertId = DB::table('account_client_receipts')->insertGetId([
+                    'user_id' => $staffId,
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterId,
+                    'receipt_id' => $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
                     'trans_date' => $requestData['trans_date'][0],
                     'entry_date' => $requestData['entry_date'][0],
                     'gst_included' => $requestData['gst_included'][0],
                     'payment_type' => $requestData['payment_type'][0],
-                    'trans_no' => !empty($requestData['invoice_no']) ? $requestData['invoice_no'] : null,
+                    'trans_no' => $invoiceNo,
                     'description' => $requestData['description'][0],
                     'withdraw_amount' => $totalWithdrawAmount,
                     'balance_amount' => $totalWithdrawAmount,
-                    'invoice_no' => !empty($requestData['invoice_no']) ? $requestData['invoice_no'] : null,
+                    'invoice_no' => $invoiceNo,
                     'save_type' => $requestData['save_type'],
                     'invoice_status' => $invoice_status,
                     'validate_receipt' => 0,
                     'void_invoice' => 0,
                     'hubdoc_sent' => 0,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
-            }
-            
-            if($lastInsertId) {
-                $response['requestData']     = $finalArr;
-                $response['status']     =     true;
-                $response['message']    =    'Invoice added successfully';
+
+                $this->logInvoiceAddedActivity($clientId, $invoiceNo);
+
+                return [
+                    'lastInsertId' => $lastInsertId,
+                    'finalArr' => $finalArr,
+                    'totalWithdrawAmount' => $totalWithdrawAmount,
+                ];
+            });
+
+            if (! empty($created['lastInsertId'])) {
+                $response['requestData'] = $created['finalArr'];
+                $response['status'] = true;
+                $response['message'] = 'Invoice added successfully';
                 $response['function_type'] = $requestData['function_type'];
-                $response['total_balance_amount'] = $totalWithdrawAmount;
-            }else{
-                $response['requestData'] = "";
-                $response['status']     =     false;
-                $response['message']    =    'Please try again';
-                $response['function_type'] = $requestData['function_type'];
-                $response['total_balance_amount'] = 0;
+                $response['total_balance_amount'] = $created['totalWithdrawAmount'];
             }
         }
         return response()->json($response);
@@ -1078,24 +1104,74 @@ class ClientAccountsController extends Controller
     private function createInvoiceNumber($invoiceType)
     {
         $prefix = 'INV';
-   
-        $latestInv = DB::table('account_client_receipts')
-            ->select('trans_no')
+
+        // Use the highest numeric suffix, not the latest row id — otherwise a
+        // lower INV-* inserted after a higher one can cause collisions / skips.
+        $suffixStart = strlen($prefix) + 2; // "INV-007" → start at char 5
+        $maxNumber = DB::table('account_client_receipts')
             ->where('receipt_type', 3)
-            ->where('trans_no', 'LIKE', "$prefix-%")
-            ->orderBy('id', 'desc')
-            ->first();
-   
-        if (!$latestInv) {
-            $nextNumber = 1;
+            ->where('trans_no', '~', '^'.preg_quote($prefix, '/').'-[0-9]+$')
+            ->selectRaw("MAX(CAST(SUBSTRING(trans_no FROM {$suffixStart}) AS INTEGER)) as max_num")
+            ->value('max_num');
+
+        $nextNumber = ((int) $maxNumber) + 1;
+
+        return $prefix.'-'.str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Normalize invoice matter id: reject empty strings (PG bigint), validate ownership,
+     * and auto-assign when the client has exactly one matter.
+     */
+    private function normalizeClientMatterId(mixed $rawMatterId, int $clientId): ?int
+    {
+        if ($rawMatterId === null || $rawMatterId === '' || $rawMatterId === 'null' || $rawMatterId === 'undefined') {
+            $matterId = null;
         } else {
-            $lastTransNo = explode('-', $latestInv->trans_no);
-            $lastNumber = isset($lastTransNo[1]) ? (int)$lastTransNo[1] : 0;
-            $nextNumber = $lastNumber + 1;
+            $matterId = (int) $rawMatterId;
+            if ($matterId <= 0) {
+                $matterId = null;
+            }
         }
-   
-        return $prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-       }
+
+        if ($matterId !== null) {
+            $belongs = DB::table('client_matters')
+                ->where('id', $matterId)
+                ->where('client_id', $clientId)
+                ->exists();
+
+            return $belongs ? $matterId : null;
+        }
+
+        $matterIds = DB::table('client_matters')
+            ->where('client_id', $clientId)
+            ->orderBy('id')
+            ->pluck('id');
+
+        if ($matterIds->count() === 1) {
+            return (int) $matterIds->first();
+        }
+
+        return null;
+    }
+
+    private function staffActorId(): int
+    {
+        return (int) (Auth::guard('admin')->id() ?? Auth::id() ?? 0);
+    }
+
+    private function logInvoiceAddedActivity(int $clientId, string $invoiceNo): void
+    {
+        $objs = new ActivitiesLog;
+        $objs->client_id = $clientId;
+        $objs->created_by = $this->staffActorId();
+        $objs->description = '';
+        $objs->subject = 'added invoice. Reference no- '.$invoiceNo;
+        $objs->activity_type = 'financial';
+        $objs->task_status = 0;
+        $objs->pin = 0;
+        $objs->save();
+    }
    
        //Save invoice reports
     /**
@@ -1144,125 +1220,124 @@ class ClientAccountsController extends Controller
                 ], 422);
             }
 
-            if(isset($requestData['trans_date'])){
-                //Generate unique receipt id
+            $clientId = (int) $requestData['client_id'];
+            $matterId = $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
+            if ($matterId === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Please select a matter before creating an invoice.',
+                    'requestData' => [],
+                    'function_type' => $functionType,
+                    'total_balance_amount' => 0,
+                    'invoice_no' => '',
+                ], 422);
+            }
+
+            $created = DB::transaction(function () use ($requestData, $clientId, $matterId) {
                 $receipt_id = $this->getNextReceiptId(3);
-                $finalArr = array();
+                $finalArr = [];
                 $totalWithdrawAmount = 0;
-                $invoiceType = 'INV';
-                $invoice_no = $this->createInvoiceNumber($invoiceType);
-                $lastInsertId = null;
-                for($i=0; $i<count($requestData['trans_date']); $i++){
-                    // Calculate unit price and withdraw amount based on GST
-                    /*$unitPrice = floatval($requestData['withdraw_amount'][$i]);
-                    $withdrawAmount = $unitPrice;
-                    if ($requestData['gst_included'][$i] == 'Yes') {
-                        $withdrawAmount = $unitPrice * 1.10; // Add 10% GST
-                    }*/
+                $invoice_no = $this->createInvoiceNumber('INV');
+                $invoice_status = 0;
+                $staffId = $this->staffActorId();
+                $now = date('Y-m-d H:i:s');
+
+                for ($i = 0; $i < count($requestData['trans_date']); $i++) {
                     $withdrawAmount = floatval($requestData['withdraw_amount'][$i]);
-   
-                    $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
-                    $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
-                    $finalArr[$i]['trans_no'] = $invoice_no; //$requestData['invoice_no'];
-                    $finalArr[$i]['gst_included'] = $requestData['gst_included'][$i];
-                    $finalArr[$i]['payment_type'] = $requestData['payment_type'][$i];
-                    $finalArr[$i]['description'] = $requestData['description'][$i];
-   
-                    $finalArr[$i]['withdraw_amount'] = $withdrawAmount; //$requestData['withdraw_amount'][$i];
-                    //$finalArr[$i]['unit_price'] = $unitPrice;
-                    $finalArr[$i]['balance_amount'] = $withdrawAmount;
-   
-                    $finalArr[$i]['invoice_no'] = $invoice_no; //$requestData['invoice_no'];
-                    $finalArr[$i]['save_type'] = $requestData['save_type'];
-                    $finalArr[$i]['receipt_id'] = $receipt_id;
-   
-                    $finalArr[$i]['client_matter_id'] = $requestData['client_matter_id'] ?? null;
-   
-                    $invoice_status = 0;
-                    $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
-   
-                    $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
-                        'client_id' =>  $requestData['client_id'],
-                        'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
-                        'receipt_id'=>  $receipt_id,
+
+                    $lineId = AccountAllInvoiceReceipt::insertGetId([
+                        'user_id' => $staffId,
+                        'client_id' => $clientId,
+                        'client_matter_id' => $matterId,
+                        'receipt_id' => $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
                         'trans_date' => $requestData['trans_date'][$i],
                         'entry_date' => $requestData['entry_date'][$i],
                         'gst_included' => $requestData['gst_included'][$i],
                         'payment_type' => $requestData['payment_type'][$i],
-                        'trans_no' => !empty($invoice_no) ? $invoice_no : null, //$requestData['invoice_no'],
+                        'trans_no' => $invoice_no,
                         'description' => $requestData['description'][$i],
-                        'withdraw_amount' => $withdrawAmount, //$requestData['withdraw_amount'][$i],
-                        //'unit_price' => $unitPrice,
-                        'invoice_no' => !empty($invoice_no) ? $invoice_no : null, //$requestData['invoice_no'],
+                        'withdraw_amount' => $withdrawAmount,
+                        'invoice_no' => $invoice_no,
                         'save_type' => $requestData['save_type'],
                         'invoice_status' => $invoice_status,
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s')
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ]);
-                    $finalArr[$i]['id'] = $lastInsertId;
-   
-                    //Save to activity log
-                    $subject = 'added invoice.Reference no- '.$invoice_no; //$requestData['invoice_no'];
-                    $objs = new ActivitiesLog;
-                    $objs->client_id = $requestData['client_id'];
-                    $objs->created_by = Auth::user()->id;
-                    $objs->description = '';
-                    $objs->subject = $subject;
-                    $objs->task_status = 0;
-                    $objs->pin = 0;
-                    $objs->save();
-   
-                    $amount11 = $withdrawAmount;
+
+                    $finalArr[$i] = [
+                        'id' => $lineId,
+                        'trans_date' => $requestData['trans_date'][$i],
+                        'entry_date' => $requestData['entry_date'][$i],
+                        'trans_no' => $invoice_no,
+                        'gst_included' => $requestData['gst_included'][$i],
+                        'payment_type' => $requestData['payment_type'][$i],
+                        'description' => $requestData['description'][$i],
+                        'withdraw_amount' => $withdrawAmount,
+                        'balance_amount' => $withdrawAmount,
+                        'invoice_no' => $invoice_no,
+                        'save_type' => $requestData['save_type'],
+                        'receipt_id' => $receipt_id,
+                        'client_matter_id' => $matterId,
+                        'invoice_status' => $invoice_status,
+                    ];
+
                     if ($requestData['payment_type'][$i] == 'Discount') {
-                        $totalWithdrawAmount -= $amount11;
+                        $totalWithdrawAmount -= $withdrawAmount;
                     } else {
-                        $totalWithdrawAmount += $amount11;
+                        $totalWithdrawAmount += $withdrawAmount;
                     }
-                } //end for loop
-   
-                //main table 'account_client_receipts' entry
-                $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => Auth::guard('admin')->id() ?? Auth::id() ?? 0,
-                    'client_id' =>  $requestData['client_id'],
-                    'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
-                    'receipt_id'=>  $receipt_id,
+                }
+
+                $lastInsertId = DB::table('account_client_receipts')->insertGetId([
+                    'user_id' => $staffId,
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterId,
+                    'receipt_id' => $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
                     'trans_date' => $requestData['trans_date'][0],
                     'entry_date' => $requestData['entry_date'][0],
                     'gst_included' => $requestData['gst_included'][0],
                     'payment_type' => $requestData['payment_type'][0],
-                    'trans_no' => !empty($invoice_no) ? $invoice_no : null,//$requestData['invoice_no'],
+                    'trans_no' => $invoice_no,
                     'description' => $requestData['description'][0],
                     'withdraw_amount' => $totalWithdrawAmount,
-                    //'unit_price' => $totalWithdrawAmount,
                     'balance_amount' => $totalWithdrawAmount,
-                    'invoice_no' => !empty($invoice_no) ? $invoice_no : null,//$requestData['invoice_no'],
+                    'invoice_no' => $invoice_no,
                     'save_type' => $requestData['save_type'],
                     'invoice_status' => $invoice_status,
                     'validate_receipt' => 0,
                     'void_invoice' => 0,
                     'hubdoc_sent' => 0,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
-            }
-            
-            if($lastInsertId) {
-                $response['requestData']     = $finalArr;
-                $response['status']     =     true;
-                $response['message']    =    'Invoice added successfully';
+
+                // Activity only after the parent invoice row exists (avoids orphan timeline entries).
+                $this->logInvoiceAddedActivity($clientId, $invoice_no);
+
+                return [
+                    'lastInsertId' => $lastInsertId,
+                    'finalArr' => $finalArr,
+                    'totalWithdrawAmount' => $totalWithdrawAmount,
+                    'invoice_no' => $invoice_no,
+                ];
+            });
+
+            if (! empty($created['lastInsertId'])) {
+                $response['requestData'] = $created['finalArr'];
+                $response['status'] = true;
+                $response['message'] = 'Invoice added successfully';
                 $response['function_type'] = $requestData['function_type'];
-                $response['total_balance_amount'] = $totalWithdrawAmount;
-                $response['invoice_no'] = $invoice_no;
-            }else{
-                $response['requestData'] = "";
-                $response['status']     =     false;
-                $response['message']    =    'Please try again';
+                $response['total_balance_amount'] = $created['totalWithdrawAmount'];
+                $response['invoice_no'] = $created['invoice_no'];
+            } else {
+                $response['requestData'] = '';
+                $response['status'] = false;
+                $response['message'] = 'Please try again';
                 $response['function_type'] = $requestData['function_type'];
                 $response['total_balance_amount'] = 0;
-                $response['invoice_no'] = "";
+                $response['invoice_no'] = '';
             }
         }
         else if ($functionType == 'edit') {
@@ -1698,33 +1773,12 @@ class ClientAccountsController extends Controller
         $requestData =     $request->all();
         $response    =     [];
         $receipt_type = $requestData['type'];
-   
-        //Start Logic For Invoice no
-        // Get the last invoice number with this type
-        $prefix = "INV";
-        $latestInv = DB::table('account_client_receipts')
-            ->select('invoice_no')
-            ->where('receipt_type', $receipt_type)
-            ->where('invoice_no', 'LIKE', "$prefix-%")
-            ->orderBy('id', 'desc')
-            ->first();
-   
-        if (!$latestInv) {
-            $nextNumber = 1;
-        } else {
-            // Extract numeric part and increment
-            $lastInvNo = explode('-', $latestInv->invoice_no);
-            $lastNumber = isset($lastInvNo[1]) ? (int)$lastInvNo[1] : 0;
-            $nextNumber = $lastNumber + 1;
-        }
-   
-        // Format with leading zeros
-        $formattedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        $invoice_no = $prefix . '-' . $formattedNumber;
-   
-        $response['max_receipt_id'] = $invoice_no;
+
+        // Preview only — actual save regenerates inside a transaction.
+        $response['max_receipt_id'] = $this->createInvoiceNumber('INV');
         $response['status']     =     true;
         $response['message']    =    'Record is exist';
+        $response['receipt_type'] = $receipt_type;
         return response()->json($response);
        }
   // NEW SIMPLIFIED saveofficereport function - Only handles office receipts (receipt_type=2)

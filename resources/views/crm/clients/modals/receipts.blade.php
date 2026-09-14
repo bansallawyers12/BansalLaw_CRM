@@ -629,6 +629,7 @@
 					<input type="hidden" name="receipt_type" value="3">
 					<input type="hidden" name="receipt_id" id="adjust_invoice_receipt_id" value="">
 					<input type="hidden" name="function_type" id="adjust_invoice_function_type" value="add">
+                    <input type="hidden" name="client_matter_id" id="client_matter_id_adjust_invoice" value="">
 
 					<div class="row">
 						<div class="col-3 col-md-3 col-lg-3">

@@ -362,14 +362,31 @@ class ClientAccountTabService
     protected function latestInvoiceRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
     {
         if ($clientMatterId !== null) {
-            $rows = DB::select('
-                SELECT DISTINCT ON (receipt_id) *
-                FROM account_client_receipts
-                WHERE client_matter_id = ?
-                AND client_id = ?
-                AND receipt_type = 3
-                ORDER BY receipt_id, id DESC
-            ', [$clientMatterId, $clientId]);
+            // Single-matter clients: also show invoices saved without a matter id
+            // (legacy / failed matter binding) so they appear on Billing.
+            $includeNullMatter = DB::table('client_matters')
+                ->where('client_id', $clientId)
+                ->count() === 1;
+
+            if ($includeNullMatter) {
+                $rows = DB::select('
+                    SELECT DISTINCT ON (receipt_id) *
+                    FROM account_client_receipts
+                    WHERE client_id = ?
+                    AND receipt_type = 3
+                    AND (client_matter_id = ? OR client_matter_id IS NULL)
+                    ORDER BY receipt_id, id DESC
+                ', [$clientId, $clientMatterId]);
+            } else {
+                $rows = DB::select('
+                    SELECT DISTINCT ON (receipt_id) *
+                    FROM account_client_receipts
+                    WHERE client_matter_id = ?
+                    AND client_id = ?
+                    AND receipt_type = 3
+                    ORDER BY receipt_id, id DESC
+                ', [$clientMatterId, $clientId]);
+            }
         } else {
             $rows = DB::select('
                 SELECT DISTINCT ON (receipt_id) *
