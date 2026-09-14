@@ -35,7 +35,10 @@ return [
 
     'sent_folders' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('MAIL_SYNC_SENT_FOLDERS', 'Sent,Sent Items,INBOX.Sent'))
+        explode(',', (string) env(
+            'MAIL_SYNC_SENT_FOLDERS',
+            'Sent,Sent Items,Sent Messages,Sent Mail,INBOX.Sent,INBOX/Sent'
+        ))
     ))),
 
     /*
@@ -80,8 +83,18 @@ return [
     | Unassigned Zoho-synced mail before this calendar date is hidden from
     | Unassigned Mail and removed when the "From 10 Aug" sync option runs.
     | Use Y-m-d (e.g. 2026-08-10). Empty disables the floor.
+    | Applies to incoming/unassigned lists — not Sent sync (see sent_available_from).
     */
     'unassigned_available_from' => env('MAIL_SYNC_UNASSIGNED_AVAILABLE_FROM', '2026-08-10'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sent-folder sync availability floor (app timezone)
+    |--------------------------------------------------------------------------
+    | Zoho Sent sync never fetches mail older than this date. Incoming/INBOX
+    | sync is unaffected. Use Y-m-d (e.g. 2026-08-12). Empty disables the floor.
+    */
+    'sent_available_from' => env('MAIL_SYNC_SENT_AVAILABLE_FROM', '2026-08-12'),
 
     'unassigned_storage_prefix' => 'sync-inbox',
 

@@ -151,7 +151,7 @@ class IncomingEmailSyncService
                 (array) config('imap_sync.sent_folders', ['Sent']),
                 $sentAfterUid,
                 'sent',
-                $since
+                $this->clampSentSyncSince($since)
             );
 
             $combined = $this->mergeSyncResults($combined, $sentResult);
@@ -195,7 +195,9 @@ class IncomingEmailSyncService
             ->whereNotNull('imap_uid')
             ->max('imap_uid') ?? 0);
 
-        if ($importedMax > 0 && $stored > $importedMax) {
+        // Watermark ahead of any imported mail (or no imports yet) means prior DESC/range
+        // syncs jumped the cursor and left gaps — rewind so catch-up can refill.
+        if ($stored > 0 && $stored > $importedMax) {
             InboxSyncLogger::warning('Healed IMAP UID watermark from imported mail history', [
                 'mailbox' => $mailbox->email,
                 'folder_type' => $folderType,
@@ -279,7 +281,7 @@ class IncomingEmailSyncService
                 (array) config('imap_sync.sent_folders', ['Sent']),
                 (int) ($mailbox->last_imap_uid_sent ?? 0),
                 'sent',
-                $catchupSince
+                $this->clampSentSyncSince($catchupSince)
             );
 
             $combined = $this->mergeSyncResults($combined, $catchupSent);
@@ -448,10 +450,13 @@ class IncomingEmailSyncService
         }
 
         $maxBatches = $since !== null
-            ? 1
+            ? max(1, (int) config('imap_sync.max_range_sync_batches', 8))
             : max(1, (int) config('imap_sync.max_incremental_batches', 6));
 
-        $cursorUid = $afterUid;
+        // Date-range sync pages ascending from UID 0 so a previous DESC watermark jump
+        // cannot permanently hide older Sent/Inbox messages inside the selected window.
+        // Already-imported messages are skipped as duplicates and the cursor still advances.
+        $cursorUid = $since !== null ? 0 : $afterUid;
         $maxUid = $afterUid;
 
         for ($batch = 0; $batch < $maxBatches; $batch++) {
@@ -522,12 +527,10 @@ class IncomingEmailSyncService
             $fetchedCount = count($messages);
             unset($messages);
 
-            if ($since === null) {
-                if ($batchHighestUid <= $cursorUid) {
-                    break;
-                }
-                $cursorUid = $batchHighestUid;
+            if ($batchHighestUid <= $cursorUid) {
+                break;
             }
+            $cursorUid = $batchHighestUid;
 
             if ($fetchedCount < $limit) {
                 break;
@@ -630,19 +633,33 @@ class IncomingEmailSyncService
                 ? 'sent'
                 : ($match['mail_type'] ?? 'inbox');
 
-            // When Sent-folder sync is active, outgoing mail must only be imported from Sent.
-            // Zoho/mobile clients can surface the same sent message under INBOX or date catch-up.
-            if ($defaultMailType === 'inbox' && $this->shouldSyncSentFolder($mailbox) && $mailType === 'sent') {
-                InboxSyncLogger::info('Skipped sent mail from INBOX; Sent folder sync handles outgoing mail', [
+            // Zoho/mobile may leave an outgoing copy under INBOX. Import it as sent so
+            // mail is not lost when Sent-folder IMAP resolution fails. Message-id dedupe
+            // prevents a second row if Sent sync later fetches the same message.
+            // Do not store the INBOX IMAP UID on a sent row — Sent/INBOX UID namespaces differ
+            // and would corrupt last_imap_uid_sent healing.
+            $storeImapUid = $imapUid;
+            if ($defaultMailType === 'inbox' && $mailType === 'sent') {
+                InboxSyncLogger::info('Importing outgoing mail found in INBOX as sent', [
                     'mailbox' => $mailbox->email,
                     'imap_uid' => $imapUid,
+                    'subject' => $parsedData['subject'] ?? $subjectHint,
+                ]);
+                $storeImapUid = null;
+            }
+
+            if ($mailType === 'sent' && $this->isBeforeSentAvailabilityFloor($parsedData)) {
+                InboxSyncLogger::info('Skipped sent mail before Sent availability floor', [
+                    'mailbox' => $mailbox->email,
+                    'imap_uid' => $imapUid,
+                    'floor' => self::resolveSentAvailableFrom()?->toDateString(),
                     'subject' => $parsedData['subject'] ?? $subjectHint,
                 ]);
 
                 return ['success' => true, 'skipped' => true];
             }
 
-            if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType, $parsedData, $fileHash)) {
+            if ($this->isDuplicate($mailbox, $messageId, $storeImapUid ?? 0, $mailType, $parsedData, $fileHash)) {
                 return ['success' => true, 'skipped' => true];
             }
 
@@ -679,7 +696,7 @@ class IncomingEmailSyncService
                     'mailbox_email' => strtolower(trim($mailbox->email)),
                     'synced_email_id' => $mailbox->id,
                     'sync_assignment_status' => $isAutoAssigned ? 'auto_assigned' : 'unassigned',
-                    'imap_uid' => $imapUid,
+                    'imap_uid' => $storeImapUid,
                     'message_id' => $messageId,
                     'sync_source' => $this->currentSyncSource,
                     // New incoming mail must always appear unread in the CRM; the IMAP
@@ -829,6 +846,24 @@ class IncomingEmailSyncService
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     */
+    protected function isBeforeSentAvailabilityFloor(array $parsedData): bool
+    {
+        $floor = self::resolveSentAvailableFrom();
+        if ($floor === null) {
+            return false;
+        }
+
+        $sentAt = $this->resolveParsedSentTime($parsedData);
+        if ($sentAt === null) {
+            return false;
+        }
+
+        return $sentAt->lt($floor);
     }
 
     protected function resolveStoragePrefix(Email $mailbox, ?int $clientId): string
@@ -1017,6 +1052,45 @@ class IncomingEmailSyncService
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Earliest calendar date for Zoho Sent-folder sync (app timezone).
+     * Incoming/INBOX sync ignores this floor.
+     */
+    public static function resolveSentAvailableFrom(): ?\Carbon\Carbon
+    {
+        $raw = trim((string) config('imap_sync.sent_available_from', '2026-08-12'));
+        if ($raw === '') {
+            return null;
+        }
+
+        try {
+            $timezone = (string) config('app.timezone', 'UTC');
+
+            return \Carbon\Carbon::parse($raw, $timezone)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Sent sync never fetches earlier than sent_available_from.
+     */
+    protected function clampSentSyncSince(?\DateTimeInterface $since): ?\Carbon\Carbon
+    {
+        $floor = self::resolveSentAvailableFrom();
+        if ($floor === null) {
+            return $since !== null ? \Carbon\Carbon::parse($since) : null;
+        }
+
+        if ($since === null) {
+            return $floor->copy();
+        }
+
+        $requested = \Carbon\Carbon::parse($since);
+
+        return $requested->lt($floor) ? $floor->copy() : $requested;
     }
 
     /**
