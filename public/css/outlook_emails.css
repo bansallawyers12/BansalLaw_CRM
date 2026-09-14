@@ -4687,6 +4687,25 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     color: #d97706;
 }
 
+.email-hearing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.email-hearing-badge i {
+    font-size: 10px;
+    color: #2563eb;
+}
+
 .folder-select-wrap {
     flex: 0 0 auto;
     min-width: 140px;

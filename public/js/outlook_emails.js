@@ -512,9 +512,13 @@ function crmInitOutlookEmailsInterface() {
 
     /**
      * Calendar invites/events belong on the calendar only — never keep them in mail lists.
+     * Hearing notices from 01/09/2026 stay in Inbox/Sent with a Hearing tag.
      */
     function emailIsCalendarOnlyListItem(email) {
         if (!email) {
+            return false;
+        }
+        if (email.is_hearing) {
             return false;
         }
         if (email.is_calendar_invite || email.has_calendar_invite || email.has_calendar) {
@@ -530,18 +534,49 @@ function crmInitOutlookEmailsInterface() {
         if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
             return true;
         }
-        // Hearing notices belong on hearing list / calendar only.
+        // Older hearing notices stay calendar-only; from 01/09/2026 they are tagged in-list.
         if (/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
-            return true;
+            return !emailLooksLikeHearingFromCutoff(email);
         }
         const events = email.calendar && Array.isArray(email.calendar.events) ? email.calendar.events : [];
         if (events.some(function (ev) {
             const t = String((ev && ev.event_type) || '').toLowerCase();
             return t === 'hearing' || t === 'court' || t === 'mention' || t === 'tribunal';
         })) {
-            return true;
+            return !emailLooksLikeHearingFromCutoff(email);
         }
         return false;
+    }
+
+    function emailLooksLikeHearingFromCutoff(email) {
+        if (!email) {
+            return false;
+        }
+        if (email.is_hearing) {
+            return true;
+        }
+        const subject = String(email.subject || '').trim();
+        if (!/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
+            return false;
+        }
+        const raw = email.fetch_mail_sent_time || email.received_date || email.created_at || '';
+        if (!raw) {
+            return false;
+        }
+        const d = new Date(raw);
+        if (Number.isNaN(d.getTime())) {
+            return false;
+        }
+        return d >= new Date('2026-09-01T00:00:00');
+    }
+
+    function renderHearingBadge(email) {
+        if (!emailLooksLikeHearingFromCutoff(email)) {
+            return '';
+        }
+        return '<span class="email-hearing-badge" title="Hearing email">'
+            + '<i class="fa-solid fa-gavel" aria-hidden="true"></i> Hearing'
+            + '</span>';
     }
 
     function hasCalendarAttachment(email) {
@@ -4609,11 +4644,12 @@ function crmInitOutlookEmailsInterface() {
             const clientBadge = renderSyncedClientBadge(email);
             const syncSourceBadge = renderSyncSourceBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
+            const hearingBadge = renderHearingBadge(email);
 
             if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
                 const senderEmail = escapeHtml(sender);
                 const reviewBadge = renderAssignmentReviewBadge(email);
-                const tagHtml = [reviewBadge, clientBadge, attachmentIcon, calendarIndicator].filter(Boolean).join('');
+                const tagHtml = [hearingBadge, reviewBadge, clientBadge, attachmentIcon, calendarIndicator].filter(Boolean).join('');
                 const tagsBlock = tagHtml
                     ? '<div class="email-item-synced-list__tags">' + tagHtml + '</div>'
                     : '';
@@ -4637,7 +4673,7 @@ function crmInitOutlookEmailsInterface() {
             } else if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const badgeRow = attachmentIcon + calendarIndicator + statusBadge + syncSourceBadge + clientBadge;
+                const badgeRow = attachmentIcon + hearingBadge + calendarIndicator + statusBadge + syncSourceBadge + clientBadge;
                 const previewHtml = preview
                     ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
                     : '';
@@ -4663,7 +4699,7 @@ function crmInitOutlookEmailsInterface() {
             } else {
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${hearingBadge}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>

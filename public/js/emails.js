@@ -561,6 +561,9 @@
         if (!email) {
             return false;
         }
+        if (email.is_hearing) {
+            return false;
+        }
         if (email.is_calendar_invite || email.has_calendar_invite || email.has_calendar) {
             return true;
         }
@@ -572,15 +575,35 @@
             return true;
         }
         if (/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
+            const raw = email.fetch_mail_sent_time || email.received_date || email.created_at || '';
+            const d = raw ? new Date(raw) : null;
+            if (d && !Number.isNaN(d.getTime()) && d >= new Date('2026-09-01T00:00:00')) {
+                return false;
+            }
             return true;
         }
         const attachments = Array.isArray(email.attachments) ? email.attachments : [];
-        return attachments.some(function (att) {
+        const hasIcs = attachments.some(function (att) {
             const name = String(att.filename || att.file_name || att.display_name || '').toLowerCase();
             const type = String(att.content_type || att.mime_type || '').toLowerCase();
             const ext = String(att.extension || '').toLowerCase();
             return ext === 'ics' || name.endsWith('.ics') || type.indexOf('calendar') !== -1;
         });
+        if (!hasIcs) {
+            return false;
+        }
+        // Hearing notices with ICS from 01/09/2026 stay in the mail list.
+        const raw = email.fetch_mail_sent_time || email.received_date || email.created_at || '';
+        const d = raw ? new Date(raw) : null;
+        if (
+            /\b(hearing|tribunal|court listing)\b/i.test(subject)
+            && d
+            && !Number.isNaN(d.getTime())
+            && d >= new Date('2026-09-01T00:00:00')
+        ) {
+            return false;
+        }
+        return true;
     }
 
     function normalizeEmailListResponseRaw(data) {

@@ -78,9 +78,78 @@ class EmailLog extends Authenticatable
     public const HEARING_NOTICE_SUBJECT_PATTERN =
         '\\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\\b';
 
+    /**
+     * From this date (app timezone), hearing emails also appear in Inbox/Sent with a Hearing tag.
+     */
+    public const HEARING_MAIL_LIST_AVAILABLE_FROM = '2026-09-01';
+
     public static function calendarInvitationBodyMarker(): string
     {
         return 'This message is a calendar invitation.';
+    }
+
+    /**
+     * Earliest datetime when hearing mail may appear in Inbox/Sent lists.
+     */
+    public static function hearingMailListAvailableFrom(): ?\Carbon\Carbon
+    {
+        try {
+            $timezone = (string) config('app.timezone', 'UTC');
+
+            return \Carbon\Carbon::parse(self::HEARING_MAIL_LIST_AVAILABLE_FROM, $timezone)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Effective datetime used for mail-list floor checks.
+     */
+    public static function effectiveMailDate(?self $email): ?\Carbon\Carbon
+    {
+        if (! $email) {
+            return null;
+        }
+
+        foreach (['fetch_mail_sent_time', 'received_date', 'created_at'] as $field) {
+            $value = $email->{$field} ?? null;
+            if ($value instanceof \Carbon\Carbon) {
+                return $value->copy();
+            }
+            if ($value instanceof \DateTimeInterface) {
+                return \Carbon\Carbon::instance($value);
+            }
+            if (is_string($value) && trim($value) !== '') {
+                try {
+                    return \Carbon\Carbon::parse($value);
+                } catch (\Throwable) {
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * True when this email should appear in mail lists as a tagged hearing item.
+     */
+    public static function isHearingMailListItem(?self $email): bool
+    {
+        if (! $email || ! self::isHearingNoticeSubject($email->subject ?? null)) {
+            return false;
+        }
+
+        $floor = self::hearingMailListAvailableFrom();
+        if ($floor === null) {
+            return false;
+        }
+
+        $effective = self::effectiveMailDate($email);
+        if ($effective === null) {
+            return false;
+        }
+
+        return ! $effective->lt($floor);
     }
 
     /**
@@ -110,15 +179,18 @@ class EmailLog extends Authenticatable
     }
 
     /**
-     * Exclude calendar invites / ICS events / hearing notices from mail lists only.
-     * Does not delete email_logs, StaffCalendarEvent, or ClientCourtHearing records —
-     * calendar and hearing lists are untouched.
+     * Exclude calendar invites / ICS meeting events from mail lists only.
+     * Hearing notices from HEARING_MAIL_LIST_AVAILABLE_FROM onward stay visible
+     * (tagged as Hearing). Does not delete email_logs or calendar/hearing records.
      *
      * @param  Builder|\Illuminate\Database\Query\Builder  $query
      */
     public static function applyExcludeCalendarInvitesFromMailLists($query): void
     {
         $invitationPhrase = self::calendarInvitationBodyMarker();
+        $hearingFloor = self::hearingMailListAvailableFrom();
+        $hearingFloorSql = $hearingFloor?->format('Y-m-d H:i:s');
+        $effectiveDateSql = 'COALESCE(fetch_mail_sent_time, received_date, created_at)';
 
         $query->where(function ($keep) use ($invitationPhrase) {
             $keep->whereNull('message')
@@ -142,45 +214,81 @@ class EmailLog extends Authenticatable
 
         $query->whereRaw("COALESCE(subject, '') !~* ?", [self::CALENDAR_INVITE_SUBJECT_PATTERN]);
 
-        // Hearing date notices belong on the hearing list / calendar only.
-        // Use ILIKE (not \b) — PostgreSQL does not treat \b as a word boundary.
-        $query->where(function ($keep) {
-            $keep->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%hearing%'])
-                ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%tribunal%'])
-                ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%court listing%']);
+        // Hearing notices before the floor stay on the hearing/calendar lists only.
+        // From the floor date onward they appear in Inbox/Sent with a Hearing tag.
+        $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
+            $keep->where(function ($nonHearing) {
+                $nonHearing->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%hearing%'])
+                    ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%tribunal%'])
+                    ->whereRaw("LOWER(COALESCE(subject, '')) NOT LIKE ?", ['%court listing%']);
+            });
+            if ($hearingFloorSql !== null) {
+                $keep->orWhereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql]);
+            }
         });
 
         // Any existing calendar link means this row already has a calendar/hearing event.
+        // Keep excluding non-hearing calendar links; allow hearing-subject rows from the floor date.
         if (Schema::hasTable('email_calendar_links')) {
-            $query->whereNotExists(function ($sub) {
-                $sub->selectRaw('1')
-                    ->from('email_calendar_links')
-                    ->whereColumn('email_calendar_links.email_log_id', 'email_logs.id');
+            $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
+                $keep->whereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('email_calendar_links')
+                        ->whereColumn('email_calendar_links.email_log_id', 'email_logs.id');
+                });
+                if ($hearingFloorSql !== null) {
+                    $keep->orWhere(function ($hearingKeep) use ($hearingFloorSql, $effectiveDateSql) {
+                        $hearingKeep->whereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql])
+                            ->where(function ($subj) {
+                                $subj->whereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%hearing%'])
+                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%tribunal%'])
+                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%court listing%']);
+                            });
+                    });
+                }
             });
         }
 
         // Emails that already created a ClientCourtHearing (notes reference Email #id).
         if (Schema::hasTable('client_court_hearings')) {
-            $query->whereNotExists(function ($sub) {
-                $sub->selectRaw('1')
-                    ->from('client_court_hearings')
-                    ->whereRaw(
-                        "client_court_hearings.notes LIKE ('%Email #' || email_logs.id::text || '%')"
-                    );
+            $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
+                $keep->whereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('client_court_hearings')
+                        ->whereRaw(
+                            "client_court_hearings.notes LIKE ('%Email #' || email_logs.id::text || '%')"
+                        );
+                });
+                if ($hearingFloorSql !== null) {
+                    $keep->orWhereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql]);
+                }
             });
         }
 
-        // ICS attachments without a link yet still belong on the calendar, not mail lists.
+        // ICS attachments without a link yet still belong on the calendar, not mail lists,
+        // unless they are hearing notices from the floor date.
         if (Schema::hasTable('email_log_attachments')) {
-            $query->whereNotExists(function ($sub) {
-                $sub->selectRaw('1')
-                    ->from('email_log_attachments')
-                    ->whereColumn('email_log_attachments.email_log_id', 'email_logs.id')
-                    ->where(function ($att) {
-                        $att->whereRaw("LOWER(COALESCE(email_log_attachments.extension, '')) = 'ics'")
-                            ->orWhereRaw("LOWER(COALESCE(email_log_attachments.filename, '')) LIKE '%.ics'")
-                            ->orWhereRaw("LOWER(COALESCE(email_log_attachments.content_type, '')) LIKE '%calendar%'");
+            $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
+                $keep->whereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('email_log_attachments')
+                        ->whereColumn('email_log_attachments.email_log_id', 'email_logs.id')
+                        ->where(function ($att) {
+                            $att->whereRaw("LOWER(COALESCE(email_log_attachments.extension, '')) = 'ics'")
+                                ->orWhereRaw("LOWER(COALESCE(email_log_attachments.filename, '')) LIKE '%.ics'")
+                                ->orWhereRaw("LOWER(COALESCE(email_log_attachments.content_type, '')) LIKE '%calendar%'");
+                        });
+                });
+                if ($hearingFloorSql !== null) {
+                    $keep->orWhere(function ($hearingKeep) use ($hearingFloorSql, $effectiveDateSql) {
+                        $hearingKeep->whereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql])
+                            ->where(function ($subj) {
+                                $subj->whereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%hearing%'])
+                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%tribunal%'])
+                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%court listing%']);
+                            });
                     });
+                }
             });
         }
     }

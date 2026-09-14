@@ -5964,6 +5964,7 @@ class ClientsController extends Controller
             }
 
             $email->is_calendar_invite = $calendarSource !== '';
+            $email->is_hearing = \App\Models\EmailLog::isHearingMailListItem($email);
             $email->body_deferred = true;
             if ($email->is_calendar_invite) {
                 $inviteSummary = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);

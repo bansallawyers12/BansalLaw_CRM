@@ -257,6 +257,7 @@ class ClientEmailListService
         $emailArray['subject'] = $emailArray['subject'] ?? '';
         $emailArray['message'] = '';
         $emailArray['text_preview'] = $emailArray['text_preview'] ?? '';
+        $emailArray['is_hearing'] = EmailLog::isHearingMailListItem($email);
 
         return $emailArray;
     }
