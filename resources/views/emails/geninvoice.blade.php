@@ -138,8 +138,12 @@
         }
         .ledger-table thead th:last-child,
         .ledger-table tbody td:last-child,
-        .ledger-table thead th:nth-child(3),
-        .ledger-table tbody td:nth-child(3) {
+        .ledger-table thead th:nth-child(4),
+        .ledger-table tbody td:nth-child(4),
+        .ledger-table thead th:nth-child(5),
+        .ledger-table tbody td:nth-child(5),
+        .ledger-table thead th:nth-child(6),
+        .ledger-table tbody td:nth-child(6) {
             text-align: right;
         }
         .totals-section {

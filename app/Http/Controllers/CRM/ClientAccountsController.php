@@ -1285,6 +1285,9 @@ class ClientAccountsController extends Controller
 
                 for ($i = 0; $i < count($requestData['trans_date']); $i++) {
                     $timesheet = $this->invoiceTimesheetLineFields($requestData, $i);
+                    if (InvoiceTimesheetLine::isBlankRequestRow($requestData, $i, $timesheet)) {
+                        continue;
+                    }
                     $withdrawAmount = (float) $timesheet['withdraw_amount'];
 
                     $lineId = AccountAllInvoiceReceipt::insertGetId(array_merge([
@@ -1294,10 +1297,10 @@ class ClientAccountsController extends Controller
                         'receipt_id' => $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
                         'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $requestData['entry_date'][$i],
-                        'payment_type' => $requestData['payment_type'][$i],
+                        'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                        'payment_type' => $requestData['payment_type'][$i] ?? '',
                         'trans_no' => $invoice_no,
-                        'description' => $requestData['description'][$i],
+                        'description' => $requestData['description'][$i] ?? '',
                         'invoice_no' => $invoice_no,
                         'save_type' => $requestData['save_type'],
                         'invoice_status' => $invoice_status,
@@ -1305,14 +1308,14 @@ class ClientAccountsController extends Controller
                         'updated_at' => $now,
                     ], $timesheet));
 
-                    $finalArr[$i] = [
+                    $finalArr[] = [
                         'id' => $lineId,
                         'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $requestData['entry_date'][$i],
+                        'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
                         'trans_no' => $invoice_no,
                         'gst_included' => $timesheet['gst_included'],
-                        'payment_type' => $requestData['payment_type'][$i],
-                        'description' => $requestData['description'][$i],
+                        'payment_type' => $requestData['payment_type'][$i] ?? '',
+                        'description' => $requestData['description'][$i] ?? '',
                         'withdraw_amount' => $withdrawAmount,
                         'balance_amount' => $withdrawAmount,
                         'invoice_no' => $invoice_no,
@@ -1322,25 +1325,30 @@ class ClientAccountsController extends Controller
                         'invoice_status' => $invoice_status,
                     ];
 
-                    if ($requestData['payment_type'][$i] == 'Discount') {
+                    if (($requestData['payment_type'][$i] ?? '') == 'Discount') {
                         $totalWithdrawAmount -= $withdrawAmount;
                     } else {
                         $totalWithdrawAmount += $withdrawAmount;
                     }
                 }
 
+                if ($finalArr === []) {
+                    throw new \RuntimeException('At least one invoice line with a charge type, description, or amount is required.');
+                }
+
+                $firstLine = $finalArr[0];
                 $lastInsertId = DB::table('account_client_receipts')->insertGetId([
                     'user_id' => $staffId,
                     'client_id' => $clientId,
                     'client_matter_id' => $matterId,
                     'receipt_id' => $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
-                    'trans_date' => $requestData['trans_date'][0],
-                    'entry_date' => $requestData['entry_date'][0],
-                    'gst_included' => $finalArr[0]['gst_included'] ?? 'No',
-                    'payment_type' => $requestData['payment_type'][0],
+                    'trans_date' => $firstLine['trans_date'],
+                    'entry_date' => $firstLine['entry_date'],
+                    'gst_included' => $firstLine['gst_included'] ?? 'No',
+                    'payment_type' => $firstLine['payment_type'],
                     'trans_no' => $invoice_no,
-                    'description' => $requestData['description'][0],
+                    'description' => $firstLine['description'],
                     'withdraw_amount' => $totalWithdrawAmount,
                     'balance_amount' => $totalWithdrawAmount,
                     'invoice_no' => $invoice_no,
@@ -1478,13 +1486,16 @@ class ClientAccountsController extends Controller
                 $currentTimestamp = now(); // Get current timestamp for created_at and updated_at
 
                 foreach ($requestData['trans_date'] as $index => $transDate) {
-                    // Calculate unit price and withdraw amount based on GST
-                    /*$unitPrice = floatval($requestData['withdraw_amount'][$index]);
-                    $withdrawAmount = $unitPrice;
-                    if ($requestData['gst_included'][$index] == 'Yes') {
-                        $withdrawAmount = $unitPrice * 1.10; // Add 10% GST
-                    }*/
                     $timesheet = $this->invoiceTimesheetLineFields($requestData, $index);
+                    if (InvoiceTimesheetLine::isBlankRequestRow($requestData, $index, $timesheet)) {
+                        if (! empty($requestData['id'][$index] ?? null)) {
+                            AccountAllInvoiceReceipt::where('id', $requestData['id'][$index])
+                                ->where('receipt_type', 3)
+                                ->where('receipt_id', $requestData['receipt_id'])
+                                ->delete();
+                        }
+                        continue;
+                    }
                     $withdrawAmount = (float) $timesheet['withdraw_amount'];
 
                     $entryData = array_merge([
@@ -1494,16 +1505,16 @@ class ClientAccountsController extends Controller
                         'receipt_type' => $requestData['receipt_type'],
                         'receipt_id' => $requestData['receipt_id'],
                         'trans_date' => $transDate,
-                        'entry_date' => $requestData['entry_date'][$index],
-                        'payment_type' => $requestData['payment_type'][$index],
+                        'entry_date' => $requestData['entry_date'][$index] ?? $transDate,
+                        'payment_type' => $requestData['payment_type'][$index] ?? '',
                         'trans_no' => $invoice_no,//$requestData['invoice_no'],
-                        'description' => $requestData['description'][$index],
+                        'description' => $requestData['description'][$index] ?? '',
                         'invoice_no' => $invoice_no, //$requestData['invoice_no'],
                         'save_type' => $requestData['save_type'],
                         'updated_at' => $currentTimestamp, // Add updated_at timestamp
                     ], $timesheet);
                     // Adjust total based on payment type using the GST-adjusted withdraw amount
-                    if ($requestData['payment_type'][$index] == 'Discount') {
+                    if (($requestData['payment_type'][$index] ?? '') == 'Discount') {
                         $totalWithdrawAmount -= $withdrawAmount;
                     } else {
                         $totalWithdrawAmount += $withdrawAmount;
@@ -1529,7 +1540,11 @@ class ClientAccountsController extends Controller
                     // Add to processed entries for response
                     $processedEntries[] = $entryData;
                 }
-   
+
+                if ($processedEntries === []) {
+                    throw new \RuntimeException('At least one invoice line with a charge type, description, or amount is required.');
+                }
+
                 // Step 3: Update or Insert into account_client_receipts with total withdraw_amount and last entry data
                 if ($lastEntryData) {
                     $lastEntryData = $this->invoiceParentLedgerFields($lastEntryData);
@@ -1626,6 +1641,15 @@ class ClientAccountsController extends Controller
             }
         }
         return response()->json($response);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'requestData' => [],
+                'function_type' => $requestData['function_type'] ?? 'add',
+                'total_balance_amount' => 0,
+                'invoice_no' => '',
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Error in saveinvoicereport: ' . $e->getMessage(), [
                 'request_data' => $request->except(['document_upload']),

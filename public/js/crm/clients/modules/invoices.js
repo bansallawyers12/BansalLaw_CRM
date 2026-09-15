@@ -140,7 +140,10 @@
     }
 
     function invoiceMoney(value) {
-        var n = parseFloat(value);
+        if (value === null || value === undefined || value === '') {
+            return 0;
+        }
+        var n = parseFloat(String(value).replace(/[^0-9.-]+/g, ''));
         return isNaN(n) ? 0 : Math.round(n * 100) / 100;
     }
 
@@ -156,19 +159,64 @@
         return $row.find('select[name="payment_type[]"]').val() === 'Discount' ? -1 : 1;
     }
 
+    function invoiceLineHasAmountInputs($row) {
+        var hoursRaw = $.trim($row.find('.invoice-hours').val() || '');
+        var rateRaw = $.trim($row.find('.invoice-rate-ex-gst').val() || '');
+        var amountRaw = $.trim($row.find('.invoice-amount-ex-gst').val() || '');
+        return hoursRaw !== '' || rateRaw !== '' || amountRaw !== '';
+    }
+
+    function resetInvoiceLineRow($row) {
+        $row.find('input[name="id[]"]').val('');
+        $row.find('input[name="gst_included[]"]').val('Yes');
+        $row.find('.withdraw_amount_invoice_per_row').val('');
+        $row.find('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .invoice-line-gst').val('').prop('readonly', false);
+        $row.find('textarea[name="description[]"]').val('');
+        $row.find('select[name="payment_type[]"]').prop('selectedIndex', 0);
+        $row.find('select[name="fee_earner_id[]"]').prop('selectedIndex', 0);
+        $row.find('select[name="fee_earner_role[]"]').prop('selectedIndex', 0);
+        $row.find('select[name="billing_basis[]"]').val('hourly');
+        $row.find('input[name="trans_no[]"]').val('');
+        $row.find('.unique_trans_no_invoice').val('');
+    }
+
+    function stripClonedFlatpickr($row) {
+        $row.find('input.flatpickr-alt-input').remove();
+        $row.find('.report_entry_date_fields_invoice').each(function() {
+            if (this._flatpickr && typeof this._flatpickr.destroy === 'function') {
+                this._flatpickr.destroy();
+            }
+            $(this).removeData('flatpickr').removeClass('flatpickr-input').show();
+        });
+    }
+
     function recalcInvoiceTimesheetRow($row, options) {
         options = options || {};
         if (!$row.find('.invoice-amount-ex-gst').length) {
             return;
         }
         var basis = ($row.find('.invoice-billing-basis').val() || 'hourly').toLowerCase();
-        var hours = invoiceMoney($row.find('.invoice-hours').val());
-        var rate = invoiceMoney($row.find('.invoice-rate-ex-gst').val());
+        var hoursRaw = $.trim($row.find('.invoice-hours').val() || '');
+        var rateRaw = $.trim($row.find('.invoice-rate-ex-gst').val() || '');
         var $amount = $row.find('.invoice-amount-ex-gst');
         var $gst = $row.find('.invoice-line-gst');
-        var amountEx = invoiceMoney($amount.val());
+        var amountRaw = $.trim($amount.val() || '');
+        var hours = invoiceMoney(hoursRaw);
+        var rate = invoiceMoney(rateRaw);
+        var amountEx = invoiceMoney(amountRaw);
 
-        if (basis === 'hourly' && $row.find('.invoice-hours').val() !== '' && $row.find('.invoice-rate-ex-gst').val() !== '') {
+        $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', basis === 'fixed');
+
+        if (!invoiceLineHasAmountInputs($row)) {
+            if (!options.keepGst) {
+                $gst.val('');
+            }
+            $row.find('.withdraw_amount_invoice_per_row').val('');
+            $row.find('.invoice-gst-included').val('Yes');
+            return;
+        }
+
+        if (basis === 'hourly' && hoursRaw !== '' && rateRaw !== '') {
             amountEx = invoiceMoney(hours * rate);
             $amount.val(amountEx.toFixed(2));
         }
@@ -181,7 +229,6 @@
         var incl = invoiceMoney(amountEx + gst);
         $row.find('.withdraw_amount_invoice_per_row').val(incl.toFixed(2));
         $row.find('.invoice-gst-included').val(gst > 0.00001 ? 'Yes' : 'No');
-        $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', basis === 'fixed');
     }
 
     function grandtotalAccountTab_invoice() {
@@ -238,6 +285,14 @@
         var amountEx = line.amount_ex_gst;
         var lineGst = line.line_gst;
         var withdraw = invoiceMoney(line.withdraw_amount);
+        var hasSavedAmounts = (amountEx !== null && amountEx !== undefined && amountEx !== '')
+            || (lineGst !== null && lineGst !== undefined && lineGst !== '')
+            || (line.withdraw_amount !== null && line.withdraw_amount !== undefined && line.withdraw_amount !== '');
+        if (!hasSavedAmounts) {
+            $row.find('.invoice-amount-ex-gst, .invoice-line-gst, .withdraw_amount_invoice_per_row').val('');
+            recalcInvoiceTimesheetRow($row, { keepGst: true });
+            return;
+        }
         if (amountEx === null || amountEx === undefined || amountEx === '') {
             if (line.gst_included === 'Yes' && withdraw) {
                 lineGst = invoiceMoney(withdraw / 11);
@@ -254,26 +309,25 @@
     }
 
     function cloneInvoiceLineRow($tbody, line) {
-        var html = typeof window.captureInvoiceLineRowTemplate === 'function'
-            ? window.captureInvoiceLineRowTemplate()
-            : '';
-        if (!html && $tbody && $tbody.length) {
-            html = $tbody.find('tr').first().prop('outerHTML');
+        var html = '';
+        if ($tbody && $tbody.length) {
+            var $source = $tbody.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').first();
+            if ($source.length) {
+                html = $source.prop('outerHTML');
+            }
+        }
+        if (!html && typeof window.captureInvoiceLineRowTemplate === 'function') {
+            html = window.captureInvoiceLineRowTemplate();
         }
         if (!html) {
             return $();
         }
         var $row = $(html);
-        $row.find('.report_entry_date_fields_invoice').each(function() {
-            if (this._flatpickr && typeof this._flatpickr.destroy === 'function') {
-                this._flatpickr.destroy();
-            }
-            $(this).removeData('flatpickr');
-        });
+        stripClonedFlatpickr($row);
         if ($tbody && $tbody.find('tr').length) {
             $row.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
         }
-        $row.find('input[name="id[]"]').val('');
+        resetInvoiceLineRow($row);
         populateInvoiceLineRow($row, line || {});
         return $row;
     }

@@ -146,6 +146,24 @@ class InvoiceTimesheetLine
         ];
     }
 
+    /**
+     * Extra cloned rows often only copy dates. Do not persist those as $0 invoice lines.
+     *
+     * @param  array<string, mixed>  $requestData
+     * @param  array<string, mixed>  $timesheet
+     */
+    public static function isBlankRequestRow(array $requestData, int $index, array $timesheet): bool
+    {
+        $description = trim((string) ($requestData['description'][$index] ?? ''));
+        $paymentType = trim((string) ($requestData['payment_type'][$index] ?? ''));
+        $hours = $timesheet['hours'] ?? null;
+        $hasHours = $hours !== null && abs((float) $hours) > 0.00001;
+        $hasAmount = abs((float) ($timesheet['amount_ex_gst'] ?? 0)) > 0.00001
+            || abs((float) ($timesheet['line_gst'] ?? 0)) > 0.00001;
+
+        return $description === '' && $paymentType === '' && ! $hasHours && ! $hasAmount;
+    }
+
     public static function displayFeeEarner(object $line): string
     {
         $name = '';

@@ -121,17 +121,26 @@
         var lines = [];
         var feesExGst = parseFloat(disclosure.estimatedLegalFees) || 0;
         var feesInclGst = parseFloat(disclosure.professionalFeesInclGst);
-        if (isNaN(feesInclGst) || feesInclGst <= 0) {
-            var gst = parseFloat(disclosure.gstAmount);
-            if (isNaN(gst) || gst < 0) {
-                gst = feesExGst * 0.10;
+        var gstAmt = parseFloat(disclosure.gstAmount);
+        if ((isNaN(feesInclGst) || feesInclGst <= 0) && feesExGst > 0) {
+            if (isNaN(gstAmt) || gstAmt < 0) {
+                gstAmt = feesExGst * 0.10;
             }
-            feesInclGst = feesExGst + gst;
+            feesInclGst = feesExGst + gstAmt;
+        }
+        if (feesExGst <= 0 && feesInclGst > 0) {
+            if (isNaN(gstAmt) || gstAmt < 0) {
+                gstAmt = feesInclGst / 11;
+            }
+            feesExGst = feesInclGst - gstAmt;
         }
         if (feesExGst > 0) {
+            if (isNaN(gstAmt) || gstAmt < 0) {
+                gstAmt = feesExGst * 0.10;
+            }
             lines.push({
                 paymentType: 'Professional Fees',
-                gst: feesExGst * 0.10,
+                gst: gstAmt,
                 amountEx: feesExGst,
                 basis: 'fixed',
                 description: scopeSnippet || 'Professional fees per costs disclosure'
@@ -184,6 +193,10 @@
                 window.recalcInvoiceTimesheetRow($row, { keepGst: true });
             }
         });
+
+        if (typeof window.grandtotalAccountTab_invoice === 'function') {
+            window.grandtotalAccountTab_invoice();
+        }
 
         if (typeof initFlatpickrForClass === 'function') {
             initFlatpickrForClass('#invoice_receipt_form .report_date_fields_invoice');

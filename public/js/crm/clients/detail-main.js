@@ -2233,12 +2233,22 @@ success: function(response) {
                 $row.find('input[name="id[]"]').val('');
                 $row.find('input[type="text"]').not('[type="hidden"]').val('');
                 $row.find('textarea[name="description[]"]').val('');
-                $row.find('select').prop('selectedIndex', 0);
+                $row.find('select').each(function() {
+                    if ($(this).hasClass('invoice-billing-basis')) {
+                        $(this).val('hourly');
+                    } else {
+                        this.selectedIndex = 0;
+                    }
+                });
+                $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', false);
+                $row.find('.withdraw_amount_invoice_per_row, .invoice-amount-ex-gst, .invoice-line-gst').val('');
             } else {
                 $row.remove();
             }
 
-            grandtotalAccountTab_invoice();
+            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                window.grandtotalAccountTab_invoice();
+            }
         }
 
         $(document).delegate('.removeitems_invoice', 'click', function(e){
@@ -2282,20 +2292,6 @@ success: function(response) {
                 window.grandtotalAccountTab_invoice();
             }
         });
-
-
-
-      
-
-
-
-        function grandtotalAccountTab_invoice() {
-            if (typeof window.grandtotalAccountTab_invoice === 'function') {
-                return window.grandtotalAccountTab_invoice();
-            }
-        }
-
-
 
 
 

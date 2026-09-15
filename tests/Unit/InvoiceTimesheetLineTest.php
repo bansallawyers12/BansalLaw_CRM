@@ -53,6 +53,33 @@ class InvoiceTimesheetLineTest extends TestCase
         $this->assertSame(550.0, $line['withdraw_amount']);
     }
 
+    public function test_gst_zero_is_preserved_for_gst_free_lines(): void
+    {
+        $line = InvoiceTimesheetLine::fromRequest([
+            'billing_basis' => ['fixed'],
+            'amount_ex_gst' => ['100.00'],
+            'line_gst' => ['0'],
+            'payment_type' => ['Government Fees'],
+        ], 0);
+
+        $this->assertSame(100.0, $line['amount_ex_gst']);
+        $this->assertSame(0.0, $line['line_gst']);
+        $this->assertSame(100.0, $line['withdraw_amount']);
+        $this->assertSame('No', $line['gst_included']);
+    }
+
+    public function test_blank_cloned_row_is_detected(): void
+    {
+        $request = [
+            'trans_date' => ['14/09/2026'],
+            'payment_type' => [''],
+            'description' => [''],
+        ];
+        $timesheet = InvoiceTimesheetLine::fromRequest($request, 0);
+
+        $this->assertTrue(InvoiceTimesheetLine::isBlankRequestRow($request, 0, $timesheet));
+    }
+
     public function test_pdf_totals_sum_gst_column(): void
     {
         $lines = [
