@@ -597,6 +597,16 @@ class StaffController extends Controller
             $obj->can_access_personal_calendar = $request->boolean('can_access_personal_calendar');
         }
 
+        if (Schema::hasColumn('staff', 'default_calendar_type')) {
+            $rawDefault = $request->input('default_calendar_type');
+            if ($rawDefault === null || $rawDefault === '' || $rawDefault === 'automatic') {
+                $obj->default_calendar_type = null;
+            } else {
+                $allowed = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
+                $obj->default_calendar_type = in_array($rawDefault, $allowed, true) ? $rawDefault : null;
+            }
+        }
+
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
             $actor instanceof Staff ? $actor : null
         );

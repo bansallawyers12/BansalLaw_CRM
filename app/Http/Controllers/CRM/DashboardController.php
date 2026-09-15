@@ -3,6 +3,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DashboardRequest;
+use App\Models\AppointmentConsultant;
 use App\Models\Staff;
 use App\Services\DashboardService;
 use App\Services\StaffPersonalCalendarFeedService;
@@ -39,20 +40,28 @@ class DashboardController extends Controller
             $dashboardData['canAccessPersonalCalendar'] = $canAccessPersonalCalendar;
             $dashboardData['calendarStats'] = null;
             $dashboardData['bookingCalendarType'] = $canAccessPersonalCalendar
-                ? $this->personalCalendarFeed->bookingCalendarTypeForStaff($staff)
+                ? $this->personalCalendarFeed->defaultTypeForStaff($staff)
                 : null;
+            $dashboardData['calendarTypeOptions'] = $canAccessPersonalCalendar
+                ? StaffPersonalCalendarFeedService::CALENDAR_TYPES
+                : [];
             $canFilterCalendarStaff = $canAccessPersonalCalendar
                 && $this->personalCalendarFeed->canFilterStaffCalendar($staff);
             $dashboardData['canFilterCalendarStaff'] = $canFilterCalendarStaff;
             $dashboardData['calendarStaffOptions'] = $canFilterCalendarStaff
                 ? $this->personalCalendarFeed->staffFilterOptions()
                 : [];
+            $dashboardData['bookingConsultants'] = $canAccessPersonalCalendar
+                ? $this->bookingConsultantsForModal()
+                : [];
         } else {
             $dashboardData['canAccessPersonalCalendar'] = false;
             $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
             $dashboardData['bookingCalendarType'] = null;
+            $dashboardData['calendarTypeOptions'] = [];
             $dashboardData['canFilterCalendarStaff'] = false;
             $dashboardData['calendarStaffOptions'] = [];
+            $dashboardData['bookingConsultants'] = [];
         }
 
         return view('crm.dashboard', $dashboardData);
@@ -107,7 +116,30 @@ class DashboardController extends Controller
             'data' => $events,
             'stats' => $includeStats ? $this->personalCalendarFeed->statsForViewer($staff, $request) : null,
             'staff_view' => $this->personalCalendarFeed->resolveCalendarView($staff, $request)['mode'],
+            'booking_calendar_type' => $this->personalCalendarFeed->resolveRequestedCalendarType($request)
+                ?? $this->personalCalendarFeed->defaultTypeForStaff($staff),
         ]);
+    }
+
+    /**
+     * Active appointment consultants for the shared booking appointment modal.
+     *
+     * @return list<array{id: int, name: string, calendar_type: ?string}>
+     */
+    public function bookingConsultantsForModal(): array
+    {
+        return AppointmentConsultant::query()
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name', 'calendar_type'])
+            ->unique('id')
+            ->values()
+            ->map(fn (AppointmentConsultant $c) => [
+                'id' => (int) $c->id,
+                'name' => (string) $c->name,
+                'calendar_type' => $c->calendar_type,
+            ])
+            ->all();
     }
 
     /**

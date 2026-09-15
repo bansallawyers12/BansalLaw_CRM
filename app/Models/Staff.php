@@ -65,6 +65,7 @@ class Staff extends Authenticatable
         'can_use_communication_check',
         'can_use_timeline_billing',
         'can_access_personal_calendar',
+        'default_calendar_type',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
     ];

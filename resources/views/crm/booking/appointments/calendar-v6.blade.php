@@ -22,7 +22,11 @@
                     $calendarStaffId = $calendarStaffId ?? null;
                     $canManagePersonalEvents = $canManagePersonalEvents ?? true;
                     $bookingPageStaffOptions = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
+                    $calendarTypeLabels = \App\Services\StaffPersonalCalendarFeedService::CALENDAR_TYPES;
                     $bookingPageCurrentLabel = $calendarTitle ?? ($type === 'kunal' ? 'Michael' : ucfirst((string) $type));
+                    if ($calendarMode === 'booking' && isset($calendarTypeLabels[$type])) {
+                        $bookingPageCurrentLabel = $calendarTypeLabels[$type];
+                    }
                     if ($calendarMode === 'booking') {
                         foreach ($bookingPageStaffOptions as $opt) {
                             if (($opt['booking_calendar_type'] ?? null) === $type) {
@@ -32,10 +36,14 @@
                         }
                     }
                 @endphp
+                <span class="dashboard-cal-type-pill is-primary" style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .85rem;border-radius:999px;font-size:.8125rem;font-weight:700;background:#1e3d60;color:#fff;">
+                    <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                    {{ $bookingPageCurrentLabel }}
+                </span>
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="bookingCalendarStaffMenu"
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="bookingCalendarStaffMenu"
                             data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-calendar-days"></i> {{ $bookingPageCurrentLabel }}
+                        Other calendars
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="bookingCalendarStaffMenu">
                         <li>
@@ -44,45 +52,43 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        @forelse($bookingPageStaffOptions as $opt)
-                            @php
-                                $optType = $opt['booking_calendar_type'] ?? null;
-                                $optHref = in_array($optType, ['ajay', 'kunal'], true)
-                                    ? route('booking.appointments.calendar', ['type' => $optType])
-                                    : route('booking.appointments.calendar.staff', ['staff' => $opt['id']]);
-                                $isActive = ($calendarMode === 'booking' && $optType === $type)
-                                    || ($calendarMode === 'personal' && (int) ($opt['id'] ?? 0) === (int) $calendarStaffId);
-                            @endphp
+                        @foreach($calendarTypeLabels as $typeKey => $typeLabel)
+                            @continue($calendarMode === 'booking' && $type === $typeKey)
                             <li>
-                                <a class="dropdown-item{{ $isActive ? ' active' : '' }}" href="{{ $optHref }}">
-                                    <i class="fa-solid fa-calendar-days me-2"></i> {{ $opt['name'] }}
+                                <a class="dropdown-item"
+                                   href="{{ route('booking.appointments.calendar', ['type' => $typeKey]) }}">
+                                    <i class="fa-solid fa-calendar-days me-2"></i> {{ $typeLabel }}
                                 </a>
                             </li>
-                        @empty
-                            <li>
-                                <a class="dropdown-item{{ $type === 'ajay' ? ' active' : '' }}"
-                                   href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                                    <i class="fa-solid fa-calendar-days me-2"></i> Ajay
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item{{ $type === 'kunal' ? ' active' : '' }}"
-                                   href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                                    <i class="fa-solid fa-calendar-days me-2"></i> Michael
-                                </a>
-                            </li>
-                        @endforelse
-                        @php $seenTypes = collect($bookingPageStaffOptions)->pluck('booking_calendar_type')->filter()->all(); @endphp
-                        @foreach(['ajay' => 'Ajay', 'kunal' => 'Michael'] as $fallbackType => $fallbackLabel)
-                            @if(!in_array($fallbackType, $seenTypes, true))
+                        @endforeach
+                        @php
+                            $otherPersonalStaff = collect($bookingPageStaffOptions)
+                                ->reject(function ($opt) use ($calendarMode, $calendarStaffId) {
+                                    $optType = $opt['booking_calendar_type'] ?? null;
+                                    // Already listed as a website calendar type (Ajay / Michael).
+                                    if (\App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($optType)) {
+                                        return true;
+                                    }
+                                    // Current personal calendar.
+                                    if ($calendarMode === 'personal' && (int) ($opt['id'] ?? 0) === (int) $calendarStaffId) {
+                                        return true;
+                                    }
+
+                                    return false;
+                                })
+                                ->values();
+                        @endphp
+                        @if($otherPersonalStaff->isNotEmpty())
+                            <li><hr class="dropdown-divider"></li>
+                            @foreach($otherPersonalStaff as $opt)
                                 <li>
-                                    <a class="dropdown-item{{ $calendarMode === 'booking' && $type === $fallbackType ? ' active' : '' }}"
-                                       href="{{ route('booking.appointments.calendar', ['type' => $fallbackType]) }}">
-                                        <i class="fa-solid fa-calendar-days me-2"></i> {{ $fallbackLabel }} calendar
+                                    <a class="dropdown-item"
+                                       href="{{ route('booking.appointments.calendar.staff', ['staff' => $opt['id']]) }}">
+                                        <i class="fa-solid fa-user me-2"></i> {{ $opt['name'] }}
                                     </a>
                                 </li>
-                            @endif
-                        @endforeach
+                            @endforeach
+                        @endif
                         @if(auth('admin')->user() instanceof \App\Models\Staff && auth('admin')->user()->hasEffectiveSuperAdminPrivileges())
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -251,43 +257,8 @@
     </div>
 </div>
 
-<!-- Event Detail Modal (scoped styles: .booking-calendar-modal — portaled next to body) -->
-<div class="modal fade booking-calendar-modal appointment-detail-modal" id="eventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" id="eventModalDialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="appointment-detail-modal__heading">
-                    <span class="appointment-detail-modal__icon" id="eventModalIcon" aria-hidden="true">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </span>
-                    <div>
-                        <h5 class="modal-title mb-0" id="eventModalTitle">Appointment Details</h5>
-                        <p class="appointment-detail-modal__subtitle mb-0 d-none" id="eventModalSubtitle"></p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="eventModalBody">
-                <!-- Content will be loaded dynamically -->
-            </div>
-            <div class="modal-footer appointment-detail-modal__footer">
-                <button type="button" id="courtHearingEditBtn" class="btn btn-outline-primary d-none">
-                    <i class="fa-solid fa-pen-to-square"></i> Edit Appointment
-                </button>
-                <div class="appointment-detail-modal__footer-actions ms-auto">
-                    <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
-                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
-                    </button>
-                    <a href="#" id="viewFullDetails" class="btn btn-primary d-none" target="_blank">
-                        <i class="fa-solid fa-user"></i> Open Client
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Event Detail Modal (shared partial) -->
+@include('crm.booking.appointments.partials.event-modals')
 
 <!-- Important event create / edit -->
 <div class="modal fade booking-calendar-modal important-event-modal" id="importantEventModal" tabindex="-1" role="dialog">
@@ -451,35 +422,7 @@
     </div>
 </div>
 
-<!-- Cancellation Confirmation Modal (shown after Appointment Details closes — Bootstrap 5 does not stack modals) -->
-<div class="modal fade booking-calendar-modal" id="cancellationConfirmModal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Cancellation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-3">Are you sure you want to change the status to <strong>cancelled</strong>?</p>
-                <div class="mb-3">
-                    <label class="form-label" for="cancelReasonInput">Cancellation reason <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="cancelReasonInput" placeholder="Enter cancellation reason" required>
-                    <div class="text-danger small d-none" id="cancelReasonError">Cancellation reason is required.</div>
-                </div>
-                <div class="form-check mb-0">
-                    <input type="checkbox" class="form-check-input" id="sendCancellationEmailCheck" checked>
-                    <label class="form-check-label" for="sendCancellationEmailCheck">Send cancellation confirmation to client</label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
-                    <i class="fa-solid fa-xmark"></i> Confirm Cancellation
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Cancellation Confirmation Modal is in event-modals partial -->
 
 <script>
 // Globals from layout @@vite(['resources/js/app.js']). Deferred modules run before DOMContentLoaded,

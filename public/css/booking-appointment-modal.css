@@ -1,0 +1,189 @@
+/* Shared booking appointment modal — dashboard + booking calendar */
+
+#eventModal .appointment-detail-modal__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+#eventModal .appointment-detail-modal__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #1e3d60;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+#eventModal .appointment-detail-modal__subtitle {
+    font-size: 0.85rem;
+    color: #5e7a90;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+#eventModal .appt-detail-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 16px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    border: 1px solid #d9e2ec;
+    background: linear-gradient(135deg, rgba(30, 61, 96, 0.08) 0%, rgba(58, 111, 168, 0.05) 100%);
+}
+
+#eventModal .appt-detail-hero__client {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a2c40;
+    line-height: 1.3;
+}
+
+#eventModal .appt-detail-hero__when {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #5e7a90;
+    font-weight: 500;
+}
+
+#eventModal .appt-detail-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+#eventModal .appt-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: #eef2f6;
+    color: #1a2c40;
+    border: 1px solid #d0d9e3;
+}
+
+#eventModal .appt-status-pill--confirmed,
+#eventModal .appt-status-pill--completed { background: #e6f4ea; color: #146c2e; border-color: #b7dfc3; }
+#eventModal .appt-status-pill--pending { background: #fff6e0; color: #8a5b00; border-color: #f0d48a; }
+#eventModal .appt-status-pill--paid { background: #e7eef7; color: #1e3d60; border-color: #b7c9df; }
+#eventModal .appt-status-pill--cancelled { background: #fdecea; color: #a83020; border-color: #f0b8b0; }
+#eventModal .appt-status-pill--no_show { background: #eef2f6; color: #5e7a90; border-color: #cfd8e1; }
+#eventModal .appt-status-pill--payment--paid { background: #e7eef7; color: #1e3d60; }
+#eventModal .appt-status-pill--payment--unpaid { background: #f5f7fa; color: #5e7a90; }
+
+#eventModal .appt-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    margin-bottom: 18px;
+}
+
+#eventModal .appt-detail-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+#eventModal .appt-detail-item__icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #eef2f6;
+    color: #1e3d60;
+    flex-shrink: 0;
+}
+
+#eventModal .appt-detail-item__label {
+    display: block;
+    font-size: 12px;
+    color: #5e7a90;
+    font-weight: 600;
+}
+
+#eventModal .appt-detail-item__value {
+    font-size: 14px;
+    color: #1a2c40;
+    font-weight: 500;
+}
+
+#eventModal .appt-detail-section {
+    border: 1px solid #d9e2ec;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: #fff;
+}
+
+#eventModal .appt-detail-section__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a2c40;
+    margin-bottom: 12px;
+}
+
+#eventModal .appt-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Darker text on tinted outline buttons for readability on white */
+#eventModal .appt-action-buttons .btn-outline-success {
+    color: #0f5132;
+    background-color: rgba(25, 135, 84, 0.12);
+    border-color: #198754;
+}
+#eventModal .appt-action-buttons .btn-outline-primary {
+    color: #084298;
+    background-color: rgba(13, 110, 253, 0.12);
+    border-color: #0d6efd;
+}
+#eventModal .appt-action-buttons .btn-outline-info {
+    color: #055160;
+    background-color: rgba(13, 202, 240, 0.16);
+    border-color: #0dcaf0;
+}
+#eventModal .appt-action-buttons .btn-outline-warning {
+    color: #664d03;
+    background-color: rgba(255, 193, 7, 0.18);
+    border-color: #ffc107;
+}
+#eventModal .appt-action-buttons .btn-outline-danger {
+    color: #842029;
+    background-color: rgba(220, 53, 69, 0.12);
+    border-color: #dc3545;
+}
+#eventModal .appt-action-buttons .btn-outline-secondary {
+    color: #41464b;
+    background-color: rgba(108, 117, 125, 0.12);
+    border-color: #6c757d;
+}
+
+#eventModal .appt-detail-tip {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #eef2f6;
+    color: #1a2c40;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    #eventModal .appt-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

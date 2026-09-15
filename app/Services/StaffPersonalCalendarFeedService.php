@@ -22,9 +22,109 @@ use Illuminate\Support\Facades\Schema;
 
 class StaffPersonalCalendarFeedService
 {
+    /**
+     * Website booking calendar keys used by CRM (ajay / kunal only).
+     *
+     * @var array<string, string>
+     */
+    public const CALENDAR_TYPES = [
+        'ajay' => 'Ajay',
+        'kunal' => 'Michael',
+    ];
+
+    /**
+     * Name/email hints when Admin Console default is Automatic.
+     * Matched against staff first name, full name, and email local-part.
+     *
+     * @var array<string, string>
+     */
+    public const STAFF_CALENDAR_HINTS = [
+        'ajay' => 'ajay',
+        'michael' => 'kunal',
+        'kunal' => 'kunal',
+    ];
+
+    public const FALLBACK_CALENDAR_TYPE = 'ajay';
+
     public function __construct(
         protected StaffCalendarFeedService $staffCalendarFeed
     ) {}
+
+    /**
+     * @return list<string>
+     */
+    public static function calendarTypeKeys(): array
+    {
+        return array_keys(self::CALENDAR_TYPES);
+    }
+
+    public static function isValidCalendarType(?string $type): bool
+    {
+        return is_string($type) && $type !== '' && isset(self::CALENDAR_TYPES[$type]);
+    }
+
+    public static function labelForCalendarType(?string $type): string
+    {
+        if (! self::isValidCalendarType($type)) {
+            return self::CALENDAR_TYPES[self::FALLBACK_CALENDAR_TYPE];
+        }
+
+        return self::CALENDAR_TYPES[$type];
+    }
+
+    /**
+     * Home website calendar for a staff member.
+     * Order: Admin override → name/email hint → fallback (Ajay).
+     */
+    public function defaultTypeForStaff(Staff $staff): string
+    {
+        $override = $staff->getAttribute('default_calendar_type');
+        if (self::isValidCalendarType(is_string($override) ? $override : null)) {
+            return (string) $override;
+        }
+
+        $haystacks = [
+            strtolower(trim((string) ($staff->first_name ?? ''))),
+            strtolower(trim(trim((string) ($staff->first_name ?? '')) . ' ' . trim((string) ($staff->last_name ?? '')))),
+        ];
+        $email = strtolower(trim((string) ($staff->email ?? '')));
+        if ($email !== '' && str_contains($email, '@')) {
+            $haystacks[] = explode('@', $email, 2)[0];
+        }
+
+        foreach ($haystacks as $haystack) {
+            if ($haystack === '') {
+                continue;
+            }
+            foreach (self::STAFF_CALENDAR_HINTS as $needle => $type) {
+                if ($haystack === $needle || str_contains($haystack, $needle)) {
+                    return $type;
+                }
+            }
+        }
+
+        $owned = $this->bookingCalendarTypeForStaff($staff);
+        if (self::isValidCalendarType($owned)) {
+            return (string) $owned;
+        }
+
+        $configured = (string) config('booking_calendar.default_website_calendar_type', self::FALLBACK_CALENDAR_TYPE);
+
+        return self::isValidCalendarType($configured) ? $configured : self::FALLBACK_CALENDAR_TYPE;
+    }
+
+    /**
+     * Resolve calendar type from request (dashboard switcher) or null.
+     */
+    public function resolveRequestedCalendarType(Request $request): ?string
+    {
+        $raw = $request->get('booking_calendar_type', $request->get('calendar_type'));
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        return self::isValidCalendarType($raw) ? $raw : null;
+    }
 
     /**
      * Personal calendar feed for one staff member: only their bookings,
@@ -160,12 +260,16 @@ class StaffPersonalCalendarFeedService
     {
         $staffId = $staff ? (int) $staff->id : null;
         $tz = (string) config('app.timezone');
-        $calendarType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+        $requestedType = $this->resolveRequestedCalendarType($request);
+        $ownedType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+        $calendarType = $requestedType
+            ?? $ownedType
+            ?? ($staff ? $this->defaultTypeForStaff($staff) : null);
 
-        $bookings = $staffId === null
-            ? $this->websiteBookingsAll($request)
-            : ($calendarType
-                ? $this->websiteBookingsForCalendarType($calendarType, $request)
+        $bookings = $calendarType
+            ? $this->websiteBookingsForCalendarType($calendarType, $request)
+            : ($staffId === null
+                ? $this->websiteBookingsAll($request)
                 : $this->websiteBookings($staff, $request));
 
         // Reminder / other / follow-up live on booking calendars only (self-created).
@@ -338,20 +442,17 @@ class StaffPersonalCalendarFeedService
             if ($consultantIds !== []) {
                 $type = AppointmentConsultant::query()
                     ->whereIn('id', $consultantIds)
-                    ->whereIn('calendar_type', ['ajay', 'kunal'])
+                    ->whereIn('calendar_type', self::calendarTypeKeys())
                     ->value('calendar_type');
-                if (is_string($type) && $type !== '') {
+                if (is_string($type) && self::isValidCalendarType($type)) {
                     return $type;
                 }
             }
         }
 
         $firstName = strtolower(trim((string) ($staff->first_name ?? '')));
-        if ($firstName === 'ajay') {
-            return 'ajay';
-        }
-        if (in_array($firstName, ['michael', 'kunal'], true)) {
-            return 'kunal';
+        if (isset(self::STAFF_CALENDAR_HINTS[$firstName])) {
+            return self::STAFF_CALENDAR_HINTS[$firstName];
         }
 
         return null;
@@ -421,12 +522,16 @@ class StaffPersonalCalendarFeedService
     protected function countEventsForStaffScope(?Staff $staff, Request $request): int
     {
         $staffId = $staff ? (int) $staff->id : null;
-        $calendarType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+        $requestedType = $this->resolveRequestedCalendarType($request);
+        $ownedType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
+        $calendarType = $requestedType
+            ?? $ownedType
+            ?? ($staff ? $this->defaultTypeForStaff($staff) : null);
 
-        $bookingCount = $staffId === null
-            ? $this->countWebsiteBookingsAll($request)
-            : ($calendarType
-                ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
+        $bookingCount = $calendarType
+            ? $this->countWebsiteBookingsForCalendarType($calendarType, $request)
+            : ($staffId === null
+                ? $this->countWebsiteBookingsAll($request)
                 : $this->countWebsiteBookings($staff, $request));
 
         return $bookingCount
@@ -876,10 +981,19 @@ class StaffPersonalCalendarFeedService
             'location' => $appointment->location,
             'meeting_type' => $appointment->meeting_type,
             'meeting_type_label' => $meetingTypeDisplay,
+            'preferred_language' => $appointment->preferred_language ?: 'English',
+            'service_type' => $appointment->service_type,
             'notes' => $appointment->enquiry_details,
             'status' => $status,
             'status_label' => $statusLabel,
+            'is_paid' => (bool) $appointment->is_paid,
+            'final_amount' => $appointment->final_amount,
+            'payment_status' => $appointment->payment_status
+                ?? ($appointment->is_paid ? 'Paid' : 'Free'),
+            'consultant_id' => $appointment->consultant_id,
             'consultant_name' => optional($appointment->consultant)->name,
+            'consultant' => optional($appointment->consultant)->name,
+            'calendar_type' => optional($appointment->consultant)->calendar_type,
         ];
     }
 

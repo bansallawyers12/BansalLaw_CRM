@@ -79,6 +79,16 @@
                         <span class="badge bg-secondary">No personal calendar access</span>
                     @endif
                 </dd>
+                <dt>Default website calendar</dt>
+                <dd>
+                    @php
+                        $defaultCal = $fetchedData->default_calendar_type ?? null;
+                        $defaultLabel = $defaultCal
+                            ? \App\Services\StaffPersonalCalendarFeedService::labelForCalendarType($defaultCal)
+                            : 'Automatic';
+                    @endphp
+                    {{ $defaultLabel }}
+                </dd>
             </dl>
         </div>
     </div>

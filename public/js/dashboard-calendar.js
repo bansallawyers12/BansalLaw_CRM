@@ -21,11 +21,14 @@
 
     function appendCalendarStaffViewParam(url) {
         var select = document.getElementById('dashboardCalendarStaffView');
-        if (!select) {
-            return url;
+        if (select) {
+            // Always send for Super Admin so "My calendar" is not overridden by the all-staff default.
+            url.searchParams.set('staff_view', calendarStaffViewValue());
         }
-        // Always send for Super Admin so "My calendar" is not overridden by the all-staff default.
-        url.searchParams.set('staff_view', calendarStaffViewValue());
+        var bookingType = calendarElTzBookingType();
+        if (bookingType) {
+            url.searchParams.set('booking_calendar_type', bookingType);
+        }
         return url;
     }
 
@@ -112,9 +115,55 @@
     }
 
     function calendarElTzBookingType() {
+        var switcher = document.getElementById('dashboardCalendarTypeSwitcher');
+        if (switcher && switcher.getAttribute('data-selected-type')) {
+            var selected = String(switcher.getAttribute('data-selected-type'));
+            var known = window.DASHBOARD_CALENDAR_TYPES || {};
+            if (Object.prototype.hasOwnProperty.call(known, selected)) {
+                return selected;
+            }
+        }
         var el = document.getElementById(CALENDAR_EL_ID);
         var type = el && el.getAttribute('data-booking-calendar-type');
-        return type === 'ajay' || type === 'kunal' ? type : null;
+        var knownTypes = window.DASHBOARD_CALENDAR_TYPES || {};
+        return type && Object.prototype.hasOwnProperty.call(knownTypes, type) ? type : null;
+    }
+
+    function setSelectedBookingCalendarType(type) {
+        var next = String(type || '');
+        var switcher = document.getElementById('dashboardCalendarTypeSwitcher');
+        if (switcher) {
+            switcher.setAttribute('data-selected-type', next);
+        }
+        var calEl = document.getElementById(CALENDAR_EL_ID);
+        if (calEl) {
+            calEl.setAttribute('data-booking-calendar-type', next);
+        }
+        var pill = document.getElementById('dashboardCalPrimaryType');
+        var labels = window.DASHBOARD_CALENDAR_TYPES || { ajay: 'Ajay', kunal: 'Michael' };
+        if (pill) {
+            pill.setAttribute('data-type', next);
+            pill.innerHTML = '<i class="fa-solid fa-calendar-days" aria-hidden="true"></i> ' +
+                escapeHtml(labels[next] || next);
+        }
+        document.querySelectorAll('.dashboard-cal-type-option').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-type') === next);
+        });
+    }
+
+    function initBookingCalendarTypeSwitcher(calendar) {
+        document.querySelectorAll('.dashboard-cal-type-option').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var type = btn.getAttribute('data-type');
+                if (!type || type === calendarElTzBookingType()) {
+                    return;
+                }
+                setSelectedBookingCalendarType(type);
+                if (calendar && typeof calendar.refetchEvents === 'function') {
+                    calendar.refetchEvents();
+                }
+            });
+        });
     }
 
     function csrfToken() {
@@ -464,7 +513,6 @@
                 var entry = cluster.entries[0];
                 var event = entry.event;
                 var props = event.extendedProps || {};
-                var typeKey = eventTypeKey(props);
                 var title = event.title || props.title || 'Event';
                 var start = event.start || props.starts_at || props.appointment_datetime;
                 var groupCount = cluster.entries.length;
@@ -484,15 +532,23 @@
                     escapeHtml(formatEventTime(start, tz, event.allDay || props.is_all_day)) +
                     '</span>' +
                     '<div class="dashboard-upcoming-item-body">' +
-                    '<div class="dashboard-upcoming-item-meta">' +
-                    '<span class="dashboard-upcoming-type dashboard-upcoming-type--' + typeKey + '">' +
-                    escapeHtml(eventTypeLabel(props)) + '</span>' +
+                    '<div class="dashboard-upcoming-item-row">' +
+                    '<div class="dashboard-upcoming-title">' + escapeHtml(title) + '</div>' +
+                    (props.status
+                        ? '<span class="dashboard-upcoming-status dashboard-upcoming-status--' +
+                            escapeHtml(String(props.status).toLowerCase().replace(/[^a-z0-9]+/g, '_')) +
+                            '">' +
+                            escapeHtml(props.status_label || String(props.status).replace(/_/g, ' ')) +
+                            '</span>'
+                        : '') +
+                    '</div>' +
+                    (props.location
+                        ? '<div class="dashboard-upcoming-location">' + escapeHtml(props.location) + '</div>'
+                        : '') +
                     (groupCount > 1
                         ? '<span class="dashboard-upcoming-group-count" title="' + groupCount + ' similar items">' +
                             escapeHtml(String(groupCount)) + '+</span>'
                         : '') +
-                    '</div>' +
-                    '<div class="dashboard-upcoming-title">' + escapeHtml(title) + '</div>' +
                     '</div></li>';
             });
 
@@ -1543,6 +1599,18 @@
             showReminderDetail(props);
             return;
         }
+        var kind = String(props.event_kind || '');
+        var bookingId = props.booking_appointment_id;
+        if (kind === 'website_booking' || bookingId) {
+            if (window.BookingAppointmentModal && typeof window.BookingAppointmentModal.openFromProps === 'function') {
+                window.BookingAppointmentModal.openFromProps(props);
+                return;
+            }
+            if (bookingId && window.BookingAppointmentModal && typeof window.BookingAppointmentModal.openById === 'function') {
+                window.BookingAppointmentModal.openById(bookingId);
+                return;
+            }
+        }
         showSimpleEventDetail(props);
     }
 
@@ -2088,6 +2156,7 @@
 
             calendar.render();
             initPersonalEventModal(calendar);
+            initBookingCalendarTypeSwitcher(calendar);
             initUpcomingLazyLoad(tz);
             window.staffDashboardCalendar = calendar;
             window.requestAnimationFrame(function () {

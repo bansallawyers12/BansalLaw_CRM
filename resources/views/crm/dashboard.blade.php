@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail_dashboard')
+@extends('layouts.crm_client_detail_dashboard')
 
 @section('content')
     @php
@@ -86,9 +86,11 @@
             :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
             :timezone="$dashboardTz"
             :booking-calendar-type="$bookingCalendarType ?? null"
+            :calendar-type-options="$calendarTypeOptions ?? []"
             :can-filter-calendar-staff="$canFilterCalendarStaff ?? false"
             :calendar-staff-options="$calendarStaffOptions ?? []"
         />
+        @include('crm.booking.appointments.partials.event-modals')
         @endif
 
         @include('crm.partials.access-approvals-dashboard')
@@ -209,11 +211,15 @@
     };
 
     window.dashboardData = {};
+    window.consultantsData = @json($bookingConsultants ?? []);
+    window.BOOKING_WEB_BASE = @json(rtrim(url('/booking'), '/'));
+    window.DASHBOARD_CALENDAR_TYPES = @json($calendarTypeOptions ?? \App\Services\StaffPersonalCalendarFeedService::CALENDAR_TYPES);
 </script>
 <script src="{{ asset('js/dashboard.js') }}?v={{ @filemtime(public_path('js/dashboard.js')) ?: time() }}"></script>
 <script src="{{ asset('js/crm/dashboard/add-task-popover.js') }}?v={{ @filemtime(public_path('js/crm/dashboard/add-task-popover.js')) ?: time() }}"></script>
 <script src="{{ asset('js/crm/dashboard/dashboard-page.js') }}?v={{ @filemtime(public_path('js/crm/dashboard/dashboard-page.js')) ?: time() }}"></script>
 @if(!empty($canAccessPersonalCalendar))
+<script src="{{ asset('js/booking-appointment-modal.js') }}?v={{ @filemtime(public_path('js/booking-appointment-modal.js')) ?: time() }}"></script>
 <script src="{{ asset('js/dashboard-calendar.js') }}?v={{ @filemtime(public_path('js/dashboard-calendar.js')) ?: time() }}"></script>
 @endif
 @endonce

@@ -482,7 +482,7 @@ class BookingAppointmentsController extends Controller
             'starts_at'        => 'required|date',
             'ends_at'          => 'nullable|date|after_or_equal:starts_at',
             'is_all_day'       => 'sometimes|boolean',
-            'calendar_type'    => 'nullable|in:ajay,kunal',
+            'calendar_type'    => 'nullable|in:' . implode(',', \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys()),
             'client_id'        => 'nullable|integer|exists:admins,id',
             'client_matter_id' => 'nullable|integer|exists:client_matters,id',
             'location'         => 'nullable|string|max:255',
@@ -521,7 +521,7 @@ class BookingAppointmentsController extends Controller
         // Reminder/other are personal — always tag to the calendar being viewed when possible.
         if (in_array($eventType, ['reminder', 'other'], true) && ($calendarType === null || $calendarType === '')) {
             $reqType = (string) $request->get('type', '');
-            if (in_array($reqType, ['ajay', 'kunal'], true)) {
+            if (\App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($reqType)) {
                 $calendarType = $reqType;
             }
         }
@@ -589,7 +589,7 @@ class BookingAppointmentsController extends Controller
             'starts_at'        => 'sometimes|required|date',
             'ends_at'          => 'nullable|date',
             'is_all_day'       => 'sometimes|boolean',
-            'calendar_type'    => 'nullable|in:ajay,kunal',
+            'calendar_type'    => 'nullable|in:' . implode(',', \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys()),
             'client_id'        => 'nullable|integer|exists:admins,id',
             'client_matter_id' => 'nullable|integer|exists:client_matters,id',
             'location'         => 'nullable|string|max:255',
@@ -1384,7 +1384,7 @@ class BookingAppointmentsController extends Controller
      */
     public function calendarStatsJson(string $type)
     {
-        $validTypes = ['ajay', 'kunal'];
+        $validTypes = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
         if (! in_array($type, $validTypes, true)) {
             return response()->json(['success' => false, 'message' => 'Invalid calendar type'], 404);
         }
@@ -1420,9 +1420,9 @@ class BookingAppointmentsController extends Controller
      */
     public function calendar($type)
     {
-        $validTypes = ['ajay', 'kunal'];
+        $validTypes = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
 
-        if (!in_array($type, $validTypes)) {
+        if (! in_array($type, $validTypes, true)) {
             abort(404);
         }
 
@@ -1443,11 +1443,7 @@ class BookingAppointmentsController extends Controller
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($appointmentsQuery);
         $appointments = $appointmentsQuery->get();
 
-        $calendarTitle = match ($type) {
-            'ajay' => 'Ajay',
-            'kunal' => 'Michael',
-            default => ucfirst($type)
-        };
+        $calendarTitle = \App\Services\StaffPersonalCalendarFeedService::labelForCalendarType($type);
 
         $stats = $this->calendarHeaderStatsForType($type);
 
@@ -2517,6 +2513,8 @@ class BookingAppointmentsController extends Controller
                 'enquiry_type' => $appointment->enquiry_type,
                 'enquiry_details' => $appointment->enquiry_details,
                 'meeting_type' => $appointment->meeting_type,
+                'preferred_language' => $appointment->preferred_language ?: 'English',
+                'duration_minutes' => (int) ($appointment->duration_minutes ?: 15),
                 'status' => $appointment->status,
                 'status_badge' => $appointment->status_badge,
                 'is_paid' => $appointment->is_paid,

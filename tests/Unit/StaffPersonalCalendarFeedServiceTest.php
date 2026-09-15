@@ -200,4 +200,68 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
         $this->assertSame('#d97706', $event['backgroundColor']);
         $this->assertContains('event-kind-follow_up', $event['classNames']);
     }
+
+    #[Test]
+    public function default_type_for_staff_uses_admin_override(): void
+    {
+        $staff = new Staff([
+            'first_name' => 'Sarah',
+            'last_name' => 'Jones',
+            'email' => 'sarah@example.com',
+            'default_calendar_type' => 'kunal',
+        ]);
+
+        $this->assertSame('kunal', $this->service()->defaultTypeForStaff($staff));
+    }
+
+    #[Test]
+    public function default_type_for_staff_uses_name_hint_when_automatic(): void
+    {
+        $staff = new Staff([
+            'first_name' => 'Ajay',
+            'last_name' => 'Bansal',
+            'email' => 'ajay@example.com',
+            'default_calendar_type' => null,
+        ]);
+
+        $this->assertSame('ajay', $this->service()->defaultTypeForStaff($staff));
+
+        $michael = new Staff([
+            'first_name' => 'Michael',
+            'last_name' => 'Test',
+            'email' => 'michael@example.com',
+            'default_calendar_type' => null,
+        ]);
+
+        $this->assertSame('kunal', $this->service()->defaultTypeForStaff($michael));
+    }
+
+    #[Test]
+    public function default_type_for_staff_falls_back_to_ajay(): void
+    {
+        config(['booking_calendar.default_website_calendar_type' => 'ajay']);
+
+        $staff = new Staff([
+            'first_name' => 'Priya',
+            'last_name' => 'Shah',
+            'email' => 'priya@example.com',
+            'default_calendar_type' => null,
+        ]);
+
+        $this->assertSame('ajay', $this->service()->defaultTypeForStaff($staff));
+    }
+
+    #[Test]
+    public function resolve_requested_calendar_type_accepts_known_keys_only(): void
+    {
+        $ok = $this->service()->resolveRequestedCalendarType(new \Illuminate\Http\Request([
+            'booking_calendar_type' => 'kunal',
+        ]));
+        $this->assertSame('kunal', $ok);
+
+        $bad = $this->service()->resolveRequestedCalendarType(new \Illuminate\Http\Request([
+            'booking_calendar_type' => 'paid',
+        ]));
+        $this->assertNull($bad);
+    }
 }

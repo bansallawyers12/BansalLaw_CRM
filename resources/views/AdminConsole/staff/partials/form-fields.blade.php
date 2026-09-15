@@ -304,6 +304,8 @@
                 </div>
                 @endif
 
+                @include('AdminConsole.staff.partials.default-calendar-type')
+
                 @if($canGrantCloseDiscontinue && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_close_discontinue_matter'))
                 <div class="form-group">
                     <input type="hidden" name="can_close_discontinue_matter" value="0">

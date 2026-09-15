@@ -2,9 +2,20 @@
     'stats' => ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0],
     'timezone' => config('app.timezone'),
     'bookingCalendarType' => null,
+    'calendarTypeOptions' => [],
     'canFilterCalendarStaff' => false,
     'calendarStaffOptions' => [],
 ])
+
+@php
+    $typeOptions = !empty($calendarTypeOptions) && is_array($calendarTypeOptions)
+        ? $calendarTypeOptions
+        : \App\Services\StaffPersonalCalendarFeedService::CALENDAR_TYPES;
+    $homeType = \App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($bookingCalendarType)
+        ? $bookingCalendarType
+        : \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE;
+    $homeLabel = $typeOptions[$homeType] ?? \App\Services\StaffPersonalCalendarFeedService::labelForCalendarType($homeType);
+@endphp
 
 <section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
     <div class="dashboard-calendar-card">
@@ -20,6 +31,31 @@
                 </p>
             </div>
             <div class="dashboard-calendar-header-right">
+                <div class="dashboard-calendar-type-switcher" id="dashboardCalendarTypeSwitcher" data-selected-type="{{ $homeType }}">
+                    <span class="dashboard-cal-type-pill is-primary" id="dashboardCalPrimaryType" data-type="{{ $homeType }}">
+                        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                        {{ $homeLabel }}
+                    </span>
+                    @if(count($typeOptions) > 1)
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle dashboard-cal-other-btn" type="button"
+                                    id="dashboardOtherCalendarsBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                Other calendars
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardOtherCalendarsBtn">
+                                @foreach($typeOptions as $typeKey => $typeLabel)
+                                    <li>
+                                        <button type="button"
+                                                class="dropdown-item dashboard-cal-type-option{{ $typeKey === $homeType ? ' active' : '' }}"
+                                                data-type="{{ $typeKey }}">
+                                            {{ $typeLabel }}
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
                 @if(!empty($canFilterCalendarStaff))
                     <div class="dashboard-calendar-staff-filter">
                         <label class="dashboard-calendar-staff-label" for="dashboardCalendarStaffView">View</label>
@@ -60,7 +96,7 @@
         <div class="dashboard-calendar-body">
             <div class="dashboard-calendar-wrapper">
                 <div class="dashboard-calendar-surface">
-                    <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $bookingCalendarType }}"></div>
+                    <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $homeType }}"></div>
                 </div>
             </div>
 
