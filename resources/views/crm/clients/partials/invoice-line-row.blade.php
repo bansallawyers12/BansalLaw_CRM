@@ -8,7 +8,14 @@
         <input name="gst_included[]" type="hidden" class="invoice-gst-included" value="Yes" />
         <input name="withdraw_amount[]" type="hidden" class="withdraw_amount_invoice_per_row" value="" />
         <input name="billing_basis[]" type="hidden" class="invoice-billing-basis" value="hourly" />
-        <input data-valid="required" class="form-control invoice-work-date" name="trans_date[]" type="text" value="" placeholder="28 May 2026" title="Date or date range shown on the tax invoice" />
+        <div class="invoice-date-cell">
+            <div class="btn-group btn-group-sm invoice-date-mode-toggle" role="group" aria-label="Date or range">
+                <button type="button" class="btn btn-primary invoice-date-mode-btn" data-date-mode="single">Date</button>
+                <button type="button" class="btn btn-outline-secondary invoice-date-mode-btn" data-date-mode="range">Range</button>
+            </div>
+            <input type="hidden" name="invoice_date_mode[]" class="invoice-date-mode" value="single" />
+            <input data-valid="required" class="form-control invoice-work-date" name="trans_date[]" type="text" value="" readonly="readonly" placeholder="Select date" title="Choose a date or range from the calendar" />
+        </div>
     </td>
     <td>
         <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />

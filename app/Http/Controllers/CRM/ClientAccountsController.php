@@ -1187,9 +1187,25 @@ class ClientAccountsController extends Controller
      * @param  array<string, mixed>  $lineData
      * @return array<string, mixed>
      */
+    private function invoiceLedgerDate(string $transDate): string
+    {
+        $transDate = trim($transDate);
+        if (preg_match('/^(\d{1,2}\/\d{1,2}\/\d{4})/', $transDate, $matches)) {
+            return $matches[1];
+        }
+
+        return $transDate;
+    }
+
+    /**
+     * Parent account_client_receipts row must not receive line-only timesheet columns.
+     *
+     * @param  array<string, mixed>  $lineData
+     * @return array<string, mixed>
+     */
     private function invoiceParentLedgerFields(array $lineData): array
     {
-        return array_diff_key($lineData, array_flip([
+        $parent = array_diff_key($lineData, array_flip([
             'id',
             'billing_basis',
             'hours',
@@ -1199,6 +1215,11 @@ class ClientAccountsController extends Controller
             'fee_earner_id',
             'fee_earner_role',
         ]));
+        if (! empty($parent['trans_date'])) {
+            $parent['trans_date'] = $this->invoiceLedgerDate((string) $parent['trans_date']);
+        }
+
+        return $parent;
     }
 
     private function logInvoiceAddedActivity(int $clientId, string $invoiceNo): void
@@ -1343,7 +1364,7 @@ class ClientAccountsController extends Controller
                     'client_matter_id' => $matterId,
                     'receipt_id' => $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
-                    'trans_date' => $firstLine['trans_date'],
+                    'trans_date' => $this->invoiceLedgerDate((string) $firstLine['trans_date']),
                     'entry_date' => $firstLine['entry_date'],
                     'gst_included' => $firstLine['gst_included'] ?? 'No',
                     'payment_type' => $firstLine['payment_type'],

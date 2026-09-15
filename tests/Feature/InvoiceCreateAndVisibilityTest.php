@@ -182,6 +182,74 @@ class InvoiceCreateAndVisibilityTest extends TestCase
     }
 
     #[Test]
+    public function saveinvoicereport_stores_work_date_range_and_parent_uses_start_date(): void
+    {
+        $staff = Staff::create([
+            'first_name' => 'Inv',
+            'last_name' => 'Range',
+            'email' => 'inv_range_'.uniqid().'@bansallawyers.com.au',
+            'password' => bcrypt('password123'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $client = Admin::create([
+            'first_name' => 'Range',
+            'last_name' => 'Client',
+            'email' => 'inv_range_client_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+            'client_id' => 'TEST'.rand(100000, 999999),
+        ]);
+
+        DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'MERITS_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 1,
+            'user_id' => $staff->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $range = '22/06/2026 – 16/07/2026';
+        $response = $this->postJson('/clients/saveinvoicereport', [
+            'client_id' => $client->id,
+            'receipt_type' => 3,
+            'function_type' => 'add',
+            'save_type' => 'draft',
+            'trans_date' => [$range],
+            'entry_date' => ['15/09/2026'],
+            'payment_type' => ['Professional Fees'],
+            'description' => ['Work across a date range'],
+            'billing_basis' => ['hourly'],
+            'hours' => ['1'],
+            'rate_ex_gst' => ['100.00'],
+            'fee_earner_role' => ['Solicitor'],
+        ]);
+
+        $response->assertOk()->assertJson(['status' => true]);
+        $invoiceNo = $response->json('invoice_no');
+
+        $line = DB::table('account_all_invoice_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertSame($range, $line->trans_date);
+
+        $parent = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertSame('22/06/2026', $parent->trans_date);
+    }
+
+    #[Test]
     public function billing_tab_shows_null_matter_invoice_for_single_matter_client(): void
     {
         $client = Admin::create([

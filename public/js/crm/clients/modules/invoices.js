@@ -155,6 +155,126 @@
         return n.toFixed(2);
     }
 
+    function invoiceDatePad(n) {
+        return (n < 10 ? '0' : '') + n;
+    }
+
+    function formatInvoicePickerDate(date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) {
+            return '';
+        }
+        return invoiceDatePad(date.getDate()) + '/' + invoiceDatePad(date.getMonth() + 1) + '/' + date.getFullYear();
+    }
+
+    function parseInvoiceWorkDates(value) {
+        var raw = $.trim(value || '');
+        if (!raw) {
+            return { mode: 'single', dates: [] };
+        }
+        var parts = raw.split(/\s+[–—-]\s+|\s+to\s+/i);
+        var dates = [];
+        parts.forEach(function(part) {
+            var m = $.trim(part).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (!m) {
+                return;
+            }
+            var parsed = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+            if (!isNaN(parsed.getTime())) {
+                dates.push(parsed);
+            }
+        });
+        if (dates.length >= 2) {
+            return { mode: 'range', dates: dates.slice(0, 2) };
+        }
+        return { mode: 'single', dates: dates };
+    }
+
+    function formatInvoiceWorkDate(dates, mode) {
+        if (!dates || !dates.length) {
+            return '';
+        }
+        if (mode === 'range' && dates.length >= 2) {
+            return formatInvoicePickerDate(dates[0]) + ' – ' + formatInvoicePickerDate(dates[1]);
+        }
+        return formatInvoicePickerDate(dates[0]);
+    }
+
+    function destroyInvoiceDatePicker(el) {
+        var $el = $(el);
+        var inst = el._flatpickr || $el.data('flatpickr');
+        if (inst && typeof inst.destroy === 'function') {
+            inst.destroy();
+        }
+        $el.removeData('flatpickr').removeClass('flatpickr-input');
+    }
+
+    function syncInvoiceDateModeButtons($row, mode) {
+        $row.find('.invoice-date-mode-btn').each(function() {
+            var isActive = $(this).data('date-mode') === mode;
+            $(this).toggleClass('btn-primary', isActive)
+                .toggleClass('btn-outline-secondary', !isActive);
+        });
+        $row.find('.invoice-date-mode').val(mode);
+        $row.find('.invoice-work-date').attr('placeholder', mode === 'range' ? 'Select range' : 'Select date');
+    }
+
+    function initInvoiceWorkDatePicker($input, mode, dates) {
+        if (typeof flatpickr === 'undefined' || !$input || !$input.length) {
+            return;
+        }
+        mode = mode === 'range' ? 'range' : 'single';
+        var el = $input.get(0);
+        destroyInvoiceDatePicker(el);
+        var config = {
+            dateFormat: 'd/m/Y',
+            allowInput: false,
+            clickOpens: true,
+            disableMobile: true,
+            locale: {
+                firstDayOfWeek: 1,
+                rangeSeparator: ' – '
+            },
+            mode: mode === 'range' ? 'range' : 'single',
+            onChange: function(selectedDates) {
+                $input.val(formatInvoiceWorkDate(selectedDates, mode));
+            }
+        };
+        if (dates && dates.length) {
+            config.defaultDate = mode === 'range' ? dates.slice(0, 2) : dates[0];
+        }
+        var fp = flatpickr(el, config);
+        $input.data('flatpickr', fp);
+        $input.prop('readonly', true);
+        if (dates && dates.length) {
+            $input.val(formatInvoiceWorkDate(dates, mode));
+        }
+    }
+
+    function applyInvoiceRowDateMode($row, mode, keepDates) {
+        var $input = $row.find('.invoice-work-date');
+        var parsed = parseInvoiceWorkDates($input.val());
+        var dates = keepDates === false ? [] : parsed.dates;
+        if (mode === 'single' && dates.length > 1) {
+            dates = [dates[0]];
+        }
+        syncInvoiceDateModeButtons($row, mode);
+        initInvoiceWorkDatePicker($input, mode, dates);
+    }
+
+    function initInvoiceWorkDates($scope) {
+        ($scope && $scope.length ? $scope.find('.invoice-work-date') : $('.invoice-work-date')).each(function() {
+            var $input = $(this);
+            var $row = $input.closest('tr');
+            var parsed = parseInvoiceWorkDates($input.val());
+            var mode = parsed.mode;
+            if (parsed.dates.length < 2 && $row.find('.invoice-date-mode').val() === 'range') {
+                mode = 'range';
+            }
+            syncInvoiceDateModeButtons($row, mode);
+            initInvoiceWorkDatePicker($input, mode, parsed.dates);
+        });
+    }
+
     function invoiceRowPaymentSign($row) {
         return $row.find('select[name="payment_type[]"]').val() === 'Discount' ? -1 : 1;
     }
@@ -180,15 +300,16 @@
         $row.find('.invoice-billing-basis').val(mode);
         $row.find('input[name="trans_no[]"]').val('');
         $row.find('.unique_trans_no_invoice').val('');
+        $row.find('.invoice-date-mode').val('single');
+        $row.find('.invoice-work-date').val('');
+        syncInvoiceDateModeButtons($row, 'single');
     }
 
     function stripClonedFlatpickr($row) {
         $row.find('input.flatpickr-alt-input').remove();
-        $row.find('.report_entry_date_fields_invoice').each(function() {
-            if (this._flatpickr && typeof this._flatpickr.destroy === 'function') {
-                this._flatpickr.destroy();
-            }
-            $(this).removeData('flatpickr').removeClass('flatpickr-input').show();
+        $row.find('.report_entry_date_fields_invoice, .invoice-work-date').each(function() {
+            destroyInvoiceDatePicker(this);
+            $(this).removeClass('flatpickr-input').show();
         });
     }
 
@@ -274,6 +395,9 @@
         $row.find('input[name="id[]"]').val(line.id || '');
         $row.find('input[name="trans_date[]"]').val(line.trans_date || '');
         $row.find('input[name="entry_date[]"]').val(line.entry_date || '');
+        var parsedWorkDate = parseInvoiceWorkDates(line.trans_date);
+        syncInvoiceDateModeButtons($row, parsedWorkDate.mode);
+        initInvoiceWorkDatePicker($row.find('.invoice-work-date'), parsedWorkDate.mode, parsedWorkDate.dates);
         $row.find('select[name="payment_type[]"]').val(normalizeInvoicePaymentType(line.payment_type));
         $row.find('[name="description[]"]').val(line.description || '');
         $row.find('select[name="fee_earner_id[]"]').val(line.fee_earner_id || '');
@@ -350,6 +474,7 @@
             if (typeof initFlatpickrForClass === 'function') {
                 initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'));
             }
+            initInvoiceWorkDates($row);
         });
         applyInvoiceBillingMode($tbody.closest('form'), invoiceModeFromLines(records));
     }
@@ -397,10 +522,28 @@
     window.cloneInvoiceLineRow = cloneInvoiceLineRow;
     window.renderInvoiceEditLines = renderInvoiceEditLines;
     window.applyInvoiceBillingMode = applyInvoiceBillingMode;
+    window.initInvoiceWorkDates = initInvoiceWorkDates;
 
     $(document).on('click', '.invoice-mode-btn', function(e) {
         e.preventDefault();
         applyInvoiceBillingMode($(this).closest('form'), $(this).data('invoice-mode'));
+    });
+
+    $(document).on('click', '.invoice-date-mode-btn', function(e) {
+        e.preventDefault();
+        applyInvoiceRowDateMode($(this).closest('tr'), $(this).data('date-mode'));
+    });
+
+    $(document).on('keydown paste cut drop', '.invoice-work-date', function(e) {
+        var allowedKeys = [9, 13, 27, 37, 38, 39, 40];
+        if (e.type === 'keydown' && allowedKeys.indexOf(e.which) !== -1) {
+            return;
+        }
+        e.preventDefault();
+    });
+
+    $(function() {
+        initInvoiceWorkDates($('#invoice_receipt_form, #create_invoice_receipt'));
     });
 
     // createapplicationnewinvoice handler REMOVED - Create Invoice from Schedule flow unused

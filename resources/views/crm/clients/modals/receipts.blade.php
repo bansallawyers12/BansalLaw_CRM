@@ -180,7 +180,26 @@
 
 .invoice-timesheet-scroll .invoice-work-date,
 .invoice-timesheet-scroll .report_entry_date_fields_invoice {
-    min-width: 110px;
+    min-width: 150px;
+}
+
+.invoice-date-cell {
+    min-width: 168px;
+}
+
+.invoice-date-mode-toggle {
+    display: flex;
+    margin-bottom: 4px;
+}
+
+.invoice-date-mode-toggle .btn {
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+.invoice-work-date[readonly] {
+    background-color: #fff;
+    cursor: pointer;
 }
 
 .invoice-timesheet-scroll .payment_type_invoice_per_row,

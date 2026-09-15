@@ -2184,16 +2184,20 @@ success: function(response) {
             var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
             var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
             var $newRow = typeof window.cloneInvoiceLineRow === 'function'
-                ? window.cloneInvoiceLineRow($tbody, {})
+                ? window.cloneInvoiceLineRow($tbody, {
+                    trans_date: invoiceDate,
+                    entry_date: recordedDate
+                })
                 : $();
             if (!$newRow.length) {
                 return;
             }
             $newRow.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
-            $newRow.find('input[name="trans_date[]"]').val(invoiceDate);
-            $newRow.find('input[name="entry_date[]"]').val(recordedDate);
             $tbody.append($newRow);
             initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
+            if (typeof window.initInvoiceWorkDates === 'function') {
+                window.initInvoiceWorkDates($newRow);
+            }
 
         });
 

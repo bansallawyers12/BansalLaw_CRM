@@ -2,7 +2,7 @@
     $includeTransNo = $includeTransNo ?? false;
 @endphp
 <tr>
-    <th title="Work date or date range shown on the tax invoice">Date</th>
+    <th title="Work date or date range from the calendar">Date</th>
     <th title="Date this entry was posted in the system">Date recorded</th>
     @if($includeTransNo)
         <th>Trans. No</th>

@@ -83,10 +83,12 @@
         });
 
         if (typeof initFlatpickrForClass === 'function') {
-            initFlatpickrForClass('#invoice_receipt_form .report_date_fields_invoice');
             initFlatpickrForClass('#invoice_receipt_form .report_entry_date_fields_invoice', {
                 defaultDate: new Date()
             });
+        }
+        if (typeof window.initInvoiceWorkDates === 'function') {
+            window.initInvoiceWorkDates($('#invoice_receipt_form'));
         }
         if (typeof window.applyInvoiceBillingMode === 'function') {
             window.applyInvoiceBillingMode($('#invoice_receipt_form'), 'hourly');
@@ -204,10 +206,12 @@
         }
 
         if (typeof initFlatpickrForClass === 'function') {
-            initFlatpickrForClass('#invoice_receipt_form .report_date_fields_invoice');
             initFlatpickrForClass('#invoice_receipt_form .report_entry_date_fields_invoice', {
                 defaultDate: new Date()
             });
+        }
+        if (typeof window.initInvoiceWorkDates === 'function') {
+            window.initInvoiceWorkDates($('#invoice_receipt_form'));
         }
     }
 
