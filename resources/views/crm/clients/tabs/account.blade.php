@@ -50,7 +50,15 @@
         if (invoiceLineRowTemplate === null) {
             var $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
             if ($row.length) {
-                invoiceLineRowTemplate = $row.prop('outerHTML');
+                var $clone = $row.clone();
+                if (typeof window.stripInvoiceLinePickers === 'function') {
+                    window.stripInvoiceLinePickers($clone);
+                } else {
+                    $clone.find('.flatpickr-calendar, input.flatpickr-alt-input').remove();
+                    $clone.find('.invoice-work-date, .report_entry_date_fields_invoice')
+                        .removeClass('flatpickr-input');
+                }
+                invoiceLineRowTemplate = $clone.prop('outerHTML');
             }
         }
         return invoiceLineRowTemplate;
@@ -66,6 +74,9 @@
         var rowTemplate = captureInvoiceLineRowTemplate();
         if (rowTemplate) {
             $('#invoice_receipt_form .productitem_invoice').html(rowTemplate);
+            if (typeof window.stripInvoiceLinePickers === 'function') {
+                window.stripInvoiceLinePickers($('#invoice_receipt_form .productitem_invoice tr'));
+            }
         }
         $('.total_withdraw_amount_all_rows_invoice').text('');
         $('#invoice_receipt_form .invoice-draft-btn').show();
@@ -84,7 +95,8 @@
 
         if (typeof initFlatpickrForClass === 'function') {
             initFlatpickrForClass('#invoice_receipt_form .report_entry_date_fields_invoice', {
-                defaultDate: new Date()
+                defaultDate: new Date(),
+                allowInput: false
             });
         }
         if (typeof window.initInvoiceWorkDates === 'function') {
@@ -207,7 +219,8 @@
 
         if (typeof initFlatpickrForClass === 'function') {
             initFlatpickrForClass('#invoice_receipt_form .report_entry_date_fields_invoice', {
-                defaultDate: new Date()
+                defaultDate: new Date(),
+                allowInput: false
             });
         }
         if (typeof window.initInvoiceWorkDates === 'function') {

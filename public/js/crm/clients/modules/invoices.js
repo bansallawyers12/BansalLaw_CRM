@@ -166,23 +166,65 @@
         return invoiceDatePad(date.getDate()) + '/' + invoiceDatePad(date.getMonth() + 1) + '/' + date.getFullYear();
     }
 
+    function parseOneInvoiceDate(part, fallbackYear) {
+        part = $.trim(part || '');
+        if (!part) {
+            return null;
+        }
+        var slash = part.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slash) {
+            return new Date(parseInt(slash[3], 10), parseInt(slash[2], 10) - 1, parseInt(slash[1], 10));
+        }
+        var dash = part.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (dash) {
+            return new Date(parseInt(dash[3], 10), parseInt(dash[2], 10) - 1, parseInt(dash[1], 10));
+        }
+        var named = part.match(/^(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?$/);
+        if (!named) {
+            return null;
+        }
+        var months = {
+            jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
+            may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7,
+            sep: 8, sept: 8, september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
+        };
+        var month = months[named[2].toLowerCase()];
+        if (month == null) {
+            return null;
+        }
+        var year = named[3] ? parseInt(named[3], 10) : fallbackYear;
+        if (!year) {
+            return null;
+        }
+        return new Date(year, month, parseInt(named[1], 10));
+    }
+
     function parseInvoiceWorkDates(value) {
         var raw = $.trim(value || '');
         if (!raw) {
             return { mode: 'single', dates: [] };
         }
-        var parts = raw.split(/\s+[–—-]\s+|\s+to\s+/i);
+        var parts = raw.split(/\s+[–—]\s+|\s+-\s+|\s+to\s+/i);
+        var fallbackYear = null;
+        parts.forEach(function(part) {
+            var yearMatch = String(part).match(/(19|20)\d{2}/);
+            if (yearMatch) {
+                fallbackYear = parseInt(yearMatch[0], 10);
+            }
+        });
         var dates = [];
         parts.forEach(function(part) {
-            var m = $.trim(part).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (!m) {
-                return;
-            }
-            var parsed = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
-            if (!isNaN(parsed.getTime())) {
+            var parsed = parseOneInvoiceDate(part, fallbackYear);
+            if (parsed && !isNaN(parsed.getTime())) {
                 dates.push(parsed);
             }
         });
+        if (!dates.length) {
+            var single = parseOneInvoiceDate(raw, fallbackYear);
+            if (single && !isNaN(single.getTime())) {
+                dates.push(single);
+            }
+        }
         if (dates.length >= 2) {
             return { mode: 'range', dates: dates.slice(0, 2) };
         }
@@ -223,17 +265,19 @@
             return;
         }
         mode = mode === 'range' ? 'range' : 'single';
+        var existing = $.trim($input.val() || '');
         var el = $input.get(0);
         destroyInvoiceDatePicker(el);
+        var locale = $.extend({}, (flatpickr.l10ns && flatpickr.l10ns.default) || {}, {
+            firstDayOfWeek: 1,
+            rangeSeparator: ' – '
+        });
         var config = {
             dateFormat: 'd/m/Y',
             allowInput: false,
             clickOpens: true,
             disableMobile: true,
-            locale: {
-                firstDayOfWeek: 1,
-                rangeSeparator: ' – '
-            },
+            locale: locale,
             mode: mode === 'range' ? 'range' : 'single',
             onChange: function(selectedDates) {
                 $input.val(formatInvoiceWorkDate(selectedDates, mode));
@@ -247,6 +291,8 @@
         $input.prop('readonly', true);
         if (dates && dates.length) {
             $input.val(formatInvoiceWorkDate(dates, mode));
+        } else if (existing) {
+            $input.val(existing);
         }
     }
 
@@ -306,11 +352,28 @@
     }
 
     function stripClonedFlatpickr($row) {
+        $row.find('.flatpickr-calendar').remove();
         $row.find('input.flatpickr-alt-input').remove();
         $row.find('.report_entry_date_fields_invoice, .invoice-work-date').each(function() {
             destroyInvoiceDatePicker(this);
-            $(this).removeClass('flatpickr-input').show();
+            $(this).removeClass('flatpickr-input').prop('readonly', true).show();
         });
+    }
+
+    function invoiceLineRowIsClientBlank($row) {
+        if (!$row || !$row.length || !$row.closest('.productitem_invoice').length) {
+            return false;
+        }
+        if ($.trim($row.find('input[name="id[]"]').val())) {
+            return false;
+        }
+        if ($.trim($row.find('textarea[name="description[]"], input[name="description[]"]').val())) {
+            return false;
+        }
+        if ($.trim($row.find('select[name="payment_type[]"]').val())) {
+            return false;
+        }
+        return !invoiceLineHasAmountInputs($row);
     }
 
     function recalcInvoiceTimesheetRow($row, options) {
@@ -472,7 +535,7 @@
             }
             $tbody.append($row);
             if (typeof initFlatpickrForClass === 'function') {
-                initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'));
+                initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'), { allowInput: false });
             }
             initInvoiceWorkDates($row);
         });
@@ -504,13 +567,20 @@
 
     function invoiceModeFromLines(records) {
         var hourly = false;
+        var fixed = false;
         $.each(records || [], function(_, line) {
-            if ((line.billing_basis || '') === 'hourly' || (parseFloat(line.hours) > 0)) {
+            var basis = String(line.billing_basis || '').toLowerCase();
+            if (basis === 'hourly' || (parseFloat(line.hours) > 0)) {
                 hourly = true;
-                return false;
+            }
+            if (basis === 'fixed') {
+                fixed = true;
             }
         });
-        return hourly ? 'hourly' : 'fixed';
+        if (hourly) {
+            return 'hourly';
+        }
+        return fixed ? 'fixed' : 'hourly';
     }
 
     window.listOfInvoice = listOfInvoice;
@@ -523,6 +593,8 @@
     window.renderInvoiceEditLines = renderInvoiceEditLines;
     window.applyInvoiceBillingMode = applyInvoiceBillingMode;
     window.initInvoiceWorkDates = initInvoiceWorkDates;
+    window.stripInvoiceLinePickers = stripClonedFlatpickr;
+    window.invoiceLineRowIsClientBlank = invoiceLineRowIsClientBlank;
 
     $(document).on('click', '.invoice-mode-btn', function(e) {
         e.preventDefault();
@@ -535,9 +607,15 @@
     });
 
     $(document).on('keydown paste cut drop', '.invoice-work-date', function(e) {
-        var allowedKeys = [9, 13, 27, 37, 38, 39, 40];
-        if (e.type === 'keydown' && allowedKeys.indexOf(e.which) !== -1) {
-            return;
+        if (e.type === 'keydown') {
+            var key = e.key || '';
+            var allowed = key === 'Tab' || key === 'Enter' || key === 'Escape'
+                || key.indexOf('Arrow') === 0
+                || e.which === 9 || e.which === 13 || e.which === 27
+                || e.which === 37 || e.which === 38 || e.which === 39 || e.which === 40;
+            if (allowed) {
+                return;
+            }
         }
         e.preventDefault();
     });

@@ -266,6 +266,10 @@ function customValidate(formName, savetype = '')
 		if (formName === 'change_matter_assignee') {
 		}
 		$inputsToValidate.each(function(){
+			if (typeof window.invoiceLineRowIsClientBlank === 'function'
+				&& window.invoiceLineRowIsClientBlank($(this).closest('tr'))) {
+				return;
+			}
 			var dataValidation = $(this).attr('data-valid');
 			var splitDataValidation = dataValidation.split(' ');
 

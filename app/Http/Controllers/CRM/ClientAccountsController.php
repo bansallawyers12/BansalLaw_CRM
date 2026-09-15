@@ -20,6 +20,7 @@ use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Support\InvoiceChargeTypes;
 use App\Support\InvoiceTimesheetLine;
+use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
 use App\Services\FinancialStatsService;
 use Illuminate\Support\Facades\Auth;
@@ -1181,20 +1182,19 @@ class ClientAccountsController extends Controller
         return $line;
     }
 
-    /**
-     * Parent account_client_receipts row must not receive line-only timesheet columns.
-     *
-     * @param  array<string, mixed>  $lineData
-     * @return array<string, mixed>
-     */
     private function invoiceLedgerDate(string $transDate): string
     {
-        $transDate = trim($transDate);
-        if (preg_match('/^(\d{1,2}\/\d{1,2}\/\d{4})/', $transDate, $matches)) {
-            return $matches[1];
+        return InvoiceWorkDate::startDate($transDate);
+    }
+
+    private function invoiceLineEntryDate(array $requestData, int $index, string $transDate): string
+    {
+        $entryDate = trim((string) ($requestData['entry_date'][$index] ?? ''));
+        if ($entryDate !== '') {
+            return $entryDate;
         }
 
-        return $transDate;
+        return $this->invoiceLedgerDate($transDate);
     }
 
     /**
@@ -1318,7 +1318,7 @@ class ClientAccountsController extends Controller
                         'receipt_id' => $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
                         'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, (string) $requestData['trans_date'][$i]),
                         'payment_type' => $requestData['payment_type'][$i] ?? '',
                         'trans_no' => $invoice_no,
                         'description' => $requestData['description'][$i] ?? '',
@@ -1332,7 +1332,7 @@ class ClientAccountsController extends Controller
                     $finalArr[] = [
                         'id' => $lineId,
                         'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, (string) $requestData['trans_date'][$i]),
                         'trans_no' => $invoice_no,
                         'gst_included' => $timesheet['gst_included'],
                         'payment_type' => $requestData['payment_type'][$i] ?? '',
@@ -1526,7 +1526,7 @@ class ClientAccountsController extends Controller
                         'receipt_type' => $requestData['receipt_type'],
                         'receipt_id' => $requestData['receipt_id'],
                         'trans_date' => $transDate,
-                        'entry_date' => $requestData['entry_date'][$index] ?? $transDate,
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $index, (string) $transDate),
                         'payment_type' => $requestData['payment_type'][$index] ?? '',
                         'trans_no' => $invoice_no,//$requestData['invoice_no'],
                         'description' => $requestData['description'][$index] ?? '',

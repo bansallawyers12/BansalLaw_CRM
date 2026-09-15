@@ -2194,7 +2194,7 @@ success: function(response) {
             }
             $newRow.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
             $tbody.append($newRow);
-            initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
+            initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'), { allowInput: false });
             if (typeof window.initInvoiceWorkDates === 'function') {
                 window.initInvoiceWorkDates($newRow);
             }

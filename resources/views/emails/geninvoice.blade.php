@@ -239,96 +239,22 @@
                     <h1 class="document-title">{{ !empty($is_draft_invoice) ? 'Draft Tax Invoice' : 'Tax Invoice' }}</h1>
                     <div class="document-info">
                         <b>ABN</b> 66 677 069 439<br/>
-                        <b>Invoice Date:</b> 
+                        <b>Invoice Date:</b>
                         @php
-                            $invoiceDate = 'N/A';
-                            try {
-                                if (!empty($record_get[0]->trans_date)) {
-                                    $rawDate = $record_get[0]->trans_date;
-                                    // Check if it's already a Carbon instance
-                                    if ($rawDate instanceof \Carbon\Carbon) {
-                                        $invoiceDate = $rawDate->format('d/m/Y');
-                                    } else {
-                                        // Clean and trim the date string
-                                        $cleanDate = trim(str_replace(["\r", "\n", "\t"], '', $rawDate));
-                                        if (!empty($cleanDate)) {
-                                            // Try multiple date formats
-                                            $formats = ['d/m/Y', 'Y-m-d', 'd-m-Y', 'm/d/Y'];
-                                            $parsed = false;
-                                            
-                                            foreach ($formats as $format) {
-                                                try {
-                                                    $date = \Carbon\Carbon::createFromFormat($format, $cleanDate);
-                                                    if ($date) {
-                                                        $invoiceDate = $date->format('d/m/Y');
-                                                        $parsed = true;
-                                                        break;
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    continue;
-                                                }
-                                            }
-                                            
-                                            // If no format worked, try Carbon::parse as last resort
-                                            if (!$parsed) {
-                                                try {
-                                                    $invoiceDate = \Carbon\Carbon::parse($cleanDate)->format('d/m/Y');
-                                                } catch (\Exception $e) {
-                                                    $invoiceDate = $cleanDate; // Just show the raw date
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (\Exception $e) {
-                                $invoiceDate = 'N/A';
+                            $rawInvoiceDate = $record_get[0]->trans_date ?? null;
+                            if ($rawInvoiceDate instanceof \Carbon\Carbon) {
+                                $invoiceDate = $rawInvoiceDate->format('d/m/Y');
+                            } else {
+                                $invoiceDate = \App\Support\InvoiceWorkDate::headerDate(is_string($rawInvoiceDate) ? $rawInvoiceDate : null);
                             }
                         @endphp
                         {{ $invoiceDate }}<br/>
-                        <b>Due Date:</b> 
+                        <b>Due Date:</b>
                         @php
-                            $dueDate = 'N/A';
-                            try {
-                                if ($invoiceDate !== 'N/A' && !empty($record_get[0]->trans_date)) {
-                                    $rawDate = $record_get[0]->trans_date;
-                                    // Check if it's already a Carbon instance
-                                    if ($rawDate instanceof \Carbon\Carbon) {
-                                        $dueDate = $rawDate->copy()->addDays(15)->format('d/m/Y');
-                                    } else {
-                                        // Clean and trim the date string
-                                        $cleanDate = trim(str_replace(["\r", "\n", "\t"], '', $rawDate));
-                                        
-                                        if (!empty($cleanDate)) {
-                                            // Try multiple date formats
-                                            $formats = ['d/m/Y', 'Y-m-d', 'd-m-Y', 'm/d/Y'];
-                                            $parsed = false;
-                                            
-                                            foreach ($formats as $format) {
-                                                try {
-                                                    $date = \Carbon\Carbon::createFromFormat($format, $cleanDate);
-                                                    if ($date) {
-                                                        $dueDate = $date->addDays(15)->format('d/m/Y');
-                                                        $parsed = true;
-                                                        break;
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    continue;
-                                                }
-                                            }
-                                            
-                                            // If no format worked, try Carbon::parse as last resort
-                                            if (!$parsed) {
-                                                try {
-                                                    $dueDate = \Carbon\Carbon::parse($cleanDate)->addDays(15)->format('d/m/Y');
-                                                } catch (\Exception $e) {
-                                                    $dueDate = 'N/A';
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (\Exception $e) {
-                                $dueDate = 'N/A';
+                            if ($rawInvoiceDate instanceof \Carbon\Carbon) {
+                                $dueDate = $rawInvoiceDate->copy()->addDays(15)->format('d/m/Y');
+                            } else {
+                                $dueDate = \App\Support\InvoiceWorkDate::dueDate(is_string($rawInvoiceDate) ? $rawInvoiceDate : null);
                             }
                         @endphp
                         {{ $dueDate }}<br/>

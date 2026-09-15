@@ -197,7 +197,8 @@
     padding: 2px 8px;
 }
 
-.invoice-work-date[readonly] {
+.invoice-work-date[readonly],
+.report_entry_date_fields_invoice[readonly] {
     background-color: #fff;
     cursor: pointer;
 }

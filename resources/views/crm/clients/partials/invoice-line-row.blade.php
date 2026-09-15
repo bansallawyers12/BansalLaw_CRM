@@ -18,7 +18,7 @@
         </div>
     </td>
     <td>
-        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
+            <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" readonly="readonly" title="Date this entry was posted in the system" />
     </td>
     @if($includeTransNo)
         <td>
