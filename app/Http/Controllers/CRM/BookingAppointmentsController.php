@@ -556,7 +556,9 @@ class BookingAppointmentsController extends Controller
             'client_matter_id' => $validated['client_matter_id'] ?? null,
             'location'         => $validated['location'] ?? null,
             'notes'            => $validated['notes'] ?? null,
-            'reminder_minutes' => isset($validated['reminder_minutes']) ? (int) $validated['reminder_minutes'] : null,
+            'reminder_minutes' => isset($validated['reminder_minutes'])
+                ? (int) $validated['reminder_minutes']
+                : (in_array($eventType, ['reminder', 'other'], true) ? 15 : null),
             'created_by_staff_id' => $createdByStaffId,
         ]);
 
@@ -757,37 +759,15 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Returns upcoming staff events whose reminder window has opened but not yet been acknowledged.
-     * Called by JS polling; lightweight — only reads staff_calendar_events, no external feeds.
+     * Returns upcoming / overdue staff events that need attention (reminder window open
+     * or event start passed without completion). Called by JS polling.
      */
     public function pendingReminders()
     {
-        $now = Carbon::now(config('app.timezone'));
-        $lookahead = $now->copy()->addMinutes(60); // look up to 60 min ahead for any reminder
-
-        $query = StaffCalendarEvent::query()
-            ->whereNotNull('reminder_minutes')
-            ->where('reminder_minutes', '>', 0)
-            ->where('starts_at', '>', $now)
-            ->where('starts_at', '<=', $lookahead)
-            // reminder window has opened: starts_at is within reminder_minutes from now
-            ->whereRaw("starts_at <= NOW() + (reminder_minutes * INTERVAL '1 minute')");
-
-        $this->staffCalendarFeed->restrictStaffCalendarEventQuery($query);
-
-        $rows = $query->orderBy('starts_at')->get()
-            ->map(fn(StaffCalendarEvent $e) => [
-                'id'               => $e->id,
-                'title'            => $e->title,
-                'event_type'       => $e->event_type,
-                'starts_at'        => Carbon::parse($e->starts_at)->timezone(config('app.timezone'))->toIso8601String(),
-                'reminder_minutes' => $e->reminder_minutes,
-                'location'         => $e->location,
-            ])
-            ->values()
-            ->all();
-
-        return response()->json(['success' => true, 'data' => $rows]);
+        return response()->json([
+            'success' => true,
+            'data' => $this->staffCalendarFeed->pendingReminderPayloads(),
+        ]);
     }
 
     /**

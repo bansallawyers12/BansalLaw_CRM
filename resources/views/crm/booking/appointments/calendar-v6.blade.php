@@ -439,25 +439,13 @@
             </div>
             <div class="modal-body">
                 <p class="booking-cal-reminder-modal__hint">
-                    These pop up before the event starts (based on <strong>Reminder before</strong>).
-                    Use <strong>Remind me</strong> to hide the alert for a while — it will return when that time ends.
+                    These pop up when a reminder window opens, or when an event from <strong>today or yesterday</strong> is still not marked complete.
+                    Use <strong>Remind me</strong> on each item to hide that alert for a while — it will return when that time ends.
                 </p>
                 <ul class="booking-cal-reminder-list" id="bookingCalReminderList"></ul>
             </div>
             <div class="modal-footer booking-cal-reminder-modal__footer">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                <div class="dropdown dropup booking-cal-reminder-snooze">
-                    <button type="button" class="btn btn-outline-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="bookingCalReminderSnoozeBtn">
-                        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Remind me
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end booking-cal-reminder-snooze__menu">
-                        <li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="5">5 minutes</button></li>
-                        <li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="10">10 minutes</button></li>
-                        <li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="20">20 minutes</button></li>
-                        <li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="30">30 minutes</button></li>
-                        <li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="60">1 hour</button></li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -2929,7 +2917,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * ─────────────────────────────────────────────────────────────────── */
     const BOOKING_CAL_REMINDER_KEY = 'bookingCalDismissedReminders';
     const BOOKING_CAL_REMINDER_SNOOZE_KEY = 'bookingCalReminderSnooze';
-    const BOOKING_CAL_REMINDER_POLL_MS = 60_000;  // every 60 s
+    const BOOKING_CAL_REMINDER_POLL_MS = 15_000;  // every 15 s (was 60 s — felt delayed)
 
     let _bookingCalReminderActive = [];
     let _bookingCalReminderSnoozeTimer = null;
@@ -3132,22 +3120,73 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const minutes = parseInt(opt.getAttribute('data-booking-cal-reminder-snooze'), 10);
             if (!minutes || minutes < 1) return;
-            const ids = (_bookingCalReminderActive || []).map(function (evt) { return evt.id; });
+
+            // Per-card snooze (preferred). Falls back to all active only if no id is present.
+            const singleId = parseInt(opt.getAttribute('data-booking-cal-reminder-id') || '', 10);
+            let ids = [];
+            if (Number.isFinite(singleId) && singleId > 0) {
+                ids = [singleId];
+            } else {
+                ids = (_bookingCalReminderActive || []).map(function (evt) { return evt.id; });
+            }
             if (!ids.length) return;
+
             const mins = bookingCalReminderSnoozeIds(ids, minutes);
-            _bookingCalReminderSkipCloseSoftHide = true;
-            _bookingCalReminderActive = [];
-            bookingCalReminderHideModal();
+            _bookingCalReminderActive = (_bookingCalReminderActive || []).filter(function (evt) {
+                return ids.indexOf(Number(evt.id)) === -1 && ids.indexOf(evt.id) === -1;
+            });
+
+            if (!_bookingCalReminderActive.length) {
+                _bookingCalReminderSkipCloseSoftHide = true;
+                bookingCalReminderHideModal();
+            } else {
+                bookingCalReminderRenderList(_bookingCalReminderActive);
+            }
+
             const label = mins === 60 ? '1 hour' : (String(mins) + ' minutes');
             if (typeof iziToast !== 'undefined') {
                 iziToast.info({
                     title: 'Remind me later',
-                    message: 'Reminder alert will return in ' + label + '.',
+                    message: (ids.length === 1 ? 'This reminder' : 'Selected reminders') +
+                        ' will return in ' + label + '.',
                     position: 'topRight',
                     timeout: 3500,
                 });
             }
         }, true);
+    }
+
+    function bookingCalReminderSnoozeMenuHtml(eventId) {
+        const id = Number(eventId);
+        const options = [
+            [5, '5 minutes'],
+            [10, '10 minutes'],
+            [20, '20 minutes'],
+            [30, '30 minutes'],
+            [60, '1 hour'],
+        ];
+        const items = options.map(function (pair) {
+            return (
+                '<li><button type="button" class="dropdown-item" data-booking-cal-reminder-snooze="' +
+                pair[0] +
+                '" data-booking-cal-reminder-id="' +
+                id +
+                '">' +
+                pair[1] +
+                '</button></li>'
+            );
+        }).join('');
+
+        return (
+            '<div class="dropdown booking-cal-reminder-snooze">' +
+                '<button type="button" class="btn btn-outline-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
+                    '<i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Remind me' +
+                '</button>' +
+                '<ul class="dropdown-menu dropdown-menu-end booking-cal-reminder-snooze__menu">' +
+                    items +
+                '</ul>' +
+            '</div>'
+        );
     }
 
     function bookingCalReminderRenderList(events) {
@@ -3164,19 +3203,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit',
                 hour12: true,
             });
+            const isOverdue = !!evt.is_overdue || evt.alert_kind === 'overdue' || startsAt.getTime() <= Date.now();
             const beforeLabel = bookingCalReminderMinutesLabel(evt.reminder_minutes);
             const typeLabel = bookingCalReminderTypeLabel(evt.event_type);
+            const whenLine = isOverdue
+                ? ('Overdue · ' + timeStr + ' — mark complete if attended, or remind me later')
+                : ((beforeLabel ? 'In ' + beforeLabel + ' · ' : '') + timeStr);
+            const badgeClass = isOverdue
+                ? 'booking-cal-reminder-list__badge booking-cal-reminder-list__badge--overdue'
+                : 'booking-cal-reminder-list__badge';
+            const badgeText = isOverdue ? 'Not attended' : typeLabel;
             const loc = evt.location
                 ? '<span class="booking-cal-reminder-list__meta">' + escapeHtml(String(evt.location)) + '</span>'
                 : '';
             return (
                 '<li>' +
-                    '<div class="booking-cal-reminder-list__card">' +
-                        '<span class="booking-cal-reminder-list__badge">' + escapeHtml(typeLabel) + '</span>' +
+                    '<div class="booking-cal-reminder-list__card' + (isOverdue ? ' is-overdue' : '') + '">' +
+                        '<span class="' + badgeClass + '">' + escapeHtml(badgeText) + '</span>' +
                         '<span class="booking-cal-reminder-list__msg">' + escapeHtml(evt.title || 'Upcoming event') + '</span>' +
-                        '<span class="booking-cal-reminder-list__when">' +
-                            escapeHtml((beforeLabel ? 'In ' + beforeLabel + ' · ' : '') + timeStr) +
-                        '</span>' +
+                        '<span class="booking-cal-reminder-list__when">' + escapeHtml(whenLine) + '</span>' +
                         loc +
                         '<div class="booking-cal-reminder-list__actions">' +
                             '<button type="button" class="btn btn-outline-secondary btn-sm" data-booking-cal-reminder-view="' + Number(evt.id) + '">' +
@@ -3185,6 +3230,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             '<button type="button" class="btn btn-outline-secondary btn-sm" data-booking-cal-reminder-dismiss="' + Number(evt.id) + '">' +
                                 'Dismiss' +
                             '</button>' +
+                            bookingCalReminderSnoozeMenuHtml(evt.id) +
                         '</div>' +
                     '</div>' +
                 '</li>'
@@ -3264,20 +3310,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Soft-hide after Close: skip re-prompt unless a new event id appears
+            // or any due item is overdue (missed attendance should keep surfacing).
             if (Date.now() < _bookingCalReminderClosedUntil) {
                 const known = {};
                 (_bookingCalReminderActive || []).forEach(function (e) { known[Number(e.id)] = true; });
                 const hasNew = due.some(function (evt) { return !known[Number(evt.id)]; });
-                if (!hasNew) return;
+                const hasOverdue = due.some(function (evt) {
+                    return !!evt.is_overdue || evt.alert_kind === 'overdue'
+                        || (evt.starts_at && new Date(evt.starts_at).getTime() <= Date.now());
+                });
+                if (!hasNew && !hasOverdue) return;
             }
 
             bookingCalShowReminderModal(due);
         } catch (e) { /* silent – never break the page */ }
     }
 
-    /* First check after 3 s (catches events set for "right now"), then every 60 s */
+    /* First check after 1 s, then every 15 s */
     bookingCalReminderScheduleSnoozeWake();
-    setTimeout(bookingCalPollReminders, 3000);
+    setTimeout(bookingCalPollReminders, 1000);
     setInterval(bookingCalPollReminders, BOOKING_CAL_REMINDER_POLL_MS);
 
     /* ─── Button / checkbox wiring ───────────────────────────────────────── */

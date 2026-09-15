@@ -199,6 +199,102 @@ class StaffCalendarFeedService
     }
 
     /**
+     * Due / overdue staff-calendar alerts for the logged-in viewer.
+     *
+     * Overdue (not attended) alerts only cover today and yesterday.
+     * Upcoming "remind before" alerts still fire when their window opens.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function pendingReminderPayloads(): array
+    {
+        if (! Schema::hasTable('staff_calendar_events')) {
+            return [];
+        }
+
+        $tz = (string) config('app.timezone', 'UTC');
+        $now = Carbon::now($tz);
+        // UI max reminder is 1 week; keep a little buffer for clock skew.
+        $upcomingHorizon = $now->copy()->addDays(8);
+        // Not-attended alerts: same day or one day before only.
+        $overdueFloor = $now->copy()->startOfDay()->subDay();
+
+        $query = StaffCalendarEvent::query()
+            ->where('starts_at', '>=', $overdueFloor)
+            ->where('starts_at', '<=', $upcomingHorizon);
+
+        if (Schema::hasColumn('staff_calendar_events', 'status')) {
+            $query->whereNotIn('status', ['completed', 'cancelled']);
+        }
+
+        // Alerts are personal: only the staff member who added the event/follow-up.
+        $viewer = Auth::guard('admin')->user();
+        $viewerId = $viewer instanceof Staff ? (int) $viewer->id : 0;
+        if ($viewerId < 1) {
+            return [];
+        }
+        $query->where('created_by_staff_id', $viewerId);
+
+        return $query->orderBy('starts_at')->get()
+            ->filter(function (StaffCalendarEvent $event) use ($now) {
+                return $this->staffEventShouldAlert($event, $now);
+            })
+            ->map(function (StaffCalendarEvent $event) use ($now, $tz) {
+                $startsAt = Carbon::parse($event->starts_at)->timezone($tz);
+                $reminderMinutes = $event->reminder_minutes !== null
+                    ? (int) $event->reminder_minutes
+                    : null;
+                $isOverdue = $startsAt->lte($now);
+
+                return [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'event_type' => $event->event_type,
+                    'status' => $event->status ?? 'scheduled',
+                    'starts_at' => $startsAt->toIso8601String(),
+                    'reminder_minutes' => $reminderMinutes,
+                    'location' => $event->location,
+                    'is_overdue' => $isOverdue,
+                    'alert_kind' => $isOverdue ? 'overdue' : 'upcoming',
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Whether an open staff event should surface in the reminder modal right now.
+     */
+    public function staffEventShouldAlert(StaffCalendarEvent $event, ?Carbon $now = null): bool
+    {
+        $tz = (string) config('app.timezone', 'UTC');
+        $now = ($now ?? Carbon::now($tz))->copy()->timezone($tz);
+        $startsAt = Carbon::parse($event->starts_at)->timezone($tz);
+
+        $status = strtolower(trim((string) ($event->status ?? 'scheduled')));
+        if (in_array($status, ['completed', 'cancelled'], true)) {
+            return false;
+        }
+
+        // Drop not-attended items older than yesterday (same day / one day before only).
+        $overdueFloor = $now->copy()->startOfDay()->subDay();
+        if ($startsAt->lt($overdueFloor)) {
+            return false;
+        }
+
+        // Explicit "remind before" — fire once the window opens (including after start).
+        $mins = $event->reminder_minutes;
+        if ($mins !== null && (int) $mins > 0) {
+            $remindAt = $startsAt->copy()->subMinutes((int) $mins);
+
+            return $now->gte($remindAt);
+        }
+
+        // No reminder configured: alert at/after start until completed (missed attendance).
+        return $startsAt->lte($now);
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     protected function staffEventsPayload(
@@ -292,6 +388,9 @@ class StaffCalendarFeedService
                     'client_matter_id' => $note->matter_id ?: $existing->client_matter_id,
                     'notes' => $note->description ?: $existing->notes,
                 ]);
+                if ($existing->reminder_minutes === null || (int) $existing->reminder_minutes <= 0) {
+                    $existing->reminder_minutes = 15;
+                }
                 $existing->save();
             }
 
@@ -310,7 +409,8 @@ class StaffCalendarFeedService
             'client_matter_id' => $note->matter_id ?: null,
             'location' => null,
             'notes' => $note->description,
-            'reminder_minutes' => null,
+            // Default 15 min so follow-ups surface in the reminder modal without manual setup.
+            'reminder_minutes' => 15,
             'created_by_staff_id' => $ownerStaffId > 0 ? $ownerStaffId : null,
         ];
         if (Schema::hasColumn('staff_calendar_events', 'source_note_id')) {
