@@ -1222,13 +1222,18 @@ class IncomingEmailSyncService
      */
     public static function syncableMailboxAddresses(): array
     {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $query = Email::query()
             ->where('status', true)
             ->where('sync_enabled', true);
         self::applyMailboxHasZohoPasswordScope($query);
         self::applyExcludedMailboxesScope($query);
 
-        return $query
+        return $cached = $query
             ->orderBy('email')
             ->pluck('email')
             ->map(static fn ($address) => strtolower(trim((string) $address)))
@@ -1308,13 +1313,18 @@ class IncomingEmailSyncService
      */
     public static function syncableMailboxIds(): array
     {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $query = Email::query()
             ->where('status', true)
             ->where('sync_enabled', true);
         self::applyMailboxHasZohoPasswordScope($query);
         self::applyExcludedMailboxesScope($query);
 
-        return $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
+        return $cached = $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
     }
 
     /**

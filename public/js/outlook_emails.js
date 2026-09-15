@@ -3636,14 +3636,87 @@ function crmInitOutlookEmailsInterface() {
     }
 
     function hasMoreInfiniteEmails() {
-        return useEmailInfiniteScroll && listTotal > emails.length && currentPage < listLastPage;
+        return useEmailInfiniteScroll && (
+            (listTotal > 0 ? emails.length < listTotal : true)
+            && currentPage < listLastPage
+        );
+    }
+
+    let syncedListMetaLoading = false;
+    let syncedListMetaFolder = '';
+
+    async function loadSyncedListMeta(folder) {
+        if (!unassignedOnly || !isSyncedInboxFolder(folder) || !baseUrl) {
+            return;
+        }
+        if (syncedListMetaLoading && syncedListMetaFolder === folder) {
+            return;
+        }
+        syncedListMetaLoading = true;
+        syncedListMetaFolder = folder;
+        try {
+            const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
+            url.searchParams.set('folder', folder);
+            url.searchParams.set('page', '1');
+            url.searchParams.set('per_page', '20');
+            url.searchParams.set('meta_only', '1');
+            url.searchParams.set('include_meta', '1');
+            if (listMailboxFilter && listMailboxFilter.value) {
+                url.searchParams.set('mailbox_filter', listMailboxFilter.value);
+            }
+            const sortValue = sortOrder && sortOrder.value === 'review'
+                ? 'desc'
+                : (sortOrder ? sortOrder.value : 'desc');
+            url.searchParams.set('sort_order', sortValue);
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json().catch(function () {
+                return {};
+            });
+            if (!response.ok || folder !== currentFolder) {
+                return;
+            }
+
+            if (data.date_summary) {
+                syncedDateSummary = data.date_summary;
+                renderSyncedDateSummaryBar(syncedDateSummary);
+            }
+
+            const total = data.total != null
+                ? data.total
+                : (data.date_summary && data.date_summary.total != null ? data.date_summary.total : listTotal);
+            const lastPage = data.last_page != null
+                ? data.last_page
+                : Math.max(1, Math.ceil(Number(total || 0) / 20));
+            updatePaginationDisplay(total, lastPage, listFrom || (emails.length ? 1 : 0), Math.min(total, emails.length));
+
+            if (senderFilter && Array.isArray(data.senders) && data.senders.length) {
+                const currentSelection = senderFilter.value;
+                let optionsHtml = '<option value="">All Senders</option>';
+                data.senders.forEach(function (s) {
+                    optionsHtml += '<option value="' + s + '"'
+                        + (s === currentSelection ? ' selected' : '')
+                        + '>' + s + '</option>';
+                });
+                senderFilter.innerHTML = optionsHtml;
+            }
+        } catch (e) {
+            console.warn('Synced list meta failed', e);
+        } finally {
+            syncedListMetaLoading = false;
+        }
     }
 
     async function loadMoreInfiniteEmails() {
         if (!useEmailInfiniteScroll || emailListLoading || emailListLoadingMore) {
             return;
         }
-        if (currentPage >= listLastPage || emails.length >= listTotal) {
+        if (currentPage >= listLastPage) {
             return;
         }
         currentPage += 1;
@@ -3654,7 +3727,7 @@ function crmInitOutlookEmailsInterface() {
         if (!useEmailInfiniteScroll || !emailListContainer || emailListLoading || emailListLoadingMore) {
             return;
         }
-        if (currentPage >= listLastPage || emails.length >= listTotal) {
+        if (currentPage >= listLastPage) {
             return;
         }
         const remaining = emailListContainer.scrollHeight - emailListContainer.scrollTop - emailListContainer.clientHeight;
@@ -3782,20 +3855,33 @@ function crmInitOutlookEmailsInterface() {
             }
             
             // Pagination
-            const total = data.total || 0;
-            const lastPage = data.last_page || 1;
-            const from = append ? (listFrom || 1) : (data.from || 0);
+            const total = append
+                ? listTotal
+                : (data.total != null
+                    ? data.total
+                    : (data.has_more ? emails.length + 1 : emails.length));
+            let lastPage = append
+                ? listLastPage
+                : (data.last_page != null
+                    ? data.last_page
+                    : (data.has_more ? Math.max(2, currentPage + 1) : 1));
+            if (append && data.has_more === false) {
+                lastPage = Math.max(1, currentPage);
+            } else if (append && data.has_more === true && currentPage >= lastPage) {
+                lastPage = currentPage + 1;
+            }
+            const from = append ? (listFrom || 1) : (data.from || (emails.length ? 1 : 0));
             const to = append
-                ? Math.min(total, emails.length)
-                : (data.to || 0);
-            if (total > 0) {
+                ? Math.max(emails.length, Math.min(total, emails.length))
+                : (data.to || emails.length);
+            if (!append) {
                 updatePaginationDisplay(total, lastPage, from, to);
-            } else {
-                updatePaginationDisplay(0, 1, 0, 0);
+            } else if (total > 0) {
+                updatePaginationDisplay(total, lastPage, from, to);
             }
 
-            // Update sender filter dropdown
-            if (senderFilter && data.senders) {
+            // Update sender filter dropdown (first page / meta responses only)
+            if (senderFilter && Array.isArray(data.senders) && data.senders.length) {
                 const currentSelection = senderFilter.value;
                 let optionsHtml = '<option value="">All Senders</option>';
                 data.senders.forEach(s => {
@@ -3811,11 +3897,12 @@ function crmInitOutlookEmailsInterface() {
             } else {
                 renderEmailList();
                 refreshSelectedEmailAfterReload();
+                if (unassignedOnly && isSyncedInboxFolder(folderToFetch) && pageToFetch === 1) {
+                    void loadSyncedListMeta(folderToFetch);
+                }
             }
 
-            if (useEmailInfiniteScroll) {
-                window.requestAnimationFrame(maybeLoadMoreInfiniteEmails);
-            }
+            // Do not auto-chain pages on first paint — that stacked 10s+ waits. Load more on scroll only.
         } catch (error) {
             console.error('Failed to fetch emails', error);
             if (append) {
@@ -4628,7 +4715,9 @@ function crmInitOutlookEmailsInterface() {
                 ? normalizePreviewText(email.text_preview || '', 90)
                 : normalizePreviewText(email.text_preview || '', 55);
             
-            const hasAttachment = getUserEmailAttachments(email).length > 0;
+            const hasAttachment = !!(email.has_attachments)
+                || (Number(email.attachments_count || 0) > 0)
+                || getUserEmailAttachments(email).length > 0;
             const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 

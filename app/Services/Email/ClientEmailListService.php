@@ -22,6 +22,13 @@ class ClientEmailListService
      */
     public static function listColumns(string $table = 'email_logs', bool $includeMessage = false): array
     {
+        static $columnCache = [];
+
+        $cacheKey = $table . ':' . ($includeMessage ? '1' : '0');
+        if (isset($columnCache[$cacheKey])) {
+            return $columnCache[$cacheKey];
+        }
+
         $exclude = ['python_analysis', 'security_issues', 'thread_info'];
         if (! $includeMessage) {
             $exclude[] = 'message';
@@ -47,7 +54,7 @@ class ClientEmailListService
                 $cols[] = 'message';
             }
 
-            return array_map(static fn (string $c) => "{$table}.{$c}", $cols);
+            return $columnCache[$cacheKey] = array_map(static fn (string $c) => "{$table}.{$c}", $cols);
         }
 
         $cols = array_values(array_filter(
@@ -55,7 +62,7 @@ class ClientEmailListService
             static fn (string $c) => ! in_array($c, $exclude, true)
         ));
 
-        return array_map(static fn (string $c) => "{$table}.{$c}", $cols);
+        return $columnCache[$cacheKey] = array_map(static fn (string $c) => "{$table}.{$c}", $cols);
     }
 
     public function applyListSelect(Builder $query): Builder

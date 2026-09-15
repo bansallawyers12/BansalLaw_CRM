@@ -5772,20 +5772,71 @@ class ClientsController extends Controller
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
         $isGlobalSyncedMailView = empty($clientId) && empty($clientMatterId);
         $isSyncedInboxFolder = $isGlobalSyncedMailView && in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true);
-        $hasCalendarLinksTable = \Illuminate\Support\Facades\Schema::hasTable('email_calendar_links');
+        $hasCalendarLinksTable = $isSyncedInboxFolder
+            ? false
+            : \Illuminate\Support\Facades\Schema::hasTable('email_calendar_links');
         $autoAssignmentReviewItems = [];
         if ($folder === 'review' && $staff instanceof \App\Models\Staff) {
             $autoAssignmentReviewItems = app(\App\Services\EmailSync\AutoAssignmentReviewService::class)
                 ->reviewItemsForStaff($staff);
         }
 
-        // Base query with attachments (+ client/matter for assignment badges and client links)
-        $withRelations = ['attachments', 'client', 'matter'];
-        if ($hasCalendarLinksTable) {
-            $withRelations[] = 'calendarLinks';
+        $page = max(1, (int) $request->input('page', 1));
+        // Synced unassigned/assigned lists: return rows first; totals/senders load via meta_only.
+        $includeListMeta = $isSyncedInboxFolder
+            ? ($request->boolean('include_meta') || $request->boolean('meta_only'))
+            : ($page === 1 || $request->boolean('include_meta'));
+        $metaOnly = $isSyncedInboxFolder && $request->boolean('meta_only');
+        $includeSenders = $request->boolean('include_senders');
+
+        // Base query — synced inbox list stays lean (counts only, no attachment/calendar payloads).
+        if ($isSyncedInboxFolder) {
+            $query = \App\Models\EmailLog::query()
+                ->select([
+                    'email_logs.id',
+                    'email_logs.from_mail',
+                    'email_logs.to_mail',
+                    'email_logs.cc',
+                    'email_logs.bcc',
+                    'email_logs.subject',
+                    'email_logs.mail_type',
+                    'email_logs.mail_body_type',
+                    'email_logs.mail_is_read',
+                    \Illuminate\Support\Facades\DB::raw('LEFT(email_logs.text_preview, 240) as text_preview'),
+                    'email_logs.fetch_mail_sent_time',
+                    'email_logs.created_at',
+                    'email_logs.client_id',
+                    'email_logs.client_matter_id',
+                    'email_logs.synced_email_id',
+                    'email_logs.sync_assignment_status',
+                    'email_logs.sync_source',
+                    'email_logs.mailbox_email',
+                    'email_logs.uploaded_doc_id',
+                    'email_logs.pdf_doc_id',
+                    'email_logs.type',
+                    'email_logs.send_status',
+                    'email_logs.send_error',
+                ])
+                ->with(['client:id,first_name,last_name,client_id'])
+                ->withCount([
+                    'attachments as attachments_count' => function ($q) {
+                        $q->where(function ($inline) {
+                            $inline->where('is_inline', false)->orWhereNull('is_inline');
+                        });
+                    },
+                ]);
+        } else {
+            $withRelations = [
+                'attachments',
+                'client:id,first_name,last_name,client_id',
+                'matter:id,client_unique_matter_no',
+            ];
+            if ($hasCalendarLinksTable) {
+                $withRelations[] = 'calendarLinks';
+            }
+            $query = \App\Models\EmailLog::with($withRelations);
+            app(\App\Services\Email\ClientEmailListService::class)->applyLeanSelect($query, includeMessage: false);
         }
-        $query = \App\Models\EmailLog::with($withRelations);
-        app(\App\Services\Email\ClientEmailListService::class)->applyLeanSelect($query, includeMessage: false);
 
         // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
         if (! empty($clientId) && ! $isSyncedInboxFolder) {
@@ -5938,7 +5989,10 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
-        if (in_array($folder, ['inbox', 'unassigned', 'assigned', 'review'], true)) {
+        // Unassigned/assigned queues: date-only sort (unread-first blocks indexes and slows large lists).
+        if (in_array($folder, ['inbox', 'review'], true) && ! $isSyncedInboxFolder) {
+            $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
+        } elseif ($folder === 'inbox' && $isSyncedInboxFolder) {
             $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
         }
         if ($folder === 'outbox' && $hasSendStatus) {
@@ -5947,9 +6001,53 @@ class ClientsController extends Controller
             $query->orderByRaw('COALESCE(fetch_mail_sent_time, created_at) ' . $sortDirection);
         }
 
-        // Paginate
-        $emails = $query->paginate($perPage);
+        if ($metaOnly && $isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
+            $dateSummary = $this->syncedInboxDateSummary(
+                $folder,
+                $staff,
+                ! empty($mailboxFilter) ? (string) $mailboxFilter : null,
+                array_keys($autoAssignmentReviewItems)
+            );
+            $senders = collect();
+            if ($includeSenders) {
+                $senders = (clone $query)
+                    ->setEagerLoads([])
+                    ->reorder()
+                    ->select('email_logs.from_mail')
+                    ->whereNotNull('from_mail')
+                    ->where('from_mail', '!=', '')
+                    ->distinct()
+                    ->limit(300)
+                    ->pluck('from_mail');
+            }
+            $total = (int) ($dateSummary['total'] ?? 0);
+
+            return response()->json([
+                'status' => 'success',
+                'emails' => [],
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => 1,
+                'last_page' => max(1, (int) ceil($total / max(1, $perPage))),
+                'has_more' => false,
+                'from' => 0,
+                'to' => 0,
+                'senders' => $senders,
+                'unread_count' => 0,
+                'date_summary' => $dateSummary,
+                'meta_included' => true,
+                'meta_only' => true,
+            ]);
+        }
+
+        // Synced folders always skip COUNT(*); client uses date_summary / has_more.
+        if ($isSyncedInboxFolder || ! $includeListMeta) {
+            $emails = $query->simplePaginate($perPage, ['*'], 'page', $page);
+        } else {
+            $emails = $query->paginate($perPage, ['*'], 'page', $page);
+        }
         $calendarMergeService = app(\App\Services\Email\EmailCalendarMergeService::class);
+        $leanSyncedList = $isSyncedInboxFolder;
 
         // Prepare preview text and map authenticated document/attachment URLs
         $emails->getCollection()->transform(function ($email) use (
@@ -5957,9 +6055,9 @@ class ClientsController extends Controller
             $hasCalendarLinksTable,
             $autoAssignmentReviewItems,
             $staff,
-            $canSyncInbox
+            $canSyncInbox,
+            $leanSyncedList
         ) {
-            $storedMessage = '';
             $storedPreview = (string) ($email->getAttributes()['text_preview'] ?? $email->text_preview ?? '');
             $calendarSource = '';
             if (\App\Models\EmailLog::isCalendarPayload($storedPreview)) {
@@ -5992,6 +6090,57 @@ class ClientsController extends Controller
             $email->client_ref = '';
             $email->client_url = '';
             $email->assignment_review = $autoAssignmentReviewItems[(int) $email->id] ?? null;
+            $email->attachments_count = (int) ($email->attachments_count ?? 0);
+            $email->has_attachments = $email->attachments_count > 0;
+
+            if ($leanSyncedList) {
+                // Unassigned rows have no client; skip visibility lookups and heavy attachment/calendar work.
+                $email->can_unlink_synced_email = false;
+                if ($email->relationLoaded('client') && $email->client) {
+                    $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
+                    $email->client_ref = (string) ($email->client->client_id ?? '');
+                    $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client->id)));
+                    $email->can_unlink_synced_email = $canSyncInbox;
+                } elseif (! empty($email->client_id)) {
+                    $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client_id)));
+                    $email->can_unlink_synced_email = $canSyncInbox;
+                }
+
+                $appTimezone = config('app.timezone', 'Australia/Melbourne');
+                if ($email->fetch_mail_sent_time) {
+                    $email->fetch_mail_sent_time_display = $email->fetch_mail_sent_time
+                        ->copy()
+                        ->timezone($appTimezone)
+                        ->format('d/m/Y h:i a');
+                } else {
+                    $email->fetch_mail_sent_time_display = null;
+                }
+
+                $email->msg_file_url = ! empty($email->uploaded_doc_id)
+                    ? $this->resolveEmailMsgDownloadUrl($email)
+                    : '';
+                $email->pdf_file_url = ! empty($email->pdf_doc_id)
+                    ? $this->resolveEmailPdfPreviewUrl($email)
+                    : '';
+                $email->pdf_download_url = ! empty($email->pdf_doc_id)
+                    ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
+                    : '';
+                $email->pdf_preview_url = ! empty($email->is_calendar_invite) ? '' : $email->pdf_file_url;
+                $email->setRelation('attachments', collect());
+                $email->calendar = [
+                    'has_calendar' => false,
+                    'count' => 0,
+                    'merged_count' => 0,
+                    'pending_count' => 0,
+                    'events' => [],
+                ];
+                $email->has_calendar = false;
+                $email->calendar_event_count = 0;
+                $email->has_calendar_invite = ! empty($email->is_calendar_invite);
+
+                return $email;
+            }
+
             $email->can_unlink_synced_email = $email->client_id
                 && $staff instanceof \App\Models\Staff
                 && (
@@ -6037,7 +6186,31 @@ class ClientsController extends Controller
                 }));
             }
 
-            if ($hasCalendarLinksTable) {
+            if ($hasCalendarLinksTable && $email->relationLoaded('calendarLinks')) {
+                $links = $email->calendarLinks;
+                $count = $links->count();
+                if ($count === 0) {
+                    $calendarSummary = [
+                        'has_calendar' => false,
+                        'count' => 0,
+                        'merged_count' => 0,
+                        'pending_count' => 0,
+                        'events' => [],
+                    ];
+                } else {
+                    $mergedCount = $links->where(
+                        'status',
+                        \App\Models\EmailCalendarLink::STATUS_MERGED
+                    )->count();
+                    $calendarSummary = [
+                        'has_calendar' => true,
+                        'count' => $count,
+                        'merged_count' => $mergedCount,
+                        'pending_count' => $count - $mergedCount,
+                        'events' => [],
+                    ];
+                }
+            } elseif ($hasCalendarLinksTable) {
                 $calendarSummary = $calendarMergeService->calendarSummaryForEmail($email);
             } else {
                 $calendarSummary = [
@@ -6058,94 +6231,65 @@ class ClientsController extends Controller
             return $email;
         });
 
-        // Fetch distinct senders for this client/matter (only received emails, mail_type = 1)
-        $sendersQuery = \App\Models\EmailLog::where('mail_type', 1)
-            ->whereNotNull('from_mail')
-            ->where('from_mail', '!=', '');
-            
-        if (!empty($clientId)) {
-            $sendersQuery->where('client_id', $clientId);
-        }
-        if (!empty($clientMatterId)) {
-            $sendersQuery->where('client_matter_id', $clientMatterId);
-        }
-        if ($folder === 'review') {
-            $sendersQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
-        }
-        
-        $senders = $sendersQuery->distinct()->pluck('from_mail');
-
+        // Meta (senders / unread / date buckets) — synced folders load this via meta_only separately.
+        $senders = collect();
         $unreadCount = 0;
-        if (! empty($clientId)) {
-            $unreadCountQuery = \App\Models\EmailLog::query();
-            $this->applyIncomingInboxScope($unreadCountQuery);
-            $unreadCountQuery->where('client_id', $clientId);
-            $this->applyUnreadEmailScope($unreadCountQuery);
-            if (! empty($clientMatterId)) {
-                $unreadCountQuery->where('client_matter_id', $clientMatterId);
-            }
-            \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($unreadCountQuery);
-            $unreadCount = $unreadCountQuery->count();
-        } elseif ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
-            $unreadCountQuery = \App\Models\EmailLog::query();
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($unreadCountQuery, $staff);
-            $this->applyIncomingInboxScope($unreadCountQuery);
-            $this->applyUnreadEmailScope($unreadCountQuery);
-
-            if ($folder === 'unassigned') {
-                \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($unreadCountQuery);
-            } elseif ($folder === 'inbox') {
-                \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($unreadCountQuery);
-                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
-            } elseif ($folder === 'review') {
-                $unreadCountQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
-                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($unreadCountQuery);
-                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
-            } else {
-                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
-                    $unreadCountQuery->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
-                        ->whereNotNull('client_id');
-                    if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
-                        $unreadCountQuery->whereNotNull('synced_email_id');
-                    }
-                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($unreadCountQuery);
-                    \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($unreadCountQuery);
-                } else {
-                    $unreadCountQuery->where('id', '<', 0);
-                }
-            }
-
-            if (! empty($mailboxFilter)) {
-                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($unreadCountQuery, (string) $mailboxFilter);
-            }
-
-            \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($unreadCountQuery);
-
-            $unreadCount = $unreadCountQuery->count();
-        }
-
         $dateSummary = null;
-        if ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
-            $dateSummary = $this->syncedInboxDateSummary(
-                $folder,
-                $staff,
-                ! empty($mailboxFilter) ? (string) $mailboxFilter : null,
-                array_keys($autoAssignmentReviewItems)
-            );
+
+        if ($includeListMeta && ! $isSyncedInboxFolder) {
+            $sendersQuery = \App\Models\EmailLog::where('mail_type', 1)
+                ->whereNotNull('from_mail')
+                ->where('from_mail', '!=', '');
+
+            if (! empty($clientId)) {
+                $sendersQuery->where('client_id', $clientId);
+            }
+            if (! empty($clientMatterId)) {
+                $sendersQuery->where('client_matter_id', $clientMatterId);
+            }
+            if ($folder === 'review') {
+                $sendersQuery->whereIn('id', array_keys($autoAssignmentReviewItems));
+            }
+
+            $senders = $sendersQuery->distinct()->limit(300)->pluck('from_mail');
+
+            if (! empty($clientId)) {
+                $unreadCountQuery = \App\Models\EmailLog::query();
+                $this->applyIncomingInboxScope($unreadCountQuery);
+                $unreadCountQuery->where('client_id', $clientId);
+                $this->applyUnreadEmailScope($unreadCountQuery);
+                if (! empty($clientMatterId)) {
+                    $unreadCountQuery->where('client_matter_id', $clientMatterId);
+                }
+                \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($unreadCountQuery);
+                $unreadCount = $unreadCountQuery->count();
+            }
         }
+
+        $total = method_exists($emails, 'total')
+            ? $emails->total()
+            : null;
+        $lastPage = method_exists($emails, 'lastPage')
+            ? $emails->lastPage()
+            : null;
+        $hasMore = method_exists($emails, 'hasMorePages')
+            ? $emails->hasMorePages()
+            : ($lastPage !== null ? $page < $lastPage : false);
 
         return response()->json([
             'status' => 'success',
             'emails' => $emails->items(),
-            'total' => $emails->total(),
+            'total' => $total,
             'per_page' => $emails->perPage(),
             'current_page' => $emails->currentPage(),
-            'last_page' => $emails->lastPage(),
+            'last_page' => $lastPage,
+            'has_more' => $hasMore,
             'from' => $emails->firstItem() ?? 0,
             'to' => $emails->lastItem() ?? 0,
             'senders' => $senders,
             'unread_count' => $unreadCount,
             'date_summary' => $dateSummary,
+            'meta_included' => $includeListMeta,
         ]);
     }
 
@@ -6159,6 +6303,14 @@ class ClientsController extends Controller
         array $reviewEmailIds = []
     ): array
     {
+        $empty = [
+            'today' => 0,
+            'yesterday' => 0,
+            'this_week' => 0,
+            'earlier' => 0,
+            'total' => 0,
+        ];
+
         $query = \App\Models\EmailLog::query();
         \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
 
@@ -6173,10 +6325,9 @@ class ClientsController extends Controller
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } elseif ($folder === 'review') {
             if ($reviewEmailIds === []) {
-                $query->where('id', '<', 0);
-            } else {
-                $query->whereIn('id', $reviewEmailIds);
+                return $empty;
             }
+            $query->whereIn('id', $reviewEmailIds);
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
@@ -6188,13 +6339,7 @@ class ClientsController extends Controller
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
         } else {
-            return [
-                'today' => 0,
-                'yesterday' => 0,
-                'this_week' => 0,
-                'earlier' => 0,
-                'total' => 0,
-            ];
+            return $empty;
         }
 
         \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
@@ -6204,38 +6349,35 @@ class ClientsController extends Controller
         $todayStart = $now->copy()->startOfDay();
         $yesterdayStart = $todayStart->copy()->subDay();
         $weekStart = $now->copy()->startOfWeek();
+        $effective = \App\Services\EmailSync\IncomingEmailSyncService::syncedMailEffectiveDateSql();
 
-        $summary = [
-            'today' => 0,
-            'yesterday' => 0,
-            'this_week' => 0,
-            'earlier' => 0,
-            'total' => 0,
+        $todayBound = $todayStart->format('Y-m-d H:i:s');
+        $yesterdayBound = $yesterdayStart->format('Y-m-d H:i:s');
+        $weekBound = $weekStart->format('Y-m-d H:i:s');
+
+        $row = $query->toBase()->selectRaw(
+            "COUNT(*) as total,
+            SUM(CASE WHEN {$effective} >= ? THEN 1 ELSE 0 END) as today,
+            SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as yesterday,
+            SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as this_week,
+            SUM(CASE WHEN {$effective} < ? THEN 1 ELSE 0 END) as earlier",
+            [
+                $todayBound,
+                $yesterdayBound,
+                $todayBound,
+                $weekBound,
+                $yesterdayBound,
+                $weekBound,
+            ]
+        )->first();
+
+        return [
+            'today' => (int) ($row->today ?? 0),
+            'yesterday' => (int) ($row->yesterday ?? 0),
+            'this_week' => (int) ($row->this_week ?? 0),
+            'earlier' => (int) ($row->earlier ?? 0),
+            'total' => (int) ($row->total ?? 0),
         ];
-
-        $query->select(['id', 'fetch_mail_sent_time', 'created_at'])
-            ->orderBy('id')
-            ->chunkById(500, function ($rows) use (&$summary, $tz, $todayStart, $yesterdayStart, $weekStart) {
-                foreach ($rows as $email) {
-                    $dt = $email->fetch_mail_sent_time ?? $email->created_at;
-                    if (! $dt) {
-                        continue;
-                    }
-                    $local = $dt->copy()->timezone($tz);
-                    $summary['total']++;
-                    if ($local->gte($todayStart)) {
-                        $summary['today']++;
-                    } elseif ($local->gte($yesterdayStart)) {
-                        $summary['yesterday']++;
-                    } elseif ($local->gte($weekStart)) {
-                        $summary['this_week']++;
-                    } else {
-                        $summary['earlier']++;
-                    }
-                }
-            });
-
-        return $summary;
     }
 
     protected function applyIncomingInboxScope($query): void

@@ -58,13 +58,15 @@
         : [];
     $defaultUnassignedSyncRange = 'today';
     $listMailboxFilterOptions = ($unassignedOnly && $canSelectSyncMailbox)
-        ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
+        ? $syncMailboxOptions
         : [];
-    $crmMailboxAddresses = \App\Models\Email::where('status', true)
-        ->orderBy('email')
-        ->pluck('email')
-        ->values()
-        ->all();
+    $crmMailboxAddresses = $syncMailboxOptions !== []
+        ? $syncMailboxOptions
+        : \App\Models\Email::where('status', true)
+            ->orderBy('email')
+            ->pluck('email')
+            ->values()
+            ->all();
 @endphp
 
 <!-- Outlook CSS -->
