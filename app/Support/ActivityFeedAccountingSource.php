@@ -68,7 +68,7 @@ class ActivityFeedAccountingSource
                 $row = $trustByRef[$meta['reference']] ?? null;
             }
 
-            $out[$activityId] = self::buildPayload($meta, $row);
+            $out[$activityId] = self::buildPayload($meta, $row, $clientId);
         }
 
         return $out;
@@ -110,10 +110,11 @@ class ActivityFeedAccountingSource
      * @param  array{kind: string, reference: string}  $meta
      * @return array<string, mixed>
      */
-    private static function buildPayload(array $meta, ?object $row): array
+    private static function buildPayload(array $meta, ?object $row, int $clientId = 0): array
     {
         $kind = $meta['kind'];
         $reference = $meta['reference'];
+        $receiptId = $row ? (int) ($row->receipt_id ?? $row->id) : null;
 
         $payload = [
             'kind' => $kind,
@@ -121,7 +122,9 @@ class ActivityFeedAccountingSource
             'tab' => 'account',
             'found' => $row !== null,
             'row_id' => $row ? (int) $row->id : null,
-            'receipt_id' => $row ? (int) ($row->receipt_id ?? $row->id) : null,
+            'receipt_id' => $receiptId,
+            'view_url' => null,
+            'can_view' => false,
             'details' => [
                 'reference' => $reference,
                 'date' => $row ? (string) ($row->trans_date ?? '') : '',
@@ -138,7 +141,23 @@ class ActivityFeedAccountingSource
             ],
         ];
 
+        if ($kind === self::KIND_INVOICE && $receiptId && $clientId > 0 && self::canViewInvoicePdf($row)) {
+            $payload['can_view'] = true;
+            $payload['view_url'] = url('/clients/genInvoice/'.$receiptId.'/'.$clientId);
+        }
+
         return $payload;
+    }
+
+    private static function canViewInvoicePdf(?object $row): bool
+    {
+        if ($row === null) {
+            return false;
+        }
+        $saveType = (string) ($row->save_type ?? '');
+
+        // Match Account tab: final, draft, or legacy rows without save_type.
+        return in_array($saveType, ['final', 'draft', ''], true);
     }
 
     /**

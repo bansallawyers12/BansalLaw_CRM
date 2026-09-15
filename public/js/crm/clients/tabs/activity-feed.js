@@ -656,10 +656,16 @@
     function buildAccountingSourceMenuHtml(activityId, source) {
         var menuId = 'feed-accounting-menu-' + activityId;
         var refLabel = escapeHtml((source && source.reference) || 'entry');
+        var viewUrl = source && source.can_view && source.view_url ? String(source.view_url) : '';
+        var viewItem = viewUrl
+            ? '<a class="dropdown-item feed-item-accounting-action" href="' + escapeAttr(viewUrl) + '" target="_blank" rel="noopener" data-action="view">' +
+              '<i class="fa-solid fa-eye" aria-hidden="true"></i> View invoice</a>'
+            : '';
         return '<div class="dropdown feed-item-accounting-dropdown d-inline-block">' +
             '<button type="button" class="feed-item-accounting-trigger dropdown-toggle" id="' + menuId + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-expanded="false" aria-haspopup="true" title="Accounting options for ' + refLabel + '" aria-label="Accounting options for ' + refLabel + '">' +
             '<i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>' +
             '<div class="dropdown-menu dropdown-menu-end" aria-labelledby="' + menuId + '">' +
+            viewItem +
             '<a class="dropdown-item feed-item-accounting-action" href="javascript:;" data-action="details">' +
             '<i class="fa-solid fa-list" aria-hidden="true"></i> Show complete details</a>' +
             '<a class="dropdown-item feed-item-accounting-action" href="javascript:;" data-action="source">' +
@@ -705,6 +711,11 @@
             html += '<div class="feed-item-accounting-details__row">' +
                 '<span class="feed-item-accounting-details__label">' + escapeHtml(label) + '</span>' +
                 '<span class="feed-item-accounting-details__value">' + valueHtml + '</span></div>';
+        }
+        if (source && source.can_view && source.view_url) {
+            html += '<div class="feed-item-accounting-details__actions">' +
+                '<a class="btn btn-sm btn-outline-primary feed-item-accounting-view-btn" href="' + escapeAttr(String(source.view_url)) + '" target="_blank" rel="noopener">' +
+                '<i class="fa-solid fa-eye" aria-hidden="true"></i> View invoice</a></div>';
         }
         html += '</div>';
         return html;
@@ -827,11 +838,13 @@
     function setupAccountingSourceActions() {
         $(document).off('click.activityFeedAccounting', '.feed-item-accounting-trigger, .feed-item-accounting-action')
             .on('click.activityFeedAccounting', '.feed-item-accounting-trigger', function(e) {
-                e.preventDefault();
+                // Keep Bootstrap dropdown working; only stop row expand/collapse.
+                e.stopPropagation();
+            })
+            .on('click.activityFeedAccounting', '.feed-item-accounting-view-btn', function(e) {
                 e.stopPropagation();
             })
             .on('click.activityFeedAccounting', '.feed-item-accounting-action', function(e) {
-                e.preventDefault();
                 e.stopPropagation();
                 var $action = $(this);
                 var action = String($action.data('action') || '');
@@ -846,6 +859,11 @@
                         }
                     }
                 }
+                if (action === 'view') {
+                    // Real href + target=_blank — allow default navigation.
+                    return;
+                }
+                e.preventDefault();
                 if (action === 'details') {
                     expandFeedItem($li);
                     return;
@@ -1203,7 +1221,8 @@
                 ? ' data-accounting-kind="' + escapeAttr(accountingSource.kind || '') + '"' +
                   ' data-accounting-reference="' + escapeAttr(accountingSource.reference || '') + '"' +
                   ' data-accounting-row-id="' + escapeAttr(accountingSource.row_id != null ? accountingSource.row_id : '') + '"' +
-                  ' data-accounting-receipt-id="' + escapeAttr(accountingSource.receipt_id != null ? accountingSource.receipt_id : '') + '"'
+                  ' data-accounting-receipt-id="' + escapeAttr(accountingSource.receipt_id != null ? accountingSource.receipt_id : '') + '"' +
+                  ' data-accounting-view-url="' + escapeAttr(accountingSource.view_url || '') + '"'
                 : '';
 
             var liOpen = '<li class="feed-item ' + feedItemClass + ' activity' + activityTypeClass + noExpandClass + (hasAccountingSource ? ' feed-item--accounting-source' : '') + '" id="activity_' + id + '" data-created-at="' + escapeAttr(createdAtYmd) + '"' + sourceAttrs + '>' +
