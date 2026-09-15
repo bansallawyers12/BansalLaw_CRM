@@ -95,6 +95,39 @@ class ClientAccountTabServiceTest extends TestCase
     }
 
     #[Test]
+    public function build_with_null_matter_shows_invoices_for_single_matter_client(): void
+    {
+        $client = Admin::create([
+            'first_name' => 'Single',
+            'last_name' => 'Matter',
+            'email' => 'single_matter_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'status' => 1,
+        ]);
+
+        $matterId = (int) DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'TEST_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->insertInvoiceRow($client->id, $matterId, 9207, 110, 110, 0);
+
+        $data = $this->service->build((int) $client->id, null);
+
+        $this->assertSame($matterId, $data['clientMatterId']);
+        $this->assertCount(1, $data['invoiceRows']);
+        $this->assertSame('INV-9207', $data['invoiceRows'][0]->trans_no);
+    }
+
+    #[Test]
     public function build_loads_latest_generated_costs_disclosure_for_matter(): void
     {
         $client = Admin::create([

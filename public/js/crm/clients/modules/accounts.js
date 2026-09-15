@@ -296,6 +296,7 @@
                 }
 
                 $modal.find('.receipt-type-selector').hide();
+                $modal.toggleClass('invoice-entry-open', receiptType === '3');
                 $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
                 $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
 
@@ -456,7 +457,7 @@
             url: url,
             type: 'GET',
             data: {
-                client_matter_id: cfg.clientMatterId || '',
+                client_matter_id: resolveAccountMatterIdForEntry() || cfg.clientMatterId || '',
                 matter_ref: cfg.matterId || ''
             },
             success: function(html) {
@@ -471,6 +472,16 @@
                 $body.data('loading', false);
             }
         });
+    };
+
+    window.ClientAccountsTab.reload = function() {
+        var $body = $('#account-tab-body');
+        if (!$body.length) {
+            return;
+        }
+        $body.attr('data-loaded', '0');
+        $body.removeData('loading');
+        window.ClientAccountsTab.loadIfNeeded();
     };
 
     $(document).on('click', '.js-retry-account-tab-load', function(e) {
@@ -488,6 +499,12 @@
         ensureAccountEntryButtonsBound();
         if ($('#account-tab').hasClass('active')) {
             window.ClientAccountsTab.loadIfNeeded();
+        }
+    });
+
+    $(document).on('change', '#sel_matter_id_client_detail, .general_matter_checkbox_client_detail', function() {
+        if ($('#account-tab').hasClass('active') || $('#account-tab-body').attr('data-loaded') === '1') {
+            window.ClientAccountsTab.reload();
         }
     });
 

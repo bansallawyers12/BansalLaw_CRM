@@ -41,6 +41,8 @@ class ClientAccountTabService
      */
     public function build(int $clientId, ?int $clientMatterId): array
     {
+        $clientMatterId = $this->resolveAccountMatterId($clientId, $clientMatterId);
+
         $trustLimit = max(0, (int) config('crm.accounts.tab_trust_row_limit', 100));
         $invoiceLimit = max(0, (int) config('crm.accounts.tab_invoice_row_limit', 50));
         $officeLimit = max(0, (int) config('crm.accounts.tab_office_row_limit', 50));
@@ -355,6 +357,29 @@ class ClientAccountTabService
     }
 
     /**
+     * When the Account tab has no matter selected, use the client's only matter
+     * so invoices/trust/office rows still appear (common on /account URLs without a matter slug).
+     */
+    protected function resolveAccountMatterId(int $clientId, ?int $clientMatterId): ?int
+    {
+        if ($clientMatterId !== null && $clientMatterId > 0) {
+            return $clientMatterId;
+        }
+
+        $matterIds = DB::table('client_matters')
+            ->where('client_id', $clientId)
+            ->orderBy('id')
+            ->limit(2)
+            ->pluck('id');
+
+        if ($matterIds->count() === 1) {
+            return (int) $matterIds->first();
+        }
+
+        return null;
+    }
+
+    /**
      * Latest invoice row per receipt_id (PostgreSQL DISTINCT ON).
      *
      * @return array{0: Collection<int, object>, 1: bool}
@@ -388,11 +413,11 @@ class ClientAccountTabService
                 ', [$clientMatterId, $clientId]);
             }
         } else {
+            // Multi-matter client with no matter filter: show all invoices for the client.
             $rows = DB::select('
                 SELECT DISTINCT ON (receipt_id) *
                 FROM account_client_receipts
-                WHERE client_matter_id IS NULL
-                AND client_id = ?
+                WHERE client_id = ?
                 AND receipt_type = 3
                 ORDER BY receipt_id, id DESC
             ', [$clientId]);
@@ -444,8 +469,7 @@ class ClientAccountTabService
     {
         if ($clientMatterId !== null && $clientMatterId !== '') {
             $query->where('client_matter_id', $clientMatterId);
-        } else {
-            $query->whereNull('client_matter_id');
         }
+        // No matter filter: include all matters for this client (do not force IS NULL).
     }
 }

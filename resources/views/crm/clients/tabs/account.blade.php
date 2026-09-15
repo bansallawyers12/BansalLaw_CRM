@@ -78,9 +78,9 @@
                 window.stripInvoiceLinePickers($('#invoice_receipt_form .productitem_invoice tr'));
             }
         }
-        $('.total_withdraw_amount_all_rows_invoice').text('');
+        $('.total_invoice_ex_gst, .total_invoice_gst, .total_withdraw_amount_all_rows_invoice').text('$0.00');
         $('#invoice_receipt_form .invoice-draft-btn').show();
-        $('#invoice_receipt_form .invoice-final-btn').text('Create Invoice');
+        $('#invoice_receipt_form .invoice-final-btn').text('Create invoice');
 
         var today = formatInvoiceDateToday();
         var $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
@@ -104,6 +104,8 @@
         }
         if (typeof window.applyInvoiceBillingMode === 'function') {
             window.applyInvoiceBillingMode($('#invoice_receipt_form'), 'hourly');
+        } else if (typeof window.grandtotalAccountTab_invoice === 'function') {
+            window.grandtotalAccountTab_invoice();
         }
     }
 
@@ -325,6 +327,7 @@ function initAccountTabScripts() {
         window._accountPendingRetainerPrefill = false;
         // Show radio buttons again (in case user opens from a different page)
         $(this).find('.receipt-type-selector').show();
+        $(this).removeClass('invoice-entry-open');
         
         // Reset modal title to default
         $(this).find('.modal-title').html('Create Receipt');
@@ -586,6 +589,7 @@ function initAccountTabScripts() {
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
         $(this).find('.badge-success').remove();
         $(this).find('.modal-title').html('Create Receipt');
+        $(this).removeClass('invoice-entry-open');
         
         // FIX: Restore invoice option when modal closes (in case it was hidden by Quick Receipt)
         $(this).find('input[name="receipt_type"][value="invoice_receipt"]').closest('label').show();

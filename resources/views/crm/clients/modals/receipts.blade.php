@@ -150,51 +150,181 @@
     font-size: 12px;
 }
 
-/* Tax invoice line description — taller than a single-line input */
+/* Tax invoice — readable XXL layout */
+.modal-xxl {
+    --bs-modal-width: min(1480px, 96vw);
+}
+@media (min-width: 1200px) {
+    .modal-xxl {
+        --bs-modal-width: min(1480px, 96vw);
+    }
+}
+
+#createreceiptmodal.invoice-entry-open .modal-dialog,
+#createinvoicereceiptmodal .modal-dialog {
+    max-width: min(1560px, 98vw);
+    width: 98vw;
+}
+
 #invoice_receipt_form textarea.invoice-line-description,
 #create_invoice_receipt textarea.invoice-line-description,
 #adjust_invoice_receipt_form textarea.invoice-line-description {
-    min-height: 4.5rem;
+    min-height: 5.25rem;
     resize: vertical;
-    line-height: 1.35;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.invoice-form-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    align-items: flex-end;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: #f5f8fb;
+    border: 1px solid #d7e4f0;
+    border-radius: 10px;
+}
+.invoice-form-toolbar .form-group {
+    margin-bottom: 0;
+    min-width: 220px;
+    flex: 1 1 240px;
+}
+.invoice-form-toolbar .invoice-billing-mode-bar {
+    flex: 2 1 320px;
+    margin-bottom: 0;
 }
 
 .invoice-timesheet-scroll {
-    overflow-x: auto;
+    overflow-x: visible;
+    overflow-y: auto;
+    max-height: min(58vh, 560px);
+    border: 1px solid #d7e4f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 10px;
 }
-
+.invoice-timesheet-scroll > table {
+    margin-bottom: 0 !important;
+    border: 0 !important;
+    width: 100%;
+    min-width: 0;
+    background: transparent;
+}
+.invoice-timesheet-scroll table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
+    color: #1e3d60;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: normal;
+    border: 0 !important;
+    padding: 4px 6px 10px;
+}
 .invoice-timesheet-scroll table th,
 .invoice-timesheet-scroll table td {
     vertical-align: top;
-    white-space: nowrap;
-}
-
-.invoice-timesheet-scroll .invoice-line-description {
-    min-width: 180px;
     white-space: normal;
+    border: 0 !important;
+    padding: 0;
+}
+.invoice-lines-legend__title {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e3d60;
+}
+.invoice-lines-legend__hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #5e7a90;
 }
 
-.invoice-timesheet-scroll .form-control {
-    min-width: 70px;
+.invoice-line-block + .invoice-line-block td {
+    padding-top: 10px;
+}
+.invoice-line-block__cell {
+    width: 100%;
+}
+.invoice-line-card {
+    background: #fff;
+    border: 1px solid #d7e4f0;
+    border-radius: 10px;
+    padding: 12px 14px 14px;
+    box-shadow: 0 1px 2px rgba(30, 61, 96, 0.04);
+}
+.invoice-line-card__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 10px 12px;
+    align-items: end;
+}
+.invoice-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.invoice-field__label {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #5e7a90;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+.invoice-field__sub {
+    font-weight: 500;
+    color: #8aa0b5;
+}
+.invoice-col-work-date { min-width: 190px; }
+.invoice-col-recorded { min-width: 112px; max-width: 140px; }
+.invoice-col-type { min-width: 140px; }
+.invoice-col-earner { min-width: 130px; }
+.invoice-col-role { min-width: 120px; }
+.invoice-col-hrs { min-width: 72px; max-width: 90px; }
+.invoice-col-rate,
+.invoice-col-amount,
+.invoice-col-gst { min-width: 96px; max-width: 120px; }
+.invoice-col-actions {
+    min-width: 44px;
+    max-width: 52px;
+    align-items: center;
+}
+.invoice-col-desc {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e6eef6;
+}
+.invoice-col-desc .invoice-line-description {
+    width: 100%;
+    min-width: 0;
+    min-height: 5.25rem;
 }
 
-.invoice-timesheet-scroll .invoice-work-date,
-.invoice-timesheet-scroll .report_entry_date_fields_invoice {
-    min-width: 150px;
+.invoice-timesheet-scroll .form-control,
+.invoice-timesheet-scroll .form-select {
+    min-width: 0;
+    width: 100%;
+    font-size: 0.86rem;
 }
 
 .invoice-date-cell {
-    min-width: 168px;
-}
-
-.invoice-date-mode-toggle {
     display: flex;
-    margin-bottom: 4px;
+    flex-direction: column;
+    gap: 4px;
 }
-
-.invoice-date-mode-toggle .btn {
-    font-size: 11px;
-    padding: 2px 8px;
+.invoice-date-mode-select {
+    font-size: 0.75rem !important;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
 }
 
 .invoice-work-date[readonly],
@@ -203,30 +333,123 @@
     cursor: pointer;
 }
 
-.invoice-timesheet-scroll .payment_type_invoice_per_row,
-.invoice-timesheet-scroll .invoice-fee-earner,
-.invoice-timesheet-scroll .invoice-fee-earner-role {
-    min-width: 120px;
-}
-
-.invoice-billing-mode-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.invoice-billing-mode-label {
-    font-weight: 600;
-    color: #34395e;
+form.invoice-billing-mode-hourly .invoice-amount-ex-gst {
+    background: #f3f7fb;
 }
 form.invoice-billing-mode-fixed .invoice-hours-col {
     display: none;
+}
+form.invoice-billing-mode-fixed .invoice-billing-hint-hourly { display: none !important; }
+form.invoice-billing-mode-fixed .invoice-billing-hint-fixed { display: inline !important; }
+form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !important; }
+
+.invoice-billing-mode-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.invoice-billing-mode-bar__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.invoice-billing-mode-label {
+    font-weight: 600;
+    color: #1e3d60;
+    font-size: 0.9rem;
+}
+.invoice-billing-mode-hint {
+    font-size: 0.78rem;
+    color: #5e7a90;
+    line-height: 1.35;
+}
+
+.invoice-form-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+}
+.invoice-form-footer__left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.invoice-form-footer__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.openproductrinfo_invoice {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #1e3d60;
+    text-decoration: none;
+}
+.openproductrinfo_invoice:hover {
+    color: #0f2740;
+    text-decoration: underline;
+}
+
+.invoice-totals-card {
+    min-width: 240px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #d7e4f0;
+    border-radius: 10px;
+}
+.invoice-totals-card__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 4px 0;
+    font-size: 0.9rem;
+    color: #34395e;
+}
+.invoice-totals-card__row--total {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid #c8dcef;
+    font-weight: 700;
+    color: #1e3d60;
+}
+.invoice-totals-card__value {
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.invoice-line-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #b02a37;
+    border: 1px solid #f1c0c5;
+    background: #fff;
+}
+.invoice-line-remove:hover {
+    background: #f8d7da;
+    color: #842029;
+}
+
+@media (min-width: 1100px) {
+    .invoice-line-card__grid {
+        grid-template-columns: 1.6fr 0.85fr 1.1fr 1.1fr 1fr 0.55fr 0.75fr 0.85fr 0.7fr auto;
+    }
 }
 </style>
 
 {{-- 1. Create Receipt Modal (Multi-Type: Client Funds Ledger, Invoice, Office Receipt) --}}
 <div class="modal fade custom_modal" id="createreceiptmodal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+	<div class="modal-dialog modal-xl modal-xxl modal-dialog-scrollable" role="document">
 		<div class="modal-content">
 		  	<div class="modal-header">
 				<h5 class="modal-title">Create Receipt</h5>
@@ -427,51 +650,42 @@ form.invoice-billing-mode-fixed .invoice-hours-col {
 					<input type="hidden" name="function_type" id="invoice_function_type" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_invoice" value="">
 
-					<div class="row">
-						<div class="col-3 col-md-3 col-lg-3">
+					<div class="invoice-form-shell">
+						<div class="invoice-form-toolbar">
 							<div class="form-group">
-								<label for="client">Client <span class="span_req">*</span></label>
-								<input type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								<label for="invoice_receipt_client">Client <span class="span_req">*</span></label>
+								<input id="invoice_receipt_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
+							@include('crm.clients.partials.invoice-billing-mode-toggle')
 						</div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
-                            <!--<div class="Invoic_no_cls" style="text-align: center;">
-                                <b>Invoice No -
-                                    <span class="unique_invoice_no"></span>
-                                </b>
-                                <input type="hidden" name="invoice_no" class="invoice_no" value="">
-                            </div>-->
-							<div class="form-group">
-                                @include('crm.clients.partials.invoice-billing-mode-toggle')
-                                <div class="invoice-timesheet-scroll">
-                                <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <thead>
-                                        @include('crm.clients.partials.invoice-line-table-header')
-                                    </thead>
-                                    <tbody class="productitem_invoice">
-                                        @include('crm.clients.partials.invoice-line-row', ['feeEarners' => $__invoiceFeeEarners])
-                                    </tbody>
-                                </table>
-                                </div>
-                                @include('crm.clients.partials.invoice-line-totals')
-                            </div>
+						<div class="invoice-timesheet-scroll">
+							<table class="table text_wrap table-hover table-md vertical_align invoice-lines-table">
+								<thead>
+									@include('crm.clients.partials.invoice-line-table-header')
+								</thead>
+								<tbody class="productitem_invoice">
+									@include('crm.clients.partials.invoice-line-row', ['feeEarners' => $__invoiceFeeEarners])
+								</tbody>
+							</table>
 						</div>
 
-                        <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add New Line</a>
-                        </div>
-
-						<div class="col-9 col-md-9 col-lg-9 text-right">
-                            <input type="hidden" name="save_type" class="save_type" value="">
-                            <button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-primary invoice-draft-btn" style="margin:0px !important;">Draft Invoice</button>
-							<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-primary invoice-final-btn" style="margin:0px !important;">Create Invoice</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<div class="invoice-form-footer">
+							<div class="invoice-form-footer__left">
+								<a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add line</a>
+								@include('crm.clients.partials.invoice-line-totals')
+							</div>
+							<div class="invoice-form-footer__actions">
+								<input type="hidden" name="save_type" class="save_type" value="">
+								<button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-outline-primary invoice-draft-btn">Save draft</button>
+								<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-primary invoice-final-btn">Create invoice</button>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							</div>
 						</div>
-                    </div>
+					</div>
 				</form>
 
 				<!-- Office Receipt Form -->
@@ -877,7 +1091,7 @@ form.invoice-billing-mode-fixed .invoice-hours-col {
 {{-- 4. Create Invoice Receipt Modal --}}
 <!-- Create Invoice Receipt Modal -->
 <div class="modal fade custom_modal" id="createinvoicereceiptmodal" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-xl modal-xxl modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Create Invoice</h5>
@@ -895,63 +1109,56 @@ form.invoice-billing-mode-fixed .invoice-hours-col {
                 <input type="hidden" name="receipt_id" id="update_draft_invoice_receipt_id" value="">
                 <input type="hidden" name="function_type" id="update_draft_invoice_function_type" value="">
 
-					<div class="row">
-						<div class="col-6 col-md-6 col-lg-6">
+					<div class="invoice-form-shell">
+						<div class="invoice-form-toolbar">
 							<div class="form-group">
-								<label for="client">Client <span class="span_req">*</span></label>
-								<input type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="">
+								<label for="create_invoice_client">Client <span class="span_req">*</span></label>
+								<input id="create_invoice_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="">
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
-						</div>
-
-                        <div class="col-6 col-md-6 col-lg-6">
-                            <div class="form-group">
-                                <label for="sel_invoice_agent_id">Solicitor <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
-                                    <option value="">Select solicitor</option>
-                                    @foreach($__receiptModalSolicitors as $aplist)
-                                        <option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-						<div class="col-12 col-md-12 col-lg-12">
-                            <div class="Invoic_no_cls" style="text-align: center;">
-                                <b>Invoice No -
-                                    <span class="unique_invoice_no"></span>
-                                </b>
-                                <input type="hidden" name="invoice_no" class="invoice_no" value="">
-                            </div>
 							<div class="form-group">
-                                @include('crm.clients.partials.invoice-billing-mode-toggle')
-                                <div class="invoice-timesheet-scroll">
-                                <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <thead>
-                                        @include('crm.clients.partials.invoice-line-table-header', ['includeTransNo' => true])
-                                    </thead>
-                                    <tbody class="productitem_invoice">
-                                        @include('crm.clients.partials.invoice-line-row', ['includeTransNo' => true, 'feeEarners' => $__invoiceFeeEarners])
-                                    </tbody>
-                                </table>
-                                </div>
-                                @include('crm.clients.partials.invoice-line-totals')
-                            </div>
+								<label for="sel_invoice_agent_id">Solicitor <span class="span_req">*</span></label>
+								<select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
+									<option value="">Select solicitor</option>
+									@foreach($__receiptModalSolicitors as $aplist)
+										<option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
+									@endforeach
+								</select>
+							</div>
+							@include('crm.clients.partials.invoice-billing-mode-toggle')
 						</div>
 
-                        <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add New Line</a>
-                        </div>
-
-						<div class="col-9 col-md-9 col-lg-9 text-right">
-                            <input type="hidden" name="save_type" class="save_type" value="">
-                            <button onclick="customValidate('create_invoice_receipt','draft')" type="button" class="btn btn-primary" style="margin:0px !important;">Draft Invoice</button>
-							<button onclick="customValidate('create_invoice_receipt','final')" type="button" class="btn btn-primary" style="margin:0px !important;">Create Invoice</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<div class="Invoic_no_cls text-center mb-2">
+							<b>Invoice No - <span class="unique_invoice_no"></span></b>
+							<input type="hidden" name="invoice_no" class="invoice_no" value="">
 						</div>
-                    </div>
+
+						<div class="invoice-timesheet-scroll">
+							<table class="table text_wrap table-hover table-md vertical_align invoice-lines-table">
+								<thead>
+									@include('crm.clients.partials.invoice-line-table-header', ['includeTransNo' => true])
+								</thead>
+								<tbody class="productitem_invoice">
+									@include('crm.clients.partials.invoice-line-row', ['includeTransNo' => true, 'feeEarners' => $__invoiceFeeEarners])
+								</tbody>
+							</table>
+						</div>
+
+						<div class="invoice-form-footer">
+							<div class="invoice-form-footer__left">
+								<a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add line</a>
+								@include('crm.clients.partials.invoice-line-totals')
+							</div>
+							<div class="invoice-form-footer__actions">
+								<input type="hidden" name="save_type" class="save_type" value="">
+								<button onclick="customValidate('create_invoice_receipt','draft')" type="button" class="btn btn-outline-primary">Save draft</button>
+								<button onclick="customValidate('create_invoice_receipt','final')" type="button" class="btn btn-primary">Create invoice</button>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
 				</form>
 			</div>
 		</div>

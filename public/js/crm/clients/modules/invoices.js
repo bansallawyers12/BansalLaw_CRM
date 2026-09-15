@@ -251,11 +251,13 @@
     }
 
     function syncInvoiceDateModeButtons($row, mode) {
+        mode = mode === 'range' ? 'range' : 'single';
         $row.find('.invoice-date-mode-btn').each(function() {
             var isActive = $(this).data('date-mode') === mode;
             $(this).toggleClass('btn-primary', isActive)
                 .toggleClass('btn-outline-secondary', !isActive);
         });
+        $row.find('.invoice-date-mode-select').val(mode);
         $row.find('.invoice-date-mode').val(mode);
         $row.find('.invoice-work-date').attr('placeholder', mode === 'range' ? 'Select range' : 'Select date');
     }
@@ -409,7 +411,8 @@
             $amount.val(amountEx.toFixed(2));
         }
 
-        if (!options.keepGst) {
+        var gstRaw = $.trim($gst.val() || '');
+        if (!options.keepGst || gstRaw === '') {
             $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
         }
 
@@ -427,14 +430,23 @@
             return $(this).closest('form').is(':visible');
         });
         if (!$visibleTables.length) {
+            $visibleTables = $('.productitem_invoice').filter(function() {
+                return $(this).closest('.modal').hasClass('show');
+            });
+        }
+        if (!$visibleTables.length) {
             $visibleTables = $('.productitem_invoice');
         }
 
-        $visibleTables.find('tr:visible').each(function() {
+        $visibleTables.find('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').each(function() {
             var $row = $(this);
+            if (!$row.find('.invoice-amount-ex-gst, .withdraw_amount_invoice_per_row').length) {
+                return;
+            }
             var sign = invoiceRowPaymentSign($row);
             if ($row.find('.invoice-amount-ex-gst').length) {
-                recalcInvoiceTimesheetRow($row, { keepGst: true });
+                // Refresh computed amount; fill GST when blank so totals are never stuck at $0.
+                recalcInvoiceTimesheetRow($row, { keepGst: $.trim($row.find('.invoice-line-gst').val() || '') !== '' });
                 totalEx += sign * invoiceMoney($row.find('.invoice-amount-ex-gst').val());
                 totalGst += sign * invoiceMoney($row.find('.invoice-line-gst').val());
                 totalIncl += sign * invoiceMoney($row.find('.withdraw_amount_invoice_per_row').val());
@@ -450,7 +462,7 @@
         var $scope = $form.length ? $form : $(document);
         $scope.find('.total_invoice_ex_gst').text('$' + totalEx.toFixed(2));
         $scope.find('.total_invoice_gst').text('$' + totalGst.toFixed(2));
-        $scope.find('.total_withdraw_amount_all_rows_invoice').html('$' + totalIncl.toFixed(2));
+        $scope.find('.total_withdraw_amount_all_rows_invoice').text('$' + totalIncl.toFixed(2));
     }
 
     function populateInvoiceLineRow($row, line) {
@@ -604,6 +616,10 @@
     $(document).on('click', '.invoice-date-mode-btn', function(e) {
         e.preventDefault();
         applyInvoiceRowDateMode($(this).closest('tr'), $(this).data('date-mode'));
+    });
+
+    $(document).on('change', '.invoice-date-mode-select', function() {
+        applyInvoiceRowDateMode($(this).closest('tr'), $(this).val());
     });
 
     $(document).on('keydown paste cut drop', '.invoice-work-date', function(e) {

@@ -146,6 +146,15 @@ class ActivityFeedAccountingSource
             $payload['view_url'] = url('/clients/genInvoice/'.$receiptId.'/'.$clientId);
         }
 
+        // Prefer the ledger's trans_no when the row is found (subject parse can truncate).
+        if ($row !== null) {
+            $transNo = trim((string) ($row->trans_no ?? ''));
+            if ($transNo !== '') {
+                $payload['reference'] = $transNo;
+                $payload['details']['reference'] = $transNo;
+            }
+        }
+
         return $payload;
     }
 

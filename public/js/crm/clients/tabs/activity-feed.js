@@ -679,9 +679,7 @@
         if (d.kind_label) {
             rows.push(['Type', d.kind_label]);
         }
-        if (d.reference) {
-            rows.push(['Reference', d.reference]);
-        }
+        rows.push(['Reference', d.reference || (source && source.reference) || '—']);
         if (d.date) {
             rows.push(['Date', d.date]);
         }
