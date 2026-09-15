@@ -43,6 +43,7 @@ use App\Services\ClientAccountTabService;
 use App\Services\ClientDetailService;
 use App\Services\ClientDetailTabHtmlService;
 use App\Services\MatterAssigneeDefaults;
+use App\Support\ActivityFeedAccountingSource;
 use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
 use App\Support\NoteDescriptionHtml;
@@ -2483,6 +2484,7 @@ class ClientsController extends Controller
 			$rows = $query->skip(($page - 1) * $perPage)->take($perPage + 1)->get();
 			$hasMore = $rows->count() > $perPage;
 			$activities = $rows->take($perPage);
+			$accountingSources = ActivityFeedAccountingSource::mapForActivities($clientId, $activities);
 
 			$data = [];
 			foreach ($activities as $activit) {
@@ -2519,6 +2521,7 @@ class ClientsController extends Controller
 					'created_by' => $activit->created_by,
 					'raw_description' => $activit->description,
 					'raw_created_at' => $activit->created_at ? (string) $activit->created_at : '',
+					'accounting_source' => $accountingSources[(int) $activit->id] ?? null,
 				];
 			}
 

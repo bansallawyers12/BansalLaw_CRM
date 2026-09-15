@@ -396,6 +396,7 @@
         setupRefreshButton();
         setupFilterBarToggle();
         setupExpandAllToggle();
+        setupAccountingSourceActions();
     }
 
     /**
@@ -650,6 +651,209 @@
     function escapeAttr(s) {
         if (s == null) return '';
         return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function buildAccountingSourceMenuHtml(activityId, source) {
+        var menuId = 'feed-accounting-menu-' + activityId;
+        var refLabel = escapeHtml((source && source.reference) || 'entry');
+        return '<div class="dropdown feed-item-accounting-dropdown d-inline-block">' +
+            '<button type="button" class="feed-item-accounting-trigger dropdown-toggle" id="' + menuId + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-expanded="false" aria-haspopup="true" title="Accounting options for ' + refLabel + '" aria-label="Accounting options for ' + refLabel + '">' +
+            '<i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>' +
+            '<div class="dropdown-menu dropdown-menu-end" aria-labelledby="' + menuId + '">' +
+            '<a class="dropdown-item feed-item-accounting-action" href="javascript:;" data-action="details">' +
+            '<i class="fa-solid fa-list" aria-hidden="true"></i> Show complete details</a>' +
+            '<a class="dropdown-item feed-item-accounting-action" href="javascript:;" data-action="source">' +
+            '<i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i> Open in actual source</a>' +
+            '</div></div>';
+    }
+
+    function buildAccountingDetailsHtml(source) {
+        var d = (source && source.details) || {};
+        var rows = [];
+        if (d.kind_label) {
+            rows.push(['Type', d.kind_label]);
+        }
+        if (d.reference) {
+            rows.push(['Reference', d.reference]);
+        }
+        if (d.date) {
+            rows.push(['Date', d.date]);
+        }
+        if (d.description) {
+            rows.push(['Description', d.description]);
+        }
+        if (d.amount) {
+            rows.push(['Amount', d.amount]);
+        }
+        if (d.status) {
+            rows.push(['Status', d.status]);
+        }
+        if (!rows.length) {
+            rows.push(['Reference', (source && source.reference) || '—']);
+            rows.push(['Note', source && source.found === false
+                ? 'Record not found on Account tab (it may have been deleted).'
+                : 'No extra details available.']);
+        }
+        var html = '<div class="feed-item-accounting-details">';
+        for (var i = 0; i < rows.length; i++) {
+            var label = rows[i][0];
+            var value = rows[i][1];
+            var valueHtml = escapeHtml(String(value));
+            if (label === 'Status' && d.status_class) {
+                valueHtml = '<span class="status-badge ' + escapeAttr(d.status_class) + '">' + valueHtml + '</span>';
+            }
+            html += '<div class="feed-item-accounting-details__row">' +
+                '<span class="feed-item-accounting-details__label">' + escapeHtml(label) + '</span>' +
+                '<span class="feed-item-accounting-details__value">' + valueHtml + '</span></div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function expandFeedItem($li) {
+        if (!$li || !$li.length || $li.hasClass('feed-item--no-expand')) {
+            return;
+        }
+        setFeedItemExpanded($li, true);
+        requestAnimationFrame(function() {
+            initClampsInDetail($li.find('.feed-item-detail').first());
+        });
+    }
+
+    function findAccountSourceRow($li) {
+        var kind = String($li.attr('data-accounting-kind') || $li.data('accounting-kind') || '');
+        var reference = String($li.attr('data-accounting-reference') || $li.data('accounting-reference') || '');
+        var rowId = String($li.attr('data-accounting-row-id') || $li.data('accounting-row-id') || '');
+        var $scope = $('#account-tab-body').length ? $('#account-tab-body') : $('#account-tab');
+        var $row = $();
+
+        if (rowId) {
+            if (kind === 'invoice') {
+                $row = $scope.find('#invoiceTrRow_' + rowId);
+            }
+            if (!$row.length) {
+                $row = $scope.find('tr').filter(function() {
+                    return this.id && this.id.indexOf('_' + rowId) !== -1;
+                });
+            }
+        }
+        if (!$row.length && reference) {
+            if (kind === 'invoice') {
+                $row = $scope.find('tr.invoiceTrRow').filter(function() {
+                    return String($(this).attr('data-invoice-no') || '') === reference;
+                });
+            } else if (kind === 'office_receipt') {
+                $row = $scope.find('tr.drow_account_office').filter(function() {
+                    return String($(this).attr('data-receipt-no') || '') === reference;
+                });
+            }
+        }
+        if (!$row.length && reference) {
+            $row = $scope.find('.reference-dropdown-trigger').filter(function() {
+                return $.trim($(this).text()).indexOf(reference) !== -1;
+            }).closest('tr');
+        }
+        return $row.first();
+    }
+
+    function highlightAccountSourceRow($row) {
+        $('#account-tab tr.account-row--feed-highlight, #account-tab-body tr.account-row--feed-highlight')
+            .removeClass('account-row--feed-highlight');
+        if (!$row || !$row.length) {
+            return;
+        }
+        $row.addClass('account-row--feed-highlight');
+        try {
+            $row[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) {
+            $row[0].scrollIntoView(true);
+        }
+        window.setTimeout(function() {
+            $row.removeClass('account-row--feed-highlight');
+        }, 4500);
+    }
+
+    function openAccountingSourceFromFeedItem($li) {
+        var pending = {
+            kind: String($li.data('accounting-kind') || ''),
+            reference: String($li.data('accounting-reference') || ''),
+            rowId: String($li.data('accounting-row-id') || '')
+        };
+
+        var highlighted = false;
+        function afterAccountReady() {
+            if (highlighted) {
+                return;
+            }
+            var $stub = $('<li></li>')
+                .attr('data-accounting-kind', pending.kind)
+                .attr('data-accounting-reference', pending.reference)
+                .attr('data-accounting-row-id', pending.rowId);
+            var $row = findAccountSourceRow($stub);
+            if ($row.length) {
+                highlighted = true;
+                highlightAccountSourceRow($row);
+            }
+        }
+
+        if (window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
+            $(document).one('accountTabContentLoaded', function() {
+                window.setTimeout(afterAccountReady, 50);
+            });
+            window.SidebarTabs.activateTab('account');
+            // Already-loaded account tab may not re-fire the event.
+            window.setTimeout(function() {
+                var $body = $('#account-tab-body');
+                if ($body.length && $body.attr('data-loaded') === '1') {
+                    afterAccountReady();
+                } else if ($('#account-tab .invoiceTrRow, #account-tab .drow_account_office, #account-tab .drow_account_ledger').length) {
+                    afterAccountReady();
+                }
+            }, 300);
+            return;
+        }
+
+        // Fallback: hard navigate via URL if SidebarTabs is unavailable.
+        var cfg = window.ClientDetailConfig || {};
+        var base = cfg.detailBaseUrl || '';
+        var clientId = cfg.encodeId || '';
+        var matterId = cfg.matterId || '';
+        if (base && clientId) {
+            var url = base + '/' + clientId + (matterId ? '/' + matterId : '') + '/account';
+            window.location.href = url;
+        }
+    }
+
+    function setupAccountingSourceActions() {
+        $(document).off('click.activityFeedAccounting', '.feed-item-accounting-trigger, .feed-item-accounting-action')
+            .on('click.activityFeedAccounting', '.feed-item-accounting-trigger', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            })
+            .on('click.activityFeedAccounting', '.feed-item-accounting-action', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $action = $(this);
+                var action = String($action.data('action') || '');
+                var $li = $action.closest('.feed-item');
+                var $menu = $action.closest('.dropdown-menu');
+                if ($menu.length && window.bootstrap && bootstrap.Dropdown) {
+                    var toggle = $menu.prev('.dropdown-toggle')[0] || $li.find('.feed-item-accounting-trigger')[0];
+                    if (toggle) {
+                        var inst = bootstrap.Dropdown.getInstance(toggle);
+                        if (inst) {
+                            inst.hide();
+                        }
+                    }
+                }
+                if (action === 'details') {
+                    expandFeedItem($li);
+                    return;
+                }
+                if (action === 'source') {
+                    openAccountingSourceFromFeedItem($li);
+                }
+            });
     }
 
     function stripHtmlToText(html) {
@@ -963,11 +1167,13 @@
             var bodyPlain = stripHtmlToText(messageHtml);
             var canConvert = /added a note|updated a note/i.test(String(subject));
             var isStage = activityType === 'stage';
+            var accountingSource = v.accounting_source && typeof v.accounting_source === 'object' ? v.accounting_source : null;
+            var hasAccountingSource = !!accountingSource;
             var isExpandable;
             if (isStage) {
                 isExpandable = stripHtmlToText(messageHtml) !== '';
             } else {
-                isExpandable = bodyPlain !== '' || !!(taskGroup && String(taskGroup).length) || !!(followupDate && String(followupDate).length) || canConvert;
+                isExpandable = bodyPlain !== '' || !!(taskGroup && String(taskGroup).length) || !!(followupDate && String(followupDate).length) || canConvert || hasAccountingSource;
             }
 
             var noExpandClass = isExpandable ? '' : ' feed-item--no-expand';
@@ -985,13 +1191,22 @@
             }
             var detailId = 'feed-detail-js-' + id;
             var headline = subjectOnly ? escapeHtml(subject) : (escapeHtml(fullName) + '  ' + escapeHtml(subject));
+            var accountingMenuHtml = hasAccountingSource ? buildAccountingSourceMenuHtml(id, accountingSource) : '';
+            var accountingDetailsHtml = hasAccountingSource ? buildAccountingDetailsHtml(accountingSource) : '';
 
             var summaryInner = '<span class="feed-item-summary-main">' +
                 '<span class="feed-item-summary-text">' + escapeHtml(summaryTitle) + '</span>' +
                 '<span class="feed-item-summary-meta">' + escapeHtml(summaryMeta) + '</span>' +
                 '</span>';
 
-            var liOpen = '<li class="feed-item ' + feedItemClass + ' activity' + activityTypeClass + noExpandClass + '" id="activity_' + id + '" data-created-at="' + escapeAttr(createdAtYmd) + '">' +
+            var sourceAttrs = hasAccountingSource
+                ? ' data-accounting-kind="' + escapeAttr(accountingSource.kind || '') + '"' +
+                  ' data-accounting-reference="' + escapeAttr(accountingSource.reference || '') + '"' +
+                  ' data-accounting-row-id="' + escapeAttr(accountingSource.row_id != null ? accountingSource.row_id : '') + '"' +
+                  ' data-accounting-receipt-id="' + escapeAttr(accountingSource.receipt_id != null ? accountingSource.receipt_id : '') + '"'
+                : '';
+
+            var liOpen = '<li class="feed-item ' + feedItemClass + ' activity' + activityTypeClass + noExpandClass + (hasAccountingSource ? ' feed-item--accounting-source' : '') + '" id="activity_' + id + '" data-created-at="' + escapeAttr(createdAtYmd) + '"' + sourceAttrs + '>' +
                 '<span class="feed-icon ' + (icon.cls || '') + '">' + icon.html + '</span>' +
                 '<div class="feed-content">';
 
@@ -1005,14 +1220,20 @@
                         '<div class="feed-item-body-chunk">' + (messageHtml || '') + '</div>' +
                         '<button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button></div></div>';
                 } else {
-                    liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
+                    liOpen += '<div class="feed-item-summary-row">' +
+                        '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
                         summaryInner +
                         '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span></button>' +
+                        accountingMenuHtml +
+                        '</div>' +
                         '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
                         '<p class="feed-item-full-headline mb-0"><strong>' + headline + '</strong>' +
                         (canConvert
                             ? '<i class="fa-solid fa-ellipsis-vertical convert-activity-to-note" style="margin-left: 5px; cursor: pointer;" title="Convert to Note" data-activity-id="' + id + '" data-activity-subject="' + escapeAttr(subject) + '" data-activity-description="' + escapeAttr(v.raw_description != null ? v.raw_description : '') + '" data-activity-created-by="' + escapeAttr(v.created_by) + '" data-activity-created-at="' + escapeAttr(v.raw_created_at != null ? v.raw_created_at : '') + '" data-client-id="' + escapeAttr((window.ClientDetailConfig && window.ClientDetailConfig.clientId) || '') + '"></i>'
                             : '') + '</p>';
+                    if (accountingDetailsHtml) {
+                        liOpen += accountingDetailsHtml;
+                    }
                     if (messageHtml) {
                         liOpen += '<div class="feed-item-body-outer" data-clampable="1">' +
                             '<div class="feed-item-body-chunk">' + messageHtml + '</div>' +
@@ -1027,8 +1248,11 @@
                     liOpen += '</div>';
                 }
             } else {
-                liOpen += '<div class="feed-item-summary feed-item-summary--static" role="none">' +
-                    summaryInner + '</div>';
+                liOpen += '<div class="feed-item-summary-row">' +
+                    '<div class="feed-item-summary feed-item-summary--static" role="none">' +
+                    summaryInner + '</div>' +
+                    accountingMenuHtml +
+                    '</div>';
             }
 
             liOpen += '</div></li>';
