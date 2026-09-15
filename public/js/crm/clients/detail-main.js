@@ -2234,14 +2234,10 @@ success: function(response) {
                 $row.find('input[type="text"]').not('[type="hidden"]').val('');
                 $row.find('textarea[name="description[]"]').val('');
                 $row.find('select').each(function() {
-                    if ($(this).hasClass('invoice-billing-basis')) {
-                        $(this).val('hourly');
-                    } else {
-                        this.selectedIndex = 0;
-                    }
+                    this.selectedIndex = 0;
                 });
-                $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', false);
-                $row.find('.withdraw_amount_invoice_per_row, .invoice-amount-ex-gst, .invoice-line-gst').val('');
+                $row.find('.withdraw_amount_invoice_per_row, .invoice-amount-ex-gst, .invoice-line-gst, .invoice-hours').val('');
+                $row.find('.invoice-billing-basis').val($row.closest('form').find('.invoice-billing-mode').val() || 'hourly');
             } else {
                 $row.remove();
             }
@@ -2273,7 +2269,7 @@ success: function(response) {
 
 
 
-        $(document).delegate('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .invoice-billing-basis, .payment_type_invoice_per_row', 'input change blur', function() {
+        $(document).delegate('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .payment_type_invoice_per_row', 'input change blur', function() {
             var $row = $(this).closest('tr');
             if (typeof window.recalcInvoiceTimesheetRow === 'function') {
                 window.recalcInvoiceTimesheetRow($row, { keepGst: false });

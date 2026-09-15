@@ -170,12 +170,14 @@
         $row.find('input[name="id[]"]').val('');
         $row.find('input[name="gst_included[]"]').val('Yes');
         $row.find('.withdraw_amount_invoice_per_row').val('');
-        $row.find('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .invoice-line-gst').val('').prop('readonly', false);
+        $row.find('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .invoice-line-gst').val('');
         $row.find('textarea[name="description[]"]').val('');
         $row.find('select[name="payment_type[]"]').prop('selectedIndex', 0);
         $row.find('select[name="fee_earner_id[]"]').prop('selectedIndex', 0);
         $row.find('select[name="fee_earner_role[]"]').prop('selectedIndex', 0);
-        $row.find('select[name="billing_basis[]"]').val('hourly');
+        var $form = $row.closest('form');
+        var mode = ($form.find('.invoice-billing-mode').val() || 'hourly');
+        $row.find('.invoice-billing-basis').val(mode);
         $row.find('input[name="trans_no[]"]').val('');
         $row.find('.unique_trans_no_invoice').val('');
     }
@@ -195,7 +197,11 @@
         if (!$row.find('.invoice-amount-ex-gst').length) {
             return;
         }
-        var basis = ($row.find('.invoice-billing-basis').val() || 'hourly').toLowerCase();
+        var $form = $row.closest('form');
+        var basis = ($form.find('.invoice-billing-mode').val()
+            || $row.find('.invoice-billing-basis').val()
+            || 'hourly').toLowerCase();
+        $row.find('.invoice-billing-basis').val(basis);
         var hoursRaw = $.trim($row.find('.invoice-hours').val() || '');
         var rateRaw = $.trim($row.find('.invoice-rate-ex-gst').val() || '');
         var $amount = $row.find('.invoice-amount-ex-gst');
@@ -204,8 +210,6 @@
         var hours = invoiceMoney(hoursRaw);
         var rate = invoiceMoney(rateRaw);
         var amountEx = invoiceMoney(amountRaw);
-
-        $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', basis === 'fixed');
 
         if (!invoiceLineHasAmountInputs($row)) {
             if (!options.keepGst) {
@@ -276,9 +280,9 @@
         $row.find('select[name="fee_earner_role[]"]').val(line.fee_earner_role || '');
 
         var basis = line.billing_basis
-            || $row.find('select[name="billing_basis[]"]').val()
+            || $row.closest('form').find('.invoice-billing-mode').val()
             || 'hourly';
-        $row.find('select[name="billing_basis[]"]').val(basis);
+        $row.find('.invoice-billing-basis').val(basis);
         $row.find('input[name="hours[]"]').val(line.hours != null && line.hours !== '' ? line.hours : '');
         $row.find('input[name="rate_ex_gst[]"]').val(invoiceMoneyField(line.rate_ex_gst));
 
@@ -347,7 +351,41 @@
                 initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'));
             }
         });
+        applyInvoiceBillingMode($tbody.closest('form'), invoiceModeFromLines(records));
+    }
+
+    function applyInvoiceBillingMode($form, mode) {
+        if (!$form || !$form.length) {
+            return;
+        }
+        mode = mode === 'fixed' ? 'fixed' : 'hourly';
+        $form.find('.invoice-billing-mode').val(mode);
+        $form.toggleClass('invoice-billing-mode-fixed', mode === 'fixed');
+        $form.toggleClass('invoice-billing-mode-hourly', mode === 'hourly');
+        $form.find('.invoice-mode-btn').each(function() {
+            var isActive = $(this).data('invoice-mode') === mode;
+            $(this).toggleClass('btn-primary', isActive)
+                .toggleClass('btn-outline-secondary', !isActive);
+        });
+        $form.find('.invoice-billing-basis').val(mode);
+        if (mode === 'fixed') {
+            $form.find('.invoice-hours').val('');
+        }
+        $form.find('.productitem_invoice tr').each(function() {
+            recalcInvoiceTimesheetRow($(this), { keepGst: true });
+        });
         grandtotalAccountTab_invoice();
+    }
+
+    function invoiceModeFromLines(records) {
+        var hourly = false;
+        $.each(records || [], function(_, line) {
+            if ((line.billing_basis || '') === 'hourly' || (parseFloat(line.hours) > 0)) {
+                hourly = true;
+                return false;
+            }
+        });
+        return hourly ? 'hourly' : 'fixed';
     }
 
     window.listOfInvoice = listOfInvoice;
@@ -358,6 +396,12 @@
     window.populateInvoiceLineRow = populateInvoiceLineRow;
     window.cloneInvoiceLineRow = cloneInvoiceLineRow;
     window.renderInvoiceEditLines = renderInvoiceEditLines;
+    window.applyInvoiceBillingMode = applyInvoiceBillingMode;
+
+    $(document).on('click', '.invoice-mode-btn', function(e) {
+        e.preventDefault();
+        applyInvoiceBillingMode($(this).closest('form'), $(this).data('invoice-mode'));
+    });
 
     // createapplicationnewinvoice handler REMOVED - Create Invoice from Schedule flow unused
     // (payment schedule list removed; no /create-invoice route)

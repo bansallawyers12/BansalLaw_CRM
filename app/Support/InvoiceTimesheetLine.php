@@ -84,10 +84,18 @@ class InvoiceTimesheetLine
         $lineGst = self::nullableFloat($requestData['line_gst'][$index] ?? null);
         $withdraw = self::nullableFloat($requestData['withdraw_amount'][$index] ?? null);
         $gstIncluded = trim((string) ($requestData['gst_included'][$index] ?? ''));
+        $formMode = strtolower(trim((string) ($requestData['invoice_billing_mode'] ?? '')));
         $basis = strtolower(trim((string) ($requestData['billing_basis'][$index] ?? '')));
+        if (in_array($formMode, ['hourly', 'fixed'], true)) {
+            $basis = $formMode;
+        }
 
         if (! in_array($basis, ['hourly', 'fixed'], true)) {
             $basis = ($hours !== null && $hours > 0 && $rate !== null && $rate > 0) ? 'hourly' : 'fixed';
+        }
+
+        if ($basis === 'fixed') {
+            $hours = null;
         }
 
         if ($basis === 'hourly' && $hours !== null && $rate !== null) {
@@ -162,6 +170,25 @@ class InvoiceTimesheetLine
             || abs((float) ($timesheet['line_gst'] ?? 0)) > 0.00001;
 
         return $description === '' && $paymentType === '' && ! $hasHours && ! $hasAmount;
+    }
+
+    /**
+     * @param  iterable<int, object>  $lines
+     */
+    public static function showsHoursColumn(iterable $lines): bool
+    {
+        foreach ($lines as $line) {
+            $basis = strtolower(trim((string) ($line->billing_basis ?? '')));
+            if ($basis === 'hourly') {
+                return true;
+            }
+            $hours = $line->hours ?? null;
+            if ($hours !== null && $hours !== '' && (float) $hours > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function displayFeeEarner(object $line): string

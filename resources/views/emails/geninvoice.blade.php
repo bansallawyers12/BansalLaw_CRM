@@ -136,14 +136,8 @@
             font-size: 12px;
             color: #1f2937;
         }
-        .ledger-table thead th:last-child,
-        .ledger-table tbody td:last-child,
-        .ledger-table thead th:nth-child(4),
-        .ledger-table tbody td:nth-child(4),
-        .ledger-table thead th:nth-child(5),
-        .ledger-table tbody td:nth-child(5),
-        .ledger-table thead th:nth-child(6),
-        .ledger-table tbody td:nth-child(6) {
+        .ledger-table thead th.invoice-num-col,
+        .ledger-table tbody td.invoice-num-col {
             text-align: right;
         }
         .totals-section {
@@ -369,6 +363,11 @@
             <strong>Matter:</strong> {{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}
         </div>
 
+        @php
+            $invoiceShowHours = \App\Support\InvoiceTimesheetLine::showsHoursColumn(
+                collect($invoice_charge_groups ?? [])->flatMap(fn ($group) => $group['lines'] ?? [])
+            );
+        @endphp
         @foreach(($invoice_charge_groups ?? []) as $chargeGroup)
             @if(($chargeGroup['count'] ?? 0) > 0)
                 <h4 class="section-title">{{ $chargeGroup['title'] }}</h4>
@@ -379,10 +378,12 @@
                                 <th>Date</th>
                                 <th style="width:32%">Description</th>
                                 <th>Fee earner</th>
-                                <th>Hrs</th>
-                                <th style="text-align:right">Rate (ex GST)</th>
-                                <th style="text-align:right">Amount (ex GST)</th>
-                                <th style="text-align:right">GST</th>
+                                @if($invoiceShowHours)
+                                    <th class="invoice-num-col">Hrs</th>
+                                @endif
+                                <th class="invoice-num-col">Rate (ex GST)</th>
+                                <th class="invoice-num-col">Amount (ex GST)</th>
+                                <th class="invoice-num-col">GST</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -395,10 +396,12 @@
                                     <td>{{ $line->trans_date ?? '' }}</td>
                                     <td>{!! nl2br(e($line->description ?? '')) !!}</td>
                                     <td>{{ $feeEarnerLabel !== '' ? $feeEarnerLabel : '—' }}</td>
-                                    <td>{{ $lineAmounts['hrs'] }}</td>
-                                    <td style="text-align:right;">{{ $lineAmounts['rate'] === '—' ? '—' : '$'.$lineAmounts['rate'] }}</td>
-                                    <td style="text-align:right;">${{ number_format($lineAmounts['amount_ex_gst'], 2) }}</td>
-                                    <td style="text-align:right;">${{ number_format($lineAmounts['line_gst'], 2) }}</td>
+                                    @if($invoiceShowHours)
+                                        <td class="invoice-num-col">{{ $lineAmounts['hrs'] }}</td>
+                                    @endif
+                                    <td class="invoice-num-col">{{ $lineAmounts['rate'] === '—' ? '—' : '$'.$lineAmounts['rate'] }}</td>
+                                    <td class="invoice-num-col">${{ number_format($lineAmounts['amount_ex_gst'], 2) }}</td>
+                                    <td class="invoice-num-col">${{ number_format($lineAmounts['line_gst'], 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

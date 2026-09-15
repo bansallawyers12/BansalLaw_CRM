@@ -88,6 +88,9 @@
                 defaultDate: new Date()
             });
         }
+        if (typeof window.applyInvoiceBillingMode === 'function') {
+            window.applyInvoiceBillingMode($('#invoice_receipt_form'), 'hourly');
+        }
     }
 
     function getAccountCostsDisclosure() {
@@ -186,7 +189,7 @@
             $row.find('input[name="entry_date[]"]').val(today);
             $row.find('select[name="payment_type[]"]').val(line.paymentType);
             $row.find('textarea[name="description[]"]').val(line.description);
-            $row.find('select[name="billing_basis[]"]').val(line.basis || 'fixed');
+            $row.find('.invoice-billing-basis').val(line.basis || 'fixed');
             $row.find('input[name="amount_ex_gst[]"]').val(parseFloat(line.amountEx).toFixed(2));
             $row.find('input[name="line_gst[]"]').val(parseFloat(line.gst || 0).toFixed(2));
             if (typeof window.recalcInvoiceTimesheetRow === 'function') {
@@ -194,7 +197,9 @@
             }
         });
 
-        if (typeof window.grandtotalAccountTab_invoice === 'function') {
+        if (typeof window.applyInvoiceBillingMode === 'function') {
+            window.applyInvoiceBillingMode($('#invoice_receipt_form'), 'fixed');
+        } else if (typeof window.grandtotalAccountTab_invoice === 'function') {
             window.grandtotalAccountTab_invoice();
         }
 

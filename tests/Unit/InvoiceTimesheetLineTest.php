@@ -80,6 +80,32 @@ class InvoiceTimesheetLineTest extends TestCase
         $this->assertTrue(InvoiceTimesheetLine::isBlankRequestRow($request, 0, $timesheet));
     }
 
+    public function test_form_level_fixed_mode_clears_hours(): void
+    {
+        $line = InvoiceTimesheetLine::fromRequest([
+            'invoice_billing_mode' => 'fixed',
+            'hours' => ['1.2'],
+            'rate_ex_gst' => ['500.00'],
+            'amount_ex_gst' => ['1500.00'],
+            'line_gst' => ['150.00'],
+            'payment_type' => ['Professional Fees'],
+        ], 0);
+
+        $this->assertSame('fixed', $line['billing_basis']);
+        $this->assertNull($line['hours']);
+        $this->assertSame(1500.0, $line['amount_ex_gst']);
+    }
+
+    public function test_pdf_hides_hours_for_fixed_only_invoices(): void
+    {
+        $this->assertFalse(InvoiceTimesheetLine::showsHoursColumn([
+            (object) ['billing_basis' => 'fixed', 'hours' => null],
+        ]));
+        $this->assertTrue(InvoiceTimesheetLine::showsHoursColumn([
+            (object) ['billing_basis' => 'hourly', 'hours' => 0.8],
+        ]));
+    }
+
     public function test_pdf_totals_sum_gst_column(): void
     {
         $lines = [

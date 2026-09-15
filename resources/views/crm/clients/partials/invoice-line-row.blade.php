@@ -7,6 +7,7 @@
         <input name="id[]" type="hidden" value="" />
         <input name="gst_included[]" type="hidden" class="invoice-gst-included" value="Yes" />
         <input name="withdraw_amount[]" type="hidden" class="withdraw_amount_invoice_per_row" value="" />
+        <input name="billing_basis[]" type="hidden" class="invoice-billing-basis" value="hourly" />
         <input data-valid="required" class="form-control invoice-work-date" name="trans_date[]" type="text" value="" placeholder="28 May 2026" title="Date or date range shown on the tax invoice" />
     </td>
     <td>
@@ -45,13 +46,7 @@
             @endforeach
         </select>
     </td>
-    <td>
-        <select class="form-control invoice-billing-basis" name="billing_basis[]">
-            <option value="hourly">Hourly</option>
-            <option value="fixed">Fixed</option>
-        </select>
-    </td>
-    <td>
+    <td class="invoice-hours-col">
         <input class="form-control invoice-hours" name="hours[]" type="text" inputmode="decimal" placeholder="1.2" />
     </td>
     <td>

@@ -189,9 +189,18 @@
     min-width: 120px;
 }
 
-.invoice-timesheet-totals {
-    max-width: 420px;
-    margin-left: auto;
+.invoice-billing-mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.invoice-billing-mode-label {
+    font-weight: 600;
+    color: #34395e;
+}
+form.invoice-billing-mode-fixed .invoice-hours-col {
+    display: none;
 }
 </style>
 
@@ -389,7 +398,7 @@
 				</form>
 
 				<!-- Tax Invoice Form -->
-				<form class="form-type" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
+				<form class="form-type invoice-billing-mode-hourly" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
@@ -417,6 +426,7 @@
                                 <input type="hidden" name="invoice_no" class="invoice_no" value="">
                             </div>-->
 							<div class="form-group">
+                                @include('crm.clients.partials.invoice-billing-mode-toggle')
                                 <div class="invoice-timesheet-scroll">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
@@ -857,7 +867,7 @@
 			</div>
 			<div class="modal-body">
                 <input type="hidden"  id="invoice_top_value_db" value="">
-				<form method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="create_invoice_receipt" autocomplete="off" id="create_invoice_receipt" >
+				<form class="invoice-billing-mode-hourly" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="create_invoice_receipt" autocomplete="off" id="create_invoice_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
@@ -896,6 +906,7 @@
                                 <input type="hidden" name="invoice_no" class="invoice_no" value="">
                             </div>
 							<div class="form-group">
+                                @include('crm.clients.partials.invoice-billing-mode-toggle')
                                 <div class="invoice-timesheet-scroll">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>

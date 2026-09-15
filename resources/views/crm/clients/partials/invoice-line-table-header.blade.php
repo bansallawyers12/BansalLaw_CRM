@@ -11,8 +11,7 @@
     <th>Description</th>
     <th title="Staff member who did the work">Fee earner</th>
     <th title="Role billed on this line (e.g. Solicitor, Paralegal)">Role</th>
-    <th title="Hourly or fixed fee">Basis</th>
-    <th>Hrs</th>
+    <th class="invoice-hours-col">Hrs</th>
     <th>Rate (ex GST)</th>
     <th>Amount (ex GST)</th>
     <th>GST</th>
