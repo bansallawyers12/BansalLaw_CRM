@@ -26,6 +26,13 @@ class AccountAllInvoiceReceipt extends Model
         'invoice_no',
         'save_type',
         'invoice_status',
+        'billing_basis',
+        'hours',
+        'rate_ex_gst',
+        'amount_ex_gst',
+        'line_gst',
+        'fee_earner_id',
+        'fee_earner_role',
     ];
 
     protected $casts = [
@@ -44,6 +51,14 @@ class AccountAllInvoiceReceipt extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'user_id');
+    }
+
+    /**
+     * Staff member billed on this timesheet line (optional).
+     */
+    public function feeEarner(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'fee_earner_id');
     }
 
     /**

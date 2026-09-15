@@ -34,6 +34,9 @@ sample env need fix.txt
 # Local MCP config may contain API keys
 .cursor/mcp.json
 
+# Graphify knowledge graph output (generated locally)
+/graphify-out/
+
 pdftk_server_installer.exe
 
 *.backup

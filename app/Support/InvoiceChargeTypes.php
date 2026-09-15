@@ -99,6 +99,7 @@ class InvoiceChargeTypes
 
         foreach (self::groups() as $key => $group) {
             $query = \App\Models\AccountAllInvoiceReceipt::query()
+                ->with('feeEarner')
                 ->where('receipt_type', 3)
                 ->where('receipt_id', $receiptId)
                 ->whereIn('payment_type', $group['types']);

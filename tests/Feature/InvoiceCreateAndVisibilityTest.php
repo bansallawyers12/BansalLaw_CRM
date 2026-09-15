@@ -89,11 +89,96 @@ class InvoiceCreateAndVisibilityTest extends TestCase
         $this->assertNotNull($parent);
         $this->assertSame($matterId, (int) $parent->client_matter_id);
 
+        $line = DB::table('account_all_invoice_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertNotNull($line);
+        $this->assertEqualsWithDelta(500.0, (float) $line->amount_ex_gst, 0.01);
+        $this->assertEqualsWithDelta(50.0, (float) $line->line_gst, 0.01);
+        $this->assertEqualsWithDelta(550.0, (float) $line->withdraw_amount, 0.01);
+
         $activityCount = DB::table('activities_logs')
             ->where('client_id', $client->id)
             ->where('subject', 'like', '%'.$invoiceNo.'%')
             ->count();
         $this->assertSame(1, $activityCount);
+    }
+
+    #[Test]
+    public function saveinvoicereport_stores_timesheet_hours_rate_role_and_gst(): void
+    {
+        $staff = Staff::create([
+            'first_name' => 'Inv',
+            'last_name' => 'Timesheet',
+            'email' => 'inv_ts_'.uniqid().'@bansallawyers.com.au',
+            'password' => bcrypt('password123'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $client = Admin::create([
+            'first_name' => 'Timesheet',
+            'last_name' => 'Client',
+            'email' => 'inv_ts_client_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+            'client_id' => 'TEST'.rand(100000, 999999),
+        ]);
+
+        DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'MERITS_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 1,
+            'user_id' => $staff->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->postJson('/clients/saveinvoicereport', [
+            'client_id' => $client->id,
+            'receipt_type' => 3,
+            'function_type' => 'add',
+            'save_type' => 'draft',
+            'trans_date' => ['28 May 2026'],
+            'entry_date' => ['14/09/2026'],
+            'payment_type' => ['Professional Fees'],
+            'description' => ['Finalise and issue LOD'],
+            'billing_basis' => ['hourly'],
+            'hours' => ['0.8'],
+            'rate_ex_gst' => ['500.00'],
+            'fee_earner_id' => [$staff->id],
+            'fee_earner_role' => ['Solicitor'],
+        ]);
+
+        $response->assertOk()->assertJson(['status' => true]);
+        $invoiceNo = $response->json('invoice_no');
+
+        $line = DB::table('account_all_invoice_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertNotNull($line);
+        $this->assertSame('hourly', $line->billing_basis);
+        $this->assertEqualsWithDelta(0.8, (float) $line->hours, 0.001);
+        $this->assertEqualsWithDelta(500.0, (float) $line->rate_ex_gst, 0.01);
+        $this->assertEqualsWithDelta(400.0, (float) $line->amount_ex_gst, 0.01);
+        $this->assertEqualsWithDelta(40.0, (float) $line->line_gst, 0.01);
+        $this->assertEqualsWithDelta(440.0, (float) $line->withdraw_amount, 0.01);
+        $this->assertSame((int) $staff->id, (int) $line->fee_earner_id);
+        $this->assertSame('Solicitor', $line->fee_earner_role);
+
+        $parent = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertEqualsWithDelta(440.0, (float) $parent->withdraw_amount, 0.01);
     }
 
     #[Test]

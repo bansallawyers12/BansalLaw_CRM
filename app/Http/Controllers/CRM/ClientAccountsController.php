@@ -19,6 +19,7 @@ use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Support\InvoiceChargeTypes;
+use App\Support\InvoiceTimesheetLine;
 use App\Services\ClientAccountTabService;
 use App\Services\FinancialStatsService;
 use Illuminate\Support\Facades\Auth;
@@ -1160,6 +1161,46 @@ class ClientAccountsController extends Controller
         return (int) (Auth::guard('admin')->id() ?? Auth::id() ?? 0);
     }
 
+    /**
+     * Timesheet columns live only on invoice line rows, not the parent ledger row.
+     *
+     * @param  array<string, mixed>  $requestData
+     * @return array<string, mixed>
+     */
+    private function invoiceTimesheetLineFields(array $requestData, int $index): array
+    {
+        $line = InvoiceTimesheetLine::fromRequest($requestData, $index);
+
+        if (! Schema::hasColumn('account_all_invoice_receipts', 'amount_ex_gst')) {
+            return [
+                'withdraw_amount' => $line['withdraw_amount'],
+                'gst_included' => $line['gst_included'],
+            ];
+        }
+
+        return $line;
+    }
+
+    /**
+     * Parent account_client_receipts row must not receive line-only timesheet columns.
+     *
+     * @param  array<string, mixed>  $lineData
+     * @return array<string, mixed>
+     */
+    private function invoiceParentLedgerFields(array $lineData): array
+    {
+        return array_diff_key($lineData, array_flip([
+            'id',
+            'billing_basis',
+            'hours',
+            'rate_ex_gst',
+            'amount_ex_gst',
+            'line_gst',
+            'fee_earner_id',
+            'fee_earner_role',
+        ]));
+    }
+
     private function logInvoiceAddedActivity(int $clientId, string $invoiceNo): void
     {
         $objs = new ActivitiesLog;
@@ -1243,9 +1284,10 @@ class ClientAccountsController extends Controller
                 $now = date('Y-m-d H:i:s');
 
                 for ($i = 0; $i < count($requestData['trans_date']); $i++) {
-                    $withdrawAmount = floatval($requestData['withdraw_amount'][$i]);
+                    $timesheet = $this->invoiceTimesheetLineFields($requestData, $i);
+                    $withdrawAmount = (float) $timesheet['withdraw_amount'];
 
-                    $lineId = AccountAllInvoiceReceipt::insertGetId([
+                    $lineId = AccountAllInvoiceReceipt::insertGetId(array_merge([
                         'user_id' => $staffId,
                         'client_id' => $clientId,
                         'client_matter_id' => $matterId,
@@ -1253,24 +1295,22 @@ class ClientAccountsController extends Controller
                         'receipt_type' => $requestData['receipt_type'],
                         'trans_date' => $requestData['trans_date'][$i],
                         'entry_date' => $requestData['entry_date'][$i],
-                        'gst_included' => $requestData['gst_included'][$i],
                         'payment_type' => $requestData['payment_type'][$i],
                         'trans_no' => $invoice_no,
                         'description' => $requestData['description'][$i],
-                        'withdraw_amount' => $withdrawAmount,
                         'invoice_no' => $invoice_no,
                         'save_type' => $requestData['save_type'],
                         'invoice_status' => $invoice_status,
                         'created_at' => $now,
                         'updated_at' => $now,
-                    ]);
+                    ], $timesheet));
 
                     $finalArr[$i] = [
                         'id' => $lineId,
                         'trans_date' => $requestData['trans_date'][$i],
                         'entry_date' => $requestData['entry_date'][$i],
                         'trans_no' => $invoice_no,
-                        'gst_included' => $requestData['gst_included'][$i],
+                        'gst_included' => $timesheet['gst_included'],
                         'payment_type' => $requestData['payment_type'][$i],
                         'description' => $requestData['description'][$i],
                         'withdraw_amount' => $withdrawAmount,
@@ -1297,7 +1337,7 @@ class ClientAccountsController extends Controller
                     'receipt_type' => $requestData['receipt_type'],
                     'trans_date' => $requestData['trans_date'][0],
                     'entry_date' => $requestData['entry_date'][0],
-                    'gst_included' => $requestData['gst_included'][0],
+                    'gst_included' => $finalArr[0]['gst_included'] ?? 'No',
                     'payment_type' => $requestData['payment_type'][0],
                     'trans_no' => $invoice_no,
                     'description' => $requestData['description'][0],
@@ -1444,9 +1484,10 @@ class ClientAccountsController extends Controller
                     if ($requestData['gst_included'][$index] == 'Yes') {
                         $withdrawAmount = $unitPrice * 1.10; // Add 10% GST
                     }*/
-                    $withdrawAmount = floatval($requestData['withdraw_amount'][$index]);
-   
-                    $entryData = [
+                    $timesheet = $this->invoiceTimesheetLineFields($requestData, $index);
+                    $withdrawAmount = (float) $timesheet['withdraw_amount'];
+
+                    $entryData = array_merge([
                         'user_id' => $invoiceEditActor instanceof Staff ? $invoiceEditActor->id : null,
                         'client_id' => $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
@@ -1454,16 +1495,13 @@ class ClientAccountsController extends Controller
                         'receipt_id' => $requestData['receipt_id'],
                         'trans_date' => $transDate,
                         'entry_date' => $requestData['entry_date'][$index],
-                        'gst_included' => $requestData['gst_included'][$index],
                         'payment_type' => $requestData['payment_type'][$index],
                         'trans_no' => $invoice_no,//$requestData['invoice_no'],
                         'description' => $requestData['description'][$index],
-                        'withdraw_amount' => $withdrawAmount,
-                        //'unit_price' => $unitPrice,
                         'invoice_no' => $invoice_no, //$requestData['invoice_no'],
                         'save_type' => $requestData['save_type'],
                         'updated_at' => $currentTimestamp, // Add updated_at timestamp
-                    ];
+                    ], $timesheet);
                     // Adjust total based on payment type using the GST-adjusted withdraw amount
                     if ($requestData['payment_type'][$index] == 'Discount') {
                         $totalWithdrawAmount -= $withdrawAmount;
@@ -1494,6 +1532,7 @@ class ClientAccountsController extends Controller
    
                 // Step 3: Update or Insert into account_client_receipts with total withdraw_amount and last entry data
                 if ($lastEntryData) {
+                    $lastEntryData = $this->invoiceParentLedgerFields($lastEntryData);
                     $lastEntryData['withdraw_amount'] = $totalWithdrawAmount;
                     $lastEntryData['balance_amount'] = $totalWithdrawAmount;
                     //$lastEntryData['unit_price'] = $totalWithdrawAmount; // Total unit price not applicable here, using total withdraw amount
@@ -3251,30 +3290,15 @@ class ClientAccountsController extends Controller
       // ============= PDF DATA PREPARATION =============
 
       $invoice_charge_groups = InvoiceChargeTypes::loadGroupedLines((int) $id, (int) $queryClientId);
-      //Calculate Gross Amount
-      $total_Gross_Amount = AccountAllInvoiceReceipt::where('client_id', $queryClientId)
+      $invoiceLinesForTotals = AccountAllInvoiceReceipt::query()
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->where('receipt_id', $id)
-          ->sum(DB::raw("
-           CASE
-               WHEN payment_type = 'Discount' AND gst_included = 'Yes' THEN -(withdraw_amount - (withdraw_amount / 11))
-               WHEN payment_type = 'Discount' AND gst_included = 'No' THEN -withdraw_amount
-               WHEN gst_included = 'Yes' THEN withdraw_amount - (withdraw_amount / 11)
-               ELSE withdraw_amount
-           END
-          "));
-
-      //Total Invoice Amount
-      $total_Invoice_Amount = AccountAllInvoiceReceipt::where('client_id', $queryClientId)
-          ->where('receipt_type', 3)
-          ->where('receipt_id', $id)
-          ->sum(DB::raw("CASE
-           WHEN payment_type = 'Discount' THEN -withdraw_amount
-           ELSE withdraw_amount
-          END"));
-
-      //Calculate GST
-      $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
+          ->get();
+      $invoicePdfTotals = InvoiceTimesheetLine::pdfTotals($invoiceLinesForTotals);
+      $total_Gross_Amount = $invoicePdfTotals['ex_gst'];
+      $total_Invoice_Amount = $invoicePdfTotals['incl_gst'];
+      $total_GST_amount = $invoicePdfTotals['gst'];
 
       // FIX: Handle NULL values for amounts (prevent decimal casting errors in Blade template)
       if ($total_Gross_Amount === null) {

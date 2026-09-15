@@ -372,16 +372,29 @@
                     <table class="ledger-table">
                         <thead>
                             <tr>
-                                <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
+                                <th>Date</th>
+                                <th style="width:32%">Description</th>
+                                <th>Fee earner</th>
+                                <th>Hrs</th>
+                                <th style="text-align:right">Rate (ex GST)</th>
+                                <th style="text-align:right">Amount (ex GST)</th>
+                                <th style="text-align:right">GST</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($chargeGroup['lines'] as $line)
+                                @php
+                                    $lineAmounts = \App\Support\InvoiceTimesheetLine::displayAmounts($line);
+                                    $feeEarnerLabel = \App\Support\InvoiceTimesheetLine::displayFeeEarner($line);
+                                @endphp
                                 <tr>
+                                    <td>{{ $line->trans_date ?? '' }}</td>
                                     <td>{!! nl2br(e($line->description ?? '')) !!}</td>
-                                    <td>{{@$line->trans_date}}</td>
-                                    <td>{{ isset($line->gst_included) && $line->gst_included !== '' ? $line->gst_included : 'N/A' }}</td>
-                                    <td style="text-align:right;">${{ number_format(floatval($line->withdraw_amount ?? 0), 2) }}</td>
+                                    <td>{{ $feeEarnerLabel !== '' ? $feeEarnerLabel : '—' }}</td>
+                                    <td>{{ $lineAmounts['hrs'] }}</td>
+                                    <td style="text-align:right;">{{ $lineAmounts['rate'] === '—' ? '—' : '$'.$lineAmounts['rate'] }}</td>
+                                    <td style="text-align:right;">${{ number_format($lineAmounts['amount_ex_gst'], 2) }}</td>
+                                    <td style="text-align:right;">${{ number_format($lineAmounts['line_gst'], 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -422,7 +435,7 @@
                 }
             @endphp
             <div class="totals-row">
-                <span class="totals-label">Gross Amount:</span>
+                <span class="totals-label">Subtotal (ex GST):</span>
                 <span class="totals-value">${{ number_format($displayGross, 2) }}</span>
             </div>
             <div class="totals-row">
@@ -430,7 +443,7 @@
                 <span class="totals-value">${{ number_format($displayGST, 2) }}</span>
             </div>
             <div class="totals-row">
-                <span class="totals-label">Total Invoice Amount:</span>
+                <span class="totals-label">Total due (incl GST):</span>
                 <span class="totals-value">${{ number_format($displayInvoice, 2) }}</span>
             </div>
             <div class="totals-row">

@@ -128,9 +128,182 @@
             });
     }
 
+    function normalizeInvoicePaymentType(paymentType) {
+        var map = {
+            'Professional Fee': 'Professional Fees',
+            'Department Charges': 'Government Fees',
+            'Other Cost': 'Other Costs',
+            'Disbursement': 'Disbursements'
+        };
+        var value = (paymentType || '').trim();
+        return map[value] || value;
+    }
+
+    function invoiceMoney(value) {
+        var n = parseFloat(value);
+        return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+    }
+
+    function invoiceMoneyField(value) {
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
+        var n = invoiceMoney(value);
+        return n.toFixed(2);
+    }
+
+    function invoiceRowPaymentSign($row) {
+        return $row.find('select[name="payment_type[]"]').val() === 'Discount' ? -1 : 1;
+    }
+
+    function recalcInvoiceTimesheetRow($row, options) {
+        options = options || {};
+        if (!$row.find('.invoice-amount-ex-gst').length) {
+            return;
+        }
+        var basis = ($row.find('.invoice-billing-basis').val() || 'hourly').toLowerCase();
+        var hours = invoiceMoney($row.find('.invoice-hours').val());
+        var rate = invoiceMoney($row.find('.invoice-rate-ex-gst').val());
+        var $amount = $row.find('.invoice-amount-ex-gst');
+        var $gst = $row.find('.invoice-line-gst');
+        var amountEx = invoiceMoney($amount.val());
+
+        if (basis === 'hourly' && $row.find('.invoice-hours').val() !== '' && $row.find('.invoice-rate-ex-gst').val() !== '') {
+            amountEx = invoiceMoney(hours * rate);
+            $amount.val(amountEx.toFixed(2));
+        }
+
+        if (!options.keepGst) {
+            $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
+        }
+
+        var gst = invoiceMoney($gst.val());
+        var incl = invoiceMoney(amountEx + gst);
+        $row.find('.withdraw_amount_invoice_per_row').val(incl.toFixed(2));
+        $row.find('.invoice-gst-included').val(gst > 0.00001 ? 'Yes' : 'No');
+        $row.find('.invoice-hours, .invoice-rate-ex-gst').prop('readonly', basis === 'fixed');
+    }
+
+    function grandtotalAccountTab_invoice() {
+        var totalEx = 0;
+        var totalGst = 0;
+        var totalIncl = 0;
+        var $visibleTables = $('.productitem_invoice').filter(function() {
+            return $(this).closest('form').is(':visible');
+        });
+        if (!$visibleTables.length) {
+            $visibleTables = $('.productitem_invoice');
+        }
+
+        $visibleTables.find('tr:visible').each(function() {
+            var $row = $(this);
+            var sign = invoiceRowPaymentSign($row);
+            if ($row.find('.invoice-amount-ex-gst').length) {
+                recalcInvoiceTimesheetRow($row, { keepGst: true });
+                totalEx += sign * invoiceMoney($row.find('.invoice-amount-ex-gst').val());
+                totalGst += sign * invoiceMoney($row.find('.invoice-line-gst').val());
+                totalIncl += sign * invoiceMoney($row.find('.withdraw_amount_invoice_per_row').val());
+                return;
+            }
+            var withdrawVal = $row.find('.withdraw_amount_invoice_per_row').val();
+            if (withdrawVal) {
+                totalIncl += sign * invoiceMoney(String(withdrawVal).replace(/[^0-9.-]+/g, ''));
+            }
+        });
+
+        var $form = $visibleTables.closest('form').first();
+        var $scope = $form.length ? $form : $(document);
+        $scope.find('.total_invoice_ex_gst').text('$' + totalEx.toFixed(2));
+        $scope.find('.total_invoice_gst').text('$' + totalGst.toFixed(2));
+        $scope.find('.total_withdraw_amount_all_rows_invoice').html('$' + totalIncl.toFixed(2));
+    }
+
+    function populateInvoiceLineRow($row, line) {
+        line = line || {};
+        $row.find('input[name="id[]"]').val(line.id || '');
+        $row.find('input[name="trans_date[]"]').val(line.trans_date || '');
+        $row.find('input[name="entry_date[]"]').val(line.entry_date || '');
+        $row.find('select[name="payment_type[]"]').val(normalizeInvoicePaymentType(line.payment_type));
+        $row.find('[name="description[]"]').val(line.description || '');
+        $row.find('select[name="fee_earner_id[]"]').val(line.fee_earner_id || '');
+        $row.find('select[name="fee_earner_role[]"]').val(line.fee_earner_role || '');
+
+        var basis = line.billing_basis
+            || $row.find('select[name="billing_basis[]"]').val()
+            || 'hourly';
+        $row.find('select[name="billing_basis[]"]').val(basis);
+        $row.find('input[name="hours[]"]').val(line.hours != null && line.hours !== '' ? line.hours : '');
+        $row.find('input[name="rate_ex_gst[]"]').val(invoiceMoneyField(line.rate_ex_gst));
+
+        var amountEx = line.amount_ex_gst;
+        var lineGst = line.line_gst;
+        var withdraw = invoiceMoney(line.withdraw_amount);
+        if (amountEx === null || amountEx === undefined || amountEx === '') {
+            if (line.gst_included === 'Yes' && withdraw) {
+                lineGst = invoiceMoney(withdraw / 11);
+                amountEx = invoiceMoney(withdraw - lineGst);
+            } else {
+                amountEx = withdraw || 0;
+                lineGst = lineGst || 0;
+            }
+        }
+
+        $row.find('.invoice-amount-ex-gst').val(invoiceMoneyField(amountEx));
+        $row.find('.invoice-line-gst').val(invoiceMoneyField(lineGst));
+        recalcInvoiceTimesheetRow($row, { keepGst: true });
+    }
+
+    function cloneInvoiceLineRow($tbody, line) {
+        var html = typeof window.captureInvoiceLineRowTemplate === 'function'
+            ? window.captureInvoiceLineRowTemplate()
+            : '';
+        if (!html && $tbody && $tbody.length) {
+            html = $tbody.find('tr').first().prop('outerHTML');
+        }
+        if (!html) {
+            return $();
+        }
+        var $row = $(html);
+        $row.find('.report_entry_date_fields_invoice').each(function() {
+            if (this._flatpickr && typeof this._flatpickr.destroy === 'function') {
+                this._flatpickr.destroy();
+            }
+            $(this).removeData('flatpickr');
+        });
+        if ($tbody && $tbody.find('tr').length) {
+            $row.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+        }
+        $row.find('input[name="id[]"]').val('');
+        populateInvoiceLineRow($row, line || {});
+        return $row;
+    }
+
+    function renderInvoiceEditLines($tbody, records) {
+        if (!$tbody.length) {
+            return;
+        }
+        $tbody.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
+        $.each(records || [], function(index, line) {
+            var $row = cloneInvoiceLineRow($tbody, line);
+            if (index < 1) {
+                $row.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice');
+            }
+            $tbody.append($row);
+            if (typeof initFlatpickrForClass === 'function') {
+                initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'));
+            }
+        });
+        grandtotalAccountTab_invoice();
+    }
+
     window.listOfInvoice = listOfInvoice;
     window.loadInvoicesForQuickReceipt = loadInvoicesForQuickReceipt;
     window.populateQuickReceiptOfficeForm = populateQuickReceiptOfficeForm;
+    window.recalcInvoiceTimesheetRow = recalcInvoiceTimesheetRow;
+    window.grandtotalAccountTab_invoice = grandtotalAccountTab_invoice;
+    window.populateInvoiceLineRow = populateInvoiceLineRow;
+    window.cloneInvoiceLineRow = cloneInvoiceLineRow;
+    window.renderInvoiceEditLines = renderInvoiceEditLines;
 
     // createapplicationnewinvoice handler REMOVED - Create Invoice from Schedule flow unused
     // (payment schedule list removed; no /create-invoice route)

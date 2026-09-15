@@ -73,13 +73,7 @@
 
         var today = formatInvoiceDateToday();
         var $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
-        $firstRow.find('input[name="trans_date[]"]').each(function() {
-            $(this).val(today);
-            var fp = this._flatpickr;
-            if (fp) {
-                fp.setDate(today, false, 'd/m/Y');
-            }
-        });
+        $firstRow.find('input[name="trans_date[]"]').val(today);
         $firstRow.find('input[name="entry_date[]"]').each(function() {
             $(this).val(today);
             var fp = this._flatpickr;
@@ -134,27 +128,30 @@
             }
             feesInclGst = feesExGst + gst;
         }
-        if (feesInclGst > 0) {
+        if (feesExGst > 0) {
             lines.push({
                 paymentType: 'Professional Fees',
-                gst: 'Yes',
-                amount: feesInclGst,
+                gst: feesExGst * 0.10,
+                amountEx: feesExGst,
+                basis: 'fixed',
                 description: scopeSnippet || 'Professional fees per costs disclosure'
             });
         }
         if (parseFloat(disclosure.estimatedDisbursements) > 0) {
             lines.push({
                 paymentType: 'Disbursements',
-                gst: 'No',
-                amount: disclosure.estimatedDisbursements,
+                gst: 0,
+                amountEx: disclosure.estimatedDisbursements,
+                basis: 'fixed',
                 description: 'Disbursements per costs disclosure'
             });
         }
         if (parseFloat(disclosure.estimatedBarristerFees) > 0) {
             lines.push({
                 paymentType: 'Barrister Fees',
-                gst: 'No',
-                amount: disclosure.estimatedBarristerFees,
+                gst: 0,
+                amountEx: disclosure.estimatedBarristerFees,
+                basis: 'fixed',
                 description: 'Barrister fees per costs disclosure'
             });
         }
@@ -178,10 +175,14 @@
             var $row = $(this);
             $row.find('input[name="trans_date[]"]').val(today);
             $row.find('input[name="entry_date[]"]').val(today);
-            $row.find('select[name="gst_included[]"]').val(line.gst);
             $row.find('select[name="payment_type[]"]').val(line.paymentType);
             $row.find('textarea[name="description[]"]').val(line.description);
-            $row.find('input[name="withdraw_amount[]"]').val(parseFloat(line.amount).toFixed(2)).trigger('blur');
+            $row.find('select[name="billing_basis[]"]').val(line.basis || 'fixed');
+            $row.find('input[name="amount_ex_gst[]"]').val(parseFloat(line.amountEx).toFixed(2));
+            $row.find('input[name="line_gst[]"]').val(parseFloat(line.gst || 0).toFixed(2));
+            if (typeof window.recalcInvoiceTimesheetRow === 'function') {
+                window.recalcInvoiceTimesheetRow($row, { keepGst: true });
+            }
         });
 
         if (typeof initFlatpickrForClass === 'function') {

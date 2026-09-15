@@ -5,6 +5,13 @@
     ======================================== --}}
 @php
     $__receiptModalSolicitors = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
+    $__invoiceFeeEarners = \App\Models\Staff::query()
+        ->where('status', 1)
+        ->whereNotNull('first_name')
+        ->where('first_name', '!=', '')
+        ->orderBy('first_name')
+        ->orderBy('last_name')
+        ->get(['id', 'first_name', 'last_name']);
 @endphp
 
 <style>
@@ -150,6 +157,41 @@
     min-height: 4.5rem;
     resize: vertical;
     line-height: 1.35;
+}
+
+.invoice-timesheet-scroll {
+    overflow-x: auto;
+}
+
+.invoice-timesheet-scroll table th,
+.invoice-timesheet-scroll table td {
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.invoice-timesheet-scroll .invoice-line-description {
+    min-width: 180px;
+    white-space: normal;
+}
+
+.invoice-timesheet-scroll .form-control {
+    min-width: 70px;
+}
+
+.invoice-timesheet-scroll .invoice-work-date,
+.invoice-timesheet-scroll .report_entry_date_fields_invoice {
+    min-width: 110px;
+}
+
+.invoice-timesheet-scroll .payment_type_invoice_per_row,
+.invoice-timesheet-scroll .invoice-fee-earner,
+.invoice-timesheet-scroll .invoice-fee-earner-role {
+    min-width: 120px;
+}
+
+.invoice-timesheet-totals {
+    max-width: 420px;
+    margin-left: auto;
 }
 </style>
 
@@ -375,69 +417,17 @@
                                 <input type="hidden" name="invoice_no" class="invoice_no" value="">
                             </div>-->
 							<div class="form-group">
+                                <div class="invoice-timesheet-scroll">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
-                                        <tr>
-                                            <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
-                                            <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
-                                            <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
-                                            <th style="width:14%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
-                                            <th style="width:25%;color: #34395e;">Description</th>
-                                            <th style="width:14%;color: #34395e;">Amount</th>
-                                            <th style="width:1%;color: #34395e;"></th>
-                                        </tr>
+                                        @include('crm.clients.partials.invoice-line-table-header')
                                     </thead>
                                     <tbody class="productitem_invoice">
-                                        <tr class="clonedrow_invoice">
-                                            <td>
-                                                <input name="id[]" type="hidden" value="" />
-                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" title="Date shown on the tax invoice" />
-                                            </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
-                                            </td>
-                                            <td>
-                                                <select class="form-control" name="gst_included[]" data-valid="required">
-                                                    <option value="">Select</option>
-                                                    <option value="Yes">Yes</option>
-                                                    <option value="No">No</option>
-                                                </select>
-                                            </td>
-
-                                            <td>
-                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
-                                                    <option value="">Select</option>
-                                                    @foreach(\App\Support\InvoiceChargeTypes::options() as $chargeType)
-                                                        <option value="{{ $chargeType }}">{{ $chargeType }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
-                                            </td>
-
-                                            <td>
-                                                <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
-                                            </td>
-
-                                            <td>
-                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-                                            </td>
-                                        </tr>
+                                        @include('crm.clients.partials.invoice-line-row', ['feeEarners' => $__invoiceFeeEarners])
                                     </tbody>
                                 </table>
-
-                                <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" style="width:83.6%;text-align:right;color: #34395e;">Totals</td>
-                                            <td colspan="2">
-                                                <span class="total_withdraw_amount_all_rows_invoice" style="color: #34395e;"></span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                </div>
+                                @include('crm.clients.partials.invoice-line-totals')
                             </div>
 						</div>
 
@@ -906,74 +896,17 @@
                                 <input type="hidden" name="invoice_no" class="invoice_no" value="">
                             </div>
 							<div class="form-group">
+                                <div class="invoice-timesheet-scroll">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
-                                        <tr>
-                                            <th style="width:15%;color: #34395e;" title="Date shown on the tax invoice">Invoice Date</th>
-                                            <th style="width:15%;color: #34395e;" title="Date this entry was posted in the system">Date Recorded</th>
-                                            <th style="width:15%;color: #34395e;">Trans. No</th>
-                                            <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
-                                            <th style="width:14%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
-                                            <th style="width:25%;color: #34395e;">Description</th>
-                                            <th style="width:14%;color: #34395e;">Amount</th>
-                                            <th style="width:1%;color: #34395e;"></th>
-                                        </tr>
+                                        @include('crm.clients.partials.invoice-line-table-header', ['includeTransNo' => true])
                                     </thead>
                                     <tbody class="productitem_invoice">
-                                        <tr class="clonedrow_invoice">
-                                            <td>
-                                                <input name="id[]" type="hidden" value="" />
-                                                <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="" title="Date shown on the tax invoice" />
-                                            </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" title="Date this entry was posted in the system" />
-                                            </td>
-                                            <td>
-                                                <input class="form-control unique_trans_no_invoice" type="text" value="" readonly/>
-                                                <input class="unique_trans_no_hidden_invoice" name="trans_no[]" type="hidden" value="" />
-                                            </td>
-                                            <td>
-                                                <select class="form-control" name="gst_included[]">
-                                                    <option value="">Select</option>
-                                                    <option value="Yes">Yes</option>
-                                                    <option value="No">No</option>
-                                                </select>
-                                            </td>
-
-                                            <td>
-                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
-                                                    <option value="">Select</option>
-                                                    @foreach(\App\Support\InvoiceChargeTypes::options() as $chargeType)
-                                                        <option value="{{ $chargeType }}">{{ $chargeType }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
-                                            </td>
-
-                                            <td>
-                                                <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
-                                            </td>
-
-                                            <td>
-                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-                                            </td>
-                                        </tr>
+                                        @include('crm.clients.partials.invoice-line-row', ['includeTransNo' => true, 'feeEarners' => $__invoiceFeeEarners])
                                     </tbody>
                                 </table>
-
-                                <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" style="width:83.6%;text-align:right;color: #34395e;">Totals</td>
-                                            <td colspan="2">
-                                                <span class="total_withdraw_amount_all_rows_invoice" style="color: #34395e;"></span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                </div>
+                                @include('crm.clients.partials.invoice-line-totals')
                             </div>
 						</div>
 

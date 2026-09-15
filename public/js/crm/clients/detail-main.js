@@ -1799,133 +1799,15 @@ success: function(response) {
                         if(obj.record_get){
 
                             var record_get = obj.record_get;
-
-                            //var trRows_office = "";
-
-                            var sum = 0;
-
                             var $invoiceLines = $('#invoice_receipt_form .productitem_invoice');
-                            $invoiceLines.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
-
-                            $.each(record_get, function(index, subArray) {
-
-                                var value_sum = parseFloat(subArray.withdraw_amount);
-
-                                if (!isNaN(value_sum)) {
-                                    if (subArray.payment_type === 'Discount') {
-                                        sum -= value_sum;
-                                    } else {
-                                        sum += value_sum;
-                                    }
-                                }
-
-
-
-                                var rowCls = index < 1 ? 'clonedrow_invoice' : 'product_field_clone_invoice';
-
-
-
-                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a></td></tr>';
-
-                                var trRows_office = `<tr class="${rowCls}">
-
-                                    <td>
-
-                                        <input name="id[]" type="hidden" value="${subArray.id}" />
-
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" title="Date shown on the tax invoice" />
-
-                                    </td>
-
-                                    <td>
-
-                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" title="Date this entry was posted in the system" />
-
-                                    </td>
-
-
-
-                                    <td>
-
-                                        <select class="form-control gst_included_cls" name="gst_included[]" data-valid="required">
-
-                                            <option value="">Select</option>
-
-                                            <option value="Yes">Yes</option>
-
-                                            <option value="No">No</option>
-
-                                        </select>
-
-                                    </td>
-
-                                    <td>
-
-                                        <select class="form-control payment_type_cls payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
-
-                                            ${buildInvoicePaymentTypeOptionsHtml(subArray.payment_type)}
-
-                                        </select>
-
-                                    </td>
-
-                                    <td>
-
-                                        <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
-
-                                    </td>
-
-                                    <td>
-
-                                        <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-
-                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
-
-                                    </td>
-
-                                    <td>
-
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-
-                                    </td>
-
-                                </tr>`;
-
-
-
-                                let $newRow = $(trRows_office);
-
-                                $invoiceLines.append($newRow);
-
-
-
-                                // Set selected values
-
-                                $newRow.find('.gst_included_cls').val(subArray.gst_included);
-
-                                $newRow.find('.payment_type_cls').val(normalizeInvoicePaymentType(subArray.payment_type));
-
-                                $newRow.find('[name="description[]"]').val(subArray.description || '');
-
-
-
-                                // Initialize Flatpickr for invoice date fields
-                                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
-                                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
-
-                                if(index <1 ){
-
-                                    $('#invoice_receipt_form .invoice_no').val(subArray.invoice_no);
-
-                                    $('#invoice_receipt_form .unique_invoice_no').text(subArray.invoice_no);
-
-                                    $('#invoice_receipt_id').val(subArray.receipt_id);
-
-                                }
-
-                            });
-
-                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$"+sum.toFixed(2));
+                            if (typeof window.renderInvoiceEditLines === 'function') {
+                                window.renderInvoiceEditLines($invoiceLines, record_get);
+                            }
+                            if (record_get[0]) {
+                                $('#invoice_receipt_form .invoice_no').val(record_get[0].invoice_no);
+                                $('#invoice_receipt_form .unique_invoice_no').text(record_get[0].invoice_no);
+                                $('#invoice_receipt_id').val(record_get[0].receipt_id);
+                            }
 
                         }
 
@@ -2014,126 +1896,15 @@ success: function(response) {
                         if (obj.record_get) {
 
                             var record_get = obj.record_get;
-
-                            var sum = 0;
-
                             var $invoiceLines = $('#invoice_receipt_form .productitem_invoice');
-                            $invoiceLines.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
-
-
-
-                            $.each(record_get, function (index, subArray) {
-
-                                var value_sum = parseFloat(subArray.withdraw_amount);
-
-                                if (!isNaN(value_sum)) {
-                                    if (subArray.payment_type === 'Discount') {
-                                        sum -= value_sum;
-                                    } else {
-                                        sum += value_sum;
-                                    }
-                                }
-
-
-
-                                var rowCls = index < 1 ? 'clonedrow_invoice' : 'product_field_clone_invoice';
-
-
-
-                                var trRows_office = `<tr class="${rowCls}">
-
-                                    <td>
-
-                                        <input name="id[]" type="hidden" value="${subArray.id}" />
-
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${subArray.trans_date}" title="Date shown on the tax invoice" />
-
-                                    </td>
-
-                                    <td>
-
-                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" title="Date this entry was posted in the system" />
-
-                                    </td>
-
-                                    <td>
-
-                                        <select class="form-control gst_included_cls" name="gst_included[]" data-valid="required">
-
-                                            <option value="">Select</option>
-
-                                            <option value="Yes" ${subArray.gst_included === 'Yes' ? 'selected' : ''}>Yes</option>
-
-                                            <option value="No" ${subArray.gst_included === 'No' ? 'selected' : ''}>No</option>
-
-                                        </select>
-
-                                    </td>
-
-                                    <td>
-
-                                        <select class="form-control payment_type_cls payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
-
-                                            ${buildInvoicePaymentTypeOptionsHtml(subArray.payment_type)}
-
-                                        </select>
-
-                                    </td>
-
-                                    <td>
-
-                                        <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
-
-                                    </td>
-
-                                    <td>
-
-                                        <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-
-                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
-
-                                    </td>
-
-                                    <td>
-
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-
-                                    </td>
-
-                                </tr>`;
-
-
-
-                                let $newRow = $(trRows_office);
-
-                                $invoiceLines.append($newRow);
-
-                                $newRow.find('[name="description[]"]').val(subArray.description || '');
-                                $newRow.find('.payment_type_cls').val(normalizeInvoicePaymentType(subArray.payment_type));
-
-
-
-                                // Initialize Flatpickr for invoice date fields
-                                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
-                                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
-
-
-
-                                if (index < 1) {
-
-                                    $('#invoice_receipt_form .invoice_no').val(subArray.invoice_no);
-
-                                    $('#invoice_receipt_form .unique_invoice_no').text(subArray.invoice_no);
-
-                                    $('#invoice_receipt_id').val(subArray.receipt_id);
-
-                                }
-
-                            });
-
-
-
-                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$" + sum.toFixed(2));
+                            if (typeof window.renderInvoiceEditLines === 'function') {
+                                window.renderInvoiceEditLines($invoiceLines, record_get);
+                            }
+                            if (record_get[0]) {
+                                $('#invoice_receipt_form .invoice_no').val(record_get[0].invoice_no);
+                                $('#invoice_receipt_form .unique_invoice_no').text(record_get[0].invoice_no);
+                                $('#invoice_receipt_id').val(record_get[0].receipt_id);
+                            }
 
                         }
 
@@ -2412,51 +2183,17 @@ success: function(response) {
 
             var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
             var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
-            var includeTransNo = $tbody.find('.unique_trans_no_invoice').length > 0;
-            var transNoCell = includeTransNo
-                ? `<td>
-                            <input class="form-control unique_trans_no_invoice" type="text" value="" readonly/>
-                            <input class="unique_trans_no_hidden_invoice" name="trans_no[]" type="hidden" value="" />
-                        </td>`
-                : '';
-
-            var clonedval_invoice = `<td>
-                            <input name="id[]" type="hidden" value="" />
-                            <input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="${invoiceDate}" title="Date shown on the tax invoice" />
-                        </td>
-                        <td>
-                            <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${recordedDate}" title="Date this entry was posted in the system" />
-                        </td>
-                        ${transNoCell}
-                        <td>
-                            <select class="form-control" name="gst_included[]" data-valid="required">
-                                <option value="">Select</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select class="form-control payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
-                                ${buildInvoicePaymentTypeOptionsHtml('')}
-                            </select>
-                        </td>
-                        <td>
-                            <textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="3"></textarea>
-                        </td>
-                        <td>
-                            <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                            <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*)\\./g, '$1').replace(/(\\.\\d{2}).*/g, '$1')" value="" />
-                        </td>
-                        <td>
-                            <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-                        </td>`;
-
-                var $newRow = $('<tr class="product_field_clone_invoice">' + clonedval_invoice + '</tr>');
-                $tbody.append($newRow);
-
-                // Initialize Flatpickr for invoice date fields on the new row only
-                initFlatpickrForClass($newRow.find('.report_date_fields_invoice'));
-                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
+            var $newRow = typeof window.cloneInvoiceLineRow === 'function'
+                ? window.cloneInvoiceLineRow($tbody, {})
+                : $();
+            if (!$newRow.length) {
+                return;
+            }
+            $newRow.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+            $newRow.find('input[name="trans_date[]"]').val(invoiceDate);
+            $newRow.find('input[name="entry_date[]"]').val(recordedDate);
+            $tbody.append($newRow);
+            initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'));
 
         });
 
@@ -2475,11 +2212,10 @@ success: function(response) {
             if ($.trim($row.find('[name="description[]"]').val())) {
                 return true;
             }
-            if ($.trim($row.find('input[name="withdraw_amount[]"]').val())) {
+            if ($.trim($row.find('input[name="amount_ex_gst[]"]').val())) {
                 return true;
             }
-            var gstIncluded = $row.find('select[name="gst_included[]"]').val();
-            if (gstIncluded && gstIncluded !== '') {
+            if ($.trim($row.find('input[name="hours[]"]').val())) {
                 return true;
             }
             var paymentType = $row.find('select[name="payment_type[]"]').val();
@@ -2527,10 +2263,24 @@ success: function(response) {
 
 
 
-        $(document).delegate('.withdraw_amount_invoice_per_row, .payment_type_invoice_per_row', 'blur', function() {
+        $(document).delegate('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .invoice-billing-basis, .payment_type_invoice_per_row', 'input change blur', function() {
+            var $row = $(this).closest('tr');
+            if (typeof window.recalcInvoiceTimesheetRow === 'function') {
+                window.recalcInvoiceTimesheetRow($row, { keepGst: false });
+            }
+            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                window.grandtotalAccountTab_invoice();
+            }
+        });
 
-            grandtotalAccountTab_invoice();
-
+        $(document).delegate('.invoice-line-gst', 'input blur', function() {
+            var $row = $(this).closest('tr');
+            if (typeof window.recalcInvoiceTimesheetRow === 'function') {
+                window.recalcInvoiceTimesheetRow($row, { keepGst: true });
+            }
+            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                window.grandtotalAccountTab_invoice();
+            }
         });
 
 
@@ -2540,67 +2290,9 @@ success: function(response) {
 
 
         function grandtotalAccountTab_invoice() {
-
-            var total_withdraw_amount_all_rows_invoice = 0;
-
-
-
-            // Loop through only visible rows
-
-            $('.productitem_invoice tr:visible').each(function(index) {
-
-                var $row = $(this);
-
-
-
-                // Get the withdraw amount from the input field
-
-                var withdrawVal = $row.find('.withdraw_amount_invoice_per_row').val();
-
-                // Get the payment type from the select field
-
-                var paymentType = $row.find('select[name="payment_type[]"]').val();
-
-
-
-                if (withdrawVal) {
-
-                    // Remove currency symbols, commas, and spaces
-
-                    withdrawVal = withdrawVal.replace(/[^0-9.-]+/g, '');
-
-                    var withdrawAmount = parseFloat(withdrawVal) || 0; // Fallback to 0 if NaN
-
-
-
-                    // Adjust total based on payment type
-
-                    if (paymentType === 'Discount') {
-
-                        total_withdraw_amount_all_rows_invoice -= withdrawAmount;
-
-                    } else {
-
-                        total_withdraw_amount_all_rows_invoice += withdrawAmount;
-
-                    }
-
-
-
-
-                } else {
-
-
-                }
-
-            });
-
-
-
-            //console.log('Total calculated: ' + total_withdraw_amount_all_rows_invoice);
-
-            $('.total_withdraw_amount_all_rows_invoice').html('$' + total_withdraw_amount_all_rows_invoice.toFixed(2));
-
+            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                return window.grandtotalAccountTab_invoice();
+            }
         }
 
 
