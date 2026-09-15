@@ -305,7 +305,8 @@
                 <div class="row g-2 mb-2">
                     <div class="col-4">
                         <label class="form-label" for="importantEventDate">Date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="importantEventDate">
+                        <input type="date" class="form-control" id="importantEventDate"
+                               min="{{ now()->timezone(config('app.timezone'))->toDateString() }}">
                     </div>
                     <div class="col-4">
                         <label class="form-label" for="importantEventStartTime">Start</label>
@@ -751,10 +752,19 @@ document.addEventListener('DOMContentLoaded', function() {
         },
 
         // Calendar grids: today onwards (lists still show past / cancelled)
-        validRange: function (nowDate) {
-            var start = new Date(nowDate.valueOf());
-            start.setHours(0, 0, 0, 0);
-            return { start: start };
+        validRange: function () {
+            return { start: bookingCalendarTodayYmd() };
+        },
+        selectAllow: function (selectInfo) {
+            var startYmd = (selectInfo.startStr || '').slice(0, 10);
+            return !isBookingCalendarPastYmd(startYmd) && !isBookingCalendarWeekendYmd(startYmd);
+        },
+        dayCellClassNames: function (arg) {
+            var ymd = (arg.dateStr || '').slice(0, 10);
+            if (isBookingCalendarPastYmd(ymd)) {
+                return ['booking-cal-day-past'];
+            }
+            return [];
         },
         
         // Event source - fetch from API
@@ -1076,10 +1086,14 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#eventModal').modal('show');
         },
         
-        // Date click — add important event on selected weekday only
+        // Date click — add important event on today/future weekdays only
         dateClick: function(info) {
             const d = info.date;
             const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+            if (isBookingCalendarPastYmd(dateStr)) {
+                warnBookingCalendarPastDate();
+                return;
+            }
             if (isBookingCalendarWeekendYmd(dateStr)) {
                 showAlert('warning', 'Weekends (Saturday and Sunday) are not available. Please select a weekday.');
                 return;
@@ -2105,14 +2119,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusRaw = props.status_label || props.status || typeLabel;
         const statusKey = String(props.status || typeKey).toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
-        const managementSection = canManage
+        const rescheduleSection = canManage && !isBookingCalendarPastYmd(melbourneDate)
             ? `
                 <section class="appt-detail-section appt-detail-section--actions">
                     <h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule Date &amp; Time</h6>
                     <div class="row g-3 align-items-end">
                         <div class="col-md-4">
                             <label class="form-label" for="staffEventDate-${slotKey}">Event date</label>
-                            <input type="date" class="form-control" id="staffEventDate-${slotKey}" value="${escapeHtml(melbourneDate)}">
+                            <input type="date" class="form-control" id="staffEventDate-${slotKey}" value="${escapeHtml(melbourneDate)}" min="${escapeHtml(bookingCalendarTodayYmd())}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="staffEventTime-${slotKey}">Event time</label>
@@ -2125,7 +2139,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div class="form-text"><i class="fa-solid fa-circle-info"></i> Updates this item on the personal / important-events calendar${isFollowUp ? ' and the linked task' : ''}.</div>
-                </section>
+                </section>`
+            : '';
+
+        const managementSection = canManage
+            ? `
+                ${rescheduleSection}
                 <div class="row g-3 appt-detail-actions-row">
                     <div class="col-md-6 d-flex">
                         <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
@@ -2233,7 +2252,12 @@ document.addEventListener('DOMContentLoaded', function() {
         setEventModalCourtHearingFooter('hidden');
         const editBtn = document.getElementById('courtHearingEditBtn');
         if (editBtn) {
-            if (canManage) {
+            const eventDateYmd = (props.starts_at || props.appointment_datetime)
+                ? new Date(props.starts_at || props.appointment_datetime)
+                    .toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' })
+                : '';
+            const isPastEvent = isBookingCalendarPastYmd(eventDateYmd);
+            if (canManage && !isPastEvent) {
                 editBtn.classList.remove('d-none');
                 editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Event';
                 editBtn.onclick = function () {
@@ -2412,6 +2436,10 @@ document.addEventListener('DOMContentLoaded', function() {
             crmAlert('Choose an event date.');
             return;
         }
+        if (isBookingCalendarPastYmd(date)) {
+            warnBookingCalendarPastDate();
+            return;
+        }
         if (isBookingCalendarWeekendYmd(date)) {
             warnBookingCalendarWeekend();
             return;
@@ -2517,6 +2545,38 @@ document.addEventListener('DOMContentLoaded', function() {
     var IMPORTANT_EVENT_TIME_MIN = '09:00';
     var IMPORTANT_EVENT_TIME_MAX = '18:00';
     var BOOKING_CALENDAR_WEEKEND_MSG = 'Weekends (Saturday and Sunday) are not available. Please select a weekday (Monday–Friday).';
+    var BOOKING_CALENDAR_PAST_MSG = 'Past dates are not available. Please choose today or a future date.';
+
+    function bookingCalendarTodayYmd() {
+        try {
+            return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+        } catch (e) {
+            return new Date().toISOString().slice(0, 10);
+        }
+    }
+
+    function isBookingCalendarPastYmd(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') {
+            return false;
+        }
+        return dateStr.slice(0, 10) < bookingCalendarTodayYmd();
+    }
+
+    function warnBookingCalendarPastDate() {
+        if (typeof iziToast !== 'undefined' && iziToast.warning) {
+            iziToast.warning({ title: 'Date not available', message: BOOKING_CALENDAR_PAST_MSG, position: 'topRight' });
+        } else if (typeof showAlert === 'function') {
+            showAlert('warning', BOOKING_CALENDAR_PAST_MSG);
+        } else {
+            crmAlert(BOOKING_CALENDAR_PAST_MSG);
+        }
+    }
+
+    function syncImportantEventDateMin() {
+        var dateEl = document.getElementById('importantEventDate');
+        if (!dateEl) return;
+        dateEl.min = bookingCalendarTodayYmd();
+    }
 
     function isBookingCalendarWeekendYmd(dateStr) {
         if (!dateStr || typeof dateStr !== 'string') {
@@ -2647,8 +2707,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openImportantEventModalForCreate(dateStr, timeStr) {
+        syncImportantEventDateMin();
+        const today = bookingCalendarTodayYmd();
+        if (dateStr && isBookingCalendarPastYmd(dateStr)) {
+            warnBookingCalendarPastDate();
+            return;
+        }
+        if (dateStr && isBookingCalendarWeekendYmd(dateStr)) {
+            warnBookingCalendarWeekend();
+            return;
+        }
         resetImportantEventForm();
-        if (dateStr) document.getElementById('importantEventDate').value = dateStr;
+        document.getElementById('importantEventDate').value = dateStr || today;
         if (timeStr && timeStr !== '00:00') {
             var startClamped = clampImportantEventTime(timeStr, IMPORTANT_EVENT_TIME_MIN);
             document.getElementById('importantEventStartTime').value = startClamped;
@@ -2666,16 +2736,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openImportantEventModalForEdit(props) {
-        resetImportantEventForm();
         const id = props.staff_calendar_event_id;
         if (!id) return;
         const start = new Date(props.starts_at || props.appointment_datetime);
+        const eventDate = start.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+        if (isBookingCalendarPastYmd(eventDate)) {
+            warnBookingCalendarPastDate();
+            return;
+        }
+        syncImportantEventDateMin();
+        resetImportantEventForm();
         document.getElementById('importantEventId').value = String(id);
         document.getElementById('importantEventModalTitle').textContent = 'Edit Important Event';
         document.getElementById('importantEventTitle').value = props.title || '';
         document.getElementById('importantEventType').value = props.event_type || 'other';
-        document.getElementById('importantEventDate').value =
-            start.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+        document.getElementById('importantEventDate').value = eventDate;
         const allDay = !!props.is_all_day;
         document.getElementById('importantEventAllDay').checked = allDay;
         document.getElementById('importantEventStartTime').disabled = allDay;
@@ -2727,6 +2802,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 crmAlert('Title and date are required.');
             }
+            return;
+        }
+        if (isBookingCalendarPastYmd(dateStr)) {
+            warnBookingCalendarPastDate();
             return;
         }
         if (isBookingCalendarWeekendYmd(dateStr)) {
@@ -3409,6 +3488,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('importantEventSaveBtn').addEventListener('click', saveImportantEvent);
     document.getElementById('importantEventDeleteBtn').addEventListener('click', deleteImportantEvent);
     document.getElementById('importantEventDate').addEventListener('change', function () {
+        if (isBookingCalendarPastYmd(this.value)) {
+            warnBookingCalendarPastDate();
+            this.value = bookingCalendarTodayYmd();
+            return;
+        }
         if (isBookingCalendarWeekendYmd(this.value)) {
             warnBookingCalendarWeekend();
             this.value = '';
@@ -4468,6 +4552,15 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(30, 61, 96, 0.14);
+}
+
+#calendar .booking-cal-day-past {
+    background: rgba(0, 0, 0, 0.04);
+    opacity: 0.55;
+}
+
+#calendar .booking-cal-day-past .fc-daygrid-day-number {
+    color: var(--text-muted, #5e7a90);
 }
 
 .booking-calendar-modal .modal-header {

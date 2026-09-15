@@ -13,6 +13,8 @@ final class CalendarScheduleConstraints
 
     public const BUSINESS_HOURS_MESSAGE = 'Events can only be booked between 9:00 AM and 6:00 PM.';
 
+    public const PAST_DATE_MESSAGE = 'Past dates are not available. Please choose today or a future date.';
+
     public static function isWeekend(CarbonInterface|string $date): bool
     {
         $carbon = $date instanceof CarbonInterface
@@ -22,9 +24,24 @@ final class CalendarScheduleConstraints
         return $carbon->isWeekend();
     }
 
+    public static function isPastDate(CarbonInterface|string $date): bool
+    {
+        $tz = (string) config('app.timezone');
+        $carbon = $date instanceof CarbonInterface
+            ? $date->copy()->timezone($tz)
+            : \Carbon\Carbon::parse((string) $date, $tz);
+
+        return $carbon->startOfDay()->lt(\Carbon\Carbon::now($tz)->startOfDay());
+    }
+
     public static function weekendMessageIfAny(CarbonInterface|string $date): ?string
     {
         return self::isWeekend($date) ? self::WEEKEND_MESSAGE : null;
+    }
+
+    public static function pastDateMessageIfAny(CarbonInterface|string $date): ?string
+    {
+        return self::isPastDate($date) ? self::PAST_DATE_MESSAGE : null;
     }
 
     /**

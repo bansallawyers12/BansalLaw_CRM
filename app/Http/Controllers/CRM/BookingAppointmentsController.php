@@ -503,6 +503,10 @@ class BookingAppointmentsController extends Controller
             $isAllDay
         );
 
+        if ($error = \App\Support\CalendarScheduleConstraints::pastDateMessageIfAny($startsAt)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
+        }
+
         if ($error = $this->staffCalendarEventOutsideBusinessHoursMessage($startsAt, $endsAt, $isAllDay)) {
             return response()->json(['success' => false, 'message' => $error], 422);
         }
@@ -641,6 +645,12 @@ class BookingAppointmentsController extends Controller
             : ($event->ends_at ? Carbon::parse($event->ends_at, config('app.timezone')) : null);
 
         [$startsAt, $endsAt] = $this->normalizeStaffCalendarEventWindow($startsAt, $endsAt, $isAllDay);
+
+        if (array_key_exists('starts_at', $validated)) {
+            if ($error = \App\Support\CalendarScheduleConstraints::pastDateMessageIfAny($startsAt)) {
+                return response()->json(['success' => false, 'message' => $error], 422);
+            }
+        }
 
         if ($error = $this->staffCalendarEventOutsideBusinessHoursMessage($startsAt, $endsAt, $isAllDay)) {
             return response()->json(['success' => false, 'message' => $error], 422);
