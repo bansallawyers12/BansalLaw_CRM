@@ -68,12 +68,12 @@
 
                 <div class="invoice-field invoice-hours-col invoice-col-hrs">
                     <label class="invoice-field__label">Hrs</label>
-                    <input class="form-control form-control-sm invoice-hours" name="hours[]" type="text" inputmode="decimal" placeholder="1.2" title="Hours worked" />
+                    <input class="form-control form-control-sm invoice-hours" name="hours[]" type="text" inputmode="decimal" placeholder="" title="Hours worked" />
                 </div>
 
                 <div class="invoice-field invoice-col-rate">
                     <label class="invoice-field__label">Rate <span class="invoice-field__sub">(ex GST)</span></label>
-                    <input class="form-control form-control-sm invoice-rate-ex-gst" name="rate_ex_gst[]" type="text" inputmode="decimal" placeholder="0.00" title="Hourly rate excluding GST" />
+                    <input class="form-control form-control-sm invoice-rate-ex-gst" name="rate_ex_gst[]" type="text" inputmode="decimal" placeholder="" title="Hourly rate excluding GST" />
                 </div>
 
                 <div class="invoice-field invoice-col-amount">

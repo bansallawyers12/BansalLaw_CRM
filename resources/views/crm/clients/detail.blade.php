@@ -1646,7 +1646,6 @@ $(document).ready(function() {
         ],
         'account' => [
             $cdnJsWithVer('js/crm/clients/modules/accounts.js'),
-            $cdnJsWithVer('js/crm/clients/modules/invoices.js'),
             $cdnJsWithVer('js/crm/clients/modules/ledger-dragdrop.js'),
         ],
     ];
@@ -1771,6 +1770,7 @@ $(document).ready(function() {
 @if($showMatterBundleTabs ?? false)
 {{-- accounts.js: Billing tab entry buttons must bind before lazy tab HTML injects --}}
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/accounts.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/invoices.js') }}"></script>
 @endif
 
 {{-- Newly added external JS placeholders for progressive migration --}}

@@ -1784,27 +1784,15 @@ success: function(response) {
                     if (!obj) return;
                     if(obj.status){
 
-                        $('#invoice_receipt_form input[name="function_type"]').val("edit");
-
-                        $('#createreceiptmodal').modal('show');
-
-
-
-                        const invoiceRadio = document.querySelector('input[name="receipt_type"][value="invoice_receipt"]');
-
-                        if (invoiceRadio) {
-
-                            invoiceRadio.checked = true;
-
-
-
-                            // Manually trigger the change event
-
-                            invoiceRadio.dispatchEvent(new Event('change'));
-
+                        if ($('#invoice_receipt_form input[name="function_type"]').val() === 'add') {
+                            return;
                         }
 
-
+                        $('#invoice_receipt_form input[name="function_type"]').val("edit");
+                        prepareInvoiceEditModal('final');
+                        $('#createreceiptmodal').modal('show');
+                        $('#client_receipt_form, #office_receipt_form').hide();
+                        $('#invoice_receipt_form').show();
 
                         if(obj.record_get){
 
@@ -1833,6 +1821,11 @@ success: function(response) {
         }
 
 
+
+        var invoiceEditLoadSeq = 0;
+        window.invalidateInvoiceEditLoad = function() {
+            invoiceEditLoadSeq++;
+        };
 
         function prepareInvoiceEditModal(saveType) {
             var $modal = $('#createreceiptmodal');
@@ -1865,6 +1858,8 @@ success: function(response) {
             prepareInvoiceEditModal(saveType);
             $('#invoice_receipt_form input[name="function_type"]').val('edit');
 
+            var loadSeq = ++invoiceEditLoadSeq;
+
             $.ajax({
 
                 type: 'post',
@@ -1877,25 +1872,23 @@ success: function(response) {
 
                 success: function (response) {
 
+                    if (loadSeq !== invoiceEditLoadSeq) {
+                        return;
+                    }
+                    if ($('#invoice_receipt_form input[name="function_type"]').val() !== 'edit') {
+                        return;
+                    }
+
                     var obj = safeParseJsonResponse(response);
                     if (!obj) return;
                     if (obj.status) {
 
                         $('#invoice_receipt_form input[name="function_type"]').val('edit');
+                        prepareInvoiceEditModal(saveType);
 
                         $('#createreceiptmodal').modal('show');
-
-
-
-                        const invoiceRadio = document.querySelector('input[name="receipt_type"][value="invoice_receipt"]');
-
-                        if (invoiceRadio) {
-
-                            invoiceRadio.checked = true;
-
-                            invoiceRadio.dispatchEvent(new Event('change'));
-
-                        }
+                        $('#client_receipt_form, #office_receipt_form').hide();
+                        $('#invoice_receipt_form').show();
 
                         if (obj.record_get_parent && obj.record_get_parent.length) {
                             var parentRow = obj.record_get_parent[0];
@@ -1903,8 +1896,6 @@ success: function(response) {
                                 $('#client_matter_id_invoice').val(parentRow.client_matter_id);
                             }
                         }
-
-
 
                         if (obj.record_get) {
 

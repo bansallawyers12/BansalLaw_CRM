@@ -51,9 +51,10 @@
             invoiceLineRowTemplate = null;
         }
         if (invoiceLineRowTemplate === null) {
-            var $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice, #invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').first();
+            // Always prefer the off-screen stash — live form rows may hold edit data.
+            var $row = $('#invoice_line_row_source tr.clonedrow_invoice').first();
             if (!$row.length) {
-                $row = $('#invoice_line_row_source tr.clonedrow_invoice').first();
+                $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice, #invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').first();
             }
             if (!$row.length) {
                 $row = $('#create_invoice_receipt .productitem_invoice tr.clonedrow_invoice').first();
@@ -103,13 +104,16 @@
     }
 
     function prepareInvoiceFormForCreate(selectedMatter) {
+        if (typeof window.resetInvoiceFormForCreate === 'function') {
+            window.resetInvoiceFormForCreate($('#invoice_receipt_form'), selectedMatter);
+            return;
+        }
+
         $('#invoice_receipt_form input[name="function_type"]').val('add');
         $('#invoice_receipt_id').val('');
         $('#client_matter_id_invoice').val(selectedMatter);
 
-        // Editing an invoice replaces the blank line rows with the saved ones,
-        // so rebuild a single empty row before creating a new invoice.
-        var rowTemplate = captureInvoiceLineRowTemplate();
+        var rowTemplate = captureInvoiceLineRowTemplate(true);
         if (rowTemplate) {
             $('#invoice_receipt_form .productitem_invoice').html(rowTemplate);
             if (typeof window.stripInvoiceLinePickers === 'function') {
@@ -369,6 +373,16 @@ function initAccountTabScripts() {
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
         window._accountPendingInvoicePrefill = false;
         window._accountPendingRetainerPrefill = false;
+        if (typeof window.invalidateInvoiceEditLoad === 'function') {
+            window.invalidateInvoiceEditLoad();
+        }
+        if (typeof window.resetInvoiceFormForCreate === 'function') {
+            var matterId = typeof resolveAccountMatterId === 'function' ? resolveAccountMatterId() : '';
+            window.resetInvoiceFormForCreate($('#invoice_receipt_form'), matterId);
+        } else {
+            $('#invoice_receipt_form input[name="function_type"]').val('');
+            $('#invoice_receipt_id').val('');
+        }
         // Show radio buttons again (in case user opens from a different page)
         $(this).find('.receipt-type-selector').show();
         $(this).removeClass('invoice-entry-open');

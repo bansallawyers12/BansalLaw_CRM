@@ -336,7 +336,8 @@
 form.invoice-billing-mode-hourly .invoice-amount-ex-gst {
     background: #f3f7fb;
 }
-form.invoice-billing-mode-fixed .invoice-hours-col {
+form.invoice-billing-mode-fixed .invoice-hours-col,
+form.invoice-billing-mode-fixed .invoice-col-rate {
     display: none;
 }
 form.invoice-billing-mode-fixed .invoice-billing-hint-hourly { display: none !important; }

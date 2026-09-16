@@ -1172,14 +1172,36 @@ class ClientAccountsController extends Controller
     {
         $line = InvoiceTimesheetLine::fromRequest($requestData, $index);
 
-        if (! Schema::hasColumn('account_all_invoice_receipts', 'amount_ex_gst')) {
-            return [
-                'withdraw_amount' => $line['withdraw_amount'],
-                'gst_included' => $line['gst_included'],
-            ];
+        // Persist every timesheet column that exists on the line table.
+        // Do not early-return on a single hasColumn check — that previously dropped
+        // fee_earner / rate / hours after the columns were added.
+        $columns = [
+            'billing_basis',
+            'hours',
+            'rate_ex_gst',
+            'amount_ex_gst',
+            'line_gst',
+            'withdraw_amount',
+            'gst_included',
+            'fee_earner_id',
+            'fee_earner_role',
+        ];
+        $payload = [];
+        foreach ($columns as $column) {
+            if (! array_key_exists($column, $line)) {
+                continue;
+            }
+            if ($column === 'withdraw_amount' || $column === 'gst_included' || Schema::hasColumn('account_all_invoice_receipts', $column)) {
+                $payload[$column] = $line[$column];
+            }
         }
 
-        return $line;
+        if (! isset($payload['withdraw_amount'])) {
+            $payload['withdraw_amount'] = $line['withdraw_amount'];
+            $payload['gst_included'] = $line['gst_included'];
+        }
+
+        return $payload;
     }
 
     private function invoiceLedgerDate(string $transDate): string
@@ -1801,7 +1823,8 @@ class ClientAccountsController extends Controller
             }
         }
    
-        $record_get  = AccountAllInvoiceReceipt::where('receipt_type', 3)
+        $record_get  = AccountAllInvoiceReceipt::with('feeEarner')
+            ->where('receipt_type', 3)
             ->where('receipt_id', $receiptid)
             ->get();
    

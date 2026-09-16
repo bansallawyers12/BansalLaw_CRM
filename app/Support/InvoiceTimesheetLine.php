@@ -98,8 +98,18 @@ class InvoiceTimesheetLine
             $hours = null;
         }
 
-        if ($basis === 'hourly' && $hours !== null && $rate !== null) {
+        // Hourly with a real rate drives amount. A zero rate must not wipe a typed amount.
+        if ($basis === 'hourly' && $hours !== null && $rate !== null && $rate > 0) {
             $amountEx = self::roundMoney($hours * $rate);
+        } elseif (
+            $basis === 'hourly'
+            && $hours !== null
+            && $hours > 0
+            && ($rate === null || $rate <= 0)
+            && $amountEx !== null
+            && $amountEx > 0
+        ) {
+            $rate = self::roundMoney($amountEx / $hours);
         }
 
         $hasTimesheetAmount = array_key_exists('amount_ex_gst', $requestData)
@@ -194,8 +204,17 @@ class InvoiceTimesheetLine
     public static function displayFeeEarner(object $line): string
     {
         $name = '';
+        $earner = null;
         if (isset($line->feeEarner) && $line->feeEarner) {
-            $name = trim(($line->feeEarner->first_name ?? '').' '.($line->feeEarner->last_name ?? ''));
+            $earner = $line->feeEarner;
+        } elseif (! empty($line->fee_earner_id) && method_exists($line, 'feeEarner')) {
+            $earner = $line->feeEarner()->first();
+        }
+        if ($earner) {
+            $name = trim(($earner->first_name ?? '').' '.($earner->last_name ?? ''));
+            if ($name === '' && ! empty($earner->name)) {
+                $name = trim((string) $earner->name);
+            }
         }
         $role = trim((string) ($line->fee_earner_role ?? ''));
         if ($name !== '' && $role !== '') {
@@ -265,10 +284,16 @@ class InvoiceTimesheetLine
             }
         }
 
+        $hoursNum = ($hours === null || $hours === '') ? null : (float) $hours;
+        $rateMissing = $rate === null || $rate === '' || (float) $rate == 0.0;
+        if ($rateMissing && $hoursNum !== null && $hoursNum > 0 && (float) $amountEx > 0) {
+            $rate = self::roundMoney(((float) $amountEx) / $hoursNum);
+        }
+
         return [
             'amount_ex_gst' => (float) $amountEx,
             'line_gst' => (float) ($lineGst ?? 0),
-            'hrs' => ($hours === null || $hours === '') ? '—' : rtrim(rtrim(number_format((float) $hours, 2, '.', ''), '0'), '.'),
+            'hrs' => ($hoursNum === null) ? '—' : rtrim(rtrim(number_format($hoursNum, 2, '.', ''), '0'), '.'),
             'rate' => ($rate === null || $rate === '') ? '—' : number_format((float) $rate, 2),
         ];
     }

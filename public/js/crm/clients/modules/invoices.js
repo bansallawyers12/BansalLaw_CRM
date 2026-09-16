@@ -155,6 +155,23 @@
         return n.toFixed(2);
     }
 
+    function setInvoiceSelectValue($select, value, label) {
+        if (!$select || !$select.length) {
+            return;
+        }
+        if (value === null || value === undefined || value === '') {
+            $select.val('');
+            return;
+        }
+        var str = String(value);
+        if ($select.find('option').filter(function() { return String(this.value) === str; }).length === 0) {
+            $select.append(
+                $('<option></option>').attr('value', str).text(label && String(label).trim() ? String(label).trim() : str)
+            );
+        }
+        $select.val(str);
+    }
+
     function invoiceDatePad(n) {
         return (n < 10 ? '0' : '') + n;
     }
@@ -353,6 +370,79 @@
         syncInvoiceDateModeButtons($row, 'single');
     }
 
+    function invoiceDateTodayStr() {
+        return formatInvoicePickerDate(new Date());
+    }
+
+    function blankInvoiceLineRowHtml() {
+        var $source = $('#invoice_line_row_source tr.clonedrow_invoice').first();
+        if ($source.length) {
+            var $clone = $source.clone();
+            stripClonedFlatpickr($clone);
+            $clone.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
+            return $clone.prop('outerHTML');
+        }
+        if (typeof window.captureInvoiceLineRowTemplate === 'function') {
+            return window.captureInvoiceLineRowTemplate(true);
+        }
+        return '';
+    }
+
+    function resetInvoiceFormForCreate($form, selectedMatter) {
+        if (!$form || !$form.length) {
+            $form = $('#invoice_receipt_form');
+        }
+        if (!$form.length) {
+            return;
+        }
+
+        if (typeof window.invalidateInvoiceEditLoad === 'function') {
+            window.invalidateInvoiceEditLoad();
+        }
+
+        $form.find('input[name="function_type"]').val('add');
+        $form.find('#invoice_receipt_id, input[name="receipt_id"]').val('');
+        if (selectedMatter !== undefined && selectedMatter !== null && selectedMatter !== '') {
+            $form.find('#client_matter_id_invoice').val(selectedMatter);
+        }
+
+        var $tbody = $form.find('.productitem_invoice');
+        var rowHtml = blankInvoiceLineRowHtml();
+        if (rowHtml && $tbody.length) {
+            $tbody.html(rowHtml);
+            stripClonedFlatpickr($tbody.children('tr'));
+        } else if ($tbody.length) {
+            $tbody.children('tr').slice(1).remove();
+        }
+
+        var $firstRow = $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').first();
+        if ($firstRow.length) {
+            resetInvoiceLineRow($firstRow);
+            $firstRow.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
+            var today = invoiceDateTodayStr();
+            $firstRow.find('input[name="trans_date[]"]').val(today);
+            $firstRow.find('input[name="entry_date[]"]').each(function() {
+                $(this).val(today);
+                if (this._flatpickr) {
+                    this._flatpickr.setDate(today, false, 'd/m/Y');
+                }
+            });
+        }
+
+        $form.find('.total_invoice_ex_gst, .total_invoice_gst, .total_withdraw_amount_all_rows_invoice').text('$0.00');
+        $form.find('.invoice-draft-btn').show();
+        $form.find('.invoice-final-btn').text('Create invoice');
+
+        if (typeof initFlatpickrForClass === 'function') {
+            initFlatpickrForClass($form.find('.report_entry_date_fields_invoice'), {
+                defaultDate: new Date(),
+                allowInput: false
+            });
+        }
+        initInvoiceWorkDates($form);
+        applyInvoiceBillingMode($form, 'hourly');
+    }
+
     function stripClonedFlatpickr($row) {
         $row.find('.flatpickr-calendar').remove();
         $row.find('input.flatpickr-alt-input').remove();
@@ -387,11 +477,16 @@
         var basis = ($form.find('.invoice-billing-mode').val()
             || $row.find('.invoice-billing-basis').val()
             || 'hourly').toLowerCase();
+        if (basis !== 'fixed') {
+            basis = 'hourly';
+        }
         $row.find('.invoice-billing-basis').val(basis);
-        var hoursRaw = $.trim($row.find('.invoice-hours, input[name="hours[]"]').first().val() || '');
-        var rateRaw = $.trim($row.find('.invoice-rate-ex-gst, input[name="rate_ex_gst[]"]').first().val() || '');
+        var $hoursInput = $row.find('.invoice-hours, input[name="hours[]"]').first();
+        var $rateInput = $row.find('.invoice-rate-ex-gst, input[name="rate_ex_gst[]"]').first();
         var $amount = $row.find('.invoice-amount-ex-gst, input[name="amount_ex_gst[]"]').first();
         var $gst = $row.find('.invoice-line-gst, input[name="line_gst[]"]').first();
+        var hoursRaw = $.trim($hoursInput.val() || '');
+        var rateRaw = $.trim($rateInput.val() || '');
         var amountRaw = $.trim($amount.val() || '');
         var hours = invoiceMoney(hoursRaw);
         var rate = invoiceMoney(rateRaw);
@@ -406,11 +501,23 @@
             return;
         }
 
-        if (basis === 'hourly' && hoursRaw !== '' && rateRaw !== '') {
-            amountEx = invoiceMoney(hours * rate);
-            $amount.val(amountEx.toFixed(2));
-        } else if (basis !== 'hourly' && amountRaw === '' && hoursRaw !== '' && rateRaw !== '') {
-            // Safety: still compute if hours/rate were entered outside hourly toggle.
+        if (basis === 'hourly') {
+            // Amount is always hours × rate. If rate is blank/zero but amount already exists,
+            // back-fill rate from amount÷hours so edit rows don't stay stuck.
+            if (hoursRaw !== '') {
+                if ((rateRaw === '' || rate === 0) && amountRaw !== '' && amountEx > 0 && hours > 0) {
+                    rate = invoiceMoney(amountEx / hours);
+                    $rateInput.val(rate.toFixed(2));
+                    rateRaw = $rateInput.val();
+                }
+                amountEx = invoiceMoney(hours * rate);
+                $amount.val(amountEx.toFixed(2));
+            } else if (rateRaw !== '' && rate > 0 && amountRaw !== '') {
+                // Rate + amount but no hours: derive hours so the row stays consistent.
+                hours = invoiceMoney(amountEx / rate);
+                $hoursInput.val(hours.toFixed(2));
+            }
+        } else if (amountRaw === '' && hoursRaw !== '' && rateRaw !== '') {
             amountEx = invoiceMoney(hours * rate);
             $amount.val(amountEx.toFixed(2));
         }
@@ -418,7 +525,7 @@
         var gstRaw = $.trim($gst.val() || '');
         var gstValue = invoiceMoney(gstRaw);
         // Recompute GST when blank, or stuck at 0 while the line has a positive amount.
-        if (!options.keepGst || gstRaw === '' || (gstValue === 0 && amountEx > 0)) {
+        if (!options.keepGst || gstRaw === '' || (gstValue === 0 && amountEx > 0) || (basis === 'hourly' && !options.keepGst)) {
             $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
         }
 
@@ -501,44 +608,78 @@
         initInvoiceWorkDatePicker($row.find('.invoice-work-date'), parsedWorkDate.mode, parsedWorkDate.dates);
         $row.find('select[name="payment_type[]"]').val(normalizeInvoicePaymentType(line.payment_type));
         $row.find('[name="description[]"]').val(line.description || '');
-        $row.find('select[name="fee_earner_id[]"]').val(line.fee_earner_id || '');
-        $row.find('select[name="fee_earner_role[]"]').val(line.fee_earner_role || '');
+        var feeEarner = line.fee_earner || line.feeEarner || null;
+        var feeLabel = feeEarner
+            ? $.trim((feeEarner.first_name || '') + ' ' + (feeEarner.last_name || ''))
+            : '';
+        setInvoiceSelectValue($row.find('select[name="fee_earner_id[]"]'), line.fee_earner_id, feeLabel);
+        setInvoiceSelectValue($row.find('select[name="fee_earner_role[]"]'), line.fee_earner_role);
 
         var $form = $row.closest('form');
-        var basis = String(
-            line.billing_basis
-            || ($form.length ? $form.find('.invoice-billing-mode').val() : '')
-            || 'hourly'
-        ).toLowerCase();
-        if (basis !== 'fixed' && parseFloat(line.hours) > 0) {
-            basis = 'hourly';
+        var basis = String(line.billing_basis || '').toLowerCase();
+        if (basis !== 'hourly' && basis !== 'fixed') {
+            if (parseFloat(line.hours) > 0) {
+                basis = 'hourly';
+            } else if (
+                (line.amount_ex_gst != null && line.amount_ex_gst !== '')
+                || (line.withdraw_amount != null && line.withdraw_amount !== '')
+            ) {
+                basis = 'fixed';
+            } else {
+                basis = String($form.length ? $form.find('.invoice-billing-mode').val() : 'hourly').toLowerCase();
+            }
         }
         if (basis !== 'fixed' && basis !== 'hourly') {
             basis = 'hourly';
         }
         $row.find('.invoice-billing-basis').val(basis);
-        $row.find('input[name="hours[]"]').val(line.hours != null && line.hours !== '' ? line.hours : '');
-        $row.find('input[name="rate_ex_gst[]"]').val(
-            line.rate_ex_gst != null && line.rate_ex_gst !== '' ? invoiceMoneyField(line.rate_ex_gst) : ''
-        );
-
+        var hoursVal = line.hours != null && line.hours !== '' ? line.hours : '';
+        var rateVal = line.rate_ex_gst != null && line.rate_ex_gst !== '' ? line.rate_ex_gst : '';
         var amountEx = line.amount_ex_gst;
         var lineGst = line.line_gst;
         var withdraw = invoiceMoney(line.withdraw_amount);
-        var hasHoursRate = line.hours != null && line.hours !== ''
-            && line.rate_ex_gst != null && line.rate_ex_gst !== '';
 
-        // Hourly edit/create: amount must follow hours × rate, not a stale saved amount.
-        if (basis === 'hourly' && hasHoursRate) {
-            amountEx = invoiceMoney(invoiceMoney(line.hours) * invoiceMoney(line.rate_ex_gst));
-            lineGst = invoiceMoney(amountEx * 0.10);
-            $row.find('.invoice-amount-ex-gst').val(amountEx.toFixed(2));
-            $row.find('.invoice-line-gst').val(lineGst.toFixed(2));
-            $row.find('.withdraw_amount_invoice_per_row').val(invoiceMoney(amountEx + lineGst).toFixed(2));
-            $row.find('.invoice-gst-included').val(lineGst > 0.00001 ? 'Yes' : 'No');
-            $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
-            return;
+        if (amountEx === null || amountEx === undefined || amountEx === '') {
+            if (line.gst_included === 'Yes' && withdraw) {
+                lineGst = invoiceMoney(withdraw / 11);
+                amountEx = invoiceMoney(withdraw - lineGst);
+            } else if (withdraw) {
+                amountEx = withdraw;
+                lineGst = lineGst || 0;
+            }
         }
+
+        // Hourly: keep hours/rate/amount in sync. Derive missing/zero rate from saved amount÷hours
+        // so edit doesn't leave Rate as 0.00 while Amount stays at a stale saved figure.
+        if (basis === 'hourly') {
+            var hoursNum = invoiceMoney(hoursVal);
+            var rateNum = invoiceMoney(rateVal);
+            var amountNum = invoiceMoney(amountEx);
+            var rateMissing = rateVal === '' || rateVal === null || rateNum === 0;
+            if (hoursVal !== '' && rateMissing && amountNum > 0 && hoursNum > 0) {
+                rateNum = invoiceMoney(amountNum / hoursNum);
+                rateVal = rateNum.toFixed(2);
+            }
+            $row.find('input[name="hours[]"]').val(hoursVal !== '' ? hoursVal : '');
+            $row.find('input[name="rate_ex_gst[]"]').val(
+                rateVal !== '' && rateVal != null ? invoiceMoneyField(rateVal) : ''
+            );
+            if (hoursVal !== '') {
+                amountEx = invoiceMoney(hoursNum * invoiceMoney(rateVal));
+                lineGst = invoiceMoney(amountEx * 0.10);
+                $row.find('.invoice-amount-ex-gst').val(amountEx.toFixed(2));
+                $row.find('.invoice-line-gst').val(lineGst.toFixed(2));
+                $row.find('.withdraw_amount_invoice_per_row').val(invoiceMoney(amountEx + lineGst).toFixed(2));
+                $row.find('.invoice-gst-included').val(lineGst > 0.00001 ? 'Yes' : 'No');
+                $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
+                return;
+            }
+        }
+
+        $row.find('input[name="hours[]"]').val(hoursVal !== '' ? hoursVal : '');
+        $row.find('input[name="rate_ex_gst[]"]').val(
+            rateVal !== '' && rateVal != null ? invoiceMoneyField(rateVal) : ''
+        );
 
         var hasSavedAmounts = (amountEx !== null && amountEx !== undefined && amountEx !== '')
             || (lineGst !== null && lineGst !== undefined && lineGst !== '')
@@ -547,15 +688,6 @@
             $row.find('.invoice-amount-ex-gst, .invoice-line-gst, .withdraw_amount_invoice_per_row').val('');
             recalcInvoiceTimesheetRow($row, { keepGst: false });
             return;
-        }
-        if (amountEx === null || amountEx === undefined || amountEx === '') {
-            if (line.gst_included === 'Yes' && withdraw) {
-                lineGst = invoiceMoney(withdraw / 11);
-                amountEx = invoiceMoney(withdraw - lineGst);
-            } else {
-                amountEx = withdraw || 0;
-                lineGst = lineGst || 0;
-            }
         }
 
         $row.find('.invoice-amount-ex-gst').val(invoiceMoneyField(amountEx));
@@ -676,10 +808,25 @@
         $form.find('.invoice-billing-basis').val(mode);
         if (mode === 'fixed') {
             $form.find('.invoice-hours').val('');
+            $form.find('.invoice-rate-ex-gst').val('');
         }
+        // Hourly amount is driven by hours × rate — keep the field read-only so it can't drift.
+        $form.find('.invoice-amount-ex-gst').prop('readonly', mode === 'hourly');
         $form.find('.productitem_invoice').children('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').each(function() {
             var $row = $(this);
             $row.find('.invoice-billing-basis').val(mode);
+            if (mode === 'hourly') {
+                var hoursRaw = $.trim($row.find('.invoice-hours').val() || '');
+                var rateRaw = $.trim($row.find('.invoice-rate-ex-gst').val() || '');
+                var amountRaw = $.trim($row.find('.invoice-amount-ex-gst').val() || '');
+                var hoursNum = invoiceMoney(hoursRaw);
+                var rateNum = invoiceMoney(rateRaw);
+                var amountNum = invoiceMoney(amountRaw);
+                // Same derive as populate: empty/zero rate + hours + amount → fill rate.
+                if (hoursRaw !== '' && (rateRaw === '' || rateNum === 0) && amountNum > 0 && hoursNum > 0) {
+                    $row.find('.invoice-rate-ex-gst').val(invoiceMoney(amountNum / hoursNum).toFixed(2));
+                }
+            }
             recalcInvoiceTimesheetRow($row, { keepGst: mode !== 'hourly' });
         });
         grandtotalAccountTab_invoice($form);
@@ -687,20 +834,15 @@
 
     function invoiceModeFromLines(records) {
         var hourly = false;
-        var fixed = false;
         $.each(records || [], function(_, line) {
             var basis = String(line.billing_basis || '').toLowerCase();
             if (basis === 'hourly' || (parseFloat(line.hours) > 0)) {
                 hourly = true;
-            }
-            if (basis === 'fixed') {
-                fixed = true;
+                return false;
             }
         });
-        if (hourly) {
-            return 'hourly';
-        }
-        return fixed ? 'fixed' : 'hourly';
+        // Amount-only / legacy lines (no hours) open as fixed so Fee/Amount aren't stuck behind hourly placeholders.
+        return hourly ? 'hourly' : 'fixed';
     }
 
     window.listOfInvoice = listOfInvoice;
@@ -716,6 +858,7 @@
     window.stripInvoiceLinePickers = stripClonedFlatpickr;
     window.invoiceLineRowIsClientBlank = invoiceLineRowIsClientBlank;
     window.resetInvoiceLineRow = resetInvoiceLineRow;
+    window.resetInvoiceFormForCreate = resetInvoiceFormForCreate;
 
     $(document).on('click', '.invoice-mode-btn', function(e) {
         e.preventDefault();

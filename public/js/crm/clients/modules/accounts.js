@@ -312,7 +312,16 @@
                         loadInvoicesForOfficeReceiptEntry(selectedMatter);
                     }
                 } else if (receiptType === '3') {
-                    if (typeof window.prepareInvoiceFormForCreate === 'function') {
+                    if (typeof window.invalidateInvoiceEditLoad === 'function') {
+                        window.invalidateInvoiceEditLoad();
+                    }
+                    $('#invoice_receipt_form input[name="function_type"]').val('add');
+                    $('#invoice_receipt_id').val('');
+                    $('#invoice_receipt_form .invoice_no').val('');
+                    $('#invoice_receipt_form .unique_invoice_no').text('');
+                    if (typeof window.resetInvoiceFormForCreate === 'function') {
+                        window.resetInvoiceFormForCreate($('#invoice_receipt_form'), selectedMatter);
+                    } else if (typeof window.prepareInvoiceFormForCreate === 'function') {
                         window.prepareInvoiceFormForCreate(selectedMatter);
                     }
                     $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
@@ -325,7 +334,14 @@
                         $('#' + formId).show();
                     }
                     if (receiptType === '3') {
-                        if (typeof window.prepareInvoiceFormForCreate === 'function') {
+                        $modal.find('.modal-title').html(modalTitles['3']);
+                        $('#invoice_receipt_form input[name="function_type"]').val('add');
+                        if (typeof window.invalidateInvoiceEditLoad === 'function') {
+                            window.invalidateInvoiceEditLoad();
+                        }
+                        if (typeof window.resetInvoiceFormForCreate === 'function') {
+                            window.resetInvoiceFormForCreate($('#invoice_receipt_form'), selectedMatter);
+                        } else if (typeof window.prepareInvoiceFormForCreate === 'function') {
                             window.prepareInvoiceFormForCreate(selectedMatter);
                         }
                         if (window._accountPendingInvoicePrefill && typeof window.getAccountCostsDisclosure === 'function' && typeof window.prefillInvoiceLinesFromDisclosure === 'function') {
