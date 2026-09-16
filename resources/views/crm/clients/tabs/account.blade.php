@@ -346,6 +346,40 @@ function initAccountTabScripts() {
         window.bindAccountEntryButtons();
     }
 
+    // Keep invoice/ledger action menus above clipped table overflow, and scroll inside the menu.
+    $(document).off('show.bs.dropdown.accountRef hide.bs.dropdown.accountRef')
+        .on('show.bs.dropdown.accountRef', '#account-tab .dropdown', function() {
+            var $toggle = $(this).find('[data-bs-toggle="dropdown"]').first();
+            var $menu = $(this).children('.dropdown-menu').first();
+            if (!$menu.length) {
+                $menu = $(this).find('> .dropdown-menu').first();
+            }
+            if (!$menu.length) {
+                return;
+            }
+            $menu.addClass('account-ref-menu');
+            if (!$menu.find('> .account-ref-menu__scroll').length) {
+                $menu.children().wrapAll('<div class="account-ref-menu__scroll"></div>');
+            }
+            if ($menu.parent()[0] !== document.body) {
+                $menu.data('account-ref-home', this);
+                document.body.appendChild($menu[0]);
+            }
+            // Popper fixed strategy (also set on invoice toggles in markup).
+            if ($toggle.length && !$toggle.attr('data-bs-popper-config')) {
+                $toggle.attr('data-bs-popper-config', '{"strategy":"fixed"}');
+            }
+        })
+        .on('hide.bs.dropdown.accountRef', '#account-tab .dropdown', function() {
+            var home = this;
+            var $menu = $('.account-ref-menu.dropdown-menu').filter(function() {
+                return $(this).data('account-ref-home') === home;
+            });
+            if ($menu.length) {
+                $(home).append($menu.first());
+            }
+        });
+
     $(document).on('click.accountTab', '#account-view-disclosure-link', function(e) {
         e.preventDefault();
         openLegalFormsTabFromAccount();
@@ -1587,22 +1621,15 @@ function initAccountTabScripts() {
     display: none !important;
 }
 
-/* FIX: Allow dropdowns to escape overflow constraints */
+/* Account ref menus: fixed strategy + body portal (see JS) — do not force transform:none */
 .transaction-table .dropdown {
-    position: relative;
+    position: static;
 }
 
-.transaction-table .dropdown-menu {
-    position: absolute !important;
-    z-index: 9999 !important;
-    transform: none !important;
-    will-change: auto !important;
-}
-
-/* Override restrictive parent rules for dropdowns */
-.account-section .dropdown-menu {
-    max-width: none !important;
-    overflow: visible !important;
+.account-section .dropdown-menu.account-ref-menu,
+.account-ref-menu.dropdown-menu {
+    max-width: min(320px, calc(100vw - 24px)) !important;
+    overflow: hidden !important;
 }
 
 /* Unallocated Office Receipt - Red Background */

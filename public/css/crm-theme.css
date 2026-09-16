@@ -4942,7 +4942,7 @@ body > .ts-dropdown.crm-global-search-dropdown [data-selectable],
 
 /* Account tab — invoice / ledger reference dropdowns (docs/theme.md)
  * Beats layout/custom .dropdown-item:hover (blue bg + broken contrast on <a>).
- * client-detail.css uses .account-section * { max-width: 100% } which clips menus — override here. */
+ * Menus use strategy:fixed and may be portaled to body (.account-ref-menu). */
 body.sidebar-mini #account-tab .transaction-table-wrapper {
   overflow-x: auto !important;
   overflow-y: visible !important;
@@ -4952,22 +4952,50 @@ body.sidebar-mini #account-tab .transaction-table td:has(.dropdown) {
   overflow: visible !important;
 }
 
-body.sidebar-mini #account-tab .transaction-table .dropdown-menu {
-  background: var(--card-bg) !important;
+body.sidebar-mini #account-tab .transaction-table .dropdown-menu,
+body.sidebar-mini .account-ref-menu.dropdown-menu {
+  z-index: 20050 !important;
+  background: #fff !important;
   background-image: none !important;
   border: 1px solid var(--border) !important;
   border-top: 3px solid var(--accent-gold) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 8px 24px rgba(30, 61, 96, 0.12) !important;
-  padding: 6px 0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(30, 61, 96, 0.18) !important;
+  padding: 0 !important;
   font-size: 0.875rem !important;
-  min-width: 280px !important;
-  max-width: min(420px, calc(100vw - 32px)) !important;
+  min-width: 260px !important;
+  max-width: min(320px, calc(100vw - 24px)) !important;
   width: max-content !important;
+  overflow: hidden !important;
+}
+
+body.sidebar-mini .account-ref-menu .account-ref-menu__scroll {
+  max-height: min(340px, calc(100vh - 96px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.sidebar-mini .account-ref-menu .account-ref-menu__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6c7a89;
+  padding: 8px 16px 4px;
+}
+
+body.sidebar-mini .account-ref-menu .account-ref-menu__meta {
+  font-size: 11px;
+  color: #666;
+  padding: 0 16px 6px 2.5rem;
 }
 
 body.sidebar-mini #account-tab .transaction-table .dropdown-item,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item,
+body.sidebar-mini .account-ref-menu .dropdown-item,
+body.sidebar-mini .account-ref-menu a.dropdown-item {
   color: var(--text-dark) !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -4979,10 +5007,13 @@ body.sidebar-mini #account-tab .transaction-table a.dropdown-item {
   white-space: normal !important;
   line-height: 1.35 !important;
   padding: 10px 16px !important;
+  border-radius: 0 !important;
 }
 
 body.sidebar-mini #account-tab .transaction-table .dropdown-item i,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item i {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item i,
+body.sidebar-mini .account-ref-menu .dropdown-item i,
+body.sidebar-mini .account-ref-menu a.dropdown-item i {
   color: var(--sidebar-active) !important;
   flex-shrink: 0 !important;
   width: 1.125rem !important;
@@ -4994,7 +5025,11 @@ body.sidebar-mini #account-tab .transaction-table a.dropdown-item i {
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:hover,
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:focus,
 body.sidebar-mini #account-tab .transaction-table a.dropdown-item:hover,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus,
+body.sidebar-mini .account-ref-menu .dropdown-item:hover,
+body.sidebar-mini .account-ref-menu .dropdown-item:focus,
+body.sidebar-mini .account-ref-menu a.dropdown-item:hover,
+body.sidebar-mini .account-ref-menu a.dropdown-item:focus {
   background-color: #ebf3ff !important;
   background-image: none !important;
   color: var(--navy) !important;
@@ -5003,23 +5038,33 @@ body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus {
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:hover i,
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:focus i,
 body.sidebar-mini #account-tab .transaction-table a.dropdown-item:hover i,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus i {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus i,
+body.sidebar-mini .account-ref-menu .dropdown-item:hover i,
+body.sidebar-mini .account-ref-menu .dropdown-item:focus i,
+body.sidebar-mini .account-ref-menu a.dropdown-item:hover i,
+body.sidebar-mini .account-ref-menu a.dropdown-item:focus i {
   color: var(--navy) !important;
 }
 
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:active,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active,
+body.sidebar-mini .account-ref-menu .dropdown-item:active,
+body.sidebar-mini .account-ref-menu a.dropdown-item:active {
   background-color: rgba(200, 153, 42, 0.15) !important;
   color: #7a5800 !important;
 }
 
 body.sidebar-mini #account-tab .transaction-table .dropdown-item:active i,
-body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active i {
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active i,
+body.sidebar-mini .account-ref-menu .dropdown-item:active i,
+body.sidebar-mini .account-ref-menu a.dropdown-item:active i {
   color: var(--accent-gold) !important;
 }
 
-body.sidebar-mini #account-tab .transaction-table .dropdown-divider {
+body.sidebar-mini #account-tab .transaction-table .dropdown-divider,
+body.sidebar-mini .account-ref-menu .dropdown-divider {
   border-top-color: var(--border) !important;
+  margin: 4px 0 !important;
 }
 
 body.sidebar-mini #account-tab .reference-dropdown-trigger {

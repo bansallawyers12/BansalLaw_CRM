@@ -215,11 +215,12 @@
 
                             <td style="text-align: center; vertical-align: middle;">
                                 <div class="dropdown d-inline-block">
-                                    <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                    <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                         <?php echo $rec_val->trans_no;?>
                                         <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
+                                    <div class="dropdown-menu account-ref-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
+                                        <div class="account-ref-menu__scroll">
                                         <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}" target="_blank">
                                             <i class="fa-solid fa-eye"></i> View Receipt
                                         </a>
@@ -295,6 +296,7 @@
                                         </a>
                                         <?php } ?>
                                         <?php } ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -390,7 +392,7 @@
                                     data-invoice-status="{{$inc_val->invoice_status}}">
                                         <td style="text-align: center; vertical-align: middle;">
                                             <div class="dropdown d-inline-block">
-                                            <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                            <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                                 <?php echo $inc_val->trans_no;?> <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
                                                 <?php
@@ -398,8 +400,10 @@
                                                 $canViewInvoicePdf = in_array($invoiceSaveType, ['final', 'draft'], true)
                                                     || $invoiceSaveType === ''; // legacy rows without save_type
                                                 ?>
-                                            <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
+                                            <div class="dropdown-menu account-ref-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
+                                                <div class="account-ref-menu__scroll">
                                                 <?php if($canViewInvoicePdf) { ?>
+                                                <div class="account-ref-menu__label">Invoice PDF</div>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
                                                     <i class="fa-solid fa-eye"></i> {{ $invoiceSaveType == 'draft' ? 'View Draft PDF' : 'View Invoice' }}
                                                 </a>
@@ -415,6 +419,7 @@
                                                 <?php } ?>
                                                 <?php if($invoiceSaveType == 'draft'){ ?>
                                                 <div class="dropdown-divider"></div>
+                                                <div class="account-ref-menu__label">Manage</div>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="draft">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit Draft Invoice
                                                 </a>
@@ -429,6 +434,7 @@
                                                     && $inc_val->invoice_status == 0;
                                                 if($isEditableFinal) { ?>
                                                 <div class="dropdown-divider"></div>
+                                                <div class="account-ref-menu__label">Manage</div>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>" data-save-type="final">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit Invoice
                                                 </a>
@@ -440,6 +446,7 @@
                                                 
                                                 <?php if($invoiceSaveType == 'final' || $invoiceSaveType === '') { ?>
                                                 <div class="dropdown-divider"></div>
+                                                <div class="account-ref-menu__label">Hubdoc</div>
                                                 <?php
                                                 $hubdoc_sent    = $inc_val->hubdoc_sent ?? false;
                                                 $hubdoc_sent_at = $inc_val->hubdoc_sent_at ?? null;
@@ -448,7 +455,7 @@
                                                     <a class="dropdown-item send-to-hubdoc-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-hubdoc-sent="1" style="color: #28a745;">
                                                         <i class="fa-solid fa-check"></i> Already Sent to Hubdoc
                                                     </a>
-                                                    <div class="dropdown-item-text" style="font-size: 11px; color: #666; padding: 0.25rem 1rem;">
+                                                    <div class="dropdown-item-text account-ref-menu__meta">
                                                         Sent: <?php echo date('d/m/Y H:i', strtotime($hubdoc_sent_at)); ?>
                                                     </div>
                                                     <a class="dropdown-item refresh-hubdoc-status" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>">
@@ -460,6 +467,7 @@
                                                     </a>
                                                 <?php } ?>
                                                 <?php } ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -601,10 +609,11 @@
                                 
                                     <td style="text-align: center; vertical-align: middle;">
                                         <div class="dropdown d-inline-block">
-                                        <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownOffice{{$off_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                        <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownOffice{{$off_val->id}}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                             <?php echo $off_val->trans_no;?> <i class="fa-solid fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                         </span>
-                                        <div class="dropdown-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
+                                        <div class="dropdown-menu account-ref-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
+                                            <div class="account-ref-menu__scroll">
                                             <?php if(isset($off_val->save_type) && $off_val->save_type == 'final') { ?>
                                             <a class="dropdown-item" href="{{URL::to('/clients/genOfficeReceipt')}}/{{$off_val->id}}" target="_blank">
                                                 <i class="fa-solid fa-eye"></i> View Receipt
@@ -673,6 +682,7 @@
                                                 <i class="fa-solid fa-link"></i> Quick Allocate to Invoice
                                             </a>
                                             <?php } ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
