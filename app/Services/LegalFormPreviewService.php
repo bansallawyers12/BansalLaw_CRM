@@ -89,6 +89,16 @@ class LegalFormPreviewService
             return null;
         }
 
+        if (
+            ($extension === 'doc' || str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"))
+            && ! str_starts_with($fileContent, 'PK')
+        ) {
+            $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
+            if ($legacyHtml !== null) {
+                return $legacyHtml;
+            }
+        }
+
         $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.'.$extension);
         $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'crm_legal_form_html_'.uniqid('', true);
 

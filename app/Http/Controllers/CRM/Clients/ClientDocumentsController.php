@@ -28,6 +28,7 @@ use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
 use App\Services\ClientDocumentFileUploadService;
 use App\Services\ClientDocumentFolderListService;
+use App\Services\LegacyDocHtmlPreviewService;
 use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Http\JsonResponse;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
@@ -2226,6 +2227,17 @@ class ClientDocumentsController extends Controller
 
         if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
             return null;
+        }
+
+        // Binary .doc: use Word piece-table extraction (PhpWord MsDoc splits words badly).
+        if (
+            ($extension === 'doc' || str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"))
+            && ! str_starts_with($fileContent, 'PK')
+        ) {
+            $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
+            if ($legacyHtml !== null) {
+                return $legacyHtml;
+            }
         }
 
         $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
