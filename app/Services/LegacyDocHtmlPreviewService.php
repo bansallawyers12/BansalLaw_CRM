@@ -36,6 +36,11 @@ class LegacyDocHtmlPreviewService
             .'p.doc-center{text-align:center;}'
             .'p.doc-title{text-align:center;font-weight:700;margin:14px 0 12px;}'
             .'p.doc-heading{font-weight:700;margin:14px 0 8px;}'
+            .'p.doc-section{text-align:center;font-weight:700;margin:18px 0 14px;}'
+            .'p.doc-num,p.doc-letter{margin:0 0 12px;}'
+            .'p.doc-num{padding-left:36px;text-indent:-36px;}'
+            .'p.doc-letter{padding-left:72px;text-indent:-28px;}'
+            .'span.doc-mark{display:inline-block;min-width:28px;}'
             .'hr.doc-rule{border:0;border-top:1px solid #000;margin:10px 0 14px;}'
             .'table.doc-table{width:100%;border-collapse:collapse;margin:4px 0 12px;}'
             .'table.doc-table td{vertical-align:top;padding:2px 0;font-size:12pt;}'
@@ -165,20 +170,146 @@ class LegacyDocHtmlPreviewService
     private function renderStructuredHtml(string $text): string
     {
         $html = '';
-        foreach ($this->splitIntoBlocks($text) as $block) {
+        foreach ($this->applyAffidavitNumbering($this->splitIntoBlocks($text)) as $block) {
             $html .= match ($block['type']) {
                 'party_table' => $this->renderPartyTable($block['rows']),
                 'meta_table' => $this->renderMetaTable($block['rows']),
                 'hr' => '<hr class="doc-rule">'."\n",
                 'title' => '<p class="doc-title">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'section' => '<p class="doc-section">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'heading' => '<p class="doc-heading">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'center' => '<p class="doc-center">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'num' => '<p class="doc-num"><span class="doc-mark">'.(int) $block['n'].'.</span> '
+                    .$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'letter' => '<p class="doc-letter"><span class="doc-mark">'.$block['n'].'.</span> '
+                    .$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'blank' => '<p class="doc-blank">&nbsp;</p>'."\n",
                 default => '<p>'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
             };
         }
 
         return $html;
+    }
+
+    /**
+     * Word stores affidavit paragraph numbers as list formatting, not text.
+     * Rebuild 1/2/3 + a/b/c numbering with hanging indents after the oath line.
+     *
+     * @param  list<array<string, mixed>>  $blocks
+     * @return list<array<string, mixed>>
+     */
+    private function applyAffidavitNumbering(array $blocks): array
+    {
+        $out = [];
+        $inBody = false;
+        $number = 0;
+        $letterIndex = 0;
+        $inLetterList = false;
+
+        foreach ($blocks as $block) {
+            $type = (string) ($block['type'] ?? 'p');
+            $text = trim((string) ($block['text'] ?? ''));
+
+            if ($type === 'heading' && $this->looksLikeCenteredSectionHeading($text)) {
+                $block['type'] = 'section';
+                $inLetterList = false;
+                $out[] = $block;
+                continue;
+            }
+
+            if ($type === 'heading' && $this->looksLikeEndOfAffidavitBody($text)) {
+                $inBody = false;
+                $inLetterList = false;
+                $out[] = $block;
+                continue;
+            }
+
+            if (in_array($type, ['party_table', 'meta_table', 'hr', 'title', 'heading', 'section', 'center'], true)) {
+                $inLetterList = false;
+                $out[] = $block;
+                continue;
+            }
+
+            if ($type === 'blank') {
+                $out[] = $block;
+                continue;
+            }
+
+            if ($type !== 'p') {
+                $out[] = $block;
+                continue;
+            }
+
+            if (! $inBody && preg_match('/make oath and say\s*:?\s*$/iu', $text) === 1) {
+                $inBody = true;
+                $out[] = $block;
+                continue;
+            }
+
+            if (! $inBody) {
+                $out[] = $block;
+                continue;
+            }
+
+            if ($this->looksLikeSignatureBlock($text)) {
+                $inBody = false;
+                $inLetterList = false;
+                $out[] = $block;
+                continue;
+            }
+
+            // Strip numbers already present in the source text.
+            $text = preg_replace('/^\(?[0-9]+\)?[\.\)]\s+/u', '', $text) ?? $text;
+            $text = preg_replace('/^\(?[a-z]\)?[\.\)]\s+/iu', '', $text) ?? $text;
+            $block['text'] = $text;
+
+            if ($inLetterList) {
+                $letterIndex++;
+                $mark = $letterIndex <= 26 ? chr(ord('a') + $letterIndex - 1) : (string) $letterIndex;
+                $out[] = [
+                    'type' => 'letter',
+                    'n' => $mark,
+                    'text' => $text,
+                ];
+                continue;
+            }
+
+            $number++;
+            $out[] = [
+                'type' => 'num',
+                'n' => $number,
+                'text' => $text,
+            ];
+
+            if (preg_match('/\bas follows\s*:?\s*$/iu', $text) === 1) {
+                $inLetterList = true;
+                $letterIndex = 0;
+            }
+        }
+
+        return $out;
+    }
+
+    private function looksLikeCenteredSectionHeading(string $text): bool
+    {
+        if (mb_strlen($text, 'UTF-8') > 80) {
+            return false;
+        }
+
+        return preg_match('/^(DISPUTED|BACKGROUND|CHRONOLOGY|RELIEF|ORDERS SOUGHT|PARTICULARS|GROUNDS|CONCLUSION)\b/iu', $text) === 1
+            || preg_match('/\bIN TOTALITY\b/u', $text) === 1;
+    }
+
+    private function looksLikeEndOfAffidavitBody(string $text): bool
+    {
+        return preg_match('/^(FORM\b|CERTIFICATE\b|SCHEDULE\b|ANNEXURE\b|EXHIBIT\b)/iu', $text) === 1;
+    }
+
+    private function looksLikeSignatureBlock(string $text): bool
+    {
+        return preg_match('/^(Sworn|Affirmed|Before me)\b/iu', $text) === 1
+            || preg_match('/^\[(signature|place|date)\b/iu', $text) === 1
+            || preg_match('/^The contents of this affidavit\b/iu', $text) === 1;
     }
 
     /**
