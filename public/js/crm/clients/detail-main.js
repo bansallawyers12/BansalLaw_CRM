@@ -459,6 +459,10 @@
 
                         getTopInvoiceNoFromDB(3);
 
+                        if (typeof window.prepareInvoiceFormForCreate === 'function') {
+                            window.prepareInvoiceFormForCreate(selectedMatter);
+                        }
+
                     }
 
                     $('#client_matter_id_invoice').val(selectedMatter);
@@ -2174,31 +2178,88 @@ success: function(response) {
 
 
 
-        $(document).delegate('.openproductrinfo_invoice', 'click', function(){
+        $(document).delegate('.openproductrinfo_invoice', 'click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
 
-            var $tbody = $(this).closest('form').find('.productitem_invoice');
+            var $form = $(this).closest('form');
+            var $tbody = $form.find('.productitem_invoice');
+            if (!$tbody.length) {
+                $tbody = $('#invoice_receipt_form .productitem_invoice');
+            }
             if (!$tbody.length) {
                 return;
             }
 
+            var $existingRows = $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice');
             var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
             var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
+
+            if (typeof window.captureInvoiceLineRowTemplate === 'function') {
+                window.captureInvoiceLineRowTemplate(!$existingRows.length);
+            }
+
             var $newRow = typeof window.cloneInvoiceLineRow === 'function'
                 ? window.cloneInvoiceLineRow($tbody, {
                     trans_date: invoiceDate,
                     entry_date: recordedDate
                 })
                 : $();
+
+            if (!$newRow.length) {
+                var $stash = $('#invoice_line_row_source tr.clonedrow_invoice').first();
+                if ($stash.length) {
+                    var $wrap = $('<table><tbody></tbody></table>');
+                    $wrap.children('tbody').html($stash.prop('outerHTML'));
+                    $newRow = $wrap.find('tr').first();
+                    if (typeof window.stripInvoiceLinePickers === 'function') {
+                        window.stripInvoiceLinePickers($newRow);
+                    }
+                    if (typeof window.resetInvoiceLineRow === 'function') {
+                        window.resetInvoiceLineRow($newRow);
+                    }
+                    if (typeof window.populateInvoiceLineRow === 'function') {
+                        window.populateInvoiceLineRow($newRow, {
+                            trans_date: invoiceDate,
+                            entry_date: recordedDate
+                        });
+                    } else {
+                        $newRow.find('input[name="trans_date[]"]').val(invoiceDate || '');
+                        $newRow.find('input[name="entry_date[]"]').val(recordedDate || '');
+                    }
+                }
+            }
+
             if (!$newRow.length) {
                 return;
             }
-            $newRow.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+
+            if ($existingRows.length) {
+                $newRow.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+            } else {
+                $newRow.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice');
+            }
+            $newRow.addClass('invoice-line-block');
             $tbody.append($newRow);
-            initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'), { allowInput: false });
+
+            if (typeof initFlatpickrForClass === 'function') {
+                initFlatpickrForClass($newRow.find('.report_entry_date_fields_invoice'), { allowInput: false });
+            }
             if (typeof window.initInvoiceWorkDates === 'function') {
                 window.initInvoiceWorkDates($newRow);
             }
+            if (typeof window.applyInvoiceBillingMode === 'function') {
+                window.applyInvoiceBillingMode($form.length ? $form : $tbody.closest('form'), $form.find('.invoice-billing-mode').val() || 'hourly');
+            }
+            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                window.grandtotalAccountTab_invoice();
+            }
 
+            var $scroll = $tbody.closest('.invoice-timesheet-scroll');
+            if ($scroll.length) {
+                $scroll.stop().animate({ scrollTop: $scroll[0].scrollHeight }, 200);
+            }
+            $newRow.find('.invoice-line-description, .payment_type_invoice_per_row').filter(':visible').first().trigger('focus');
         });
 
 

@@ -46,9 +46,18 @@
 
     var invoiceLineRowTemplate = null;
 
-    function captureInvoiceLineRowTemplate() {
+    function captureInvoiceLineRowTemplate(force) {
+        if (force) {
+            invoiceLineRowTemplate = null;
+        }
         if (invoiceLineRowTemplate === null) {
-            var $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
+            var $row = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice, #invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').first();
+            if (!$row.length) {
+                $row = $('#invoice_line_row_source tr.clonedrow_invoice').first();
+            }
+            if (!$row.length) {
+                $row = $('#create_invoice_receipt .productitem_invoice tr.clonedrow_invoice').first();
+            }
             if ($row.length) {
                 var $clone = $row.clone();
                 if (typeof window.stripInvoiceLinePickers === 'function') {
@@ -58,10 +67,39 @@
                     $clone.find('.invoice-work-date, .report_entry_date_fields_invoice')
                         .removeClass('flatpickr-input');
                 }
+                $clone.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
                 invoiceLineRowTemplate = $clone.prop('outerHTML');
             }
         }
         return invoiceLineRowTemplate;
+    }
+
+    function ensureInvoiceFormHasLineRow(selectedMatter) {
+        var $tbody = $('#invoice_receipt_form .productitem_invoice');
+        if (!$tbody.length) {
+            return $();
+        }
+        var $rows = $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice');
+        if ($rows.length) {
+            return $rows.first();
+        }
+
+        var rowTemplate = captureInvoiceLineRowTemplate(true);
+        if (!rowTemplate && typeof window.cloneInvoiceLineRow === 'function') {
+            var $cloned = window.cloneInvoiceLineRow($tbody, {});
+            if ($cloned.length) {
+                $cloned.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
+                $tbody.append($cloned);
+                return $cloned;
+            }
+        }
+        if (rowTemplate) {
+            $tbody.html(rowTemplate);
+            if (typeof window.stripInvoiceLinePickers === 'function') {
+                window.stripInvoiceLinePickers($tbody.children('tr'));
+            }
+        }
+        return $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice').first();
     }
 
     function prepareInvoiceFormForCreate(selectedMatter) {
@@ -78,12 +116,18 @@
                 window.stripInvoiceLinePickers($('#invoice_receipt_form .productitem_invoice tr'));
             }
         }
-        $('.total_invoice_ex_gst, .total_invoice_gst, .total_withdraw_amount_all_rows_invoice').text('$0.00');
+        var $firstRow = ensureInvoiceFormHasLineRow(selectedMatter);
+        if (typeof window.resetInvoiceLineRow === 'function' && $firstRow.length) {
+            window.resetInvoiceLineRow($firstRow);
+            $firstRow.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
+        }
+
+        $('#invoice_receipt_form .total_invoice_ex_gst, #invoice_receipt_form .total_invoice_gst, #invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text('$0.00');
         $('#invoice_receipt_form .invoice-draft-btn').show();
         $('#invoice_receipt_form .invoice-final-btn').text('Create invoice');
 
         var today = formatInvoiceDateToday();
-        var $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
+        $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice, #invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').first();
         $firstRow.find('input[name="trans_date[]"]').val(today);
         $firstRow.find('input[name="entry_date[]"]').each(function() {
             $(this).val(today);
@@ -292,7 +336,7 @@ function initAccountTabScripts() {
     window.__accountTabScriptsInitialized = true;
 
     // Snapshot the pristine invoice line row before any edit flow replaces it.
-    captureInvoiceLineRowTemplate();
+    captureInvoiceLineRowTemplate(true);
 
     if (typeof window.bindAccountEntryButtons === 'function') {
         window.bindAccountEntryButtons();

@@ -688,6 +688,13 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 					</div>
 				</form>
 
+				{{-- Durable clone source (outside forms so it is never submitted/cleared) --}}
+				<table id="invoice_line_row_source" class="d-none" aria-hidden="true">
+					<tbody>
+						@include('crm.clients.partials.invoice-line-row', ['feeEarners' => $__invoiceFeeEarners])
+					</tbody>
+				</table>
+
 				<!-- Office Receipt Form -->
 				<form class="form-type"  method="post" action="{{URL::to('/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
 					@csrf

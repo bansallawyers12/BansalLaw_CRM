@@ -511,6 +511,16 @@
         recalcInvoiceTimesheetRow($row, { keepGst: true });
     }
 
+    function parseInvoiceLineRowHtml(html) {
+        if (!html) {
+            return $();
+        }
+        // Browsers discard a bare <tr> string; parse inside a real table context.
+        var $wrap = $('<table><tbody></tbody></table>');
+        $wrap.children('tbody').html(html);
+        return $wrap.find('tr').first();
+    }
+
     function cloneInvoiceLineRow($tbody, line) {
         var html = '';
         if ($tbody && $tbody.length) {
@@ -520,16 +530,28 @@
             }
         }
         if (!html && typeof window.captureInvoiceLineRowTemplate === 'function') {
-            html = window.captureInvoiceLineRowTemplate();
+            html = window.captureInvoiceLineRowTemplate(true);
+        }
+        if (!html) {
+            var $stash = $('#invoice_line_row_source tr.clonedrow_invoice').first();
+            if ($stash.length) {
+                html = $stash.prop('outerHTML');
+            }
         }
         if (!html) {
             return $();
         }
-        var $row = $(html);
-        stripClonedFlatpickr($row);
-        if ($tbody && $tbody.find('tr').length) {
-            $row.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+        var $row = parseInvoiceLineRowHtml(html);
+        if (!$row.length) {
+            return $();
         }
+        stripClonedFlatpickr($row);
+        if ($tbody && $tbody.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').length) {
+            $row.removeClass('clonedrow_invoice').addClass('product_field_clone_invoice');
+        } else {
+            $row.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice');
+        }
+        $row.addClass('invoice-line-block');
         resetInvoiceLineRow($row);
         populateInvoiceLineRow($row, line || {});
         return $row;
@@ -540,18 +562,33 @@
             return;
         }
         $tbody.find('tr.clonedrow_invoice, tr.product_field_clone_invoice').remove();
-        $.each(records || [], function(index, line) {
+        var lines = records || [];
+        if (!lines.length) {
+            var $blank = cloneInvoiceLineRow($tbody, {});
+            if ($blank.length) {
+                $blank.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
+                $tbody.append($blank);
+                if (typeof initFlatpickrForClass === 'function') {
+                    initFlatpickrForClass($blank.find('.report_entry_date_fields_invoice'), { allowInput: false });
+                }
+                initInvoiceWorkDates($blank);
+            }
+            applyInvoiceBillingMode($tbody.closest('form'), 'hourly');
+            return;
+        }
+        $.each(lines, function(index, line) {
             var $row = cloneInvoiceLineRow($tbody, line);
             if (index < 1) {
                 $row.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice');
             }
+            $row.addClass('invoice-line-block');
             $tbody.append($row);
             if (typeof initFlatpickrForClass === 'function') {
                 initFlatpickrForClass($row.find('.report_entry_date_fields_invoice'), { allowInput: false });
             }
             initInvoiceWorkDates($row);
         });
-        applyInvoiceBillingMode($tbody.closest('form'), invoiceModeFromLines(records));
+        applyInvoiceBillingMode($tbody.closest('form'), invoiceModeFromLines(lines));
     }
 
     function applyInvoiceBillingMode($form, mode) {
@@ -607,6 +644,7 @@
     window.initInvoiceWorkDates = initInvoiceWorkDates;
     window.stripInvoiceLinePickers = stripClonedFlatpickr;
     window.invoiceLineRowIsClientBlank = invoiceLineRowIsClientBlank;
+    window.resetInvoiceLineRow = resetInvoiceLineRow;
 
     $(document).on('click', '.invoice-mode-btn', function(e) {
         e.preventDefault();
