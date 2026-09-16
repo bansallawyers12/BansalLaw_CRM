@@ -2239,7 +2239,9 @@ class ClientDocumentsController extends Controller
         file_put_contents($inputPath, $fileContent);
 
         try {
-            $phpWord = PhpWordIOFactory::load($inputPath);
+            // IOFactory::load() defaults to Word2007 (ZIP/DOCX). Legacy .doc needs MsDoc.
+            $readerName = $this->resolvePhpWordReaderName($extension, $fileContent);
+            $phpWord = PhpWordIOFactory::load($inputPath, $readerName);
             $writer = PhpWordIOFactory::createWriter($phpWord, 'HTML');
             ob_start();
             $writer->save('php://output');
@@ -2247,6 +2249,11 @@ class ClientDocumentsController extends Controller
 
             if ($body === false || trim($body) === '') {
                 return null;
+            }
+
+            // PhpWord MsDoc often emits UTF-16LE pairs as single codepoints (CJK mojibake).
+            if ($readerName === 'MsDoc') {
+                $body = $this->normalizeMsDocHtmlEncoding($body);
             }
 
             $styles = '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222;margin:0;padding:20px;background:#fff;}'
@@ -2277,6 +2284,101 @@ class ClientDocumentsController extends Controller
             }
             @rmdir($tempDir);
         }
+    }
+
+    /**
+     * Map extension (and magic bytes) to a PhpWord reader. Default load() is Word2007 only.
+     */
+    private function resolvePhpWordReaderName(string $extension, string $fileContent): string
+    {
+        $extension = strtolower(ltrim($extension, '.'));
+
+        // Mislabeled files: ZIP/OOXML vs OLE compound document.
+        if (str_starts_with($fileContent, 'PK')) {
+            return 'Word2007';
+        }
+        if (str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) {
+            return 'MsDoc';
+        }
+        if (str_starts_with(ltrim($fileContent), '{\\rtf')) {
+            return 'RTF';
+        }
+
+        return match ($extension) {
+            'doc' => 'MsDoc',
+            'rtf' => 'RTF',
+            'odt' => 'ODText',
+            default => 'Word2007',
+        };
+    }
+
+    /**
+     * Repair MsDoc HTML where each character packs two ASCII bytes (UTF-16LE units as codepoints).
+     */
+    private function normalizeMsDocHtmlEncoding(string $html): string
+    {
+        return (string) preg_replace_callback(
+            '/>([^<]+)</u',
+            function (array $matches): string {
+                $text = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (! $this->msDocTextLooksPacked($text)) {
+                    return '>' . $matches[1] . '<';
+                }
+
+                $fixed = $this->unpackMsDocPackedText($text);
+
+                return '>' . htmlspecialchars($fixed, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '<';
+            },
+            $html
+        );
+    }
+
+    private function msDocTextLooksPacked(string $text): bool
+    {
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $packed = 0;
+        $significant = 0;
+
+        foreach ($chars as $ch) {
+            $cp = mb_ord($ch, 'UTF-8');
+            if ($cp === false || $cp <= 0x20) {
+                continue;
+            }
+            $significant++;
+            $lo = $cp & 0xFF;
+            $hi = ($cp >> 8) & 0xFF;
+            if ($hi >= 0x20 && $hi <= 0x7E && $lo >= 0x09 && $lo <= 0x7E) {
+                $packed++;
+            }
+        }
+
+        return $significant > 0 && ($packed / $significant) >= 0.5;
+    }
+
+    private function unpackMsDocPackedText(string $text): string
+    {
+        $out = '';
+        foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
+            $cp = mb_ord($ch, 'UTF-8');
+            if ($cp === false) {
+                continue;
+            }
+            if ($cp <= 0xFF) {
+                $out .= chr($cp);
+                continue;
+            }
+            $out .= chr($cp & 0xFF);
+            $hi = ($cp >> 8) & 0xFF;
+            if ($hi !== 0) {
+                $out .= chr($hi);
+            }
+        }
+
+        // Normalize Word paragraph marks / odd control chars left after unpack.
+        $out = str_replace(["\x07", "\x0B", "\x0C"], ' ', $out);
+        $out = preg_replace("/\r\n?|\n/", "\n", $out) ?? $out;
+
+        return trim($out);
     }
 
     /**
