@@ -399,7 +399,13 @@
 
                 if (!isQuickReceiptMode) {
                     // Clear all forms before showing selected one (prevents data leakage between forms)
+                    // Skip wiping invoice lines while editing an existing invoice — renderInvoiceEditLines owns that DOM.
                     document.querySelectorAll('.form-type').forEach(form => {
+                        if (form.id === 'invoice_receipt_form'
+                            && form.querySelector('input[name="function_type"]')
+                            && form.querySelector('input[name="function_type"]').value === 'edit') {
+                            return;
+                        }
                         // Clear input fields, but preserve hidden system fields (client_id, matter_id, etc)
                         form.querySelectorAll('input[type="text"], textarea').forEach(field => {
                             if (!field.name.includes('client_id') &&
@@ -1812,6 +1818,9 @@ success: function(response) {
                                 $('#invoice_receipt_form .unique_invoice_no').text(record_get[0].invoice_no);
                                 $('#invoice_receipt_id').val(record_get[0].receipt_id);
                             }
+                            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                                window.grandtotalAccountTab_invoice($('#invoice_receipt_form'));
+                            }
 
                         }
 
@@ -1908,6 +1917,9 @@ success: function(response) {
                                 $('#invoice_receipt_form .invoice_no').val(record_get[0].invoice_no);
                                 $('#invoice_receipt_form .unique_invoice_no').text(record_get[0].invoice_no);
                                 $('#invoice_receipt_id').val(record_get[0].receipt_id);
+                            }
+                            if (typeof window.grandtotalAccountTab_invoice === 'function') {
+                                window.grandtotalAccountTab_invoice($('#invoice_receipt_form'));
                             }
 
                         }
@@ -2334,23 +2346,31 @@ success: function(response) {
 
 
 
-        $(document).delegate('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .payment_type_invoice_per_row', 'input change blur', function() {
-            var $row = $(this).closest('tr');
+        $(document).delegate('.invoice-hours, .invoice-rate-ex-gst, .invoice-amount-ex-gst, .payment_type_invoice_per_row', 'input change blur keyup', function() {
+            var $row = $(this).closest('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block');
+            if (!$row.length) {
+                $row = $(this).closest('tr');
+            }
+            $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
             if (typeof window.recalcInvoiceTimesheetRow === 'function') {
                 window.recalcInvoiceTimesheetRow($row, { keepGst: false });
             }
             if (typeof window.grandtotalAccountTab_invoice === 'function') {
-                window.grandtotalAccountTab_invoice();
+                window.grandtotalAccountTab_invoice($row.closest('form'));
             }
         });
 
-        $(document).delegate('.invoice-line-gst', 'input blur', function() {
-            var $row = $(this).closest('tr');
+        $(document).delegate('.invoice-line-gst', 'input blur keyup', function() {
+            var $row = $(this).closest('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block');
+            if (!$row.length) {
+                $row = $(this).closest('tr');
+            }
+            $row.data('invoice-gst-manual', 1).attr('data-invoice-gst-manual', '1');
             if (typeof window.recalcInvoiceTimesheetRow === 'function') {
                 window.recalcInvoiceTimesheetRow($row, { keepGst: true });
             }
             if (typeof window.grandtotalAccountTab_invoice === 'function') {
-                window.grandtotalAccountTab_invoice();
+                window.grandtotalAccountTab_invoice($row.closest('form'));
             }
         });
 
