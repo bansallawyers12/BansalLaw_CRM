@@ -2325,13 +2325,31 @@ success: function(response) {
                 return;
             }
 
-            if (invoiceRowHasFilledData($row)) {
-                if (!confirm('Are you sure you want to remove this line?')) {
-                    return;
-                }
+            function proceedRemove() {
+                removeInvoiceRow($row);
             }
 
-            removeInvoiceRow($row);
+            if (!invoiceRowHasFilledData($row)) {
+                proceedRemove();
+                return;
+            }
+
+            var ask = (typeof window.crmConfirm === 'function')
+                ? window.crmConfirm({
+                    title: 'Remove line?',
+                    text: 'Are you sure you want to remove this line?',
+                    confirmText: 'Yes, remove',
+                    cancelText: 'Cancel',
+                    icon: 'warning',
+                    confirmColor: '#b91c1c'
+                })
+                : Promise.resolve(window.confirm('Are you sure you want to remove this line?'));
+
+            ask.then(function(ok) {
+                if (ok) {
+                    proceedRemove();
+                }
+            });
 
         });
 
