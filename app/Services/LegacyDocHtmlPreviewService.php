@@ -6,10 +6,10 @@ use PhpOffice\PhpWord\Shared\OLERead;
 use Throwable;
 
 /**
- * Build a readable HTML preview for legacy binary .doc files.
+ * Build a Word-like HTML preview for legacy binary .doc files.
  *
- * PhpWord's MsDoc reader mangles character runs; this uses the Word piece table
- * (CLX / PlcPcd) from the OLE streams instead.
+ * Uses the Word piece table (CLX / PlcPcd) and preserves cell marks / tabs so
+ * party tables and two-column filing details render closer to the original layout.
  */
 class LegacyDocHtmlPreviewService
 {
@@ -20,24 +20,35 @@ class LegacyDocHtmlPreviewService
             return null;
         }
 
-        $paragraphs = $this->textToParagraphs($text);
-        if ($paragraphs === []) {
+        $body = $this->renderStructuredHtml($text);
+        if (trim(strip_tags($body)) === '') {
             return null;
-        }
-
-        $body = '';
-        foreach ($paragraphs as $paragraph) {
-            $body .= '<p>'.htmlspecialchars($paragraph, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')."</p>\n";
         }
 
         $title = htmlspecialchars(basename($filename), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $styles = '<style>'
-            .'body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.55;color:#222;margin:0;padding:24px 28px;background:#fff;}'
-            .'p{margin:0 0 0.75em;white-space:pre-wrap;word-wrap:break-word;}'
+            .'html,body{margin:0;padding:0;background:#e8e8e8;}'
+            .'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.35;color:#000;}'
+            .'.doc-page{max-width:816px;margin:16px auto;padding:72px 72px 80px;background:#fff;'
+            .'box-shadow:0 1px 4px rgba(0,0,0,.18);min-height:100vh;box-sizing:border-box;}'
+            .'p{margin:0 0 10px;}'
+            .'p.doc-blank{margin:0 0 8px;min-height:0.6em;}'
+            .'p.doc-center{text-align:center;}'
+            .'p.doc-title{text-align:center;font-weight:700;margin:14px 0 12px;}'
+            .'p.doc-heading{font-weight:700;margin:14px 0 8px;}'
+            .'hr.doc-rule{border:0;border-top:1px solid #000;margin:10px 0 14px;}'
+            .'table.doc-table{width:100%;border-collapse:collapse;margin:4px 0 12px;}'
+            .'table.doc-table td{vertical-align:top;padding:2px 0;font-size:12pt;}'
+            .'table.doc-party td:first-child{width:62%;padding-right:12px;}'
+            .'table.doc-party td:last-child{width:38%;text-align:right;white-space:nowrap;}'
+            .'table.doc-meta td:first-child{width:58%;padding-right:16px;}'
+            .'table.doc-meta td:last-child{width:42%;}'
+            .'a{color:#0563c1;}'
+            .'@media print{html,body{background:#fff}.doc-page{margin:0;box-shadow:none;max-width:none}}'
             .'</style>';
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'.$title.'</title>'
-            .$styles.'</head><body>'.$body.'</body></html>';
+            .$styles.'</head><body><div class="doc-page">'.$body.'</div></body></html>';
     }
 
     public function extractText(string $fileContent): ?string
@@ -135,37 +146,304 @@ class LegacyDocHtmlPreviewService
     }
 
     /**
+     * @deprecated kept for callers that only need flat paragraphs
      * @return list<string>
      */
     public function textToParagraphs(string $text): array
     {
-        $normalized = str_replace(["\r\n", "\r"], "\n", $text);
-        $lines = preg_split("/\n+/", $normalized) ?: [];
-        $paragraphs = [];
-
-        foreach ($lines as $line) {
-            $line = trim(preg_replace('/[ \t\x0B\xA0]+/u', ' ', $line) ?? $line);
-            if ($line !== '') {
-                $paragraphs[] = $line;
+        $blocks = $this->splitIntoBlocks($text);
+        $out = [];
+        foreach ($blocks as $block) {
+            if ($block['type'] === 'p' || $block['type'] === 'title' || $block['type'] === 'heading') {
+                $out[] = $block['text'];
             }
         }
 
-        return $paragraphs;
+        return $out;
+    }
+
+    private function renderStructuredHtml(string $text): string
+    {
+        $html = '';
+        foreach ($this->splitIntoBlocks($text) as $block) {
+            $html .= match ($block['type']) {
+                'party_table' => $this->renderPartyTable($block['rows']),
+                'meta_table' => $this->renderMetaTable($block['rows']),
+                'hr' => '<hr class="doc-rule">'."\n",
+                'title' => '<p class="doc-title">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'heading' => '<p class="doc-heading">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'center' => '<p class="doc-center">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'blank' => '<p class="doc-blank">&nbsp;</p>'."\n",
+                default => '<p>'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+            };
+        }
+
+        return $html;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function splitIntoBlocks(string $text): array
+    {
+        $normalized = str_replace(["\r\n", "\r"], "\n", $text);
+        $lines = explode("\n", $normalized);
+        $blocks = [];
+
+        foreach ($lines as $line) {
+            // Soft line breaks inside a Word paragraph.
+            $line = str_replace("\x0B", "\n", $line);
+
+            if (str_contains($line, "\x07")) {
+                $rows = $this->cellsToPartyRows($line);
+                if ($rows !== []) {
+                    $blocks[] = ['type' => 'party_table', 'rows' => $rows];
+                    continue;
+                }
+                $line = str_replace("\x07", ' ', $line);
+            }
+
+            $trimmed = trim(str_replace("\xA0", ' ', $line));
+            $trimmed = preg_replace('/[ \t]+/u', ' ', $trimmed) ?? $trimmed;
+
+            if ($trimmed === '') {
+                $blocks[] = ['type' => 'blank', 'text' => ''];
+                continue;
+            }
+
+            if (preg_match('/^_{8,}$/u', $trimmed) === 1) {
+                $blocks[] = ['type' => 'hr'];
+                continue;
+            }
+
+            $metaRow = $this->parseMetaColumns($line);
+            if ($metaRow !== null) {
+                // Merge consecutive meta rows into one table block.
+                $last = $blocks === [] ? null : $blocks[array_key_last($blocks)];
+                if (is_array($last) && ($last['type'] ?? null) === 'meta_table') {
+                    $blocks[array_key_last($blocks)]['rows'][] = $metaRow;
+                } else {
+                    $blocks[] = ['type' => 'meta_table', 'rows' => [$metaRow]];
+                }
+                continue;
+            }
+
+            // Email line that sits under the filing-details column in Word.
+            if (preg_match('/^Email:\s*(.+)$/iu', $trimmed, $emailMatch) === 1) {
+                $lastIdx = $blocks === [] ? null : array_key_last($blocks);
+                if ($lastIdx !== null && ($blocks[$lastIdx]['type'] ?? null) === 'meta_table') {
+                    $blocks[$lastIdx]['rows'][] = ['', 'Email: '.trim($emailMatch[1])];
+                    continue;
+                }
+            }
+
+            if ($this->looksLikeCenteredTitle($trimmed)) {
+                $blocks[] = ['type' => 'title', 'text' => $trimmed];
+                continue;
+            }
+
+            if ($this->looksLikeSectionHeading($trimmed)) {
+                $blocks[] = ['type' => 'heading', 'text' => $trimmed];
+                continue;
+            }
+
+            $blocks[] = ['type' => 'p', 'text' => trim($line)];
+        }
+
+        return $this->collapseExtraBlanks($blocks);
+    }
+
+    /**
+     * @return list<array{0:string,1:string}>
+     */
+    private function cellsToPartyRows(string $line): array
+    {
+        $cells = array_map(
+            static fn (string $cell): string => trim(str_replace(["\x0B", "\xA0"], ["\n", ' '], $cell)),
+            explode("\x07", $line)
+        );
+
+        $nonEmpty = array_values(array_filter($cells, static fn (string $c): bool => $c !== ''));
+        if (count($nonEmpty) < 2) {
+            return [];
+        }
+
+        // Typical court party block: Name | Role | and | Name | Role
+        $rolePattern = '/\b(Plaintiffs?|Defendants?|Applicants?|Respondents?|The Company|First and Second|Plaintiff|Defendant)\b/i';
+        $hasRole = false;
+        foreach ($nonEmpty as $cell) {
+            if (preg_match($rolePattern, $cell) === 1) {
+                $hasRole = true;
+                break;
+            }
+        }
+        if (! $hasRole && count($nonEmpty) < 3) {
+            return [];
+        }
+
+        $rows = [];
+        $i = 0;
+        $count = count($nonEmpty);
+        while ($i < $count) {
+            $left = $nonEmpty[$i];
+            $right = '';
+            if ($i + 1 < $count && preg_match($rolePattern, $nonEmpty[$i + 1]) === 1) {
+                $right = $nonEmpty[$i + 1];
+                $i += 2;
+            } else {
+                $i++;
+            }
+            $rows[] = [$left, $right];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{0:string,1:string}|null
+     */
+    private function parseMetaColumns(string $line): ?array
+    {
+        if (! str_contains($line, "\t")) {
+            return null;
+        }
+
+        $parts = preg_split('/\t+/', $line) ?: [];
+        $parts = array_values(array_filter(array_map(
+            static fn (string $p): string => trim(str_replace(["\x0B", "\xA0"], [' ', ' '], $p)),
+            $parts
+        ), static fn (string $p): bool => $p !== ''));
+
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $left = $parts[0];
+        $right = $parts[count($parts) - 1];
+        if ($left === $right && count($parts) === 2) {
+            return null;
+        }
+
+        // Filing-detail style rows.
+        $metaHint = '/^(Date of Document|Filed on behalf|Prepared by|Solicitors? Code|Telephone|Ref:|Email:)/i';
+        if (preg_match($metaHint, $left) !== 1 && preg_match($metaHint, $right) !== 1) {
+            return null;
+        }
+
+        return [$left, $right];
+    }
+
+    private function looksLikeCenteredTitle(string $text): bool
+    {
+        if (mb_strlen($text, 'UTF-8') > 80) {
+            return false;
+        }
+
+        return preg_match('/^(AFFIDAVIT|STATEMENT|OUTLINE|SUBMISSIONS|ORDERS?|NOTICE|SUMMONS)\b/i', $text) === 1
+            || preg_match('/^AFFIDAVIT OF\b/i', $text) === 1;
+    }
+
+    private function looksLikeSectionHeading(string $text): bool
+    {
+        if (mb_strlen($text, 'UTF-8') > 60) {
+            return false;
+        }
+
+        // Court caption lines stay normal left-aligned paragraphs.
+        if (preg_match('/\b(COURT|LIST|BETWEEN|ECI|VIC|PTY LTD)\b/u', $text) === 1) {
+            return false;
+        }
+
+        return preg_match('/^[A-Z0-9][A-Z0-9 \/\-]{2,}$/u', $text) === 1
+            && preg_match('/[A-Z]{3,}/u', $text) === 1
+            && ! preg_match('/\.$/u', $text);
+    }
+
+    /**
+     * @param list<array{0:string,1:string}> $rows
+     */
+    private function renderPartyTable(array $rows): string
+    {
+        $html = '<table class="doc-table doc-party" role="presentation">';
+        foreach ($rows as [$left, $right]) {
+            $html .= '<tr><td>'.$this->escapeWithBreaks($left).'</td><td>'
+                .$this->escapeWithBreaks($right).'</td></tr>';
+        }
+
+        return $html.'</table>'."\n";
+    }
+
+    /**
+     * @param list<array{0:string,1:string}> $rows
+     */
+    private function renderMetaTable(array $rows): string
+    {
+        $html = '<table class="doc-table doc-meta" role="presentation">';
+        foreach ($rows as [$left, $right]) {
+            $html .= '<tr><td>'.$this->escapeWithBreaks($left).'</td><td>'
+                .$this->escapeWithBreaks($right).'</td></tr>';
+        }
+
+        return $html.'</table>'."\n";
+    }
+
+    private function escapeWithBreaks(string $text): string
+    {
+        $text = str_replace(["\x0B", "\r\n", "\r"], "\n", $text);
+        $parts = explode("\n", $text);
+        $escaped = [];
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+            if (preg_match('/^Email:\s*(\S+@\S+)$/iu', $part, $m) === 1) {
+                $addr = htmlspecialchars($m[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                $escaped[] = 'Email: <a href="mailto:'.$addr.'">'.$addr.'</a>';
+                continue;
+            }
+            $escaped[] = htmlspecialchars($part, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        return implode('<br>', $escaped);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $blocks
+     * @return list<array<string, mixed>>
+     */
+    private function collapseExtraBlanks(array $blocks): array
+    {
+        $out = [];
+        $blankRun = 0;
+        foreach ($blocks as $block) {
+            if (($block['type'] ?? '') === 'blank') {
+                $blankRun++;
+                if ($blankRun > 1) {
+                    continue;
+                }
+            } else {
+                $blankRun = 0;
+            }
+            $out[] = $block;
+        }
+
+        return $out;
     }
 
     private function cleanWordText(string $text): string
     {
         $text = $this->stripWordFields($text);
 
-        // Cell marks / specials → paragraph breaks; soft breaks → newline.
+        // Keep \t (columns), \x07 (cells), \x0B (soft breaks), \r (paragraphs).
         $text = str_replace(
-            ["\x07", "\x0B", "\x0C", "\x01", "\x02", "\x03", "\x04", "\x05", "\x08"],
-            ["\n", "\n", "\n", '', '', '', '', '', ''],
+            ["\x0C", "\x01", "\x02", "\x03", "\x04", "\x05", "\x08"],
+            ["\n", '', '', '', '', '', ''],
             $text
         );
 
-        // Drop residual field / ASCII control chars except TAB/LF/CR.
-        $text = preg_replace('/[\x00-\x08\x0E-\x1F]/', '', $text) ?? $text;
+        // Drop other controls except TAB, LF, CR, VT, BEL(cell).
+        $text = preg_replace('/[\x00-\x06\x0E-\x1F]/', '', $text) ?? $text;
 
         return $text;
     }
