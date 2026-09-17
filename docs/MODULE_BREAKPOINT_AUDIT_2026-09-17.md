@@ -91,10 +91,11 @@ Code now has mitigations (`MsDoc` reader selection + `LegacyDocHtmlPreviewServic
 |-------|--------|
 | **Module** | Client Documents + Legal Forms |
 | **Priority** | **High** (user-facing: “still not showing complete docs / not Word format”) |
-| **Status** | **At Risk** |
-| **Breakpoint** | `LegacyDocHtmlPreviewService` (`app/Services/LegacyDocHtmlPreviewService.php`); fallback PhpWord HTML writer |
+| **Status** | **Fixed** (2026-09-17) — LibreOffice→PDF when available; improved HTML fallback layout |
+| **Breakpoint** | `OfficeToPdfConverterService` + `python_services` `/documents/convert-to-pdf`; fallback `LegacyDocHtmlPreviewService` |
 | **Symptom** | Preview opens but layout/sections incomplete vs desktop Word; not WYSIWYG. |
 | **Root cause** | No LibreOffice/MS Word server conversion; piece-table / PhpWord HTML is lossy (images, complex tables, headers/footers). |
+| **Fix** | Prefer LibreOffice PDF embed for Word/PPT; HTML fallback restores party/meta tables, court captions, affidavit numbering. Requires LibreOffice (`soffice`) on the host for true WYSIWYG. |
 | **Routes** | Same embed preview URL; Legal forms use `LegalFormPreviewService::convertDocxBytesToHtml` |
 | **Word-specific?** | Yes |
 
@@ -106,7 +107,7 @@ Code now has mitigations (`MsDoc` reader selection + `LegacyDocHtmlPreviewServic
 |-------|--------|
 | **Module** | Client Documents (all doc tabs) |
 | **Priority** | **High** |
-| **Status** | **Broken** |
+| **Status** | **Broken** without LibreOffice; **mitigated** when `soffice` installed (same `/documents/convert-to-pdf` path as DOC-BP-02) |
 | **Breakpoint** | `isOfficeDocumentPreviewType()` includes `ppt`,`pptx`,`odp` (~L2204–L2209); `convertOfficeDocumentToHtml()` only handles word + spreadsheet (~L2228 returns null for ppt*) |
 | **JS** | `document-preview.js` treats `pptx?` / `odp` as `isOfficePreview` → iframe embed → 503 error HTML |
 | **Symptom** | “Converting document…” then “Unable to preview this Office file inline.” |

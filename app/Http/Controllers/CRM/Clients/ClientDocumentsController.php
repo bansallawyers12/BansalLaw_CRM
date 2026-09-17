@@ -29,6 +29,7 @@ use App\Support\StaffClientVisibility;
 use App\Services\ClientDocumentFileUploadService;
 use App\Services\ClientDocumentFolderListService;
 use App\Services\LegacyDocHtmlPreviewService;
+use App\Services\OfficeToPdfConverterService;
 use App\Services\PersonalDocumentVideoUploadService;
 use App\Support\OfficeDocumentFormat;
 use Illuminate\Http\JsonResponse;
@@ -2065,7 +2066,23 @@ class ClientDocumentsController extends Controller
                             ->header('Content-Type', 'text/html; charset=UTF-8');
                     }
 
-                    // Spreadsheets / Office: HTML preview only (no DOC/DOCX→PDF conversion).
+                    // Prefer LibreOffice→PDF for Word-accurate layout (DOC-BP-02). Falls back to HTML.
+                    if (! $this->isSpreadsheetDocumentType($displayFilename, (string) ($document->filetype ?? ''))) {
+                        $pdfPreview = app(OfficeToPdfConverterService::class)->convertToPdf($fileContent, $displayFilename);
+                        if (is_string($pdfPreview) && $pdfPreview !== '') {
+                            $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) ?: 'document';
+                            $pdfName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $pdfName) ?: 'document';
+
+                            return response($pdfPreview, 200, [
+                                'Content-Type' => 'application/pdf',
+                                'Content-Disposition' => 'inline; filename="'.$pdfName.'.pdf"',
+                                'Cache-Control' => 'private, max-age=120',
+                                'X-CRM-Preview' => 'libreoffice-pdf',
+                            ]);
+                        }
+                    }
+
+                    // Spreadsheets / Office HTML fallback when LibreOffice is unavailable.
                     if ($this->isSpreadsheetDocumentType($displayFilename, (string) ($document->filetype ?? ''))) {
                         $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
                         if ($htmlPreview !== null) {
@@ -2083,6 +2100,7 @@ class ClientDocumentsController extends Controller
                     if ($htmlPreview !== null) {
                         return response($htmlPreview, 200, [
                             'Content-Type' => 'text/html; charset=UTF-8',
+                            'X-CRM-Preview' => 'html-fallback',
                         ]);
                     }
 

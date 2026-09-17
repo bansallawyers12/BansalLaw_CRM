@@ -85,6 +85,19 @@ class LegalFormPreviewService
 
     public function convertDocxBytesToHtml(string $fileContent, string $filename): ?string
     {
+        // Prefer LibreOffice→PDF for Word-accurate legal form preview when available.
+        $pdf = app(OfficeToPdfConverterService::class)->convertToPdf($fileContent, $filename);
+        if (is_string($pdf) && $pdf !== '') {
+            $b64 = base64_encode($pdf);
+            $title = htmlspecialchars(basename($filename), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'.$title.'</title>'
+                .'<style>html,body{margin:0;height:100%;background:#525659;}embed{border:0;width:100%;height:100%;}</style>'
+                .'</head><body>'
+                .'<embed type="application/pdf" src="data:application/pdf;base64,'.$b64.'">'
+                .'</body></html>';
+        }
+
         $extension = OfficeDocumentFormat::sniffWordExtension($filename, $fileContent);
         if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
             return null;

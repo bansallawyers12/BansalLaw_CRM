@@ -27,13 +27,15 @@ class LegacyDocHtmlPreviewService
 
         $title = htmlspecialchars(basename($filename), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $styles = '<style>'
-            .'html,body{margin:0;padding:0;background:#e8e8e8;}'
-            .'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.35;color:#000;}'
-            .'.doc-page{max-width:816px;margin:16px auto;padding:72px 72px 80px;background:#fff;'
+            .'html,body{margin:0;padding:0;background:#e8e8e8;width:100%;}'
+            .'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.35;color:#000;'
+            .'overflow-x:auto;-webkit-text-size-adjust:100%;}'
+            .'.doc-page{max-width:816px;width:100%;margin:16px auto;padding:72px 72px 80px;background:#fff;'
             .'box-shadow:0 1px 4px rgba(0,0,0,.18);min-height:100vh;box-sizing:border-box;}'
-            .'p{margin:0 0 10px;}'
+            .'p{margin:0 0 10px;word-break:normal;overflow-wrap:break-word;}'
             .'p.doc-blank{margin:0 0 8px;min-height:0.6em;}'
             .'p.doc-center{text-align:center;}'
+            .'p.doc-caption{text-align:center;margin:0 0 4px;}'
             .'p.doc-title{text-align:center;font-weight:700;margin:14px 0 12px;}'
             .'p.doc-heading{font-weight:700;margin:14px 0 8px;}'
             .'p.doc-section{text-align:center;font-weight:700;margin:18px 0 14px;}'
@@ -42,10 +44,10 @@ class LegacyDocHtmlPreviewService
             .'p.doc-letter{padding-left:72px;text-indent:-28px;}'
             .'span.doc-mark{display:inline-block;min-width:28px;}'
             .'hr.doc-rule{border:0;border-top:1px solid #000;margin:10px 0 14px;}'
-            .'table.doc-table{width:100%;border-collapse:collapse;margin:4px 0 12px;}'
-            .'table.doc-table td{vertical-align:top;padding:2px 0;font-size:12pt;}'
+            .'table.doc-table{width:100%;border-collapse:collapse;margin:4px 0 12px;table-layout:fixed;}'
+            .'table.doc-table td{vertical-align:top;padding:2px 0;font-size:12pt;word-break:normal;overflow-wrap:break-word;}'
             .'table.doc-party td:first-child{width:62%;padding-right:12px;}'
-            .'table.doc-party td:last-child{width:38%;text-align:right;white-space:nowrap;}'
+            .'table.doc-party td:last-child{width:38%;text-align:right;white-space:normal;}'
             .'table.doc-meta td:first-child{width:58%;padding-right:16px;}'
             .'table.doc-meta td:last-child{width:42%;}'
             .'a{color:#0563c1;}'
@@ -178,6 +180,7 @@ class LegacyDocHtmlPreviewService
                 'title' => '<p class="doc-title">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'section' => '<p class="doc-section">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'heading' => '<p class="doc-heading">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
+                'caption' => '<p class="doc-caption">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'center' => '<p class="doc-center">'.$this->escapeWithBreaks($block['text']).'</p>'."\n",
                 'num' => '<p class="doc-num"><span class="doc-mark">'.(int) $block['n'].'.</span> '
                     .$this->escapeWithBreaks($block['text']).'</p>'."\n",
@@ -224,7 +227,7 @@ class LegacyDocHtmlPreviewService
                 continue;
             }
 
-            if (in_array($type, ['party_table', 'meta_table', 'hr', 'title', 'heading', 'section', 'center'], true)) {
+            if (in_array($type, ['party_table', 'meta_table', 'hr', 'title', 'heading', 'section', 'center', 'caption'], true)) {
                 $inLetterList = false;
                 $out[] = $block;
                 continue;
@@ -348,6 +351,9 @@ class LegacyDocHtmlPreviewService
             }
 
             $metaRow = $this->parseMetaColumns($line);
+            if ($metaRow === null) {
+                $metaRow = $this->parseMetaColumnsLoose($trimmed);
+            }
             if ($metaRow !== null) {
                 // Merge consecutive meta rows into one table block.
                 $last = $blocks === [] ? null : $blocks[array_key_last($blocks)];
@@ -368,8 +374,24 @@ class LegacyDocHtmlPreviewService
                 }
             }
 
+            $partyInline = $this->parseInlinePartyLine($trimmed);
+            if ($partyInline !== null) {
+                $last = $blocks === [] ? null : $blocks[array_key_last($blocks)];
+                if (is_array($last) && ($last['type'] ?? null) === 'party_table') {
+                    $blocks[array_key_last($blocks)]['rows'][] = $partyInline;
+                } else {
+                    $blocks[] = ['type' => 'party_table', 'rows' => [$partyInline]];
+                }
+                continue;
+            }
+
             if ($this->looksLikeCenteredTitle($trimmed)) {
                 $blocks[] = ['type' => 'title', 'text' => $trimmed];
+                continue;
+            }
+
+            if ($this->looksLikeCourtCaption($trimmed)) {
+                $blocks[] = ['type' => 'caption', 'text' => $trimmed];
                 continue;
             }
 
@@ -381,7 +403,7 @@ class LegacyDocHtmlPreviewService
             $blocks[] = ['type' => 'p', 'text' => trim($line)];
         }
 
-        return $this->collapseExtraBlanks($blocks);
+        return $this->collapseExtraBlanks($this->mergeAdjacentPartyTables($blocks));
     }
 
     /**
@@ -462,6 +484,95 @@ class LegacyDocHtmlPreviewService
         }
 
         return [$left, $right];
+    }
+
+    /**
+     * Split "Prepared by: … Ref: …" style rows when Word tabs were lost.
+     *
+     * @return array{0:string,1:string}|null
+     */
+    private function parseMetaColumnsLoose(string $trimmed): ?array
+    {
+        if (preg_match('/^(Prepared by:.+?)\s+(Ref:\s*.+)$/iu', $trimmed, $m) === 1) {
+            return [trim($m[1]), trim($m[2])];
+        }
+
+        if (preg_match('/^(Date of Document:.+?)\s+(Solicitors?\s*Code:\s*.+)$/iu', $trimmed, $m) === 1) {
+            return [trim($m[1]), trim($m[2])];
+        }
+
+        if (preg_match('/^(Filed on behalf of:.+?)\s+(Telephone:\s*.+)$/iu', $trimmed, $m) === 1) {
+            return [trim($m[1]), trim($m[2])];
+        }
+
+        return null;
+    }
+
+    /**
+     * "RACHIT SALVI AND VIRAJ SALVI (First and Second Plaintiffs)" without cell marks.
+     *
+     * @return array{0:string,1:string}|null
+     */
+    private function parseInlinePartyLine(string $text): ?array
+    {
+        if (preg_match(
+            '/^(.+?)\s*\(([^)]*\b(?:Plaintiffs?|Defendants?|Applicants?|Respondents?|The Company|First and Second|Plaintiff|Defendant)\b[^)]*)\)\s*$/iu',
+            $text,
+            $m
+        ) !== 1) {
+            return null;
+        }
+
+        $left = trim($m[1]);
+        $right = trim($m[2]);
+        if ($left === '' || $right === '' || mb_strlen($left, 'UTF-8') > 180) {
+            return null;
+        }
+
+        return [$left, $right];
+    }
+
+    private function looksLikeCourtCaption(string $text): bool
+    {
+        if (mb_strlen($text, 'UTF-8') > 90) {
+            return false;
+        }
+
+        return preg_match('/^(IN THE |BETWEEN$|AND$|COMMERCIAL COURT|CORPORATIONS LIST|FEDERAL COURT|COUNTY COURT)/iu', $text) === 1
+            || preg_match('/^S\s*ECI\s+\d+/iu', $text) === 1
+            || preg_match('/^No\.\s*\d+/iu', $text) === 1;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $blocks
+     * @return list<array<string, mixed>>
+     */
+    private function mergeAdjacentPartyTables(array $blocks): array
+    {
+        $out = [];
+        foreach ($blocks as $block) {
+            $last = $out === [] ? null : $out[array_key_last($out)];
+            if (
+                ($block['type'] ?? '') === 'party_table'
+                && is_array($last)
+                && ($last['type'] ?? null) === 'party_table'
+            ) {
+                $out[array_key_last($out)]['rows'] = array_merge($last['rows'], $block['rows']);
+                continue;
+            }
+            // Keep lone "and" between party tables as part of the caption flow.
+            if (
+                ($block['type'] ?? '') === 'p'
+                && strcasecmp(trim((string) ($block['text'] ?? '')), 'and') === 0
+                && is_array($last)
+                && ($last['type'] ?? null) === 'party_table'
+            ) {
+                $block['type'] = 'caption';
+            }
+            $out[] = $block;
+        }
+
+        return $out;
     }
 
     private function looksLikeCenteredTitle(string $text): bool

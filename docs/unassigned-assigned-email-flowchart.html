@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unassigned vs Assigned Email — Staff Guide</title>
+  <style>
+    :root {
+      --bg: #f7f5f1;
+      --card: #ffffff;
+      --ink: #1c1917;
+      --muted: #78716c;
+      --line: #44403c;
+      --border: #d6d3d1;
+      --assigned: #166534;
+      --assigned-bg: #dcfce7;
+      --unassigned: #9a3412;
+      --unassigned-bg: #ffedd5;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.25;
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      margin: 0 auto;
+      padding: 10mm 12mm;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 6mm;
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 16pt;
+      font-weight: 600;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .sub {
+      color: var(--muted);
+      margin: 0;
+      font-size: 9.5pt;
+    }
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 9pt;
+    }
+    .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+    .swatch.assigned { background: var(--assigned); }
+    .swatch.unassigned { background: var(--unassigned); }
+    .flow {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4mm 3mm 2mm;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+    }
+    .flow svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    h2 {
+      font-size: 11pt;
+      font-weight: 600;
+      margin: 0 0 3mm;
+    }
+    .bottom {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 5mm;
+      flex: 0 0 auto;
+    }
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2.5mm 3mm;
+      font-size: 8.5pt;
+    }
+    .card .label {
+      font-size: 7.5pt;
+      color: var(--muted);
+      margin-bottom: 1mm;
+    }
+    .card .title { font-weight: 500; }
+    .card .hint {
+      font-size: 7.5pt;
+      color: var(--muted);
+      margin-top: 1mm;
+    }
+    .card.ok {
+      background: var(--assigned-bg);
+      border-color: #86efac;
+    }
+    .card.warn {
+      background: var(--unassigned-bg);
+      border-color: #fdba74;
+    }
+    .steps {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3mm 4mm;
+      font-size: 8.5pt;
+    }
+    .steps ol {
+      margin: 2mm 0 0;
+      padding-left: 4.5mm;
+    }
+    .steps li { margin-bottom: 1.5mm; }
+    @media screen {
+      body {
+        padding: 12px;
+        background: #e7e5e4;
+      }
+      .page {
+        box-shadow: 0 1px 8px rgba(0,0,0,.12);
+      }
+    }
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { background: #fff; }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        max-height: 297mm;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <h1>Unassigned vs Assigned Email</h1>
+        <p class="sub">Staff guide for the CRM mailbox</p>
+      </div>
+      <div class="legend">
+        <span><span class="swatch assigned"></span>Assigned</span>
+        <span><span class="swatch unassigned"></span>Unassigned</span>
+      </div>
+    </div>
+
+    <div class="flow">
+      <svg viewBox="0 0 736 430" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Email assignment flowchart">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#44403c"/>
+          </marker>
+        </defs>
+
+        <rect x="248" y="4" width="240" height="44" rx="7" fill="#fff" stroke="#1c1917" stroke-width="1.5"/>
+        <text x="368" y="22" text-anchor="middle" fill="#1c1917" font-size="14" font-family="Segoe UI, sans-serif">1. Email arrives</text>
+        <text x="368" y="38" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">Inbox or Sent sync</text>
+
+        <line x1="368" y1="48" x2="368" y2="68" stroke="#44403c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <rect x="198" y="72" width="340" height="54" rx="7" fill="#fff" stroke="#1c1917" stroke-width="1.5"/>
+        <text x="368" y="92" text-anchor="middle" fill="#1c1917" font-size="14" font-family="Segoe UI, sans-serif">2. System looks for a match</text>
+        <text x="368" y="110" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">To / Cc / Bcc · name · client ID / matter</text>
+
+        <line x1="368" y1="126" x2="368" y2="146" stroke="#44403c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <rect x="218" y="150" width="300" height="44" rx="7" fill="#fff" stroke="#1c1917" stroke-width="1.5"/>
+        <text x="368" y="170" text-anchor="middle" fill="#1c1917" font-size="14" font-family="Segoe UI, sans-serif">3. How many active matters?</text>
+        <text x="368" y="186" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">For that client or lead</text>
+
+        <path d="M368 194 L368 214 L140 214 L140 232" fill="none" stroke="#44403c" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <path d="M368 194 L368 214 L596 214 L596 232" fill="none" stroke="#44403c" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="220" y="208" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">Match + exactly 1 matter</text>
+        <text x="520" y="208" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">No match, or 2+ matters</text>
+
+        <rect x="40" y="236" width="200" height="50" rx="7" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/>
+        <text x="140" y="257" text-anchor="middle" fill="#166534" font-size="15" font-weight="600" font-family="Segoe UI, sans-serif">Assigned</text>
+        <text x="140" y="274" text-anchor="middle" fill="#166534" font-size="11" font-family="Segoe UI, sans-serif">On the client matter</text>
+
+        <rect x="496" y="236" width="200" height="50" rx="7" fill="#ffedd5" stroke="#9a3412" stroke-width="1.5"/>
+        <text x="596" y="257" text-anchor="middle" fill="#9a3412" font-size="15" font-weight="600" font-family="Segoe UI, sans-serif">Unassigned</text>
+        <text x="596" y="274" text-anchor="middle" fill="#9a3412" font-size="11" font-family="Segoe UI, sans-serif">Needs staff action</text>
+
+        <line x1="140" y1="286" x2="140" y2="308" stroke="#78716c" stroke-width="1" marker-end="url(#arrow)"/>
+        <line x1="596" y1="286" x2="596" y2="308" stroke="#78716c" stroke-width="1" marker-end="url(#arrow)"/>
+
+        <rect x="28" y="312" width="224" height="64" rx="7" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+        <text x="140" y="334" text-anchor="middle" fill="#1c1917" font-size="12" font-family="Segoe UI, sans-serif">Open Assigned tab</text>
+        <text x="140" y="352" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">Read on file · reassign if needed</text>
+
+        <rect x="484" y="312" width="224" height="78" rx="7" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+        <text x="596" y="334" text-anchor="middle" fill="#1c1917" font-size="12" font-family="Segoe UI, sans-serif">Open Unassigned tab</text>
+        <text x="596" y="352" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">Assign by subject</text>
+        <text x="596" y="370" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">or pick client + matter</text>
+
+        <path d="M484 350 C360 350 280 365 252 330" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+        <text x="368" y="412" text-anchor="middle" fill="#78716c" font-size="11" font-family="Segoe UI, sans-serif">After you assign → moves to Assigned</text>
+      </svg>
+    </div>
+
+    <div class="bottom">
+      <div>
+        <h2>What the system checks</h2>
+        <div class="checks">
+          <div class="card">
+            <div class="label">Check A</div>
+            <div class="title">To / Cc / Bcc email</div>
+            <div class="hint">Matches client or lead</div>
+          </div>
+          <div class="card">
+            <div class="label">Check B</div>
+            <div class="title">Name in subject/body</div>
+            <div class="hint">Unique client or lead</div>
+          </div>
+          <div class="card">
+            <div class="label">Check C</div>
+            <div class="title">Client ID / matter code</div>
+            <div class="hint">In subject or body</div>
+          </div>
+          <div class="card ok">
+            <div class="label">Auto-assign</div>
+            <div class="title">Exactly 1 active matter</div>
+            <div class="hint">Goes to Assigned</div>
+          </div>
+          <div class="card warn" style="grid-column: span 2;">
+            <div class="label">Manual</div>
+            <div class="title">2+ active matters, or no clear match</div>
+            <div class="hint">Stays Unassigned until staff files it</div>
+          </div>
+        </div>
+      </div>
+      <div class="steps">
+        <h2>Quick reminder</h2>
+        <ol>
+          <li>Mail syncs into the CRM mailbox.</li>
+          <li>System tries to match client/lead.</li>
+          <li><strong>Assigned</strong> = clear match + exactly 1 active matter.</li>
+          <li><strong>Unassigned</strong> = no match, or 2+ active matters.</li>
+          <li>Use <strong>Assign by subject</strong> or pick client + matter.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

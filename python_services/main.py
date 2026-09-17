@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Query, Form
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -30,6 +30,7 @@ from services.pdf_service import PDFService
 from services.email_parser_service import EmailParserService
 from services.email_analyzer_service import EmailAnalyzerService
 from services.email_renderer_service import EmailRendererService
+from services.document_converter_service import DocumentConverterService
 from utils.logger import setup_logger
 from utils.weasyprint_env import configure_weasyprint_dll_paths
 from utils.datetime_format import DEFAULT_TIMEZONE, format_laravel_datetime
@@ -56,6 +57,7 @@ pdf_service = None
 email_parser = None
 email_analyzer = None
 email_renderer = None
+document_converter = None
 
 
 def create_app() -> FastAPI:
@@ -63,7 +65,7 @@ def create_app() -> FastAPI:
     Factory function to create and configure the FastAPI application.
     This prevents double initialization when uvicorn reloads the module.
     """
-    global pdf_service, email_parser, email_analyzer, email_renderer
+    global pdf_service, email_parser, email_analyzer, email_renderer, document_converter
     
     # Initialize FastAPI app
     app = FastAPI(
@@ -86,6 +88,7 @@ def create_app() -> FastAPI:
     email_parser = EmailParserService()
     email_analyzer = EmailAnalyzerService()
     email_renderer = EmailRendererService()
+    document_converter = DocumentConverterService()
 
     ensure_pdf_output_dir()
     removed = cleanup_stale_pdf_outputs()
@@ -114,6 +117,7 @@ async def root():
         "endpoints": {
             "pdf": "/pdf/*",
             "email": "/email/*",
+            "documents": "/documents/*",
             "health": "/health"
         }
     }
@@ -128,6 +132,8 @@ async def health_check():
     except (ImportError, OSError):
         weasyprint_status = "unavailable"
 
+    converter_ready = bool(document_converter and document_converter.is_available())
+
     return {
         "status": "healthy",
         "services": {
@@ -135,6 +141,7 @@ async def health_check():
             "email_parser": "ready",
             "email_analyzer": "ready",
             "email_renderer": "ready",
+            "document_converter": "ready" if converter_ready else "unavailable",
             "weasyprint": weasyprint_status,
         },
         "runtime": {
@@ -147,6 +154,53 @@ async def health_check():
             "email_analysis_cache": email_analysis_cache.stats(),
         },
     }
+
+
+# ============================================================================
+# Document conversion (LibreOffice → PDF)
+# ============================================================================
+
+@app.get("/documents/converter-status")
+async def document_converter_status():
+    """Whether LibreOffice-backed Office→PDF conversion is available."""
+    available = bool(document_converter and document_converter.is_available())
+    return {
+        "available": available,
+        "soffice": document_converter.find_soffice() if document_converter else None,
+    }
+
+
+@app.post("/documents/convert-to-pdf")
+async def convert_document_to_pdf(file: UploadFile = File(...)):
+    """
+    Convert an uploaded Office document to PDF via LibreOffice.
+    Used by CRM embed preview for Word-accurate layout.
+    """
+    if document_converter is None:
+        raise HTTPException(status_code=503, detail="Document converter not initialized")
+
+    filename = file.filename or "document.bin"
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    def _convert():
+        return document_converter.convert_to_pdf(content, filename)
+
+    pdf_bytes, error = await run_sync(_convert)
+    if pdf_bytes is None:
+        status = 503 if error in {"libreoffice_unavailable", "timeout", "conversion_failed"} else 400
+        raise HTTPException(status_code=status, detail=error or "conversion_failed")
+
+    download_name = Path(filename).stem + ".pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{download_name}"',
+            "X-Converted-By": "libreoffice",
+        },
+    )
 
 
 # ============================================================================

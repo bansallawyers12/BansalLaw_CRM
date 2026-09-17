@@ -62,6 +62,8 @@ return [
     'python_pdf' => [
         'url' => env('PYTHON_PDF_SERVICE_URL', 'http://127.0.0.1:5002'),
         'timeout' => env('PYTHON_PDF_SERVICE_TIMEOUT', 60),
+        // LibreOffice Office→PDF can be slower than page renders.
+        'office_timeout' => env('PYTHON_OFFICE_PDF_TIMEOUT', env('PYTHON_SERVICE_TIMEOUT', 180)),
     ],
 
     /*
