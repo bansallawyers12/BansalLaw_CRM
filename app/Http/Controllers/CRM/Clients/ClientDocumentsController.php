@@ -30,6 +30,7 @@ use App\Services\ClientDocumentFileUploadService;
 use App\Services\ClientDocumentFolderListService;
 use App\Services\LegacyDocHtmlPreviewService;
 use App\Services\OfficeToPdfConverterService;
+use App\Services\PptxPresentationPreviewService;
 use App\Services\PersonalDocumentVideoUploadService;
 use App\Support\OfficeDocumentFormat;
 use Illuminate\Http\JsonResponse;
@@ -2096,6 +2097,21 @@ class ClientDocumentsController extends Controller
                             ->header('Content-Type', 'text/html; charset=UTF-8');
                     }
 
+                    // Presentations (PPT, PPTX, ODP): parse slide deck or display presentation card with download
+                    if ($this->isPresentationDocumentType($displayFilename, (string) ($document->filetype ?? ''))) {
+                        $downloadUrl = $this->documentPreviewUrl($document) . '?download=1';
+                        $deckHtml = app(PptxPresentationPreviewService::class)->convertToHtml($fileContent, $displayFilename, $downloadUrl);
+                        if ($deckHtml !== null) {
+                            return response($deckHtml, 200, [
+                                'Content-Type' => 'text/html; charset=UTF-8',
+                                'X-CRM-Preview' => 'pptx-slide-deck',
+                            ]);
+                        }
+
+                        return response($this->presentationFallbackPreviewHtml($displayFilename, $downloadUrl), 200)
+                            ->header('Content-Type', 'text/html; charset=UTF-8');
+                    }
+
                     $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
                     if ($htmlPreview !== null) {
                         return response($htmlPreview, 200, [
@@ -2234,6 +2250,14 @@ class ClientDocumentsController extends Controller
         $ext = ltrim($ext, '.');
 
         return in_array($ext, ['xls', 'xlsx', 'csv', 'ods'], true);
+    }
+
+    private function isPresentationDocumentType(string $filename, string $fileType = ''): bool
+    {
+        $ext = strtolower(trim($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION)));
+        $ext = ltrim($ext, '.');
+
+        return in_array($ext, ['ppt', 'pptx', 'odp'], true);
     }
 
     private function convertOfficeDocumentToHtml(string $fileContent, string $filename): ?string
@@ -2490,6 +2514,36 @@ class ClientDocumentsController extends Controller
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title></head><body style="font-family:Segoe UI,sans-serif;padding:24px;color:#444;">'
             . '<p><strong>Unable to preview this Office file inline.</strong></p>'
             . '<p>' . $detail . '</p>'
+            . '</body></html>';
+    }
+
+    private function presentationFallbackPreviewHtml(string $filename, string $downloadUrl): string
+    {
+        $safeFilename = htmlspecialchars(basename($filename), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeDownloadUrl = htmlspecialchars($downloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">'
+            . '<title>' . $safeFilename . '</title>'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<style>'
+            . 'body { margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 80vh; box-sizing: border-box; }'
+            . '.card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 480px; width: 100%; padding: 32px 24px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07); }'
+            . '.icon-wrap { width: 64px; height: 64px; margin: 0 auto 16px; background: #fff7ed; border: 1px solid #ffedd5; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #ea580c; font-size: 28px; }'
+            . '.title { font-size: 16px; font-weight: 600; color: #0f172a; margin: 0 0 6px; word-break: break-word; }'
+            . '.badge { display: inline-block; background: #ea580c; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; margin-bottom: 12px; }'
+            . '.desc { font-size: 13px; color: #64748b; line-height: 1.5; margin: 0 0 24px; }'
+            . '.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #ea580c; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }'
+            . '.btn:hover { background: #c2410c; }'
+            . '</style></head><body>'
+            . '<div class="card">'
+            . '<div class="icon-wrap">'
+            . '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>'
+            . '</div>'
+            . '<span class="badge">POWERPOINT PRESENTATION</span>'
+            . '<div class="title">' . $safeFilename . '</div>'
+            . '<p class="desc">Interactive slide rendering requires LibreOffice on the server. You can download and open this presentation directly in Microsoft PowerPoint, Keynote, or Google Slides.</p>'
+            . '<a href="' . $safeDownloadUrl . '" class="btn" target="_blank" rel="noopener">Download Presentation</a>'
+            . '</div>'
             . '</body></html>';
     }
 

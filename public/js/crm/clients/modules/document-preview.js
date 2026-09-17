@@ -310,6 +310,11 @@
         return /^(xls|xlsx|csv|ods)$/.test(normalizedType);
     }
 
+    function isPresentationFileType(fileType) {
+        var normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        return /^(ppt|pptx|odp)$/.test(normalizedType);
+    }
+
     /**
      * Expand the preview pane to full width (hide checklist list) for document viewing.
      */
@@ -440,14 +445,19 @@
             img.onerror = showPreviewError;
             img.src = embeddedPreviewUrl;
         } else if (normalizedType === 'pdf' || isOfficePreview) {
+            var isPres = isPresentationFileType(normalizedType);
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
                 headerHtml: previewHeaderHtml,
                 toolbarHtml: '',
-                loadingMessage: isOfficePreview ? 'Preparing document preview…' : 'Loading PDF preview…',
-                slowMessage: isOfficePreview
-                    ? 'Converting document for preview… please wait.'
-                    : 'Still loading PDF… please wait.',
+                loadingMessage: isPres
+                    ? 'Preparing presentation preview…'
+                    : (isOfficePreview ? 'Preparing document preview…' : 'Loading PDF preview…'),
+                slowMessage: isPres
+                    ? 'Converting presentation slides… please wait.'
+                    : (isOfficePreview
+                        ? 'Converting document for preview… please wait.'
+                        : 'Still loading PDF… please wait.'),
                 frameHeight: getPreviewFrameHeight(container, isOfficePreview),
                 onError: showPreviewError
             });
