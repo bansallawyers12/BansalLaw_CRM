@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ClientLegalForm;
+use App\Support\OfficeDocumentFormat;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpWord\IOFactory;
 
@@ -84,22 +85,27 @@ class LegalFormPreviewService
 
     public function convertDocxBytesToHtml(string $fileContent, string $filename): ?string
     {
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $extension = OfficeDocumentFormat::sniffWordExtension($filename, $fileContent);
         if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
             return null;
         }
 
-        if (
-            ($extension === 'doc' || str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"))
-            && ! str_starts_with($fileContent, 'PK')
-        ) {
+        if (OfficeDocumentFormat::isLegacyBinaryDoc($extension, $fileContent)) {
             $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
             if ($legacyHtml !== null) {
                 return $legacyHtml;
             }
+
+            Log::warning('Legal form legacy .doc HTML preview returned empty; falling back to PhpWord MsDoc', [
+                'file' => $filename,
+                'extension' => $extension,
+            ]);
         }
 
         $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.'.$extension);
+        if (! str_contains($safeFilename, '.')) {
+            $safeFilename .= '.'.$extension;
+        }
         $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'crm_legal_form_html_'.uniqid('', true);
 
         if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
@@ -111,7 +117,7 @@ class LegalFormPreviewService
 
         try {
             // IOFactory::load() defaults to Word2007 (ZIP/DOCX). Legacy .doc needs MsDoc.
-            $readerName = $this->resolvePhpWordReaderName($extension, $fileContent);
+            $readerName = OfficeDocumentFormat::phpWordReaderName($extension, $fileContent);
             $phpWord = IOFactory::load($inputPath, $readerName);
             $writer = IOFactory::createWriter($phpWord, 'HTML');
             ob_start();
@@ -143,8 +149,21 @@ class LegalFormPreviewService
                 .$body
                 .'</body></html>';
         } catch (\Throwable $e) {
+            if (OfficeDocumentFormat::looksLikeZipArchiveError($e->getMessage())) {
+                $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
+                if ($legacyHtml !== null) {
+                    Log::warning('Recovered legal form preview via LegacyDoc after ZipArchive failure', [
+                        'file' => $filename,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    return $legacyHtml;
+                }
+            }
+
             Log::warning('Legal form PhpWord HTML preview failed', [
                 'file' => $filename,
+                'reader' => OfficeDocumentFormat::phpWordReaderName($extension, $fileContent),
                 'error' => $e->getMessage(),
             ]);
 
@@ -155,31 +174,6 @@ class LegalFormPreviewService
             }
             @rmdir($tempDir);
         }
-    }
-
-    /**
-     * Map extension (and magic bytes) to a PhpWord reader. Default load() is Word2007 only.
-     */
-    private function resolvePhpWordReaderName(string $extension, string $fileContent): string
-    {
-        $extension = strtolower(ltrim($extension, '.'));
-
-        if (str_starts_with($fileContent, 'PK')) {
-            return 'Word2007';
-        }
-        if (str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) {
-            return 'MsDoc';
-        }
-        if (str_starts_with(ltrim($fileContent), '{\\rtf')) {
-            return 'RTF';
-        }
-
-        return match ($extension) {
-            'doc' => 'MsDoc',
-            'rtf' => 'RTF',
-            'odt' => 'ODText',
-            default => 'Word2007',
-        };
     }
 
     /**

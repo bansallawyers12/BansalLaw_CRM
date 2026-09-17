@@ -30,6 +30,7 @@ use App\Services\ClientDocumentFileUploadService;
 use App\Services\ClientDocumentFolderListService;
 use App\Services\LegacyDocHtmlPreviewService;
 use App\Services\PersonalDocumentVideoUploadService;
+use App\Support\OfficeDocumentFormat;
 use Illuminate\Http\JsonResponse;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
 use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
@@ -2219,28 +2220,37 @@ class ClientDocumentsController extends Controller
 
     private function convertOfficeDocumentToHtml(string $fileContent, string $filename): ?string
     {
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $pathExtension = strtolower(ltrim((string) pathinfo($filename, PATHINFO_EXTENSION), '.'));
 
-        if (in_array($extension, ['xls', 'xlsx', 'csv', 'ods'], true)) {
-            return $this->convertSpreadsheetDocumentToHtml($fileContent, $filename, $extension);
+        if (in_array($pathExtension, ['xls', 'xlsx', 'csv', 'ods'], true)) {
+            return $this->convertSpreadsheetDocumentToHtml($fileContent, $filename, $pathExtension);
         }
+
+        // Magic bytes correct missing/mislabeled extensions (e.g. OLE .doc saved without ".doc").
+        $extension = OfficeDocumentFormat::sniffWordExtension($filename, $fileContent);
 
         if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
             return null;
         }
 
         // Binary .doc: use Word piece-table extraction (PhpWord MsDoc splits words badly).
-        if (
-            ($extension === 'doc' || str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"))
-            && ! str_starts_with($fileContent, 'PK')
-        ) {
+        if (OfficeDocumentFormat::isLegacyBinaryDoc($extension, $fileContent)) {
             $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
             if ($legacyHtml !== null) {
                 return $legacyHtml;
             }
+
+            Log::warning('Legacy .doc HTML preview returned empty; falling back to PhpWord MsDoc', [
+                'file' => $filename,
+                'extension' => $extension,
+                'ole' => OfficeDocumentFormat::isOleCompound($fileContent),
+            ]);
         }
 
         $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
+        if (! str_contains($safeFilename, '.')) {
+            $safeFilename .= '.' . $extension;
+        }
         $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_html_' . uniqid('', true);
 
         if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
@@ -2252,7 +2262,7 @@ class ClientDocumentsController extends Controller
 
         try {
             // IOFactory::load() defaults to Word2007 (ZIP/DOCX). Legacy .doc needs MsDoc.
-            $readerName = $this->resolvePhpWordReaderName($extension, $fileContent);
+            $readerName = OfficeDocumentFormat::phpWordReaderName($extension, $fileContent);
             $phpWord = PhpWordIOFactory::load($inputPath, $readerName);
             $writer = PhpWordIOFactory::createWriter($phpWord, 'HTML');
             ob_start();
@@ -2284,8 +2294,22 @@ class ClientDocumentsController extends Controller
                 . $body
                 . '</body></html>';
         } catch (\Throwable $e) {
+            // Safety net for the logged DOC-BP-01 failure (Word2007 on OLE → ZipArchive 19).
+            if (OfficeDocumentFormat::looksLikeZipArchiveError($e->getMessage())) {
+                $legacyHtml = (new LegacyDocHtmlPreviewService())->convertToHtml($fileContent, $filename);
+                if ($legacyHtml !== null) {
+                    Log::warning('Recovered Office preview via LegacyDoc after ZipArchive failure', [
+                        'file' => $filename,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    return $legacyHtml;
+                }
+            }
+
             Log::warning('PhpWord HTML office preview failed', [
                 'file' => $filename,
+                'reader' => OfficeDocumentFormat::phpWordReaderName($extension, $fileContent),
                 'error' => $e->getMessage(),
             ]);
 
@@ -2296,32 +2320,6 @@ class ClientDocumentsController extends Controller
             }
             @rmdir($tempDir);
         }
-    }
-
-    /**
-     * Map extension (and magic bytes) to a PhpWord reader. Default load() is Word2007 only.
-     */
-    private function resolvePhpWordReaderName(string $extension, string $fileContent): string
-    {
-        $extension = strtolower(ltrim($extension, '.'));
-
-        // Mislabeled files: ZIP/OOXML vs OLE compound document.
-        if (str_starts_with($fileContent, 'PK')) {
-            return 'Word2007';
-        }
-        if (str_starts_with($fileContent, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) {
-            return 'MsDoc';
-        }
-        if (str_starts_with(ltrim($fileContent), '{\\rtf')) {
-            return 'RTF';
-        }
-
-        return match ($extension) {
-            'doc' => 'MsDoc',
-            'rtf' => 'RTF',
-            'odt' => 'ODText',
-            default => 'Word2007',
-        };
     }
 
     /**

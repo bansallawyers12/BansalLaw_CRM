@@ -76,6 +76,10 @@
                 + '<span class="client-doc-preview-uploaded-date">Uploaded ' + safeUploadedAt + '</span>'
                 + '</div>'
             : '';
+        // Office files need embed=1 so the server converts to HTML (browsers cannot render raw .doc/.docx).
+        var openUrl = isOfficePreview
+            ? (fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1')
+            : fileUrl;
 
         return ''
             + '<div class="client-doc-preview-header">'
@@ -87,7 +91,7 @@
             + '</div>'
             + uploadedMeta
             + '<div class="client-doc-preview-header-actions">'
-            + '<a href="' + fileUrl + '" target="_blank" rel="noopener" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-open-btn" title="Open in new tab" aria-label="Open in new tab"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>'
+            + '<a href="' + openUrl + '" target="_blank" rel="noopener" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-open-btn" title="Open in new tab" aria-label="Open in new tab"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>'
             + '<a href="' + downloadUrl + '" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-download-btn" title="Download file" aria-label="Download file"><i class="fa-solid fa-download" aria-hidden="true"></i></a>'
             + '</div>'
             + '</div>';
