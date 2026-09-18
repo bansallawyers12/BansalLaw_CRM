@@ -7632,3 +7632,175 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
         padding: 10px;
     }
 }
+
+/* Email conversation chain timeline */
+.email-chain-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--outlook-modal-overlay);
+    z-index: 10050;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.email-chain-modal-overlay.is-open {
+    display: flex;
+}
+.email-chain-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.email-chain-toolbar__filters {
+    display: inline-flex;
+    gap: 6px;
+    padding: 3px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #fff;
+}
+.email-chain-filter-btn {
+    border: 0;
+    background: transparent;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.email-chain-filter-btn.is-active {
+    background: #0078d4;
+    color: #fff;
+}
+.email-chain-toolbar__counts {
+    font-size: 12px;
+    color: #64748b;
+}
+.email-chain-subject {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    word-break: break-word;
+}
+.email-chain-timeline {
+    position: relative;
+    padding-left: 18px;
+    min-height: 80px;
+}
+.email-chain-timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: #cbd5e1;
+}
+.email-chain-loading,
+.email-chain-empty {
+    padding: 24px 12px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+}
+.email-chain-item {
+    position: relative;
+    margin: 0 0 12px;
+    padding: 12px 14px 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.email-chain-item:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+.email-chain-item.is-current {
+    border-color: #0078d4;
+    background: #f0f9ff;
+}
+.email-chain-item::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #94a3b8;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #cbd5e1;
+}
+.email-chain-item.is-incoming::before { background: #16a34a; }
+.email-chain-item.is-outgoing::before { background: #0078d4; }
+.email-chain-item__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.email-chain-item__date {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.email-chain-item__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.email-chain-item__badge--in {
+    background: #dcfce7;
+    color: #166534;
+}
+.email-chain-item__badge--out {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.email-chain-item__badge--current {
+    background: #fff7ed;
+    color: #c2410c;
+}
+.email-chain-item__from {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.email-chain-item__to {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+.email-chain-item__subject {
+    font-size: 12px;
+    color: #475569;
+    margin-top: 6px;
+}
+.email-chain-item__preview {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

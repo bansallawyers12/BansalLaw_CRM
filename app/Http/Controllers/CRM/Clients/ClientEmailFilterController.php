@@ -137,6 +137,43 @@ class ClientEmailFilterController extends Controller
         return response()->json($this->lists->bodyPayload($email));
     }
 
+    /**
+     * Chronological subject-chain timeline for one email (inbox + firm replies).
+     */
+    public function chain(Request $request, int $id): JsonResponse
+    {
+        $email = EmailLog::query()->find($id, [
+            'id', 'client_id', 'client_matter_id', 'subject', 'from_mail', 'to_mail', 'cc',
+            'mail_body_type', 'mail_type', 'type', 'text_preview', 'received_date',
+            'fetch_mail_sent_time', 'sent_at', 'created_at', 'mailbox_email',
+        ]);
+        if (! $email) {
+            return response()->json(['success' => false, 'error' => 'Email not found'], 404);
+        }
+
+        $clientId = (int) ($email->client_id ?? 0);
+        if ($clientId <= 0 && ! empty($email->client_matter_id)) {
+            $clientId = (int) ClientMatter::where('id', $email->client_matter_id)->value('client_id');
+        }
+
+        if ($clientId > 0) {
+            $this->ensureCrmRecordAccess($clientId);
+        } else {
+            $staff = Auth::guard('admin')->user();
+            if (! ($staff instanceof Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
+                return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
+            }
+        }
+
+        $direction = (string) $request->query('direction', 'all');
+        $payload = $this->lists->listChainForEmail($email, $direction);
+
+        return response()->json([
+            'success' => true,
+            ...$payload,
+        ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
     private function ensureMatterAccess(int $matterId): void
     {
         $clientId = (int) ClientMatter::where('id', $matterId)->value('client_id');

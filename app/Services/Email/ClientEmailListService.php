@@ -409,4 +409,239 @@ class ClientEmailListService
 
         return url('/documents/preview/' . (int) $email->pdf_doc_id) . '?embed=1';
     }
+
+    /**
+     * Strip reply/forward prefixes so chain messages share one subject key.
+     */
+    public static function normalizeThreadSubject(string $subject): string
+    {
+        $s = trim(preg_replace('/\s+/u', ' ', $subject) ?? $subject);
+        $previous = null;
+        while ($s !== '' && $s !== $previous) {
+            $previous = $s;
+            $stripped = preg_replace('/^(re|fw|fwd)\s*:\s*/iu', '', $s);
+            $s = trim((string) ($stripped ?? $s));
+        }
+
+        return mb_strtolower($s);
+    }
+
+    /**
+     * Distinctive LIKE needle for SQL prefilter (prefer last | segment).
+     */
+    public static function threadSubjectSearchNeedle(string $normalizedSubject): string
+    {
+        $normalizedSubject = trim($normalizedSubject);
+        if ($normalizedSubject === '') {
+            return '';
+        }
+
+        $parts = array_values(array_filter(array_map('trim', explode('|', $normalizedSubject)), static fn ($p) => $p !== ''));
+        $needle = $parts !== [] ? (string) end($parts) : $normalizedSubject;
+        if (mb_strlen($needle) < 12) {
+            $needle = $normalizedSubject;
+        }
+
+        return mb_substr($needle, 0, 120);
+    }
+
+    /**
+     * Whether two normalized subjects belong to the same conversation chain.
+     */
+    public static function subjectsBelongToSameThread(string $a, string $b): bool
+    {
+        $na = self::normalizeThreadSubject($a);
+        $nb = self::normalizeThreadSubject($b);
+        if ($na === '' || $nb === '') {
+            return $na === $nb;
+        }
+        if ($na === $nb) {
+            return true;
+        }
+
+        // Allow longer subject variants that still carry the same core thread text.
+        if (mb_strlen($na) >= 12 && mb_strlen($nb) >= 12 && (str_contains($na, $nb) || str_contains($nb, $na))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Chronological conversation chain for one email (inbox + sent / firm replies).
+     *
+     * @param  'all'|'incoming'|'outgoing'  $direction
+     * @return array{
+     *     thread_subject: string,
+     *     seed_email_id: int,
+     *     direction: string,
+     *     total: int,
+     *     incoming_count: int,
+     *     outgoing_count: int,
+     *     emails: list<array<string, mixed>>
+     * }
+     */
+    public function listChainForEmail(EmailLog $seed, string $direction = 'all'): array
+    {
+        $direction = in_array($direction, ['all', 'incoming', 'outgoing'], true) ? $direction : 'all';
+        $threadSubject = self::normalizeThreadSubject((string) ($seed->subject ?? ''));
+        $appTimezone = (string) config('app.timezone', 'Australia/Melbourne');
+        $firmDomains = $this->firmEmailDomains();
+
+        $mapItem = function (EmailLog $email) use ($seed, $appTimezone, $firmDomains): array {
+            $sortAt = $email->received_date
+                ?? $email->fetch_mail_sent_time
+                ?? $email->sent_at
+                ?? $email->created_at;
+            $dir = $this->resolveChainDirection($email, $firmDomains);
+
+            return [
+                'id' => (int) $email->id,
+                'subject' => (string) ($email->subject ?? ''),
+                'from_mail' => (string) ($email->from_mail ?? ''),
+                'to_mail' => EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null),
+                'cc' => EmailLog::resolveRecipientDisplay($email->cc ?? '', $email->type ?? null),
+                'mail_body_type' => (string) ($email->mail_body_type ?? ''),
+                'mail_type' => $email->mail_type,
+                'direction' => $dir,
+                'is_current' => (int) $email->id === (int) $seed->id,
+                'text_preview' => mb_substr((string) ($email->text_preview ?? ''), 0, 160),
+                'received_at' => $sortAt?->toIso8601String(),
+                'received_at_display' => $sortAt
+                    ? $sortAt->copy()->timezone($appTimezone)->format('d/m/Y h:i a')
+                    : '',
+            ];
+        };
+
+        if ($threadSubject === '') {
+            $only = $mapItem($seed);
+
+            return [
+                'thread_subject' => '',
+                'seed_email_id' => (int) $seed->id,
+                'direction' => $direction,
+                'total' => 1,
+                'incoming_count' => $only['direction'] === 'incoming' ? 1 : 0,
+                'outgoing_count' => $only['direction'] === 'outgoing' ? 1 : 0,
+                'emails' => [$only],
+            ];
+        }
+
+        $needle = self::threadSubjectSearchNeedle($threadSubject);
+        $query = EmailLog::query()
+            ->select([
+                'id', 'subject', 'from_mail', 'to_mail', 'cc', 'mail_body_type', 'mail_type',
+                'type', 'text_preview', 'received_date', 'fetch_mail_sent_time', 'sent_at', 'created_at',
+                'client_id', 'client_matter_id', 'mailbox_email',
+            ]);
+
+        if (! empty($seed->client_matter_id)) {
+            $query->where('client_matter_id', $seed->client_matter_id);
+        } elseif (! empty($seed->client_id)) {
+            $query->where('client_id', $seed->client_id);
+        } else {
+            $query->where('id', $seed->id);
+        }
+
+        if ($needle !== '') {
+            $query->whereRaw('LOWER(subject) LIKE ?', ['%' . mb_strtolower(addcslashes($needle, '%_\\')) . '%']);
+        }
+
+        EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
+        $candidates = $query
+            ->orderByRaw('COALESCE(received_date, fetch_mail_sent_time, sent_at, created_at) asc')
+            ->orderBy('id')
+            ->limit(250)
+            ->get();
+
+        $seedIncluded = false;
+        $items = [];
+        foreach ($candidates as $email) {
+            if (! self::subjectsBelongToSameThread((string) $email->subject, (string) $seed->subject)) {
+                continue;
+            }
+            $item = $mapItem($email);
+            if ($item['id'] === (int) $seed->id) {
+                $seedIncluded = true;
+            }
+            $items[] = $item;
+        }
+
+        if (! $seedIncluded) {
+            $items[] = $mapItem($seed);
+            usort($items, static function (array $a, array $b): int {
+                return strcmp((string) ($a['received_at'] ?? ''), (string) ($b['received_at'] ?? ''))
+                    ?: ($a['id'] <=> $b['id']);
+            });
+        }
+
+        $incomingCount = count(array_filter($items, static fn ($i) => ($i['direction'] ?? '') === 'incoming'));
+        $outgoingCount = count(array_filter($items, static fn ($i) => ($i['direction'] ?? '') === 'outgoing'));
+
+        if ($direction !== 'all') {
+            $items = array_values(array_filter(
+                $items,
+                static fn (array $i) => ($i['direction'] ?? '') === $direction
+            ));
+        }
+
+        return [
+            'thread_subject' => $threadSubject,
+            'seed_email_id' => (int) $seed->id,
+            'direction' => $direction,
+            'total' => count($items),
+            'incoming_count' => $incomingCount,
+            'outgoing_count' => $outgoingCount,
+            'emails' => array_values($items),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function firmEmailDomains(): array
+    {
+        $domains = ['bansallawyers.com.au'];
+        try {
+            $mailboxes = \App\Models\Email::query()
+                ->where('status', true)
+                ->pluck('email')
+                ->filter()
+                ->all();
+            foreach ($mailboxes as $addr) {
+                $host = strtolower((string) (parse_url('mailto:' . $addr, PHP_URL_HOST) ?: ''));
+                if ($host === '' && str_contains((string) $addr, '@')) {
+                    $host = strtolower((string) substr((string) $addr, strrpos((string) $addr, '@') + 1));
+                }
+                if ($host !== '' && ! in_array($host, $domains, true)) {
+                    $domains[] = $host;
+                }
+            }
+        } catch (\Throwable) {
+            // Schema / DB unavailable — keep default firm domain.
+        }
+
+        return $domains;
+    }
+
+    /**
+     * @param  list<string>  $firmDomains
+     */
+    private function resolveChainDirection(EmailLog $email, array $firmDomains): string
+    {
+        $folder = strtolower((string) ($email->mail_body_type ?? ''));
+        if ($folder === 'sent' || (int) ($email->mail_type ?? 0) === 2) {
+            return 'outgoing';
+        }
+
+        $from = strtolower(trim((string) ($email->from_mail ?? '')));
+        foreach ($firmDomains as $domain) {
+            if ($domain !== '' && str_contains($from, '@' . strtolower($domain))) {
+                return 'outgoing';
+            }
+        }
+
+        return 'incoming';
+    }
 }

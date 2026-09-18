@@ -94,6 +94,16 @@ function crmInitOutlookEmailsInterface() {
     const btnSendEl = document.getElementById('btnSend');
     const btnResend = document.getElementById('btnResend');
     const btnAssignToClient = document.getElementById('btnAssignToClient');
+    const btnViewEmailChain = document.getElementById('btnViewEmailChain');
+    const emailChainModal = document.getElementById('emailChainModal');
+    const emailChainModalClose = document.getElementById('emailChainModalClose');
+    const emailChainModalDismiss = document.getElementById('emailChainModalDismiss');
+    const emailChainTimeline = document.getElementById('emailChainTimeline');
+    const emailChainSubject = document.getElementById('emailChainSubject');
+    const emailChainCounts = document.getElementById('emailChainCounts');
+    const emailChainModalSubtitle = document.getElementById('emailChainModalSubtitle');
+    let emailChainDirection = 'all';
+    let emailChainSeedId = null;
     const btnUnlinkFromClient = document.getElementById('btnUnlinkFromClient');
     const assignmentReviewBanner = document.getElementById('assignmentReviewBanner');
     const btnSyncInbox = document.getElementById('btnSyncInbox');
@@ -978,6 +988,9 @@ function crmInitOutlookEmailsInterface() {
     function resetReadingPane() {
         selectedEmailId = null;
         selectedEmail = null;
+        if (btnViewEmailChain) {
+            btnViewEmailChain.hidden = true;
+        }
         if (readingPane) {
             readingPane.classList.remove('is-visible');
             readingPane.hidden = false;
@@ -2095,6 +2108,43 @@ function crmInitOutlookEmailsInterface() {
     
     const btnForward = document.getElementById('btnForward');
     if (btnForward) btnForward.addEventListener('click', () => openCompose('forward'));
+
+    if (btnViewEmailChain) {
+        btnViewEmailChain.addEventListener('click', function () {
+            openEmailChainModal();
+        });
+    }
+    if (emailChainModalClose) {
+        emailChainModalClose.addEventListener('click', closeEmailChainModal);
+    }
+    if (emailChainModalDismiss) {
+        emailChainModalDismiss.addEventListener('click', closeEmailChainModal);
+    }
+    if (emailChainModal) {
+        emailChainModal.addEventListener('click', function (event) {
+            if (event.target === emailChainModal) {
+                closeEmailChainModal();
+            }
+        });
+        emailChainModal.querySelectorAll('[data-chain-direction]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const next = btn.getAttribute('data-chain-direction') || 'all';
+                if (next === emailChainDirection) {
+                    return;
+                }
+                emailChainDirection = next;
+                emailChainModal.querySelectorAll('[data-chain-direction]').forEach(function (el) {
+                    el.classList.toggle('is-active', el.getAttribute('data-chain-direction') === emailChainDirection);
+                });
+                loadEmailChainTimeline();
+            });
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && emailChainModal.classList.contains('is-open')) {
+                closeEmailChainModal();
+            }
+        });
+    }
 
     if (btnResend) {
         btnResend.addEventListener('click', () => openComposeResend());
@@ -4705,6 +4755,7 @@ function crmInitOutlookEmailsInterface() {
             const el = document.createElement('div');
             const unread = isEmailUnread(email);
             el.className = 'email-item' + (unread ? ' unread' : '');
+            el.dataset.emailId = String(email.id);
             if (selectedEmailId === email.id) {
                 el.classList.add('active');
             }
@@ -4921,6 +4972,10 @@ function crmInitOutlookEmailsInterface() {
 
         if (btnUnlinkFromClient) {
             btnUnlinkFromClient.hidden = !canUnlinkSyncedEmail || !canShowReassignClient(email);
+        }
+
+        if (btnViewEmailChain) {
+            btnViewEmailChain.hidden = !email || !email.id;
         }
 
         if (assignmentReviewBanner) {
@@ -5696,6 +5751,164 @@ function crmInitOutlookEmailsInterface() {
     function getCsrfToken() {
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         return csrfMeta ? csrfMeta.content : '';
+    }
+
+    function emailChainApiBase() {
+        const configured = outlookContainer ? outlookContainer.getAttribute('data-email-chain-url') : '';
+        if (configured) {
+            return configured.replace(/\/$/, '');
+        }
+        return (baseUrl || '').replace(/\/$/, '') + '/email-logs';
+    }
+
+    function openEmailChainModal() {
+        if (!emailChainModal || !selectedEmailId) {
+            return;
+        }
+        emailChainSeedId = selectedEmailId;
+        emailChainDirection = 'all';
+        if (emailChainModal) {
+            emailChainModal.querySelectorAll('[data-chain-direction]').forEach(function (el) {
+                el.classList.toggle('is-active', el.getAttribute('data-chain-direction') === 'all');
+            });
+        }
+        emailChainModal.classList.add('is-open');
+        emailChainModal.setAttribute('aria-hidden', 'false');
+        loadEmailChainTimeline();
+    }
+
+    function closeEmailChainModal() {
+        if (!emailChainModal) {
+            return;
+        }
+        emailChainModal.classList.remove('is-open');
+        emailChainModal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function loadEmailChainTimeline() {
+        if (!emailChainTimeline || !emailChainSeedId) {
+            return;
+        }
+        emailChainTimeline.innerHTML = '<div class="email-chain-loading"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Loading chain…</div>';
+        if (emailChainCounts) {
+            emailChainCounts.textContent = '';
+        }
+        try {
+            const url = new URL(emailChainApiBase() + '/' + encodeURIComponent(String(emailChainSeedId)) + '/chain');
+            url.searchParams.set('direction', emailChainDirection || 'all');
+            const response = await fetch(url.toString(), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok || data.success === false) {
+                throw new Error(data.error || data.message || ('Failed to load chain (' + response.status + ')'));
+            }
+            renderEmailChainTimeline(data);
+        } catch (error) {
+            emailChainTimeline.innerHTML = '<div class="email-chain-empty">'
+                + escapeHtml(error && error.message ? error.message : 'Unable to load email chain.')
+                + '</div>';
+        }
+    }
+
+    function renderEmailChainTimeline(data) {
+        const chainEmails = Array.isArray(data.emails) ? data.emails : [];
+        const threadSubject = data.thread_subject || (selectedEmail && selectedEmail.subject) || '';
+        if (emailChainSubject) {
+            emailChainSubject.textContent = threadSubject
+                ? ('Thread: ' + threadSubject)
+                : 'Thread subject unavailable';
+        }
+        if (emailChainModalSubtitle) {
+            emailChainModalSubtitle.textContent = chainEmails.length
+                ? (chainEmails.length + ' message' + (chainEmails.length === 1 ? '' : 's') + ' by received date')
+                : 'No messages in this filter';
+        }
+        if (emailChainCounts) {
+            const inCount = typeof data.incoming_count === 'number' ? data.incoming_count : 0;
+            const outCount = typeof data.outgoing_count === 'number' ? data.outgoing_count : 0;
+            emailChainCounts.textContent = 'Incoming ' + inCount + ' · Sent/firm ' + outCount;
+        }
+        if (!chainEmails.length) {
+            emailChainTimeline.innerHTML = '<div class="email-chain-empty">No emails found for this filter.</div>';
+            return;
+        }
+
+        emailChainTimeline.innerHTML = chainEmails.map(function (item) {
+            const direction = item.direction === 'outgoing' ? 'outgoing' : 'incoming';
+            const badgeClass = direction === 'outgoing' ? 'email-chain-item__badge--out' : 'email-chain-item__badge--in';
+            const badgeLabel = direction === 'outgoing' ? 'Sent / firm' : 'Incoming';
+            const currentBadge = item.is_current
+                ? '<span class="email-chain-item__badge email-chain-item__badge--current">Current</span>'
+                : '';
+            const preview = item.text_preview ? '<div class="email-chain-item__preview">' + escapeHtml(item.text_preview) + '</div>' : '';
+            return ''
+                + '<button type="button" class="email-chain-item is-' + direction
+                + (item.is_current ? ' is-current' : '')
+                + '" data-chain-email-id="' + escapeHtml(String(item.id)) + '">'
+                + '  <div class="email-chain-item__top">'
+                + '    <span class="email-chain-item__date">' + escapeHtml(item.received_at_display || '') + '</span>'
+                + '    <span class="email-chain-item__badges">'
+                + '      <span class="email-chain-item__badge ' + badgeClass + '">' + badgeLabel + '</span>'
+                + currentBadge
+                + '    </span>'
+                + '  </div>'
+                + '  <div class="email-chain-item__from">' + escapeHtml(item.from_mail || 'Unknown') + '</div>'
+                + '  <div class="email-chain-item__to">to ' + escapeHtml(item.to_mail || '—') + '</div>'
+                + '  <div class="email-chain-item__subject">' + escapeHtml(item.subject || '(No subject)') + '</div>'
+                + preview
+                + '</button>';
+        }).join('');
+
+        emailChainTimeline.querySelectorAll('[data-chain-email-id]').forEach(function (node) {
+            node.addEventListener('click', function () {
+                const targetId = parseInt(node.getAttribute('data-chain-email-id'), 10);
+                if (!targetId) {
+                    return;
+                }
+                const meta = chainEmails.find(function (item) { return item.id === targetId; }) || null;
+                closeEmailChainModal();
+                openChainEmailInReadingPane(targetId, meta);
+            });
+        });
+    }
+
+    function openChainEmailInReadingPane(emailId, meta) {
+        const existing = emails.find(function (email) { return email.id === emailId; });
+        if (existing) {
+            selectedEmailId = emailId;
+            document.querySelectorAll('.email-item').forEach(function (el) {
+                el.classList.toggle('active', String(el.dataset.emailId) === String(emailId));
+            });
+            const listEl = document.querySelector('.email-item[data-email-id="' + emailId + '"]');
+            showEmail(existing, listEl || null);
+            if (listEl && typeof listEl.scrollIntoView === 'function') {
+                listEl.scrollIntoView({ block: 'nearest' });
+            }
+            return;
+        }
+
+        selectedEmailId = emailId;
+        const stub = {
+            id: emailId,
+            subject: (meta && meta.subject) || '(No subject)',
+            from_mail: (meta && meta.from_mail) || '',
+            to_mail: (meta && meta.to_mail) || '',
+            cc: (meta && meta.cc) || '',
+            text_preview: (meta && meta.text_preview) || '',
+            fetch_mail_sent_time_display: (meta && meta.received_at_display) || '',
+            fetch_mail_sent_time: (meta && meta.received_at) || null,
+            received_date: (meta && meta.received_at) || null,
+            mail_body_type: (meta && meta.mail_body_type) || '',
+            mail_type: meta ? meta.mail_type : null,
+            body_deferred: true,
+            attachments: []
+        };
+        showEmail(stub, null);
     }
 
     function updateAssignConfirmButton() {

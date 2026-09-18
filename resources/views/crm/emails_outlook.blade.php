@@ -98,6 +98,7 @@
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
     data-can-unlink-synced-email="{{ $canUnlinkSyncedEmail ? '1' : '0' }}"
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
+    data-email-chain-url="{{ url('/email-logs') }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
     data-compact-pagination="{{ $compactPagination ? '1' : '0' }}"
@@ -543,6 +544,9 @@
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
+                    <button type="button" class="action-btn" id="btnViewEmailChain" title="Show all emails in this conversation with received dates" hidden>
+                        <i class="fa-solid fa-timeline"></i> View chain
+                    </button>
                     <button type="button" class="action-btn action-btn--warning" id="btnResend" hidden>
                         <i class="fa-solid fa-rotate-right"></i> Resend
                     </button>
@@ -742,6 +746,45 @@
 @if($canDeleteEmail)
 @include('crm.partials.email_delete_confirm_modal')
 @endif
+
+<!-- Email conversation chain timeline -->
+<div class="email-chain-modal-overlay outlook-modal-overlay" id="emailChainModal" aria-hidden="true">
+    <div class="email-chain-modal outlook-ui-modal outlook-ui-modal--lg" role="dialog" aria-labelledby="emailChainModalTitle" aria-modal="true">
+        <div class="outlook-ui-modal__header">
+            <div class="outlook-ui-modal__header-main">
+                <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                    <i class="fa-solid fa-timeline"></i>
+                </div>
+                <div class="outlook-ui-modal__header-text">
+                    <h3 class="outlook-ui-modal__title" id="emailChainModalTitle">Email chain</h3>
+                    <p class="outlook-ui-modal__subtitle" id="emailChainModalSubtitle">Messages in this conversation by received date</p>
+                </div>
+            </div>
+            <div class="outlook-ui-modal__header-actions">
+                <button type="button" class="outlook-ui-modal__close" id="emailChainModalClose" aria-label="Close">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+        <div class="outlook-ui-modal__body outlook-ui-modal__body--scroll">
+            <div class="email-chain-toolbar">
+                <div class="email-chain-toolbar__filters" role="group" aria-label="Chain direction filter">
+                    <button type="button" class="email-chain-filter-btn is-active" data-chain-direction="all">All</button>
+                    <button type="button" class="email-chain-filter-btn" data-chain-direction="incoming">Incoming</button>
+                    <button type="button" class="email-chain-filter-btn" data-chain-direction="outgoing">Sent / firm</button>
+                </div>
+                <div class="email-chain-toolbar__counts" id="emailChainCounts" aria-live="polite"></div>
+            </div>
+            <div class="email-chain-subject" id="emailChainSubject"></div>
+            <div class="email-chain-timeline" id="emailChainTimeline">
+                <div class="email-chain-loading"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Loading chain…</div>
+            </div>
+        </div>
+        <div class="outlook-ui-modal__footer">
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel" id="emailChainModalDismiss">Close</button>
+        </div>
+    </div>
+</div>
 
 <!-- Attachment storage modal -->
 <div class="attachment-storage-modal-overlay outlook-modal-overlay" id="attachmentStorageModal" aria-hidden="true">

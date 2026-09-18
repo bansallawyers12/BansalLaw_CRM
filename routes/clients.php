@@ -121,6 +121,7 @@ Route::post('/clients/filter-emails', [ClientEmailFilterController::class, 'filt
 Route::post('/clients/filter-sentemails', [ClientEmailFilterController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
 Route::post('/clients/filter-lead-emails', [ClientEmailFilterController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
 Route::get('/email-logs/{id}/body', [ClientEmailFilterController::class, 'body'])->name('email-logs.body');
+Route::get('/email-logs/{id}/chain', [ClientEmailFilterController::class, 'chain'])->name('email-logs.chain');
 Route::post('/clients/email-senders', [ClientsController::class, 'getEmailSenders'])->name('clients.email.senders');
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');
 // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
