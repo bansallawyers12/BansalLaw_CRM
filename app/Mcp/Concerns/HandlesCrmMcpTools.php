@@ -5,9 +5,11 @@ namespace App\Mcp\Concerns;
 use App\Models\Staff;
 use App\Services\CrmMcp\CrmMcpAccessException;
 use App\Services\CrmMcp\CrmMcpReadService;
+use Illuminate\Support\Facades\Log;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
+use Throwable;
 
 trait HandlesCrmMcpTools
 {
@@ -29,5 +31,15 @@ trait HandlesCrmMcpTools
         return Response::make(
             Response::text($summary)
         )->withStructuredContent($data);
+    }
+
+    protected function unexpected(Throwable $e): Response
+    {
+        Log::error('crm_mcp.tool_failed', [
+            'tool' => static::class,
+            'message' => $e->getMessage(),
+        ]);
+
+        return Response::error('Unable to complete that CRM request. Please try again.');
     }
 }

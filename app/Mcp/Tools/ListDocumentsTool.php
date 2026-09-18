@@ -37,6 +37,8 @@ class ListDocumentsTool extends Tool
             );
         } catch (CrmMcpAccessException $e) {
             return $this->fail($e);
+        } catch (\Throwable $e) {
+            return $this->unexpected($e);
         }
     }
 

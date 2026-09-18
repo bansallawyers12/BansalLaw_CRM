@@ -16,11 +16,14 @@ class SetAdminGuardFromSanctumUser
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = $request->user()
+            ?? Auth::user()
+            ?? Auth::guard('admin')->user();
 
         if ($user instanceof Staff) {
             Auth::guard('admin')->setUser($user);
             Auth::shouldUse('admin');
+            $request->setUserResolver(static fn (?string $guard = null) => $user);
         }
 
         return $next($request);

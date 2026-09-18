@@ -69,13 +69,19 @@ class CrmMcpReadService
         $builder->where(function ($q) use ($like, $query) {
             $q->whereRaw('LOWER(COALESCE(first_name, \'\')) LIKE ?', [$like])
                 ->orWhereRaw('LOWER(COALESCE(last_name, \'\')) LIKE ?', [$like])
-                ->orWhereRaw('LOWER(TRIM(COALESCE(first_name, \'\') || \' \' || COALESCE(last_name, \'\'))) LIKE ?', [$like])
+                ->orWhereRaw(
+                    "LOWER(TRIM(CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')))) LIKE ?",
+                    [$like]
+                )
                 ->orWhereRaw('LOWER(COALESCE(email, \'\')) LIKE ?', [$like])
                 ->orWhereRaw('LOWER(COALESCE(client_id, \'\')) LIKE ?', [$like])
-                ->orWhereRaw('CAST(id AS TEXT) = ?', [(string) (int) $query]);
+                ->orWhereHas('company', function ($companyQ) use ($like) {
+                    $companyQ->whereRaw('LOWER(COALESCE(company_name, \'\')) LIKE ?', [$like]);
+                });
 
             if (ctype_digit($query)) {
-                $q->orWhere('id', (int) $query);
+                $q->orWhere('id', (int) $query)
+                    ->orWhereRaw('CAST(id AS TEXT) = ?', [$query]);
             }
 
             $phoneVariants = GlobalSearchPhoneMatcher::searchDigitVariants($query);
@@ -114,7 +120,11 @@ class CrmMcpReadService
 
         $this->audit($staff, 'search', ['q' => $query, 'type' => $type, 'count' => $rows->count()]);
 
-        return $rows->map(fn (Admin $row) => $this->serializeRecordSummary($row, $staff))->all();
+        return $rows
+            ->map(fn (Admin $row) => $this->serializeRecordSummary($row, $staff))
+            ->reject(fn (array $item) => ! empty($item['locked']))
+            ->values()
+            ->all();
     }
 
     /**
@@ -175,6 +185,8 @@ class CrmMcpReadService
         $record = $this->findAccessibleRecord($adminId, $staff);
         $noteType = $record->type === 'lead' ? 'lead' : 'client';
         $limit = $limit ?? (int) config('crm_mcp.notes_limit', 30);
+        $limit = max(1, min(100, $limit));
+        $offset = max(0, $offset);
 
         $fetched = $this->notesListService->fetchNotes($adminId, $noteType, $offset, $limit);
 
@@ -320,7 +332,7 @@ class CrmMcpReadService
         ?int $clientMatterId = null,
         ?int $limit = null,
     ): array {
-        $record = $this->findAccessibleRecord($adminId, $staff);
+        $this->findAccessibleRecord($adminId, $staff);
         $limit = $limit ?? (int) config('crm_mcp.documents_limit', 50);
         $limit = max(1, min(150, $limit));
 
@@ -351,10 +363,8 @@ class CrmMcpReadService
             $query->where('client_matter_id', $clientMatterId);
         }
 
-        // Prefer the record type when set on documents.
-        $query->where(function ($q) use ($record) {
-            $q->where('type', $record->type)->orWhereNull('type');
-        });
+        // Scoped by client_id / lead_id above; do not also require documents.type —
+        // some rows are null or historically mismatched while still belonging to the file.
 
         $total = (clone $query)->count();
         $docs = $query->orderByDesc('updated_at')->limit($limit + 1)->get();

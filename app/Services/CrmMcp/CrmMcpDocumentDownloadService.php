@@ -77,25 +77,39 @@ class CrmMcpDocumentDownloadService
 
     private function resolveS3KeyForDocument(Document $document): ?string
     {
+        $candidates = [];
+
         $myfile = (string) ($document->myfile ?? '');
         if ($myfile !== '' && str_starts_with($myfile, 'http')) {
-            $s3Key = $this->normalizeS3KeyFromMyfileUrl($myfile);
-        } else {
-            $s3Key = $this->buildLegacyS3KeyForDocument($document);
+            $fromUrl = $this->normalizeS3KeyFromMyfileUrl($myfile);
+            if ($fromUrl) {
+                $candidates[] = $fromUrl;
+            }
+        } elseif ($myfile !== '' && str_contains($myfile, '/')) {
+            // Stored as an object key rather than a full URL.
+            $candidates[] = ltrim($myfile, '/');
         }
 
-        if ($s3Key === null || $s3Key === '') {
-            return null;
+        $myfileKey = (string) ($document->myfile_key ?? '');
+        if ($myfileKey !== '' && str_contains($myfileKey, '/')) {
+            $candidates[] = ltrim($myfileKey, '/');
         }
 
-        if ($this->s3ObjectExistsLenient($s3Key)) {
-            return $s3Key;
+        $legacy = $this->buildLegacyS3KeyForDocument($document);
+        if ($legacy) {
+            $candidates[] = $legacy;
         }
 
-        if (str_contains($s3Key, '/matter/')) {
-            $altKey = str_replace('/matter/', '/visa/', $s3Key);
-            if ($this->s3ObjectExistsLenient($altKey)) {
-                return $altKey;
+        foreach (array_values(array_unique(array_filter($candidates))) as $s3Key) {
+            if ($this->s3ObjectExistsLenient($s3Key)) {
+                return $s3Key;
+            }
+
+            if (str_contains($s3Key, '/matter/')) {
+                $altKey = str_replace('/matter/', '/visa/', $s3Key);
+                if ($this->s3ObjectExistsLenient($altKey)) {
+                    return $altKey;
+                }
             }
         }
 
@@ -104,14 +118,25 @@ class CrmMcpDocumentDownloadService
 
     private function buildLegacyS3KeyForDocument(Document $document): ?string
     {
-        $admin = Admin::query()->select('client_id')->where('id', $document->client_id)->first();
+        $ownerAdminId = (int) ($document->client_id ?: $document->lead_id);
+        if ($ownerAdminId <= 0) {
+            return null;
+        }
+
+        $admin = Admin::query()->select('client_id')->where('id', $ownerAdminId)->first();
         if (! $admin || $admin->client_id === null || $admin->client_id === '') {
             return null;
         }
 
         $uniqueId = (string) $admin->client_id;
-        $fileName = $document->myfile_key ?? $document->myfile;
-        if ($fileName === null || $fileName === '') {
+        $rawName = $document->myfile_key ?? $document->myfile;
+        if ($rawName === null || $rawName === '') {
+            return null;
+        }
+
+        // Legacy keys store only the leaf filename; full keys are tried separately.
+        $fileName = basename((string) $rawName);
+        if ($fileName === '') {
             return null;
         }
 

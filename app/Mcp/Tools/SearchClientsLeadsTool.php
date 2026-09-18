@@ -33,6 +33,8 @@ class SearchClientsLeadsTool extends Tool
             );
         } catch (CrmMcpAccessException $e) {
             return $this->fail($e);
+        } catch (\Throwable $e) {
+            return $this->unexpected($e);
         }
     }
 
@@ -47,8 +49,7 @@ class SearchClientsLeadsTool extends Tool
                 ->required(),
             'type' => $schema->string()
                 ->description('Optional filter: client, lead, or omit for both.')
-                ->enum(['client', 'lead'])
-                ->nullable(),
+                ->enum(['client', 'lead']),
         ];
     }
 }
