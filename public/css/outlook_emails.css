@@ -5058,6 +5058,108 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     color: #0f172a;
 }
 
+.assign-subject-group__header--with-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.assign-subject-collapse-actions {
+    display: inline-flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.assign-subject-collapse-action {
+    border: 1px solid #99f6e4;
+    background: #fff;
+    color: #0f766e;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.assign-subject-collapse-action:hover {
+    background: #ccfbf1;
+}
+
+.assign-subject-subgroup {
+    margin-top: 10px;
+    border: 1px solid #99f6e4;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.assign-subject-subgroup__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #f0fdfa;
+}
+
+.assign-subject-collapse-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 0;
+}
+
+.assign-subject-collapse-btn .fa-chevron-down {
+    transition: transform 0.15s ease;
+    color: #0f766e;
+    width: 12px;
+}
+
+.assign-subject-subgroup.is-collapsed .assign-subject-collapse-btn .fa-chevron-down,
+.assign-subject-group--collapsible.is-collapsed .assign-subject-collapse-btn .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+
+.assign-subject-subgroup__title {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.assign-subject-subgroup__count {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f766e;
+    background: #ccfbf1;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.assign-subject-subgroup__body {
+    padding: 0 10px 10px;
+}
+
+.assign-subject-subgroup.is-collapsed .assign-subject-subgroup__body,
+.assign-subject-group--collapsible.is-collapsed .assign-subject-subgroup__body {
+    display: none;
+}
+
+.assign-subject-select-all--subgroup {
+    margin: 0;
+}
+
 .assign-subject-group__reason {
     margin-top: 4px;
     font-size: 12px;

@@ -7464,21 +7464,34 @@ function crmInitOutlookEmailsInterface() {
         if (!items || !items.length) {
             return '';
         }
-        return '<section class="assign-subject-group assign-subject-group--ready" data-group-type="ready">'
-            + '<div class="assign-subject-group__header">'
-            + '<strong>Ready to assign</strong>'
-            + '<div class="assign-subject-group__reason">Matter is already known (subject pair, only one matter, or only one active matter). Select the emails you want to assign.</div>'
-            + '</div>'
-            + '<label class="assign-subject-select-all">'
-            + '<input type="checkbox" class="assign-subject-select-all__input" checked>'
-            + '<span>Select all</span>'
-            + '</label>'
-            + '<ul class="assign-subject-results assign-subject-results--pending">'
-            + items.map(function (row) {
-                const matterId = row.client_matter_id || row.matter_id || '';
-                const clientMeta = escapeHtml((row.client_name || row.client_ref || 'Client') + '')
-                    + (row.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(row.client_ref) + '</span>' : '');
-                const matterMeta = escapeHtml((row.matter_no || '') + (row.matter_title ? ' · ' + row.matter_title : ''));
+
+        const groupsMap = {};
+        items.forEach(function (row) {
+            const matterId = row.client_matter_id || row.matter_id || '';
+            const key = String(row.client_id || '') + ':' + String(matterId);
+            if (!groupsMap[key]) {
+                groupsMap[key] = {
+                    client_id: row.client_id,
+                    client_name: row.client_name,
+                    client_ref: row.client_ref,
+                    matter_id: matterId,
+                    matter_no: row.matter_no,
+                    matter_title: row.matter_title,
+                    emails: []
+                };
+            }
+            groupsMap[key].emails.push(row);
+        });
+        const groups = Object.keys(groupsMap).map(function (key) { return groupsMap[key]; });
+        const collapseByDefault = items.length > 5 || groups.length > 2;
+
+        const subgroupHtml = groups.map(function (group, index) {
+            const clientMeta = escapeHtml((group.client_name || group.client_ref || 'Client') + '')
+                + (group.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(group.client_ref) + '</span>' : '');
+            const matterMeta = escapeHtml((group.matter_no || '') + (group.matter_title ? ' · ' + group.matter_title : ''));
+            const countLabel = group.emails.length + ' email' + (group.emails.length === 1 ? '' : 's');
+            const collapsedClass = collapseByDefault ? ' is-collapsed' : '';
+            const emailRows = group.emails.map(function (row) {
                 const manuals = Array.isArray(row.matched_manual_emails) ? row.matched_manual_emails : [];
                 const matchNote = row.matched_by === 'manual_upload_thread'
                     ? '<span class="assign-subject-results__match">Matched '
@@ -7494,16 +7507,51 @@ function crmInitOutlookEmailsInterface() {
                     + '<input type="checkbox" class="assign-subject-email-check" checked'
                     + ' data-email-log-id="' + escapeHtml(String(row.email_log_id)) + '"'
                     + ' data-client-id="' + escapeHtml(String(row.client_id)) + '"'
-                    + ' data-client-matter-id="' + escapeHtml(String(matterId)) + '">'
+                    + ' data-client-matter-id="' + escapeHtml(String(group.matter_id)) + '">'
                     + '<span class="assign-subject-row__body">'
                     + '<span class="assign-subject-results__subject">' + escapeHtml(row.subject || '(No subject)') + '</span>'
-                    + '<span class="assign-subject-results__meta">' + clientMeta
-                    + (matterMeta ? ' · ' + matterMeta : '')
-                    + '</span>'
+                    + '<span class="assign-subject-results__meta">' + escapeHtml(row.from_mail || '') + '</span>'
                     + matchNote
                     + '</span></label></li>';
-            }).join('')
-            + '</ul></section>';
+            }).join('');
+
+            return '<div class="assign-subject-subgroup' + collapsedClass + '" data-subgroup-index="' + index + '">'
+                + '<div class="assign-subject-subgroup__toolbar">'
+                + '<button type="button" class="assign-subject-collapse-btn" aria-expanded="'
+                + (collapseByDefault ? 'false' : 'true') + '" title="Collapse or expand this group">'
+                + '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>'
+                + '<span class="assign-subject-subgroup__title">' + clientMeta
+                + (matterMeta ? ' · ' + matterMeta : '')
+                + '</span>'
+                + '<span class="assign-subject-subgroup__count">' + countLabel + '</span>'
+                + '</button>'
+                + '<label class="assign-subject-select-all assign-subject-select-all--subgroup">'
+                + '<input type="checkbox" class="assign-subject-select-all__input" checked>'
+                + '<span>Select all</span>'
+                + '</label>'
+                + '</div>'
+                + '<div class="assign-subject-subgroup__body">'
+                + '<ul class="assign-subject-results assign-subject-results--pending">' + emailRows + '</ul>'
+                + '</div></div>';
+        }).join('');
+
+        return '<section class="assign-subject-group assign-subject-group--ready" data-group-type="ready">'
+            + '<div class="assign-subject-group__header assign-subject-group__header--with-actions">'
+            + '<div>'
+            + '<strong>Ready to assign</strong>'
+            + '<div class="assign-subject-group__reason">Matter is already known (subject pair, only one matter, or only one active matter). Select the emails you want to assign.</div>'
+            + '</div>'
+            + '<div class="assign-subject-collapse-actions" role="group" aria-label="Collapse ready groups">'
+            + '<button type="button" class="assign-subject-collapse-action" data-collapse-action="expand">Expand all</button>'
+            + '<button type="button" class="assign-subject-collapse-action" data-collapse-action="collapse">Collapse all</button>'
+            + '</div>'
+            + '</div>'
+            + '<label class="assign-subject-select-all">'
+            + '<input type="checkbox" class="assign-subject-select-all__input assign-subject-select-all__input--section" checked>'
+            + '<span>Select all ready emails</span>'
+            + '</label>'
+            + subgroupHtml
+            + '</section>';
     }
 
     function renderNeedsMatterGroups(groups) {
@@ -7536,12 +7584,24 @@ function crmInitOutlookEmailsInterface() {
                     + '<span class="assign-subject-results__meta">' + escapeHtml(email.from_mail || '') + '</span>'
                     + '</span></label></li>';
             }).join('');
-            return '<section class="assign-subject-group" data-group-index="' + groupIndex + '" data-group-type="needs" data-client-id="' + escapeHtml(String(group.client_id)) + '">'
-                + '<div class="assign-subject-group__header">'
+            const collapsedClass = emails.length > 3 ? ' is-collapsed' : '';
+            return '<section class="assign-subject-group assign-subject-group--collapsible'
+                + collapsedClass + '" data-group-index="' + groupIndex
+                + '" data-group-type="needs" data-client-id="' + escapeHtml(String(group.client_id)) + '">'
+                + '<div class="assign-subject-group__header assign-subject-group__header--with-actions">'
+                + '<button type="button" class="assign-subject-collapse-btn" aria-expanded="'
+                + (emails.length > 3 ? 'false' : 'true') + '" title="Collapse or expand this group">'
+                + '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>'
+                + '<span class="assign-subject-subgroup__title">'
                 + '<strong>' + escapeHtml(group.client_name || group.client_ref || 'Client') + '</strong>'
                 + (group.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(group.client_ref) + '</span>' : '')
-                + '<div class="assign-subject-group__reason">' + escapeHtml(reason) + '</div>'
+                + '</span>'
+                + '<span class="assign-subject-subgroup__count">' + emails.length
+                + ' email' + (emails.length === 1 ? '' : 's') + '</span>'
+                + '</button>'
                 + '</div>'
+                + '<div class="assign-subject-group__reason">' + escapeHtml(reason) + '</div>'
+                + '<div class="assign-subject-subgroup__body">'
                 + '<label class="assign-subject-group__matter-label">Matter</label>'
                 + '<select class="list-filter-select assign-subject-group__matter" aria-label="Choose matter">'
                 + '<option value="">Select matter</option>'
@@ -7552,8 +7612,49 @@ function crmInitOutlookEmailsInterface() {
                 + '<span>Select all</span>'
                 + '</label>'
                 + '<ul class="assign-subject-results assign-subject-results--pending">' + emailList + '</ul>'
-                + '</section>';
+                + '</div></section>';
         }).join('');
+    }
+
+    function setAssignSubjectGroupCollapsed(groupEl, collapsed) {
+        if (!groupEl) {
+            return;
+        }
+        groupEl.classList.toggle('is-collapsed', collapsed);
+        const btn = groupEl.querySelector('.assign-subject-collapse-btn');
+        if (btn) {
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        }
+    }
+
+    function bindAssignBySubjectCollapse() {
+        if (!assignBySubjectModalBody) {
+            return;
+        }
+
+        assignBySubjectModalBody.querySelectorAll('.assign-subject-collapse-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (event) {
+                event.preventDefault();
+                const group = btn.closest('.assign-subject-subgroup, .assign-subject-group--collapsible');
+                if (!group) {
+                    return;
+                }
+                setAssignSubjectGroupCollapsed(group, !group.classList.contains('is-collapsed'));
+            });
+        });
+
+        assignBySubjectModalBody.querySelectorAll('[data-collapse-action]').forEach(function (actionBtn) {
+            actionBtn.addEventListener('click', function () {
+                const collapse = actionBtn.getAttribute('data-collapse-action') === 'collapse';
+                const readySection = actionBtn.closest('.assign-subject-group--ready');
+                if (!readySection) {
+                    return;
+                }
+                readySection.querySelectorAll('.assign-subject-subgroup').forEach(function (group) {
+                    setAssignSubjectGroupCollapsed(group, collapse);
+                });
+            });
+        });
     }
 
     function bindAssignBySubjectSelectAll() {
@@ -7562,13 +7663,19 @@ function crmInitOutlookEmailsInterface() {
         }
         assignBySubjectModalBody.querySelectorAll('.assign-subject-select-all__input').forEach(function (master) {
             master.addEventListener('change', function () {
-                const group = master.closest('.assign-subject-group');
-                if (!group) {
+                const section = master.closest('.assign-subject-subgroup, .assign-subject-group');
+                if (!section) {
                     return;
                 }
-                group.querySelectorAll('.assign-subject-email-check').forEach(function (box) {
+                section.querySelectorAll('.assign-subject-email-check').forEach(function (box) {
                     box.checked = master.checked;
                 });
+                // Keep nested subgroup masters in sync when toggling the whole Ready section.
+                if (master.classList.contains('assign-subject-select-all__input--section')) {
+                    section.querySelectorAll('.assign-subject-subgroup .assign-subject-select-all__input').forEach(function (nested) {
+                        nested.checked = master.checked;
+                    });
+                }
             });
         });
     }
@@ -7652,6 +7759,7 @@ function crmInitOutlookEmailsInterface() {
                     }
                     assignBySubjectModalBody.innerHTML = html;
                     bindAssignBySubjectSelectAll();
+                    bindAssignBySubjectCollapse();
                     if (assignBySubjectConfirmBtn) {
                         assignBySubjectConfirmBtn.hidden = !(ready.length || needs.length);
                     }
