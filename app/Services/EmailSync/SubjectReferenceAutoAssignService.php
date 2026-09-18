@@ -15,6 +15,7 @@ class SubjectReferenceAutoAssignService
     public function __construct(
         private EmailMatchingService $matchingService,
         private UnassignedEmailAssignmentService $assignmentService,
+        private ManualUploadThreadMatchService $manualUploadMatchService,
     ) {
     }
 
@@ -166,6 +167,85 @@ class SubjectReferenceAutoAssignService
                 $subject = (string) ($emailLog->subject ?? '');
                 $bodyPreview = mb_substr(strip_tags((string) ($emailLog->message ?? '')), 0, 2000);
                 $text = $subject . "\n" . $bodyPreview;
+
+                // Prefer matching against manually uploaded matter emails (same conversation thread).
+                $manualMatch = $this->manualUploadMatchService->findMatterMatches($emailLog);
+                if ($manualMatch && empty($manualMatch['ambiguous']) && ! empty($manualMatch['client_matter_id'])) {
+                    $clientId = (int) $manualMatch['client_id'];
+                    $matterId = (int) $manualMatch['client_matter_id'];
+                    if ($staff && ! StaffClientVisibility::canAccessClientOrLead($clientId, $staff)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if ($previewOnly) {
+                        $readyPairs[] = array_merge(
+                            $this->assignedRow(
+                                $emailLog,
+                                $manualMatch,
+                                $matterId,
+                                'manual_upload_thread'
+                            ),
+                            [
+                                'client_matter_id' => $matterId,
+                                'matched_manual_emails' => $manualMatch['matched_manual_emails'] ?? [],
+                            ]
+                        );
+                        continue;
+                    }
+
+                    $result = $this->tryAssign(
+                        $emailLog,
+                        $clientId,
+                        $matterId,
+                        'auto_assigned',
+                        $enforceStaffAccess
+                    );
+                    if ($result) {
+                        $assigned[] = array_merge(
+                            $this->assignedRow(
+                                $emailLog->fresh() ?: $emailLog,
+                                $manualMatch,
+                                $matterId,
+                                'manual_upload_thread'
+                            ),
+                            [
+                                'matched_manual_emails' => $manualMatch['matched_manual_emails'] ?? [],
+                            ]
+                        );
+                    } else {
+                        $skipped++;
+                    }
+                    continue;
+                }
+
+                if ($manualMatch && ! empty($manualMatch['ambiguous']) && $collectNeedsMatter) {
+                    $clientId = (int) ($manualMatch['client_id'] ?? 0);
+                    if ($clientId > 0 && (! $staff || StaffClientVisibility::canAccessClientOrLead($clientId, $staff))) {
+                        $matters = $this->matchingService->listMattersForClient($clientId);
+                        $mattersForChoice = $this->matchingService->mattersForStaffChoice($matters);
+                        if ($mattersForChoice !== []) {
+                            if (! isset($needsMatterByClient[$clientId])) {
+                                $needsMatterByClient[$clientId] = [
+                                    'client_id' => $clientId,
+                                    'client_ref' => $manualMatch['client_ref'] ?? '',
+                                    'client_name' => $manualMatch['client_name'] ?? '',
+                                    'matched_by' => 'manual_upload_thread',
+                                    'matters' => $mattersForChoice,
+                                    'emails' => [],
+                                ];
+                            }
+                            $needsMatterByClient[$clientId]['emails'][] = [
+                                'email_log_id' => (int) $emailLog->id,
+                                'subject' => $subject,
+                                'from_mail' => (string) ($emailLog->from_mail ?? ''),
+                                'matched_by' => 'manual_upload_thread',
+                                'matched_manual_emails' => $manualMatch['matched_manual_emails'] ?? [],
+                            ];
+                            continue;
+                        }
+                    }
+                }
 
                 $pair = $subject !== ''
                     ? $this->matchingService->findUniqueClientMatterAssignment($text)

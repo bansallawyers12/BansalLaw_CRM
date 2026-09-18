@@ -190,8 +190,8 @@ class SyncedEmailController extends Controller
         $parts = [];
         if ($ready > 0) {
             $parts[] = $ready === 1
-                ? '1 email is ready to assign (matter already known) — select to assign.'
-                : $ready . ' emails are ready to assign (matter already known) — select to assign.';
+                ? '1 email is ready to assign (matter known from subject or manual upload match) — select to assign.'
+                : $ready . ' emails are ready to assign (matter known from subject or manual upload match) — select to assign.';
         }
         if ($needs > 0) {
             $parts[] = $needs === 1
@@ -199,7 +199,7 @@ class SyncedEmailController extends Controller
                 : $needs . ' clients have multiple active matters — choose one.';
         }
         if ($parts === []) {
-            return 'No unassigned emails had a matching client ID and matter, or a unique client name.';
+            return 'No unassigned emails matched a client/matter reference, unique client name, or manually uploaded conversation.';
         }
 
         return implode(' ', $parts);

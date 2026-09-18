@@ -6231,6 +6231,11 @@ class ClientsController extends Controller
             return $email;
         });
 
+        if ($leanSyncedList) {
+            app(\App\Services\EmailSync\ManualUploadThreadMatchService::class)
+                ->attachMatchesToEmails($emails->getCollection());
+        }
+
         // Meta (senders / unread / date buckets) — synced folders load this via meta_only separately.
         $senders = collect();
         $unreadCount = 0;

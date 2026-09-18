@@ -175,7 +175,7 @@
                     @endif
                 <div class="list-toolbar__side-actions" id="unassignedSideActions">
                     @if($canSyncInbox && $canAssignBySubject && ! $assignmentReviewOnly)
-                    <button type="button" class="list-toolbar__assign-subject" id="btnAssignBySubject" title="Assign unassigned emails whose subject has a matching client ID and matter">
+                    <button type="button" class="list-toolbar__assign-subject" id="btnAssignBySubject" title="Assign unassigned emails matched by subject refs or by manually uploaded conversation threads">
                         <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
                         <span class="list-toolbar__assign-subject-text">Assign by subject</span>
                     </button>

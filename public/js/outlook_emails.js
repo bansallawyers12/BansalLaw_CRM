@@ -954,14 +954,101 @@ function crmInitOutlookEmailsInterface() {
 
     function renderAssignmentReviewBadge(email) {
         const review = email && email.assignment_review;
-        if (!review || !review.reason) {
-            return '';
+        if (review && review.reason) {
+            return '<span class="email-assignment-review-badge" title="' + escapeHtml(review.reason) + '"'
+                + ' role="img" aria-label="Needs review: ' + escapeHtml(review.reason) + '">'
+                + '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
+                + '</span>';
         }
 
-        return '<span class="email-assignment-review-badge" title="' + escapeHtml(review.reason) + '"'
-            + ' role="img" aria-label="Needs review: ' + escapeHtml(review.reason) + '">'
-            + '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
-            + '</span>';
+        const match = email && email.manual_upload_match;
+        if (match && match.client_id && Array.isArray(match.matched_manual_emails) && match.matched_manual_emails.length) {
+            const title = 'Matched ' + match.matched_manual_emails.length
+                + ' manual upload'
+                + (match.matched_manual_emails.length === 1 ? '' : 's')
+                + (match.client_ref ? ' → ' + match.client_ref : '');
+            return '<span class="email-manual-match-badge" title="' + escapeHtml(title) + '"'
+                + ' role="img" aria-label="' + escapeHtml(title) + '">'
+                + '<i class="fa-solid fa-link" aria-hidden="true"></i>'
+                + '</span>';
+        }
+
+        return '';
+    }
+
+    function renderManualUploadMatchBanner(match) {
+        const manuals = Array.isArray(match.matched_manual_emails) ? match.matched_manual_emails : [];
+        const clientLabel = escapeHtml((match.client_name || match.client_ref || 'Client') + '')
+            + (match.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(match.client_ref) + '</span>' : '');
+        const matterLabel = escapeHtml((match.matter_no || '') + (match.matter_title ? ' · ' + match.matter_title : ''));
+        const canAuto = !match.ambiguous && match.client_matter_id;
+        const list = manuals.slice(0, 5).map(function (item) {
+            return '<li>'
+                + '<strong>' + escapeHtml(item.received_at_display || '') + '</strong>'
+                + ' · ' + escapeHtml(item.from_mail || '')
+                + '<div class="email-manual-match-banner__subject">' + escapeHtml(item.subject || '') + '</div>'
+                + '</li>';
+        }).join('');
+        const more = manuals.length > 5
+            ? '<div class="email-manual-match-banner__more">+' + (manuals.length - 5) + ' more matched uploads</div>'
+            : '';
+        const action = canAuto
+            ? '<button type="button" class="action-btn action-btn--primary" id="btnAssignManualMatch">'
+                + '<i class="fa-solid fa-user-check" aria-hidden="true"></i> Assign to matched matter'
+                + '</button>'
+            : '<div class="email-manual-match-banner__hint">Multiple matters matched — use Assign to Client and pick the matter, or Assign by subject.</div>';
+
+        return '<i class="fa-solid fa-link" aria-hidden="true"></i>'
+            + '<div class="email-manual-match-banner">'
+            + '<strong>Matched manual uploads</strong>'
+            + '<span>Same conversation found on ' + clientLabel
+            + (matterLabel ? ' · ' + matterLabel : '')
+            + ' (' + manuals.length + ' upload' + (manuals.length === 1 ? '' : 's') + ').</span>'
+            + '<ul class="email-manual-match-banner__list">' + list + '</ul>'
+            + more
+            + action
+            + '</div>';
+    }
+
+    function bindManualUploadMatchAssign(match) {
+        const btn = document.getElementById('btnAssignManualMatch');
+        if (!btn || !assignEmailUrl || !selectedEmailId) {
+            return;
+        }
+        btn.addEventListener('click', async function () {
+            if (!match.client_id || !match.client_matter_id) {
+                return;
+            }
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Assigning...';
+            try {
+                const response = await fetch(assignEmailUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        email_log_id: selectedEmailId,
+                        client_id: match.client_id,
+                        client_matter_id: match.client_matter_id
+                    })
+                });
+                const data = await response.json().catch(function () { return {}; });
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || 'Could not assign email.');
+                }
+                crmToast(data.message || 'Email assigned to matched matter.', 'success');
+                loadEmails();
+            } catch (error) {
+                crmToast(error.message || 'Could not assign email.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        });
     }
 
     function isEmailRead(email) {
@@ -4980,12 +5067,18 @@ function crmInitOutlookEmailsInterface() {
 
         if (assignmentReviewBanner) {
             const review = email.assignment_review;
+            const manualMatch = email.manual_upload_match;
             if (review && review.reason) {
                 assignmentReviewBanner.hidden = false;
                 assignmentReviewBanner.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
                     + '<div><strong>Why this email needs review</strong><span>'
                     + escapeHtml(review.reason)
                     + '</span></div>';
+            } else if (manualMatch && manualMatch.client_id && Array.isArray(manualMatch.matched_manual_emails)
+                && manualMatch.matched_manual_emails.length) {
+                assignmentReviewBanner.hidden = false;
+                assignmentReviewBanner.innerHTML = renderManualUploadMatchBanner(manualMatch);
+                bindManualUploadMatchAssign(manualMatch);
             } else {
                 assignmentReviewBanner.hidden = true;
                 assignmentReviewBanner.innerHTML = '';
@@ -7386,6 +7479,16 @@ function crmInitOutlookEmailsInterface() {
                 const clientMeta = escapeHtml((row.client_name || row.client_ref || 'Client') + '')
                     + (row.client_ref ? ' <span class="assign-subject-ref">' + escapeHtml(row.client_ref) + '</span>' : '');
                 const matterMeta = escapeHtml((row.matter_no || '') + (row.matter_title ? ' · ' + row.matter_title : ''));
+                const manuals = Array.isArray(row.matched_manual_emails) ? row.matched_manual_emails : [];
+                const matchNote = row.matched_by === 'manual_upload_thread'
+                    ? '<span class="assign-subject-results__match">Matched '
+                        + manuals.length + ' manual upload'
+                        + (manuals.length === 1 ? '' : 's')
+                        + (manuals[0] && manuals[0].received_at_display
+                            ? ' (latest ' + escapeHtml(manuals[0].received_at_display) + ')'
+                            : '')
+                        + '</span>'
+                    : '';
                 return '<li class="assign-subject-row">'
                     + '<label class="assign-subject-row__label">'
                     + '<input type="checkbox" class="assign-subject-email-check" checked'
@@ -7396,7 +7499,9 @@ function crmInitOutlookEmailsInterface() {
                     + '<span class="assign-subject-results__subject">' + escapeHtml(row.subject || '(No subject)') + '</span>'
                     + '<span class="assign-subject-results__meta">' + clientMeta
                     + (matterMeta ? ' · ' + matterMeta : '')
-                    + '</span></span></label></li>';
+                    + '</span>'
+                    + matchNote
+                    + '</span></label></li>';
             }).join('')
             + '</ul></section>';
     }
@@ -7412,7 +7517,9 @@ function crmInitOutlookEmailsInterface() {
                 ? 'Matched by client name — choose a matter, then select emails to assign.'
                 : (group.matched_by === 'recipient_email'
                     ? 'Matched by To/Cc/Bcc email — choose a matter, then select emails to assign.'
-                    : 'Client ID found — choose a matter, then select emails to assign.');
+                    : (group.matched_by === 'manual_upload_thread'
+                        ? 'Matched manually uploaded conversation — choose a matter, then select emails to assign.'
+                        : 'Client ID found — choose a matter, then select emails to assign.'));
             const options = matters.map(function (matter) {
                 const label = (matter.matter_no || ('Matter #' + matter.id))
                     + (matter.matter_title ? ' — ' + matter.matter_title : '')
