@@ -23,7 +23,7 @@ class CrmMcpReadOnlyTest extends TestCase
     #[Test]
     public function mcp_endpoint_requires_authentication(): void
     {
-        $response = $this->postJson('/mcp', [
+        $response = $this->postJson('/mcp/crm', [
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'initialize',
@@ -243,7 +243,7 @@ class CrmMcpReadOnlyTest extends TestCase
         $staff = Staff::factory()->superAdmin()->create();
         Sanctum::actingAs($staff, ['*']);
 
-        $response = $this->postJson('/mcp', [
+        $response = $this->postJson('/mcp/crm', [
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'initialize',

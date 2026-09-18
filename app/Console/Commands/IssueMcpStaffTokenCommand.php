@@ -38,7 +38,7 @@ class IssueMcpStaffTokenCommand extends Command
         $token = $staff->createToken($tokenName)->plainTextToken;
 
         $this->newLine();
-        $this->info('MCP endpoint: '.rtrim((string) config('app.url'), '/').'/mcp');
+        $this->info('MCP endpoint: '.rtrim((string) config('app.url'), '/').'/mcp/crm');
         $this->info("Staff: {$staff->first_name} {$staff->last_name} <{$staff->email}> (id {$staff->id})");
         $this->line('Authorization header:');
         $this->line('  Bearer '.$token);
