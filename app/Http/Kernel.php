@@ -69,6 +69,7 @@ class Kernel extends HttpKernel
         'extend.video.upload' => \App\Http\Middleware\ExtendVideoUploadLimits::class,
         'migration.crm.token' => \App\Http\Middleware\VerifyMigrationCrmToken::class,
         'communication.check' => \App\Http\Middleware\EnsureCommunicationCheckEnabled::class,
+        'mcp.admin.guard' => \App\Http\Middleware\SetAdminGuardFromSanctumUser::class,
     ];
 
     /**

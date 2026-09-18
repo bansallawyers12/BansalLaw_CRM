@@ -14,9 +14,9 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-        // Check if this is an API request
-        if ($request->is('api/*')) {
-            return null; // API requests should not redirect
+        // Check if this is an API or MCP request
+        if ($request->is('api/*') || $request->is('mcp') || $request->is('mcp/*')) {
+            return null; // API/MCP requests should not redirect
         }
         
         // Default to CRM login (formerly admin.login)

@@ -49,6 +49,8 @@ class Kernel extends ConsoleKernel
 
         // Migration Management
         '\App\Console\Commands\MarkMigrationsAsRun',
+
+        '\App\Console\Commands\IssueMcpStaffTokenCommand',
     ];
 
     /**
