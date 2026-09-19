@@ -695,6 +695,7 @@
             <div class="navbar-bg"></div>
             @include('../Elements/CRM/header_client_detail')
             @include('../Elements/CRM/matter_reopen_alerts')
+            @include('../Elements/CRM/calendar_reminder_alerts')
             @yield('content')
             @include('../Elements/CRM/footer_client_detail')
         </div>
