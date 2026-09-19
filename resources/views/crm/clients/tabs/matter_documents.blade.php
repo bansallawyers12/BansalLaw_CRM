@@ -1413,14 +1413,34 @@
                     });
                 }
                 
-                // Get existing visa checklists
+                // Get existing visa checklists (current matter only — ignore hidden other-matter rows)
                 function getExistingVisaChecklists(categoryId, callback) {
                     const checklists = [];
                     const checklistNames = new Set();
+                    const matterId = String($('#sel_matter_id_client_detail').val() || currentVisaMatterId || '');
+                    const decodeLabel = typeof window.decodeBulkUploadLabel === 'function'
+                        ? window.decodeBulkUploadLabel
+                        : function (v) { return String(v || '').trim(); };
                     
-                    $('.migdocumnetlist_' + categoryId + ' .visachecklist-row').each(function() {
-                        const checklistName = String($(this).data('visachecklistname') || '').trim();
-                        const checklistId = $(this).closest('tr').attr('id').replace('id_', '');
+                    $('.migdocumnetlist_' + categoryId + ' tr.drow').each(function() {
+                        const $row = $(this);
+                        if (!$row.is(':visible')) {
+                            return;
+                        }
+                        const rowMatter = String($row.attr('data-matterid') || $row.data('matterid') || '');
+                        const hasNoMatter = !rowMatter || rowMatter === 'null' || rowMatter === '0';
+                        if (matterId && !hasNoMatter && String(rowMatter) !== String(matterId)) {
+                            return;
+                        }
+
+                        const $checklist = $row.find('.visachecklist-row').first();
+                        if (!$checklist.length) {
+                            return;
+                        }
+                        const rawName = $checklist.attr('data-visachecklistname') || $checklist.data('visachecklistname') || '';
+                        const checklistName = decodeLabel(rawName);
+                        const rowId = $row.attr('id') || '';
+                        const checklistId = rowId ? String(rowId).replace('id_', '') : String($checklist.data('id') || '');
                         
                         if (checklistName && !checklistNames.has(checklistName)) {
                             checklistNames.add(checklistName);
@@ -1793,18 +1813,25 @@
                         formData.append('mappings[]', JSON.stringify(mapping));
                     });
                     
-                    // Show progress
+                    // Show progress — always use full-screen loader (works on matter-only lazy tab)
                     $('#confirm-bulk-upload').prop('disabled', true);
-                    if (hasVideos && typeof showPersonalVideoUploadLoader === 'function') {
-                        if (typeof window.hideBulkUploadModal === 'function') {
-                            window.hideBulkUploadModal();
-                        }
+                    $('#bulk-upload-mapping-modal').hide();
+                    if (typeof showPersonalVideoUploadLoader === 'function') {
                         showPersonalVideoUploadLoader({
-                            title: videoFiles.length === fileList.length ? 'Uploading Videos' : 'Uploading Files',
-                            filename: videoFiles.length === 1 ? videoFiles[0].name : (videoFiles.length + ' video(s) in batch'),
-                            fileSize: videoFiles.reduce(function(sum, f) { return sum + (f.size || 0); }, 0),
+                            title: hasVideos
+                                ? (videoFiles.length === fileList.length ? 'Uploading Videos' : 'Uploading Files')
+                                : 'Uploading Files',
+                            filename: fileList.length === 1
+                                ? fileList[0].name
+                                : (fileList.length + ' file(s)'),
+                            fileSize: fileList.reduce(function(sum, f) { return sum + (f.size || 0); }, 0),
                             message: 'Uploading files to server…'
                         });
+                        if (hasVideos) {
+                            $('#pvuMainIcon').removeClass('fa-cloud-arrow-up').addClass('fa-file-video');
+                        } else {
+                            $('#pvuMainIcon').removeClass('fa-file-video').addClass('fa-cloud-arrow-up');
+                        }
                     } else {
                         $('#bulk-upload-progress').show();
                         $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
@@ -1822,7 +1849,7 @@
                             xhr.upload.addEventListener('progress', function(e) {
                                 if (e.lengthComputable) {
                                     const percentComplete = (e.loaded / e.total) * 100;
-                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                    if (typeof updatePersonalVideoUploadLoader === 'function') {
                                         const overallPct = Math.round((e.loaded / e.total) * 45);
                                         updatePersonalVideoUploadLoader(
                                             'upload',
@@ -1834,7 +1861,7 @@
                                                 'processing',
                                                 48,
                                                 88,
-                                                'Saving video(s) to cloud storage…'
+                                                hasVideos ? 'Saving video(s) to cloud storage…' : 'Saving file(s) to cloud storage…'
                                             );
                                         }
                                     } else {
@@ -1866,14 +1893,17 @@
                                 };
 
                                 if (tokens.length > 0 && typeof waitForPersonalVideoUploads === 'function') {
-                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
-                                        updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Processing video(s) in queue…');
+                                    if (typeof updatePersonalVideoUploadLoader === 'function') {
+                                        updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Processing file(s)…');
                                     }
                                     waitForPersonalVideoUploads(tokens, function(success, message) {
                                         if (typeof showPersonalDocVideoToast === 'function') {
                                             showPersonalDocVideoToast(success, message);
                                         }
                                         afterVideos();
+                                    }, {
+                                        skipLoader: true,
+                                        filename: fileList.length === 1 ? fileList[0].name : (fileList.length + ' file(s)')
                                     });
                                     return;
                                 }
@@ -1885,7 +1915,10 @@
                                     errorMsg += '\n\nDetails:\n' + response.errors.join('\n');
                                 }
                                 if (typeof hidePersonalVideoUploadLoader === 'function') {
-                                    hidePersonalVideoUploadLoader(0);
+                                    if (typeof updatePersonalVideoUploadLoader === 'function') {
+                                        updatePersonalVideoUploadLoader('error', 0, errorMsg);
+                                    }
+                                    hidePersonalVideoUploadLoader(900);
                                 }
                                 if (typeof crmNotify !== 'undefined') {
                                     crmNotify.error({
@@ -1896,6 +1929,8 @@
                                         transitionIn: 'fadeInDown',
                                         transitionOut: 'fadeOutUp'
                                     });
+                                } else {
+                                    crmAlert(errorMsg);
                                 }
                                 $('#bulk-upload-progress').hide();
                                 $('#confirm-bulk-upload').prop('disabled', false);
@@ -1927,6 +1962,8 @@
                                     transitionIn: 'fadeInDown',
                                     transitionOut: 'fadeOutUp'
                                 });
+                            } else {
+                                crmAlert(errorMsg);
                             }
                             $('#bulk-upload-progress').hide();
                             $('#confirm-bulk-upload').prop('disabled', false);

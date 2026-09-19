@@ -3559,13 +3559,15 @@ class ClientDocumentsController extends Controller
                 $files = [$files];
             }
             
-            // Parse mappings JSON strings
+            // Parse mappings (preserve indexes so files[] and mappings[] stay aligned)
             $mappings = [];
-            foreach ($mappingsInput as $mappingStr) {
-                $mapping = json_decode($mappingStr, true);
-                if ($mapping) {
-                    $mappings[] = $mapping;
+            foreach ($mappingsInput as $mapIndex => $mappingStr) {
+                if (is_array($mappingStr)) {
+                    $mappings[$mapIndex] = $mappingStr;
+                    continue;
                 }
+                $decoded = json_decode((string) $mappingStr, true);
+                $mappings[$mapIndex] = is_array($decoded) ? $decoded : null;
             }
             
             $uploadedCount = 0;
@@ -3606,8 +3608,8 @@ class ClientDocumentsController extends Controller
                         ->whereNull('file_name') // Only get checklists without files
                         ->first();
                     
-                    // If checklist doesn't exist and mapping type is 'new', create it
-                    if (!$document && $mapping['type'] === 'new') {
+                    // Create a checklist row when missing (new OR existing-but-filled / not in this folder)
+                    if (!$document) {
                         $document = new Document();
                         $document->user_id = Auth::user()->id;
                         $document->client_id = $clientid;
@@ -3616,27 +3618,6 @@ class ClientDocumentsController extends Controller
                         $document->folder_name = $categoryid;
                         $document->checklist = $checklistName;
                         $document->save();
-                    } elseif (!$document && $mapping['type'] === 'existing') {
-                        // If trying to use existing checklist but all instances have files, create new one
-                        $hasAnyChecklist = Document::where('client_id', $clientid)
-                            ->where('doc_type', $doctype)
-                            ->where('folder_name', $categoryid)
-                            ->where('checklist', $checklistName)
-                            ->where('type', $type)
-                            ->whereNull('not_used_doc')
-                            ->exists();
-                        
-                        if ($hasAnyChecklist) {
-                            // Checklist exists but all have files - create a new instance
-                            $document = new Document();
-                            $document->user_id = Auth::user()->id;
-                            $document->client_id = $clientid;
-                            $document->type = $type;
-                            $document->doc_type = $doctype;
-                            $document->folder_name = $categoryid;
-                            $document->checklist = $checklistName;
-                            $document->save();
-                        }
                     }
                     
                     if (!$document) {
@@ -3866,13 +3847,15 @@ class ClientDocumentsController extends Controller
                 $files = [$files];
             }
             
-            // Parse mappings JSON strings
+            // Parse mappings (preserve indexes so files[] and mappings[] stay aligned)
             $mappings = [];
-            foreach ($mappingsInput as $mappingStr) {
-                $mapping = json_decode($mappingStr, true);
-                if ($mapping) {
-                    $mappings[] = $mapping;
+            foreach ($mappingsInput as $mapIndex => $mappingStr) {
+                if (is_array($mappingStr)) {
+                    $mappings[$mapIndex] = $mappingStr;
+                    continue;
                 }
+                $decoded = json_decode((string) $mappingStr, true);
+                $mappings[$mapIndex] = is_array($decoded) ? $decoded : null;
             }
             
             $uploadedCount = 0;
@@ -3916,8 +3899,8 @@ class ClientDocumentsController extends Controller
                         })
                         ->first();
                     
-                    // If checklist doesn't exist and mapping type is 'new', create it
-                    if (!$document && $mapping['type'] === 'new') {
+                    // Create when missing for this matter (covers auto-match from another matter's label)
+                    if (!$document) {
                         $document = new Document();
                         $document->user_id = Auth::user()->id;
                         $document->client_id = $clientid;
@@ -3925,33 +3908,8 @@ class ClientDocumentsController extends Controller
                         $document->doc_type = $doctype;
                         $document->folder_name = $categoryid;
                         $document->checklist = $checklistName;
-                        $document->client_matter_id = $matterid;
+                        $document->client_matter_id = $matterid ?: null;
                         $document->save();
-                    } elseif (!$document && $mapping['type'] === 'existing') {
-                        // If trying to use existing checklist but all instances have files, create new one
-                        $hasAnyChecklist = Document::where('client_id', $clientid)
-                            ->where('doc_type', $doctype)
-                            ->where('folder_name', $categoryid)
-                            ->where('checklist', $checklistName)
-                            ->where('type', $type)
-                            ->whereNull('not_used_doc')
-                            ->when($matterid, function($query) use ($matterid) {
-                                return $query->where('client_matter_id', $matterid);
-                            })
-                            ->exists();
-                        
-                        if ($hasAnyChecklist) {
-                            // Checklist exists but all have files - create a new instance
-                            $document = new Document();
-                            $document->user_id = Auth::user()->id;
-                            $document->client_id = $clientid;
-                            $document->type = $type;
-                            $document->doc_type = $doctype;
-                            $document->folder_name = $categoryid;
-                            $document->checklist = $checklistName;
-                            $document->client_matter_id = $matterid;
-                            $document->save();
-                        }
                     }
                     
                     if (!$document) {

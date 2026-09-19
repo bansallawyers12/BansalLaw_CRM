@@ -5603,6 +5603,8 @@ success: function(response) {
         window.showPersonalVideoUploadLoader = showPersonalVideoUploadLoader;
         window.hidePersonalVideoUploadLoader = hidePersonalVideoUploadLoader;
         window.updatePersonalVideoUploadLoader = updatePersonalVideoUploadLoader;
+        window.startPersonalVideoProcessingPulse = startPersonalVideoProcessingPulse;
+        window.clearPersonalVideoProcessingPulse = clearPersonalVideoProcessingPulse;
 
         function performPersonalDocUpload(file, targetFileId, targetCategoryId, dragZone, options) {
             options = options || {};
