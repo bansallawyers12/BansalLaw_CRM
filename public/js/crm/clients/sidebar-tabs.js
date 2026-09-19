@@ -151,6 +151,7 @@
         
         // Setup event handlers immediately (caller ensures DOM is ready)
         setupTabClickHandlers();
+        setupDelegatedTabClickFallback();
         setupBrowserNavigation();
         activateInitialTab(config.activeTab);
         
@@ -161,33 +162,40 @@
     }
 
     /**
-     * Setup tab click handlers
+     * Setup tab click handlers.
+     *
+     * Personal/Matter "Not Used Documents" buttons use .client-nav-button but are often
+     * injected after first paint (ClientTabLazy). Bind-at-init misses those nodes.
+     * A capture-phase document listener covers SSR and lazy-loaded shortcuts.
      */
     function setupTabClickHandlers() {
-        // IMPORTANT: Attach handlers DIRECTLY to each button element
-        // This ensures our handler runs BEFORE any delegated handlers that might stop propagation
-        $('.client-nav-button').each(function() {
-            const $button = $(this);
-            const tabId = $button.data('tab');
-            
-            // Remove any existing handler on this specific button
-            $button.off('click.sidebarTabs');
-            
-            // Attach handler directly with namespace
-            $button.on('click.sidebarTabs', function(e) {
-                // Stop event from propagating to other handlers
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                
-                if (!tabId) {
-                    console.error('[SidebarTabs] No tab ID found on button');
-                    return false;
-                }
-                
-                activateTab(tabId);
-                return false;
-            });
-        });
+        // Capture-phase fallback is registered once in setupDelegatedTabClickFallback().
+        // This remains for callers of SidebarTabs.rebindNavButtons (no-op-safe).
+    }
+
+    function setupDelegatedTabClickFallback() {
+        if (SidebarTabs._navCaptureBound) {
+            return;
+        }
+        SidebarTabs._navCaptureBound = true;
+
+        document.addEventListener('click', function (e) {
+            const target = e.target;
+            if (!target || typeof target.closest !== 'function') {
+                return;
+            }
+            const btn = target.closest('.client-nav-button[data-tab]');
+            if (!btn || btn.closest('.modal')) {
+                return;
+            }
+            const tabId = btn.getAttribute('data-tab');
+            if (!tabId) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            activateTab(String(tabId));
+        }, true);
     }
 
     /**
@@ -240,8 +248,13 @@
 
         // Add active class to the clicked button - use exact match with filter to ensure precision
         $('.client-nav-button').filter(function() {
-            return $(this).data('tab') === tabId;
+            return ($(this).attr('data-tab') || $(this).data('tab')) === tabId;
         }).addClass('active');
+
+        // Keep main Documents nav selected while viewing Not Used (in-tab shortcut)
+        if (tabId === 'notuseddocuments') {
+            $('.client-nav-button[data-tab="personaldocuments"]').addClass('active');
+        }
 
         // Show the corresponding tab pane (placeholder until lazy HTML arrives)
         const $tabPane = $(`#${tabId}-tab`);
@@ -458,27 +471,30 @@
             return;
         }
 
-        // Non-default tab: trigger click so full tab-switching logic runs.
+        // Non-default tab: activate directly (do not rely on jQuery .click() —
+        // native capture listeners do not receive synthetic jQuery events).
         const $button = $(`.client-nav-button[data-tab="${tabId}"]`);
         if ($button.length) {
-            $button.click();
+            activateTab(tabId);
         } else {
             // Try to find a close match (singular vs plural), excluding hyphenated legacy slugs
             const availableTabs = [];
             $('.client-nav-button').each(function() {
-                availableTabs.push($(this).data('tab'));
+                availableTabs.push($(this).attr('data-tab') || $(this).data('tab'));
             });
             
             const closeTabs = availableTabs.filter(t => {
                 if (t === tabId) return true;
-                if (t.includes('-') || tabId.includes('-')) {
+                if (!t || String(t).includes('-') || tabId.includes('-')) {
                     return false;
                 }
-                return t.startsWith(tabId) || tabId.startsWith(t);
+                return String(t).startsWith(tabId) || tabId.startsWith(String(t));
             });
             
             if (closeTabs.length > 0) {
-                $(`.client-nav-button[data-tab="${closeTabs[0]}"]`).click();
+                activateTab(closeTabs[0]);
+            } else {
+                activateTab(tabId);
             }
         }
     }
@@ -492,7 +508,8 @@
         syncAriaForTabs: syncAriaForTabs,
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
-        filtermatterdocumentsByMatter: filtermatterdocumentsByMatter
+        filtermatterdocumentsByMatter: filtermatterdocumentsByMatter,
+        rebindNavButtons: setupTabClickHandlers
     };
 
 })(jQuery);
