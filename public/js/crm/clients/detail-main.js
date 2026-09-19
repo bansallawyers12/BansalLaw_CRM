@@ -5179,12 +5179,25 @@ success: function(response) {
             if (!file) {
                 return false;
             }
-            var ext = (file.name && file.name.split('.').pop() || '').toLowerCase();
-            if (/^(mp4|webm|mov|m4v|avi|mkv|vob)$/.test(ext)) {
+            var name = String(file.name || '');
+            var ext = (name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            // MP4 + VOB (DVD) and common Teams / camcorder formats — extension wins on Windows
+            // where .vob is often application/octet-stream with an empty type.
+            if (/^(mp4|webm|mov|m4v|avi|mkv|vob|mpeg|mpg|m2ts|mts)$/.test(ext)) {
+                return true;
+            }
+            if (/\.(mp4|webm|mov|m4v|avi|mkv|vob|mpeg|mpg|m2ts|mts)(?:$|\?)/i.test(name)) {
                 return true;
             }
             var mime = (file.type || '').toLowerCase();
-            return mime.indexOf('video/') === 0 || mime === 'application/mp4';
+            if (!mime || mime === 'application/octet-stream') {
+                return false;
+            }
+            return mime.indexOf('video/') === 0
+                || mime === 'application/mp4'
+                || mime === 'video/dvd'
+                || mime === 'video/x-ms-vob'
+                || mime === 'application/vnd.dvd';
         }
 
         function getPersonalDocumentFolders() {
@@ -5310,6 +5323,17 @@ success: function(response) {
                 return;
             }
 
+            // Already dropping into a known folder — skip the extra modal so MP4/VOB uploads start immediately.
+            var hasDefault = folders.some(function(folder) {
+                return String(folder.id) === String(defaultCategoryId);
+            });
+            if (hasDefault && defaultCategoryId != null && defaultCategoryId !== '') {
+                if (typeof onSelected === 'function') {
+                    onSelected(String(defaultCategoryId));
+                }
+                return;
+            }
+
             var $select = $('#videoUploadFolderSelect').empty();
             folders.forEach(function(folder) {
                 var selected = String(folder.id) === String(defaultCategoryId) ? ' selected' : '';
@@ -5319,7 +5343,18 @@ success: function(response) {
             $('#videoUploadFolderError').hide();
             _videoFolderPromptCallback = onSelected;
             _videoFolderPromptCancel = onCancel;
-            $('#videoUploadFolderModal').modal('show');
+            var $modal = $('#videoUploadFolderModal');
+            if (!$modal.length) {
+                // Fallback if personal tab modal was not loaded yet
+                if (typeof onSelected === 'function') {
+                    onSelected(String(folders[0].id));
+                }
+                return;
+            }
+            if ($modal.parent().length && !$modal.parent().is('body')) {
+                $modal.appendTo('body');
+            }
+            $modal.modal('show');
         }
 
         function showPersonalDocVideoToast(success, message) {
@@ -5777,7 +5812,7 @@ success: function(response) {
 
             var isVideoUploadCheck = isPersonalDocVideoFile(file);
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
             var maxAllowed = isVideoUploadCheck ? (maxVideoMb * 1024 * 1024) : (maxFileMb * 1024 * 1024);
             if (file.size > maxAllowed) {
                 crmAlert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? (maxVideoMb + 'MB') : (maxFileMb + 'MB')) + '.');
@@ -5873,8 +5908,8 @@ success: function(response) {
             if (!file || !file.name) {
                 return false;
             }
-            var ext = (file.name.split('.').pop() || '').toLowerCase();
-            return /^(mp4|webm|mov|m4v|avi|mkv|vob)$/.test(ext);
+            var ext = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return /^(mp4|webm|mov|m4v|avi|mkv|vob|mpeg|mpg|m2ts|mts)$/.test(ext);
         }
 
         function validateMatterDocFile(file) {
@@ -5882,15 +5917,15 @@ success: function(response) {
                 crmAlert("File name cannot contain slashes. Please rename the file and try again.");
                 return false;
             }
-            var ext = (file.name.split('.').pop() || '').toLowerCase();
+            var ext = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             var isVideo = isMatterDocVideoFile(file);
-            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
+            var allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3', 'mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob', 'mpeg', 'mpg', 'm2ts', 'mts'];
             if (!isVideo && !allowedExtensions.includes(ext)) {
                 crmAlert('Invalid file type. Allowed: PDF, images, Word, Excel (XLS/XLSX/CSV), MP3 audio, videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings.');
                 return false;
             }
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
             var maxSize = maxFileMb * 1024 * 1024;
             var maxVideoSize = maxVideoMb * 1024 * 1024;
             var sizeLimit = isVideo ? maxVideoSize : maxSize;

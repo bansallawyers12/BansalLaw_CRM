@@ -1845,7 +1845,7 @@ $(document).ready(function() {
 {{-- Main detail page JavaScript --}}
 <script>
     window.__CRM_DOC_MAX_FILE_MB__ = {{ (int) config('crm.document_upload.max_file_size_mb', 100) }};
-    window.__CRM_DOC_MAX_VIDEO_MB__ = {{ (int) config('crm.personal_video_upload.max_size_mb', 300) }};
+    window.__CRM_DOC_MAX_VIDEO_MB__ = {{ (int) config('crm.personal_video_upload.max_size_mb', 600) }};
 </script>
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ @filemtime(public_path('js/crm/clients/detail-main.js')) ?: time() }}"></script>
 <script>

@@ -98,8 +98,8 @@
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), audio (MP3), videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 300) }}MB for videos)</p>
-                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*">
+                                                <p class="bulk-upload-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), audio (MP3), videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 600) }}MB for videos)</p>
+                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,.mpeg,.mpg,.m2ts,.mts,video/*,audio/mpeg,audio/mp3">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count">0</span></h5>
@@ -197,7 +197,7 @@
                                                                                data-doccategory="<?= $id ?>" 
                                                                                type="file" 
                                                                                name="document_upload"
-                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*"
+                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,.mpeg,.mpg,.m2ts,.mts,video/*,audio/mpeg,audio/mp3"
                                                                                style="display: none;"/>
                                                                     </form>
                                                                 </div>
@@ -1447,14 +1447,14 @@
                     // Validate and add files to array
                     const invalidFiles = [];
                     const maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 300;
+                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
                     const maxSize = maxFileMb * 1024 * 1024;
                     const maxVideoSize = maxVideoMb * 1024 * 1024;
-                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
+                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob', 'mpeg', 'mpg', 'm2ts', 'mts'];
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'mp3'].concat(videoExtensions);
                     
                     Array.from(files).forEach(file => {
-                        const ext = file.name.split('.').pop().toLowerCase();
+                        const ext = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
                         const isVideo = (typeof isPersonalDocVideoFile === 'function' && isPersonalDocVideoFile(file))
                             || videoExtensions.includes(ext)
                             || String(file.type || '').indexOf('video/') === 0;

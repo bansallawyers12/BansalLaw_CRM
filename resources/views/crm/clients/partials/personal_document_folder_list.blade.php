@@ -46,7 +46,7 @@
                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                             </div>
                         </div>
-                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,audio/mpeg,audio/mp3,video/mp4,video/webm,video/quicktime,video/mpeg,video/*" style="display: none;">
+                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,.mpeg,.mpg,.m2ts,.mts,video/*,audio/mpeg,audio/mp3" style="display: none;">
                     </form>
                 </div>
             @endif

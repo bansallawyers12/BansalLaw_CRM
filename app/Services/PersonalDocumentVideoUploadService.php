@@ -19,7 +19,7 @@ class PersonalDocumentVideoUploadService
 {
     use ClientHelpers, LogsClientActivity;
 
-    public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'];
+    public const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob', 'mpeg', 'mpg', 'm2ts', 'mts'];
 
     public const VIDEO_MIME_TYPES = [
         'video/mp4',
@@ -30,7 +30,11 @@ class PersonalDocumentVideoUploadService
         'video/x-matroska',
         'video/mpeg',
         'video/ogg',
+        'video/dvd',
+        'video/x-ms-vob',
+        'video/vob',
         'application/mp4',
+        'application/vnd.dvd',
     ];
 
     private const CACHE_PREFIX = 'personal_video_upload:';
@@ -43,17 +47,25 @@ class PersonalDocumentVideoUploadService
     }
 
     /**
-     * True for MP4/WebM/MOV and Microsoft Teams meeting recordings (video/* MIME).
+     * True for MP4/WebM/MOV/VOB and Microsoft Teams meeting recordings (video/* MIME).
+     * Extension wins: Windows often reports .vob as application/octet-stream.
      */
     public static function isVideoFile(UploadedFile $file): bool
     {
-        if (self::isVideoExtension($file->getClientOriginalExtension())) {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (self::isVideoExtension($extension)) {
+            return true;
+        }
+
+        // Fallback: filename may include multi-dot names where getClientOriginalExtension is empty
+        $original = strtolower((string) $file->getClientOriginalName());
+        if ($original !== '' && preg_match('/\.(mp4|webm|mov|m4v|avi|mkv|vob|mpeg|mpg|m2ts|mts)(?:$|\?)/', $original)) {
             return true;
         }
 
         foreach ([$file->getClientMimeType(), $file->getMimeType()] as $mime) {
             $mime = strtolower((string) $mime);
-            if ($mime === '') {
+            if ($mime === '' || $mime === 'application/octet-stream') {
                 continue;
             }
             if (str_starts_with($mime, 'video/') || in_array($mime, self::VIDEO_MIME_TYPES, true)) {
@@ -101,6 +113,13 @@ class PersonalDocumentVideoUploadService
             return 'avi';
         }
 
+        if (str_contains($mime, 'mpeg') || str_contains($mime, 'mpg')) {
+            return 'mpg';
+        }
+        if (str_contains($mime, 'dvd') || str_contains($mime, 'vob')) {
+            return 'vob';
+        }
+
         return 'mp4';
     }
 
@@ -137,7 +156,7 @@ class PersonalDocumentVideoUploadService
 
     public static function maxVideoMb(): int
     {
-        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 300));
+        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 600));
     }
 
     public static function maxVideoBytes(): int
