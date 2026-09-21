@@ -1188,5 +1188,103 @@ class Area8SecurityTest extends TestCase
         $this->assertInstanceOf(\Illuminate\Auth\EloquentUserProvider::class, $webProvider);
         $this->assertEquals(\App\Models\Staff::class, $webProvider->getModel());
     }
+
+    #[Test]
+    public function cors_configuration_blocks_wildcard_origins_and_uses_trusted_domains(): void
+    {
+        $allowedOrigins = config('cors.allowed_origins', []);
+
+        // 1. Wildcard '*' must not be present in allowed_origins
+        $this->assertNotContains('*', $allowedOrigins);
+
+        // 2. Trusted production/website domains must be present
+        $this->assertContains('https://www.bansallawyers.com.au', $allowedOrigins);
+        $this->assertContains('https://bansallawyers.com.au', $allowedOrigins);
+    }
+
+    #[Test]
+    public function document_policy_enforces_least_privilege_and_blocks_unauthorized_staff(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $superAdmin = new Staff(['role' => 1, 'status' => 1]);
+        $superAdmin->id = 851;
+        $superAdmin->email = 'superadmin851@bansallawyers.com.au';
+        $superAdmin->password = bcrypt('secret');
+        $superAdmin->save();
+
+        $allocatedStaff = new Staff(['role' => 2, 'status' => 1]);
+        $allocatedStaff->id = 852;
+        $allocatedStaff->email = 'allocated852@bansallawyers.com.au';
+        $allocatedStaff->password = bcrypt('secret');
+        $allocatedStaff->save();
+
+        $unallocatedStaff = new Staff(['role' => 2, 'status' => 1]);
+        $unallocatedStaff->id = 853;
+        $unallocatedStaff->email = 'unallocated853@bansallawyers.com.au';
+        $unallocatedStaff->password = bcrypt('secret');
+        $unallocatedStaff->save();
+
+        $client = new \App\Models\Admin();
+        $client->id = 9988;
+        $client->type = 'client';
+        $client->first_name = 'Client';
+        $client->last_name = 'Test';
+        $client->email = 'client9988@example.com';
+        $client->password = bcrypt('secret');
+        $client->status = 1;
+        $client->save();
+
+        // Assign client to allocatedStaff via matter
+        $matter = new \App\Models\ClientMatter();
+        $matter->client_id = 9988;
+        $matter->client_unique_matter_no = 'MAT852';
+        $matter->sel_legal_practitioner = $allocatedStaff->id;
+        $matter->workflow_stage_id = 1;
+        $matter->matter_status = 1;
+        $matter->save();
+
+        $document = new \App\Models\Document();
+        $document->client_id = 9988;
+        $document->file_name = 'engagement_agreement.pdf';
+        $document->filetype = 'application/pdf';
+        $document->created_by = $allocatedStaff->id;
+        $document->status = 'draft';
+        $document->save();
+
+        $policy = new \App\Policies\DocumentPolicy();
+
+        // 1. Unallocated staff CANNOT view, update, delete, or void document
+        $this->assertFalse($policy->view($unallocatedStaff, $document));
+        $this->assertFalse($policy->update($unallocatedStaff, $document));
+        $this->assertFalse($policy->delete($unallocatedStaff, $document));
+        $this->assertFalse($policy->void($unallocatedStaff, $document));
+
+        // 2. Allocated staff (and creator) CAN view, update, and delete draft document
+        $this->assertTrue($policy->view($allocatedStaff, $document));
+        $this->assertTrue($policy->update($allocatedStaff, $document));
+        $this->assertTrue($policy->delete($allocatedStaff, $document));
+
+        // 3. Super admin CAN view and delete document
+        $this->assertTrue($policy->view($superAdmin, $document));
+        $this->assertTrue($policy->delete($superAdmin, $document));
+
+        // 4. Signed documents CANNOT be deleted or voided by anyone
+        $document->status = 'signed';
+        $document->save();
+
+        $this->assertFalse($policy->delete($superAdmin, $document));
+        $this->assertFalse($policy->delete($allocatedStaff, $document));
+        $this->assertFalse($policy->void($superAdmin, $document));
+        $this->assertFalse($policy->void($allocatedStaff, $document));
+    }
 }
+
 

@@ -25,7 +25,6 @@ class LeadFactory extends Factory
             'user_id' => \App\Models\Staff::query()->value('id'), // Assigned to staff (null if no staff)
             'status' => LeadFollowUpNoteService::adminsStatusForLeadStatus($leadStatus),
             'lead_status' => $leadStatus,
-            'source' => $this->faker->optional()->randomElement(['website', 'referral', 'social_media', 'direct']),
             'remember_token' => Str::random(10),
             'is_archived' => 0,
             'is_deleted' => null,

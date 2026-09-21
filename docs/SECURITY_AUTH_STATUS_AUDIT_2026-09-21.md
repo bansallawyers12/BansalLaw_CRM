@@ -37,7 +37,7 @@ Top issues:
 2. **High [RESOLVED] —** `approveAction` / `declinedAction` / `processAction` / `archiveAction`: Fixed with strict table allowlists (`systemTables` + `clientTables`), column validation, Admin Console privilege checks, and row-level client visibility.  
 3. **High [RESOLVED] —** SMS Cellcast webhooks: Fixed with fail-closed authentication when secret is unset or invalid in non-local environments; removed test bypass; added route throttle (`throttle:60,1`).  
 4. **High [RESOLVED] —** Public booking/payment API: Protected with `VerifyBookingApiAccess` shared-secret check (when configured) and dedicated route rate limits (`throttle:10,1` on booking/payment mutations and `throttle:30,1` on calendar queries).  
-5. **Medium/High —** `DocumentPolicy` grants near-global document mutate/view to any authenticated user; Auth gates compare `user->id` to `client->id` in a confusing way.  
+5. **Medium [RESOLVED] —** `AUTH-CORS-1` & `AUTH-DOC-1`: Tightened CORS allowed origins by eliminating wildcard default in favor of configured/trusted domains. Enforced least-privilege document authorization in `DocumentPolicy` aligned with staff allocation (`StaffClientVisibility`) and lifecycle protection for signed documents.  
 6. **Medium —** Session hardening incomplete (`AuthenticateSession` off, `HttpsProtocol` dead, session encrypt off, weak password min length, **GET logout**, no password-reset routes).
 
 ---
@@ -87,7 +87,7 @@ Top issues:
 |--------|------|--------|-------|
 | Session | `config/session.php` | **Partial** | Driver default redis; lifetime 30; `http_only` true; `same_site` lax; **`encrypt` false**; **`secure` default false** (mitigated by middleware when HTTPS detected). |
 | Sanctum | `config/sanctum.php` | **Partial** | 7-day token expiry; `guard => ['web']` (Admin provider) while MCP/service tokens are Staff. |
-| CORS | `config/cors.php` | **At risk** | `allowed_origins => ['*']` with comment to tighten for production; `supports_credentials` false. |
+| CORS | `config/cors.php` | **OK** (Fixed) | Resolved: Removed wildcard `*`. Restricted to explicit trusted origins via `CORS_ALLOWED_ORIGINS` (defaults to `bansallawyers.com.au` and `APP_URL`), allowing local regex patterns only in non-production environments. |
 
 ### 5. Route protection (web / CRM)
 
@@ -110,7 +110,7 @@ Top issues:
 | Record access concern | `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php` | **OK** | Enforces client/lead type + visibility; strict variant available. |
 | Access config | `config/crm_access.php` | **OK** | Env-driven exempt roles, grants, allocation toggles. |
 | Super-admin elevation | `SuperAdminElevationController` | **OK** | Capability-gated session flag. |
-| Document policy | `app/Policies/DocumentPolicy.php` | **At risk** | `view`/`update`/`delete`/`void`/`associate`/`sendReminder` effectively **true for any authenticated user** (only create requires Staff; delete/void block signed). Firm-wide staff access may be intentional — still weak least-privilege. |
+| Document policy | `app/Policies/DocumentPolicy.php` | **OK** (Fixed) | Resolved: Enforced least-privilege authorization via `StaffClientVisibility::mayAccessDocument` checking super-admin privileges, creator ownership, unattributed templates, and matter/client allocations. Delete restricted to creators or Admin Console staff. |
 
 ### 7. Generic CRM utility mutations
 
@@ -172,8 +172,8 @@ Top issues:
 | AUTH-UTIL-1 | **High** | CRMUtility | **OK** (Fixed) | Resolved: Enforced strict table allowlists (`systemTables` + `clientTables`), column existence validation, Admin Console authorization for system tables, and row-level client visibility checks. |
 | AUTH-SMS-1 | **High** | Webhooks | **OK** (Fixed) | Resolved: Enforced fail-closed authentication when secret is unset or invalid in non-local environments; removed test bypass; added dedicated `throttle:60,1` to webhook routes. |
 | AUTH-API-1 | **High** | Public booking API | **OK** (Fixed) | Resolved: Enforced `VerifyBookingApiAccess` middleware for shared-secret authorization (`BOOKING_SHARED_SECRET`), dedicated `throttle:10,1` on booking and payment endpoints, and `throttle:30,1` on calendar availability queries. |
-| AUTH-CORS-1 | **Medium** | CORS | At risk | `allowed_origins = *` for `api/*`. |
-| AUTH-DOC-1 | **Medium** | DocumentPolicy | At risk | Global document view/update/delete/void for any authenticated user. |
+| AUTH-CORS-1 | **Medium** | CORS | **OK** (Fixed) | Resolved: Removed wildcard `*`. Restricted to explicit trusted origins via `CORS_ALLOWED_ORIGINS` (defaults to `bansallawyers.com.au` and `APP_URL`), allowing local dev origins only in non-production environments. |
+| AUTH-DOC-1 | **Medium** | DocumentPolicy | **OK** (Fixed) | Resolved: Enforced least-privilege authorization via `StaffClientVisibility::mayAccessDocument` checking super-admin privileges, creator ownership, unattributed templates, and client/matter allocations. Delete restricted to creators or Admin Console staff. |
 | AUTH-GATE-1 | **Medium** | AuthServiceProvider | At risk | `view`/`update` gates compare staff id to client id. |
 | AUTH-SESS-1 | **Medium** | Session | At risk | `AuthenticateSession` disabled; session encryption off; HTTPS middleware dead. |
 | AUTH-LOGOUT-1 | **Medium** | Logout | Partial | `GET /logout` enables CSRF logout / prefetch side effects. |
@@ -199,6 +199,8 @@ Top issues:
 - `updateAction`, `deleteAction`, `approveAction`, `declinedAction`, `processAction`, and `archiveAction` all strictly enforce table allowlists and row-level client visibility.
 - Cellcast SMS webhooks strictly fail closed against unconfigured or mismatched secrets with dedicated route throttling (`throttle:60,1`).
 - Public booking and payment endpoints enforce dedicated rate limiting (`throttle:10,1` and `throttle:30,1`) and optional shared secret validation (`VerifyBookingApiAccess`).
+- CORS origin allowlist strictly avoids wildcards and restricts requests to production domain allowlists and non-prod localhost patterns.
+- `DocumentPolicy` enforces least privilege via `StaffClientVisibility::mayAccessDocument`, blocking unauthorized staff from viewing, modifying, or deleting unallocated client documents.
 
 ---
 
@@ -208,7 +210,7 @@ Top issues:
 2. [COMPLETED - AUTH-UTIL-1] Added **table allowlists** and client visibility checks to approve/decline/process/archive.  
 3. [COMPLETED - AUTH-SMS-1] Made Cellcast webhook **fail closed** when secret unset in non-local envs; added route throttle (`throttle:60,1`).  
 4. [COMPLETED - AUTH-API-1] Added dedicated throttles and shared-secret access control on public booking and payment-without-login APIs.  
-5. Revisit DocumentPolicy least-privilege; fix or remove misleading Auth gates.  
+5. [COMPLETED - AUTH-CORS-1 & AUTH-DOC-1] Tightened CORS to trusted origins and enforced DocumentPolicy least-privilege via StaffClientVisibility.
 6. Harden session (AuthenticateSession, secure cookie defaults in prod, reconsider GET logout); strengthen password policy / reset story.
 
 ---

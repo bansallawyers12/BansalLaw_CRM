@@ -160,9 +160,9 @@ class DocumentPolicyTest extends TestCase
     }
 
     #[Test]
-    public function any_user_can_delete_a_non_signed_document()
+    public function non_creator_without_admin_privileges_cannot_delete_a_document()
     {
-        // Policy allows deletion of non-signed documents by anyone
+        // Non-creator, non-admin users cannot delete someone else's document
         $user = Admin::factory()->create();
         $staff = Staff::factory()->create();
         $document = Document::factory()->create([
@@ -170,7 +170,7 @@ class DocumentPolicyTest extends TestCase
             'status'     => 'draft',
         ]);
 
-        $this->assertTrue($this->policy->delete($user, $document));
+        $this->assertFalse($this->policy->delete($user, $document));
     }
 
     #[Test]

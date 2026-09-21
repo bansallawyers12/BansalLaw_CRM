@@ -1,5 +1,17 @@
 <?php
 
+$configuredOrigins = env('CORS_ALLOWED_ORIGINS');
+
+if (! empty($configuredOrigins)) {
+    $allowedOrigins = array_values(array_filter(array_map('trim', explode(',', (string) $configuredOrigins))));
+} else {
+    $allowedOrigins = array_values(array_filter([
+        rtrim((string) env('APP_URL', ''), '/'),
+        rtrim((string) env('APP_PUBLIC_WEBSITE_URL', 'https://www.bansallawyers.com.au'), '/'),
+        'https://bansallawyers.com.au',
+    ]));
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -18,9 +30,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'], // Configure specific domains for production
+    'allowed_origins' => $allowedOrigins,
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => env('APP_ENV') === 'production'
+        ? []
+        : ['#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#'],
 
     'allowed_headers' => ['*'],
 

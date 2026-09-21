@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Admin;
 use App\Models\BookingAppointment;
 use App\Models\ClientAccessGrant;
+use App\Models\Document;
 use App\Models\Staff;
 use App\Services\CrmAccess\CrmAccessService;
 use Carbon\Carbon;
@@ -580,6 +581,42 @@ final class StaffClientVisibility
                 });
             }
         });
+    }
+
+    /**
+     * Check if a staff user may view/access a given Document under allocation rules.
+     */
+    public static function mayAccessDocument(Document $document, ?Authenticatable $user = null): bool
+    {
+        $user = self::currentStaff($user);
+        if (! $user) {
+            return false;
+        }
+
+        if (! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+            return true;
+        }
+
+        $staffId = (int) $user->id;
+
+        // Creator of the document always has access
+        if ($staffId > 0 && ((int) ($document->created_by ?? 0) === $staffId || (int) ($document->user_id ?? 0) === $staffId)) {
+            return true;
+        }
+
+        // Unattributed documents (no client_id and no lead_id) are accessible to all authenticated staff
+        if (empty($document->client_id) && empty($document->lead_id)) {
+            return true;
+        }
+
+        if ($document->exists) {
+            $query = Document::query()->whereKey($document->getKey());
+            self::restrictDocumentEloquentQuery($query, $user);
+
+            return $query->exists();
+        }
+
+        return false;
     }
 
     /**
