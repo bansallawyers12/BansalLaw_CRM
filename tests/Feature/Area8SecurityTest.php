@@ -1285,6 +1285,161 @@ class Area8SecurityTest extends TestCase
         $this->assertFalse($policy->void($superAdmin, $document));
         $this->assertFalse($policy->void($allocatedStaff, $document));
     }
+
+    #[Test]
+    public function service_account_authenticate_route_validates_active_staff_and_rejects_expired_or_inactive_tokens(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        // 1. Active staff member with token
+        $activeStaff = new Staff(['role' => 1, 'status' => 1]);
+        $activeStaff->id = 861;
+        $activeStaff->email = 'active861@bansallawyers.com.au';
+        $activeStaff->password = bcrypt('secret');
+        $activeStaff->save();
+
+        $validToken = $activeStaff->createToken('AppointmentAPI')->plainTextToken;
+
+        $response = $this->postJson('/api/service-account/authenticate', [
+            'service_token' => $validToken,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Authentication successful',
+                'data' => [
+                    'user' => [
+                        'id' => 861,
+                        'email' => 'active861@bansallawyers.com.au',
+                    ],
+                ],
+            ]);
+
+        // 2. Inactive staff member token is rejected
+        $inactiveStaff = new Staff(['role' => 1, 'status' => 0]);
+        $inactiveStaff->id = 862;
+        $inactiveStaff->email = 'inactive862@bansallawyers.com.au';
+        $inactiveStaff->password = bcrypt('secret');
+        $inactiveStaff->save();
+
+        $inactiveToken = $inactiveStaff->createToken('InactiveService')->plainTextToken;
+
+        $responseInactive = $this->postJson('/api/service-account/authenticate', [
+            'service_token' => $inactiveToken,
+        ]);
+
+        $responseInactive->assertStatus(401)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Invalid or expired service token',
+            ]);
+
+        // 3. Expired token is rejected
+        $activeStaff->tokens()->create([
+            'name' => 'ExpiredToken',
+            'token' => hash('sha256', 'fake-expired-token-val'),
+            'abilities' => ['*'],
+            'expires_at' => now()->subMinutes(10),
+            'created_at' => now()->subDays(20),
+        ]);
+
+        $responseExpired = $this->postJson('/api/service-account/authenticate', [
+            'service_token' => 'fake-expired-token-val',
+        ]);
+
+        $responseExpired->assertStatus(401)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Invalid or expired service token',
+            ]);
+    }
+
+    #[Test]
+    public function stripe_payment_intent_rejects_inactive_staff_and_unauthorized_roles(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 99],
+            ['name' => 'Unauthorized Role', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        // Inactive staff
+        $inactiveStaff = new Staff(['role' => 1, 'status' => 0]);
+        $inactiveStaff->id = 871;
+        $inactiveStaff->email = 'inactive871@bansallawyers.com.au';
+        $inactiveStaff->password = bcrypt('secret');
+        $inactiveStaff->save();
+
+        \Laravel\Sanctum\Sanctum::actingAs($inactiveStaff, ['*']);
+
+        $responseInactive = $this->postJson('/api/payments/create-payment-intent', [
+            'amount' => 15000,
+        ]);
+        $responseInactive->assertStatus(403);
+
+        // Active staff with non-payment/non-admin role (e.g. role 99 without modules)
+        $unauthorizedStaff = new Staff(['role' => 99, 'status' => 1]);
+        $unauthorizedStaff->id = 872;
+        $unauthorizedStaff->email = 'staff872@bansallawyers.com.au';
+        $unauthorizedStaff->password = bcrypt('secret');
+        $unauthorizedStaff->save();
+
+        \Laravel\Sanctum\Sanctum::actingAs($unauthorizedStaff, ['*']);
+
+        $responseUnauthorized = $this->postJson('/api/payments/create-payment-intent', [
+            'amount' => 15000,
+        ]);
+        $responseUnauthorized->assertStatus(403);
+    }
+
+    #[Test]
+    public function public_leads_endpoint_prevents_lead_enumeration_and_handles_honeypot_silently(): void
+    {
+        $existingClient = new \App\Models\Admin();
+        $existingClient->id = 9991;
+        $existingClient->first_name = 'Existing';
+        $existingClient->last_name = 'Person';
+        $existingClient->email = 'existing9991@example.com';
+        $existingClient->phone = '+61400009991';
+        $existingClient->type = 'client';
+        $existingClient->status = 1;
+        $existingClient->password = bcrypt('secret');
+        $existingClient->save();
+
+        // 1. Calling /api/leads with existing email and migration_lead_id must NOT leak existing status or internal lead ID
+        $responseEnumeration = $this->postJson('/api/leads', [
+            'full_name' => 'Existing Person',
+            'email' => 'existing9991@example.com',
+            'phone' => '0400009991',
+            'migration_lead_id' => 888,
+        ]);
+
+        $responseEnumeration->assertStatus(200);
+        $data = $responseEnumeration->json();
+        $this->assertTrue($data['success']);
+        $this->assertArrayNotHasKey('lead_id', $data);
+        $this->assertArrayNotHasKey('data', $data);
+
+        // 2. Honeypot check: spambot filling website_hp receives 200 without DB creation
+        $beforeCount = \App\Models\Admin::where('email', 'botspam@example.com')->count();
+        $responseHoneypot = $this->postJson('/api/leads', [
+            'full_name' => 'Bot Spammer',
+            'email' => 'botspam@example.com',
+            'phone' => '0400009992',
+            'website_hp' => 'http://spambot-link.com',
+        ]);
+
+        $responseHoneypot->assertStatus(200);
+        $afterCount = \App\Models\Admin::where('email', 'botspam@example.com')->count();
+        $this->assertEquals($beforeCount, $afterCount);
+    }
 }
 
 

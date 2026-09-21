@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class LeadBookingApiController extends BaseController
@@ -24,6 +26,33 @@ class LeadBookingApiController extends BaseController
      */
     public function storeLead(Request $request)
     {
+        // 1. Honeypot anti-bot protection for public intake
+        $honeypot = $request->input('website_hp') ?? $request->input('bot_field') ?? $request->input('fax_number');
+        if (! empty($honeypot)) {
+            Log::info('Lead creation silently blocked by honeypot trigger', [
+                'ip' => $request->ip(),
+                'email' => $request->input('email'),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for reaching out. Your request has been received.',
+            ], 200);
+        }
+
+        // 2. In-controller rate limit per normalized email address (max 5 per hour)
+        $rawEmail = strtolower(trim((string) $request->input('email', '')));
+        if ($rawEmail !== '') {
+            $emailThrottleKey = 'lead-intake-email|' . $rawEmail;
+            if (RateLimiter::tooManyAttempts($emailThrottleKey, 5)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many submissions for this email address. Please try again later.',
+                ], 429);
+            }
+            RateLimiter::hit($emailThrottleKey, 3600);
+        }
+
         $validated = $request->validate([
             'full_name' => ['nullable', 'string', 'max:255'],
             'first_name' => ['nullable', 'string', 'max:255'],
@@ -221,18 +250,15 @@ class LeadBookingApiController extends BaseController
     }
 
     /**
-     * Detect Migration CRM dedicated handoff (separate route or migration_lead_id payload).
+     * Detect Migration CRM dedicated handoff (strictly via authenticated migration route).
      *
      * @param  array<string, mixed>  $validated
      */
     private function isMigrationCrmLeadHandoff(Request $request, array $validated): bool
     {
-        if (! empty($validated['migration_lead_id'])) {
-            return true;
-        }
-
         $path = $request->path();
 
+        // Must strictly originate from the authenticated Migration CRM route
         return str_contains($path, 'migration-crm/leads');
     }
 

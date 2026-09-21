@@ -16,9 +16,44 @@ use App\Http\Controllers\API\LeadBookingApiController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/create-payment-intent', function (Request $request) {
+        $user = $request->user();
+
+        // 1. Verify authenticated user is active
+        if (! $user || (isset($user->status) && (int) $user->status !== 1)) {
+            return response()->json([
+                'message' => 'Unauthorized or user account is inactive.',
+            ], 403);
+        }
+
+        // 2. Verify authorization to initiate payments
+        $adminRoles = config('crm.admin_console_role_ids', [1, 12, 17]);
+        $isAuthorized = false;
+        if ($user instanceof \App\Models\Staff) {
+            $isAuthorized = $user->canAccessAdminConsole()
+                || $user->hasEffectiveSuperAdminPrivileges()
+                || in_array((int) $user->role, $adminRoles, true)
+                || $user->hasCrmModule('payment')
+                || $user->hasCrmModule('booking');
+        } elseif (isset($user->role) && in_array((int) $user->role, [1, 12, 17], true)) {
+            $isAuthorized = true;
+        }
+
+        if (method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
+            $token = $user->currentAccessToken();
+            if (! $token->can('*') && ! $token->can('payments:create')) {
+                $isAuthorized = false;
+            }
+        }
+
+        if (! $isAuthorized) {
+            return response()->json([
+                'message' => 'Forbidden: insufficient privileges to create payment intent.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'amount' => ['required', 'integer', 'min:50'],
-            'currency' => ['sometimes', 'string', 'size:3'],
+            'currency' => ['sometimes', 'string', 'size:3', 'in:aud,usd,nzd,gbp,eur,AUD,USD,NZD,GBP,EUR'],
             'customer' => ['sometimes', 'string'],
             'description' => ['sometimes', 'string', 'max:255'],
             'metadata' => ['sometimes', 'array'],
@@ -39,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
             $payload = [
                 'amount' => $validated['amount'],
-                'currency' => strtolower($validated['currency'] ?? 'usd'),
+                'currency' => strtolower($validated['currency'] ?? 'aud'),
                 'automatic_payment_methods' => [
                     'enabled' => data_get($validated, 'automatic_payment_methods.enabled', true),
                 ],
@@ -62,6 +97,13 @@ Route::middleware('auth:sanctum')->group(function () {
             }
 
             $paymentIntent = $stripe->paymentIntents->create($payload);
+
+            Log::info('Stripe PaymentIntent created', [
+                'staff_id' => $user->id,
+                'amount' => $validated['amount'],
+                'currency' => $payload['currency'],
+                'payment_intent_id' => $paymentIntent->id,
+            ]);
 
             return response()->json([
                 'id' => $paymentIntent->id,
@@ -118,3 +160,7 @@ Route::middleware('throttle:30,1')->group(function () {
 
 Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken'])
     ->middleware('throttle:5,1');
+
+Route::post('/service-account/authenticate', [ServiceAccountController::class, 'authenticate'])
+    ->middleware('throttle:15,1');
+

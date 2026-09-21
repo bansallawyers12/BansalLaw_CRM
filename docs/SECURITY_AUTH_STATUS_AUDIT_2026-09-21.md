@@ -137,9 +137,9 @@ Top issues:
 | Surface | Path | Status | Notes |
 |---------|------|--------|-------|
 | Service account token mint | `POST /api/service-account/generate-token` | **OK** (Fixed) | Route throttle (`throttle:5,1`) + in-controller rate limit (5/min per email+IP); active-status check (`status=1`); Admin Console / elevated role requirement; timing attack mitigation; password removed from error logs. |
-| Service account authenticate | controller method | **Partial** | Exists on controller; **not registered** in `routes/api.php` (dead unless called elsewhere). |
-| Stripe PaymentIntent | `POST /api/payments/create-payment-intent` | **Partial** | Behind `auth:sanctum` + throttle 6/min — OK if only trusted tokens exist; weak if any staff can mint tokens (see above). |
-| Public leads | `POST /api/leads` | **Partial** | Throttle 5/min — intentional public intake. |
+| Service account authenticate | `POST /api/service-account/authenticate` | **OK** (Fixed) | Resolved: Registered route with dedicated `throttle:15,1` and in-controller IP rate limiter. Validates token existence, expiration (`sanctum.expiration`), active staff status (`status=1`), and timing attack mitigation. |
+| Stripe PaymentIntent | `POST /api/payments/create-payment-intent` | **OK** (Fixed) | Resolved: Enforced active staff verification (`status=1`), role/capability authorization (Admin Console, super-admin, payment/booking module access), currency allowlist validation, and structured audit logging. |
+| Public leads | `POST /api/leads` | **OK** (Fixed) | Resolved: Prevented user enumeration and ID leakage by restricting migration handoff logic strictly to the authenticated `migration-crm/leads` route. Added honeypot anti-spam protection and in-controller per-email rate limiting. |
 | Migration CRM leads | `POST /api/migration-crm/leads` | **OK** | Token middleware + dedicated rate limiter. |
 | Booking / appointments / payments without login | `routes/api.php` public posts | **OK** (Fixed) | Protected by `VerifyBookingApiAccess` shared-secret check (when `BOOKING_SHARED_SECRET` is set) + dedicated route throttles (`throttle:10,1` for appointments & payment mutations, `throttle:30,1` for calendar/availability queries). |
 | MCP | `routes/ai.php` | **OK** | `auth:sanctum` + guard mirror + throttle 60/min. |
@@ -201,6 +201,9 @@ Top issues:
 - Public booking and payment endpoints enforce dedicated rate limiting (`throttle:10,1` and `throttle:30,1`) and optional shared secret validation (`VerifyBookingApiAccess`).
 - CORS origin allowlist strictly avoids wildcards and restricts requests to production domain allowlists and non-prod localhost patterns.
 - `DocumentPolicy` enforces least privilege via `StaffClientVisibility::mayAccessDocument`, blocking unauthorized staff from viewing, modifying, or deleting unallocated client documents.
+- `POST /api/service-account/authenticate` is registered with dedicated rate limiting (`throttle:15,1`) and strictly enforces token expiration and active staff status.
+- `POST /api/payments/create-payment-intent` enforces active staff verification, payment authorization/capabilities, currency validation, and structured audit logs.
+- `POST /api/leads` returns opaque responses preventing email enumeration or database ID leaks, while incorporating honeypot spam traps and per-email rate limits.
 
 ---
 

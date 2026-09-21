@@ -126,25 +126,70 @@ class ServiceAccountController extends Controller
                 'service_token' => 'required|string',
             ]);
 
+            // Rate limit check: 15 attempts per minute per IP
+            $throttleKey = 'service-account-auth|' . $request->ip();
+            if (RateLimiter::tooManyAttempts($throttleKey, 15)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many authentication attempts. Please try again in ' . RateLimiter::availableIn($throttleKey) . ' seconds.',
+                ], 429);
+            }
+
             $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($request->service_token);
-            if (!$tokenModel || !$tokenModel->tokenable) {
+            $user = $tokenModel?->tokenable;
+
+            // Check expiration against expires_at and sanctum.expiration config
+            $expirationMinutes = (int) config('sanctum.expiration', 10080);
+            $isExpired = false;
+            if ($tokenModel) {
+                if ($tokenModel->expires_at && $tokenModel->expires_at->isPast()) {
+                    $isExpired = true;
+                } elseif ($expirationMinutes > 0 && $tokenModel->created_at && $tokenModel->created_at->lte(now()->subMinutes($expirationMinutes))) {
+                    $isExpired = true;
+                }
+            }
+
+            $isActiveStaff = $user && (int) ($user->status ?? 0) === 1;
+
+            if (! $tokenModel || ! $user || ! $isActiveStaff || $isExpired) {
+                // Timing equalization
+                Hash::check(
+                    (string) $request->service_token,
+                    '$2y$10$e0MYzXyjpJS7Pd0RVvHwHe1FX5X1D2u.w8Y4vL.N.o8Y4vL.N.o8Y'
+                );
+
+                RateLimiter::hit($throttleKey, 60);
+
+                Log::warning('Service account token authentication failed', [
+                    'ip' => $request->ip(),
+                    'token_found' => (bool) $tokenModel,
+                    'user_found' => (bool) $user,
+                    'is_active' => $isActiveStaff,
+                    'is_expired' => $isExpired,
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid or expired service token',
                 ], 401);
             }
 
+            RateLimiter::clear($throttleKey);
+
+            $expiresAt = $tokenModel->expires_at
+                ?? ($expirationMinutes > 0 ? $tokenModel->created_at?->addMinutes($expirationMinutes) : null);
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'token' => $request->service_token,
                     'user' => [
-                        'id' => $tokenModel->tokenable->id,
-                        'email' => $tokenModel->tokenable->email,
+                        'id' => $user->id,
+                        'email' => $user->email,
                     ],
-                    'expires_at' => $tokenModel->expires_at?->toISOString()
+                    'expires_at' => $expiresAt?->toISOString(),
                 ],
-                'message' => 'Authentication successful'
+                'message' => 'Authentication successful',
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -162,7 +207,7 @@ class ServiceAccountController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Authentication failed',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
