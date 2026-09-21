@@ -1,6 +1,220 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Matter')
 
+@section('styles')
+<style>
+/* Scoped Matter Action Buttons & Dropdown UI */
+.adminconsole-matter-spa .mat-list-table .mat-actions-cell {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    vertical-align: middle !important;
+}
+
+.adminconsole-matter-spa .mat-action-btns {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    vertical-align: middle !important;
+}
+
+.adminconsole-matter-spa .mat-btn-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 5px 11px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    border-radius: 6px !important;
+    transition: all 0.15s ease-in-out !important;
+    box-shadow: 0 1px 2px rgba(30, 61, 96, 0.05) !important;
+    height: 31px !important;
+    text-decoration: none !important;
+}
+
+.adminconsole-matter-spa .mat-btn-action i {
+    font-size: 12px !important;
+}
+
+.adminconsole-matter-spa .mat-btn-view {
+    background: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.adminconsole-matter-spa .mat-btn-view:hover,
+.adminconsole-matter-spa .mat-btn-view:focus {
+    background: var(--sidebar-bg, #ddeaf8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.adminconsole-matter-spa .mat-btn-edit {
+    background: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
+    color: #ffffff !important;
+}
+
+.adminconsole-matter-spa .mat-btn-edit:hover,
+.adminconsole-matter-spa .mat-btn-edit:focus {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.18) !important;
+}
+
+.adminconsole-matter-spa .mat-btn-more {
+    background: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.adminconsole-matter-spa .mat-btn-more:hover,
+.adminconsole-matter-spa .mat-btn-more:focus,
+.adminconsole-matter-spa .mat-btn-more[aria-expanded="true"] {
+    background: var(--sidebar-bg, #ddeaf8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.adminconsole-matter-spa .mat-list-table-wrap {
+    overflow: visible !important;
+}
+
+.adminconsole-matter-spa .mat-list-table .mat-dropdown-menu {
+    z-index: 1060 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    background: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    border-top: 3px solid var(--accent-gold, #c8992a) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 32px rgba(30, 61, 96, 0.16), 0 2px 8px rgba(30, 61, 96, 0.06) !important;
+    padding: 6px !important;
+    min-width: 220px !important;
+    margin-top: 6px !important;
+    animation: matDropdownFadeIn 0.15s ease-out !important;
+}
+
+.adminconsole-matter-spa .mat-list-table .mat-dropdown-menu::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+@keyframes matDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.adminconsole-matter-spa .mat-dropdown-header {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--text-muted, #5e7a90) !important;
+    padding: 6px 12px 4px !important;
+    user-select: none !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    color: var(--text-dark, #1a2c40) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    text-decoration: none !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item:hover,
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item:focus {
+    background-color: var(--page-bg, #f0f6ff) !important;
+    color: var(--navy, #1e3d60) !important;
+    padding-left: 15px !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.15s ease !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-item:hover .mat-dropdown-icon {
+    transform: scale(1.08) !important;
+}
+
+.adminconsole-matter-spa .mat-icon-email {
+    background: rgba(58, 111, 168, 0.1) !important;
+    color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.adminconsole-matter-spa .mat-icon-checklist {
+    background: rgba(200, 153, 42, 0.12) !important;
+    color: #936b0f !important;
+}
+
+.adminconsole-matter-spa .mat-icon-templates {
+    background: rgba(30, 61, 96, 0.08) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.adminconsole-matter-spa .mat-icon-delete {
+    background: rgba(168, 48, 32, 0.1) !important;
+    color: var(--danger, #a83020) !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-label {
+    flex: 1 !important;
+    white-space: nowrap !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-divider {
+    margin: 5px 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--border, #c8dcef) !important;
+    opacity: 0.7 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item--danger {
+    color: var(--danger, #a83020) !important;
+}
+
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item--danger:hover,
+.adminconsole-matter-spa .mat-dropdown-menu .mat-dropdown-item--danger:focus {
+    background-color: #fff1f0 !important;
+    color: #8c1e10 !important;
+}
+</style>
+@endsection
+
 @section('content')
 <div class="main-content adminconsole-features adminconsole-matter-list adminconsole-matter-spa adminconsole-matter-form matter-index-layout"
     id="mat-admin-app"
