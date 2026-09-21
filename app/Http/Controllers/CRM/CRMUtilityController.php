@@ -373,277 +373,237 @@ class CRMUtilityController extends Controller
 		return response()->json(['status' => $status, 'message' => $message]);
 	}
 
+	private function validateAndAuthorizeStatusMutation(Request $request, string $targetColumn = 'status'): array
+	{
+		$systemTables = [
+			'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
+			'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+			'templates', 'products', 'document_checklists', 'personal_document_types',
+			'matter_document_types', 'teams'
+		];
+
+		$clientTables = [
+			'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+		];
+
+		$allowedTables = array_merge($systemTables, $clientTables);
+
+		$id = (int) trim((string) $request->input('id', 0));
+		$table = trim((string) $request->input('table', ''));
+
+		if ($id <= 0 || empty($table)) {
+			return [
+				'authorized' => false,
+				'response' => response()->json(['status' => 0, 'message' => 'Id OR Table does not exist, please check it once again.'])
+			];
+		}
+
+		if (!in_array($table, $allowedTables, true) || !Schema::hasTable($table)) {
+			return [
+				'authorized' => false,
+				'response' => response()->json(['status' => 0, 'message' => 'Status mutation is not authorized for this table.'])
+			];
+		}
+
+		if (!Schema::hasColumn($table, $targetColumn)) {
+			return [
+				'authorized' => false,
+				'response' => response()->json(['status' => 0, 'message' => 'Target column does not exist on this table.'])
+			];
+		}
+
+		$user = Auth::guard('admin')->user();
+		$staff = $user instanceof \App\Models\Staff ? $user : null;
+
+		// 1. Authorization check for system-wide configuration tables
+		if (in_array($table, $systemTables, true)) {
+			$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+			if (!$canManageSystem) {
+				return [
+					'authorized' => false,
+					'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.'])
+				];
+			}
+		}
+
+		// 2. Authorization check for client-specific records
+		if (in_array($table, $clientTables, true)) {
+			$row = DB::table($table)->where('id', $id)->first();
+			if (!$row) {
+				return [
+					'authorized' => false,
+					'response' => response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.'])
+				];
+			}
+
+			$clientId = $row->client_id ?? $row->admin_id ?? null;
+			if ($clientId) {
+				$this->ensureCrmRecordAccess((int) $clientId);
+			} elseif ($table === 'email_labels' && !empty($row->user_id) && (int) $row->user_id !== (int) Auth::id()) {
+				if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+					return [
+						'authorized' => false,
+						'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.'])
+					];
+				}
+			}
+		}
+
+		// General authorization check
+		if (!$this->viewerCanMutateAnyRecord() && !$staff) {
+			return [
+				'authorized' => false,
+				'response' => response()->json(['status' => 0, 'message' => 'You are not authorized person to perform this action.'])
+			];
+		}
+
+		return [
+			'authorized' => true,
+			'id' => $id,
+			'table' => $table,
+			'user' => $user,
+			'staff' => $staff,
+		];
+	}
+
 	public function declinedAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			$requestData['table'] = trim($requestData['table']);
-
-			if($this->viewerCanMutateAnyRecord())
-			{
-				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
-
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-
-						if($recordExist)
-						{
-
-								$updated_status = 2;
-								$message = 'Record has been disabled successfully.';
-
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['status' => $updated_status]);
-							if($response)
-							{
-								$status = 1;
-							}
-							else
-							{
-								$message = config('constants.server_error');
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
-					}
-				}
-				else
-				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
-				}
-			}
-			else
-			{
-				$message = 'You are not authorized person to perform this action.';
-			}
+		if (!$request->isMethod('post')) {
+			return response()->json(['status' => 0, 'message' => config('constants.post_method')]);
 		}
-		else
-		{
-			$message = config('constants.post_method');
+
+		$authCheck = $this->validateAndAuthorizeStatusMutation($request, 'status');
+		if (!$authCheck['authorized']) {
+			return $authCheck['response'];
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		die;
+
+		$id = $authCheck['id'];
+		$table = $authCheck['table'];
+
+		$recordExist = DB::table($table)->where('id', $id)->exists();
+		if (!$recordExist) {
+			return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+		}
+
+		$response = DB::table($table)->where('id', $id)->update([
+			'status' => 2,
+			'updated_at' => date('Y-m-d H:i:s')
+		]);
+
+		if ($response) {
+			return response()->json(['status' => 1, 'message' => 'Record has been disabled successfully.']);
+		}
+
+		return response()->json(['status' => 0, 'message' => config('constants.server_error')]);
 	}
 
 	public function approveAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			$requestData['table'] = trim($requestData['table']);
-
-			if($this->viewerCanMutateAnyRecord())
-			{
-				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
-
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-
-						if($recordExist)
-						{
-
-								$updated_status = 1;
-								$message = 'Record has been approved successfully.';
-
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['status' => $updated_status]);
-							if($response)
-							{
-								$status = 1;
-							}
-							else
-							{
-								$message = config('constants.server_error').'sss';
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
-					}
-				}
-				else
-				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
-				}
-			}
-			else
-			{
-				$message = 'You are not authorized person to perform this action.';
-			}
+		if (!$request->isMethod('post')) {
+			return response()->json(['status' => 0, 'message' => config('constants.post_method')]);
 		}
-		else
-		{
-			$message = config('constants.post_method');
+
+		$authCheck = $this->validateAndAuthorizeStatusMutation($request, 'status');
+		if (!$authCheck['authorized']) {
+			return $authCheck['response'];
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		die;
+
+		$id = $authCheck['id'];
+		$table = $authCheck['table'];
+
+		$recordExist = DB::table($table)->where('id', $id)->exists();
+		if (!$recordExist) {
+			return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+		}
+
+		$response = DB::table($table)->where('id', $id)->update([
+			'status' => 1,
+			'updated_at' => date('Y-m-d H:i:s')
+		]);
+
+		if ($response) {
+			return response()->json(['status' => 1, 'message' => 'Record has been approved successfully.']);
+		}
+
+		return response()->json(['status' => 0, 'message' => config('constants.server_error')]);
 	}
 
 	public function processAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
-
-			$requestData['id'] = trim($requestData['id']);
-
-			$requestData['table'] = trim($requestData['table']);
-
-			if($this->viewerCanMutateAnyRecord())
-			{
-				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
-
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
-
-						if($recordExist)
-						{
-
-								$updated_status = 4;
-								$message = 'Record has been processed successfully.';
-
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['status' => $updated_status]);
-							if($response)
-							{
-								$status = 1;
-							}
-							else
-							{
-								$message = config('constants.server_error').'sss';
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
-					}
-				}
-				else
-				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
-				}
-			}
-			else
-			{
-				$message = 'You are not authorized person to perform this action.';
-			}
+		if (!$request->isMethod('post')) {
+			return response()->json(['status' => 0, 'message' => config('constants.post_method')]);
 		}
-		else
-		{
-			$message = config('constants.post_method');
+
+		$authCheck = $this->validateAndAuthorizeStatusMutation($request, 'status');
+		if (!$authCheck['authorized']) {
+			return $authCheck['response'];
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message));
-		die;
+
+		$id = $authCheck['id'];
+		$table = $authCheck['table'];
+
+		$recordExist = DB::table($table)->where('id', $id)->exists();
+		if (!$recordExist) {
+			return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+		}
+
+		$response = DB::table($table)->where('id', $id)->update([
+			'status' => 4,
+			'updated_at' => date('Y-m-d H:i:s')
+		]);
+
+		if ($response) {
+			return response()->json(['status' => 1, 'message' => 'Record has been processed successfully.']);
+		}
+
+		return response()->json(['status' => 0, 'message' => config('constants.server_error')]);
 	}
 
 	public function archiveAction(Request $request)
 	{
-		$status 			= 	0;
-		$method 			= 	$request->method();
-		if ($request->isMethod('post'))
-		{
-			$requestData 	= 	$request->all();
+		if (!$request->isMethod('post')) {
+			return response()->json(['status' => 0, 'message' => config('constants.post_method'), 'astatus' => '']);
+		}
 
-			$requestData['id'] = trim($requestData['id']);
+		$authCheck = $this->validateAndAuthorizeStatusMutation($request, 'is_archive');
+		if (!$authCheck['authorized']) {
+			return $authCheck['response'];
+		}
 
-			$requestData['table'] = trim($requestData['table']);
+		$id = $authCheck['id'];
+		$table = $authCheck['table'];
 
-			$astatus = '';
-			if($this->viewerCanMutateAnyRecord())
-			{
-				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
-				{
-					$tableExist = Schema::hasTable(trim($requestData['table']));
+		$recordExist = DB::table($table)->where('id', $id)->exists();
+		if (!$recordExist) {
+			return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.', 'astatus' => '']);
+		}
 
-					if($tableExist)
-					{
-						$recordExist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
+		$response = DB::table($table)->where('id', $id)->update([
+			'is_archive' => 1,
+			'updated_at' => date('Y-m-d H:i:s')
+		]);
 
-						if($recordExist)
-						{
-
-								$updated_status = 1;
-								$message = 'Record has been archived successfully.';
-
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update(['is_archive' => $updated_status]);
-							$getarchive 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->first();
-							if($getarchive->status == 0){
-								$astatus = '<span title="draft" class="ui label uppercase">Draft</span><span> (Archived)</span>';
-							}else if($getarchive->status == 1){
-								$astatus = '<span title="draft" class="ui label uppercase yellow">Sent</span><span> (Archived)</span>';
-							}else if($getarchive->status == 2){
-								$astatus = '<span title="draft" class="ui label uppercase text-danger">Declined</span><span> (Archived)</span>';
-							}
-							if($response)
-							{
-								$status = 1;
-							}
-							else
-							{
-								$message = config('constants.server_error');
-							}
-						}
-						else
-						{
-							$message = 'ID does not exist, please check it once again.';
-						}
-					}
-					else
-					{
-						$message = 'Table does not exist, please check it once again.';
-					}
-				}
-				else
-				{
-					$message = 'Id OR Current Status OR Table does not exist, please check it once again.';
-				}
-			}
-			else
-			{
-				$message = 'You are not authorized person to perform this action.';
+		$astatus = '';
+		$getarchive = DB::table($table)->where('id', $id)->first();
+		if ($getarchive && isset($getarchive->status)) {
+			if ((int)$getarchive->status === 0) {
+				$astatus = '<span title="draft" class="ui label uppercase">Draft</span><span> (Archived)</span>';
+			} else if ((int)$getarchive->status === 1) {
+				$astatus = '<span title="draft" class="ui label uppercase yellow">Sent</span><span> (Archived)</span>';
+			} else if ((int)$getarchive->status === 2) {
+				$astatus = '<span title="draft" class="ui label uppercase text-danger">Declined</span><span> (Archived)</span>';
 			}
 		}
-		else
-		{
-			$message = config('constants.post_method');
+
+		if ($response) {
+			return response()->json([
+				'status' => 1,
+				'message' => 'Record has been archived successfully.',
+				'astatus' => $astatus
+			]);
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message, 'astatus'=>$astatus));
-		die;
+
+		return response()->json(['status' => 0, 'message' => config('constants.server_error'), 'astatus' => $astatus]);
 	}
 
 	public function deleteAction(Request $request)

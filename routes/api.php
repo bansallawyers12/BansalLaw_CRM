@@ -113,4 +113,5 @@ Route::post('/appointments/get-booked-disabled-time-slots', [PublicBookingContro
 Route::post('/appointments/record-payment-without-login', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLogin']);
 Route::post('/appointments/record-payment-without-login-wallet', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
 
-Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken']);
+Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken'])
+    ->middleware('throttle:5,1');

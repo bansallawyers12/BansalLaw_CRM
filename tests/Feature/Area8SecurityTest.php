@@ -159,6 +159,71 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
+    public function service_account_token_endpoint_rejects_inactive_staff_and_unauthorized_roles(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        // 1. Inactive staff (status = 0) with correct password cannot mint token
+        $inactiveStaff = new Staff();
+        $inactiveStaff->email = 'inactive@bansallawyers.com.au';
+        $inactiveStaff->password = \Illuminate\Support\Facades\Hash::make('secret123');
+        $inactiveStaff->role = 1; // Admin role
+        $inactiveStaff->status = 0; // Inactive
+        $inactiveStaff->save();
+
+        $inactiveResponse = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Testing inactive staff',
+            'admin_email' => 'inactive@bansallawyers.com.au',
+            'admin_password' => 'secret123',
+        ]);
+        $inactiveResponse->assertStatus(401);
+        $this->assertFalse($inactiveResponse->json('success'));
+
+        // 2. Regular staff without Admin Console privileges cannot mint token
+        $regularStaff = new Staff();
+        $regularStaff->email = 'regular@bansallawyers.com.au';
+        $regularStaff->password = \Illuminate\Support\Facades\Hash::make('secret123');
+        $regularStaff->role = 2; // Non-admin role
+        $regularStaff->status = 1; // Active
+        $regularStaff->save();
+
+        $regularResponse = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Testing regular staff',
+            'admin_email' => 'regular@bansallawyers.com.au',
+            'admin_password' => 'secret123',
+        ]);
+        $regularResponse->assertStatus(401);
+        $this->assertFalse($regularResponse->json('success'));
+
+        // 3. Rate limiting kicks in on repeated attempts
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/service-account/generate-token', [
+                'service_name' => 'TestService',
+                'description' => 'Brute force simulation',
+                'admin_email' => 'attacker_target@bansallawyers.com.au',
+                'admin_password' => 'wrong',
+            ]);
+        }
+
+        $throttledResponse = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Brute force simulation',
+            'admin_email' => 'attacker_target@bansallawyers.com.au',
+            'admin_password' => 'wrong',
+        ]);
+        $throttledResponse->assertStatus(429);
+    }
+
+    #[Test]
     public function public_lead_api_does_not_disclose_existing_pii_or_lead_ids(): void
     {
         // 1. Send public lead request
@@ -360,6 +425,93 @@ class Area8SecurityTest extends TestCase
         ]);
         $response2->assertJson(['status' => 0]);
         $this->assertStringContainsString('not authorized', $response2->json('message'));
+    }
+
+    #[Test]
+    public function status_mutations_reject_arbitrary_non_allowlisted_tables_and_unauthorized_users(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Staff', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $superAdmin = new Staff();
+        $superAdmin->id = 905;
+        $superAdmin->email = 'superadmin905@bansallawyers.com.au';
+        $superAdmin->password = \Illuminate\Support\Facades\Hash::make('password');
+        $superAdmin->role = 1;
+        $superAdmin->status = 1;
+        $superAdmin->save();
+
+        $regularStaff = new Staff();
+        $regularStaff->id = 906;
+        $regularStaff->email = 'staff906@bansallawyers.com.au';
+        $regularStaff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $regularStaff->role = 2; // Regular staff
+        $regularStaff->status = 1;
+        $regularStaff->save();
+
+        // 1. Super-admin cannot mutate non-allowlisted arbitrary tables
+        $this->actingAs($superAdmin, 'admin');
+
+        $endpoints = [
+            '/approved_action' => 'staff',
+            '/declined_action' => 'user_roles',
+            '/process_action' => 'personal_access_tokens',
+            '/archive_action' => 'migrations',
+        ];
+
+        foreach ($endpoints as $endpoint => $table) {
+            $resp = $this->postJson($endpoint, [
+                'table' => $table,
+                'id' => 1,
+            ]);
+            $resp->assertJson(['status' => 0]);
+            $this->assertStringContainsString('not authorized', $resp->json('message'));
+        }
+
+        // 2. Regular staff cannot mutate system configuration tables
+        $this->actingAs($regularStaff, 'admin');
+
+        $sysResp = $this->postJson('/approved_action', [
+            'table' => 'workflows',
+            'id' => 1,
+        ]);
+        $sysResp->assertJson(['status' => 0]);
+        $this->assertStringContainsString('Unauthorized', $sysResp->json('message'));
+
+        // 3. Super-admin can mutate allowlisted tables (e.g. workflows)
+        $this->actingAs($superAdmin, 'admin');
+
+        \Illuminate\Support\Facades\DB::table('workflows')->updateOrInsert(
+            ['id' => 888],
+            ['name' => 'Test Workflow', 'status' => 0, 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $approveResp = $this->postJson('/approved_action', [
+            'table' => 'workflows',
+            'id' => 888,
+        ]);
+        $approveResp->assertJson(['status' => 1]);
+        $this->assertEquals(1, \Illuminate\Support\Facades\DB::table('workflows')->where('id', 888)->value('status'));
+
+        $declineResp = $this->postJson('/declined_action', [
+            'table' => 'workflows',
+            'id' => 888,
+        ]);
+        $declineResp->assertJson(['status' => 1]);
+        $this->assertEquals(2, \Illuminate\Support\Facades\DB::table('workflows')->where('id', 888)->value('status'));
+
+        $processResp = $this->postJson('/process_action', [
+            'table' => 'workflows',
+            'id' => 888,
+        ]);
+        $processResp->assertJson(['status' => 1]);
+        $this->assertEquals(4, \Illuminate\Support\Facades\DB::table('workflows')->where('id', 888)->value('status'));
     }
 
     #[Test]
