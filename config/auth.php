@@ -17,14 +17,6 @@ return [
         'guard' => 'admin',
         'passwords' => 'staff',  // Staff CRM password resets
     ],
-	'admins' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Admin::class,
-    ],
-	'staff' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Staff::class,
-    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -46,14 +38,15 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'admins', // Changed from 'users' to 'admins'
+            'provider' => 'staff',
         ],
 
         'api' => [
             'driver' => 'sanctum',
-            'provider' => 'admins',
+            'provider' => 'staff',
         ],
-		'admin' => [
+
+        'admin' => [
             'driver' => 'session',
             'provider' => 'staff',  // CRM login uses staff table
         ],
@@ -77,18 +70,14 @@ return [
     */
 
     'providers' => [
-        // Removed 'users' provider - no longer used (legacy sub-user system was never implemented)
-        // 'users' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\User::class,
-        // ],
-		'admins' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\Admin::class,
-        ],
-		'staff' => [
+        'staff' => [
             'driver' => 'eloquent',
             'model' => App\Models\Staff::class,
+        ],
+
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Admin::class,
         ],
     ],
 
@@ -108,19 +97,14 @@ return [
     */
 
     'passwords' => [
-        // Removed 'users' password reset config - no longer used
-        // 'users' => [
-        //     'provider' => 'users',
-        //     'table' => 'password_reset_tokens',
-        //     'expire' => 60,
-        // ],
-		'admins' => [
-            'provider' => 'admins',
+        'staff' => [
+            'provider' => 'staff',
             'table' => 'password_reset_tokens',
             'expire' => 15,
         ],
-		'staff' => [
-            'provider' => 'staff',
+
+        'admins' => [
+            'provider' => 'admins',
             'table' => 'password_reset_tokens',
             'expire' => 15,
         ],

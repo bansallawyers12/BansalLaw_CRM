@@ -1154,5 +1154,39 @@ class Area8SecurityTest extends TestCase
         ]);
         $throttledResp->assertStatus(429);
     }
+
+    #[Test]
+    public function auth_configuration_aligns_guards_and_providers_to_staff_model(): void
+    {
+        // 1. Defaults use admin guard and staff password broker
+        $this->assertEquals('admin', config('auth.defaults.guard'));
+        $this->assertEquals('staff', config('auth.defaults.passwords'));
+
+        // 2. All guards (admin, web, api) point to the staff provider
+        $this->assertEquals('staff', config('auth.guards.admin.provider'));
+        $this->assertEquals('staff', config('auth.guards.web.provider'));
+        $this->assertEquals('staff', config('auth.guards.api.provider'));
+
+        // 3. Root-level provider keys do not exist
+        $this->assertNull(config('auth.admins'));
+        $this->assertNull(config('auth.staff'));
+
+        // 4. Staff provider maps to Staff model
+        $this->assertEquals(\App\Models\Staff::class, config('auth.providers.staff.model'));
+        $this->assertEquals(\App\Models\Admin::class, config('auth.providers.admins.model'));
+
+        // 5. Sanctum guards configuration includes 'admin'
+        $sanctumGuards = config('sanctum.guard', []);
+        $this->assertContains('admin', $sanctumGuards);
+
+        // 6. Guards resolve Staff model
+        $adminProvider = Auth::guard('admin')->getProvider();
+        $this->assertInstanceOf(\Illuminate\Auth\EloquentUserProvider::class, $adminProvider);
+        $this->assertEquals(\App\Models\Staff::class, $adminProvider->getModel());
+
+        $webProvider = Auth::guard('web')->getProvider();
+        $this->assertInstanceOf(\Illuminate\Auth\EloquentUserProvider::class, $webProvider);
+        $this->assertEquals(\App\Models\Staff::class, $webProvider->getModel());
+    }
 }
 

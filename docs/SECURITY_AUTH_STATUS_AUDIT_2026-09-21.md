@@ -48,9 +48,9 @@ Top issues:
 
 | Component | Path | Status | Notes |
 |-----------|------|--------|-------|
-| Auth config | `config/auth.php` | **Partial** | Default guard `admin` → provider `staff` (`Staff`) is correct for CRM login. Legacy `web`/`api` still use provider `admins` (`Admin`) while Sanctum tokens are issued on **Staff** — token auth works via Sanctum tokenable lookup, but guard/provider docs and config are inconsistent. |
+| Auth config | `config/auth.php` | **OK** (Fixed) | Aligned all guards (`admin`, `web`, `api`) and default password reset broker to `staff` provider (`Staff` model). Removed stray root-level provider definitions. Registered `admin` guard in `config/sanctum.php`. |
 | Staff model | `app/Models/Staff.php` | **OK** | `HasApiTokens`, password hidden, status/role helpers (`hasCrmModule`, `canAccessAdminConsole`, elevation helpers). Password not cast as `hashed` (manual `Hash::make` used — acceptable if consistent). |
-| Admin model | `app/Models/Admin.php` | **Partial** | Clients/leads table model still `Authenticatable` + `HasApiTokens`; `password`/`id` fillable; `protected $guard = 'admin'` is misleading (admin guard uses Staff). |
+| Admin model | `app/Models/Admin.php` | **OK** (Clarified) | Clarified that `Admin` represents client and lead records in `admins` table while CRM staff authentication is governed by `Staff` via `admin` guard. Removed misleading `$guard = 'admin'`. |
 | AuthServiceProvider | `app/Providers/AuthServiceProvider.php` | **At risk** | Gates `view`/`update` allow `$user->id === $client->id` (Staff id vs client/Admin id). Likely dead/legacy logic; risk if ever used as real authz. Only `DocumentPolicy` registered. |
 
 ### 2. Staff web login / logout
@@ -178,7 +178,7 @@ Top issues:
 | AUTH-SESS-1 | **Medium** | Session | At risk | `AuthenticateSession` disabled; session encryption off; HTTPS middleware dead. |
 | AUTH-LOGOUT-1 | **Medium** | Logout | Partial | `GET /logout` enables CSRF logout / prefetch side effects. |
 | AUTH-PWD-1 | **Medium** | Passwords | Partial | Min length 6; no self-service reset routes despite password broker config. |
-| AUTH-CFG-1 | **Low** | Guards | Partial | `api`/`web` providers still `Admin` while CRM tokens are `Staff`; Admin model still auth-shaped. |
+| AUTH-CFG-1 | **Low** | Guards | **OK** (Fixed) | Resolved: Aligned `api`, `web`, and `admin` guards to `staff` provider (`Staff` model); removed duplicate root provider config; added `admin` guard to Sanctum configuration; clarified `Admin` model identity as client/lead representation. |
 | AUTH-CSRF-1 | **Low** | CSRF except | Partial | Stale `admin/update_*` exceptions do not match current route paths. |
 | AUTH-DOC-2 | **Low** | Docs | Partial | README says e-sign “HMAC”; code uses opaque stored tokens. |
 | AUTH-LOGIN-1 | — | Login | **OK** | Throttle, reCAPTCHA, regenerate, status check, audit log. |

@@ -19,8 +19,9 @@ class Admin extends Authenticatable
     /** Client has left a review — never show modal again */
     public const GOOGLE_REVIEW_REMINDER_REVIEW_RECEIVED = 'review_received';
 
-	// The authentication guard for admin
-    protected $guard = 'admin';
+	// Note: CRM staff authentication uses the Staff model via the 'admin' guard.
+	// The Admin model represents client and lead records in the admins table.
+
 
 	/**
       * The attributes that are mass assignable.
