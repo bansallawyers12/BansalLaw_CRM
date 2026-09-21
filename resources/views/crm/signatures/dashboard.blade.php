@@ -173,12 +173,27 @@
         border-radius: 10px;
         box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
         overflow: hidden;
+        position: relative;
+    }
+
+    .stat-card.stat-card-clickable {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .stat-card.stat-card-clickable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.12);
     }
 
     .signature-dashboard .nav-tabs {
         border-bottom: 1px solid var(--border);
         padding: 0 20px;
         background: var(--page-bg);
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        scrollbar-width: thin;
     }
 
     .signature-dashboard .nav-tabs .nav-link {
@@ -519,16 +534,16 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="stats-cards">
-        <div class="stat-card sent">
+    <div class="stats-cards" id="signaturesStatsCards">
+        <div class="stat-card sent stat-card-clickable" data-tab="sent_by_me" title="View documents sent by me">
             <h3>My Documents</h3>
             <div class="number">{{ $counts['sent_by_me'] ?? 0 }}</div>
         </div>
-        <div class="stat-card pending">
+        <div class="stat-card pending stat-card-clickable" data-tab="pending" title="View documents pending signature">
             <h3>Pending Signature</h3>
             <div class="number">{{ $counts['pending'] ?? 0 }}</div>
         </div>
-        <div class="stat-card signed">
+        <div class="stat-card signed stat-card-clickable" data-tab="signed" title="View signed documents">
             <h3>Signed</h3>
             <div class="number">{{ $counts['signed'] ?? 0 }}</div>
         </div>
@@ -566,31 +581,35 @@
     @endif
 
     <!-- Tabs -->
-    <div class="tabs-container">
+    <div class="tabs-container" id="signaturesTabsContainer">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link {{ !request('tab') || request('tab') == 'sent_by_me' ? 'active' : '' }}" 
-                   href="{{ route('signatures.index', ['tab' => 'sent_by_me']) }}">
+                   href="{{ route('signatures.index', array_merge(request()->only('scope'), ['tab' => 'sent_by_me'])) }}"
+                   data-tab="sent_by_me">
                     Sent by Me
                 </a>
             </li>
             @if($sigEffectiveSa)
             <li class="nav-item">
                 <a class="nav-link {{ request('tab') == 'all' ? 'active' : '' }}" 
-                   href="{{ route('signatures.index', ['tab' => 'all']) }}">
+                   href="{{ route('signatures.index', array_merge(request()->only('scope'), ['tab' => 'all'])) }}"
+                   data-tab="all">
                     All Documents
                 </a>
             </li>
             @endif
             <li class="nav-item">
                 <a class="nav-link {{ request('tab') == 'pending' ? 'active' : '' }}" 
-                   href="{{ route('signatures.index', ['tab' => 'pending']) }}">
+                   href="{{ route('signatures.index', array_merge(request()->only('scope'), ['tab' => 'pending'])) }}"
+                   data-tab="pending">
                     Pending
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request('tab') == 'signed' ? 'active' : '' }}" 
-                   href="{{ route('signatures.index', ['tab' => 'signed']) }}">
+                   href="{{ route('signatures.index', array_merge(request()->only('scope'), ['tab' => 'signed'])) }}"
+                   data-tab="signed">
                     Signed
                 </a>
             </li>
@@ -598,8 +617,8 @@
 
         <!-- Filters -->
         <div class="filter-bar">
-            <form method="GET" action="{{ route('signatures.index') }}" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; width: 100%;">
-                <input type="hidden" name="tab" value="{{ request('tab') }}">
+            <form method="GET" action="{{ route('signatures.index') }}" id="signaturesFilterForm" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; width: 100%;">
+                <input type="hidden" name="tab" id="signatureActiveTab" value="{{ request('tab', 'sent_by_me') }}">
                 
                 <!-- Visibility Scope Filter -->
                 <div class="scope-toggle">
@@ -617,13 +636,13 @@
                     @endif
                 </div>
                 
-                <select name="association" class="form-control" style="width: auto;" onchange="this.form.submit()">
+                <select name="association" class="form-control" style="width: auto;">
                     <option value="">All Types</option>
                     <option value="associated" {{ request('association') == 'associated' ? 'selected' : '' }}>Associated</option>
                     <option value="adhoc" {{ request('association') == 'adhoc' ? 'selected' : '' }}>Ad-hoc</option>
                 </select>
                 
-                <select name="status" class="form-control" style="width: auto;" onchange="this.form.submit()">
+                <select name="status" class="form-control" style="width: auto;">
                     <option value="">All Statuses</option>
                     <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="sent" {{ request('status') == 'sent' ? 'selected' : '' }}>Sent</option>
@@ -638,7 +657,7 @@
                 </button>
                 
                 @if(request()->anyFilled(['association', 'status', 'search', 'scope']))
-                <a href="{{ route('signatures.index', ['tab' => request('tab')]) }}" class="btn btn-secondary">
+                <a href="{{ route('signatures.index', array_merge(request()->only('scope'), ['tab' => request('tab', 'sent_by_me')])) }}" class="btn btn-secondary btn-clear-filters">
                     Clear Filters
                 </a>
                 @endif
@@ -968,11 +987,176 @@ function bulkVoid() {
 
 function clearSelection() {
     document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = false);
-    document.getElementById('select-all').checked = false;
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) selectAll.checked = false;
     updateBulkActions();
 }
 
-// Verify function is defined
+// --- SPA AJAX Tab Switching & Filtering (No Page Reload) ---
+(function($) {
+    'use strict';
+
+    var activeXhr = null;
+
+    function showCrmLoader() {
+        var $loader = $('.popuploader');
+        if ($loader.length) {
+            $loader.show();
+        } else {
+            $('<div class="popuploader"></div>').appendTo('body').show();
+        }
+    }
+
+    function hideCrmLoader() {
+        $('.popuploader').hide();
+    }
+
+    function loadSignatureDashboard(url, pushState) {
+        var container = document.getElementById('signaturesTabsContainer');
+        if (!container) {
+            window.location.href = url;
+            return;
+        }
+
+        if (activeXhr && typeof activeXhr.abort === 'function') {
+            activeXhr.abort();
+        }
+
+        showCrmLoader();
+
+        activeXhr = $.ajax({
+            url: url,
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(responseHtml) {
+                try {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(responseHtml, 'text/html');
+
+                    var newContainer = doc.getElementById('signaturesTabsContainer');
+                    var currentContainer = document.getElementById('signaturesTabsContainer');
+                    if (newContainer && currentContainer) {
+                        currentContainer.innerHTML = newContainer.innerHTML;
+                    }
+
+                    var newStats = doc.getElementById('signaturesStatsCards');
+                    var currentStats = document.getElementById('signaturesStatsCards');
+                    if (newStats && currentStats) {
+                        currentStats.innerHTML = newStats.innerHTML;
+                    }
+
+                    if (doc.title) {
+                        document.title = doc.title;
+                    }
+
+                    if (pushState !== false) {
+                        window.history.pushState({ signaturesTab: true, url: url }, '', url);
+                    }
+
+                    clearSelection();
+                } catch (err) {
+                    console.error('Error rendering signature dashboard update:', err);
+                    window.location.href = url;
+                }
+            },
+            error: function(xhr, status) {
+                if (status === 'abort') {
+                    return;
+                }
+                console.warn('AJAX load error, falling back to standard navigation:', status);
+                window.location.href = url;
+            },
+            complete: function() {
+                hideCrmLoader();
+                activeXhr = null;
+            }
+        });
+    }
+
+    // 1. Tab link clicks
+    $(document).on('click', '#signaturesTabsContainer .nav-tabs .nav-link', function(e) {
+        if (e.which === 2 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+            return;
+        }
+        var href = $(this).attr('href');
+        if (!href || href === '#' || href.indexOf('javascript') === 0) {
+            return;
+        }
+        e.preventDefault();
+
+        // If clicking the active tab and not currently loading, skip
+        var $container = $('#signaturesTabsContainer');
+        if ($(this).hasClass('active') && !$('.popuploader').is(':visible')) {
+            return;
+        }
+
+        // Instant visual feedback
+        $container.find('.nav-tabs .nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        loadSignatureDashboard(href, true);
+    });
+
+    // 2. Click on clickable Stat Cards at the top
+    $(document).on('click', '#signaturesStatsCards .stat-card.stat-card-clickable', function() {
+        var targetTab = $(this).data('tab');
+        if (!targetTab) return;
+        var tabLink = $('#signaturesTabsContainer .nav-tabs .nav-link[data-tab="' + targetTab + '"]');
+        if (tabLink.length) {
+            tabLink.trigger('click');
+        }
+    });
+
+    // 3. Pagination link clicks
+    $(document).on('click', '#signaturesTabsContainer .pagination a, #signaturesTabsContainer .page-link', function(e) {
+        if (e.which === 2 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+            return;
+        }
+        var href = $(this).attr('href');
+        if (!href || href === '#' || href.indexOf('javascript') === 0) {
+            return;
+        }
+        e.preventDefault();
+        loadSignatureDashboard(href, true);
+    });
+
+    // 4. Scope toggle & Clear filter clicks
+    $(document).on('click', '#signaturesTabsContainer .scope-toggle a, #signaturesTabsContainer .btn-clear-filters', function(e) {
+        if (e.which === 2 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+            return;
+        }
+        var href = $(this).attr('href');
+        if (!href || href === '#' || href.indexOf('javascript') === 0) {
+            return;
+        }
+        e.preventDefault();
+        loadSignatureDashboard(href, true);
+    });
+
+    // 5. Filter form submission (search button / enter key)
+    $(document).on('submit', '#signaturesFilterForm', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        var action = $(this).attr('action') || window.location.pathname;
+        var url = action + (formData ? ('?' + formData) : '');
+        loadSignatureDashboard(url, true);
+    });
+
+    // 6. Filter dropdowns change
+    $(document).on('change', '#signaturesFilterForm select', function() {
+        $('#signaturesFilterForm').trigger('submit');
+    });
+
+    // 7. Browser Back / Forward buttons (popstate)
+    window.addEventListener('popstate', function() {
+        if (window.location.pathname.indexOf('/signatures') !== -1) {
+            loadSignatureDashboard(window.location.href, false);
+        }
+    });
+
+})(jQuery);
 </script>
 @endsection
 
