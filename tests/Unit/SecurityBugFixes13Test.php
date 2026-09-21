@@ -34,10 +34,12 @@ class SecurityBugFixes13Test extends TestCase
         $log->delivered_at = '2026-01-01 12:00:00';
         $log->status = 'delivered';
 
+        config(['services.cellcast.webhook_secret' => 'test_secret']);
         $controller = new SmsWebhookController();
         $request = new Request([
             'message_id' => 'test_sid_123',
             'status' => 'SENT',
+            'token' => 'test_secret',
         ]);
 
         $response = $controller->cellcastStatus($request);

@@ -15,7 +15,10 @@ use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 // ============================================================================
 // WEBHOOK ROUTES (Public - No Authentication)
 // ============================================================================
-Route::prefix('webhooks/sms')->name('webhooks.sms.')->group(function () {
-    Route::post('/cellcast/status', [SmsWebhookController::class, 'cellcastStatus'])->name('cellcast.status');
-    Route::post('/cellcast/incoming', [SmsWebhookController::class, 'cellcastIncoming'])->name('cellcast.incoming');
-});
+Route::prefix('webhooks/sms')
+    ->name('webhooks.sms.')
+    ->middleware('throttle:60,1')
+    ->group(function () {
+        Route::post('/cellcast/status', [SmsWebhookController::class, 'cellcastStatus'])->name('cellcast.status');
+        Route::post('/cellcast/incoming', [SmsWebhookController::class, 'cellcastIncoming'])->name('cellcast.incoming');
+    });

@@ -70,6 +70,7 @@ class Kernel extends HttpKernel
         'migration.crm.token' => \App\Http\Middleware\VerifyMigrationCrmToken::class,
         'communication.check' => \App\Http\Middleware\EnsureCommunicationCheckEnabled::class,
         'mcp.admin.guard' => \App\Http\Middleware\SetAdminGuardFromSanctumUser::class,
+        'booking.api.access' => \App\Http\Middleware\VerifyBookingApiAccess::class,
     ];
 
     /**

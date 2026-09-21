@@ -103,20 +103,24 @@ class SmsWebhookController extends Controller
     {
         $secret = config('services.cellcast.webhook_secret') ?: config('services.cellcast.api_key');
         if (empty($secret)) {
-            Log::warning('Cellcast webhook signature verification skipped: CELLCAST_WEBHOOK_SECRET / CELLCAST_API_KEY is not set');
+            if (app()->isLocal()) {
+                Log::warning('Cellcast webhook signature verification skipped: CELLCAST_WEBHOOK_SECRET / CELLCAST_API_KEY is not set (allowed only in local environment)');
 
-            return true;
+                return true;
+            }
+
+            Log::error('Cellcast webhook signature verification failed: CELLCAST_WEBHOOK_SECRET or CELLCAST_API_KEY is not configured');
+
+            return false;
         }
 
         $signature = $request->header('X-Cellcast-Signature')
             ?? $request->header('X-Signature')
+            ?? $request->bearerToken()
             ?? $request->input('secret')
             ?? $request->input('token');
 
-        if (empty($signature)) {
-            if (app()->environment('testing')) {
-                return true;
-            }
+        if (empty($signature) || ! is_string($signature)) {
             Log::warning('Cellcast webhook signature verification failed: missing signature/secret');
 
             return false;
@@ -126,7 +130,7 @@ class SmsWebhookController extends Controller
             return true;
         }
 
-        $computedSignature = hash_hmac('sha256', $request->getContent(), $secret);
+        $computedSignature = hash_hmac('sha256', $request->getContent(), (string) $secret);
         if (hash_equals($computedSignature, (string) $signature)) {
             return true;
         }

@@ -130,10 +130,16 @@ return [
 
     'cellcast' => [
         'api_key' => env('CELLCAST_API_KEY'),
+        'webhook_secret' => env('CELLCAST_WEBHOOK_SECRET'),
         'base_url' => env('CELLCAST_BASE_URL', 'https://api.cellcast.com.au/v1'),
         'sender_id' => env('CELLCAST_SENDER_ID', ''),
         'timeout' => env('CELLCAST_TIMEOUT', 30),
     ],
+
+    'booking' => [
+        'shared_secret' => env('BOOKING_SHARED_SECRET'),
+    ],
+
 
     /*
     |--------------------------------------------------------------------------

@@ -100,18 +100,21 @@ Route::post('/leads', [LeadBookingApiController::class, 'storeLead'])->middlewar
 Route::post('/migration-crm/leads', [LeadBookingApiController::class, 'storeLead'])
     ->middleware(['migration.crm.token', 'throttle:migration-crm-leads']);
 
-Route::post('/booking-appointments', [LeadBookingApiController::class, 'storeBookingAppointment']);
+// Public booking & appointment creation / payments: protected by booking shared secret (when set) + dedicated throttles
+Route::middleware(['booking.api.access', 'throttle:10,1'])->group(function () {
+    Route::post('/booking-appointments', [LeadBookingApiController::class, 'storeBookingAppointment']);
+    Route::post('/appointments/add-appointment-without-login', [PublicBookingController::class, 'addAppointmentWithoutLogin']);
+    Route::post('/appointments/record-payment-without-login', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLogin']);
+    Route::post('/appointments/record-payment-without-login-wallet', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
+});
 
-Route::get('/appointment-variable-lists', [PublicBookingController::class, 'getAppointmentVariableLists']);
-
-Route::post('/appointments/add-appointment-without-login', [PublicBookingController::class, 'addAppointmentWithoutLogin']);
-
-Route::post('/appointments/get-disabled-dates', [PublicBookingController::class, 'getDisabledDateFromCalendar']);
-Route::post('/appointments/get-disabled-slots', [PublicBookingController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
-Route::post('/appointments/get-booked-disabled-time-slots', [PublicBookingController::class, 'getBookedTimeSlotsToDisable']);
-
-Route::post('/appointments/record-payment-without-login', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLogin']);
-Route::post('/appointments/record-payment-without-login-wallet', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
+// Calendar & slot availability queries: protected by dedicated throttle
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/appointment-variable-lists', [PublicBookingController::class, 'getAppointmentVariableLists']);
+    Route::post('/appointments/get-disabled-dates', [PublicBookingController::class, 'getDisabledDateFromCalendar']);
+    Route::post('/appointments/get-disabled-slots', [PublicBookingController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
+    Route::post('/appointments/get-booked-disabled-time-slots', [PublicBookingController::class, 'getBookedTimeSlotsToDisable']);
+});
 
 Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken'])
     ->middleware('throttle:5,1');

@@ -35,8 +35,8 @@ Top issues:
 
 1. **Critical [RESOLVED] —** `POST /api/service-account/generate-token`: Fixed with rate limiting (5/min per email+IP), active-status check (`status=1`), Admin Console / elevated role restriction, timing equalization, and sanitized logs.  
 2. **High [RESOLVED] —** `approveAction` / `declinedAction` / `processAction` / `archiveAction`: Fixed with strict table allowlists (`systemTables` + `clientTables`), column validation, Admin Console privilege checks, and row-level client visibility.  
-3. **High —** SMS Cellcast webhooks **accept all requests if webhook secret/API key is unset**.  
-4. **High —** Public booking/payment API routes are largely **unauthenticated** and mostly **unthrottled** (beyond global `api` 60/min).  
+3. **High [RESOLVED] —** SMS Cellcast webhooks: Fixed with fail-closed authentication when secret is unset or invalid in non-local environments; removed test bypass; added route throttle (`throttle:60,1`).  
+4. **High [RESOLVED] —** Public booking/payment API: Protected with `VerifyBookingApiAccess` shared-secret check (when configured) and dedicated route rate limits (`throttle:10,1` on booking/payment mutations and `throttle:30,1` on calendar queries).  
 5. **Medium/High —** `DocumentPolicy` grants near-global document mutate/view to any authenticated user; Auth gates compare `user->id` to `client->id` in a confusing way.  
 6. **Medium —** Session hardening incomplete (`AuthenticateSession` off, `HttpsProtocol` dead, session encrypt off, weak password min length, **GET logout**, no password-reset routes).
 
@@ -141,7 +141,7 @@ Top issues:
 | Stripe PaymentIntent | `POST /api/payments/create-payment-intent` | **Partial** | Behind `auth:sanctum` + throttle 6/min — OK if only trusted tokens exist; weak if any staff can mint tokens (see above). |
 | Public leads | `POST /api/leads` | **Partial** | Throttle 5/min — intentional public intake. |
 | Migration CRM leads | `POST /api/migration-crm/leads` | **OK** | Token middleware + dedicated rate limiter. |
-| Booking / appointments / payments without login | `routes/api.php` public posts | **At risk** | No auth; **no route-level throttle** beyond group `throttle:60,1`. Payment-without-login endpoints increase abuse/fraud risk. |
+| Booking / appointments / payments without login | `routes/api.php` public posts | **OK** (Fixed) | Protected by `VerifyBookingApiAccess` shared-secret check (when `BOOKING_SHARED_SECRET` is set) + dedicated route throttles (`throttle:10,1` for appointments & payment mutations, `throttle:30,1` for calendar/availability queries). |
 | MCP | `routes/ai.php` | **OK** | `auth:sanctum` + guard mirror + throttle 60/min. |
 | Countries listing | `GET /api/countries` | **OK** | Public catalogue. |
 
@@ -149,7 +149,7 @@ Top issues:
 
 | Component | Path | Status | Notes |
 |-----------|------|--------|-------|
-| SMS webhooks | `routes/sms.php` + `SmsWebhookController` | **Fail** if secret unset | Signature check **returns true** when `CELLCAST_WEBHOOK_SECRET` / API key empty (“verification skipped”). CSRF excepted (expected for webhooks). |
+| SMS webhooks | `routes/sms.php` + `SmsWebhookController` | **OK** (Fixed) | Fail-closed signature verification enforced when secret is unset or invalid in non-local environments (`CELLCAST_WEBHOOK_SECRET` / `CELLCAST_API_KEY`); testing bypass removed; dedicated `throttle:60,1` applied to webhook route group. CSRF excepted (expected for webhooks). |
 | Phone OTP | `PhoneVerificationService` | **Partial** | Attempt limits / expiry / rate helpers present; OTP compared with `!==` (prefer `hash_equals`); storage of plaintext OTP likely (not fully traced). Staff-gated controllers expected. |
 | Contact verification tests | `tests/Feature/ContactVerificationTest.php` | **OK** | Coverage for OTP expiry, rate limit, resend supersede. |
 
@@ -170,8 +170,8 @@ Top issues:
 |----|----------|------|--------|---------|
 | AUTH-SA-1 | **Critical** | API Sanctum | **OK** (Fixed) | Resolved: Enforced route + controller rate limiting (5/min), inactive staff rejection (`status === 1`), Admin Console / elevated role requirement, timing attack mitigation, and credential-sanitized logging. |
 | AUTH-UTIL-1 | **High** | CRMUtility | **OK** (Fixed) | Resolved: Enforced strict table allowlists (`systemTables` + `clientTables`), column existence validation, Admin Console authorization for system tables, and row-level client visibility checks. |
-| AUTH-SMS-1 | **High** | Webhooks | Fail | Cellcast webhook auth fail-open when secret not configured. |
-| AUTH-API-1 | **High** | Public booking API | At risk | Booking/payment-without-login endpoints lack dedicated throttles / shared secrets. |
+| AUTH-SMS-1 | **High** | Webhooks | **OK** (Fixed) | Resolved: Enforced fail-closed authentication when secret is unset or invalid in non-local environments; removed test bypass; added dedicated `throttle:60,1` to webhook routes. |
+| AUTH-API-1 | **High** | Public booking API | **OK** (Fixed) | Resolved: Enforced `VerifyBookingApiAccess` middleware for shared-secret authorization (`BOOKING_SHARED_SECRET`), dedicated `throttle:10,1` on booking and payment endpoints, and `throttle:30,1` on calendar availability queries. |
 | AUTH-CORS-1 | **Medium** | CORS | At risk | `allowed_origins = *` for `api/*`. |
 | AUTH-DOC-1 | **Medium** | DocumentPolicy | At risk | Global document view/update/delete/void for any authenticated user. |
 | AUTH-GATE-1 | **Medium** | AuthServiceProvider | At risk | `view`/`update` gates compare staff id to client id. |
@@ -197,6 +197,8 @@ Top issues:
 - Migration CRM handoff and MCP entrypoints use proper token auth patterns.  
 - Public e-sign **entry** and **submit** paths validate signer tokens.  
 - `updateAction`, `deleteAction`, `approveAction`, `declinedAction`, `processAction`, and `archiveAction` all strictly enforce table allowlists and row-level client visibility.
+- Cellcast SMS webhooks strictly fail closed against unconfigured or mismatched secrets with dedicated route throttling (`throttle:60,1`).
+- Public booking and payment endpoints enforce dedicated rate limiting (`throttle:10,1` and `throttle:30,1`) and optional shared secret validation (`VerifyBookingApiAccess`).
 
 ---
 
@@ -204,8 +206,8 @@ Top issues:
 
 1. [COMPLETED - AUTH-SA-1] Lock down public **service-account token mint**; added throttle, status/role checks, sanitized error logging.  
 2. [COMPLETED - AUTH-UTIL-1] Added **table allowlists** and client visibility checks to approve/decline/process/archive.  
-3. Make Cellcast webhook **fail closed** when secret unset in non-local envs.  
-4. Add dedicated throttles / abuse controls on public booking and payment-without-login APIs; tighten CORS origins.  
+3. [COMPLETED - AUTH-SMS-1] Made Cellcast webhook **fail closed** when secret unset in non-local envs; added route throttle (`throttle:60,1`).  
+4. [COMPLETED - AUTH-API-1] Added dedicated throttles and shared-secret access control on public booking and payment-without-login APIs.  
 5. Revisit DocumentPolicy least-privilege; fix or remove misleading Auth gates.  
 6. Harden session (AuthenticateSession, secure cookie defaults in prod, reconsider GET logout); strengthen password policy / reset story.
 

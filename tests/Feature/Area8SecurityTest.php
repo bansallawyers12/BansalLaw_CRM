@@ -95,7 +95,7 @@ class Area8SecurityTest extends TestCase
         $contact->save();
 
         // 1. With invalid signature, when Cellcast secret set, fails 401
-        config(['services.cellcast.api_key' => 'secret_token_123']);
+        config(['services.cellcast.api_key' => 'secret_token_123', 'services.cellcast.webhook_secret' => null]);
         $unauthResponse = $this->postJson('/webhooks/sms/cellcast/incoming', [
             'from' => '+61412345678',
             'message' => 'Hello from client',
@@ -105,15 +105,26 @@ class Area8SecurityTest extends TestCase
         ]);
         $unauthResponse->assertStatus(401);
 
-        // 2. Unset secret token allows fallback mode
+        // 2. Unset secret token fails closed in testing / non-local environments (401)
         config(['services.cellcast.api_key' => null, 'services.cellcast.webhook_secret' => null]);
-        $response = $this->postJson('/webhooks/sms/cellcast/incoming', [
+        $responseUnset = $this->postJson('/webhooks/sms/cellcast/incoming', [
             'from' => '+61412345678',
             'message' => 'Hello from client',
             'message_id' => 'SM1234567890',
         ]);
+        $responseUnset->assertStatus(401);
 
-        $response->assertStatus(200);
+        // 3. Valid secret token or header signature processes incoming SMS log (200)
+        config(['services.cellcast.webhook_secret' => 'valid_secret_key_456']);
+        $responseValid = $this->postJson('/webhooks/sms/cellcast/incoming', [
+            'from' => '+61412345678',
+            'message' => 'Hello from client',
+            'message_id' => 'SM1234567890',
+        ], [
+            'X-Cellcast-Signature' => 'valid_secret_key_456',
+        ]);
+
+        $responseValid->assertStatus(200);
         $this->assertDatabaseHas('sms_logs', [
             'provider_message_id' => 'SM1234567890',
             'message_type' => 'notification',
@@ -1092,4 +1103,56 @@ class Area8SecurityTest extends TestCase
         $this->assertEquals('***@***', $restrictedItem['emails']);
         $this->assertStringNotContainsString('secret.person1020@bansallawyers.com.au', json_encode($restrictedItem));
     }
+
+    #[Test]
+    public function public_booking_endpoints_enforce_shared_secret_and_dedicated_throttles(): void
+    {
+        // 1. When BOOKING_SHARED_SECRET is configured, requests without secret fail with 401
+        config(['services.booking.shared_secret' => 'super-secret-booking-token-xyz']);
+
+        $unauthResp = $this->postJson('/api/booking-appointments', [
+            'first_name' => 'John',
+        ]);
+        $unauthResp->assertStatus(401);
+        $unauthResp->assertJson([
+            'status' => false,
+            'message' => 'Unauthorized booking API access.',
+        ]);
+
+        // 2. Request with wrong secret fails with 401
+        $badSecretResp = $this->postJson('/api/booking-appointments', [
+            'first_name' => 'John',
+        ], [
+            'X-Booking-Secret' => 'wrong-secret-token',
+        ]);
+        $badSecretResp->assertStatus(401);
+
+        // 3. Request with valid secret header passes middleware
+        $validResp = $this->postJson('/api/booking-appointments', [
+            'first_name' => 'John',
+        ], [
+            'X-Booking-Secret' => 'super-secret-booking-token-xyz',
+        ]);
+        $this->assertNotEquals(401, $validResp->getStatusCode());
+
+        // 4. When BOOKING_SHARED_SECRET is not configured, public intake passes middleware
+        config(['services.booking.shared_secret' => null]);
+        $openResp = $this->postJson('/api/booking-appointments', [
+            'first_name' => 'John',
+        ]);
+        $this->assertNotEquals(401, $openResp->getStatusCode());
+
+        // 5. Dedicated route rate limiter (throttle:10,1) triggers on excessive calls
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/appointments/record-payment-without-login', [
+                'appointment_id' => 99999,
+            ]);
+        }
+
+        $throttledResp = $this->postJson('/api/appointments/record-payment-without-login', [
+            'appointment_id' => 99999,
+        ]);
+        $throttledResp->assertStatus(429);
+    }
 }
+
