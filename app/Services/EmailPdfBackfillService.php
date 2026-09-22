@@ -15,7 +15,7 @@ class EmailPdfBackfillService
 
     public function __construct()
     {
-        $this->pythonServiceUrl = app(PythonServiceUrlResolver::class)->baseUrl();
+        $this->pythonServiceUrl = config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
     }
 
     private function getUrlWithTimezone(string $path): string

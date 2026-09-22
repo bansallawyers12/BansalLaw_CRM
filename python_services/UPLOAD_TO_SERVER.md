@@ -249,7 +249,7 @@ Expected output:
 ### Test Health Endpoint
 
 ```bash
-curl http://localhost:5002/health
+curl http://localhost:5000/health
 ```
 
 Expected response:
@@ -286,7 +286,7 @@ sudo journalctl -u migration-python-services -n 50
 sudo nano /var/www/bansal-law-crm/.env
 
 # Update or add this line
-PYTHON_SERVICE_URL=http://localhost:5002
+PYTHON_SERVICE_URL=http://localhost:5000
 ```
 
 ### Test from Laravel
@@ -296,7 +296,7 @@ From Laravel Tinker or a test script:
 ```php
 use Illuminate\Support\Facades\Http;
 
-$response = Http::get('http://localhost:5002/health');
+$response = Http::get('http://localhost:5000/health');
 dd($response->json());
 ```
 
@@ -335,7 +335,7 @@ sudo journalctl -u migration-python-services -n 50
 python3 /var/www/bansal-law-crm/python_services/main.py
 
 # Check port
-sudo lsof -i :5002
+sudo lsof -i :5000
 ```
 
 ### Missing Dependencies
@@ -389,7 +389,7 @@ After upload, verify:
 
 1. **Test the service**
    ```bash
-   curl http://localhost:5002/health
+   curl http://localhost:5000/health
    ```
 
 2. **Configure Nginx** (if needed)
@@ -404,7 +404,7 @@ After upload, verify:
 4. **Set up monitoring**
    ```bash
    # Add to crontab
-   */5 * * * * curl -f http://127.0.0.1:5002/health || systemctl restart migration-python-services
+   */5 * * * * curl -f http://127.0.0.1:5000/health || systemctl restart migration-python-services
    ```
 
 5. **Set up log rotation**
@@ -431,7 +431,7 @@ sudo systemctl status migration-python-services
 sudo journalctl -u migration-python-services -f
 
 # Test health
-curl http://localhost:5002/health
+curl http://localhost:5000/health
 
 # Update service
 cd /var/www/bansal-law-crm/python_services

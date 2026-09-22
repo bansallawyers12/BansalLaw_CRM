@@ -51,10 +51,10 @@ docker-compose down
 
 ```bash
 # Check if service is running
-curl http://localhost:5002/health
+curl http://localhost:5000/health
 
 # Check service info
-curl http://localhost:5002/
+curl http://localhost:5000/
 
 # Expected response
 {
@@ -75,11 +75,11 @@ curl http://localhost:5002/
 ### PDF Service
 ```bash
 # Convert PDF to images
-curl -X POST http://localhost:5002/pdf/convert-to-images \
+curl -X POST http://localhost:5000/pdf/convert-to-images \
   -F "file=@document.pdf"
 
 # Merge PDFs
-curl -X POST http://localhost:5002/pdf/merge \
+curl -X POST http://localhost:5000/pdf/merge \
   -F "files=@file1.pdf" \
   -F "files=@file2.pdf"
 ```
@@ -87,16 +87,16 @@ curl -X POST http://localhost:5002/pdf/merge \
 ### Email Service
 ```bash
 # Parse email
-curl -X POST http://localhost:5002/email/parse \
+curl -X POST http://localhost:5000/email/parse \
   -F "file=@email.msg"
 
 # Analyze email
-curl -X POST http://localhost:5002/email/analyze \
+curl -X POST http://localhost:5000/email/analyze \
   -H "Content-Type: application/json" \
   -d '{"subject":"Meeting","html_content":"<p>Hello</p>"}'
 
 # Complete pipeline (parse + analyze + render)
-curl -X POST http://localhost:5002/email/parse-analyze-render \
+curl -X POST http://localhost:5000/email/parse-analyze-render \
   -F "file=@email.msg"
 ```
 
@@ -222,13 +222,13 @@ docker-compose logs -f
 
 #### Windows
 ```bash
-netstat -ano | findstr :5002
+netstat -ano | findstr :5000
 taskkill /PID <PID> /F
 ```
 
 #### Linux
 ```bash
-sudo lsof -i :5002
+sudo lsof -i :5000
 sudo kill -9 <PID>
 ```
 
@@ -290,14 +290,14 @@ python test_service.py
 
 ```bash
 # Test health
-curl http://localhost:5002/health
+curl http://localhost:5000/health
 
 # Test PDF conversion (need actual PDF file)
-curl -X POST http://localhost:5002/pdf/convert-to-images \
+curl -X POST http://localhost:5000/pdf/convert-to-images \
   -F "file=@test.pdf"
 
 # Test email parsing (need actual .msg file)
-curl -X POST http://localhost:5002/email/parse \
+curl -X POST http://localhost:5000/email/parse \
   -F "file=@test.msg"
 ```
 
@@ -357,7 +357,7 @@ docker-compose restart
 ```bash
 # Create .env file
 SERVICE_HOST=127.0.0.1
-SERVICE_PORT=5002
+SERVICE_PORT=5000
 DEBUG=False
 LOG_LEVEL=INFO
 MAX_FILE_SIZE_MB=20
@@ -369,11 +369,11 @@ ALLOWED_PDF_SIZE_MB=50
 ```bash
 # Linux (add to /etc/environment or .env file)
 export SERVICE_HOST=127.0.0.1
-export SERVICE_PORT=5002
+export SERVICE_PORT=5000
 
 # Windows (Command Prompt)
 set SERVICE_HOST=127.0.0.1
-set SERVICE_PORT=5002
+set SERVICE_PORT=5000
 
 # Windows (PowerShell)
 $env:SERVICE_HOST="127.0.0.1"
@@ -388,7 +388,7 @@ $env:SERVICE_PORT="5000"
 
 #### Linux (UFW)
 ```bash
-# Allow port 5002
+# Allow port 5000
 sudo ufw allow 5000/tcp
 
 # Remove rule
@@ -397,7 +397,7 @@ sudo ufw delete allow 5000/tcp
 
 #### Linux (firewalld)
 ```bash
-# Allow port 5002
+# Allow port 5000
 sudo firewall-cmd --permanent --add-port=5000/tcp
 sudo firewall-cmd --reload
 
@@ -408,7 +408,7 @@ sudo firewall-cmd --reload
 
 #### Windows Firewall
 ```powershell
-# Allow port 5002
+# Allow port 5000
 netsh advfirewall firewall add rule name="Python Services" dir=in action=allow protocol=TCP localport=5000
 
 # Remove rule
@@ -428,7 +428,7 @@ netsh advfirewall firewall delete rule name="Python Services"
 
 ### Common Issues
 
-1. **Port already in use**: Kill the process using port 5002
+1. **Port already in use**: Kill the process using port 5000
 2. **Module not found**: Reinstall dependencies
 3. **Permission denied**: Fix file permissions
 4. **Service won't start**: Check logs for errors
@@ -455,7 +455,7 @@ docker stats migration-python-services
 ```bash
 # Use Gunicorn for production (Linux)
 pip install gunicorn
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:5002
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:5000
 
 # Number of workers = (2 x CPU cores) + 1
 ```

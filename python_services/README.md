@@ -92,7 +92,7 @@ python start_services.py
 
 **Option C: Direct start**
 ```bash
-python main.py --host 127.0.0.1 --port 5002
+python main.py --host 127.0.0.1 --port 5000
 ```
 
 ### Linux
@@ -120,7 +120,7 @@ sudo ./install_service_linux.sh
 
 **Option C: Direct start**
 ```bash
-python3 main.py --host 127.0.0.1 --port 5002
+python3 main.py --host 127.0.0.1 --port 5000
 ```
 
 For detailed Linux deployment instructions, see **[LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md)**
@@ -161,7 +161,7 @@ use Illuminate\Support\Facades\Http;
 // Convert PDF to images
 $response = Http::timeout(120)
     ->attach('file', file_get_contents($pdfPath), 'document.pdf')
-    ->post('http://localhost:5002/pdf/convert-to-images');
+    ->post('http://localhost:5000/pdf/convert-to-images');
 
 $result = $response->json();
 // {
@@ -177,7 +177,7 @@ $result = $response->json();
 // Parse .msg file
 $response = Http::timeout(120)
     ->attach('file', file_get_contents($msgPath), 'email.msg')
-    ->post('http://localhost:5002/email/parse');
+    ->post('http://localhost:5000/email/parse');
 
 $emailData = $response->json();
 // {
@@ -193,7 +193,7 @@ $emailData = $response->json();
 ```php
 // Analyze email content
 $response = Http::timeout(120)
-    ->post('http://localhost:5002/email/analyze', [
+    ->post('http://localhost:5000/email/analyze', [
         'subject' => $email->subject,
         'html_content' => $email->html_content,
         'text_content' => $email->text_content,
@@ -216,7 +216,7 @@ $analysis = $response->json();
 // Parse + Analyze + Render in one call
 $response = Http::timeout(180)
     ->attach('file', file_get_contents($msgPath), 'email.msg')
-    ->post('http://localhost:5002/email/parse-analyze-render');
+    ->post('http://localhost:5000/email/parse-analyze-render');
 
 $result = $response->json();
 // Returns complete email data with analysis and rendering
@@ -231,7 +231,7 @@ Create a `.env` file in `python_services/`:
 ```env
 # Service Configuration
 SERVICE_HOST=127.0.0.1
-SERVICE_PORT=5002
+SERVICE_PORT=5000
 DEBUG=False
 
 # File Upload Limits
@@ -256,7 +256,7 @@ LOG_RETENTION_DAYS=30
 ### Before: Multiple Separate Services
 
 ```
-python_pdf_service/      → port 5002
+python_pdf_service/      → Port 5000
 python_outlook_web/      → Port 5001
 python_email_renderer/   → Port 5002
 python/                  → Standalone scripts
@@ -272,7 +272,7 @@ Problems:
 ### After: Unified Service
 
 ```
-python_services/         → port 5002 (all services)
+python_services/         → Port 5000 (all services)
 
 Benefits:
 - Single service
@@ -359,25 +359,25 @@ pip install -r requirements.txt
 ### Step 2: Update Laravel .env
 ```env
 # Old
-# PYTHON_PDF_SERVICE_URL=http://localhost:5002
+# PYTHON_PDF_SERVICE_URL=http://localhost:5000
 # PYTHON_EMAIL_SERVICE_URL=http://localhost:5001
 
 # New
-PYTHON_SERVICE_URL=http://localhost:5002
+PYTHON_SERVICE_URL=http://localhost:5000
 ```
 
 ### Step 3: Update Service Calls
 
 **Old:**
 ```php
-Http::post('http://localhost:5002/convert-pdf')      // PDF service
+Http::post('http://localhost:5000/convert-pdf')      // PDF service
 Http::post('http://localhost:5001/parse-email')       // Email service
 ```
 
 **New:**
 ```php
-Http::post('http://localhost:5002/pdf/convert-to-images')
-Http::post('http://localhost:5002/email/parse')
+Http::post('http://localhost:5000/pdf/convert-to-images')
+Http::post('http://localhost:5000/email/parse')
 ```
 
 ### Step 4: Start Unified Service
@@ -410,7 +410,7 @@ python3 main.py --reload
 # 2. Install as service:
 nssm install BansalLawPythonServices "C:\Python39\python.exe" "C:\xampp\htdocs\BansalLaw_CRM\python_services\main.py"
 nssm set BansalLawPythonServices AppDirectory "C:\xampp\htdocs\BansalLaw_CRM\python_services"
-nssm set BansalLawPythonServices AppParameters "--host 127.0.0.1 --port 5002"
+nssm set BansalLawPythonServices AppParameters "--host 127.0.0.1 --port 5000"
 nssm start BansalLawPythonServices
 
 # Option 2: Using Python script
@@ -438,14 +438,14 @@ sudo journalctl -u migration-python-services -f
 ### Docker (Optional)
 ```bash
 docker build -t migration-manager-python-services .
-docker run -d -p 5002:5002 --name python-services migration-manager-python-services
+docker run -d -p 5000:5000 --name python-services migration-manager-python-services
 ```
 
 ## 📞 Support
 
 For issues:
 1. Check logs in `logs/` directory
-2. Verify service is running: `curl http://localhost:5002/health`
+2. Verify service is running: `curl http://localhost:5000/health`
 3. Test individual endpoints
 4. Review error messages
 

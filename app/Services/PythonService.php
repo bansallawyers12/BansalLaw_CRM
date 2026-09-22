@@ -21,7 +21,7 @@ class PythonService
 
     public function __construct()
     {
-        $this->baseUrl = app(PythonServiceUrlResolver::class)->baseUrl();
+        $this->baseUrl = config('services.python.url', 'http://localhost:5002');
         $this->timeout = config('services.python.timeout', 120);
         $this->maxRetries = config('services.python.max_retries', 3);
     }
@@ -38,7 +38,13 @@ class PythonService
      */
     public function isHealthy(): bool
     {
-        return app(PythonServiceUrlResolver::class)->isAvailable(true);
+        try {
+            $response = Http::timeout(10)->get($this->baseUrl . '/health');
+            return $response->successful() && $response->json('status') === 'healthy';
+        } catch (Exception $e) {
+            Log::warning('Python service health check failed', ['error' => $e->getMessage()]);
+            return false;
+        }
     }
 
     /**

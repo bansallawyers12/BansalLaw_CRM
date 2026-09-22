@@ -46,21 +46,8 @@ class EmailUploadController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-        // Resolve after construct so health probe can pick 5000↔5002 if misconfigured.
-        $this->pythonServiceUrl = '';
+        $this->pythonServiceUrl = (string) config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
         $this->pythonServiceTimeout = max(30, (int) config('services.python.timeout', env('PYTHON_SERVICE_TIMEOUT', 180)));
-    }
-
-    /**
-     * Reachable Python microservice base URL (probes configured + legacy alternate ports).
-     */
-    protected function resolvedPythonServiceUrl(): string
-    {
-        if ($this->pythonServiceUrl === '') {
-            $this->pythonServiceUrl = app(\App\Services\PythonServiceUrlResolver::class)->baseUrl();
-        }
-
-        return $this->pythonServiceUrl;
     }
 
     /**
@@ -94,7 +81,7 @@ class EmailUploadController extends Controller
         $timezone = config('app.timezone', 'Australia/Melbourne');
         $separator = str_contains($path, '?') ? '&' : '?';
 
-        return $this->resolvedPythonServiceUrl() . $path . $separator . 'timezone=' . urlencode($timezone);
+        return $this->pythonServiceUrl . $path . $separator . 'timezone=' . urlencode($timezone);
     }
 
     /**
@@ -1072,7 +1059,7 @@ class EmailUploadController extends Controller
 
             if (stripos($rawMessage, 'Failed to connect') !== false || stripos($rawMessage, 'Connection refused') !== false) {
                 $errorCode = 'service_unreachable';
-                $errorMessage = "Cannot connect to the email processing service at {$this->resolvedPythonServiceUrl()}. "
+                $errorMessage = "Cannot connect to the email processing service at {$this->pythonServiceUrl}. "
                     . "Ensure the Python service is running. ({$rawMessage})";
             } elseif (stripos($rawMessage, 'timed out') !== false || stripos($rawMessage, 'timeout') !== false) {
                 $errorCode = 'timeout';
@@ -1326,22 +1313,6 @@ class EmailUploadController extends Controller
                 ];
             }
 
-            $cliMode = str_contains($path, 'parse-render-pdf') ? 'parse-render-pdf' : 'parse';
-
-            // Prefer one-shot CLI when the HTTP daemon is already known to be down.
-            $resolver = app(\App\Services\PythonServiceUrlResolver::class);
-            if (! $resolver->isAvailable()) {
-                $cliResult = app(\App\Services\PythonEmailCliFallback::class)->parse(
-                    $file,
-                    $cliMode,
-                    $metadataOnly,
-                    $timeout
-                );
-                if (is_array($cliResult)) {
-                    return $cliResult;
-                }
-            }
-
             $payload = [
                 'timezone' => config('app.timezone', 'Australia/Melbourne'),
             ];
@@ -1390,31 +1361,14 @@ class EmailUploadController extends Controller
         } catch (\Exception $e) {
             $rawMessage = $e->getMessage();
             $isTimeout = stripos($rawMessage, 'timed out') !== false || stripos($rawMessage, 'timeout') !== false;
-            $isUnreachable = stripos($rawMessage, 'Failed to connect') !== false
-                || stripos($rawMessage, 'Connection refused') !== false
-                || stripos($rawMessage, 'Could not resolve host') !== false;
-
-            // Production often has no daemon on :5002 — fall back to one-shot CLI.
-            if (! $isTimeout && $isUnreachable) {
-                $cliMode = str_contains($path, 'parse-render-pdf') ? 'parse-render-pdf' : 'parse';
-                $cliResult = app(\App\Services\PythonEmailCliFallback::class)->parse(
-                    $file,
-                    $cliMode,
-                    $metadataOnly,
-                    $timeout
-                );
-                if (is_array($cliResult)) {
-                    return $cliResult;
-                }
-            }
 
             return [
                 'success' => false,
                 'error_code' => $isTimeout ? 'timeout' : 'service_unreachable',
                 'error' => $isTimeout
                     ? 'Email processing timed out. The file may be very large — try again or upload a smaller file. (' . $rawMessage . ')'
-                    : 'Cannot connect to the email processing service at ' . $this->resolvedPythonServiceUrl()
-                        . '. Ensure the Python service is running, or install python_services dependencies for CLI fallback. (' . $rawMessage . ')',
+                    : 'Cannot connect to the email processing service at ' . $this->pythonServiceUrl
+                        . '. Ensure the Python service is running. (' . $rawMessage . ')',
                 'technical_error' => $rawMessage,
             ];
         }
@@ -1474,31 +1428,19 @@ class EmailUploadController extends Controller
      */
     public function checkPythonService()
     {
-        $resolver = app(\App\Services\PythonServiceUrlResolver::class);
-        $status = $resolver->resolve(true);
-        $this->pythonServiceUrl = $status['url'];
-
         try {
-            if (! $status['available']) {
-                return [
-                    'status' => false,
-                    'url' => $status['url'],
-                    'error' => 'Python service health check failed',
-                ];
-            }
-
-            $response = Http::timeout(5)->get($status['url'] . '/health');
+            $response = Http::timeout(5)->get($this->pythonServiceUrl . '/health');
 
             return [
                 'status' => $response->successful(),
-                'url' => $status['url'],
+                'url' => $this->pythonServiceUrl,
                 'response' => $response->successful() ? $response->json() : null
             ];
 
         } catch (\Exception $e) {
             return [
                 'status' => false,
-                'url' => $status['url'],
+                'url' => $this->pythonServiceUrl,
                 'error' => $e->getMessage()
             ];
         }
@@ -1513,7 +1455,7 @@ class EmailUploadController extends Controller
     protected function analyzeEmailWithPython($parsedData)
     {
         try {
-            $response = Http::timeout(30)->post($this->resolvedPythonServiceUrl() . '/email/analyze', [
+            $response = Http::timeout(30)->post($this->pythonServiceUrl . '/email/analyze', [
                 'subject' => $parsedData['subject'] ?? '',
                 'text_content' => $parsedData['text_content'] ?? '',
                 'html_content' => $parsedData['html_content'] ?? '',

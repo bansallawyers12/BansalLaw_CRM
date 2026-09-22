@@ -547,7 +547,18 @@ class IncomingEmailSyncService
      */
     public static function isPythonParserAvailable(): bool
     {
-        return app(\App\Services\PythonServiceUrlResolver::class)->isAvailable(true);
+        $url = rtrim((string) config('services.python.url', ''), '/');
+        if ($url === '') {
+            return false;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($url . '/health');
+
+            return $response->successful();
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -555,9 +566,7 @@ class IncomingEmailSyncService
      */
     public static function pythonParserStatus(): array
     {
-        $status = app(\App\Services\PythonServiceUrlResolver::class)->resolve(true);
-        $url = $status['url'];
-
+        $url = rtrim((string) config('services.python.url', ''), '/');
         if ($url === '') {
             return [
                 'available' => false,
@@ -566,7 +575,7 @@ class IncomingEmailSyncService
             ];
         }
 
-        if ($status['available']) {
+        if (self::isPythonParserAvailable()) {
             return [
                 'available' => true,
                 'url' => $url,
