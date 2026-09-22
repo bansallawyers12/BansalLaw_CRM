@@ -43,8 +43,11 @@ return [
 
     'python' => [
         // PYTHON_CONVERTER_URL is a legacy alias for the same python_services process.
+        // Canonical port is 5002 (see python_services/config.py and install_service_linux.sh).
         'url' => env('PYTHON_SERVICE_URL')
-            ?: env('PYTHON_CONVERTER_URL', 'http://localhost:5002'),
+            ?: env('PYTHON_CONVERTER_URL', 'http://127.0.0.1:5002'),
+        // Optional explicit alternate (also auto-probes 5000 ↔ 5002 when unset).
+        'fallback_url' => env('PYTHON_SERVICE_FALLBACK_URL', ''),
         'timeout' => env('PYTHON_SERVICE_TIMEOUT', env('PYTHON_CONVERTER_TIMEOUT', 180)),
         'max_retries' => env('PYTHON_SERVICE_MAX_RETRIES', 3),
         'health_check_interval' => env('PYTHON_SERVICE_HEALTH_CHECK_INTERVAL', 60),

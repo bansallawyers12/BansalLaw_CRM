@@ -98,7 +98,7 @@ Create a `.env` file or set environment variables:
 # Create .env file
 cat > .env << EOF
 SERVICE_HOST=127.0.0.1
-SERVICE_PORT=5000
+SERVICE_PORT=5002
 DEBUG=False
 LOG_LEVEL=INFO
 MAX_FILE_SIZE_MB=20
@@ -120,7 +120,7 @@ sudo firewall-cmd --permanent --add-port=5000/tcp
 sudo firewall-cmd --reload
 
 # iptables
-sudo iptables -A INPUT -p tcp --dport 5000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 5002 -j ACCEPT
 ```
 
 **Note:** For production, it's better to use Nginx as a reverse proxy (see below) and keep the Python service on localhost only.
@@ -171,7 +171,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/bansal-law-crm/python_services
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+ExecStart=/usr/bin/python3 /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5002
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -191,7 +191,7 @@ WantedBy=multi-user.target
 If you're using a virtual environment, modify the `ExecStart` line:
 
 ```ini
-ExecStart=/var/www/bansal-law-crm/python_services/venv/bin/python /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+ExecStart=/var/www/bansal-law-crm/python_services/venv/bin/python /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5002
 ```
 
 #### Enable and Start Service
@@ -279,7 +279,7 @@ server {
 
     # Python Services
     location /python/ {
-        proxy_pass http://127.0.0.1:5000/;
+        proxy_pass http://127.0.0.1:5002/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -417,7 +417,7 @@ tail -f /var/www/bansal-law-crm/python_services/logs/error.log
 
 ```bash
 # Check service health
-curl http://127.0.0.1:5000/health
+curl http://127.0.0.1:5002/health
 
 # Check via Nginx
 curl https://your-domain.com/python/health
@@ -471,8 +471,8 @@ ls -la /var/www/bansal-law-crm/python_services/
 ### Port Already in Use
 
 ```bash
-# Check what's using port 5000
-sudo lsof -i :5000
+# Check what's using port 5002
+sudo lsof -i :5002
 sudo netstat -tulpn | grep 5000
 
 # Kill process
@@ -540,7 +540,7 @@ Update systemd service:
 
 ```ini
 ExecStart=/usr/bin/python3 -m gunicorn main:app \
-    --bind 127.0.0.1:5000 \
+    --bind 127.0.0.1:5002 \
     --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
     --timeout 300 \
@@ -625,7 +625,7 @@ Set up a cron job to check service health:
 crontab -e
 
 # Add health check every 5 minutes
-*/5 * * * * curl -f http://127.0.0.1:5000/health || systemctl restart migration-python-services
+*/5 * * * * curl -f http://127.0.0.1:5002/health || systemctl restart migration-python-services
 ```
 
 ---
@@ -653,7 +653,7 @@ For issues or questions:
 
 1. Check logs: `sudo journalctl -u migration-python-services -f`
 2. Check application logs in `logs/` directory
-3. Test health endpoint: `curl http://127.0.0.1:5000/health`
+3. Test health endpoint: `curl http://127.0.0.1:5002/health`
 4. Review this documentation
 
 ---

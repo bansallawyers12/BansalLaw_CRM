@@ -5676,7 +5676,7 @@ class ClientsController extends Controller
             // Get original filename or use a default
             $filename = basename($emailLog->s3_path) ?: 'email.msg';
 
-            $pythonServiceUrl = config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
+            $pythonServiceUrl = app(\App\Services\PythonServiceUrlResolver::class)->baseUrl();
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
             
             $response = \Illuminate\Support\Facades\Http::timeout(90)

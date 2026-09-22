@@ -46,8 +46,21 @@ class EmailUploadController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-        $this->pythonServiceUrl = (string) config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
+        // Resolve after construct so health probe can pick 5000↔5002 if misconfigured.
+        $this->pythonServiceUrl = '';
         $this->pythonServiceTimeout = max(30, (int) config('services.python.timeout', env('PYTHON_SERVICE_TIMEOUT', 180)));
+    }
+
+    /**
+     * Reachable Python microservice base URL (probes configured + legacy alternate ports).
+     */
+    protected function resolvedPythonServiceUrl(): string
+    {
+        if ($this->pythonServiceUrl === '') {
+            $this->pythonServiceUrl = app(\App\Services\PythonServiceUrlResolver::class)->baseUrl();
+        }
+
+        return $this->pythonServiceUrl;
     }
 
     /**
@@ -81,7 +94,7 @@ class EmailUploadController extends Controller
         $timezone = config('app.timezone', 'Australia/Melbourne');
         $separator = str_contains($path, '?') ? '&' : '?';
 
-        return $this->pythonServiceUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+        return $this->resolvedPythonServiceUrl() . $path . $separator . 'timezone=' . urlencode($timezone);
     }
 
     /**
@@ -1059,7 +1072,7 @@ class EmailUploadController extends Controller
 
             if (stripos($rawMessage, 'Failed to connect') !== false || stripos($rawMessage, 'Connection refused') !== false) {
                 $errorCode = 'service_unreachable';
-                $errorMessage = "Cannot connect to the email processing service at {$this->pythonServiceUrl}. "
+                $errorMessage = "Cannot connect to the email processing service at {$this->resolvedPythonServiceUrl()}. "
                     . "Ensure the Python service is running. ({$rawMessage})";
             } elseif (stripos($rawMessage, 'timed out') !== false || stripos($rawMessage, 'timeout') !== false) {
                 $errorCode = 'timeout';
@@ -1367,7 +1380,7 @@ class EmailUploadController extends Controller
                 'error_code' => $isTimeout ? 'timeout' : 'service_unreachable',
                 'error' => $isTimeout
                     ? 'Email processing timed out. The file may be very large — try again or upload a smaller file. (' . $rawMessage . ')'
-                    : 'Cannot connect to the email processing service at ' . $this->pythonServiceUrl
+                    : 'Cannot connect to the email processing service at ' . $this->resolvedPythonServiceUrl()
                         . '. Ensure the Python service is running. (' . $rawMessage . ')',
                 'technical_error' => $rawMessage,
             ];
@@ -1428,19 +1441,31 @@ class EmailUploadController extends Controller
      */
     public function checkPythonService()
     {
+        $resolver = app(\App\Services\PythonServiceUrlResolver::class);
+        $status = $resolver->resolve(true);
+        $this->pythonServiceUrl = $status['url'];
+
         try {
-            $response = Http::timeout(5)->get($this->pythonServiceUrl . '/health');
+            if (! $status['available']) {
+                return [
+                    'status' => false,
+                    'url' => $status['url'],
+                    'error' => 'Python service health check failed',
+                ];
+            }
+
+            $response = Http::timeout(5)->get($status['url'] . '/health');
 
             return [
                 'status' => $response->successful(),
-                'url' => $this->pythonServiceUrl,
+                'url' => $status['url'],
                 'response' => $response->successful() ? $response->json() : null
             ];
 
         } catch (\Exception $e) {
             return [
                 'status' => false,
-                'url' => $this->pythonServiceUrl,
+                'url' => $status['url'],
                 'error' => $e->getMessage()
             ];
         }
@@ -1455,7 +1480,7 @@ class EmailUploadController extends Controller
     protected function analyzeEmailWithPython($parsedData)
     {
         try {
-            $response = Http::timeout(30)->post($this->pythonServiceUrl . '/email/analyze', [
+            $response = Http::timeout(30)->post($this->resolvedPythonServiceUrl() . '/email/analyze', [
                 'subject' => $parsedData['subject'] ?? '',
                 'text_content' => $parsedData['text_content'] ?? '',
                 'html_content' => $parsedData['html_content'] ?? '',

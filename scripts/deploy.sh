@@ -228,8 +228,43 @@ for SVC in $PHP_FPM bansallaw-queue bansallaw-email migration-python-services; d
         fi
     else
         echo "  SKIP : $SVC is not enabled"
+        if [ "$SVC" = "migration-python-services" ]; then
+            echo "  WARN : email .msg/.eml uploads require migration-python-services on port 5002"
+            echo "         Install: cd $PROJECT_DIR/python_services && sudo ./install_service_linux.sh"
+            RESTART_ERRORS=$((RESTART_ERRORS + 1))
+        fi
     fi
 done
+
+# Email upload / IMAP import depend on this — fail loudly if nothing answers /health.
+PYTHON_URL="http://127.0.0.1:5002"
+if [ -f "$ENV_FILE" ]; then
+    ENV_PY=$(grep -E '^PYTHON_SERVICE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- | tr -d '\r' | tr -d '"' | tr -d "'")
+    if [ -n "$ENV_PY" ]; then
+        PYTHON_URL="${ENV_PY%/}"
+    fi
+fi
+echo "Checking Python email service at ${PYTHON_URL}/health ..."
+PYTHON_OK=0
+for _try in 1 2 3 4 5 6; do
+    if curl -sf --max-time 3 --connect-timeout 2 "${PYTHON_URL}/health" >/dev/null 2>&1 \
+        || curl -sf --max-time 3 --connect-timeout 2 "http://127.0.0.1:5002/health" >/dev/null 2>&1 \
+        || curl -sf --max-time 3 --connect-timeout 2 "http://127.0.0.1:5000/health" >/dev/null 2>&1; then
+        PYTHON_OK=1
+        echo "  OK   : Python service health check passed"
+        break
+    fi
+    if systemctl is-enabled --quiet migration-python-services 2>/dev/null; then
+        systemctl start migration-python-services 2>/dev/null || true
+    fi
+    sleep 2
+done
+if [ "$PYTHON_OK" -ne 1 ]; then
+    echo "  FAIL : Python service not reachable on 5002/5000 — .msg email uploads will fail"
+    echo "         Fix: sudo systemctl start migration-python-services"
+    echo "         Or:  cd $PROJECT_DIR/python_services && ./start_services.sh"
+    RESTART_ERRORS=$((RESTART_ERRORS + 1))
+fi
 
 # ValidateService curls 127.0.0.1 — if the unit is enabled but never started, HTTP 000 results.
 echo "Ensuring web server is running..."
