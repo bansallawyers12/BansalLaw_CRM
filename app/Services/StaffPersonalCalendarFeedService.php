@@ -1449,14 +1449,15 @@ class StaffPersonalCalendarFeedService
     protected function colorForBookingStatus(string $status): string
     {
         return match ($status) {
-            'pending' => '#92400E',
-            'paid' => '#0C2340',
-            'confirmed' => '#047857',
-            'completed' => '#0369A1',
-            'cancelled' => '#9F1239',
-            'no_show' => '#334155',
-            'rescheduled' => '#0C2340',
-            default => '#334155',
+            'pending' => '#ffc107',
+            'awaiting_confirmation' => '#fd7e14',
+            'paid' => '#007bff',
+            'confirmed' => '#28a745',
+            'completed' => '#17a2b8',
+            'cancelled' => '#dc3545',
+            'no_show' => '#6c757d',
+            'rescheduled' => '#007bff',
+            default => '#6c757d',
         };
     }
 
@@ -1483,7 +1484,15 @@ class StaffPersonalCalendarFeedService
             default => StaffCalendarFeedService::colorForEventType($type),
         };
 
-        $textColor = '#fff';
+        $textType = match (true) {
+            in_array($kind, ['action', 'matter_deadline'], true) => 'deadline',
+            $kind === 'follow_up' => 'reminder',
+            $kind === 'court_hearing' => 'court',
+            default => $type,
+        };
+        $textColor = $kind === 'website_booking'
+            ? (((string) ($row['status'] ?? '')) === 'pending' ? '#000' : '#fff')
+            : StaffCalendarFeedService::textColorForEventType($textType);
 
         $classNames = ['event-' . $type, 'event-kind-' . $kind];
         if ($kind === 'website_booking') {

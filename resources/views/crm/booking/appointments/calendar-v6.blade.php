@@ -534,11 +534,11 @@ const BOOKING_CALENDAR_MODE = @json($calendarMode ?? 'booking');
 const BOOKING_CALENDAR_STAFF_ID = @json($calendarStaffId ?? null);
 
 const IMPORTANT_EVENT_COLORS = {
-    court: { bg: '#3730A3', border: '#3730A3', text: '#fff', className: 'event-court' },
-    meeting: { bg: '#1E40AF', border: '#1E40AF', text: '#fff', className: 'event-meeting' },
-    deadline: { bg: '#B91C1C', border: '#B91C1C', text: '#fff', className: 'event-deadline' },
-    reminder: { bg: '#0F766E', border: '#0F766E', text: '#fff', className: 'event-reminder' },
-    other: { bg: '#334155', border: '#334155', text: '#fff', className: 'event-other' }
+    court: { bg: '#fd7e14', border: '#fd7e14', text: '#fff', className: 'event-court' },
+    meeting: { bg: '#007bff', border: '#007bff', text: '#fff', className: 'event-meeting' },
+    deadline: { bg: '#dc3545', border: '#dc3545', text: '#fff', className: 'event-deadline' },
+    reminder: { bg: '#ffc107', border: '#ffc107', text: '#000', className: 'event-reminder' },
+    other: { bg: '#6c757d', border: '#6c757d', text: '#fff', className: 'event-other' }
 };
 
 function getImportantEventStyle(eventType) {
@@ -749,6 +749,13 @@ document.addEventListener('DOMContentLoaded', function() {
             var ymd = (arg.dateStr || '').slice(0, 10);
             if (isBookingCalendarPastYmd(ymd)) {
                 return ['booking-cal-day-past'];
+            }
+            return [];
+        },
+        eventClassNames: function (arg) {
+            var ymd = String(arg.event.startStr || '').slice(0, 10);
+            if (isBookingCalendarPastYmd(ymd)) {
+                return ['cal-event-past-day'];
             }
             return [];
         },
@@ -1193,19 +1200,20 @@ document.addEventListener('DOMContentLoaded', function() {
     /* docs/theme.md — hex fallbacks if :root vars unavailable to FullCalendar internals */
     function getStatusColor(status) {
         const colors = {
-            'pending': '#92400E',
-            'paid': '#0C2340',
-            'confirmed': '#047857',
-            'completed': '#0369A1',
-            'cancelled': '#9F1239',
-            'no_show': '#334155',
-            'rescheduled': '#0C2340'
+            'pending': '#ffc107',
+            'awaiting_confirmation': '#fd7e14',
+            'paid': '#007bff',
+            'confirmed': '#28a745',
+            'completed': '#17a2b8',
+            'cancelled': '#dc3545',
+            'no_show': '#6c757d',
+            'rescheduled': '#007bff'
         };
-        return colors[status] || '#334155';
+        return colors[status] || '#6c757d';
     }
 
     function getStatusTextColor(status) {
-        return '#fff';
+        return status === 'pending' ? '#000' : '#fff';
     }
     
     function getStatusClass(status) {
@@ -1662,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Appointment Details',
             subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
             iconHtml: '<i class="fa-solid fa-gavel"></i>',
-            iconBg: '#3730A3',
+            iconBg: '#fd7e14',
             iconColor: '#fff'
         });
         const vfd = document.getElementById('viewFullDetails');
@@ -1688,7 +1696,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Edit Appointment',
             subtitle: formatCalendarDetail(props.client_name),
             iconHtml: '<i class="fa-solid fa-pen-to-square"></i>',
-            iconBg: '#3730A3',
+            iconBg: '#fd7e14',
             iconColor: '#fff'
         });
         setEventModalCourtHearingFooter('edit');
@@ -1959,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Appointment Details',
             subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
             iconHtml: '<i class="fa-solid fa-gavel"></i>',
-            iconBg: '#3730A3',
+            iconBg: '#fd7e14',
             iconColor: '#fff'
         });
         const vfd = document.getElementById('viewFullDetails');
@@ -4075,47 +4083,47 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .legend-color.event-pending {
-    background-color: #92400E;
+    background-color: #ffc107;
 }
 
 .legend-color.event-paid {
-    background-color: #0C2340;
+    background-color: #007bff;
 }
 
 .legend-color.event-confirmed {
-    background-color: #047857;
+    background-color: #28a745;
 }
 
 .legend-color.event-completed {
-    background-color: #0369A1;
+    background-color: #17a2b8;
 }
 
 .legend-color.event-cancelled {
-    background-color: #9F1239;
+    background-color: #dc3545;
 }
 
 .legend-color.event-no-show {
-    background-color: #334155;
+    background-color: #6c757d;
 }
 
 .legend-color.event-court {
-    background-color: #3730A3;
+    background-color: #fd7e14;
 }
 
 .legend-color.event-meeting {
-    background-color: #1E40AF;
+    background-color: #007bff;
 }
 
 .legend-color.event-deadline {
-    background-color: #B91C1C;
+    background-color: #dc3545;
 }
 
 .legend-color.event-reminder {
-    background-color: #0F766E;
+    background-color: #ffc107;
 }
 
 .legend-color.event-other {
-    background-color: #334155;
+    background-color: #6c757d;
 }
 
 .calendar-v6-wrapper {
@@ -4226,6 +4234,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 #calendar .booking-cal-day-past .fc-daygrid-day-number {
     color: var(--text-muted, #5e7a90);
+}
+
+#calendar .fc-day-past .fc-event,
+#calendar .fc-event.cal-event-past-day,
+.fc-more-popover .fc-event.cal-event-past-day {
+    background-color: #94A3B8 !important;
+    border-color: #94A3B8 !important;
+    color: #fff !important;
 }
 
 .booking-calendar-modal .modal-header {
@@ -4864,7 +4880,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .appt-type-pill--court {
     background: rgba(92, 61, 143, 0.14);
-    color: #3730A3;
+    color: #fd7e14;
     border: 1px solid rgba(92, 61, 143, 0.25);
 }
 

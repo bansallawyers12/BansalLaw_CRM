@@ -527,7 +527,8 @@
         groupOrder.forEach(function (dateKey) {
             var items = groups[dateKey];
             var clusters = clusterAgendaEntries(items, tz);
-            html += '<div class="dashboard-upcoming-day" data-date="' + escapeHtml(dateKey) + '" id="upcoming-day-' + escapeHtml(dateKey) + '">' +
+            var pastDay = isPastDateStr(dateKey, tz);
+            html += '<div class="dashboard-upcoming-day' + (pastDay ? ' is-past' : '') + '" data-date="' + escapeHtml(dateKey) + '" id="upcoming-day-' + escapeHtml(dateKey) + '">' +
                 '<div class="dashboard-upcoming-day-header">' +
                 '<span>' + escapeHtml(formatDayGroupLabel(dateKey, tz)) + '</span>' +
                 '<span class="dashboard-upcoming-day-count">' + clusters.length + '</span>' +
@@ -2113,6 +2114,13 @@
                 dayCellClassNames: function (arg) {
                     if (arg.isPast) {
                         return ['dashboard-cal-day-past'];
+                    }
+                    return [];
+                },
+                eventClassNames: function (arg) {
+                    var ymd = String(arg.event.startStr || '').slice(0, 10);
+                    if (isPastDateStr(ymd, calendarElTz())) {
+                        return ['cal-event-past-day'];
                     }
                     return [];
                 },
