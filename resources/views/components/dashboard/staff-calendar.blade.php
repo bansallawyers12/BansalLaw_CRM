@@ -97,6 +97,13 @@
             <div class="dashboard-calendar-wrapper">
                 <div class="dashboard-calendar-surface">
                     <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $homeType }}"></div>
+                    <ul class="dashboard-calendar-legend" aria-label="Event colour key">
+                        <li><span class="dashboard-cal-legend-swatch event-meeting" aria-hidden="true"></span> Meeting</li>
+                        <li><span class="dashboard-cal-legend-swatch event-court" aria-hidden="true"></span> Court / Hearing</li>
+                        <li><span class="dashboard-cal-legend-swatch event-deadline" aria-hidden="true"></span> Deadline</li>
+                        <li><span class="dashboard-cal-legend-swatch event-reminder" aria-hidden="true"></span> Reminder</li>
+                        <li><span class="dashboard-cal-legend-swatch event-other" aria-hidden="true"></span> Other</li>
+                    </ul>
                 </div>
             </div>
 

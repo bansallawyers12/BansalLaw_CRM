@@ -228,6 +228,30 @@
         });
     }
 
+    function compactMonthTimeText(timeText) {
+        if (!timeText) return '';
+        var t = String(timeText).trim().toLowerCase().replace(/\s+/g, '');
+        var match = t.match(/^(\d{1,2})(?::(\d{2}))?(am|pm|a|p)?$/);
+        if (!match) {
+            return t.replace(/am$/, 'a').replace(/pm$/, 'p');
+        }
+        var hour = match[1];
+        var mins = match[2] && match[2] !== '00' ? ':' + match[2] : '';
+        var mer = match[3] ? match[3].charAt(0) : '';
+        return hour + mins + mer;
+    }
+
+    function monthGridEventContent(arg) {
+        var title = arg.event.title || '';
+        var time = arg.event.allDay ? '' : compactMonthTimeText(arg.timeText);
+        var html = '<span class="cal-month-chip">';
+        if (time) {
+            html += '<span class="cal-month-chip__time">' + escapeHtml(time) + '</span>';
+        }
+        html += '<span class="cal-month-chip__title">' + escapeHtml(title) + '</span></span>';
+        return { html: html };
+    }
+
     function eventTypeKey(props) {
         var kind = String((props && props.event_kind) || '');
         if (kind === 'court_hearing') return 'court';
@@ -2058,6 +2082,7 @@
                 },
                 height: '100%',
                 expandRows: true,
+                fixedWeekCount: false,
                 timeZone: tz,
                 firstDay: 1,
                 slotMinTime: '09:00:00',
@@ -2079,10 +2104,11 @@
                     minute: '2-digit',
                     meridiem: 'short',
                 },
-                validRange: function (nowDate) {
-                    var start = new Date(nowDate.valueOf());
-                    start.setHours(0, 0, 0, 0);
-                    return { start: start };
+                eventContent: function (arg) {
+                    if (arg.view.type === 'dayGridMonth') {
+                        return monthGridEventContent(arg);
+                    }
+                    return true;
                 },
                 dayCellClassNames: function (arg) {
                     if (arg.isPast) {

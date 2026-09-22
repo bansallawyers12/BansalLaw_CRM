@@ -5,48 +5,19 @@
 @section('content')
 <div class="crm-login-wrapper">
 	<div class="crm-login-card">
-		<!-- Left Side Branding Panel -->
-		<div class="crm-login-branding">
-			<div class="brand-header-logo">
+		<div class="crm-login-form-panel">
+			<div class="login-brand">
 				<div class="brand-header-icon" aria-hidden="true">
 					<i class="fa-solid fa-scale-balanced"></i>
 				</div>
 				<div>
-					<div class="brand-header-text">{{ config('app.login_brand') ?? config('app.name') }}</div>
-					<div class="brand-header-sub">Legal Practice Management</div>
+					<div class="login-brand-name">{{ config('app.login_brand') ?? config('app.name') }}</div>
+					<div class="login-brand-sub">Staff login</div>
 				</div>
 			</div>
 
-			<div class="brand-body-content">
-				<div class="brand-headline">Streamline Your Legal Operations</div>
-				<div class="brand-subline">Access client matters, automated email sync, appointments, and practice analytics in one place.</div>
-
-				<ul class="brand-features">
-					<li class="brand-feature-item">
-						<div class="brand-feature-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></div>
-						<span>Automated Zoho & Outlook Email Sync</span>
-					</li>
-					<li class="brand-feature-item">
-						<div class="brand-feature-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></div>
-						<span>Client Matter & Document Management</span>
-					</li>
-					<li class="brand-feature-item">
-						<div class="brand-feature-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></div>
-						<span>Calendar Scheduling & Conflict Check</span>
-					</li>
-				</ul>
-			</div>
-
-			<div class="brand-footer-text">
-				<i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-				<span>Encrypted SSL 256-Bit Connection</span>
-			</div>
-		</div>
-
-		<!-- Right Side Form Panel -->
-		<div class="crm-login-form-panel">
-			<div class="form-header-title">Staff Sign In</div>
-			<div class="form-header-sub">Please enter your credentials to access your CRM account</div>
+			<div class="form-header-title">Sign in</div>
+			<div class="form-header-sub">Use your staff email and password.</div>
 
 			<div class="alert-flash-wrap">
 				@include('../Elements/flash-message')

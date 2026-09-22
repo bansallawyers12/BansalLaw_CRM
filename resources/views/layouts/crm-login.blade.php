@@ -26,7 +26,9 @@
 	@include('components.sweetalert2-assets')
 	@include('components.font-awesome')
 
-    <script async src="https://www.google.com/recaptcha/api.js"></script> <!-- Add recaptcha script -->
+    @if(config('services.recaptcha.key'))
+    <script async src="https://www.google.com/recaptcha/api.js"></script>
+    @endif
 </head>
 <style>
 .bg{

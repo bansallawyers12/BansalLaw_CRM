@@ -695,6 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calendar settings
         height: 'auto',
+        fixedWeekCount: false,
         timeZone: 'Australia/Melbourne',
         firstDay: 1, // Monday
         slotMinTime: '09:00:00',
@@ -718,6 +719,20 @@ document.addEventListener('DOMContentLoaded', function() {
             minute: '2-digit',
             meridiem: 'short'
         },
+
+        eventContent: function (arg) {
+            if (arg.view.type !== 'dayGridMonth') {
+                return true;
+            }
+            var title = arg.event.title || '';
+            var time = arg.event.allDay ? '' : compactBookingMonthTimeText(arg.timeText);
+            var html = '<span class="cal-month-chip">';
+            if (time) {
+                html += '<span class="cal-month-chip__time">' + escapeBookingCalHtml(time) + '</span>';
+            }
+            html += '<span class="cal-month-chip__title">' + escapeBookingCalHtml(title) + '</span></span>';
+            return { html: html };
+        },
         
         // Business hours highlight (Melbourne working day)
         businessHours: {
@@ -726,10 +741,6 @@ document.addEventListener('DOMContentLoaded', function() {
             endTime: '18:00',
         },
 
-        // Calendar grids: today onwards (lists still show past / cancelled)
-        validRange: function () {
-            return { start: bookingCalendarTodayYmd() };
-        },
         selectAllow: function (selectInfo) {
             var startYmd = (selectInfo.startStr || '').slice(0, 10);
             return !isBookingCalendarPastYmd(startYmd) && !isBookingCalendarWeekendYmd(startYmd);
@@ -2562,6 +2573,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function compactBookingMonthTimeText(timeText) {
+        if (!timeText) return '';
+        var t = String(timeText).trim().toLowerCase().replace(/\s+/g, '');
+        var match = t.match(/^(\d{1,2})(?::(\d{2}))?(am|pm|a|p)?$/);
+        if (!match) {
+            return t.replace(/am$/, 'a').replace(/pm$/, 'p');
+        }
+        var hour = match[1];
+        var mins = match[2] && match[2] !== '00' ? ':' + match[2] : '';
+        var mer = match[3] ? match[3].charAt(0) : '';
+        return hour + mins + mer;
+    }
+
+    function escapeBookingCalHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function isBookingCalendarPastYmd(dateStr) {
         if (!dateStr || typeof dateStr !== 'string') {
             return false;
@@ -4141,8 +4174,33 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 #calendar .booking-cal-day-past {
-    background: rgba(0, 0, 0, 0.04);
-    opacity: 0.55;
+    background: rgba(30, 61, 96, 0.035);
+}
+
+#calendar .cal-month-chip,
+.fc-more-popover .cal-month-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+#calendar .cal-month-chip__time,
+.fc-more-popover .cal-month-chip__time {
+    flex: 0 0 auto;
+    font-weight: 700;
+    opacity: 0.92;
+}
+
+#calendar .cal-month-chip__title,
+.fc-more-popover .cal-month-chip__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #calendar .booking-cal-day-past .fc-daygrid-day-number {

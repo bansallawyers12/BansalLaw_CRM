@@ -23,7 +23,7 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
     }
 
     #[Test]
-    public function clamp_range_moves_start_up_to_today(): void
+    public function clamp_range_keeps_past_month_start(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-14 10:00:00', 'Australia/Melbourne'));
         config(['app.timezone' => 'Australia/Melbourne']);
@@ -34,7 +34,7 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
             'Australia/Melbourne'
         );
 
-        $this->assertSame('2026-08-14', $start->toDateString());
+        $this->assertSame('2026-08-01', $start->toDateString());
         $this->assertSame('2026-09-01', $end->toDateString());
     }
 

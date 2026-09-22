@@ -313,7 +313,7 @@
 .dashboard-calendar-container {
     flex: 1 1 0;
     min-height: 0;
-    height: 100%;
+    height: auto;
 }
 
 .dashboard-calendar-container .fc {
@@ -439,7 +439,68 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
 }
+
+.dashboard-calendar-container .cal-month-chip,
+.dashboard-calendar-section .fc-more-popover .cal-month-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.dashboard-calendar-container .cal-month-chip__time,
+.dashboard-calendar-section .fc-more-popover .cal-month-chip__time {
+    flex: 0 0 auto;
+    font-weight: 700;
+    opacity: 0.92;
+}
+
+.dashboard-calendar-container .cal-month-chip__title,
+.dashboard-calendar-section .fc-more-popover .cal-month-chip__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    flex: 0 0 auto;
+}
+
+.dashboard-calendar-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted-color);
+    white-space: nowrap;
+}
+
+.dashboard-cal-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+}
+
+.dashboard-cal-legend-swatch.event-meeting { background: #0d6efd; }
+.dashboard-cal-legend-swatch.event-court { background: #5c3d8f; }
+.dashboard-cal-legend-swatch.event-deadline { background: #c0392b; }
+.dashboard-cal-legend-swatch.event-reminder { background: #d97706; }
+.dashboard-cal-legend-swatch.event-other { background: #111; }
 
 .dashboard-calendar-container .fc-daygrid-more-link {
     font-size: 0.75rem;
@@ -483,8 +544,7 @@
 }
 
 .dashboard-calendar-container .dashboard-cal-day-past {
-    background: rgba(0, 0, 0, 0.04);
-    opacity: 0.55;
+    background: rgba(30, 61, 96, 0.035);
 }
 
 .dashboard-calendar-container .dashboard-cal-day-past .fc-daygrid-day-number {
