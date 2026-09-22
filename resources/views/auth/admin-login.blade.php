@@ -23,8 +23,8 @@
 				@include('../Elements/flash-message')
 			</div>
 
-			<form action="{{ URL::to('login') }}" method="post" name="admin_login" autocomplete="on">
-				<input type="hidden" name="_token" value="{{ csrf_token() }}">
+			<form action="{{ route('crm.login.post') }}" method="post" name="admin_login" autocomplete="on">
+				@csrf
 
 				<!-- Email Input Group -->
 				<div class="login-form-group">
@@ -37,7 +37,8 @@
 						       name="email" 
 						       placeholder="name@bansallawyers.com.au" 
 						       tabindex="1" 
-						       value="{{ (Cookie::get('email') != '' && !old('email')) ? Cookie::get('email') : old('email') }}" 
+						       autocomplete="email"
+						       value="{{ !empty(old('email')) ? old('email') : (filter_var(Cookie::get('email'), FILTER_VALIDATE_EMAIL) ? Cookie::get('email') : '') }}" 
 						       required 
 						       autofocus>
 					</div>
@@ -59,7 +60,7 @@
 						       name="password" 
 						       placeholder="••••••••" 
 						       tabindex="2" 
-						       value="{{ old('password') }}" 
+						       autocomplete="current-password"
 						       required>
 						<button type="button" class="btn-toggle-password" id="togglePasswordBtn" title="Show/Hide Password" aria-label="Toggle password visibility">
 							<i class="fa-solid fa-eye" id="togglePasswordIcon"></i>

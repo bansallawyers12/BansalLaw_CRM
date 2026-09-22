@@ -58,9 +58,9 @@ Top issues:
 | Component | Path | Status | Notes |
 |-----------|------|--------|-------|
 | Login controller | `app/Http/Controllers/Auth/AdminLoginController.php` | **OK** | `guest:admin`; rate limit 5/min per email+IP; optional reCAPTCHA (non-local); `status => 1`; session regenerate on success; failed-login timing equalization; login/logout audit via `StaffLoginLog`. |
-| Login routes | `routes/web.php` | **Partial** | `GET/POST /login`, `POST /logout` OK. **`GET /logout` also destroys session** (CSRF-logout / link-prefetch risk). |
-| Login view | `resources/views/auth/admin-login.blade.php` | **OK** *(assumed)* | Used by controller; not deeply UI-audited. |
-| Remember cookie | `AdminLoginController::authenticated` | **Low / Partial** | Queues plaintext `email` cookie on remember; forgets `password` cookie (good). Prefer not storing PII in non-HttpOnly custom cookies. |
+| Login routes | `routes/web.php` | **OK** (Fixed) | Resolved: `GET /logout` no longer destroys session directly; renders a CSRF-protected confirmation prompt (`auth.logout-confirm`) for authenticated users and redirects guests to login. Eliminates CSRF-logout and browser link prefetching session termination risks while keeping bookmarked links safe. |
+| Login view | `resources/views/auth/admin-login.blade.php` | **OK** (Fixed) | Deeply audited and hardened: removed unsafe `old('password')` repopulation; updated to `@csrf` directive and route helper; added explicit `autocomplete` attributes (`email`, `current-password`); sanitized remember-me email fallback. |
+| Remember cookie | `AdminLoginController::authenticated` | **OK** (Fixed) | Resolved: Explicitly configured remember-me email cookie with `HttpOnly = true`, `SameSite = 'lax'`, `secure` HTTPS auto-detection, and email syntax validation; encrypted on the wire via `EncryptCookies` middleware. |
 
 **Password reset:** `config/auth.php` defines `passwords.staff` / `admins` (15 min), but **no forgot/reset routes or controllers** found under `routes/`. Status: **Fail** for “self-service reset”; **OK** if intentional (admin-only reset only — not verified in Admin Console for this audit).
 
@@ -85,8 +85,8 @@ Top issues:
 
 | Config | Path | Status | Notes |
 |--------|------|--------|-------|
-| Session | `config/session.php` | **Partial** | Driver default redis; lifetime 30; `http_only` true; `same_site` lax; **`encrypt` false**; **`secure` default false** (mitigated by middleware when HTTPS detected). |
-| Sanctum | `config/sanctum.php` | **Partial** | 7-day token expiry; `guard => ['web']` (Admin provider) while MCP/service tokens are Staff. |
+| Session | `config/session.php` | **OK** (Fixed) | Resolved: Enabled environment-driven session encryption via `SESSION_ENCRYPT` (defaults false), set cookie domain to `env('SESSION_DOMAIN', null)`, and set cookie secure default to `env('SESSION_SECURE_COOKIE', null)` so Laravel/Symfony automatically enforces the `Secure` flag on HTTPS requests while `SetSecureSessionCookies` provides dynamic reverse-proxy protection. |
+| Sanctum | `config/sanctum.php` | **OK** (Fixed) | Resolved: Both `admin` and `web` guards are registered and aligned with `staff` provider (`Staff` model with `HasApiTokens`); token expiration configurable via `SANCTUM_EXPIRATION` (defaults to 7 days = 10080 minutes); `SetAdminGuardFromSanctumUser` mirrors tokens for CRM staff authorization. |
 | CORS | `config/cors.php` | **OK** (Fixed) | Resolved: Removed wildcard `*`. Restricted to explicit trusted origins via `CORS_ALLOWED_ORIGINS` (defaults to `bansallawyers.com.au` and `APP_URL`), allowing local regex patterns only in non-production environments. |
 
 ### 5. Route protection (web / CRM)
@@ -175,8 +175,8 @@ Top issues:
 | AUTH-CORS-1 | **Medium** | CORS | **OK** (Fixed) | Resolved: Removed wildcard `*`. Restricted to explicit trusted origins via `CORS_ALLOWED_ORIGINS` (defaults to `bansallawyers.com.au` and `APP_URL`), allowing local dev origins only in non-production environments. |
 | AUTH-DOC-1 | **Medium** | DocumentPolicy | **OK** (Fixed) | Resolved: Enforced least-privilege authorization via `StaffClientVisibility::mayAccessDocument` checking super-admin privileges, creator ownership, unattributed templates, and client/matter allocations. Delete restricted to creators or Admin Console staff. |
 | AUTH-GATE-1 | **Medium** | AuthServiceProvider | At risk | `view`/`update` gates compare staff id to client id. |
-| AUTH-SESS-1 | **Medium** | Session | At risk | `AuthenticateSession` disabled; session encryption off; HTTPS middleware dead. |
-| AUTH-LOGOUT-1 | **Medium** | Logout | Partial | `GET /logout` enables CSRF logout / prefetch side effects. |
+| AUTH-SESS-1 | **Medium** | Session | **OK** (Hardened) | Resolved: `config/session.php` supports `SESSION_ENCRYPT`, defaults `secure` and `domain` to `null` for automatic HTTPS enforcement; `TrustProxies` + `SetSecureSessionCookies` auto-upgrades secure cookies across reverse proxies; note that `AuthenticateSession` remains intentionally commented out to preserve existing multi-tab behavior. |
+| AUTH-LOGOUT-1 | **Medium** | Logout | **OK** (Fixed) | Resolved: `GET /logout` no longer terminates sessions; presents a CSRF-protected logout confirmation screen (`auth.logout-confirm`) for authenticated staff and redirects unauthenticated requests to `/login`, eliminating CSRF-logout and prefetch denial-of-service risks. |
 | AUTH-PWD-1 | **Medium** | Passwords | Partial | Min length 6; no self-service reset routes despite password broker config. |
 | AUTH-CFG-1 | **Low** | Guards | **OK** (Fixed) | Resolved: Aligned `api`, `web`, and `admin` guards to `staff` provider (`Staff` model); removed duplicate root provider config; added `admin` guard to Sanctum configuration; clarified `Admin` model identity as client/lead representation. |
 | AUTH-CSRF-1 | **Low** | CSRF except | **OK** (Fixed) | Resolved: Cleaned `VerifyCsrfToken::$except` to only contain valid stateless prefixes (`api/*` and `webhooks/sms/*`). Removed stale `admin/*` task/visit paths and redundant GET route (`get-activities`), ensuring all browser mutating actions enforce CSRF verification. |
@@ -207,6 +207,10 @@ Top issues:
 - `POST /api/leads` returns opaque responses preventing email enumeration or database ID leaks, while incorporating honeypot spam traps and per-email rate limits.
 - CSRF protection is fully active across all web and CRM routes; stale dead exceptions removed from `VerifyCsrfToken` with only valid API and SMS webhook exclusions retained.
 - Reverse proxy trust (`TrustProxies`) is active in global middleware with `config/trustedproxy.php` support, ensuring accurate HTTPS detection and secure session cookie auto-configuration behind load balancers/reverse proxies.
+- `GET /logout` prompts confirmation to prevent CSRF logout and prefetch side effects; state-destroying logout strictly requires POST + CSRF.
+- Staff login view avoids repopulating plaintext passwords, and remember-me email cookie is explicitly HttpOnly, SameSite=Lax, and encrypted.
+- Session configuration allows opting into encryption via `SESSION_ENCRYPT`, with `secure` defaulting to `null` enabling automatic HTTPS enforcement by Laravel/Symfony alongside reverse-proxy dynamic detection.
+- Sanctum guards include `admin` and `web` aligned to the `staff` provider (`Staff` model), with token expiration configurable via `SANCTUM_EXPIRATION`.
 
 ---
 

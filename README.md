@@ -319,8 +319,8 @@ Within `routes/web.php`:
 | GET | `/` | — | Redirect to `/login` |
 | GET | `/login` | `crm.login` | Staff login form |
 | POST | `/login` | `crm.login.post` | Authenticate staff |
-| POST | `/logout` | `crm.logout` | End session |
-| GET | `/logout` | `crm.logout.get` | End session (same as POST) |
+| POST | `/logout` | `crm.logout` | End session (CSRF protected) |
+| GET | `/logout` | `crm.logout.get` | Show logout confirmation (CSRF-safe prompt) |
 | GET | `/up` | `health.up` | Health check (plain `OK` response) |
 
 #### Email verification

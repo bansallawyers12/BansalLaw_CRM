@@ -28,9 +28,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | This array contains the authentication guards that will be checked when
-    | Sanctum is trying to authenticate a request. If none of these guards
-    | are able to authenticate the request, Sanctum will use the bearer
-    | token that's present on an incoming request for authentication.
+    | Sanctum is trying to authenticate a request. Both 'admin' and 'web'
+    | guards map to the 'staff' provider (App\Models\Staff) in config/auth.php.
     |
     */
 
@@ -44,10 +43,13 @@ return [
     | This value controls the number of minutes until an issued token will be
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
+    | Set SANCTUM_EXPIRATION in .env (in minutes), or leave unset for 7 days.
     |
     */
 
-    'expiration' => 60 * 24 * 7, // 7 days
+    'expiration' => env('SANCTUM_EXPIRATION') !== null
+        ? (is_numeric(env('SANCTUM_EXPIRATION')) ? (int) env('SANCTUM_EXPIRATION') : null)
+        : 60 * 24 * 7, // 7 days (minutes)
 
     /*
     |--------------------------------------------------------------------------

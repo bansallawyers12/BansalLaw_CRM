@@ -16,7 +16,7 @@ class AdminLoginController extends Controller
 
     public function __construct()
     {
-        $this->middleware('guest:admin')->except('logout');
+        $this->middleware('guest:admin')->except(['logout', 'showLogoutConfirmation']);
     }
 
     public function username(): string
@@ -138,7 +138,23 @@ class AdminLoginController extends Controller
         // siteverify call fails with timeout-or-duplicate, logging the user out.
 
         if (!empty($request->remember)) {
-            \Cookie::queue(\Cookie::make('email', $request->email, 3600));
+            $isSecure = (bool) (config('session.secure', false) || $request->isSecure());
+            $sanitizedEmail = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? $request->email : '';
+            if ($sanitizedEmail !== '') {
+                \Cookie::queue(\Cookie::make(
+                    'email',
+                    $sanitizedEmail,
+                    43200, // 30 days
+                    '/',
+                    null,
+                    $isSecure,
+                    true,  // HttpOnly: prevents client-side script access
+                    false, // raw
+                    'lax'  // SameSite
+                ));
+            } else {
+                \Cookie::queue(\Cookie::forget('email'));
+            }
         } else {
             \Cookie::queue(\Cookie::forget('email'));
         }
@@ -178,6 +194,26 @@ class AdminLoginController extends Controller
             ->withErrors($errors);
     }
 
+    /**
+     * Show confirmation prompt for GET /logout to protect against CSRF-logout and link prefetch.
+     */
+    public function showLogoutConfirmation(Request $request): mixed
+    {
+        if (!Auth::guard('admin')->check()) {
+            return redirect()->route('crm.login');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'The GET method is not supported for logout. Please submit a POST request with CSRF token.',
+            ], 405);
+        }
+
+        return view('auth.logout-confirm', [
+            'user' => Auth::guard('admin')->user(),
+        ]);
+    }
+
     public function logout(Request $request): mixed
     {
         $user = Auth::guard('admin')->user();
@@ -196,6 +232,7 @@ class AdminLoginController extends Controller
         Auth::guard('admin')->logout();
         $request->session()->flush();
         $request->session()->regenerate();
+        \Cookie::queue(\Cookie::forget('password'));
 
         return redirect()->route('crm.login');
     }

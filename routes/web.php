@@ -75,9 +75,9 @@ require __DIR__ . '/adminconsole.php';
 Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('crm.login');
 Route::post('/login', [AdminLoginController::class, 'login'])->name('crm.login.post');
 Route::post('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout');
-// GET /logout must destroy the session too — a redirect-only handler left bookmarks
-// appearing signed out while the admin session stayed active (AUTH-1).
-Route::get('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout.get');
+// GET /logout prompts confirmation to prevent CSRF-logout / link-prefetch attacks (AUTH-LOGOUT-1)
+// while ensuring bookmarked links don't silently leave sessions active or broken (AUTH-1).
+Route::get('/logout', [AdminLoginController::class, 'showLogoutConfirmation'])->name('crm.logout.get');
 
 /*--------------------------------------------------
 | SECTION: CRM Application Routes (Protected)
