@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Services\PythonEmailCliFallback;
 use Illuminate\Http\UploadedFile;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class PythonEmailCliFallbackTest extends TestCase
@@ -14,6 +15,25 @@ class PythonEmailCliFallbackTest extends TestCase
     {
         $fallback = new PythonEmailCliFallback();
         $this->assertIsBool($fallback->isAvailable());
+    }
+
+    #[Test]
+    public function extract_json_payload_strips_fitz_deprecation_warning_prefix(): void
+    {
+        $fallback = new PythonEmailCliFallback();
+        $method = new ReflectionMethod(PythonEmailCliFallback::class, 'extractJsonPayload');
+        $method->setAccessible(true);
+
+        $raw = "warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\n"
+            . '{"success":true,"subject":"Hello"}';
+
+        $extracted = $method->invoke($fallback, $raw);
+
+        $this->assertSame('{"success":true,"subject":"Hello"}', $extracted);
+        $this->assertSame(
+            ['success' => true, 'subject' => 'Hello'],
+            json_decode((string) $extracted, true)
+        );
     }
 
     #[Test]

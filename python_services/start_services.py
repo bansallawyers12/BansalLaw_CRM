@@ -29,7 +29,7 @@ def check_dependencies():
         'beautifulsoup4': 'bs4',
         'extract-msg': 'extract_msg',
         'PyPDF2': 'PyPDF2',
-        'PyMuPDF': 'fitz'
+        'PyMuPDF': 'pymupdf',  # prefer modern import; legacy alias is `fitz`
     }
     
     # Required packages (pip names for display, import names for checking)

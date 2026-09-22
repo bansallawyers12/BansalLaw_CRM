@@ -18,9 +18,12 @@ try:
     from PyPDF2 import PdfReader, PdfWriter
     from pdf2image import convert_from_bytes, convert_from_path
     from PIL import Image
-    import fitz  # PyMuPDF for advanced PDF operations
+    try:
+        import pymupdf as fitz  # PyMuPDF for advanced PDF operations
+    except ImportError:
+        import fitz  # type: ignore  # legacy alias
 except ImportError as e:
-    print(f"Warning: PDF dependencies not installed: {e}")
+    print(f"Warning: PDF dependencies not installed: {e}", file=__import__('sys').stderr)
 
 from utils.logger import setup_logger
 from utils.ttl_cache import pdf_op_cache, stable_hash

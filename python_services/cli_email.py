@@ -10,14 +10,20 @@ Outputs JSON to stdout.
 """
 
 import argparse
+import contextlib
+import io
 import json
-import sys
-import os
-import time
 import logging
+import os
+import sys
+import time
+import warnings
 from pathlib import Path
 
-# Disable logging to console in CLI mode so stdout is 100% clean JSON
+# Keep stdout as pure JSON — PyMuPDF and other libs may print deprecation
+# warnings (`import fitz` → "Use import pymupdf") which break PHP json_decode.
+os.environ.setdefault('PYTHONWARNINGS', 'ignore')
+warnings.filterwarnings('ignore')
 logging.disable(logging.CRITICAL)
 
 ROOT = Path(__file__).resolve().parent
@@ -147,10 +153,17 @@ def main(argv: list[str] | None = None) -> int:
         return _emit({'success': False, 'error': f'File not found: {args.file}'}, 1)
 
     try:
-        if args.command == 'parse':
-            result = cmd_parse(args.file, args.original_name, args.metadata_only)
-        else:
-            result = cmd_parse_render_pdf(args.file, args.original_name, args.timezone)
+        # Capture library print() noise (e.g. PyMuPDF fitz deprecation) so only JSON hits stdout.
+        sink = io.StringIO()
+        with contextlib.redirect_stdout(sink):
+            if args.command == 'parse':
+                result = cmd_parse(args.file, args.original_name, args.metadata_only)
+            else:
+                result = cmd_parse_render_pdf(args.file, args.original_name, args.timezone)
+
+        leaked = sink.getvalue().strip()
+        if leaked:
+            sys.stderr.write(leaked + '\n')
 
         ok = not (result.get('success') is False or result.get('error'))
         return _emit(result, 0 if ok else 1)

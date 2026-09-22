@@ -635,11 +635,15 @@ class EmailRendererService:
             return None, 'empty html'
 
         try:
-            import fitz
+            import pymupdf as fitz
             from io import BytesIO
         except ImportError:
-            logger.warning('PyMuPDF is not installed; cannot render HTML email PDF')
-            return None, 'PyMuPDF is not installed'
+            try:
+                import fitz  # type: ignore
+                from io import BytesIO
+            except ImportError:
+                logger.warning('PyMuPDF is not installed; cannot render HTML email PDF')
+                return None, 'PyMuPDF is not installed'
 
         candidates = [
             html_content,
@@ -1122,7 +1126,10 @@ class EmailRendererService:
         if not pdf_bytes:
             return pdf_bytes
         try:
-            import fitz
+            try:
+                import pymupdf as fitz
+            except ImportError:
+                import fitz  # type: ignore
         except ImportError:
             return pdf_bytes
 

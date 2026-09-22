@@ -136,21 +136,108 @@ class PythonEmailCliFallback
     protected function extractJsonPayload(string $raw): ?string
     {
         $raw = trim($raw);
-        if (str_starts_with($raw, '{') && str_ends_with($raw, '}')) {
-            return $raw;
+        if ($raw === '') {
+            return null;
         }
 
-        // Look for the last JSON object line
-        $lines = explode("\n", $raw);
-        for ($i = count($lines) - 1; $i >= 0; $i--) {
-            $line = trim($lines[$i]);
-            if (str_starts_with($line, '{') && str_ends_with($line, '}')) {
-                return $line;
+        if (str_starts_with($raw, '{')) {
+            try {
+                json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+
+                return $raw;
+            } catch (\Throwable) {
+                // Fall through — may be warning text then JSON without a clean split.
             }
         }
 
-        if (preg_match('/\{[\s\S]*\}/', $raw, $matches)) {
-            return $matches[0];
+        // Prefer the last complete JSON object line (CLI emits one JSON object per run).
+        $lines = preg_split("/\r\n|\n|\r/", $raw) ?: [];
+        for ($i = count($lines) - 1; $i >= 0; $i--) {
+            $line = trim($lines[$i]);
+            if ($line === '' || ! str_starts_with($line, '{')) {
+                continue;
+            }
+            try {
+                json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+
+                return $line;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        // Strip leading non-JSON noise (PyMuPDF "warning: ..." prints) and decode from first '{'.
+        $start = strpos($raw, '{');
+        if ($start === false) {
+            return null;
+        }
+
+        $candidate = substr($raw, $start);
+        try {
+            json_decode($candidate, true, 512, JSON_THROW_ON_ERROR);
+
+            return $candidate;
+        } catch (\Throwable) {
+            // Try brace-balanced extraction for multiline JSON after warnings.
+            $extracted = $this->extractBalancedJsonObject($candidate);
+            if ($extracted !== null) {
+                try {
+                    json_decode($extracted, true, 512, JSON_THROW_ON_ERROR);
+
+                    return $extracted;
+                } catch (\Throwable) {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function extractBalancedJsonObject(string $raw): ?string
+    {
+        $start = strpos($raw, '{');
+        if ($start === false) {
+            return null;
+        }
+
+        $depth = 0;
+        $inString = false;
+        $escape = false;
+        $length = strlen($raw);
+
+        for ($i = $start; $i < $length; $i++) {
+            $ch = $raw[$i];
+
+            if ($inString) {
+                if ($escape) {
+                    $escape = false;
+                    continue;
+                }
+                if ($ch === '\\') {
+                    $escape = true;
+                    continue;
+                }
+                if ($ch === '"') {
+                    $inString = false;
+                }
+                continue;
+            }
+
+            if ($ch === '"') {
+                $inString = true;
+                continue;
+            }
+            if ($ch === '{') {
+                $depth++;
+                continue;
+            }
+            if ($ch === '}') {
+                $depth--;
+                if ($depth === 0) {
+                    return substr($raw, $start, $i - $start + 1);
+                }
+            }
         }
 
         return null;
