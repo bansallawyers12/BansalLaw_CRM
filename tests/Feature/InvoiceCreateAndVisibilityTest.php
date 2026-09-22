@@ -250,6 +250,89 @@ class InvoiceCreateAndVisibilityTest extends TestCase
     }
 
     #[Test]
+    public function saveinvoicereport_draft_works_with_empty_function_type_and_matter_ref(): void
+    {
+        $staff = Staff::create([
+            'first_name' => 'Inv',
+            'last_name' => 'Draft',
+            'email' => 'inv_draft_'.uniqid().'@bansallawyers.com.au',
+            'password' => bcrypt('password123'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $client = Admin::create([
+            'first_name' => 'Draft',
+            'last_name' => 'Client',
+            'email' => 'inv_draft_client_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+            'client_id' => 'TEST'.rand(100000, 999999),
+        ]);
+
+        // Multi-matter client: empty matter id must not auto-assign; matter ref must resolve.
+        DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'OTHER_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 1,
+            'user_id' => $staff->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $matterId = DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'CIV_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 2,
+            'user_id' => $staff->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->postJson('/clients/saveinvoicereport', [
+            'client_id' => $client->id,
+            'client_matter_id' => 'CIV_1',
+            'receipt_type' => 3,
+            'function_type' => '', // production hidden field often posts empty
+            'save_type' => ['', 'draft'], // FormData append duplicate
+            'trans_date' => ['11/06/2026'],
+            'entry_date' => ['22/09/2026'],
+            'payment_type' => ['Professional Fees'],
+            'description' => ['Review of outstanding documents and preparation of next steps'],
+            'billing_basis' => ['hourly'],
+            'hours' => ['0.65'],
+            'rate_ex_gst' => ['400.00'],
+            'fee_earner_id' => [$staff->id],
+            'fee_earner_role' => ['Solicitor'],
+        ]);
+
+        $response->assertOk()->assertJson([
+            'status' => true,
+            'function_type' => 'add',
+        ]);
+        $invoiceNo = $response->json('invoice_no');
+        $this->assertNotEmpty($invoiceNo);
+
+        $parent = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertNotNull($parent);
+        $this->assertSame('draft', $parent->save_type);
+        $this->assertSame($matterId, (int) $parent->client_matter_id);
+        $this->assertEqualsWithDelta(286.0, (float) $parent->withdraw_amount, 0.01);
+    }
+
+    #[Test]
     public function billing_tab_shows_null_matter_invoice_for_single_matter_client(): void
     {
         $client = Admin::create([

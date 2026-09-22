@@ -1107,32 +1107,60 @@ class ClientAccountsController extends Controller
     {
         $prefix = 'INV';
 
-        // Use the highest numeric suffix, not the latest row id — otherwise a
-        // lower INV-* inserted after a higher one can cause collisions / skips.
-        $suffixStart = strlen($prefix) + 2; // "INV-007" → start at char 5
-        $maxNumber = DB::table('account_client_receipts')
+        // Portable max of INV-<digits> only (ignore INV-TEST-*, INV-VOID-*, etc).
+        // Avoid Postgres-only "~" / SUBSTRING(... FROM ...) which can fail or time out
+        // under some production drivers / large tables.
+        $candidates = DB::table('account_client_receipts')
             ->where('receipt_type', 3)
-            ->where('trans_no', '~', '^'.preg_quote($prefix, '/').'-[0-9]+$')
-            ->selectRaw("MAX(CAST(SUBSTRING(trans_no FROM {$suffixStart}) AS INTEGER)) as max_num")
-            ->value('max_num');
+            ->where(function ($q) use ($prefix) {
+                $q->where('trans_no', 'LIKE', $prefix.'-%')
+                    ->orWhere('invoice_no', 'LIKE', $prefix.'-%');
+            })
+            ->orderByDesc('id')
+            ->limit(500)
+            ->get(['trans_no', 'invoice_no']);
 
-        $nextNumber = ((int) $maxNumber) + 1;
+        $maxNumber = 0;
+        $pattern = '/^'.preg_quote($prefix, '/').'-(\d+)$/';
+        foreach ($candidates as $row) {
+            foreach ([$row->trans_no ?? null, $row->invoice_no ?? null] as $value) {
+                if (is_string($value) && preg_match($pattern, $value, $m)) {
+                    $maxNumber = max($maxNumber, (int) $m[1]);
+                }
+            }
+        }
 
-        return $prefix.'-'.str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix.'-'.str_pad((string) ($maxNumber + 1), 3, '0', STR_PAD_LEFT);
     }
 
     /**
      * Normalize invoice matter id: reject empty strings (PG bigint), validate ownership,
-     * and auto-assign when the client has exactly one matter.
+     * resolve matter refs (e.g. CIV_1), and auto-assign when the client has exactly one matter.
      */
     private function normalizeClientMatterId(mixed $rawMatterId, int $clientId): ?int
     {
-        if ($rawMatterId === null || $rawMatterId === '' || $rawMatterId === 'null' || $rawMatterId === 'undefined') {
+        if (is_array($rawMatterId)) {
+            $rawMatterId = end($rawMatterId);
+        }
+
+        $raw = is_string($rawMatterId) ? trim($rawMatterId) : $rawMatterId;
+
+        if ($raw === null || $raw === '' || $raw === 'null' || $raw === 'undefined') {
             $matterId = null;
-        } else {
-            $matterId = (int) $rawMatterId;
+        } elseif (is_numeric($raw)) {
+            $matterId = (int) $raw;
             if ($matterId <= 0) {
                 $matterId = null;
+            }
+        } else {
+            // Non-numeric value may be client_unique_matter_no from the URL/sidebar.
+            $matterId = null;
+            $byRef = DB::table('client_matters')
+                ->where('client_id', $clientId)
+                ->where('client_unique_matter_no', (string) $raw)
+                ->value('id');
+            if ($byRef) {
+                $matterId = (int) $byRef;
             }
         }
 
@@ -1173,32 +1201,32 @@ class ClientAccountsController extends Controller
         $line = InvoiceTimesheetLine::fromRequest($requestData, $index);
 
         // Persist every timesheet column that exists on the line table.
-        // Do not early-return on a single hasColumn check — that previously dropped
-        // fee_earner / rate / hours after the columns were added.
-        $columns = [
-            'billing_basis',
-            'hours',
-            'rate_ex_gst',
-            'amount_ex_gst',
-            'line_gst',
-            'withdraw_amount',
-            'gst_included',
-            'fee_earner_id',
-            'fee_earner_role',
-        ];
-        $payload = [];
-        foreach ($columns as $column) {
-            if (! array_key_exists($column, $line)) {
-                continue;
-            }
-            if ($column === 'withdraw_amount' || $column === 'gst_included' || Schema::hasColumn('account_all_invoice_receipts', $column)) {
-                $payload[$column] = $line[$column];
+        // Cache hasColumn results — calling information_schema per line/column on
+        // production (often without schema:cache) was slow and could time out drafts.
+        static $timesheetColumns = null;
+        if ($timesheetColumns === null) {
+            $timesheetColumns = [];
+            foreach ([
+                'billing_basis',
+                'hours',
+                'rate_ex_gst',
+                'amount_ex_gst',
+                'line_gst',
+                'fee_earner_id',
+                'fee_earner_role',
+            ] as $column) {
+                $timesheetColumns[$column] = Schema::hasColumn('account_all_invoice_receipts', $column);
             }
         }
 
-        if (! isset($payload['withdraw_amount'])) {
-            $payload['withdraw_amount'] = $line['withdraw_amount'];
-            $payload['gst_included'] = $line['gst_included'];
+        $payload = [
+            'withdraw_amount' => $line['withdraw_amount'],
+            'gst_included' => $line['gst_included'],
+        ];
+        foreach ($timesheetColumns as $column => $exists) {
+            if ($exists && array_key_exists($column, $line)) {
+                $payload[$column] = $line[$column];
+            }
         }
 
         return $payload;
@@ -1282,6 +1310,30 @@ class ClientAccountsController extends Controller
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
 
             $functionType = $requestData['function_type'] ?? 'add';
+            if (is_array($functionType)) {
+                $functionType = (string) (end($functionType) ?: 'add');
+            }
+            $functionType = trim((string) $functionType);
+            // Empty hidden field submits as "" — treat as create (not a no-op 200).
+            if ($functionType === '' || $functionType === 'null' || $functionType === 'undefined') {
+                $functionType = 'add';
+            }
+
+            $saveType = $requestData['save_type'] ?? '';
+            if (is_array($saveType)) {
+                // FormData.append + empty hidden field can yield ['', 'draft'].
+                $saveType = (string) (end($saveType) ?: '');
+            }
+            $saveType = trim((string) $saveType);
+            if ($saveType === '' || $saveType === 'null' || $saveType === 'undefined') {
+                $saveType = 'draft';
+            }
+            if (! in_array($saveType, ['draft', 'final'], true)) {
+                $saveType = 'draft';
+            }
+            $requestData['save_type'] = $saveType;
+            $requestData['function_type'] = $functionType;
+
             $response = [
                 'requestData' => [],
                 'status' => false,

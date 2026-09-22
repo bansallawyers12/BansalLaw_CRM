@@ -401,7 +401,15 @@ function customValidate(formName, savetype = '')
 				if (formName === 'change_matter_assignee') {
 					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Legal Practitioner, Person Responsible, Person Assisting).');
 				}
-				if(formName == 'add-query'){
+				if (formName === 'invoice_receipt_form' || formName === 'create_invoice_receipt') {
+					if (typeof crmToast === 'function') {
+						crmToast('Please complete all required invoice line fields before saving.', 'error');
+					}
+					var firstInvoiceErr = document.querySelector('#invoice_receipt_form .custom-error, #createreceiptmodal .custom-error');
+					if (firstInvoiceErr && typeof firstInvoiceErr.scrollIntoView === 'function') {
+						firstInvoiceErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+				} else if(formName == 'add-query'){
 					$('html, body').animate({scrollTop:$("#row_scroll"). offset(). top}, 'slow');
 				}else if(formName != 'upload-answer')	{
 					$('html, body').animate({scrollTop:0}, 'slow');
@@ -1043,8 +1051,49 @@ function customValidate(formName, savetype = '')
 					else if(formName == 'invoice_receipt_form'){
 						var client_id = $('#invoice_receipt_form input[name="client_id"]').val();
 						var myform = document.getElementById('invoice_receipt_form');
+
+						// Re-sync matter + save_type immediately before submit (production race /
+						// empty hidden save_type + FormData.append duplicates caused silent failures).
+						var matterForInvoice = '';
+						if (typeof window.resolveAccountMatterId === 'function') {
+							matterForInvoice = window.resolveAccountMatterId() || '';
+						} else if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+							matterForInvoice = $('.general_matter_checkbox_client_detail').val() || '';
+						}
+						if (!matterForInvoice) {
+							matterForInvoice = $('#sel_matter_id_client_detail').val() || '';
+						}
+						if (!matterForInvoice && window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId) {
+							matterForInvoice = String(window.ClientDetailConfig.clientMatterId);
+						}
+						if (!matterForInvoice && window.ClientDetailConfig && window.ClientDetailConfig.matterUniqueNo) {
+							matterForInvoice = String(window.ClientDetailConfig.matterUniqueNo);
+						}
+						$('#client_matter_id_invoice').val(matterForInvoice || '');
+						if (!matterForInvoice) {
+							$('.popuploader').hide();
+							var matterMsg = 'Please select a matter before saving the invoice.';
+							if (typeof crmToast === 'function') {
+								crmToast(matterMsg, 'error');
+							}
+							$('.custom-error-msg').html('<span class="alert alert-danger">' + matterMsg + '</span>');
+							return false;
+						}
+
+						var $fnType = $('#invoice_receipt_form input[name="function_type"]');
+						if (!$fnType.val() || $fnType.val() === 'null' || $fnType.val() === 'undefined') {
+							$fnType.val('add');
+						}
+
+						$('#invoice_receipt_form input[name="save_type"]').val(savetype || 'draft');
 						var fd = new FormData(myform);
-						fd.append('save_type', savetype);
+						if (typeof fd.set === 'function') {
+							fd.set('save_type', savetype || 'draft');
+							fd.set('client_matter_id', matterForInvoice);
+							fd.set('function_type', $fnType.val() || 'add');
+						} else {
+							fd.append('save_type', savetype || 'draft');
+						}
 							$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -1315,6 +1364,12 @@ function customValidate(formName, savetype = '')
 								var msg = 'An error occurred while saving the invoice. Please try again.';
 								if (xhr.responseJSON && xhr.responseJSON.message) {
 									msg = xhr.responseJSON.message;
+								} else if (xhr.status === 419) {
+									msg = 'Your session expired. Please refresh the page and try again.';
+								} else if (xhr.status === 403) {
+									msg = 'You do not have permission to save this invoice.';
+								} else if (xhr.status === 0) {
+									msg = 'Network error while saving the invoice. Check your connection and try again.';
 								}
 								crmToast(msg, 'error');
 								$('.custom-error-msg').html('<span class="alert alert-danger">' + msg + '</span>');
