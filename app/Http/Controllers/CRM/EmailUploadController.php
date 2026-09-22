@@ -2080,9 +2080,9 @@ class EmailUploadController extends Controller
 
         $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
 
-        if (strlen($sanitizedFilename) > 255) {
-            $maxNameLength = 255 - strlen($extension) - ($extension !== '' ? 1 : 0);
-            if ($maxNameLength > 0) {
+        if (strlen($sanitizedFilename) > 100) {
+            $maxNameLength = 100 - strlen($extension) - ($extension !== '' ? 1 : 0);
+            if ($maxNameLength > 16) {
                 $sanitizedName = substr($sanitizedName, 0, $maxNameLength);
                 $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
             } else {
@@ -2340,20 +2340,32 @@ class EmailUploadController extends Controller
     {
         $allowedLabel = $this->emailUploadExtensionsLabel();
 
+        $maxKb = (int) config('crm.email_upload_max_kb', 30720);
+        $maxMbLabel = max(1, (int) round($maxKb / 1024));
+
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1',
-            'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 30720),
+            'email_files.*' => 'file|max:' . $maxKb,
             'client_id' => 'required',
             'type' => 'required|in:client,lead',
         ], [
             'email_files.required' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
             'email_files.min' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
+            'email_files.*.uploaded' => 'The email file did not finish uploading. This often means the file is larger than PHP allows (upload_max_filesize or post_max_size), the upload was interrupted, or your session expired. Try a smaller .msg/.eml file or refresh the page.',
+            'email_files.*.file' => 'One of the selected items is not a valid uploaded file. Refresh the page and try again.',
+            'email_files.*.max' => 'Each Outlook email file must be ' . $maxMbLabel . ' MB or smaller.',
+            'client_id.required' => 'Client is required for email upload.',
+            'type.required' => 'Upload type is required.',
+            'type.in' => 'Upload type must be client or lead.',
         ]);
 
         if ($validator->fails()) {
+            $firstError = $validator->errors()->first() ?: 'Validation failed';
+
             return response()->json([
                 'status' => false,
-                'message' => 'Validation failed',
+                'message' => $firstError,
+                'error_code' => 'validation',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -2407,14 +2419,19 @@ class EmailUploadController extends Controller
         }
 
         if (!empty($invalidFiles)) {
+            $extensionMessage = 'Only Outlook email files are allowed (' . $allowedLabel . ').';
+
             return response()->json([
                 'status' => false,
-                'message' => 'Validation failed',
-                'errors' => [
-                    'email_files' => [
-                        'Only Outlook email files are allowed (' . $allowedLabel . ').',
+                'message' => $extensionMessage,
+                'error_code' => 'invalid_extension',
+                'errors' => array_map(
+                    static fn (string $name): array => [
+                        'filename' => $name,
+                        'error' => $extensionMessage,
                     ],
-                ],
+                    $invalidFiles
+                ),
                 'invalid_files' => $invalidFiles,
             ], 422);
         }

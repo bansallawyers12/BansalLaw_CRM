@@ -2937,7 +2937,10 @@ function crmInitOutlookEmailsInterface() {
             }
 
             if (!response.ok || !result.status) {
-                throw new Error(result.message || 'Failed to preview attachments');
+                const detail = (typeof window.crmResolveEmailUploadServerErrorMessage === 'function')
+                    ? window.crmResolveEmailUploadServerErrorMessage(result, 'Failed to preview attachments')
+                    : (result.message || 'Failed to preview attachments');
+                throw new Error(detail);
             }
             return result.attachments || [];
         }
@@ -3397,11 +3400,12 @@ function crmInitOutlookEmailsInterface() {
                         : null;
                     throw new Error(wafMsg || (result.message || 'Upload failed (HTTP 403).'));
                 }
-                let errorMsg = result.message || ('Upload failed (HTTP ' + response.status + ').');
-                const details = formatUploadErrorDetails(result.errors);
-                if (details) {
-                    errorMsg += '\n\n' + details;
-                }
+                const errorMsg = (typeof window.crmResolveEmailUploadServerErrorMessage === 'function')
+                    ? window.crmResolveEmailUploadServerErrorMessage(
+                        result,
+                        result.message || ('Upload failed (HTTP ' + response.status + ').')
+                    )
+                    : (result.message || ('Upload failed (HTTP ' + response.status + ').'));
                 throw new Error(errorMsg);
             }
 

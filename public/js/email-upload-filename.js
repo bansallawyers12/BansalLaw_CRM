@@ -448,6 +448,53 @@
         });
     }
 
+    /**
+     * Prefer a concrete Laravel / API validation message over generic "Validation failed".
+     */
+    function resolveEmailUploadServerErrorMessage(result, fallbackMessage) {
+        var fallback = fallbackMessage || 'Upload failed';
+        if (!result || typeof result !== 'object') {
+            return fallback;
+        }
+
+        var detail = result.message ? String(result.message).trim() : '';
+        var errors = result.errors;
+
+        if (Array.isArray(errors) && errors.length) {
+            var fromArray = errors.map(function (err) {
+                if (typeof err === 'string') {
+                    return err;
+                }
+                if (err && typeof err === 'object') {
+                    return err.error || err.message || '';
+                }
+                return '';
+            }).map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+            if (fromArray.length) {
+                detail = fromArray.join(' ');
+            }
+        } else if (errors && typeof errors === 'object') {
+            var flat = Object.keys(errors).map(function (key) {
+                var value = errors[key];
+                if (Array.isArray(value)) {
+                    return value.map(function (v) { return v == null ? '' : String(v); }).filter(Boolean).join(' ');
+                }
+                return value == null ? '' : String(value);
+            }).map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+            if (flat.length) {
+                detail = flat.join(' ');
+            }
+        }
+
+        if (!detail || detail === 'Validation failed') {
+            return fallback === 'Validation failed'
+                ? 'Could not upload this email. The file may be too large for the server upload limit, interrupted, or invalid. Try a smaller .msg/.eml file or refresh the page.'
+                : fallback;
+        }
+
+        return detail;
+    }
+
     function sanitizeEmailUploadFilename(filename, preferredExtension) {
         if (!filename || typeof filename !== 'string') {
             var fallbackExt = preferredExtension || 'eml';
@@ -470,9 +517,12 @@
 
         var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
 
-        if (sanitizedFilename.length > 255) {
-            var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
-            if (maxNameLength > 0) {
+        // Keep multipart Content-Disposition short — long Outlook subject filenames
+        // can trip proxies/WAFs even after character sanitization.
+        var maxTotal = 100;
+        if (sanitizedFilename.length > maxTotal) {
+            var maxNameLength = maxTotal - extension.length - (extension ? 1 : 0);
+            if (maxNameLength > 16) {
                 sanitizedName = sanitizedName.slice(0, maxNameLength);
                 sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
             } else {
@@ -935,6 +985,7 @@
     global.crmEmailUploadOutlookDragInstructions = emailUploadOutlookDragInstructions;
     global.crmEmailUploadEmptyFileMessage = emailUploadEmptyFileMessage;
     global.crmSanitizeEmailUploadFilename = sanitizeEmailUploadFilename;
+    global.crmResolveEmailUploadServerErrorMessage = resolveEmailUploadServerErrorMessage;
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;
     global.crmEmailUpload403Message = emailUpload403Message;
     global.crmLogEmailUploadFailure = logEmailUploadFailure;

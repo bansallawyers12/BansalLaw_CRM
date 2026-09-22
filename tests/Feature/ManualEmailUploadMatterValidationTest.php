@@ -75,6 +75,45 @@ class ManualEmailUploadMatterValidationTest extends TestCase
     }
 
     #[Test]
+    public function email_upload_returns_concrete_message_for_oversized_file(): void
+    {
+        $admin = Staff::create([
+            'first_name' => 'Admin',
+            'last_name' => 'Upload',
+            'email' => 'admin.upload.size@example.com',
+            'password' => bcrypt('password'),
+            'role' => 1,
+        ]);
+
+        $client = Admin::create([
+            'first_name' => 'Client',
+            'last_name' => 'Size',
+            'email' => 'client.size.mail@example.com',
+            'password' => bcrypt('password'),
+            'type' => 'client',
+        ]);
+
+        // Larger than crm.email_upload_max_kb (default 30720 KB = 30 MB).
+        $file = UploadedFile::fake()->create(
+            'Reminder _ Samridhi & Preet S _ SAMR2600082 _ long subject.msg',
+            40 * 1024
+        );
+
+        $this->actingAs($admin, 'admin');
+
+        $response = $this->post('/upload-fetch-mail', [
+            'client_id' => $client->id,
+            'type' => 'client',
+            'email_files' => [$file],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('error_code', 'validation');
+        $response->assertJsonMissing(['message' => 'Validation failed']);
+        $this->assertStringContainsString('30 MB', (string) $response->json('message'));
+    }
+
+    #[Test]
     public function import_email_from_context_rejects_mismatched_matter(): void
     {
         $admin = Staff::create([

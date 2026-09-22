@@ -146,7 +146,11 @@
                 const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
                     ? window.crmEmailUploadExtensionsLabel()
                     : '.msg, .eml';
-                let detail = 'Only Outlook email files are allowed (' + allowedLabel + ', max ' + MAX_EMAIL_FILES + ' files, ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' each). Check your selection and try again.';
+                const fallback = 'Only Outlook email files are allowed (' + allowedLabel + ', max ' + MAX_EMAIL_FILES + ' files, ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' each). Check your selection and try again.';
+                if (typeof window.crmResolveEmailUploadServerErrorMessage === 'function') {
+                    return window.crmResolveEmailUploadServerErrorMessage(parsed, fallback);
+                }
+                let detail = fallback;
                 if (parsed.errors && typeof parsed.errors === 'object') {
                     const flat = Object.values(parsed.errors)
                         .flat()
