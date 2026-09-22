@@ -146,6 +146,11 @@
 <link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
 @endif
 <script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
+<script>
+window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+window.__CRM_EMAIL_MAX_FILE_BYTES__ = {{ (int) config('crm.email_upload_max_kb', 102400) * 1024 }};
+window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ = {{ (int) config('crm.compose_max_total_attachment_bytes', 18 * 1024 * 1024) }};
+</script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)
 <script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>

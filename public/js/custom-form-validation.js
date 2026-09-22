@@ -2539,6 +2539,36 @@ function customValidate(formName, savetype = '')
 								return false;
 							}
 						}
+
+						// Zoho rejects oversized messages with 554 5.2.3 — fail fast before upload/send.
+						var composeMaxAttachBytes = (typeof window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ === 'number'
+							&& window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ > 0)
+							? window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__
+							: (18 * 1024 * 1024);
+						var attachInput = myform.querySelector('input[name="attach[]"], input[name="attach"], input[type="file"][name*="attach"]');
+						if (attachInput && attachInput.files && attachInput.files.length) {
+							var attachTotal = 0;
+							for (var ai = 0; ai < attachInput.files.length; ai++) {
+								attachTotal += attachInput.files[ai].size || 0;
+							}
+							if (attachTotal > composeMaxAttachBytes) {
+								$('.popuploader').hide();
+								var maxMb = Math.max(1, Math.round(composeMaxAttachBytes / (1024 * 1024)));
+								var totalMb = (attachTotal / (1024 * 1024)).toFixed(1);
+								var sizeMsg = 'Attachments total ' + totalMb + ' MB, which exceeds the '
+									+ maxMb + ' MB send limit. Zoho Mail will bounce oversized messages. '
+									+ 'Remove large files or share them as a link instead.';
+								$('.custom-error-msg').html('');
+								if (typeof crmSendMailNotify === 'function') {
+									crmSendMailNotify(sizeMsg, 'error', 'Attachments too large');
+								} else if (typeof iziToast !== 'undefined') {
+									iziToast.error({ title: 'Attachments too large', message: sizeMsg, position: 'topRight' });
+								} else {
+									crmAlert(sizeMsg);
+								}
+								return false;
+							}
+						}
 						
 						// Get CSRF token from meta tag (most current source)
 						var csrfToken = $('meta[name="csrf-token"]').attr('content');

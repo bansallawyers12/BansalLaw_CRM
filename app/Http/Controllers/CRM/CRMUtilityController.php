@@ -1118,6 +1118,54 @@ class CRMUtilityController extends Controller
 		return 'Subject must include the matter reference: ' . $ref . ' (at the start or end is fine).';
 	}
 
+	/**
+	 * Prevent Zoho 554 5.2.3 "Mail Size exceeds limit" bounces by rejecting oversized compose attachments early.
+	 *
+	 * @param  array<int, mixed>  $uploadedFiles
+	 * @param  array<int, mixed>  $existingPaths
+	 * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|null
+	 */
+	protected function assertComposeAttachmentsWithinSizeLimit(Request $request, array $uploadedFiles = [], array $existingPaths = [])
+	{
+		$maxBytes = (int) config('crm.compose_max_total_attachment_bytes', 18 * 1024 * 1024);
+		if ($maxBytes <= 0) {
+			return null;
+		}
+
+		$total = 0;
+		foreach ($uploadedFiles as $file) {
+			if ($file instanceof \Illuminate\Http\UploadedFile) {
+				$total += (int) $file->getSize();
+			}
+		}
+		foreach ($existingPaths as $path) {
+			if (is_string($path) && $path !== '' && is_file($path)) {
+				$total += (int) filesize($path);
+			}
+		}
+
+		if ($total <= $maxBytes) {
+			return null;
+		}
+
+		$maxMb = max(1, (int) round($maxBytes / (1024 * 1024)));
+		$totalMb = round($total / (1024 * 1024), 1);
+		$message = 'Attachments total ' . $totalMb . ' MB, which exceeds the '
+			. $maxMb . ' MB send limit. Zoho Mail will bounce oversized messages '
+			. '(554 Mail Size exceeds limit). Remove large files or share them as a link instead.';
+
+		if ($request->ajax() || $request->wantsJson()) {
+			return response()->json([
+				'status' => false,
+				'success' => false,
+				'message' => $message,
+				'error_code' => 'attachments_too_large',
+			], 422);
+		}
+
+		return redirect()->back()->with('error', $message)->withInput();
+	}
+
     public function sendmail(Request $request){
 		$requestData = $request->all();
 		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
@@ -1406,6 +1454,15 @@ class CRMUtilityController extends Controller
                 foreach ($request->file('attach') as $file1) {
                     $array['filesatta'][] =  $file1;
                 }
+            }
+
+            $composeAttachmentBudget = $this->assertComposeAttachmentsWithinSizeLimit(
+                $request,
+                $array['filesatta'] ?? [],
+                $array['files'] ?? []
+            );
+            if ($composeAttachmentBudget !== null) {
+                return $composeAttachmentBudget;
             }
 
             //dd($client->email,  $requestData['email_from']);

@@ -304,6 +304,8 @@
         maxFiles: 10,
     };
     window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+    window.__CRM_EMAIL_MAX_FILE_BYTES__ = {{ (int) config('crm.email_upload_max_kb', 102400) * 1024 }};
+    window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ = {{ (int) config('crm.compose_max_total_attachment_bytes', 18 * 1024 * 1024) }};
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ filemtime(public_path('js/email-upload-filename.js')) }}"></script>
 <script src="{{ asset('js/smart-email-import.js') }}?v={{ filemtime(public_path('js/smart-email-import.js')) }}"></script>

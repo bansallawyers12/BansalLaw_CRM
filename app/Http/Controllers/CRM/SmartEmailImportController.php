@@ -300,7 +300,7 @@ class SmartEmailImportController extends EmailUploadController
 
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1|max:' . self::MAX_FILES,
-            'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 30720),
+            'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 102400),
         ], [
             'email_files.required' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
             'email_files.max' => 'Maximum ' . self::MAX_FILES . ' email files allowed per upload.',

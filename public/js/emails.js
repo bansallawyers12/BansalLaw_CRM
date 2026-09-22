@@ -109,7 +109,7 @@
     const MAX_EMAIL_FILES = 10;
     const MAX_EMAIL_FILE_BYTES = (typeof window.__CRM_EMAIL_MAX_FILE_BYTES__ === 'number' && window.__CRM_EMAIL_MAX_FILE_BYTES__ > 0)
         ? window.__CRM_EMAIL_MAX_FILE_BYTES__
-        : (30 * 1024 * 1024);
+        : (100 * 1024 * 1024);
 
     function isSessionOrSecurityError(message) {
         if (!message) {

@@ -3528,6 +3528,24 @@ function crmInitOutlookEmailsInterface() {
                 return;
             }
 
+            const maxBytes = (typeof window.__CRM_EMAIL_MAX_FILE_BYTES__ === 'number' && window.__CRM_EMAIL_MAX_FILE_BYTES__ > 0)
+                ? window.__CRM_EMAIL_MAX_FILE_BYTES__
+                : (100 * 1024 * 1024);
+            const oversizedFiles = msgFiles.filter(function (file) { return file.size > maxBytes; });
+            if (oversizedFiles.length > 0) {
+                const maxLabel = (maxBytes / (1024 * 1024)).toFixed(0) + ' MB';
+                const names = oversizedFiles.map(function (file) {
+                    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                    return file.name + ' (' + sizeMb + ' MB)';
+                }).join('\n');
+                showUploadErrorAlert(
+                    oversizedFiles.length + ' file(s) exceed the ' + maxLabel + ' upload limit:\n' + names
+                    + '\n\nSave a smaller copy from Outlook (remove large attachments) or ask an admin to raise EMAIL_UPLOAD_MAX_KB.',
+                    'File too large'
+                );
+                return;
+            }
+
             const uploadUrl = currentFolder === 'sent'
                 ? `${baseUrl}/upload-sent-fetch-mail`
                 : `${baseUrl}/upload-fetch-mail`;

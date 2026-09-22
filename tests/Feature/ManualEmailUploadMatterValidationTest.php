@@ -93,10 +93,11 @@ class ManualEmailUploadMatterValidationTest extends TestCase
             'type' => 'client',
         ]);
 
-        // Larger than crm.email_upload_max_kb (default 30720 KB = 30 MB).
+        // Larger than crm.email_upload_max_kb (default 102400 KB = 100 MB).
+        $maxKb = (int) config('crm.email_upload_max_kb', 102400);
         $file = UploadedFile::fake()->create(
             'Reminder _ Samridhi & Preet S _ SAMR2600082 _ long subject.msg',
-            40 * 1024
+            $maxKb + 1024
         );
 
         $this->actingAs($admin, 'admin');
@@ -110,7 +111,7 @@ class ManualEmailUploadMatterValidationTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonPath('error_code', 'validation');
         $response->assertJsonMissing(['message' => 'Validation failed']);
-        $this->assertStringContainsString('30 MB', (string) $response->json('message'));
+        $this->assertStringContainsString('MB or smaller', (string) $response->json('message'));
     }
 
     #[Test]

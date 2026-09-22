@@ -376,7 +376,20 @@ return [
     | Email upload limits (matches EmailUploadController validation)
     |--------------------------------------------------------------------------
     */
-    'email_upload_max_kb' => max(1, (int) env('EMAIL_UPLOAD_MAX_KB', 30720)),
+    'email_upload_max_kb' => max(1, (int) env('EMAIL_UPLOAD_MAX_KB', 102400)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compose / send — total attachment budget (raw bytes before MIME encoding)
+    |--------------------------------------------------------------------------
+    | Zoho Mail rejects oversized messages with 554 5.2.3 "Mail Size exceeds
+    | limit" (org policy up to 40MB; many mailboxes are lower). Keep headroom
+    | under that for MIME overhead (~33% for base64 attachments).
+    */
+    'compose_max_total_attachment_bytes' => max(
+        1,
+        (int) env('COMPOSE_MAX_TOTAL_ATTACHMENT_BYTES', 18 * 1024 * 1024)
+    ),
 
     /*
     |--------------------------------------------------------------------------
