@@ -178,7 +178,7 @@ class AjayCalendarParityTest extends TestCase
 
         $this->assertContains('booking:' . $confirmed->id, $dashboardIds);
         $this->assertContains('staff:' . $staffEvent->id, $dashboardIds);
-        $this->assertNotContains('staff:' . $personalReminder->id, $dashboardIds);
+        $this->assertContains('staff:' . $personalReminder->id, $dashboardIds);
         $this->assertNotContains('staff:' . $otherPersonal->id, $dashboardIds);
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['event_kind'] ?? '') === 'court_hearing'));
         $this->assertFalse(collect($dashboard)->contains(fn (array $row) => ($row['status'] ?? '') === 'cancelled'));
@@ -198,6 +198,17 @@ class AjayCalendarParityTest extends TestCase
         $this->assertContains((int) $personalReminder->id, $bookingIds);
         $this->assertNotContains((int) $otherPersonal->id, $bookingIds);
         $this->assertContains((int) $staffEvent->id, $bookingIds);
+
+        // Dashboard and booking important-events share the same personal reminder + meeting for this staff.
+        $dashboardStaffIds = collect($dashboard)
+            ->pluck('staff_calendar_event_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
+        $bookingStaffIds = collect($bookingIds)->sort()->values()->all();
+        $this->assertSame($dashboardStaffIds, $bookingStaffIds);
     }
 
     #[Test]

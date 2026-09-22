@@ -123,7 +123,7 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
     }
 
     #[Test]
-    public function stats_for_staff_uses_count_queries_not_full_event_payloads(): void
+    public function stats_for_staff_returns_integer_kpi_counts(): void
     {
         $staff = new Staff();
         $staff->first_name = 'Ajay';

@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
+use App\Models\Note;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,6 +24,12 @@ class StaffCalendarReminderStatusTest extends TestCase
             ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     #[Test]
@@ -243,7 +251,7 @@ class StaffCalendarReminderStatusTest extends TestCase
             'created_by_staff_id' => $staff->id,
         ]);
 
-        // Personal reminders live on the booking personal calendar feed (not the dashboard widget).
+        // Personal reminders appear on both the booking personal calendar and the dashboard feed.
         $response = $this->getJson(route('booking.api.appointments', [
             'format' => 'calendar',
             'type' => 'personal',
@@ -258,5 +266,138 @@ class StaffCalendarReminderStatusTest extends TestCase
         $this->assertContains('staff-cal-' . $active->id, $ids);
         $this->assertNotContains('staff-cal-' . $completed->id, $ids);
         $this->assertNotContains('staff-cal-' . $cancelled->id, $ids);
+
+        $dashboard = $this->getJson(route('dashboard.calendar-events', [
+            'staff_view' => 'self',
+            'start' => now()->startOfMonth()->toIso8601String(),
+            'end' => now()->endOfMonth()->toIso8601String(),
+        ]));
+        $dashboard->assertOk()->assertJson(['success' => true]);
+        $dashboardIds = collect($dashboard->json('data') ?? [])
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+        $this->assertContains('staff-cal-' . $active->id, $dashboardIds);
+        $this->assertNotContains('staff-cal-' . $completed->id, $dashboardIds);
+        $this->assertNotContains('staff-cal-' . $cancelled->id, $dashboardIds);
+    }
+
+    #[Test]
+    public function action_deadlines_appear_on_dashboard_and_booking_calendar_feeds(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-10 10:00:00', 'Australia/Melbourne'));
+        config([
+            'app.timezone' => 'Australia/Melbourne',
+            'booking_calendar.include_important_events' => true,
+            'booking_calendar.include_past_in_visible_range' => true,
+            'booking_calendar.data_source' => 'local',
+        ]);
+
+        $staff = Staff::factory()->superAdmin()->create([
+            'status' => 1,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Ajay',
+            'email' => 'ajay.deadline.parity@example.com',
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $note = Note::create([
+            'client_id' => null,
+            'user_id' => $staff->id,
+            'title' => 'File lodgement',
+            'description' => 'deadline task',
+            'is_action' => 1,
+            'type' => 'client',
+            'assigned_to' => $staff->id,
+            'status' => 0,
+            'pin' => 0,
+            'note_deadline' => '2026-09-18',
+        ]);
+
+        $range = [
+            'start' => '2026-09-01T00:00:00+10:00',
+            'end' => '2026-10-01T00:00:00+10:00',
+        ];
+
+        $dashboard = $this->getJson(route('dashboard.calendar-events', array_merge($range, [
+            'staff_view' => 'self',
+        ])));
+        $dashboard->assertOk()->assertJson(['success' => true]);
+        $dashboardIds = collect($dashboard->json('data') ?? [])
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+        $this->assertContains('action-' . $note->id, $dashboardIds);
+
+        $booking = $this->getJson(route('booking.api.appointments', array_merge($range, [
+            'format' => 'calendar',
+            'type' => 'ajay',
+        ])));
+        $booking->assertOk()->assertJson(['success' => true]);
+        $bookingIds = collect($booking->json('data') ?? [])
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+        $this->assertContains('action-' . $note->id, $bookingIds);
+    }
+
+    #[Test]
+    public function dashboard_hides_personal_reminders_created_before_calendar_clear(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-09 16:00:00', 'Australia/Melbourne'));
+
+        $staff = Staff::factory()->superAdmin()->create([
+            'status' => 1,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi.dashboard.clear@example.com',
+        ]);
+
+        config([
+            'booking_calendar.personal_calendar_cleared' => [[
+                'staff_id' => $staff->id,
+                'first_name' => 'Khushi',
+                'last_name' => 'Sangroya',
+                'cleared_at' => '2026-09-09 15:00:00',
+            ]],
+        ]);
+
+        $legacy = StaffCalendarEvent::create([
+            'title' => 'Old dashboard reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-10 09:00:00',
+            'ends_at' => '2026-09-10 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $staff->id,
+            'status' => 'scheduled',
+        ]);
+        $legacy->forceFill(['created_at' => '2026-09-01 10:00:00'])->saveQuietly();
+
+        $fresh = StaffCalendarEvent::create([
+            'title' => 'New dashboard reminder',
+            'event_type' => 'reminder',
+            'starts_at' => '2026-09-11 09:00:00',
+            'ends_at' => '2026-09-11 09:15:00',
+            'is_all_day' => false,
+            'created_by_staff_id' => $staff->id,
+            'status' => 'scheduled',
+        ]);
+
+        $this->actingAs($staff, 'admin');
+
+        $dashboard = $this->getJson(route('dashboard.calendar-events', [
+            'staff_view' => 'self',
+            'start' => '2026-09-09T00:00:00+10:00',
+            'end' => '2026-09-20T00:00:00+10:00',
+        ]));
+        $dashboard->assertOk()->assertJson(['success' => true]);
+        $ids = collect($dashboard->json('data') ?? [])
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        $this->assertContains('staff-cal-' . $fresh->id, $ids);
+        $this->assertNotContains('staff-cal-' . $legacy->id, $ids);
     }
 }

@@ -761,7 +761,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Transform appointments to FullCalendar v6 event format
                 const events = rows.map(apt => {
-                    if (apt.event_kind === 'staff_event' || apt.event_kind === 'court_hearing' || apt.event_kind === 'follow_up') {
+                    if (
+                        apt.event_kind === 'staff_event'
+                        || apt.event_kind === 'court_hearing'
+                        || apt.event_kind === 'follow_up'
+                        || apt.event_kind === 'action'
+                        || apt.event_kind === 'matter_deadline'
+                    ) {
                         return mapImportantCalendarRow(apt);
                     }
 
@@ -855,7 +861,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (eventKind === 'staff_event' || eventKind === 'follow_up') {
+            if (
+                eventKind === 'staff_event'
+                || eventKind === 'follow_up'
+                || eventKind === 'action'
+                || eventKind === 'matter_deadline'
+            ) {
                 showStaffImportantEventModal(event, props);
                 return;
             }
@@ -1966,8 +1977,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let _activeStaffEventProps = null;
 
     function staffEventTypeLabel(props) {
-        if ((props.event_kind || '') === 'follow_up') {
+        const kind = String(props.event_kind || '');
+        if (kind === 'follow_up') {
             return props.status_label || 'Follow-up';
+        }
+        if (kind === 'action') {
+            return props.status_label || 'My Task';
+        }
+        if (kind === 'matter_deadline') {
+            return props.status_label || 'Matter Deadline';
         }
         const type = String(props.event_type || 'other').toLowerCase();
         const map = {
@@ -2107,7 +2125,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         _activeStaffEventProps = Object.assign({}, props);
         const canManage = !props.read_only && !!eventId;
-        const typeKey = isFollowUp ? 'reminder' : String(props.event_type || 'other').toLowerCase();
+        const eventKind = String(props.event_kind || '');
+        const isDeadlineKind = eventKind === 'action' || eventKind === 'matter_deadline';
+        const typeKey = isFollowUp
+            ? 'reminder'
+            : (isDeadlineKind ? 'deadline' : String(props.event_type || 'other').toLowerCase());
         const style = getImportantEventStyle(typeKey);
         const typeLabel = staffEventTypeLabel(props);
         const whenLabel = staffEventFormattedWhen(props);

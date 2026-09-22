@@ -287,9 +287,11 @@ class BookingAppointmentsController extends Controller
             if ($followUpStaff) {
                 // Personal calendars: followUpsForStaff keeps only notes this staff created (user_id).
                 // Booking calendars: follow-ups assigned to the logged-in staff.
+                // Deadlines match the dashboard feed for the same owner.
                 $extra = array_merge(
                     $extra,
-                    $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request)
+                    $this->personalCalendarFeed->followUpsForStaff($followUpStaff, $request),
+                    $this->personalCalendarFeed->deadlinesForStaff($followUpStaff, $request)
                 );
             }
             // Collapse note follow-ups that also exist as personal reminders (same client + day + title).
