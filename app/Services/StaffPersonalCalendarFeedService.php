@@ -1449,14 +1449,14 @@ class StaffPersonalCalendarFeedService
     protected function colorForBookingStatus(string $status): string
     {
         return match ($status) {
-            'pending' => '#D4A84A',
-            'paid' => '#1E3D60',
-            'confirmed' => '#1E7A52',
-            'completed' => '#3A6FA8',
-            'cancelled' => '#A83020',
-            'no_show' => '#5E7A90',
-            'rescheduled' => '#1E3D60',
-            default => '#5E7A90',
+            'pending' => '#92400E',
+            'paid' => '#0C2340',
+            'confirmed' => '#047857',
+            'completed' => '#0369A1',
+            'cancelled' => '#9F1239',
+            'no_show' => '#334155',
+            'rescheduled' => '#0C2340',
+            default => '#334155',
         };
     }
 
@@ -1483,15 +1483,14 @@ class StaffPersonalCalendarFeedService
             default => StaffCalendarFeedService::colorForEventType($type),
         };
 
-        $textColor = $kind === 'website_booking'
-            ? (((string) ($row['status'] ?? '')) === 'pending' ? '#1A2C40' : '#fff')
-            : StaffCalendarFeedService::textColorForEventType(
-                match (true) {
-                    in_array($kind, ['action', 'matter_deadline'], true) => 'deadline',
-                    $kind === 'follow_up' => 'reminder',
-                    default => $type,
-                }
-            );
+        $textColor = '#fff';
+
+        $classNames = ['event-' . $type, 'event-kind-' . $kind];
+        if ($kind === 'website_booking') {
+            $statusKey = strtolower(trim((string) ($row['status'] ?? 'other')));
+            $statusKey = $statusKey !== '' ? $statusKey : 'other';
+            $classNames[] = 'event-status-' . preg_replace('/[^a-z0-9_]+/', '', $statusKey);
+        }
 
         return [
             'id' => (string) ($row['id'] ?? uniqid('evt-', true)),
@@ -1502,7 +1501,7 @@ class StaffPersonalCalendarFeedService
             'backgroundColor' => $color,
             'borderColor' => $color,
             'textColor' => $textColor,
-            'classNames' => ['event-' . $type, 'event-kind-' . $kind],
+            'classNames' => $classNames,
             'extendedProps' => $row,
         ];
     }

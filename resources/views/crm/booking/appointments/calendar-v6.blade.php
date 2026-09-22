@@ -534,11 +534,11 @@ const BOOKING_CALENDAR_MODE = @json($calendarMode ?? 'booking');
 const BOOKING_CALENDAR_STAFF_ID = @json($calendarStaffId ?? null);
 
 const IMPORTANT_EVENT_COLORS = {
-    court: { bg: '#5c3d8f', border: '#5c3d8f', text: '#fff', className: 'event-court' },
-    meeting: { bg: '#0d6efd', border: '#0d6efd', text: '#fff', className: 'event-meeting' },
-    deadline: { bg: '#c0392b', border: '#c0392b', text: '#fff', className: 'event-deadline' },
-    reminder: { bg: '#d97706', border: '#d97706', text: '#1A2C40', className: 'event-reminder' },
-    other: { bg: '#5E7A90', border: '#5E7A90', text: '#fff', className: 'event-other' }
+    court: { bg: '#3730A3', border: '#3730A3', text: '#fff', className: 'event-court' },
+    meeting: { bg: '#1E40AF', border: '#1E40AF', text: '#fff', className: 'event-meeting' },
+    deadline: { bg: '#B91C1C', border: '#B91C1C', text: '#fff', className: 'event-deadline' },
+    reminder: { bg: '#0F766E', border: '#0F766E', text: '#fff', className: 'event-reminder' },
+    other: { bg: '#334155', border: '#334155', text: '#fff', className: 'event-other' }
 };
 
 function getImportantEventStyle(eventType) {
@@ -1193,19 +1193,19 @@ document.addEventListener('DOMContentLoaded', function() {
     /* docs/theme.md — hex fallbacks if :root vars unavailable to FullCalendar internals */
     function getStatusColor(status) {
         const colors = {
-            'pending': '#D4A84A',
-            'paid': '#1E3D60',
-            'confirmed': '#1E7A52',
-            'completed': '#3A6FA8',
-            'cancelled': '#A83020',
-            'no_show': '#5E7A90',
-            'rescheduled': '#1E3D60'
+            'pending': '#92400E',
+            'paid': '#0C2340',
+            'confirmed': '#047857',
+            'completed': '#0369A1',
+            'cancelled': '#9F1239',
+            'no_show': '#334155',
+            'rescheduled': '#0C2340'
         };
-        return colors[status] || '#5E7A90';
+        return colors[status] || '#334155';
     }
 
     function getStatusTextColor(status) {
-        return status === 'pending' ? '#1A2C40' : '#fff';
+        return '#fff';
     }
     
     function getStatusClass(status) {
@@ -1662,7 +1662,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Appointment Details',
             subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
             iconHtml: '<i class="fa-solid fa-gavel"></i>',
-            iconBg: '#5c3d8f',
+            iconBg: '#3730A3',
             iconColor: '#fff'
         });
         const vfd = document.getElementById('viewFullDetails');
@@ -1688,7 +1688,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Edit Appointment',
             subtitle: formatCalendarDetail(props.client_name),
             iconHtml: '<i class="fa-solid fa-pen-to-square"></i>',
-            iconBg: '#5c3d8f',
+            iconBg: '#3730A3',
             iconColor: '#fff'
         });
         setEventModalCourtHearingFooter('edit');
@@ -1959,7 +1959,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Appointment Details',
             subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
             iconHtml: '<i class="fa-solid fa-gavel"></i>',
-            iconBg: '#5c3d8f',
+            iconBg: '#3730A3',
             iconColor: '#fff'
         });
         const vfd = document.getElementById('viewFullDetails');
@@ -4075,48 +4075,47 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .legend-color.event-pending {
-    background-color: rgba(200, 153, 42, 0.55);
-    border: 1px solid var(--accent-gold);
+    background-color: #92400E;
 }
 
 .legend-color.event-paid {
-    background-color: var(--navy);
+    background-color: #0C2340;
 }
 
 .legend-color.event-confirmed {
-    background-color: var(--success);
+    background-color: #047857;
 }
 
 .legend-color.event-completed {
-    background-color: var(--sidebar-active);
+    background-color: #0369A1;
 }
 
 .legend-color.event-cancelled {
-    background-color: var(--danger);
+    background-color: #9F1239;
 }
 
 .legend-color.event-no-show {
-    background-color: var(--text-muted);
+    background-color: #334155;
 }
 
 .legend-color.event-court {
-    background-color: #5c3d8f;
+    background-color: #3730A3;
 }
 
 .legend-color.event-meeting {
-    background-color: #0d6efd;
+    background-color: #1E40AF;
 }
 
 .legend-color.event-deadline {
-    background-color: #c0392b;
+    background-color: #B91C1C;
 }
 
 .legend-color.event-reminder {
-    background-color: #d97706;
+    background-color: #0F766E;
 }
 
 .legend-color.event-other {
-    background-color: #5e7a90;
+    background-color: #334155;
 }
 
 .calendar-v6-wrapper {
@@ -4790,23 +4789,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .appt-detail-hero--reminder,
 .appt-detail-hero--follow_up {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.04) 100%);
-    border-color: rgba(217, 119, 6, 0.22);
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.14) 0%, rgba(15, 118, 110, 0.04) 100%);
+    border-color: rgba(15, 118, 110, 0.28);
 }
 
 .appt-detail-hero--meeting {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.03) 100%);
-    border-color: rgba(13, 110, 253, 0.2);
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.12) 0%, rgba(30, 64, 175, 0.04) 100%);
+    border-color: rgba(30, 64, 175, 0.24);
 }
 
 .appt-detail-hero--deadline {
-    background: linear-gradient(135deg, rgba(192, 57, 43, 0.1) 0%, rgba(192, 57, 43, 0.03) 100%);
-    border-color: rgba(192, 57, 43, 0.2);
+    background: linear-gradient(135deg, rgba(185, 28, 28, 0.12) 0%, rgba(185, 28, 28, 0.04) 100%);
+    border-color: rgba(185, 28, 28, 0.24);
 }
 
 .appt-detail-hero--other {
-    background: linear-gradient(135deg, rgba(94, 122, 144, 0.12) 0%, rgba(94, 122, 144, 0.04) 100%);
-    border-color: rgba(94, 122, 144, 0.22);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.12) 0%, rgba(51, 65, 85, 0.04) 100%);
+    border-color: rgba(51, 65, 85, 0.24);
 }
 
 .appt-detail-hero--compact {
@@ -4865,7 +4864,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .appt-type-pill--court {
     background: rgba(92, 61, 143, 0.14);
-    color: #5c3d8f;
+    color: #3730A3;
     border: 1px solid rgba(92, 61, 143, 0.25);
 }
 

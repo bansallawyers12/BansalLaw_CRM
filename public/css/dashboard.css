@@ -496,11 +496,11 @@
     flex: 0 0 auto;
 }
 
-.dashboard-cal-legend-swatch.event-meeting { background: #0d6efd; }
-.dashboard-cal-legend-swatch.event-court { background: #5c3d8f; }
-.dashboard-cal-legend-swatch.event-deadline { background: #c0392b; }
-.dashboard-cal-legend-swatch.event-reminder { background: #d97706; }
-.dashboard-cal-legend-swatch.event-other { background: #111; }
+.dashboard-cal-legend-swatch.event-meeting { background: #1E40AF; }
+.dashboard-cal-legend-swatch.event-court { background: #3730A3; }
+.dashboard-cal-legend-swatch.event-deadline { background: #B91C1C; }
+.dashboard-cal-legend-swatch.event-reminder { background: #0F766E; }
+.dashboard-cal-legend-swatch.event-other { background: #334155; }
 
 .dashboard-calendar-container .fc-daygrid-more-link {
     font-size: 0.75rem;
@@ -512,34 +512,64 @@
 
 .dashboard-calendar-container .fc-event.event-court,
 .dashboard-calendar-container .fc-event.event-kind-court_hearing {
-    background-color: #5c3d8f !important;
-    border-color: #5c3d8f !important;
+    background-color: #3730A3 !important;
+    border-color: #3730A3 !important;
     color: #fff !important;
 }
 
-.dashboard-calendar-container .fc-event.event-meeting {
-    background-color: #0d6efd !important;
-    border-color: #0d6efd !important;
+.dashboard-calendar-container .fc-event.event-meeting:not(.event-kind-website_booking) {
+    background-color: #1E40AF !important;
+    border-color: #1E40AF !important;
     color: #fff !important;
+}
+
+.dashboard-calendar-container .fc-event.event-kind-website_booking {
+    color: #fff !important;
+}
+.dashboard-calendar-container .fc-event.event-status-pending {
+    background-color: #92400E !important;
+    border-color: #92400E !important;
+}
+.dashboard-calendar-container .fc-event.event-status-paid,
+.dashboard-calendar-container .fc-event.event-status-rescheduled {
+    background-color: #0C2340 !important;
+    border-color: #0C2340 !important;
+}
+.dashboard-calendar-container .fc-event.event-status-confirmed {
+    background-color: #047857 !important;
+    border-color: #047857 !important;
+}
+.dashboard-calendar-container .fc-event.event-status-completed {
+    background-color: #0369A1 !important;
+    border-color: #0369A1 !important;
+}
+.dashboard-calendar-container .fc-event.event-status-cancelled {
+    background-color: #9F1239 !important;
+    border-color: #9F1239 !important;
+}
+.dashboard-calendar-container .fc-event.event-status-no_show,
+.dashboard-calendar-container .fc-event.event-status-other {
+    background-color: #334155 !important;
+    border-color: #334155 !important;
 }
 
 .dashboard-calendar-container .fc-event.event-deadline,
 .dashboard-calendar-container .fc-event.event-kind-action,
 .dashboard-calendar-container .fc-event.event-kind-matter_deadline {
-    background-color: #c0392b !important;
-    border-color: #c0392b !important;
+    background-color: #B91C1C !important;
+    border-color: #B91C1C !important;
     color: #fff !important;
 }
 
 .dashboard-calendar-container .fc-event.event-reminder {
-    background-color: #d97706 !important;
-    border-color: #d97706 !important;
-    color: #1a2c40 !important;
+    background-color: #0F766E !important;
+    border-color: #0F766E !important;
+    color: #fff !important;
 }
 
 .dashboard-calendar-container .fc-event.event-other {
-    background-color: #111 !important;
-    border-color: #111 !important;
+    background-color: #334155 !important;
+    border-color: #334155 !important;
     color: #fff !important;
 }
 
@@ -900,11 +930,11 @@
     white-space: nowrap;
 }
 
-.dashboard-upcoming-type--court { background: #5c3d8f; }
-.dashboard-upcoming-type--meeting { background: #0d6efd; }
-.dashboard-upcoming-type--deadline { background: #c0392b; }
-.dashboard-upcoming-type--reminder { background: #d97706; color: #1a2c40; }
-.dashboard-upcoming-type--other { background: #111; }
+.dashboard-upcoming-type--court { background: #3730A3; }
+.dashboard-upcoming-type--meeting { background: #1E40AF; }
+.dashboard-upcoming-type--deadline { background: #B91C1C; }
+.dashboard-upcoming-type--reminder { background: #0F766E; color: #fff; }
+.dashboard-upcoming-type--other { background: #334155; }
 
 .dashboard-upcoming-group-count {
     display: inline-flex;
@@ -961,27 +991,27 @@
 
 .personal-calendar-detail-modal .appointment-detail-modal__icon--reminder,
 .personal-calendar-detail-modal .appointment-detail-modal__icon--follow_up {
-    background: #d97706;
+    background: #0F766E;
 }
 
 .personal-calendar-detail-modal .appointment-detail-modal__icon--court,
 .personal-calendar-detail-modal .appointment-detail-modal__icon--court_hearing {
-    background: #5c3d8f;
+    background: #3730A3;
 }
 
 .personal-calendar-detail-modal .appointment-detail-modal__icon--deadline,
 .personal-calendar-detail-modal .appointment-detail-modal__icon--action,
 .personal-calendar-detail-modal .appointment-detail-modal__icon--matter_deadline {
-    background: #c0392b;
+    background: #B91C1C;
 }
 
 .personal-calendar-detail-modal .appointment-detail-modal__icon--meeting,
 .personal-calendar-detail-modal .appointment-detail-modal__icon--website_booking {
-    background: #0d6efd;
+    background: #1E40AF;
 }
 
 .personal-calendar-detail-modal .appointment-detail-modal__icon--staff_event {
-    background: #3a6fa8;
+    background: #334155;
 }
 
 .personal-calendar-detail-modal .appointment-detail-modal__subtitle {
@@ -1079,31 +1109,31 @@
 
 .personal-calendar-detail-modal .appt-status-pill--reminder,
 .personal-calendar-detail-modal .appt-status-pill--follow_up {
-    background: rgba(217, 119, 6, 0.14);
-    color: #b45309;
-    border-color: rgba(217, 119, 6, 0.28);
+    background: rgba(15, 118, 110, 0.14);
+    color: #0F766E;
+    border-color: rgba(15, 118, 110, 0.28);
 }
 
 .personal-calendar-detail-modal .appt-status-pill--court,
 .personal-calendar-detail-modal .appt-status-pill--court_hearing {
-    background: rgba(92, 61, 143, 0.14);
-    color: #5c3d8f;
-    border-color: rgba(92, 61, 143, 0.28);
+    background: rgba(55, 48, 163, 0.14);
+    color: #3730A3;
+    border-color: rgba(55, 48, 163, 0.28);
 }
 
 .personal-calendar-detail-modal .appt-status-pill--deadline,
 .personal-calendar-detail-modal .appt-status-pill--action,
 .personal-calendar-detail-modal .appt-status-pill--matter_deadline {
-    background: rgba(192, 57, 43, 0.12);
-    color: #c0392b;
-    border-color: rgba(192, 57, 43, 0.25);
+    background: rgba(185, 28, 28, 0.12);
+    color: #B91C1C;
+    border-color: rgba(185, 28, 28, 0.25);
 }
 
 .personal-calendar-detail-modal .appt-status-pill--meeting,
 .personal-calendar-detail-modal .appt-status-pill--website_booking {
-    background: rgba(13, 110, 253, 0.12);
-    color: #0d6efd;
-    border-color: rgba(13, 110, 253, 0.25);
+    background: rgba(30, 64, 175, 0.12);
+    color: #1E40AF;
+    border-color: rgba(30, 64, 175, 0.25);
 }
 
 .personal-calendar-detail-modal .appt-status-pill--staff_event {

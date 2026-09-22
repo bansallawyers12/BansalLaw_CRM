@@ -65,7 +65,7 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
             'client_email' => 'malcolm.s.heys@gmail.com',
         ]);
 
-        $this->assertSame('#5c3d8f', $event['backgroundColor']);
+        $this->assertSame('#3730A3', $event['backgroundColor']);
         $this->assertContains('event-court', $event['classNames']);
         $this->assertSame('malcolm.s.heys@gmail.com', $event['extendedProps']['client_email']);
     }
@@ -82,8 +82,10 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
             'starts_at' => '2026-08-21T11:00:00+10:00',
         ]);
 
-        $this->assertSame('#1E7A52', $event['backgroundColor']);
+        $this->assertSame('#047857', $event['backgroundColor']);
         $this->assertContains('event-kind-website_booking', $event['classNames']);
+        $this->assertContains('event-status-confirmed', $event['classNames']);
+        $this->assertSame('#fff', $event['textColor']);
     }
 
     #[Test]
@@ -197,7 +199,7 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
             'starts_at' => '2026-08-21T15:00:00+10:00',
         ]);
 
-        $this->assertSame('#d97706', $event['backgroundColor']);
+        $this->assertSame('#0F766E', $event['backgroundColor']);
         $this->assertContains('event-kind-follow_up', $event['classNames']);
     }
 
