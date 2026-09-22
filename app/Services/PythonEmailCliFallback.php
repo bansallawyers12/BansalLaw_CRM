@@ -36,7 +36,13 @@ class PythonEmailCliFallback
                 'script' => $script,
             ]);
 
-            return null;
+            return [
+                'success' => false,
+                'error_code' => 'cli_python_missing',
+                'error' => 'Email CLI needs Python 3.9+ (prefer python3.13). '
+                    . 'On the server run: cd python_services && python3.13 -m venv venv && ./venv/bin/pip install -r requirements.txt',
+                'technical_error' => 'No suitable Python binary found for CLI fallback',
+            ];
         }
 
         $timeout = max(30, $timeout ?? (int) config('services.python.timeout', 180));
@@ -128,41 +134,73 @@ class PythonEmailCliFallback
     private function resolvePythonBinary(): ?string
     {
         $configured = trim((string) config('services.python.cli_python', ''));
-        $candidates = array_filter([
+
+        // Prefer versioned interpreters first — cPanel often ships an ancient `python3`
+        // that cannot run extract-msg / this CLI (seen as SyntaxError on annotations).
+        $candidates = array_values(array_filter([
             $configured !== '' ? $configured : null,
             base_path('python_services/venv/bin/python'),
+            base_path('python_services/venv/bin/python3'),
             base_path('python_services/venv/Scripts/python.exe'),
-            'python3',
-            'python',
             'python3.13',
             'python3.12',
-        ]);
+            'python3.11',
+            'python3.10',
+            'python3.9',
+            'python3',
+            'python',
+        ]));
 
-        // Prefer explicit paths that exist; for bare names, ask `command -v` via Process.
         foreach ($candidates as $bin) {
-            if ($bin === null || $bin === '') {
+            $resolved = $this->resolveBinaryPath($bin);
+            if ($resolved === null) {
                 continue;
             }
-            if (str_contains($bin, DIRECTORY_SEPARATOR) || str_contains($bin, '/') || str_contains($bin, '\\')) {
-                if (is_file($bin) || is_executable($bin)) {
-                    return $bin;
-                }
-                continue;
-            }
-
-            $which = new Process(
-                PHP_OS_FAMILY === 'Windows' ? ['where', $bin] : ['command', '-v', $bin]
-            );
-            $which->setTimeout(5);
-            $which->run();
-            if ($which->isSuccessful()) {
-                $path = trim(strtok($which->getOutput(), "\n"));
-                if ($path !== '') {
-                    return $path;
-                }
+            if ($this->pythonMeetsMinimum($resolved, 3, 9)) {
+                return $resolved;
             }
         }
 
         return null;
+    }
+
+    private function resolveBinaryPath(string $bin): ?string
+    {
+        if (str_contains($bin, DIRECTORY_SEPARATOR) || str_contains($bin, '/') || str_contains($bin, '\\')) {
+            return (is_file($bin) || is_executable($bin)) ? $bin : null;
+        }
+
+        $which = new Process(
+            PHP_OS_FAMILY === 'Windows' ? ['where', $bin] : ['command', '-v', $bin]
+        );
+        $which->setTimeout(5);
+        $which->run();
+        if (! $which->isSuccessful()) {
+            return null;
+        }
+
+        $path = trim(strtok($which->getOutput(), "\n") ?: '');
+
+        return $path !== '' ? $path : null;
+    }
+
+    private function pythonMeetsMinimum(string $binary, int $major, int $minor): bool
+    {
+        $probe = new Process([$binary, '-c', 'import sys; print("%d.%d" % sys.version_info[:2])']);
+        $probe->setTimeout(5);
+        $probe->run();
+        if (! $probe->isSuccessful()) {
+            return false;
+        }
+
+        $version = trim($probe->getOutput());
+        if (! preg_match('/^(\d+)\.(\d+)/', $version, $m)) {
+            return false;
+        }
+
+        $maj = (int) $m[1];
+        $min = (int) $m[2];
+
+        return $maj > $major || ($maj === $major && $min >= $minor);
     }
 }

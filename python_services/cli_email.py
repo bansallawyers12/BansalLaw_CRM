@@ -5,6 +5,8 @@ One-shot CLI for CRM email parsing (no HTTP daemon required).
 Used by Laravel when http://127.0.0.1:5002 is unreachable (common on
 production before systemd/nohup is started).
 
+Requires Python 3.9+. Prefer python3.13 on the host (same as start_services.sh).
+
 Usage:
   python cli_email.py parse <file> [--timezone TZ] [--metadata-only]
   python cli_email.py parse-render-pdf <file> [--timezone TZ]
@@ -12,12 +14,22 @@ Usage:
 Prints a single JSON object to stdout.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys
 from pathlib import Path
+
+if sys.version_info < (3, 9):
+    sys.stdout.write(json.dumps({
+        'success': False,
+        'error': (
+            'Python %s.%s is too old for email parsing. '
+            'Install/use Python 3.9+ (prefer python3.13).'
+            % (sys.version_info[0], sys.version_info[1])
+        ),
+    }))
+    sys.stdout.write('\n')
+    raise SystemExit(1)
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -36,13 +48,21 @@ from utils.validators import resolve_email_upload_filename, validate_email_uploa
 ALLOWED_EMAIL_EXTENSIONS = ['.msg', '.eml']
 
 
-def _emit(payload: dict, exit_code: int = 0) -> int:
+def _emit(payload, exit_code=0):
     sys.stdout.write(json.dumps(payload, default=str, ensure_ascii=False))
     sys.stdout.write('\n')
     return exit_code
 
 
-def _load_file(path: Path) -> tuple[bytes, str]:
+def _safe_unlink(path):
+    try:
+        if path.exists():
+            path.unlink()
+    except Exception:
+        pass
+
+
+def _load_file(path):
     content = path.read_bytes()
     name = path.name
     if not validate_email_upload(name, content, ALLOWED_EMAIL_EXTENSIONS):
@@ -51,12 +71,11 @@ def _load_file(path: Path) -> tuple[bytes, str]:
     return content, resolved
 
 
-def cmd_parse(file_path: Path, metadata_only: bool) -> dict:
+def cmd_parse(file_path, metadata_only):
     content, resolved = _load_file(file_path)
-    # Work from a temp copy under python_services/temp so extractors see a stable path.
     temp_dir = ROOT / 'temp'
     temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = temp_dir / f'cli_{Path(resolved).name}'
+    temp_path = temp_dir / ('cli_' + Path(resolved).name)
     temp_path.write_bytes(content)
     try:
         parser = EmailParserService()
@@ -65,18 +84,15 @@ def cmd_parse(file_path: Path, metadata_only: bool) -> dict:
             result = parser.strip_attachment_payloads(result)
         return result
     finally:
-        try:
-            temp_path.unlink(missing_ok=True)
-        except Exception:
-            pass
+        _safe_unlink(temp_path)
 
 
-def cmd_parse_render_pdf(file_path: Path, timezone: str) -> dict:
+def cmd_parse_render_pdf(file_path, timezone):
     content, resolved = _load_file(file_path)
     temp_dir = ROOT / 'temp'
     temp_dir.mkdir(parents=True, exist_ok=True)
     ensure_pdf_output_dir()
-    temp_path = temp_dir / f'cli_{Path(resolved).name}'
+    temp_path = temp_dir / ('cli_' + Path(resolved).name)
     temp_path.write_bytes(content)
     try:
         parser = EmailParserService()
@@ -108,13 +124,10 @@ def cmd_parse_render_pdf(file_path: Path, timezone: str) -> dict:
 
         return result
     finally:
-        try:
-            temp_path.unlink(missing_ok=True)
-        except Exception:
-            pass
+        _safe_unlink(temp_path)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv=None):
     parser = argparse.ArgumentParser(description='CRM email parse CLI (no HTTP daemon)')
     parser.add_argument('command', choices=['parse', 'parse-render-pdf'])
     parser.add_argument('file', type=Path)
@@ -123,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.file.is_file():
-        return _emit({'success': False, 'error': f'File not found: {args.file}'}, 1)
+        return _emit({'success': False, 'error': 'File not found: %s' % args.file}, 1)
 
     try:
         if args.command == 'parse':
