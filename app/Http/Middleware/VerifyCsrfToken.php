@@ -19,18 +19,7 @@ class VerifyCsrfToken extends Middleware
      * @var array
      */ 
     protected $except = [
-        //
-		'api/*',
-		'webhooks/sms/*',
-		'admin/update_visit_purpose',
-		'admin/update_visit_comment',
-		'admin/attend_session',
-		'admin/complete_session',
-		'admin/update_task_comment',
-		'admin/update_task_description',
-		'admin/update_task_status',
-		'admin/update_task_priority',
-		'admin/updateduedate',
-		'get-activities', // Client activities endpoint (GET request, no CSRF needed)
+        'api/*',
+        'webhooks/sms/*',
     ];
 }

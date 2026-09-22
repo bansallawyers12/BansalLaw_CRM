@@ -70,7 +70,7 @@ Top issues:
 |------------|---------------|--------|-------|
 | `Authenticate` | `auth` | **OK** | Redirects to `crm.login`; API/MCP paths return null (no HTML redirect). |
 | `RedirectIfAuthenticated` | `guest` | **OK** | `guest:admin` → dashboard; allows `?tab_logout`. |
-| `VerifyCsrfToken` | `web` | **Partial** | CSRF on for web. Except: `api/*`, `webhooks/sms/*`, and **stale `admin/*` task/visit paths** that no longer match current `/update_visit_*` routes (dead exceptions — low risk). |
+| `VerifyCsrfToken` | `web` | **OK** (Fixed) | Resolved: Removed stale `admin/*` visit and task paths (`admin/update_visit_*`, `admin/attend_session`, `admin/complete_session`, `admin/update_task_*`, `admin/updateduedate`) and redundant GET route (`get-activities`). Only valid stateless exceptions (`api/*` and `webhooks/sms/*`) remain; full CSRF token verification enforced on all state-changing web routes. |
 | `SetSecureSessionCookies` | `web` | **OK** | Auto-sets `session.secure` when HTTPS / proxy headers detected; reads `config()`, not `env()`. |
 | `EncryptCookies` | `web` | **OK** | Empty except list. |
 | `EnsureAdminConsoleAccess` | `adminconsole` | **OK** | Role allowlist + elevation + narrow mailbox-sync exception. |
@@ -79,7 +79,7 @@ Top issues:
 | `EnsureCommunicationCheckEnabled` | `communication.check` | **OK** | Feature flag + staff capability. |
 | `HttpsProtocol` | *(commented out in Kernel)* | **Fail** | Class body is commented empty; not enforcing HTTPS redirect. Rely on load balancer + secure cookies instead. |
 | `AuthenticateSession` | *(commented in Kernel web group)* | **At risk** | Disabled — stolen session cookie not invalidated on password change elsewhere until natural expiry (logout after change_password does flush). |
-| TrustProxies | global | **Partial** | Uses framework `TrustProxies`; custom app class exists but unused. Proxy trust must be correct for secure-cookie auto-detect. |
+| `TrustProxies` | global | **OK** (Fixed) | Resolved: Activated `App\Http\Middleware\TrustProxies` in global middleware stack (`Kernel.php`). Added `config/trustedproxy.php` reading `TRUSTED_PROXIES` with trusted AWS ELB and standard proxy headers. Ensures reverse-proxy TLS termination is correctly recognized by `$request->isSecure()`, real client IP resolution, and HTTPS secure cookie auto-detection. |
 
 ### 4. Session / cookie / CORS config
 
@@ -159,7 +159,7 @@ Top issues:
 |--------|--------|-------|
 | Login analytics / `StaffLoginLog` | **OK** | Success/fail/logout recorded. |
 | User roles Admin Console | **Partial** | Protected by `adminconsole`; permission model is JSON `module_access` (complex; not fully audited per permission edge). |
-| Front-desk / office visits | **OK** (auth) | Inside `auth:admin`; CSRF exceptions for old `admin/*` paths appear stale. |
+| Front-desk / office visits | **OK** (auth) | Inside `auth:admin`; stale `admin/*` CSRF exceptions removed and protected by standard CSRF verification. |
 | Health `/up` | **OK** | Unauthenticated by design. |
 
 ---
@@ -179,7 +179,8 @@ Top issues:
 | AUTH-LOGOUT-1 | **Medium** | Logout | Partial | `GET /logout` enables CSRF logout / prefetch side effects. |
 | AUTH-PWD-1 | **Medium** | Passwords | Partial | Min length 6; no self-service reset routes despite password broker config. |
 | AUTH-CFG-1 | **Low** | Guards | **OK** (Fixed) | Resolved: Aligned `api`, `web`, and `admin` guards to `staff` provider (`Staff` model); removed duplicate root provider config; added `admin` guard to Sanctum configuration; clarified `Admin` model identity as client/lead representation. |
-| AUTH-CSRF-1 | **Low** | CSRF except | Partial | Stale `admin/update_*` exceptions do not match current route paths. |
+| AUTH-CSRF-1 | **Low** | CSRF except | **OK** (Fixed) | Resolved: Cleaned `VerifyCsrfToken::$except` to only contain valid stateless prefixes (`api/*` and `webhooks/sms/*`). Removed stale `admin/*` task/visit paths and redundant GET route (`get-activities`), ensuring all browser mutating actions enforce CSRF verification. |
+| AUTH-PROXY-1 | **Low** | TrustProxies | **OK** (Fixed) | Resolved: Switched global middleware to `App\Http\Middleware\TrustProxies`; added `config/trustedproxy.php` reading `TRUSTED_PROXIES` with trusted AWS ELB and standard headers; reverse proxy detection properly powers `$request->isSecure()` and secure cookie auto-detection. |
 | AUTH-DOC-2 | **Low** | Docs | Partial | README says e-sign “HMAC”; code uses opaque stored tokens. |
 | AUTH-LOGIN-1 | — | Login | **OK** | Throttle, reCAPTCHA, regenerate, status check, audit log. |
 | AUTH-ACL-1 | — | Row ACL | **OK** | Visibility + grants + Admin Console middleware solid in static review. |
@@ -204,6 +205,8 @@ Top issues:
 - `POST /api/service-account/authenticate` is registered with dedicated rate limiting (`throttle:15,1`) and strictly enforces token expiration and active staff status.
 - `POST /api/payments/create-payment-intent` enforces active staff verification, payment authorization/capabilities, currency validation, and structured audit logs.
 - `POST /api/leads` returns opaque responses preventing email enumeration or database ID leaks, while incorporating honeypot spam traps and per-email rate limits.
+- CSRF protection is fully active across all web and CRM routes; stale dead exceptions removed from `VerifyCsrfToken` with only valid API and SMS webhook exclusions retained.
+- Reverse proxy trust (`TrustProxies`) is active in global middleware with `config/trustedproxy.php` support, ensuring accurate HTTPS detection and secure session cookie auto-configuration behind load balancers/reverse proxies.
 
 ---
 
