@@ -48,6 +48,10 @@ return [
         'timeout' => env('PYTHON_SERVICE_TIMEOUT', env('PYTHON_CONVERTER_TIMEOUT', 180)),
         'max_retries' => env('PYTHON_SERVICE_MAX_RETRIES', 3),
         'health_check_interval' => env('PYTHON_SERVICE_HEALTH_CHECK_INTERVAL', 60),
+        'auto_start' => env('PYTHON_SERVICE_AUTO_START', true),
+        'cli_fallback' => env('PYTHON_SERVICE_CLI_FALLBACK', true),
+        'cli_python' => env('PYTHON_SERVICE_CLI_PYTHON', ''),
+        'cli_script' => env('PYTHON_SERVICE_CLI_SCRIPT', ''),
     ],
 
     /*

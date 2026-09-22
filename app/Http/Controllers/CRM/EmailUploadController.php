@@ -1300,66 +1300,113 @@ class EmailUploadController extends Controller
      */
     protected function callPythonEmailEndpoint($file, string $path, int $timeout, bool $metadataOnly = false)
     {
-        try {
-            $originalFileName = $this->sanitizedUploadFilename($file);
-            $sanitizedFileName = $originalFileName;
-            $fileContents = file_get_contents($file->getPathname());
+        $originalFileName = $this->sanitizedUploadFilename($file);
+        $sanitizedFileName = $originalFileName;
+        $fileContents = file_get_contents($file->getPathname());
 
-            if ($fileContents === false || $fileContents === '') {
+        if ($fileContents === false || $fileContents === '') {
+            return [
+                'success' => false,
+                'error_code' => 'file_empty',
+                'error' => 'Uploaded file is empty or could not be read.',
+            ];
+        }
+
+        $payload = [
+            'timezone' => config('app.timezone', 'Australia/Melbourne'),
+        ];
+        if ($metadataOnly) {
+            $payload['metadata_only'] = '1';
+        }
+
+        $executeHttp = function () use ($fileContents, $sanitizedFileName, $path, $payload, $timeout) {
+            return Http::timeout($timeout)
+                ->attach('file', $fileContents, $sanitizedFileName)
+                ->post($this->pythonServiceUrlWithTimezone($path), $payload);
+        };
+
+        $response = null;
+        $caughtException = null;
+
+        try {
+            $response = $executeHttp();
+        } catch (\Throwable $e) {
+            $caughtException = $e;
+        }
+
+        // If connection was refused or service was unreachable, try auto-starting daemon once
+        $isConnectionError = $caughtException !== null && (
+            stripos($caughtException->getMessage(), 'Connection refused') !== false
+            || stripos($caughtException->getMessage(), 'Failed to connect') !== false
+            || stripos($caughtException->getMessage(), 'cURL error 7') !== false
+        );
+
+        if ($isConnectionError || ($response !== null && in_array($response->status(), [502, 503, 504], true))) {
+            if ($this->attemptToStartPythonService()) {
+                try {
+                    $response = $executeHttp();
+                    $caughtException = null;
+                } catch (\Throwable $retryException) {
+                    $caughtException = $retryException;
+                }
+            }
+        }
+
+        if ($response !== null && $response->successful()) {
+            try {
+                $result = $response->json();
+            } catch (\Exception $jsonException) {
                 return [
                     'success' => false,
-                    'error_code' => 'file_empty',
-                    'error' => 'Uploaded file is empty or could not be read.',
+                    'error_code' => 'service_invalid_response',
+                    'error' => 'The email processing service returned an invalid response. The service may be experiencing issues.',
+                    'technical_error' => $jsonException->getMessage(),
                 ];
             }
 
-            $payload = [
-                'timezone' => config('app.timezone', 'Australia/Melbourne'),
-            ];
-            if ($metadataOnly) {
-                $payload['metadata_only'] = '1';
+            if (isset($result['error']) || (isset($result['success']) && ! $result['success'])) {
+                $technicalError = (string) ($result['error'] ?? $result['detail'] ?? 'Email parsing failed');
+
+                return [
+                    'success' => false,
+                    'error_code' => 'parse_failed',
+                    'error' => $technicalError,
+                    'technical_error' => $technicalError,
+                ];
             }
 
-            $response = Http::timeout($timeout)
-                ->attach('file', $fileContents, $sanitizedFileName)
-                ->post($this->pythonServiceUrlWithTimezone($path), $payload);
+            return $result;
+        }
 
-            if ($response->successful()) {
-                try {
-                    $result = $response->json();
-                } catch (\Exception $jsonException) {
-                    return [
-                        'success' => false,
-                        'error_code' => 'service_invalid_response',
-                        'error' => 'The email processing service returned an invalid response. The service may be experiencing issues.',
-                        'technical_error' => $jsonException->getMessage(),
-                    ];
+        // If HTTP failed or threw connection error, try direct CLI fallback
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+            $cliFallback = app(\App\Services\PythonEmailCliFallback::class);
+            if ($cliFallback->isAvailable()) {
+                $mode = str_contains($path, 'parse-render-pdf') ? 'parse-render-pdf' : 'parse';
+                $cliResult = $cliFallback->parse($file, $mode, $metadataOnly, $timeout);
+
+                if (is_array($cliResult) && (empty($cliResult['error']) || (! isset($cliResult['success']) || $cliResult['success']))) {
+                    Log::info('Email parsing succeeded via CLI fallback', [
+                        'file' => $sanitizedFileName,
+                        'mode' => $mode,
+                    ]);
+
+                    return $cliResult;
                 }
 
-                if (isset($result['error']) || (isset($result['success']) && ! $result['success'])) {
-                    $technicalError = (string) ($result['error'] ?? $result['detail'] ?? 'Email parsing failed');
-
+                if (is_array($cliResult) && ! empty($cliResult['error'])) {
                     return [
                         'success' => false,
-                        'error_code' => 'parse_failed',
-                        'error' => $technicalError,
-                        'technical_error' => $technicalError,
+                        'error_code' => $cliResult['error_code'] ?? 'parse_failed',
+                        'error' => $cliResult['error'],
+                        'technical_error' => $cliResult['technical_error'] ?? $cliResult['error'],
                     ];
                 }
-
-                return $result;
             }
+        }
 
-            $technicalError = $this->extractPythonServiceError($response);
-
-            return [
-                'success' => false,
-                'error_code' => $this->pythonServiceErrorCode($response->status()),
-                'error' => $technicalError,
-                'technical_error' => $technicalError,
-            ];
-        } catch (\Exception $e) {
-            $rawMessage = $e->getMessage();
+        if ($caughtException !== null) {
+            $rawMessage = $caughtException->getMessage();
             $isTimeout = stripos($rawMessage, 'timed out') !== false || stripos($rawMessage, 'timeout') !== false;
 
             return [
@@ -1372,6 +1419,65 @@ class EmailUploadController extends Controller
                 'technical_error' => $rawMessage,
             ];
         }
+
+        $technicalError = $response ? $this->extractPythonServiceError($response) : 'Unknown service error';
+
+        return [
+            'success' => false,
+            'error_code' => $response ? $this->pythonServiceErrorCode($response->status()) : 'service_error',
+            'error' => $technicalError,
+            'technical_error' => $technicalError,
+        ];
+    }
+
+    /**
+     * Attempt to automatically start the Python microservice if it's down.
+     */
+    protected function attemptToStartPythonService(): bool
+    {
+        if (! filter_var(config('services.python.auto_start', true), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            return false;
+        }
+
+        $script = base_path('scripts/ensure_python_service.sh');
+        if (! file_exists($script)) {
+            return false;
+        }
+
+        static $alreadyAttempted = false;
+        if ($alreadyAttempted) {
+            return false;
+        }
+        $alreadyAttempted = true;
+
+        try {
+            Log::info('Python service unreachable. Auto-starting via ensure_python_service.sh...');
+            $process = new \Symfony\Component\Process\Process(['bash', $script]);
+            $process->setTimeout(10);
+            $process->run();
+
+            $healthUrl = rtrim($this->pythonServiceUrl, '/') . '/health';
+            for ($i = 0; $i < 4; $i++) {
+                usleep(750000); // 0.75s
+                try {
+                    $check = Http::timeout(2)->get($healthUrl);
+                    if ($check->successful()) {
+                        Log::info('Python service recovered via auto-start');
+                        return true;
+                    }
+                } catch (\Throwable) {
+                    // Retry
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Auto-start of Python service failed: ' . $e->getMessage());
+        }
+
+        return false;
     }
 
     /**
@@ -1428,20 +1534,24 @@ class EmailUploadController extends Controller
      */
     public function checkPythonService()
     {
+        $cliAvailable = app(\App\Services\PythonEmailCliFallback::class)->isAvailable();
+
         try {
             $response = Http::timeout(5)->get($this->pythonServiceUrl . '/health');
 
             return [
                 'status' => $response->successful(),
                 'url' => $this->pythonServiceUrl,
-                'response' => $response->successful() ? $response->json() : null
+                'response' => $response->successful() ? $response->json() : null,
+                'cli_fallback' => $cliAvailable,
             ];
 
         } catch (\Exception $e) {
             return [
                 'status' => false,
                 'url' => $this->pythonServiceUrl,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'cli_fallback' => $cliAvailable,
             ];
         }
     }

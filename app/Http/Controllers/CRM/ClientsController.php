@@ -5679,14 +5679,48 @@ class ClientsController extends Controller
             $pythonServiceUrl = config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
             
-            $response = \Illuminate\Support\Facades\Http::timeout(90)
-                ->attach('file', $fileContents, $filename)
-                ->post($pythonServiceUrl . '/email/parse-render-pdf?timezone=' . urlencode($appTimezone), [
-                    'timezone' => $appTimezone,
-                ]);
+            $response = null;
+            $caughtException = null;
 
-            if ($response->successful()) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(90)
+                    ->attach('file', $fileContents, $filename)
+                    ->post($pythonServiceUrl . '/email/parse-render-pdf?timezone=' . urlencode($appTimezone), [
+                        'timezone' => $appTimezone,
+                    ]);
+            } catch (\Throwable $e) {
+                $caughtException = $e;
+            }
+
+            $result = null;
+            if ($response && $response->successful()) {
                 $result = $response->json();
+            } else {
+                // Try CLI fallback using a temporary file
+                try {
+                    $cliFallback = app(\App\Services\PythonEmailCliFallback::class);
+                    if ($cliFallback->isAvailable()) {
+                        $tempPath = tempnam(sys_get_temp_dir(), 'crm_msg_');
+                        file_put_contents($tempPath, $fileContents);
+                        $uploadedFile = new \Illuminate\Http\UploadedFile(
+                            $tempPath,
+                            $filename,
+                            'application/vnd.ms-outlook',
+                            null,
+                            true
+                        );
+                        $cliResult = $cliFallback->parse($uploadedFile, 'parse-render-pdf', false, 90);
+                        @unlink($tempPath);
+                        if (is_array($cliResult) && (empty($cliResult['error']) || (! isset($cliResult['success']) || $cliResult['success']))) {
+                            $result = $cliResult;
+                        }
+                    }
+                } catch (\Throwable $cliErr) {
+                    \Illuminate\Support\Facades\Log::warning('ClientsController CLI email parse fallback failed: ' . $cliErr->getMessage());
+                }
+            }
+
+            if ($result) {
                 $html = $result['html_content']
                     ?? $result['html_body']
                     ?? $result['text_preview']
@@ -5712,9 +5746,16 @@ class ClientsController extends Controller
                 return response()->json(['success' => true, 'html' => $html, 'source' => 'python_fallback']);
             }
 
+            if ($caughtException !== null) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Cannot connect to the email processing service at ' . $pythonServiceUrl . '. (' . $caughtException->getMessage() . ')',
+                ], 500);
+            }
+
             return response()->json([
                 'success' => false, 
-                'error' => 'Failed to parse email. Python service returned: ' . $response->status()
+                'error' => 'Failed to parse email. Python service returned: ' . ($response ? $response->status() : 'unknown error')
             ], 500);
             
         } catch (\Exception $e) {

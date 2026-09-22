@@ -30,3 +30,11 @@ jobs:
             --exclude="node_modules" \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+      - name: Ensure Python Service & Health Check
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+            cd ${{ secrets.DEPLOY_PATH }} &&
+            chmod +x scripts/ensure_python_service.sh &&
+            ./scripts/ensure_python_service.sh || true
+          "
