@@ -44,7 +44,7 @@ return [
     |
     */
 
-    'encrypt' => false,
+    'encrypt' => env('SESSION_ENCRYPT', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -151,7 +151,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN', ''),
+    'domain' => env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -162,12 +162,13 @@ return [
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you if it can not be done securely.
     |
-    | IMPORTANT: For production (HTTPS), set SESSION_SECURE_COOKIE=true in .env
-    | For local development (HTTP), set SESSION_SECURE_COOKIE=false or leave unset
+    | IMPORTANT: For production (HTTPS), set SESSION_SECURE_COOKIE=true in .env,
+    | or leave unset (null) to let Laravel/Symfony auto-detect HTTPS requests.
+    | For local development (HTTP), leave unset or set SESSION_SECURE_COOKIE=false.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', false),
+    'secure' => env('SESSION_SECURE_COOKIE', null),
 
     /*
     |--------------------------------------------------------------------------
