@@ -41,8 +41,8 @@
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-pending {
-    background-color: #ffc107 !important;
-    border-color: #ffc107 !important;
+    background-color: #e0a800 !important;
+    border-color: #e0a800 !important;
     color: #000 !important;
 }
 
@@ -50,64 +50,64 @@
 .booking-calendar-page .calendar-v6-container .fc-event.event-rescheduled,
 .booking-calendar-page .calendar-v6-container .fc-event[class*="event-paid"],
 .booking-calendar-page .calendar-v6-container .fc-event[data-paid="true"] {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
+    background-color: #0069d9 !important;
+    border-color: #0069d9 !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-confirmed {
-    background-color: #28a745 !important;
-    border-color: #28a745 !important;
+    background-color: #218838 !important;
+    border-color: #218838 !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-completed {
-    background-color: #17a2b8 !important;
-    border-color: #17a2b8 !important;
+    background-color: #138496 !important;
+    border-color: #138496 !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-cancelled {
-    background-color: #dc3545 !important;
-    border-color: #dc3545 !important;
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
     color: #fff !important;
     text-decoration: line-through !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-no-show {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
+    background-color: #5a6268 !important;
+    border-color: #5a6268 !important;
     color: #fff !important;
     opacity: 0.7 !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-court {
-    background-color: #fd7e14 !important;
-    border-color: #fd7e14 !important;
+    background-color: #e8590c !important;
+    border-color: #e8590c !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-meeting {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
+    background-color: #0069d9 !important;
+    border-color: #0069d9 !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-deadline {
-    background-color: #dc3545 !important;
-    border-color: #dc3545 !important;
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
     color: #fff !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-reminder {
-    background-color: #ffc107 !important;
-    border-color: #ffc107 !important;
+    background-color: #e0a800 !important;
+    border-color: #e0a800 !important;
     color: #000 !important;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event.event-other {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
+    background-color: #5a6268 !important;
+    border-color: #5a6268 !important;
     color: #fff !important;
 }
 
@@ -122,7 +122,14 @@
 .booking-calendar-page .calendar-v6-container .fc-event {
     cursor: pointer;
     font-size: 0.85em;
+    font-weight: 600;
     padding: 2px 4px;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event .fc-event-title,
+.booking-calendar-page .calendar-v6-container .fc-event .fc-event-time,
+.booking-calendar-page .calendar-v6-container .fc-event .fc-event-main {
+    font-weight: 600;
 }
 
 .booking-calendar-page .calendar-v6-container .fc-event:hover {

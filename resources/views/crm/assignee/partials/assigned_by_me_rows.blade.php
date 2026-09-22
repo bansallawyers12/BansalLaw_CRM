@@ -92,14 +92,14 @@
                         class="btn btn-primary btn-sm update_task"
                         title="Update Task"
                         data-assignedto="{{ $list->assigned_to }}"
-                        data-noteid="{{ e($list->description ?? '') }}"
+                        data-noteid="{{ $list->description ?? '' }}"
                         data-taskid="{{ $list->id }}"
-                        data-taskgroupid="{{ e($list->task_group ?? '') }}"
+                        data-taskgroupid="{{ $list->task_group ?? '' }}"
                         data-actiondate="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}"
                         data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"
-                        data-matterref="{{ e($matterRef) }}"
-                        data-matterurl="{{ e($openMatterUrl) }}"
-                        data-clientlabel="{{ e($clientLabel) }}"
+                        data-matterref="{{ $matterRef }}"
+                        data-matterurl="{{ $openMatterUrl }}"
+                        data-clientlabel="{{ $clientLabel }}"
                     >
                         <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                     </button>

@@ -1449,15 +1449,15 @@ class StaffPersonalCalendarFeedService
     protected function colorForBookingStatus(string $status): string
     {
         return match ($status) {
-            'pending' => '#ffc107',
-            'awaiting_confirmation' => '#fd7e14',
-            'paid' => '#007bff',
-            'confirmed' => '#28a745',
-            'completed' => '#17a2b8',
-            'cancelled' => '#dc3545',
-            'no_show' => '#6c757d',
-            'rescheduled' => '#007bff',
-            default => '#6c757d',
+            'pending' => '#e0a800',
+            'awaiting_confirmation' => '#e8590c',
+            'paid' => '#0069d9',
+            'confirmed' => '#218838',
+            'completed' => '#138496',
+            'cancelled' => '#c82333',
+            'no_show' => '#5a6268',
+            'rescheduled' => '#0069d9',
+            default => '#5a6268',
         };
     }
 

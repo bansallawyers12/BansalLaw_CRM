@@ -26,12 +26,14 @@
             $dateLabel = $list->action_date ? date('d/m/Y', strtotime($list->action_date)) : 'N/P';
             $currentDate = $list->action_date ?: date('Y-m-d');
 
-            $safeDescription = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
-            $safeTaskGroup = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
+            // Plain text only — Blade {{ }} escapes once for the attribute;
+            // JS escapeHtml() escapes once more when building the Update Task HTML.
+            $safeDescription = Utf8Helper::safeSanitize($list->description ?? '');
+            $safeTaskGroup = Utf8Helper::safeSanitize($list->task_group ?? '');
             $encodedClientId = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
             $detailUrl = $list->clientDetailUrl();
-            $matterRef = htmlspecialchars($list->matterReference() ?? '', ENT_QUOTES, 'UTF-8');
-            $matterUrl = htmlspecialchars($detailUrl ?? '', ENT_QUOTES, 'UTF-8');
+            $matterRef = Utf8Helper::safeSanitize($list->matterReference() ?? '');
+            $matterUrl = $detailUrl ?? '';
             $clientLabelRaw = '';
             if ($list->noteClient) {
                 $clientLabelRaw = trim($list->noteClient->company_name_or_personal_name ?? '');
@@ -39,7 +41,7 @@
                     $clientLabelRaw = trim(($list->noteClient->first_name ?? '').' '.($list->noteClient->last_name ?? ''));
                 }
             }
-            $clientLabel = htmlspecialchars(Utf8Helper::safeSanitize($clientLabelRaw), ENT_QUOTES, 'UTF-8');
+            $clientLabel = Utf8Helper::safeSanitize($clientLabelRaw);
         @endphp
         <tr data-note-id="{{ $list->id }}">
             <td>{{ $rowIndex }}</td>

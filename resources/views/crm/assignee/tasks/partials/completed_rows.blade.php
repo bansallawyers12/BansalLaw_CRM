@@ -51,9 +51,9 @@
                 <div class="action-buttons">
                     @if ($list->task_group != 'Personal Task' && $list->task_group != 'Personal Action')
                         <button type="button"
-                            data-noteid="{{ e($list->description ?? '') }}"
+                            data-noteid="{{ $list->description ?? '' }}"
                             data-taskid="{{ $list->id }}"
-                            data-taskgroupid="{{ e($list->task_group ?? '') }}"
+                            data-taskgroupid="{{ $list->task_group ?? '' }}"
                             data-actiondate="{{ $list->action_date }}"
                             data-assignedto="{{ $list->assigned_to }}"
                             data-clientid="{{ $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '' }}"

@@ -679,11 +679,11 @@ class StaffCalendarFeedService
     public static function colorForEventType(string $type): string
     {
         return match ($type) {
-            'court' => '#fd7e14',
-            'meeting' => '#007bff',
-            'deadline' => '#dc3545',
-            'reminder' => '#ffc107',
-            default => '#6c757d',
+            'court' => '#e8590c',
+            'meeting' => '#0069d9',
+            'deadline' => '#c82333',
+            'reminder' => '#e0a800',
+            default => '#5a6268',
         };
     }
 
