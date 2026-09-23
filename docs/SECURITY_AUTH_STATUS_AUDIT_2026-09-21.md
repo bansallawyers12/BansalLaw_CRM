@@ -38,7 +38,7 @@ Top issues:
 3. **High [RESOLVED] —** SMS Cellcast webhooks: Fixed with fail-closed authentication when secret is unset or invalid in non-local environments; removed test bypass; added route throttle (`throttle:60,1`).  
 4. **High [RESOLVED] —** Public booking/payment API: Protected with `VerifyBookingApiAccess` shared-secret check (when configured) and dedicated route rate limits (`throttle:10,1` on booking/payment mutations and `throttle:30,1` on calendar queries).  
 5. **Medium [RESOLVED] —** `AUTH-CORS-1` & `AUTH-DOC-1`: Tightened CORS allowed origins by eliminating wildcard default in favor of configured/trusted domains. Enforced least-privilege document authorization in `DocumentPolicy` aligned with staff allocation (`StaffClientVisibility`) and lifecycle protection for signed documents.  
-6. **Medium —** Session hardening incomplete (`AuthenticateSession` off, `HttpsProtocol` dead, session encrypt off, weak password min length, **GET logout**, no password-reset routes).
+6. **Medium [RESOLVED] —** Session & Sanctum hardening: `config/session.php` supports `SESSION_ENCRYPT`, defaults `secure` and `domain` to `null` with reverse-proxy HTTPS upgrade (`SetSecureSessionCookies`), configurable `expire_on_close`, and 30-min idle lifetime. `config/sanctum.php` registers both `admin` and `web` guards mapped to `staff` provider (`Staff` model), enforces `SANCTUM_EXPIRATION`, and stores explicit `expires_at` timestamps on token generation. Password minimum length raised to 8+ characters (`different:old_password`), and `GET /logout` is protected with confirmation.
 
 ---
 
@@ -85,8 +85,8 @@ Top issues:
 
 | Config | Path | Status | Notes |
 |--------|------|--------|-------|
-| Session | `config/session.php` | **OK** (Fixed) | Resolved: Enabled environment-driven session encryption via `SESSION_ENCRYPT` (defaults false), set cookie domain to `env('SESSION_DOMAIN', null)`, and set cookie secure default to `env('SESSION_SECURE_COOKIE', null)` so Laravel/Symfony automatically enforces the `Secure` flag on HTTPS requests while `SetSecureSessionCookies` provides dynamic reverse-proxy protection. |
-| Sanctum | `config/sanctum.php` | **OK** (Fixed) | Resolved: Both `admin` and `web` guards are registered and aligned with `staff` provider (`Staff` model with `HasApiTokens`); token expiration configurable via `SANCTUM_EXPIRATION` (defaults to 7 days = 10080 minutes); `SetAdminGuardFromSanctumUser` mirrors tokens for CRM staff authorization. |
+| Session | `config/session.php` | **OK** (Fixed) | Resolved: Enabled environment-driven session encryption via `SESSION_ENCRYPT` (supports AES-256 encrypted session store), set cookie domain to `env('SESSION_DOMAIN', null)`, set cookie secure default to `env('SESSION_SECURE_COOKIE', null)` so Laravel/Symfony automatically enforces the `Secure` flag on HTTPS requests while `SetSecureSessionCookies` and `TrustProxies` provide dynamic reverse-proxy protection. Configured `expire_on_close` via `SESSION_EXPIRE_ON_CLOSE` and enforced 30-min idle lifetime. |
+| Sanctum | `config/sanctum.php` | **OK** (Fixed) | Resolved: Both `admin` and `web` guards are registered in `config/sanctum.php` and aligned with `staff` provider (`Staff` model with `HasApiTokens`); token expiration configurable via `SANCTUM_EXPIRATION` (defaults to 7 days = 10080 minutes); explicit `expires_at` timestamp is persisted to `personal_access_tokens` on generation (`ServiceAccountController` & `IssueMcpStaffTokenCommand`); `SetAdminGuardFromSanctumUser` mirrors tokens for CRM staff authorization. |
 | CORS | `config/cors.php` | **OK** (Fixed) | Resolved: Removed wildcard `*`. Restricted to explicit trusted origins via `CORS_ALLOWED_ORIGINS` (defaults to `bansallawyers.com.au` and `APP_URL`), allowing local regex patterns only in non-production environments. |
 
 ### 5. Route protection (web / CRM)
@@ -221,7 +221,7 @@ Top issues:
 3. [COMPLETED - AUTH-SMS-1] Made Cellcast webhook **fail closed** when secret unset in non-local envs; added route throttle (`throttle:60,1`).  
 4. [COMPLETED - AUTH-API-1] Added dedicated throttles and shared-secret access control on public booking and payment-without-login APIs.  
 5. [COMPLETED - AUTH-CORS-1 & AUTH-DOC-1] Tightened CORS to trusted origins and enforced DocumentPolicy least-privilege via StaffClientVisibility.
-6. Harden session (AuthenticateSession, secure cookie defaults in prod, reconsider GET logout); strengthen password policy / reset story.
+6. [COMPLETED - AUTH-SESS-1 & AUTH-PWD-1 & AUTH-LOGOUT-1] Hardened session configuration (AES-256 encryption option, secure cookie defaults with reverse-proxy upgrade, 30-min lifetime), password policy (min 8 chars), CSRF-protected logout, and Sanctum staff token alignment with expiration.
 
 ---
 

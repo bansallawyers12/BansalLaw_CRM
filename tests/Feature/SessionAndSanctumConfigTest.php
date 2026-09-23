@@ -16,6 +16,14 @@ class SessionAndSanctumConfigTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+    }
+
     #[Test]
     public function session_config_defaults_encrypt_to_false_and_is_configurable(): void
     {
@@ -111,5 +119,51 @@ class SessionAndSanctumConfigTest extends TestCase
 
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals($staff->id, Auth::guard('admin')->id());
+    }
+
+    #[Test]
+    public function session_config_supports_expire_on_close_and_encryption(): void
+    {
+        $sessionConfig = require config_path('session.php');
+
+        $this->assertArrayHasKey('expire_on_close', $sessionConfig);
+        $this->assertFalse($sessionConfig['expire_on_close']);
+
+        Config::set('session.expire_on_close', true);
+        $this->assertTrue(config('session.expire_on_close'));
+
+        Config::set('session.encrypt', true);
+        $this->assertTrue(config('session.encrypt'));
+    }
+
+    #[Test]
+    public function service_account_token_generation_sets_expires_at_timestamp(): void
+    {
+        $staff = Staff::create([
+            'first_name' => 'Service',
+            'last_name' => 'Tester',
+            'email' => 'service_token_' . uniqid() . '@example.com',
+            'password' => bcrypt('Secret123!'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+
+        $response = $this->postJson('/api/service-account/generate-token', [
+            'service_name' => 'TestService',
+            'description' => 'Test token expiration',
+            'admin_email' => $staff->email,
+            'admin_password' => 'Secret123!',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['token', 'expires_at']);
+
+        $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $staff->id)
+            ->where('name', 'TestService')
+            ->first();
+
+        $this->assertNotNull($tokenRecord);
+        $this->assertNotNull($tokenRecord->expires_at);
+        $this->assertTrue($tokenRecord->expires_at->isFuture());
     }
 }

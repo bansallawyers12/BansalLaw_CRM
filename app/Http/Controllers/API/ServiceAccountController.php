@@ -71,8 +71,10 @@ class ServiceAccountController extends Controller
             // Clear rate limiter on valid authenticated request
             RateLimiter::clear($throttleKey);
 
-            // Generate genuine Sanctum API token for staff member
-            $token = $user->createToken($request->service_name)->plainTextToken;
+            // Generate genuine Sanctum API token for staff member with explicit expiration
+            $expirationMinutes = (int) config('sanctum.expiration', 10080);
+            $expiresAt = $expirationMinutes > 0 ? now()->addMinutes($expirationMinutes) : null;
+            $token = $user->createToken($request->service_name, ['*'], $expiresAt)->plainTextToken;
             
             $response = [
                 'success' => true,
@@ -80,7 +82,8 @@ class ServiceAccountController extends Controller
                 'message' => 'Service account token generated successfully',
                 'service_name' => $request->service_name,
                 'admin_email' => $request->admin_email,
-                'generated_at' => now()->toISOString()
+                'generated_at' => now()->toISOString(),
+                'expires_at' => $expiresAt?->toISOString(),
             ];
 
             Log::info('Service account token generated', [

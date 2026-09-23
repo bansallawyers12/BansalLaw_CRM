@@ -35,7 +35,9 @@ class IssueMcpStaffTokenCommand extends Command
             $this->info("Revoked existing tokens named [{$tokenName}] for {$email}.");
         }
 
-        $token = $staff->createToken($tokenName)->plainTextToken;
+        $expirationMinutes = (int) config('sanctum.expiration', 10080);
+        $expiresAt = $expirationMinutes > 0 ? now()->addMinutes($expirationMinutes) : null;
+        $token = $staff->createToken($tokenName, ['*'], $expiresAt)->plainTextToken;
 
         $this->newLine();
         $this->info('MCP endpoint: '.rtrim((string) config('app.url'), '/').'/mcp/crm');
