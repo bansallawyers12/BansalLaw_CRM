@@ -53,10 +53,10 @@ Route::post('/clients/conflict-check/run', [ClientPersonalDetailsController::cla
 Route::get('/clients/conflict-check/{checkId}', [ClientPersonalDetailsController::class, 'getConflictCheckDetail'])->name('clients.conflictCheck.detail')->whereNumber('checkId');
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
-    Route::post('/send-otp', [PhoneVerificationController::class, 'sendOTP'])->name('sendOTP');
-    Route::post('/verify-otp', [PhoneVerificationController::class, 'verifyOTP'])->name('verifyOTP');
-    Route::post('/resend-otp', [PhoneVerificationController::class, 'resendOTP'])->name('resendOTP');
-    Route::get('/status/{contactId}', [PhoneVerificationController::class, 'getStatus'])->name('status');
+    Route::post('/send-otp', [PhoneVerificationController::class, 'sendOTP'])->middleware('throttle:6,1')->name('sendOTP');
+    Route::post('/verify-otp', [PhoneVerificationController::class, 'verifyOTP'])->middleware('throttle:10,1')->name('verifyOTP');
+    Route::post('/resend-otp', [PhoneVerificationController::class, 'resendOTP'])->middleware('throttle:6,1')->name('resendOTP');
+    Route::get('/status/{contactId}', [PhoneVerificationController::class, 'getStatus'])->middleware('throttle:60,1')->name('status');
 });
 
 Route::prefix('clients/email')->name('clients.email.')->group(function () {

@@ -1940,6 +1940,128 @@ class Area8SecurityTest extends TestCase
         $cooldownRes->assertStatus(429);
         $this->assertStringContainsString('cooldown active', $cooldownRes->json('message'));
     }
+
+    #[Test]
+    public function phone_otp_is_stored_hashed_and_not_in_plaintext_in_database(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 931;
+        $staff->email = 'staff931@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $client = new \App\Models\Admin();
+        $client->id = 7031;
+        $client->type = 'client';
+        $client->first_name = 'Test';
+        $client->last_name = 'Client';
+        $client->email = 'client7031@example.com';
+        $client->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $client->save();
+
+        $contact = new ClientContact();
+        $contact->id = 8931;
+        $contact->client_id = $client->id;
+        $contact->admin_id = $staff->id;
+        $contact->contact_type = 'Personal';
+        $contact->phone = '412345678';
+        $contact->country_code = '+61';
+        $contact->save();
+
+        $capturedOtp = null;
+        $mockSmsManager = $this->createMock(\App\Services\Sms\UnifiedSmsManager::class);
+        $mockSmsManager->method('sendFromTemplateByAlias')
+            ->willReturnCallback(function ($number, $template, $params, $context) use (&$capturedOtp) {
+                $capturedOtp = $params['verification_code'] ?? null;
+                return ['success' => true, 'message' => 'SMS sent'];
+            });
+
+        $service = new \App\Services\Sms\PhoneVerificationService(
+            $mockSmsManager,
+            app(\App\Services\ContactVerificationService::class)
+        );
+
+        $sendResult = $service->sendOTP($contact->id);
+        $this->assertTrue($sendResult['success']);
+        $this->assertNotNull($capturedOtp);
+
+        // Verify the raw database column is hashed and does not contain the plaintext OTP
+        $rawRecord = \Illuminate\Support\Facades\DB::table('phone_verifications')
+            ->where('client_contact_id', $contact->id)
+            ->where('status', \App\Models\PhoneVerification::STATUS_PENDING)
+            ->first();
+
+        $this->assertNotNull($rawRecord);
+        $this->assertNotEquals($capturedOtp, $rawRecord->otp_code);
+        $this->assertTrue(str_starts_with($rawRecord->otp_code, '$2y$') || str_starts_with($rawRecord->otp_code, '$2a$'));
+        $this->assertGreaterThanOrEqual(60, strlen($rawRecord->otp_code));
+
+        // Authenticate staff and verify OTP successfully with captured OTP
+        $this->actingAs($staff, 'admin');
+        $verifyResult = $service->verifyOTP($contact->id, $capturedOtp);
+        $this->assertTrue($verifyResult['success']);
+
+        $contact->refresh();
+        $this->assertTrue($contact->is_verified);
+    }
+
+    #[Test]
+    public function inactive_staff_cannot_send_or_verify_phone_otp(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $inactiveStaff = new Staff();
+        $inactiveStaff->id = 932;
+        $inactiveStaff->email = 'inactive932@bansallawyers.com.au';
+        $inactiveStaff->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $inactiveStaff->role = 1;
+        $inactiveStaff->status = 0; // Inactive
+        $inactiveStaff->save();
+
+        $client = new \App\Models\Admin();
+        $client->id = 7032;
+        $client->type = 'client';
+        $client->first_name = 'Test';
+        $client->last_name = 'Client';
+        $client->email = 'client7032@example.com';
+        $client->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $client->save();
+
+        $contact = new ClientContact();
+        $contact->id = 8932;
+        $contact->client_id = $client->id;
+        $contact->admin_id = $inactiveStaff->id;
+        $contact->contact_type = 'Personal';
+        $contact->phone = '412345678';
+        $contact->country_code = '+61';
+        $contact->save();
+
+        $this->actingAs($inactiveStaff, 'admin');
+
+        $sendRes = $this->postJson('/clients/phone/send-otp', ['contact_id' => $contact->id]);
+        $sendRes->assertStatus(403);
+        $this->assertStringContainsString('Inactive staff', $sendRes->json('message'));
+
+        $verifyRes = $this->postJson('/clients/phone/verify-otp', ['contact_id' => $contact->id, 'otp_code' => '123456']);
+        $verifyRes->assertStatus(403);
+        $this->assertStringContainsString('Inactive staff', $verifyRes->json('message'));
+
+        $resendRes = $this->postJson('/clients/phone/resend-otp', ['contact_id' => $contact->id]);
+        $resendRes->assertStatus(403);
+
+        $statusRes = $this->getJson('/clients/phone/status/' . $contact->id);
+        $statusRes->assertStatus(403);
+    }
 }
 
 

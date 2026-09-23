@@ -150,7 +150,7 @@ class PhoneVerificationService
             ];
         }
 
-        if ((string) $verification->otp_code !== (string) $otpCode) {
+        if (! $verification->isValidOtp((string) $otpCode)) {
             $verification->incrementAttempts();
 
             return [

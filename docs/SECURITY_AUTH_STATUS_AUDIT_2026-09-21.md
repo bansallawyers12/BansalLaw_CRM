@@ -150,7 +150,7 @@ Top issues:
 | Component | Path | Status | Notes |
 |-----------|------|--------|-------|
 | SMS webhooks | `routes/sms.php` + `SmsWebhookController` | **OK** (Fixed) | Fail-closed signature verification enforced when secret is unset or invalid in non-local environments (`CELLCAST_WEBHOOK_SECRET` / `CELLCAST_API_KEY`); testing bypass removed; dedicated `throttle:60,1` applied to webhook route group. CSRF excepted (expected for webhooks). |
-| Phone OTP | `PhoneVerificationService` | **Partial** | Attempt limits / expiry / rate helpers present; OTP compared with `!==` (prefer `hash_equals`); storage of plaintext OTP likely (not fully traced). Staff-gated controllers expected. |
+| Phone OTP | `PhoneVerificationService` | **OK** (Fixed) | Resolved: `phone_verifications.otp_code` expanded to `VARCHAR(255)` and automatically hashed using salted bcrypt (`Hash::make`), preventing plaintext OTP exposure in database. Comparison uses constant-time `isValidOtp` (`Hash::check` for bcrypt hashes, `hash_equals` fallback for legacy records). `PhoneVerificationController` enforces active staff verification (`status=1`), regex `^[0-9]{6}$` OTP format validation, in-controller `RateLimiter`, and dedicated route throttling (`throttle:6,1` on send/resend, `throttle:10,1` on verify). |
 | Contact verification tests | `tests/Feature/ContactVerificationTest.php` | **OK** | Coverage for OTP expiry, rate limit, resend supersede. |
 
 ### 11. Related security-adjacent modules (in scope)

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\ClientContact;
+use App\Models\Staff;
 use App\Services\Sms\PhoneVerificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 
 class PhoneVerificationController extends Controller
@@ -22,10 +25,30 @@ class PhoneVerificationController extends Controller
     }
 
     /**
+     * Ensure the authenticated staff user is active (status === 1).
+     */
+    protected function ensureActiveStaff(): ?\Illuminate\Http\JsonResponse
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || (int) $staff->status !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Inactive staff account',
+            ], 403);
+        }
+
+        return null;
+    }
+
+    /**
      * Send OTP to phone number
      */
     public function sendOTP(Request $request)
     {
+        if ($denied = $this->ensureActiveStaff()) {
+            return $denied;
+        }
+
         try {
             $validator = Validator::make($request->all(), [
                 'contact_id' => 'required|exists:client_contacts,id'
@@ -37,6 +60,16 @@ class PhoneVerificationController extends Controller
                     'message' => $validator->errors()->first()
                 ], 422);
             }
+
+            $staff = Auth::guard('admin')->user();
+            $sendKey = 'phone_otp_send:' . ($staff ? $staff->id : $request->ip());
+            if (RateLimiter::tooManyAttempts($sendKey, 6)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many OTP requests. Please wait a minute before requesting another code.',
+                ], 429);
+            }
+            RateLimiter::hit($sendKey, 60);
 
             $contact = ClientContact::findOrFail($request->contact_id);
             $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
@@ -68,10 +101,14 @@ class PhoneVerificationController extends Controller
      */
     public function verifyOTP(Request $request)
     {
+        if ($denied = $this->ensureActiveStaff()) {
+            return $denied;
+        }
+
         try {
             $validator = Validator::make($request->all(), [
                 'contact_id' => 'required|exists:client_contacts,id',
-                'otp_code' => 'required|string|size:6'
+                'otp_code' => ['required', 'string', 'size:6', 'regex:/^[0-9]{6}$/'],
             ]);
 
             if ($validator->fails()) {
@@ -81,13 +118,28 @@ class PhoneVerificationController extends Controller
                 ], 422);
             }
 
+            $verifyKey = 'phone_otp_verify:' . $request->ip() . ':' . $request->contact_id;
+            if (RateLimiter::tooManyAttempts($verifyKey, 10)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many verification attempts. Please wait a moment before trying again.',
+                ], 429);
+            }
+            RateLimiter::hit($verifyKey, 60);
+
             $contact = ClientContact::findOrFail($request->contact_id);
             $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
 
+            $cleanOtp = trim((string) $request->otp_code);
+
             $result = $this->verificationService->verifyOTP(
                 $request->contact_id,
-                $request->otp_code
+                $cleanOtp
             );
+
+            if (! empty($result['success'])) {
+                RateLimiter::clear($verifyKey);
+            }
 
             return response()->json($result, $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
@@ -114,6 +166,10 @@ class PhoneVerificationController extends Controller
      */
     public function resendOTP(Request $request)
     {
+        if ($denied = $this->ensureActiveStaff()) {
+            return $denied;
+        }
+
         $validator = Validator::make($request->all(), [
             'contact_id' => 'required|exists:client_contacts,id'
         ]);
@@ -124,6 +180,16 @@ class PhoneVerificationController extends Controller
                 'message' => $validator->errors()->first()
             ], 422);
         }
+
+        $staff = Auth::guard('admin')->user();
+        $sendKey = 'phone_otp_send:' . ($staff ? $staff->id : $request->ip());
+        if (RateLimiter::tooManyAttempts($sendKey, 6)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many OTP requests. Please wait a minute before requesting another code.',
+            ], 429);
+        }
+        RateLimiter::hit($sendKey, 60);
 
         $contact = ClientContact::findOrFail($request->contact_id);
         $this->ensureCrmRecordAccess((int) ($contact->client_id ?? $contact->admin_id));
@@ -145,6 +211,10 @@ class PhoneVerificationController extends Controller
      */
     public function getStatus(Request $request, $contactId)
     {
+        if ($denied = $this->ensureActiveStaff()) {
+            return $denied;
+        }
+
         $contact = ClientContact::find($contactId);
 
         if (!$contact) {

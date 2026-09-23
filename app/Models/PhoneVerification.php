@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class PhoneVerification extends Model
 {
@@ -28,12 +29,47 @@ class PhoneVerification extends Model
         'max_attempts',
     ];
 
+    protected $hidden = [
+        'otp_code',
+    ];
+
     protected $casts = [
         'is_verified' => 'boolean',
         'verified_at' => 'datetime',
         'otp_sent_at' => 'datetime',
         'otp_expires_at' => 'datetime',
     ];
+
+    /**
+     * Hash plain OTP codes before saving to the database.
+     */
+    public function setOtpCodeAttribute($value): void
+    {
+        $stringValue = (string) $value;
+        if (str_starts_with($stringValue, '$2y$') || str_starts_with($stringValue, '$2a$')) {
+            $this->attributes['otp_code'] = $stringValue;
+        } else {
+            $this->attributes['otp_code'] = Hash::make($stringValue);
+        }
+    }
+
+    /**
+     * Check if a supplied OTP code matches the stored code.
+     * Uses Hash::check for bcrypt-hashed OTPs and constant-time hash_equals for legacy plain OTPs.
+     */
+    public function isValidOtp(string $inputCode): bool
+    {
+        $stored = (string) ($this->otp_code ?? '');
+        if ($stored === '' || $inputCode === '') {
+            return false;
+        }
+
+        if (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2a$')) {
+            return Hash::check($inputCode, $stored);
+        }
+
+        return hash_equals($stored, $inputCode);
+    }
 
     public function clientContact()
     {
@@ -84,6 +120,7 @@ class PhoneVerification extends Model
 
     public function incrementAttempts()
     {
+        $this->attempts = (int) $this->attempts + 1;
         $this->increment('attempts');
 
         if ($this->attempts >= $this->max_attempts) {

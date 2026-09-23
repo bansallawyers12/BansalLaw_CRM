@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('client_id');
             $table->string('phone', 20);
             $table->string('country_code', 10);
-            $table->string('otp_code', 6);
+            $table->string('otp_code', 255);
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->unsignedInteger('verified_by')->nullable();
