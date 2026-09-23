@@ -201,7 +201,7 @@ class StaffCalendarFeedService
     /**
      * Due / overdue staff-calendar alerts for the logged-in viewer.
      *
-     * Overdue (not attended) alerts only cover today and yesterday.
+     * Overdue (not attended) alerts only cover today (past days are excluded).
      * Upcoming "remind before" alerts still fire when their window opens.
      *
      * @return list<array<string, mixed>>
@@ -216,8 +216,8 @@ class StaffCalendarFeedService
         $now = Carbon::now($tz);
         // UI max reminder is 1 week; keep a little buffer for clock skew.
         $upcomingHorizon = $now->copy()->addDays(8);
-        // Not-attended alerts: same day or one day before only.
-        $overdueFloor = $now->copy()->startOfDay()->subDay();
+        // Not-attended alerts: today only (previous days do not show).
+        $overdueFloor = $now->copy()->startOfDay();
 
         $query = StaffCalendarEvent::query()
             ->where('starts_at', '>=', $overdueFloor)
@@ -276,8 +276,8 @@ class StaffCalendarFeedService
             return false;
         }
 
-        // Drop not-attended items older than yesterday (same day / one day before only).
-        $overdueFloor = $now->copy()->startOfDay()->subDay();
+        // Drop not-attended items from previous days (today and future only).
+        $overdueFloor = $now->copy()->startOfDay();
         if ($startsAt->lt($overdueFloor)) {
             return false;
         }

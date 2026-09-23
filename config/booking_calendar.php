@@ -31,11 +31,11 @@ return [
 
     /**
      * When true, the calendar JSON feed includes appointments in FullCalendar’s visible [start, end) window
-     * even if they are before “today” (so month view can show earlier days). When false, only today and
-     * future appointments are returned.
+     * even if they are before “today” (e.g. earlier days in the current month). When false (default),
+     * only today and future appointments are returned.
      */
     'include_past_in_visible_range' => filter_var(
-        env('BOOKING_CALENDAR_INCLUDE_PAST_IN_RANGE', true),
+        env('BOOKING_CALENDAR_INCLUDE_PAST_IN_RANGE', false),
         FILTER_VALIDATE_BOOL
     ),
 

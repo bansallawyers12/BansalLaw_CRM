@@ -22,7 +22,7 @@
             </div>
             <div class="modal-body">
                 <p class="booking-cal-reminder-modal__hint">
-                    These pop up when a reminder window opens, or when an event from <strong>today or yesterday</strong> is still not marked complete.
+                    These pop up when a reminder window opens, or when an event from <strong>today</strong> is still not marked complete.
                     Use <strong>Remind me</strong> on each item to hide that alert for a while — it will return when that time ends.
                 </p>
                 <ul class="booking-cal-reminder-list" id="bookingCalReminderList"></ul>

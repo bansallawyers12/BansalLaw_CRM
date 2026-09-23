@@ -141,6 +141,17 @@ class StaffCalendarReminderStatusTest extends TestCase
             'created_by_staff_id' => $staff->id,
         ]);
 
+        $yesterday = StaffCalendarEvent::create([
+            'title' => 'Yesterday reminder',
+            'event_type' => 'reminder',
+            'status' => 'scheduled',
+            'starts_at' => now()->subDay()->setTime(14, 0),
+            'ends_at' => now()->subDay()->setTime(14, 30),
+            'is_all_day' => false,
+            'reminder_minutes' => null,
+            'created_by_staff_id' => $staff->id,
+        ]);
+
         $tooOld = StaffCalendarEvent::create([
             'title' => 'Older than yesterday',
             'event_type' => 'reminder',
@@ -168,6 +179,7 @@ class StaffCalendarReminderStatusTest extends TestCase
 
         $rows = collect($response->json('data'));
         $this->assertTrue($rows->contains(fn ($row) => (int) $row['id'] === $overdue->id));
+        $this->assertFalse($rows->contains(fn ($row) => (int) $row['id'] === $yesterday->id));
         $this->assertFalse($rows->contains(fn ($row) => (int) $row['id'] === $tooOld->id));
         $this->assertFalse($rows->contains(fn ($row) => (int) $row['id'] === $completed->id));
 

@@ -764,7 +764,12 @@ document.addEventListener('DOMContentLoaded', function() {
         events: async function(fetchInfo, successCallback, failureCallback) {
             
             try {
-                const rows = await fetchBookingCalendarEvents(fetchInfo);
+                const allRows = await fetchBookingCalendarEvents(fetchInfo);
+                const rows = allRows.filter(apt => {
+                    const rawDt = apt.starts_at || apt.appointment_datetime || '';
+                    const ymd = String(rawDt).slice(0, 10);
+                    return !isBookingCalendarPastYmd(ymd);
+                });
 
                 // Transform appointments to FullCalendar v6 event format
                 const events = rows.map(apt => {

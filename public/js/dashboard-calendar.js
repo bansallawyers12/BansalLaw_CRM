@@ -493,7 +493,12 @@
         var listEl = document.getElementById('dashboardUpcomingList');
         if (!listEl) return;
 
-        var rows = (events || []).slice().sort(function (a, b) {
+        var rows = (events || []).slice().filter(function (event) {
+            var props = event.extendedProps || {};
+            var start = event.start || props.starts_at || props.appointment_datetime;
+            var dateKey = eventDateKey(start, tz);
+            return !isPastDateStr(dateKey, tz);
+        }).sort(function (a, b) {
             return String(a.start || '').localeCompare(String(b.start || ''));
         });
 
@@ -2146,7 +2151,12 @@
                         }
 
                         updateStats(payload.stats);
-                        successCallback(payload.data || []);
+                        var filtered = (payload.data || []).filter(function (ev) {
+                            var rawDt = ev.start || (ev.extendedProps && (ev.extendedProps.starts_at || ev.extendedProps.appointment_datetime)) || '';
+                            var ymd = String(rawDt).slice(0, 10);
+                            return !isPastDateStr(ymd, calendarElTz());
+                        });
+                        successCallback(filtered);
                     } catch (err) {
                         console.error('Dashboard calendar feed error:', err);
                         failureCallback(err);

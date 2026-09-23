@@ -1295,7 +1295,7 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * Default window start when the client does not send a range (today).
+     * Dashboard calendar only shows today and future items.
      */
     public function upcomingStart(?string $timezone = null): Carbon
     {
@@ -1303,20 +1303,24 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * Parse FullCalendar’s [start, end) window. Past dates stay in range so month view can show the full month.
+     * Clamp a FullCalendar range so past dates are never included.
      *
      * @return array{0: Carbon, 1: Carbon|null}
      */
     public function clampRangeToUpcoming(?string $start, ?string $end, ?string $timezone = null): array
     {
         $tz = $timezone ?: config('app.timezone');
-        $fallbackStart = $this->upcomingStart($tz);
+        $floor = $this->upcomingStart($tz);
         $rangeEnd = null;
 
         try {
-            $rangeStart = $start ? Carbon::parse($start, $tz) : $fallbackStart->copy();
+            $rangeStart = $start ? Carbon::parse($start, $tz) : $floor->copy();
         } catch (Exception) {
-            $rangeStart = $fallbackStart->copy();
+            $rangeStart = $floor->copy();
+        }
+
+        if ($rangeStart->lt($floor)) {
+            $rangeStart = $floor->copy();
         }
 
         if ($end) {
