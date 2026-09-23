@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 use App\Models\Lead;
 use App\Models\Admin;
@@ -144,62 +147,85 @@ class CRMUtilityController extends Controller
      */
 	public function change_password(Request $request)
 	{
-		//check authorization start
-			/* $check = $this->checkAuthorizationAction('Admin', $request->route()->getActionMethod(), Auth::user()->role);
-			if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			} */
-		//check authorization end
+		$user = Auth::guard('admin')->user();
+		$staff = $user instanceof Staff ? $user : null;
+
+		if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+			Auth::guard('admin')->logout();
+			$request->session()->invalidate();
+			$request->session()->regenerateToken();
+			return redirect()->route('crm.login')->with('error', 'Unauthorized: Active staff authentication required.');
+		}
 
 		if ($request->isMethod('post'))
 		{
+			$throttleKey = 'change-password:' . $staff->id . '|' . $request->ip();
+			if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+				$seconds = RateLimiter::availableIn($throttleKey);
+				return redirect()->back()->with('error', "Too many password change attempts. Please try again in {$seconds} seconds.");
+			}
+
 			$this->validate($request, [
-										'old_password' => 'required|min:6',
-										'password' => 'required|confirmed|min:6',
-										'password_confirmation' => 'required|min:6'
-									  ]);
+				'old_password' => 'required',
+				'password' => ['required', 'string', 'min:8', 'confirmed', 'different:old_password'],
+				'password_confirmation' => 'required',
+			], [
+				'password.min' => 'The new password must be at least 8 characters long.',
+				'password.different' => 'The new password must be different from your current password.',
+				'password.confirmed' => 'The password confirmation does not match.',
+			]);
 
-			$requestData 	= 	$request->all();
-			$admin_id = Auth::user()->id;
+			if ($request->filled('admin_id') && (int) $request->input('admin_id') !== (int) $staff->id) {
+				return redirect()->back()->with('error', 'You can change the password only for your own account.');
+			}
 
-			$fetchedData = \App\Models\Staff::where('id', '=', $admin_id)->first();
-			if(!empty($fetchedData))
-				{
-					if($admin_id == trim($requestData['admin_id']))
-						{
-							 if (!(Hash::check($request->get('old_password'), Auth::user()->password)))
-								{
-									return redirect()->back()->with("error","Your current password does not matches with the password you provided. Please try again.");
-								}
-							else
-								{
-									$admin = \App\Models\Staff::find($requestData['admin_id']);
-									$admin->password = Hash::make($requestData['password']);
-									if($admin->save())
-										{
-											Auth::guard('admin')->logout();
-											$request->session()->flush();
+			if (!Hash::check($request->input('old_password'), $staff->password)) {
+				RateLimiter::hit($throttleKey, 60);
+				return redirect()->back()->with('error', 'Your current password does not match the password you provided. Please try again.');
+			}
 
-											return redirect()->route('dashboard')->with('success', 'Your Password has been changed successfully.');
-										}
-									else
-										{
-											return redirect()->back()->with('error', config('constants.server_error'));
-										}
-								}
-						}
-					else
-						{
-							return redirect()->back()->with('error', 'You can change the password only your account.');
-						}
-				}
-			else
-				{
-					return redirect()->back()->with('error', 'Staff member does not exist, so you cannot change the password.');
-				}
+			// Clear rate limiter upon successful credential verification
+			RateLimiter::clear($throttleKey);
+
+			// Update password and rotate remember token
+			$staff->password = Hash::make($request->input('password'));
+			$staff->setRememberToken(Str::random(60));
+
+			// Revoke all existing Sanctum API tokens for this staff member
+			if (method_exists($staff, 'tokens')) {
+				$staff->tokens()->delete();
+			}
+
+			if ($staff->save()) {
+				// Record audit log
+				$loginLog = new \App\Models\StaffLoginLog();
+				$loginLog->level = 'info';
+				$loginLog->user_id = $staff->id;
+				$loginLog->ip_address = $request->getClientIp();
+				$loginLog->user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+				$loginLog->message = 'Password changed; session invalidated and logged out';
+				$loginLog->save();
+
+				// Invalidate session, regenerate CSRF token, and clear credentials
+				Auth::guard('admin')->logout();
+				$request->session()->invalidate();
+				$request->session()->regenerateToken();
+				\Illuminate\Support\Facades\Cookie::queue(\Illuminate\Support\Facades\Cookie::forget('password'));
+
+				Log::info('Staff password successfully changed and session invalidated', [
+					'staff_id' => $staff->id,
+					'ip' => $request->ip(),
+				]);
+
+				return redirect()->route('crm.login')->with('success', 'Your password has been changed successfully. Please log in with your new password.');
+			} else {
+				return redirect()->back()->with('error', config('constants.server_error'));
+			}
 		}
-		return view('crm.change_password');
+
+		return view('crm.change_password', [
+			'staff' => $staff,
+		]);
 	}
 
 	public function updateAction(Request $request)

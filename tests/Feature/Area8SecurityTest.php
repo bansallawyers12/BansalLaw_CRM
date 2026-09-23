@@ -1616,6 +1616,174 @@ class Area8SecurityTest extends TestCase
             $this->assertSame(0, $response->json('status'));
         }
     }
+
+    #[Test]
+    public function unauthenticated_user_cannot_access_or_submit_change_password(): void
+    {
+        $getResponse = $this->get('/change_password');
+        $getResponse->assertRedirect('/login');
+
+        $postResponse = $this->post('/change_password', [
+            'old_password' => 'password123',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ]);
+        $postResponse->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function change_password_rejects_password_shorter_than_8_characters(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 920;
+        $staff->email = 'staff920@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('currentpassword123');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->post('/change_password', [
+            'admin_id' => 920,
+            'old_password' => 'currentpassword123',
+            'password' => 'short1', // 6 chars
+            'password_confirmation' => 'short1',
+        ]);
+
+        $response->assertSessionHasErrors('password');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('currentpassword123', $staff->fresh()->password));
+    }
+
+    #[Test]
+    public function change_password_rejects_new_password_identical_to_old_password(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 921;
+        $staff->email = 'staff921@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('currentpassword123');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->post('/change_password', [
+            'admin_id' => 921,
+            'old_password' => 'currentpassword123',
+            'password' => 'currentpassword123',
+            'password_confirmation' => 'currentpassword123',
+        ]);
+
+        $response->assertSessionHasErrors('password');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('currentpassword123', $staff->fresh()->password));
+    }
+
+    #[Test]
+    public function change_password_rejects_incorrect_current_password(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 922;
+        $staff->email = 'staff922@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('correctpassword123');
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->post('/change_password', [
+            'admin_id' => 922,
+            'old_password' => 'wrongpassword123',
+            'password' => 'brandnewpassword123',
+            'password_confirmation' => 'brandnewpassword123',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('Your current password does not match', session('error'));
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('correctpassword123', $staff->fresh()->password));
+    }
+
+    #[Test]
+    public function change_password_succeeds_with_valid_input_and_invalidates_session(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 923;
+        $staff->email = 'staff923@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('oldvalidpassword123');
+        $staff->remember_token = 'old_token_value';
+        $staff->role = 1;
+        $staff->status = 1;
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->post('/change_password', [
+            'admin_id' => 923,
+            'old_password' => 'oldvalidpassword123',
+            'password' => 'brandnewpassword123',
+            'password_confirmation' => 'brandnewpassword123',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHas('success');
+
+        $freshStaff = $staff->fresh();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('brandnewpassword123', $freshStaff->password));
+        $this->assertNotEquals('old_token_value', $freshStaff->remember_token);
+        $this->assertFalse(\Illuminate\Support\Facades\Auth::guard('admin')->check());
+    }
+
+    #[Test]
+    public function inactive_staff_cannot_change_password(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 924;
+        $staff->email = 'staff924@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('oldvalidpassword123');
+        $staff->role = 1;
+        $staff->status = 0; // Inactive
+        $staff->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->post('/change_password', [
+            'admin_id' => 924,
+            'old_password' => 'oldvalidpassword123',
+            'password' => 'brandnewpassword123',
+            'password_confirmation' => 'brandnewpassword123',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHas('error');
+        $this->assertFalse(\Illuminate\Support\Facades\Auth::guard('admin')->check());
+    }
 }
+
 
 

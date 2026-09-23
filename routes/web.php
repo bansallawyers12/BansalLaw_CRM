@@ -108,7 +108,7 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/my_profile', [CRMUtilityController::class, 'myProfile'])->name('my_profile');
     Route::post('/my_profile', [CRMUtilityController::class, 'myProfile'])->name('my_profile.update');
     Route::get('/change_password', [CRMUtilityController::class, 'change_password'])->name('change_password');
-    Route::post('/change_password', [CRMUtilityController::class, 'change_password'])->name('change_password.update');
+    Route::post('/change_password', [CRMUtilityController::class, 'change_password'])->middleware('throttle:5,1')->name('change_password.update');
     Route::post('/update_action', [CRMUtilityController::class, 'updateAction']);
     Route::post('/approved_action', [CRMUtilityController::class, 'approveAction']);
     Route::post('/process_action', [CRMUtilityController::class, 'processAction']);
