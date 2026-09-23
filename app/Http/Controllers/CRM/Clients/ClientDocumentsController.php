@@ -2124,6 +2124,34 @@ class ClientDocumentsController extends Controller
                         ->header('Content-Type', 'text/html; charset=UTF-8');
                 }
 
+                if ($mime === 'application/pdf') {
+                    $fileContent = $this->readDocumentFileContent($document, $s3Key);
+                    if (is_string($fileContent) && strlen($fileContent) > 0 && ! str_starts_with($fileContent, '%PDF')) {
+                        if ($this->isEmlOrMimeContent($fileContent)) {
+                            $htmlContent = $this->extractHtmlFromEml($fileContent);
+                            $pdfContent = $this->convertHtmlToPdf($htmlContent, $fileContent);
+                            if ($pdfContent !== null) {
+                                try {
+                                    $this->s3Disk()->put($s3Key, $pdfContent);
+                                    $document->file_size = (string) strlen($pdfContent);
+                                    $document->saveQuietly();
+                                } catch (\Throwable $e) {
+                                    Log::warning('Failed caching converted PDF to S3', ['error' => $e->getMessage()]);
+                                }
+
+                                return response($pdfContent, 200, [
+                                    'Content-Type' => 'application/pdf',
+                                    'Content-Disposition' => $inlineDisposition,
+                                ]);
+                            }
+
+                            return response($htmlContent, 200, [
+                                'Content-Type' => 'text/html; charset=UTF-8',
+                            ]);
+                        }
+                    }
+                }
+
                 return $this->s3Disk()->response($s3Key, $filename, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => $inlineDisposition,
@@ -2132,6 +2160,25 @@ class ClientDocumentsController extends Controller
                 Log::error('S3 embedded preview error: ' . $e->getMessage(), ['document_id' => $id]);
 
                 return abort(500, 'Error loading preview');
+            }
+        }
+
+        if ($mime === 'application/pdf') {
+            $fileContent = $this->readDocumentFileContent($document, $s3Key);
+            if (is_string($fileContent) && strlen($fileContent) > 0 && ! str_starts_with($fileContent, '%PDF')) {
+                if ($this->isEmlOrMimeContent($fileContent)) {
+                    $htmlContent = $this->extractHtmlFromEml($fileContent);
+                    $pdfContent = $this->convertHtmlToPdf($htmlContent, $fileContent);
+                    if ($pdfContent !== null) {
+                        try {
+                            $this->s3Disk()->put($s3Key, $pdfContent);
+                            $document->file_size = (string) strlen($pdfContent);
+                            $document->saveQuietly();
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed caching converted PDF to S3', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
             }
         }
 
@@ -2194,6 +2241,16 @@ class ClientDocumentsController extends Controller
                     $cleanHtml = preg_replace('/<embed\b[^>]*>(.*?)<\/embed>/is', '', $cleanHtml);
                     $cleanHtml = preg_replace('/on[a-z]+\s*=\s*"[^"]*"/i', '', $cleanHtml);
                     $cleanHtml = preg_replace('/on[a-z]+\s*=\s*\'[^\']*\'/i', '', $cleanHtml);
+
+                    if (preg_match_all('/Content-Type:\s*image\/([a-zA-Z0-9_-]+)[^;\r\n]*;[^\r\n]*\r?\nContent-ID:\s*<([^>]+)>\r?\n(?:Content-Transfer-Encoding:\s*base64\r?\n)?(?:Content-Disposition:[^\r\n]*\r?\n)*\r?\n\r?\n([A-Za-z0-9+\/=\r\n]+)/s', $emlContent, $imgMatches, PREG_SET_ORDER)) {
+                        foreach ($imgMatches as $imgPart) {
+                            $imgType = $imgPart[1];
+                            $cid = $imgPart[2];
+                            $b64 = preg_replace('/\s+/', '', $imgPart[3]);
+                            $cleanHtml = str_replace('cid:' . $cid, 'data:image/' . $imgType . ';base64,' . $b64, $cleanHtml);
+                        }
+                    }
+
                     return $cleanHtml;
                 }
             }
@@ -2215,6 +2272,49 @@ class ClientDocumentsController extends Controller
         }
         
         return "Could not extract content from EML.";
+    }
+
+    private function isEmlOrMimeContent(string $content): bool
+    {
+        $prefix = substr(ltrim($content), 0, 500);
+
+        return (bool) preg_match('/^(?:MIME-Version:|Date:\s+[A-Za-z]+,|From:\s+["\w]|Received:|Return-Path:)/im', $prefix);
+    }
+
+    private function convertHtmlToPdf(string $html, ?string $rawEml = null): ?string
+    {
+        try {
+            if ($rawEml !== null) {
+                if (preg_match_all('/Content-Type:\s*image\/([a-zA-Z0-9_-]+)[^;\r\n]*;[^\r\n]*\r?\nContent-ID:\s*<([^>]+)>\r?\n(?:Content-Transfer-Encoding:\s*base64\r?\n)?(?:Content-Disposition:[^\r\n]*\r?\n)*\r?\n\r?\n([A-Za-z0-9+\/=\r\n]+)/s', $rawEml, $matches, PREG_SET_ORDER)) {
+                    foreach ($matches as $imgPart) {
+                        $imgType = $imgPart[1];
+                        $cid = $imgPart[2];
+                        $b64 = preg_replace('/\s+/', '', $imgPart[3]);
+                        $html = str_replace('cid:' . $cid, 'data:image/' . $imgType . ';base64,' . $b64, $html);
+                    }
+                }
+            }
+
+            $styledHtml = '<style>
+                body { font-family: sans-serif; font-size: 11pt; line-height: 1.4; color: #222; }
+                table { width: 100%; border-collapse: collapse; }
+                img { max-width: 100%; height: auto; }
+            </style>' . $html;
+
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($styledHtml);
+                $pdf->setPaper('a4', 'portrait');
+                $pdfOutput = $pdf->output();
+
+                if (is_string($pdfOutput) && str_starts_with($pdfOutput, '%PDF')) {
+                    return $pdfOutput;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('convertHtmlToPdf failed', ['error' => $e->getMessage()]);
+        }
+
+        return null;
     }
 
     private function decodeEmlPart(string $part): string
