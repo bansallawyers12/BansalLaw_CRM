@@ -156,14 +156,55 @@
 
 #createreceiptmodal.invoice-entry-open .modal-dialog,
 #createinvoicereceiptmodal .modal-dialog {
-    max-width: min(1560px, 98vw);
-    width: 98vw;
+    max-width: min(1480px, 97vw);
+    width: 97vw;
+    margin: 1.25rem auto;
+}
+#createreceiptmodal.invoice-entry-open .modal-content,
+#createinvoicereceiptmodal .modal-content {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 20px 45px -10px rgba(15, 39, 64, 0.22), 0 0 1px 1px rgba(15, 39, 64, 0.08);
+    overflow: hidden;
+}
+#createreceiptmodal.invoice-entry-open .modal-body,
+#createinvoicereceiptmodal .modal-body {
+    overflow: hidden !important;
+    padding: 16px 20px !important;
+}
+#createreceiptmodal.invoice-entry-open .invoice-form-shell,
+#createinvoicereceiptmodal .invoice-form-shell {
+    display: flex;
+    flex-direction: column;
+}
+#createreceiptmodal.invoice-entry-open .invoice-timesheet-scroll,
+#createinvoicereceiptmodal .invoice-timesheet-scroll {
+    max-height: calc(86vh - 225px);
+    min-height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.invoice-timesheet-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.invoice-timesheet-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.invoice-timesheet-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.invoice-timesheet-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 #invoice_receipt_form textarea.invoice-line-description,
 #create_invoice_receipt textarea.invoice-line-description,
 #adjust_invoice_receipt_form textarea.invoice-line-description {
-    min-height: 5.25rem;
+    min-height: 48px;
+    max-height: 140px;
     resize: vertical;
     line-height: 1.45;
     white-space: pre-wrap;
@@ -172,32 +213,120 @@
 .invoice-form-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px 24px;
-    align-items: flex-end;
+    gap: 16px 20px;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 14px;
-    padding: 12px 14px;
-    background: #f5f8fb;
-    border: 1px solid #d7e4f0;
-    border-radius: 10px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 .invoice-form-toolbar .form-group {
     margin-bottom: 0;
     min-width: 220px;
     flex: 1 1 240px;
 }
+.invoice-form-toolbar .form-group label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+    display: block;
+}
+.invoice-client-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+.invoice-client-input-wrap .input-group-text {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #64748b;
+    padding: 0 10px;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+.invoice-client-input-wrap .form-control {
+    font-weight: 600;
+    color: #1e293b;
+    border-color: #cbd5e1;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    height: 36px;
+    font-size: 0.88rem;
+}
 .invoice-form-toolbar .invoice-billing-mode-bar {
     flex: 2 1 320px;
     margin-bottom: 0;
 }
 
+.invoice-billing-mode-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+}
+.invoice-billing-mode-bar__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.invoice-billing-mode-label {
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.82rem;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+.invoice-billing-mode-toggle {
+    background: #e2e8f0;
+    padding: 3px;
+    border-radius: 24px;
+    display: inline-flex;
+    gap: 2px;
+}
+.invoice-billing-mode-toggle .btn {
+    border: 0 !important;
+    border-radius: 20px !important;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    line-height: 1.4;
+}
+.invoice-billing-mode-toggle .btn-primary {
+    background: #1e3d60 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 5px rgba(30, 61, 96, 0.28);
+}
+.invoice-billing-mode-toggle .btn-outline-secondary {
+    background: transparent !important;
+    color: #64748b !important;
+}
+.invoice-billing-mode-toggle .btn-outline-secondary:hover {
+    color: #1e293b !important;
+}
+.invoice-billing-mode-hint {
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.35;
+    display: flex;
+    align-items: center;
+}
+
 .invoice-timesheet-scroll {
     overflow-x: visible;
     overflow-y: auto;
-    max-height: min(58vh, 560px);
-    border: 1px solid #d7e4f0;
-    border-radius: 10px;
+    max-height: min(54vh, 520px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     background: #f8fafc;
-    padding: 10px;
+    padding: 12px;
 }
 .invoice-timesheet-scroll > table {
     margin-bottom: 0 !important;
@@ -209,16 +338,11 @@
 .invoice-timesheet-scroll table thead th {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
     background: #f8fafc;
     color: #1e3d60;
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-transform: none;
-    letter-spacing: 0;
-    white-space: normal;
     border: 0 !important;
-    padding: 4px 6px 10px;
+    padding: 0 0 10px 0;
 }
 .invoice-timesheet-scroll table th,
 .invoice-timesheet-scroll table td {
@@ -227,108 +351,266 @@
     border: 0 !important;
     padding: 0;
 }
+.invoice-lines-legend__cell {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 0 10px 0 !important;
+}
+.invoice-lines-legend__wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: #edf2f7;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.invoice-lines-legend__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #1e3d60;
+    color: #fff;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
 .invoice-lines-legend__title {
     display: block;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     font-weight: 700;
-    color: #1e3d60;
+    color: #1e293b;
+    line-height: 1.2;
 }
 .invoice-lines-legend__hint {
     display: block;
-    margin-top: 2px;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     font-weight: 500;
-    color: #5e7a90;
+    color: #64748b;
+    line-height: 1.2;
 }
 
 .invoice-line-block + .invoice-line-block td {
-    padding-top: 10px;
+    padding-top: 12px;
 }
 .invoice-line-block__cell {
     width: 100%;
 }
 .invoice-line-card {
-    background: #fff;
-    border: 1px solid #d7e4f0;
-    border-radius: 10px;
-    padding: 12px 14px 14px;
-    box-shadow: 0 1px 2px rgba(30, 61, 96, 0.04);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #1e3d60;
+    border-radius: 12px;
+    padding: 12px 16px 14px;
+    box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 3px -1px rgba(15, 23, 42, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.invoice-line-card:hover {
+    border-color: #cbd5e1;
+    border-left-color: #0d6efd;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+.invoice-line-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.invoice-line-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.invoice-line-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+}
+.invoice-line-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-size: 0.76rem;
+}
+.invoice-line-remove:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
 .invoice-line-card__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
     gap: 10px 12px;
-    align-items: end;
+    align-items: flex-end;
 }
 .invoice-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     min-width: 0;
+}
+.invoice-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 22px;
+    margin-bottom: 5px;
+    gap: 6px;
 }
 .invoice-field__label {
     margin: 0;
     font-size: 0.72rem;
     font-weight: 700;
-    color: #5e7a90;
-    letter-spacing: 0.01em;
+    color: #475569;
+    letter-spacing: 0.02em;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .invoice-field__sub {
     font-weight: 500;
-    color: #8aa0b5;
+    color: #94a3b8;
+    font-size: 0.67rem;
 }
-.invoice-col-work-date { min-width: 190px; }
-.invoice-col-recorded { min-width: 112px; max-width: 140px; }
-.invoice-col-type { min-width: 140px; }
-.invoice-col-earner { min-width: 130px; }
-.invoice-col-role { min-width: 120px; }
-.invoice-col-hrs { min-width: 72px; max-width: 90px; }
-.invoice-col-rate,
-.invoice-col-amount,
-.invoice-col-gst { min-width: 96px; max-width: 120px; }
-.invoice-col-actions {
-    min-width: 44px;
-    max-width: 52px;
+.invoice-date-mode-pills {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1px;
+    display: inline-flex;
+    gap: 1px;
+}
+.invoice-date-mode-pills .btn {
+    padding: 1px 7px;
+    font-size: 0.66rem;
+    font-weight: 600;
+    border-radius: 10px !important;
+    border: none !important;
+    line-height: 1.3;
+}
+.invoice-date-mode-pills .btn-primary {
+    background: #1e3d60 !important;
+    color: #ffffff !important;
+}
+.invoice-date-mode-pills .btn-outline-secondary {
+    background: transparent !important;
+    color: #64748b !important;
+}
+.invoice-input-icon-wrap,
+.invoice-input-prefix-wrap {
+    position: relative;
+    display: flex;
     align-items: center;
-}
-.invoice-col-desc {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e6eef6;
-}
-.invoice-col-desc .invoice-line-description {
     width: 100%;
-    min-width: 0;
-    min-height: 5.25rem;
 }
-
+.invoice-input-icon {
+    position: absolute;
+    left: 9px;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    pointer-events: none;
+    z-index: 2;
+}
+.invoice-input-icon-wrap input {
+    padding-left: 28px !important;
+}
+.invoice-input-prefix {
+    position: absolute;
+    left: 9px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.78rem;
+    pointer-events: none;
+    z-index: 2;
+}
+.invoice-input-prefix-wrap input {
+    padding-left: 20px !important;
+}
 .invoice-timesheet-scroll .form-control,
 .invoice-timesheet-scroll .form-select {
-    min-width: 0;
-    width: 100%;
-    font-size: 0.86rem;
+    height: 35px;
+    font-size: 0.83rem;
+    border-color: #cbd5e1;
+    border-radius: 7px;
+    background-color: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
-.invoice-date-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.invoice-timesheet-scroll .form-control:focus,
+.invoice-timesheet-scroll .form-select:focus {
+    border-color: #1e3d60;
+    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.12);
 }
-.invoice-date-mode-select {
-    font-size: 0.75rem !important;
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
-}
-
 .invoice-work-date[readonly],
 .report_entry_date_fields_invoice[readonly] {
-    background-color: #fff;
+    background-color: #ffffff !important;
     cursor: pointer;
+}
+.invoice-col-work-date { min-width: 175px; }
+.invoice-col-recorded { min-width: 110px; }
+.invoice-col-trans { min-width: 95px; }
+.invoice-col-type { min-width: 135px; }
+.invoice-col-earner { min-width: 130px; }
+.invoice-col-role { min-width: 115px; }
+.invoice-col-hrs { min-width: 65px; }
+.invoice-col-rate { min-width: 92px; }
+.invoice-col-amount { min-width: 100px; }
+.invoice-col-gst { min-width: 82px; }
+
+@media (min-width: 1200px) {
+    .invoice-line-card__grid {
+        grid-template-columns: 1.55fr 1.05fr 1.2fr 1.2fr 1.1fr 0.65fr 0.9fr 1fr 0.8fr;
+    }
+    .invoice-line-card__grid.has-trans-no {
+        grid-template-columns: 1.45fr 1fr 0.9fr 1.15fr 1.15fr 1.05fr 0.6fr 0.85fr 0.95fr 0.75fr;
+    }
+}
+
+.invoice-col-desc {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+.invoice-col-desc .invoice-line-description {
+    height: auto;
+    min-height: 48px;
+    max-height: 140px;
+    resize: vertical;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    border-radius: 7px;
+    background: #fafbfc;
+}
+.invoice-col-desc .invoice-line-description:focus {
+    background: #ffffff;
 }
 
 form.invoice-billing-mode-hourly .invoice-amount-ex-gst {
-    background: #f3f7fb;
+    background: #f1f5f9 !important;
+    font-weight: 600;
+    color: #1e293b;
 }
 form.invoice-billing-mode-fixed .invoice-hours-col,
 form.invoice-billing-mode-fixed .invoice-col-rate {
@@ -338,107 +620,94 @@ form.invoice-billing-mode-fixed .invoice-billing-hint-hourly { display: none !im
 form.invoice-billing-mode-fixed .invoice-billing-hint-fixed { display: inline !important; }
 form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !important; }
 
-.invoice-billing-mode-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.invoice-billing-mode-bar__main {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-.invoice-billing-mode-label {
-    font-weight: 600;
-    color: #1e3d60;
-    font-size: 0.9rem;
-}
-.invoice-billing-mode-hint {
-    font-size: 0.78rem;
-    color: #5e7a90;
-    line-height: 1.35;
-}
-
 .invoice-form-footer {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 14px;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 -2px 10px -2px rgba(15, 23, 42, 0.04);
 }
 .invoice-form-footer__left {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.invoice-form-footer__actions {
-    display: flex;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
+    gap: 16px;
 }
-.openproductrinfo_invoice {
+.invoice-add-line-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: #1e3d60;
-    text-decoration: none;
+    border-radius: 8px;
+    text-decoration: none !important;
 }
-.openproductrinfo_invoice:hover {
-    color: #0f2740;
-    text-decoration: underline;
-}
-
 .invoice-totals-card {
-    min-width: 240px;
-    padding: 12px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 6px 16px;
     background: #f8fafc;
-    border: 1px solid #d7e4f0;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
 }
 .invoice-totals-card__row {
     display: flex;
-    justify-content: space-between;
     align-items: baseline;
-    gap: 16px;
-    padding: 4px 0;
-    font-size: 0.9rem;
-    color: #34395e;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #475569;
+    white-space: nowrap;
+}
+.invoice-totals-card__row + .invoice-totals-card__row {
+    position: relative;
+    padding-left: 16px;
+}
+.invoice-totals-card__row + .invoice-totals-card__row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 1px;
+    background: #cbd5e1;
 }
 .invoice-totals-card__row--total {
-    margin-top: 6px;
-    padding-top: 8px;
-    border-top: 1px solid #c8dcef;
     font-weight: 700;
     color: #1e3d60;
+}
+.invoice-totals-card__row--total .invoice-totals-card__value {
+    font-size: 1.05rem;
+    color: #1e3d60;
+    font-weight: 800;
 }
 .invoice-totals-card__value {
     font-variant-numeric: tabular-nums;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 600;
+    color: #1e293b;
 }
-.invoice-line-remove {
-    display: inline-flex;
+.invoice-form-footer__actions {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    color: #b02a37;
-    border: 1px solid #f1c0c5;
-    background: #fff;
+    gap: 8px;
 }
-.invoice-line-remove:hover {
-    background: #f8d7da;
-    color: #842029;
+.invoice-final-btn {
+    background: linear-gradient(180deg, #1e3d60 0%, #152d47 100%) !important;
+    border-color: #152d47 !important;
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.25);
+    font-weight: 600;
 }
-
-@media (min-width: 1100px) {
-    .invoice-line-card__grid {
-        grid-template-columns: 1.6fr 0.85fr 1.1fr 1.1fr 1fr 0.55fr 0.75fr 0.85fr 0.7fr auto;
-    }
+.invoice-final-btn:hover {
+    background: #152d47 !important;
+    box-shadow: 0 4px 10px rgba(30, 61, 96, 0.35);
 }
 </style>
 
@@ -647,9 +916,12 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 
 					<div class="invoice-form-shell">
 						<div class="invoice-form-toolbar">
-							<div class="form-group">
+							<div class="form-group invoice-client-group">
 								<label for="invoice_receipt_client">Client <span class="span_req">*</span></label>
-								<input id="invoice_receipt_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								<div class="input-group input-group-sm invoice-client-input-wrap">
+									<span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+									<input id="invoice_receipt_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="Client Name" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								</div>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
@@ -670,14 +942,20 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 
 						<div class="invoice-form-footer">
 							<div class="invoice-form-footer__left">
-								<a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add line</a>
+								<a href="javascript:;" class="btn btn-sm btn-outline-primary openproductrinfo_invoice invoice-add-line-btn">
+									<i class="fa-solid fa-plus me-1"></i> Add line
+								</a>
 								@include('crm.clients.partials.invoice-line-totals')
 							</div>
 							<div class="invoice-form-footer__actions">
 								<input type="hidden" name="save_type" class="save_type" value="">
-								<button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-outline-primary invoice-draft-btn">Save draft</button>
-								<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-primary invoice-final-btn">Create invoice</button>
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+								<button onclick="customValidate('invoice_receipt_form','draft')" type="button" class="btn btn-sm btn-outline-secondary invoice-draft-btn">
+									<i class="fa-regular fa-bookmark me-1"></i> Save draft
+								</button>
+								<button onclick="customValidate('invoice_receipt_form','final')" type="button" class="btn btn-sm btn-primary invoice-final-btn">
+									<i class="fa-solid fa-check me-1"></i> Create invoice
+								</button>
+								<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
 							</div>
 						</div>
 					</div>
@@ -1113,21 +1391,27 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 
 					<div class="invoice-form-shell">
 						<div class="invoice-form-toolbar">
-							<div class="form-group">
+							<div class="form-group invoice-client-group">
 								<label for="create_invoice_client">Client <span class="span_req">*</span></label>
-								<input id="create_invoice_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="">
+								<div class="input-group input-group-sm invoice-client-input-wrap">
+									<span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+									<input id="create_invoice_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="Client Name">
+								</div>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
-							<div class="form-group">
+							<div class="form-group invoice-solicitor-group">
 								<label for="sel_invoice_agent_id">Solicitor <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
-									<option value="">Select solicitor</option>
-									@foreach($__receiptModalSolicitors as $aplist)
-										<option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
-									@endforeach
-								</select>
+								<div class="input-group input-group-sm invoice-client-input-wrap">
+									<span class="input-group-text"><i class="fa-solid fa-scale-balanced"></i></span>
+									<select data-valid="required" class="form-control form-select crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
+										<option value="">Select solicitor</option>
+										@foreach($__receiptModalSolicitors as $aplist)
+											<option value="{{$aplist->id}}">{{@$aplist->first_name}} {{@$aplist->last_name}}@if(!empty($aplist->email)) ({{@$aplist->email}})@endif</option>
+										@endforeach
+									</select>
+								</div>
 							</div>
 							@include('crm.clients.partials.invoice-billing-mode-toggle')
 						</div>
@@ -1150,14 +1434,20 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 
 						<div class="invoice-form-footer">
 							<div class="invoice-form-footer__left">
-								<a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add line</a>
+								<a href="javascript:;" class="btn btn-sm btn-outline-primary openproductrinfo_invoice invoice-add-line-btn">
+									<i class="fa-solid fa-plus me-1"></i> Add line
+								</a>
 								@include('crm.clients.partials.invoice-line-totals')
 							</div>
 							<div class="invoice-form-footer__actions">
 								<input type="hidden" name="save_type" class="save_type" value="">
-								<button onclick="customValidate('create_invoice_receipt','draft')" type="button" class="btn btn-outline-primary">Save draft</button>
-								<button onclick="customValidate('create_invoice_receipt','final')" type="button" class="btn btn-primary">Create invoice</button>
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+								<button onclick="customValidate('create_invoice_receipt','draft')" type="button" class="btn btn-sm btn-outline-secondary invoice-draft-btn">
+									<i class="fa-regular fa-bookmark me-1"></i> Save draft
+								</button>
+								<button onclick="customValidate('create_invoice_receipt','final')" type="button" class="btn btn-sm btn-primary invoice-final-btn">
+									<i class="fa-solid fa-check me-1"></i> Create invoice
+								</button>
+								<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
 							</div>
 						</div>
 					</div>
