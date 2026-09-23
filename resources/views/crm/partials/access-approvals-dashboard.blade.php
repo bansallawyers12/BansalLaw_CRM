@@ -13,13 +13,18 @@
 @if($dashCrmAccessIsApprover)
 <section class="access-approvals-dashboard focus-container" style="margin-bottom: 1.5rem;">
     <div class="focus-header access-approvals-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="margin: 0;">
-            <i class="fa-solid fa-user-shield" aria-hidden="true"></i>
-            Access approvals
+        <div class="focus-header-left">
+            <div class="dashboard-section-icon-badge dashboard-section-icon-badge--approvals">
+                <i class="fa-solid fa-user-shield" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0;">Access approvals</h3>
+                <span class="dashboard-section-sub">Supervisor access requests</span>
+            </div>
             @if($dashCrmAccessPending > 0)
                 <span class="badge badge-access-pending ms-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>
             @endif
-        </h3>
+        </div>
         <a href="{{ route('crm.access.queue') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa-solid fa-inbox me-1" aria-hidden="true"></i> Full access queue
         </a>

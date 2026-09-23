@@ -17,14 +17,18 @@
         <header class="dashboard-welcome-banner">
             <div class="dashboard-welcome-content">
                 <div class="dashboard-welcome-text">
-                    <p class="dashboard-welcome-label">Dashboard</p>
+                    <div class="dashboard-welcome-badge">
+                        <span class="dashboard-welcome-badge__dot"></span>
+                        <span class="dashboard-welcome-label">Workspace Overview</span>
+                    </div>
                     <div class="dashboard-welcome-heading">
                         <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
-                        <p class="dashboard-header-meta">
+                        <div class="dashboard-header-meta">
+                            <span class="dashboard-clock-icon"><i class="fa-regular fa-clock"></i></span>
                             <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
                                 {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
                             </time>
-                        </p>
+                        </div>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -101,10 +105,13 @@
             <div class="focus-container todo-container">
                 <div class="todo-header">
                     <div class="todo-header-left">
-                        <h3>
-                            <i class="fa-solid fa-list-check dashboard-theme-icon-primary"></i> 
-                            My Tasks
-                        </h3>
+                        <div class="dashboard-section-icon-badge dashboard-section-icon-badge--tasks">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <div>
+                            <h3>My Tasks</h3>
+                            <span class="dashboard-section-sub">Personal and matter deadlines</span>
+                        </div>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
                     {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
@@ -143,10 +150,15 @@
             {{-- Recent Matter Activity --}}
             <div class="focus-container dashboard-scroll-anchor" id="recent-matter-activity">
                 <div class="focus-header">
-                    <h3>
-                        <i class="fa-solid fa-clock-rotate-left dashboard-theme-icon-primary"></i> 
-                        Recent Matter Activity
-                    </h3>
+                    <div class="focus-header-left">
+                        <div class="dashboard-section-icon-badge dashboard-section-icon-badge--activity">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div>
+                            <h3>Recent Matter Activity</h3>
+                            <span class="dashboard-section-sub">Latest updates across matters</span>
+                        </div>
+                    </div>
                     <span class="badge-count" id="cases-attention-badge">{{ $count_cases_requiring_attention_data }}</span>
                 </div>
                 <div class="case-list-container"

@@ -21,14 +21,21 @@
     <div class="dashboard-calendar-card">
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
-                <h2>My Calendar</h2>
-                <p class="dashboard-calendar-subtitle" id="dashboardCalendarSubtitle">
-                    @if(!empty($canFilterCalendarStaff))
-                        All staff appointments, hearings and deadlines
-                    @else
-                        Your appointments, hearings and deadlines
-                    @endif
-                </p>
+                <div class="dashboard-calendar-title-group">
+                    <div class="dashboard-section-icon-badge dashboard-section-icon-badge--calendar">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div>
+                        <h2>My Calendar</h2>
+                        <p class="dashboard-calendar-subtitle" id="dashboardCalendarSubtitle">
+                            @if(!empty($canFilterCalendarStaff))
+                                All staff appointments, hearings and deadlines
+                            @else
+                                Your appointments, hearings and deadlines
+                            @endif
+                        </p>
+                    </div>
+                </div>
             </div>
             <div class="dashboard-calendar-header-right">
                 <div class="dashboard-calendar-type-switcher" id="dashboardCalendarTypeSwitcher" data-selected-type="{{ $homeType }}">
