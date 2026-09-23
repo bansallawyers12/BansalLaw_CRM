@@ -31,7 +31,19 @@
     @endif
 </head>
 <style>
-.bg{
+html, body.crm-login-page {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body.crm-login-page::-webkit-scrollbar {
+    display: none;
+}
+.bg {
     height: 100%;
     margin: 0;
     background-position: center;
@@ -40,7 +52,7 @@
 }
 </style>
 <body class="bg crm-login-page">
-	<div class="loader"></div>
+	<div class="loader" style="display: none;"></div>
 	<div id="app">
 		@yield('content')
 	</div>
