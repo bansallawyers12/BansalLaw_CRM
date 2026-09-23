@@ -222,47 +222,68 @@
         </header>
 
         <div class="cdn-ov-card__body">
-        @if(! empty($activeClientMatterId))
-        <p class="text-muted mb-2" style="font-size:13px;">
-            Other parties for the active matter only. Each matter can have its own defendants.
-        </p>
-        @endif
-
-        <div class="field-group">
-            <span class="field-label">Recorded parties</span>
-            <span class="field-value" id="cpPartiesCountDisplay">{{ $conflictParties->count() }}</span>
-        </div>
-
-        <div id="cpPartiesSummaryList">
-            @forelse($conflictParties as $party)
-                @php
-                    $roleLabel = $party->party_role ? ($partyRoles[$party->party_role] ?? $party->party_role) : '—';
-                    if (($party->party_type ?? 'individual') === 'company') {
-                        $displayName = trim($party->company_name ?? '') ?: 'Unnamed company';
-                    } else {
-                        $displayName = trim(($party->first_name ?? '') . ' ' . ($party->last_name ?? '')) ?: 'Unnamed';
-                    }
-                @endphp
-                <div class="field-group cp-summary-party">
-                    <span class="field-value" style="font-weight:600;">{{ $displayName }}</span>
-                    <span class="field-value" style="font-size:12px;color:#666;">{{ $roleLabel }}</span>
+            {{-- Conflict Check Status Widget --}}
+            <div class="cdn-ov-conflict-status-card {{ $latestOutcome ? 'is-checked is-' . $latestOutcome : 'is-pending' }}">
+                <div class="cdn-ov-conflict-status-card__top">
+                    <div class="cdn-ov-conflict-status-card__icon">
+                        @if($latestOutcome === 'clear')
+                            <i class="fa-solid fa-shield-check"></i>
+                        @elseif($latestOutcome === 'conflict_found')
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        @else
+                            <i class="fa-solid fa-shield-halved"></i>
+                        @endif
+                    </div>
+                    <div class="cdn-ov-conflict-status-card__info">
+                        <span class="cdn-ov-conflict-status-card__title">Conflict Check Status</span>
+                        <div id="cpOutcomeSummaryDisplay">
+                            @if($latestCheckedAt && $latestOutcomeLabel)
+                                <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$latestOutcome] ?? '#555' }};">{{ $latestOutcomeLabel }}</span>
+                                <span class="cdn-ov-conflict-check-date">Checked {{ $latestCheckedAt }}</span>
+                            @else
+                                <span class="cdn-ov-conflict-pending-pill"><i class="fa-solid fa-triangle-exclamation"></i> Not checked yet</span>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-            @empty
-                <p class="text-muted mb-2" style="font-size:13px;">No other parties recorded yet.</p>
-            @endforelse
-        </div>
-
-        <div class="field-group" style="margin-top:10px;padding-top:10px;border-top:1px solid #e9ecef;">
-            <span class="field-label">Conflict check</span>
-            <span class="field-value" id="cpOutcomeSummaryDisplay">
-                @if($latestCheckedAt && $latestOutcomeLabel)
-                    {{ $latestCheckedAt }} —
-                    <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$latestOutcome] ?? '#555' }};">{{ $latestOutcomeLabel }}</span>
-                @else
-                    Not checked yet
+                @if(! $latestOutcome)
+                    <p class="cdn-ov-conflict-status-card__hint">Verify opposing parties &amp; defendants before court proceedings.</p>
                 @endif
-            </span>
-        </div>
+            </div>
+
+            {{-- Opposing Parties Widget --}}
+            <div class="cdn-ov-parties-widget">
+                <div class="cdn-ov-parties-widget__head">
+                    <span class="cdn-ov-section-label"><i class="fa-solid fa-users-viewfinder"></i> Opposing Parties</span>
+                    <span class="cdn-ov-parties-count-badge" id="cpPartiesCountDisplay">{{ $conflictParties->count() }}</span>
+                </div>
+
+                <div id="cpPartiesSummaryList" class="cdn-ov-parties-list">
+                    @forelse($conflictParties as $party)
+                        @php
+                            $roleLabel = $party->party_role ? ($partyRoles[$party->party_role] ?? $party->party_role) : '—';
+                            if (($party->party_type ?? 'individual') === 'company') {
+                                $displayName = trim($party->company_name ?? '') ?: 'Unnamed company';
+                            } else {
+                                $displayName = trim(($party->first_name ?? '') . ' ' . ($party->last_name ?? '')) ?: 'Unnamed';
+                            }
+                        @endphp
+                        <div class="cdn-ov-party-row">
+                            <div class="cdn-ov-party-row__info">
+                                <strong class="cdn-ov-party-row__name">{{ $displayName }}</strong>
+                                <span class="cdn-ov-party-row__role">{{ $roleLabel }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="cdn-ov-parties-empty-state">
+                            <p>No other parties recorded for this matter yet.</p>
+                            <button type="button" class="btn btn-sm btn-outline-primary cp-open-edit" title="Add party">
+                                <i class="fa-solid fa-plus"></i> Add party
+                            </button>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
     </div>
 </div>

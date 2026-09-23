@@ -20,184 +20,175 @@
                                 <h3>Personal Information</h3>
                             </div>
                         </header>
-                        <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
-                        <div class="cdn-ov-field">
-                            <span class="cdn-ov-field__label">Age / Date of Birth</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDobTick = '<span class="cdn-ov-verify-badge is-unverified" title="Date of birth not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span>';
-                                    if ($detailHasDobVerifiedCol) {
-                                        $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
-                                        if ($verifiedDob) {
-                                            $verifiedDobTick = '<span class="cdn-ov-verify-badge is-verified" title="Date of birth verified"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span>';
-                                        }
+                        <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
+                            {{-- Demographics Tile Row (Age/DOB, Gender, Marital Status) --}}
+                            @php
+                                $verifiedDobTick = '<span class="cdn-ov-verify-badge is-unverified" title="Date of birth not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span>';
+                                if ($detailHasDobVerifiedCol) {
+                                    $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
+                                    if ($verifiedDob) {
+                                        $verifiedDobTick = '<span class="cdn-ov-verify-badge is-verified" title="Date of birth verified"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span>';
                                     }
-                                    
-                                    // Format DOB for display
-                                    $formattedDob = 'N/A';
-                                    if (isset($fetchedData->dob) && $fetchedData->dob != '') {
-                                        try {
-                                            $dobDate = \Carbon\Carbon::parse($fetchedData->dob);
-                                            $formattedDob = $dobDate->format('d M Y'); // e.g., "15 Jan 2001"
-                                        } catch (\Exception $e) {
-                                            $formattedDob = 'N/A';
-                                        }
+                                }
+
+                                $formattedDob = 'N/A';
+                                if (isset($fetchedData->dob) && $fetchedData->dob != '') {
+                                    try {
+                                        $dobDate = \Carbon\Carbon::parse($fetchedData->dob);
+                                        $formattedDob = $dobDate->format('d M Y');
+                                    } catch (\Exception $e) {
+                                        $formattedDob = 'N/A';
                                     }
-                                    $ageRaw = trim((string) $fetchedData->age);
-                                    $preferDob = $formattedDob !== 'N/A' && preg_match('/^0\s+years?\s+0\s+months?$/i', $ageRaw);
-                                    ?>
-                                    <span id="ageDobToggle"
-                                          class="cdn-ov-age-toggle"
-                                          title="Click to switch between age and date of birth"
-                                          data-age="<?php echo htmlspecialchars($ageRaw); ?>" 
-                                          data-dob="<?php echo htmlspecialchars($formattedDob); ?>">
-                                        <span class="display-age"<?php echo $preferDob ? ' style="display: none;"' : ''; ?>><?php echo e($ageRaw); ?></span>
-                                        <span class="display-dob"<?php echo $preferDob ? '' : ' style="display: none;"'; ?>><?php echo e($formattedDob); ?></span>
-                                        <i class="fa-solid fa-right-left cdn-ov-toggle-icon" aria-hidden="true"></i>
-                                        <?php echo $verifiedDobTick; ?>
+                                }
+                                $ageRaw = trim((string) ($fetchedData->age ?? ''));
+                                $preferDob = $formattedDob !== 'N/A' && preg_match('/^0\s+years?\s+0\s+months?$/i', $ageRaw);
+                            @endphp
+
+                            <div class="cdn-ov-demographics-row">
+                                <div class="cdn-ov-demo-tile">
+                                    <span class="cdn-ov-demo-tile__label"><i class="fa-regular fa-calendar"></i> Age / DOB</span>
+                                    <span class="cdn-ov-demo-tile__value">
+                                        @if($ageRaw !== '')
+                                            <span id="ageDobToggle"
+                                                  class="cdn-ov-age-toggle"
+                                                  title="Click to switch between age and date of birth"
+                                                  data-age="{{ htmlspecialchars($ageRaw) }}"
+                                                  data-dob="{{ htmlspecialchars($formattedDob) }}">
+                                                <span class="display-age"{{ $preferDob ? ' style=display:none;' : '' }}>{{ $ageRaw }}</span>
+                                                <span class="display-dob"{{ $preferDob ? '' : ' style=display:none;' }}>{{ $formattedDob }}</span>
+                                                <i class="fa-solid fa-right-left cdn-ov-toggle-icon" aria-hidden="true"></i>
+                                                {!! $verifiedDobTick !!}
+                                            </span>
+                                        @else
+                                            <span class="cdn-ov-na">N/A</span>
+                                        @endif
                                     </span>
-                                <?php
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
-                                } ?>
-                            </span>
-                        </div>
+                                </div>
+                                <div class="cdn-ov-demo-tile">
+                                    <span class="cdn-ov-demo-tile__label"><i class="fa-solid fa-venus-mars"></i> Gender</span>
+                                    <span class="cdn-ov-demo-tile__value">
+                                        {{ !empty($fetchedData->gender) ? $fetchedData->gender : 'N/A' }}
+                                    </span>
+                                </div>
+                                <div class="cdn-ov-demo-tile">
+                                    <span class="cdn-ov-demo-tile__label"><i class="fa-solid fa-heart"></i> Marital</span>
+                                    <span class="cdn-ov-demo-tile__value">
+                                        {{ !empty($fetchedData->marital_status) ? $fetchedData->marital_status : 'N/A' }}
+                                    </span>
+                                </div>
+                            </div>
 
-                        <div class="cdn-ov-field">
-                            <span class="cdn-ov-field__label">Gender</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if ( isset($fetchedData->gender) && $fetchedData->gender != '') {
-                                    echo $fetchedData->gender;
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
-                                } ?>
-                            </span>
-                        </div>
-
-                        <div class="cdn-ov-field">
-                            <span class="cdn-ov-field__label">Marital Status</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if ( isset($fetchedData->marital_status) && $fetchedData->marital_status != '') {
-                                    echo $fetchedData->marital_status;
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
-                                } ?>
-                            </span>
-                        </div>
-
-                        <div class="cdn-ov-field cdn-ov-field--full">
-                            <span class="cdn-ov-field__label">Client Email</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
+                            {{-- Email Block --}}
+                            @php
+                                if (\App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
                                     $clientEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->get();
                                 } else {
-                                    if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                    if (\App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
                                     } else {
-                                        $clientEmails = [];
+                                        $clientEmails = collect();
                                     }
-                                } //dd($clientEmails);
-                                if( !empty($clientEmails) && count($clientEmails)>0 ){
-                                    $emailStr = "";
-                                    foreach($clientEmails as $emailKey=>$emailVal){
+                                }
+                            @endphp
+                            <div class="cdn-ov-contact-block">
+                                <div class="cdn-ov-contact-block__head">
+                                    <span class="cdn-ov-field__label"><i class="fa-regular fa-envelope"></i> Client Email</span>
+                                </div>
+                                @if(!empty($clientEmails) && count($clientEmails) > 0)
+                                    @foreach($clientEmails as $emailVal)
+                                        @php
+                                            $eAddr = trim((string) $emailVal->email);
+                                            $isV = !empty($emailVal->is_verified);
+                                            $vTitle = $isV ? ('Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown')) : 'Not verified';
+                                        @endphp
+                                        <div class="cdn-ov-contact-row">
+                                            <a href="mailto:{{ $eAddr }}" class="cdn-ov-contact-link" title="Click to email">
+                                                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                                                <span>{{ $eAddr }}</span>
+                                            </a>
+                                            <div class="cdn-ov-contact-row__actions">
+                                                <button type="button" class="cdn-ov-copy-btn" title="Copy email" onclick="navigator.clipboard.writeText('{{ $eAddr }}'); this.classList.add('is-copied'); setTimeout(() => this.classList.remove('is-copied'), 1500);">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                                @if($isV)
+                                                    <span class="cdn-ov-verify-badge is-verified" title="{{ $vTitle }}"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span>
+                                                @else
+                                                    <span class="cdn-ov-verify-badge is-unverified" title="{{ $vTitle }}"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="cdn-ov-contact-row">
+                                        <span class="cdn-ov-na">N/A</span>
+                                    </div>
+                                @endif
+                            </div>
 
-                                        //Check email is verified or not
-                                        $check_verified_email = $emailVal->email_type."".$emailVal->email;
-                                        if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
-                                            // Show verification status for ALL email types
-                                            if ( $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
-                                            } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
-                                            }
-                                        } else {
-                                            // For emails without type, still show verification status if available
-                                            if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
-                                            } else {
-                                                $emailStr .= '<span class="cdn-ov-contact-line">'.e($emailVal->email).' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
-                                            }
-                                        }
-                                    }
-                                    echo $emailStr;
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
-                                }?>
-                            </span>
-                        </div>
-
-                        <div class="cdn-ov-field cdn-ov-field--full">
-                            <span class="cdn-ov-field__label">Client Phone</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
+                            {{-- Phone Block --}}
+                            @php
+                                if (\App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
                                     $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
                                 } else {
-                                    if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                    if (\App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
                                     } else {
-                                        $clientContacts = [];
+                                        $clientContacts = collect();
                                     }
-                                } //dd($clientContacts);
-                                if( !empty($clientContacts) && count($clientContacts)>0 ){
-                                    $phonenoStr = "";
-                                    foreach($clientContacts as $conKey=>$conVal){
-                                        //Check phone is verified or not
-                                        $check_verified_phoneno = $conVal->country_code."".$conVal->phone;
-                                        if( isset($conVal->country_code) && $conVal->country_code != "" ){
-                                            $country_code = $conVal->country_code;
-                                        } else {
-                                            $country_code = "";
-                                        }
-
-                                        // Format phone number to Australian standard
-                                        $formattedPhone = \App\Helpers\PhoneValidationHelper::formatAustralianPhone($conVal->phone, $country_code);
-
-                                        if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
-                                            // Show verification status for ALL contact types
-                                            if ( $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
-                                            } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
-                                            }
-                                        } else {
-                                            // For phones without type, still show verification status if available
-                                            if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-verified" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown') . '"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span></span>';
-                                            } else {
-                                                $phonenoStr .= '<span class="cdn-ov-contact-line">'.$formattedPhone.' <span class="cdn-ov-verify-badge is-unverified" title="Not verified"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span></span>';
-                                            }
-                                        }
-                                    }
-                                    echo $phonenoStr;
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
-                                }?>
-                            </span>
-                        </div>
-
-                        <?php
-                        $address_Info = null;
-                        if ($detailHasClientAddressCols) {
-                            $addressSelectCols = ['address', 'suburb', 'country', 'zip', 'regional_code'];
-                            foreach (['address_line_1', 'address_line_2', 'state'] as $addressCol) {
-                                if ($__sch::hasColumn('client_addresses', $addressCol)) {
-                                    $addressSelectCols[] = $addressCol;
                                 }
-                            }
-                            $address_Info = App\Models\ClientAddress::select($addressSelectCols)->where('client_id', $fetchedData->id)->latest('id')->first();
-                        }
-                        ?>
+                            @endphp
+                            <div class="cdn-ov-contact-block">
+                                <div class="cdn-ov-contact-block__head">
+                                    <span class="cdn-ov-field__label"><i class="fa-solid fa-phone"></i> Client Phone</span>
+                                </div>
+                                @if(!empty($clientContacts) && count($clientContacts) > 0)
+                                    @foreach($clientContacts as $conVal)
+                                        @php
+                                            $cc = $conVal->country_code ?? '';
+                                            $rawPhone = $conVal->phone ?? '';
+                                            $formattedPhone = \App\Helpers\PhoneValidationHelper::formatAustralianPhone($rawPhone, $cc);
+                                            $isV = !empty($conVal->is_verified);
+                                            $vTitle = $isV ? ('Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('d/m/Y g:i A') : 'Unknown')) : 'Not verified';
+                                            $dialNumber = preg_replace('/[^0-9+]/', '', $formattedPhone);
+                                        @endphp
+                                        <div class="cdn-ov-contact-row">
+                                            <a href="tel:{{ $dialNumber }}" class="cdn-ov-contact-link" title="Click to call">
+                                                <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                                                <span>{{ $formattedPhone }}</span>
+                                            </a>
+                                            <div class="cdn-ov-contact-row__actions">
+                                                <button type="button" class="cdn-ov-copy-btn" title="Copy phone" onclick="navigator.clipboard.writeText('{{ $formattedPhone }}'); this.classList.add('is-copied'); setTimeout(() => this.classList.remove('is-copied'), 1500);">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                                @if($isV)
+                                                    <span class="cdn-ov-verify-badge is-verified" title="{{ $vTitle }}"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="cdn-ov-verify-text">Verified</span></span>
+                                                @else
+                                                    <span class="cdn-ov-verify-badge is-unverified" title="{{ $vTitle }}"><i class="fa-regular fa-circle" aria-hidden="true"></i><span class="cdn-ov-verify-text">Unverified</span></span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="cdn-ov-contact-row">
+                                        <span class="cdn-ov-na">N/A</span>
+                                    </div>
+                                @endif
+                            </div>
 
-                        <div class="cdn-ov-field cdn-ov-field--full">
-                            <span class="cdn-ov-field__label">Address</span>
-                            <span class="cdn-ov-field__value">
-                                <?php
-                                if($address_Info) {
+                            {{-- Address Block --}}
+                            @php
+                                $address_Info = null;
+                                if ($detailHasClientAddressCols) {
+                                    $addressSelectCols = ['address', 'suburb', 'country', 'zip', 'regional_code'];
+                                    foreach (['address_line_1', 'address_line_2', 'state'] as $addressCol) {
+                                        if ($__sch::hasColumn('client_addresses', $addressCol)) {
+                                            $addressSelectCols[] = $addressCol;
+                                        }
+                                    }
+                                    $address_Info = App\Models\ClientAddress::select($addressSelectCols)->where('client_id', $fetchedData->id)->latest('id')->first();
+                                }
+                                $fullAddressString = 'N/A';
+                                if ($address_Info) {
                                     $addressParts = array_filter([
                                         $address_Info->address_line_1 ?? '',
                                         $address_Info->address_line_2 ?? '',
@@ -206,34 +197,46 @@
                                         $address_Info->zip ?? '',
                                         (!empty($address_Info->country) && $address_Info->country !== 'Australia') ? $address_Info->country : '',
                                     ]);
-
                                     if (!empty($addressParts)) {
-                                        echo implode(', ', $addressParts);
+                                        $fullAddressString = implode(', ', $addressParts);
                                     } elseif (!empty($address_Info->address)) {
-                                        echo $address_Info->address;
-                                    } else {
-                                        echo '<span class="cdn-ov-na">N/A</span>';
+                                        $fullAddressString = $address_Info->address;
                                     }
-                                } else {
-                                    echo '<span class="cdn-ov-na">N/A</span>';
                                 }
-                                ?>
-                            </span>
-                        </div>
+                            @endphp
+                            <div class="cdn-ov-contact-block">
+                                <div class="cdn-ov-contact-block__head">
+                                    <span class="cdn-ov-field__label"><i class="fa-solid fa-location-dot"></i> Address</span>
+                                </div>
+                                <div class="cdn-ov-address-row">
+                                    <div class="cdn-ov-address-content">
+                                        <i class="fa-solid fa-location-dot cdn-ov-address-icon" aria-hidden="true"></i>
+                                        <span class="cdn-ov-address-text">{{ $fullAddressString }}</span>
+                                    </div>
+                                    @if(!empty($fullAddressString) && $fullAddressString !== 'N/A')
+                                        <div class="cdn-ov-contact-row__actions">
+                                            <button type="button" class="cdn-ov-copy-btn" title="Copy address" onclick="navigator.clipboard.writeText('{{ addslashes($fullAddressString) }}'); this.classList.add('is-copied'); setTimeout(() => this.classList.remove('is-copied'), 1500);">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </button>
+                                            <a href="https://maps.google.com/?q={{ urlencode($fullAddressString) }}" target="_blank" rel="noopener" class="cdn-ov-map-link" title="Open in Google Maps">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
 
-                        <?php if($address_Info && $address_Info->regional_code): ?>
-                        <div class="cdn-ov-field">
-                            <span class="cdn-ov-field__label">Regional Classification</span>
-                            <span class="cdn-ov-field__value">
-                                <?php echo $address_Info->regional_code; ?>
-                            </span>
-                        </div>
-                        <?php endif; ?>
+                            @if($address_Info && !empty($address_Info->regional_code))
+                                <div class="cdn-ov-contact-block">
+                                    <span class="cdn-ov-field__label">Regional Classification</span>
+                                    <span class="cdn-ov-field__value">{{ $address_Info->regional_code }}</span>
+                                </div>
+                            @endif
                         </div>
                         @if(!empty($cdnHeroLastUpdateOn))
-                        <footer class="cdn-ov-card__foot">
-                            Last update on {{ $cdnHeroLastUpdateOn }}
-                        </footer>
+                            <footer class="cdn-ov-card__foot">
+                                <i class="fa-regular fa-clock"></i> Last update on {{ $cdnHeroLastUpdateOn }}
+                            </footer>
                         @endif
                     </article>
 
@@ -306,185 +309,221 @@
                                 @endif
                             </header>
                             <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
-                            <section class="cdn-ov-block">
-                            <p class="cdn-ov-section-label">Team</p>
-                            <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
-                            <div class="cdn-ov-field">
-                                <span class="cdn-ov-field__label">Principal Solicitor</span>
-                                <span class="cdn-ov-field__value">
-                                    <?php
-                                    $lpName = null;
-                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
+                                @php
+                                    $lpName = 'Ajay Bansal';
+                                    $lpFirst = 'A';
+                                    $lpLast = 'B';
+                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
                                         $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
-                                        if($legal_practitioner_info){
-                                            $lpName = $legal_practitioner_info->first_name.' '.$legal_practitioner_info->last_name;
+                                        if ($legal_practitioner_info) {
+                                            $lpName = $legal_practitioner_info->first_name . ' ' . $legal_practitioner_info->last_name;
+                                            $lpFirst = $legal_practitioner_info->first_name;
+                                            $lpLast = $legal_practitioner_info->last_name;
                                         }
                                     }
-                                    echo $lpName ?? 'Ajay Bansal';
-                                    ?>
-                                </span>
-                            </div>
-                            <div class="cdn-ov-field">
-                                <span class="cdn-ov-field__label">Responsible Solicitor</span>
-                                <span class="cdn-ov-field__value">
-                                    <?php
-                                    $prName = null;
-                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
+
+                                    $prName = 'Michael Saleh';
+                                    $prFirst = 'M';
+                                    $prLast = 'S';
+                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
                                         $sel_person_responsible_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
-                                        if($sel_person_responsible_info_arr){
-                                            $prName = $sel_person_responsible_info_arr->first_name.' '.$sel_person_responsible_info_arr->last_name;
+                                        if ($sel_person_responsible_info_arr) {
+                                            $prName = $sel_person_responsible_info_arr->first_name . ' ' . $sel_person_responsible_info_arr->last_name;
+                                            $prFirst = $sel_person_responsible_info_arr->first_name;
+                                            $prLast = $sel_person_responsible_info_arr->last_name;
                                         }
                                     }
-                                    echo $prName ?? 'Michael Saleh';
-                                    ?>
-                                </span>
-                            </div>
 
-                            <div class="cdn-ov-field">
-                                <span class="cdn-ov-field__label">Paralegal</span>
-                                <span class="cdn-ov-field__value">
-                                    <?php
-                                    $paName = null;
-                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
+                                    $paName = 'Khushi Sangroya';
+                                    $paFirst = 'K';
+                                    $paLast = 'S';
+                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
                                         $sel_person_assisting_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
-                                        if($sel_person_assisting_info_arr){
-                                            $paName = $sel_person_assisting_info_arr->first_name.' '.$sel_person_assisting_info_arr->last_name;
+                                        if ($sel_person_assisting_info_arr) {
+                                            $paName = $sel_person_assisting_info_arr->first_name . ' ' . $sel_person_assisting_info_arr->last_name;
+                                            $paFirst = $sel_person_assisting_info_arr->first_name;
+                                            $paLast = $sel_person_assisting_info_arr->last_name;
                                         }
                                     }
-                                    echo $paName ?? 'Khushi Sangroya';
-                                    ?>
-                                </span>
-                            </div>
 
-                            <div class="cdn-ov-field">
-                                <span class="cdn-ov-field__label">Handling Office</span>
-                                <span class="cdn-ov-field__value">
-                                    <?php
-                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->office_id != ''){
+                                    $officeName = 'Melbourne';
+                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->office_id != ''){
                                         $office_info = \App\Models\Branch::select('office_name')->where('id', $matter_dis_ref_info_arr->office_id)->first();
-                                        if($office_info){
-                                            echo $office_info->office_name;
+                                        if ($office_info) {
+                                            $officeName = $office_info->office_name;
                                         }
-                                    } else {
-                                        echo 'Melbourne';
-                                    } ?>
-                                </span>
-                            </div>
-                            </div>
-                            </section>
+                                    }
+                                @endphp
 
-                            @php
-                                $mdRows = [];
-                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
-                                    $ourRoleVal = trim((string) ($matter_dis_ref_info_arr->our_party_role ?? ''));
-                                    if ($ourRoleVal !== '') {
-                                        $matterStream = 'general';
-                                        if (! empty($matter_dis_ref_info_arr->sel_matter_id)) {
-                                            $matterStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
+                                <section class="cdn-ov-block">
+                                    <div class="cdn-ov-block__head">
+                                        <p class="cdn-ov-section-label"><i class="fa-solid fa-users-gear"></i> Assigned Team</p>
+                                    </div>
+                                    <div class="cdn-ov-team-list">
+                                        {{-- Principal Solicitor --}}
+                                        <div class="cdn-ov-member-card">
+                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--navy" title="Principal Solicitor">
+                                                {{ strtoupper(substr($lpFirst, 0, 1) . substr($lpLast, 0, 1)) }}
+                                            </div>
+                                            <div class="cdn-ov-member-info">
+                                                <span class="cdn-ov-member-role">Principal</span>
+                                                <strong class="cdn-ov-member-name">{{ $lpName }}</strong>
+                                            </div>
+                                        </div>
+
+                                        {{-- Responsible Solicitor --}}
+                                        <div class="cdn-ov-member-card">
+                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--blue" title="Responsible Solicitor">
+                                                {{ strtoupper(substr($prFirst, 0, 1) . substr($prLast, 0, 1)) }}
+                                            </div>
+                                            <div class="cdn-ov-member-info">
+                                                <span class="cdn-ov-member-role">Responsible</span>
+                                                <strong class="cdn-ov-member-name">{{ $prName }}</strong>
+                                            </div>
+                                        </div>
+
+                                        {{-- Paralegal --}}
+                                        <div class="cdn-ov-member-card">
+                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--teal" title="Paralegal">
+                                                {{ strtoupper(substr($paFirst, 0, 1) . substr($paLast, 0, 1)) }}
+                                            </div>
+                                            <div class="cdn-ov-member-info">
+                                                <span class="cdn-ov-member-role">Paralegal</span>
+                                                <strong class="cdn-ov-member-name">{{ $paName }}</strong>
+                                            </div>
+                                        </div>
+
+                                        {{-- Handling Office --}}
+                                        <div class="cdn-ov-member-card">
+                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--slate" title="Handling Office">
+                                                <i class="fa-solid fa-building" style="font-size: 0.75rem;"></i>
+                                            </div>
+                                            <div class="cdn-ov-member-info">
+                                                <span class="cdn-ov-member-role">Office</span>
+                                                <strong class="cdn-ov-member-name">{{ $officeName }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                @php
+                                    $mdRows = [];
+                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
+                                        $ourRoleVal = trim((string) ($matter_dis_ref_info_arr->our_party_role ?? ''));
+                                        if ($ourRoleVal !== '') {
+                                            $matterStream = 'general';
+                                            if (! empty($matter_dis_ref_info_arr->sel_matter_id)) {
+                                                $matterStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
+                                            }
+                                            $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($matterStream);
+                                            $mdRows[] = ['label' => 'Our client\'s role', 'value' => $roleLabels[$ourRoleVal] ?? $ourRoleVal];
                                         }
-                                        $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($matterStream);
-                                        $mdRows[] = ['label' => 'Our client\'s role', 'value' => $roleLabels[$ourRoleVal] ?? $ourRoleVal];
                                     }
-                                }
-                                $linkedOtherParties = collect();
-                                if ($matter_dis_ref_info_arr && $__sch::hasTable('client_matter_opposing_parties')) {
-                                    $linkedOtherParties = \App\Models\ClientMatterOpposingParty::query()
-                                        ->where('client_matter_id', (int) $matter_dis_ref_info_arr->id)
-                                        ->orderBy('sort_order')
-                                        ->orderBy('id')
-                                        ->get();
-                                }
-                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
-                                    $subtype = trim((string) ($matter_dis_ref_info_arr->incidence_type ?? ''));
-                                    if ($subtype !== '') {
-                                        $mdRows[] = ['label' => 'Matter subtype', 'value' => $subtype];
+                                    $linkedOtherParties = collect();
+                                    if ($matter_dis_ref_info_arr && $__sch::hasTable('client_matter_opposing_parties')) {
+                                        $linkedOtherParties = \App\Models\ClientMatterOpposingParty::query()
+                                            ->where('client_matter_id', (int) $matter_dis_ref_info_arr->id)
+                                            ->orderBy('sort_order')
+                                            ->orderBy('id')
+                                            ->get();
                                     }
-                                }
-                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'date_of_incidence') && ! empty($matter_dis_ref_info_arr->date_of_incidence)) {
-                                    try {
-                                        $doiLabel = \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y');
-                                    } catch (\Throwable $e) {
-                                        $doiLabel = (string) $matter_dis_ref_info_arr->date_of_incidence;
+                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
+                                        $subtype = trim((string) ($matter_dis_ref_info_arr->incidence_type ?? ''));
+                                        if ($subtype !== '') {
+                                            $mdRows[] = ['label' => 'Matter subtype', 'value' => $subtype];
+                                        }
                                     }
-                                    $mdRows[] = ['label' => 'Date of incidence', 'value' => $doiLabel];
-                                }
-                                if ($__sch::hasColumn('client_matters', 'case_detail')) {
-                                    $rawCaseDetail = ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail)) ? trim((string) $matter_dis_ref_info_arr->case_detail) : '';
-                                    if ($rawCaseDetail !== '') {
-                                        foreach (preg_split('/\r?\n/', $rawCaseDetail) as $cdLine) {
-                                            $cdLine = trim($cdLine);
-                                            if ($cdLine === '') continue;
-                                            if (strpos($cdLine, ':') !== false) {
-                                                [$cdLabel, $cdVal] = explode(':', $cdLine, 2);
-                                                $mdRows[] = ['label' => trim($cdLabel), 'value' => trim($cdVal)];
-                                            } else {
-                                                $mdRows[] = ['label' => 'Case detail', 'value' => $cdLine];
+                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'date_of_incidence') && ! empty($matter_dis_ref_info_arr->date_of_incidence)) {
+                                        try {
+                                            $doiLabel = \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y');
+                                        } catch (\Throwable $e) {
+                                            $doiLabel = (string) $matter_dis_ref_info_arr->date_of_incidence;
+                                        }
+                                        $mdRows[] = ['label' => 'Date of incidence', 'value' => $doiLabel];
+                                    }
+                                    if ($__sch::hasColumn('client_matters', 'case_detail')) {
+                                        $rawCaseDetail = ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail)) ? trim((string) $matter_dis_ref_info_arr->case_detail) : '';
+                                        if ($rawCaseDetail !== '') {
+                                            foreach (preg_split('/\r?\n/', $rawCaseDetail) as $cdLine) {
+                                                $cdLine = trim($cdLine);
+                                                if ($cdLine === '') continue;
+                                                if (strpos($cdLine, ':') !== false) {
+                                                    [$cdLabel, $cdVal] = explode(':', $cdLine, 2);
+                                                    $mdRows[] = ['label' => trim($cdLabel), 'value' => trim($cdVal)];
+                                                } else {
+                                                    $mdRows[] = ['label' => 'Case detail', 'value' => $cdLine];
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            @endphp
-                            <section class="cdn-ov-block">
-                            <p class="cdn-ov-section-label">Case details</p>
-                            @if(count($mdRows) > 0)
-                            <div class="cdn-ov-card__body--grid cdn-ov-nested-grid">
-                            @foreach($mdRows as $mdRow)
-                            <div class="cdn-ov-field{{ $mdRow['label'] === 'Case detail' ? ' cdn-ov-field--full' : '' }}">
-                                @if($mdRow['label'] !== '')
-                                <span class="cdn-ov-field__label">{{ $mdRow['label'] }}</span>
-                                <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
-                                @else
-                                <span class="cdn-ov-field__value">{{ $mdRow['value'] }}</span>
-                                @endif
-                            </div>
-                            @endforeach
-                            </div>
-                            @else
-                            <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
-                            @endif
-                            </section>
-                            @if($linkedOtherParties->isNotEmpty())
-                                <section class="cdn-ov-block cdn-ov-block--parties">
+                                @endphp
+
+                                <section class="cdn-ov-block">
                                     <div class="cdn-ov-block__head">
-                                        <p class="cdn-ov-section-label">Other parties</p>
-                                        <span class="cdn-ov-count">{{ $linkedOtherParties->count() }}</span>
+                                        <p class="cdn-ov-section-label"><i class="fa-solid fa-folder-tree"></i> Case Details</p>
                                     </div>
-                                    <div class="cdn-ov-scroll cdn-ov-scroll--parties" tabindex="0" role="region" aria-label="Other parties">
-                                        <ul class="cdn-ov-party-list">
-                                            @foreach($linkedOtherParties as $opp)
-                                                @php
-                                                    $oppRoleLabel = $opp->party_role;
-                                                    if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->sel_matter_id)) {
-                                                        $oppStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
-                                                        $oppRoleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($oppStream);
-                                                        $oppRoleLabel = $oppRoleLabels[$opp->party_role] ?? $opp->party_role;
-                                                    }
-                                                    $repParts = array_filter([
-                                                        $opp->rep_firm ?? null,
-                                                        $opp->rep_name ?? null,
-                                                        $opp->rep_email ?? null,
-                                                        $opp->rep_phone ?? null,
-                                                    ]);
-                                                @endphp
-                                                <li class="cdn-ov-party-item">
-                                                    <div class="cdn-ov-party-item__main">
-                                                        <strong class="cdn-ov-party-item__name">{{ $opp->name }}</strong>
-                                                        @if($oppRoleLabel)
-                                                            <span class="cdn-ov-party-item__role">{{ $oppRoleLabel }}</span>
-                                                        @endif
-                                                    </div>
-                                                    @if($repParts !== [])
-                                                        <div class="cdn-ov-party-item__meta">Rep: {{ implode(' · ', $repParts) }}</div>
+                                    @if(count($mdRows) > 0)
+                                        <div class="cdn-ov-case-grid">
+                                            @foreach($mdRows as $mdRow)
+                                                <div class="cdn-ov-case-item{{ $mdRow['label'] === 'Case detail' ? ' cdn-ov-case-item--full' : '' }}">
+                                                    @if($mdRow['label'] !== '')
+                                                        <span class="cdn-ov-case-item__label">{{ $mdRow['label'] }}</span>
                                                     @endif
-                                                    @if(! empty($opp->rep_notes))
-                                                        <div class="cdn-ov-party-item__meta">{{ $opp->rep_notes }}</div>
+                                                    @if(strtolower((string)$mdRow['label']) === "our client's role")
+                                                        <span class="cdn-ov-role-pill"><i class="fa-solid fa-user-tag"></i> {{ $mdRow['value'] }}</span>
+                                                    @else
+                                                        <span class="cdn-ov-case-item__value">{{ $mdRow['value'] }}</span>
                                                     @endif
-                                                </li>
+                                                </div>
                                             @endforeach
-                                        </ul>
-                                    </div>
+                                        </div>
+                                    @else
+                                        <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
+                                    @endif
                                 </section>
-                            @endif
+
+                                @if($linkedOtherParties->isNotEmpty())
+                                    <section class="cdn-ov-block cdn-ov-block--parties">
+                                        <div class="cdn-ov-block__head">
+                                            <p class="cdn-ov-section-label"><i class="fa-solid fa-users"></i> Other Parties</p>
+                                            <span class="cdn-ov-count">{{ $linkedOtherParties->count() }}</span>
+                                        </div>
+                                        <div class="cdn-ov-scroll cdn-ov-scroll--parties" tabindex="0" role="region" aria-label="Other parties">
+                                            <ul class="cdn-ov-party-list">
+                                                @foreach($linkedOtherParties as $opp)
+                                                    @php
+                                                        $oppRoleLabel = $opp->party_role;
+                                                        if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->sel_matter_id)) {
+                                                            $oppStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
+                                                            $oppRoleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($oppStream);
+                                                            $oppRoleLabel = $oppRoleLabels[$opp->party_role] ?? $opp->party_role;
+                                                        }
+                                                        $repParts = array_filter([
+                                                            $opp->rep_firm ?? null,
+                                                            $opp->rep_name ?? null,
+                                                            $opp->rep_email ?? null,
+                                                            $opp->rep_phone ?? null,
+                                                        ]);
+                                                    @endphp
+                                                    <li class="cdn-ov-party-item">
+                                                        <div class="cdn-ov-party-item__main">
+                                                            <strong class="cdn-ov-party-item__name">{{ $opp->name }}</strong>
+                                                            @if($oppRoleLabel)
+                                                                <span class="cdn-ov-party-item__role">{{ $oppRoleLabel }}</span>
+                                                            @endif
+                                                        </div>
+                                                        @if($repParts !== [])
+                                                            <div class="cdn-ov-party-item__meta">Rep: {{ implode(' · ', $repParts) }}</div>
+                                                        @endif
+                                                        @if(! empty($opp->rep_notes))
+                                                            <div class="cdn-ov-party-item__meta">{{ $opp->rep_notes }}</div>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </section>
+                                @endif
                             </div>
                         </article>
                     <?php
@@ -676,37 +715,84 @@
                         ->get();
                 @endphp
                 @if($clientHearings->count() > 0)
-                <div class="card" style="margin-top:20px;">
-                    <h3><i class="fa-solid fa-gavel"></i> Court Hearings</h3>
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+                <div class="card cdn-ov-hearings-card">
+                    <div class="cdn-ov-hearings-card__header">
+                        <div class="cdn-ov-hearings-card__title">
+                            <span class="cdn-ov-card__icon cdn-ov-card__icon--gavel"><i class="fa-solid fa-gavel" aria-hidden="true"></i></span>
+                            <div>
+                                <h3>Court Hearings</h3>
+                                <span class="cdn-ov-hearings-subtitle">Scheduled proceedings and judicial listings for this client</span>
+                            </div>
+                        </div>
+                        <div class="cdn-ov-hearings-card__meta">
+                            <span class="cdn-ov-hearings-count-pill">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                {{ $clientHearings->count() }} {{ \Illuminate\Support\Str::plural('Hearing', $clientHearings->count()) }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="cdn-ov-hearings-table-wrap">
+                        <table class="cdn-ov-hearings-table">
                             <thead>
-                                <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Date</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Time</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Hearing Type</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Court Name</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Case Number</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Judge</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Status</th>
-                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Notes</th>
+                                <tr>
+                                    <th><i class="fa-regular fa-calendar me-1"></i> Date</th>
+                                    <th><i class="fa-regular fa-clock me-1"></i> Time</th>
+                                    <th>Hearing Type</th>
+                                    <th><i class="fa-solid fa-landmark me-1"></i> Court Name</th>
+                                    <th>Case Number</th>
+                                    <th>Judge</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($clientHearings as $ch)
                                 @php
-                                    $hStatusColors = ['Scheduled'=>'#1a73e8','Completed'=>'#188038','Adjourned'=>'#e37400','Cancelled'=>'#c5221f'];
-                                    $hsc = $hStatusColors[$ch->status] ?? '#555';
+                                    $statusStr = strtolower(trim((string) $ch->status));
+                                    $statusClass = match($statusStr) {
+                                        'scheduled' => 'is-scheduled',
+                                        'completed' => 'is-completed',
+                                        'adjourned' => 'is-adjourned',
+                                        'cancelled' => 'is-cancelled',
+                                        default => 'is-default',
+                                    };
                                 @endphp
-                                <tr style="border-bottom:1px solid #eee;">
-                                    <td style="padding:10px 14px;white-space:nowrap;"><strong>{{ $ch->hearing_date->format('d/m/Y') }}</strong></td>
-                                    <td style="padding:10px 14px;white-space:nowrap;">{{ $ch->hearing_time ? \Carbon\Carbon::parse($ch->hearing_time)->format('g:i A') : '—' }}</td>
-                                    <td style="padding:10px 14px;">{{ $ch->hearing_type ?: '—' }}</td>
-                                    <td style="padding:10px 14px;">{{ $ch->court_name ?: '—' }}</td>
-                                    <td style="padding:10px 14px;">{{ $ch->case_number ?: '—' }}</td>
-                                    <td style="padding:10px 14px;">{{ $ch->judge_name ?: '—' }}</td>
-                                    <td style="padding:10px 14px;white-space:nowrap;"><span style="color:{{ $hsc }};font-weight:600;">{{ $ch->status }}</span></td>
-                                    <td style="padding:10px 14px;">{{ $ch->notes ?: '—' }}</td>
+                                <tr>
+                                    <td class="cdn-ov-hearing-date">
+                                        <strong>{{ $ch->hearing_date->format('d/m/Y') }}</strong>
+                                    </td>
+                                    <td class="cdn-ov-hearing-time">
+                                        @if($ch->hearing_time)
+                                            <span class="cdn-ov-time-chip">{{ \Carbon\Carbon::parse($ch->hearing_time)->format('g:i A') }}</span>
+                                        @else
+                                            <span class="cdn-ov-muted-dash">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="cdn-ov-hearing-type">
+                                        {{ $ch->hearing_type ?: '—' }}
+                                    </td>
+                                    <td class="cdn-ov-hearing-court">
+                                        <span>{{ $ch->court_name ?: '—' }}</span>
+                                    </td>
+                                    <td class="cdn-ov-hearing-caseno">
+                                        @if($ch->case_number)
+                                            <code class="cdn-ov-case-code">{{ $ch->case_number }}</code>
+                                        @else
+                                            <span class="cdn-ov-muted-dash">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="cdn-ov-hearing-judge">
+                                        {{ $ch->judge_name ?: '—' }}
+                                    </td>
+                                    <td class="cdn-ov-hearing-status-cell">
+                                        <span class="cdn-ov-hearing-status {{ $statusClass }}">
+                                            <span class="cdn-ov-status-dot"></span>
+                                            {{ $ch->status ?: 'Unknown' }}
+                                        </span>
+                                    </td>
+                                    <td class="cdn-ov-hearing-notes">
+                                        {{ $ch->notes ?: '—' }}
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>

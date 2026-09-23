@@ -132,38 +132,67 @@
             tabindex="0"
             data-matter-url="{{ $matterUrl }}"
             @endif>
-            <div class="cdn-ov-matter-row__main">
-                <div class="cdn-ov-matter-row__identity">
-                    <span class="cdn-ov-matter-row__ref">{{ $matterRefLabel }}</span>
-                    @if($ourRole !== '')
-                        <span class="cdn-ov-matter-row__role">{{ $ourRole }}</span>
-                    @endif
-                </div>
-                <div class="cdn-ov-matter-row__actions">
-                    @if($isCurrent)
-                        <span class="cdn-ov-matter-status">Current</span>
-                        @if($canCloseClientMatter)
+            <div class="cdn-ov-matter-card-inner">
+                <div class="cdn-ov-matter-card-top">
+                    <div class="cdn-ov-matter-badge-group">
+                        <span class="cdn-ov-matter-code">{{ $matterRefLabel }}</span>
+                        @if($isCurrent)
+                            <span class="cdn-ov-active-matter-pill"><span class="cdn-ov-pulse-dot"></span> Current</span>
+                        @else
+                            <span class="cdn-ov-matter-switch-pill"><i class="fa-solid fa-arrow-right-arrow-left"></i> Switch</span>
+                        @endif
+                    </div>
+                    <div class="cdn-ov-matter-actions">
+                        @if($isCurrent && $canCloseClientMatter)
                             <button type="button"
-                                    class="client-matter-list-close-btn"
+                                    class="client-matter-list-close-btn cdn-ov-matter-close-btn"
                                     title="Close this matter"
                                     aria-label="Close this matter"
                                     data-matter-id="{{ $cmRow->id }}"
-                                    onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">Close</button>
+                                    onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">
+                                <i class="fa-solid fa-ban"></i> Close
+                            </button>
                         @endif
+                    </div>
+                </div>
+
+                <div class="cdn-ov-matter-card-meta">
+                    @if($ourRole !== '')
+                        <span class="cdn-ov-matter-role-tag"><i class="fa-solid fa-user-shield"></i> {{ $ourRole }}</span>
+                    @endif
+                    <span class="cdn-ov-matter-stream-tag"><i class="fa-solid fa-scale-balanced"></i> {{ ucfirst($stream) }}</span>
+                </div>
+
+                <div class="cdn-ov-matter-card-parties">
+                    @if($partySummary->isNotEmpty())
+                        <div class="cdn-ov-party-summary-line">
+                            <i class="fa-solid fa-users"></i>
+                            <span>{{ $partySummary->implode(' · ') }}</span>
+                        </div>
                     @else
-                        <span class="cdn-ov-matter-status is-muted">Switch</span>
+                        <div class="cdn-ov-party-summary-line is-empty">
+                            <i class="fa-regular fa-circle-dot"></i>
+                            <span>No other parties linked</span>
+                        </div>
                     @endif
                 </div>
             </div>
-            @if($partySummary->isNotEmpty())
-                <p class="cdn-ov-matter-row__parties">{{ $partySummary->implode(' · ') }}</p>
-            @else
-                <p class="cdn-ov-matter-row__parties is-empty">No other parties linked</p>
-            @endif
         </li>
     @endforeach
     </ul>
     </div>
+    @if($matterCount === 1)
+        <div class="cdn-ov-matter-quick-status">
+            <div class="cdn-ov-mqs-item">
+                <span class="cdn-ov-mqs-label">Active Matter</span>
+                <strong class="cdn-ov-mqs-val">{{ $currentMatterRef }}</strong>
+            </div>
+            <div class="cdn-ov-mqs-item">
+                <span class="cdn-ov-mqs-label">Status</span>
+                <strong class="cdn-ov-mqs-val text-success"><i class="fa-solid fa-circle-check"></i> Open &amp; Active</strong>
+            </div>
+        </div>
+    @endif
     @endif
     </div>
 </div>
