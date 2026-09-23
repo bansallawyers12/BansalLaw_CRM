@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Public Document Controller
@@ -867,6 +869,36 @@ class PublicDocumentController extends Controller
     }
 
     /**
+     * Authorize access to a document either via a valid signer token or an authorized active staff member.
+     *
+     * @param Document $document
+     * @param string|null $token
+     * @return bool
+     */
+    protected function authorizeDocumentAccess(Document $document, ?string $token): bool
+    {
+        // 1. Staff authentication check with least-privilege document policy
+        if (Auth::guard('admin')->check()) {
+            $staff = Auth::guard('admin')->user();
+            if ($staff instanceof \App\Models\Staff && (int) ($staff->status ?? 0) === 1) {
+                if (app(\App\Policies\DocumentPolicy::class)->view($staff, $document)) {
+                    return true;
+                }
+            }
+        }
+
+        // 2. High-entropy token verification
+        if ($token && is_string($token) && strlen($token) >= 32 && preg_match('/^[a-zA-Z0-9]+$/', $token)) {
+            $signer = $document->signers()->where('token', $token)->first();
+            if ($signer && hash_equals($signer->token, $token) && $signer->status !== 'cancelled') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Get a specific page of the PDF as an image
      * 
      * @param int $id Document ID
@@ -875,19 +907,18 @@ class PublicDocumentController extends Controller
      */
     public function getPage($id, $page)
     {
-        // Clear any existing output buffers
-        while (ob_get_level()) {
+        $document = Document::findOrFail($id);
+
+        if (!$this->authorizeDocumentAccess($document, request('token'))) {
+            abort(403, 'Unauthorized access to document page.');
+        }
+
+        // Clear nested output buffers if any
+        while (ob_get_level() > 1) {
             ob_end_clean();
         }
         
         try {
-            $document = Document::findOrFail($id);
-
-            $token = request('token');
-            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
-            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
-                abort(403, 'Unauthorized access to document page.');
-            }
             
             // Check if cached image already exists
             $cachedImagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
@@ -1094,14 +1125,13 @@ class PublicDocumentController extends Controller
      */
     public function downloadSigned($id)
     {
-        try {
-            $document = Document::findOrFail($id);
+        $document = Document::findOrFail($id);
 
-            $token = request('token');
-            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
-            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
-                abort(403, 'Unauthorized download access.');
-            }
+        if (!$this->authorizeDocumentAccess($document, request('token'))) {
+            abort(403, 'Unauthorized download access.');
+        }
+
+        try {
 
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
@@ -1180,14 +1210,13 @@ class PublicDocumentController extends Controller
      */
     public function downloadSignedAndThankyou($id)
     {
-        try {
-            $document = Document::findOrFail($id);
+        $document = Document::findOrFail($id);
 
-            $token = request('token');
-            $hasValidToken = $token && DB::table('signers')->where('document_id', $id)->where('token', $token)->exists();
-            if (!$hasValidToken && !\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
-                abort(403, 'Unauthorized download access.');
-            }
+        if (!$this->authorizeDocumentAccess($document, request('token'))) {
+            abort(403, 'Unauthorized download access.');
+        }
+
+        try {
             
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
@@ -1297,44 +1326,110 @@ class PublicDocumentController extends Controller
     {
         $documentId = (int) $id;
         if ($documentId <= 0) {
-            return redirect()->back()->with('error', 'Invalid document ID.');
+            return $request->expectsJson()
+                ? response()->json(['status' => 0, 'message' => 'Invalid document ID.'], 400)
+                : redirect()->back()->with('error', 'Invalid document ID.');
         }
 
         $request->validate([
-            'signer_id' => 'required|integer|exists:signers,id'
+            'signer_id' => 'required|integer|exists:signers,id',
+            'token' => 'nullable|string',
         ]);
 
         $signerId = (int) $request->signer_id;
+
+        // In-controller rate limiting to prevent automated spam
+        $throttleKey = 'send-reminder:' . $request->ip() . '|' . $documentId . '|' . $signerId;
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $msg = "Too many reminder attempts. Please try again in {$seconds} seconds.";
+            return $request->expectsJson()
+                ? response()->json(['status' => 0, 'message' => $msg], 429)
+                : redirect()->back()->with('error', $msg);
+        }
 
         try {
             $document = Document::findOrFail($documentId);
             $signer = $document->signers()->findOrFail($signerId);
 
-            if (!\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
-                $token = $request->input('token');
-                if (!$token || $signer->token !== $token) {
-                    return redirect()->back()->with('error', 'Unauthorized to send reminder.');
+            // Authorization: active staff with document policy permission, or a valid non-cancelled signer token
+            $isAuthorized = false;
+            if (Auth::guard('admin')->check()) {
+                $staff = Auth::guard('admin')->user();
+                if ($staff instanceof \App\Models\Staff && (int) ($staff->status ?? 0) === 1) {
+                    if (app(\App\Policies\DocumentPolicy::class)->view($staff, $document)) {
+                        $isAuthorized = true;
+                    }
                 }
             }
 
+            if (!$isAuthorized) {
+                $token = $request->input('token');
+                if ($token && is_string($token) && strlen($token) >= 32 && preg_match('/^[a-zA-Z0-9]+$/', $token)) {
+                    $callerSigner = $document->signers()->where('token', $token)->first();
+                    if ($callerSigner && hash_equals($callerSigner->token, $token) && $callerSigner->status !== 'cancelled') {
+                        $isAuthorized = true;
+                    }
+                }
+            }
+
+            if (!$isAuthorized) {
+                RateLimiter::hit($throttleKey, 300);
+                return $request->expectsJson()
+                    ? response()->json(['status' => 0, 'message' => 'Unauthorized to send reminder.'], 403)
+                    : redirect()->back()->with('error', 'Unauthorized to send reminder.');
+            }
+
             if ($signer->status === 'signed') {
-                return redirect()->back()->with('error', 'Document is already signed.');
+                return $request->expectsJson()
+                    ? response()->json(['status' => 0, 'message' => 'Document is already signed.'], 400)
+                    : redirect()->back()->with('error', 'Document is already signed.');
+            }
+
+            if ($signer->status === 'cancelled') {
+                return $request->expectsJson()
+                    ? response()->json(['status' => 0, 'message' => 'Signer invitation is cancelled.'], 400)
+                    : redirect()->back()->with('error', 'Signer invitation is cancelled.');
             }
 
             if ($signer->reminder_count >= 3) {
-                return redirect()->back()->with('error', 'Maximum reminders already sent.');
+                return $request->expectsJson()
+                    ? response()->json(['status' => 0, 'message' => 'Maximum reminders already sent for this signer.'], 400)
+                    : redirect()->back()->with('error', 'Maximum reminders already sent for this signer.');
             }
 
-            app(\App\Services\SignatureService::class)->remind($signer);
+            if ($signer->last_reminder_sent_at && $signer->last_reminder_sent_at->isAfter(now()->subHours(24))) {
+                return $request->expectsJson()
+                    ? response()->json(['status' => 0, 'message' => 'Reminder cooldown active. Please wait 24 hours between reminders.'], 429)
+                    : redirect()->back()->with('error', 'Reminder cooldown active. Please wait 24 hours between reminders.');
+            }
 
-            return redirect()->back()->with('success', 'Reminder sent successfully!');
+            RateLimiter::hit($throttleKey, 3600);
+
+            $success = app(\App\Services\SignatureService::class)->remind($signer);
+
+            if ($success) {
+                $msg = 'Reminder sent successfully!';
+                return $request->expectsJson()
+                    ? response()->json(['status' => 1, 'message' => $msg])
+                    : redirect()->back()->with('success', $msg);
+            }
+
+            $msg = 'Failed to send reminder. Please try again.';
+            return $request->expectsJson()
+                ? response()->json(['status' => 0, 'message' => $msg], 500)
+                : redirect()->back()->with('error', $msg);
+
         } catch (\Exception $e) {
             Log::error('Error sending reminder', [
                 'document_id' => $documentId,
                 'signer_id' => $signerId,
                 'error' => $e->getMessage()
             ]);
-            return redirect()->back()->with('error', 'An error occurred while sending the reminder.');
+            $msg = $e->getMessage() ?: 'An error occurred while sending the reminder.';
+            return $request->expectsJson()
+                ? response()->json(['status' => 0, 'message' => $msg], 500)
+                : redirect()->back()->with('error', $msg);
         }
     }
 

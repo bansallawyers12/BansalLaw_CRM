@@ -127,8 +127,8 @@ Top issues:
 |------|------|--------|-------|
 | E-sign page | `GET /sign/{id}/{token}` | **OK** | Token format + DB match; signed/cancelled handled. |
 | Submit signatures | `POST /documents/{id}/sign` | **OK** | Requires token; verifies signer belongs to document. |
-| Page / download | public document helpers | **Partial** | Token **or** logged-in admin guard; token compared via query existence (OK if tokens high-entropy). |
-| Public send-reminder | `POST /documents/{document}/send-reminder` | **Partial** | Token required when not staff; can be abused for reminder spam if token leaked. |
+| Page / download | public document helpers | **OK** (Fixed) | Resolved: Validates high-entropy token format (>=32 chars, alphanumeric) and uses timing-safe constant-time comparison (`hash_equals`). Rejects cancelled signers. For staff access, enforces active status (`status=1`) and least-privilege document visibility (`DocumentPolicy::view`) instead of raw admin guard check. Added route throttles (`throttle:60,1` for page rendering, `throttle:30,1` for signed downloads). |
+| Public send-reminder | `POST /documents/{document}/send-reminder` | **OK** (Fixed) | Resolved: Added route throttle (`throttle:6,1`) and in-controller IP rate limiter. Requires active staff with `DocumentPolicy::view` authorization or non-cancelled signer token verified via `hash_equals`. Enforces 24-hour reminder cooldown and max 3 reminders limit per signer. Blocks reminder spam for signed or cancelled documents. |
 | Email verify | `GET /verify-email/{token}` | **OK** | Public by design; service validates token. |
 | README claim “HMAC token” | README | **Partial** | Implementation uses **stored signer token string match**, not HMAC of document id (doc wording overstates). |
 

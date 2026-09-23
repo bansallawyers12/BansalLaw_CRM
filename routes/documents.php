@@ -136,15 +136,18 @@ Route::post('/documents/{document}/sign', [PublicDocumentController::class, 'sub
 /*---------- Public Document Viewing ----------*/
 Route::get('/documents/{id}/page/{page}', [PublicDocumentController::class, 'getPage'])
     ->whereNumber(['id', 'page'])
+    ->middleware('throttle:60,1')
     ->name('public.documents.page');
 
 /*---------- Public Download & Thank You ----------*/
 Route::get('/documents/{id}/download-signed', [PublicDocumentController::class, 'downloadSigned'])
     ->whereNumber('id')
+    ->middleware('throttle:30,1')
     ->name('public.documents.download.signed');
 
 Route::get('/documents/{id}/download-signed-and-thankyou', [PublicDocumentController::class, 'downloadSignedAndThankyou'])
     ->whereNumber('id')
+    ->middleware('throttle:30,1')
     ->name('public.documents.download_and_thankyou');
 
 Route::get('/documents/thankyou/{id?}', [PublicDocumentController::class, 'thankyou'])
@@ -152,6 +155,7 @@ Route::get('/documents/thankyou/{id?}', [PublicDocumentController::class, 'thank
 
 /*---------- Public Reminder ----------*/
 Route::post('/documents/{document}/send-reminder', [PublicDocumentController::class, 'sendReminder'])
+    ->middleware('throttle:6,1')
     ->name('public.documents.sendReminder');
 
 // No public GET /documents index — signing is token-only via /sign/{id}/{token} (DOC-3).

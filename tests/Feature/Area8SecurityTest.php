@@ -1783,6 +1783,163 @@ class Area8SecurityTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertFalse(\Illuminate\Support\Facades\Auth::guard('admin')->check());
     }
+
+    #[Test]
+    public function public_document_helpers_reject_unauthorized_token_and_unauthorized_staff(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Solicitor', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $creatorStaff = new Staff();
+        $creatorStaff->id = 925;
+        $creatorStaff->email = 'creator925@bansallawyers.com.au';
+        $creatorStaff->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $creatorStaff->role = 1;
+        $creatorStaff->status = 1;
+        $creatorStaff->save();
+
+        $document = new \App\Models\Document();
+        $document->id = 7001;
+        $document->file_name = 'Contract.pdf';
+        $document->filetype = 'application/pdf';
+        $document->myfile = 'documents/contract.pdf';
+        $document->file_size = 1000;
+        $document->status = 'sent';
+        $document->created_by = $creatorStaff->id;
+        $document->client_id = 9999;
+        $document->save();
+
+        $signer = new \App\Models\Signer();
+        $signer->id = 6001;
+        $signer->document_id = $document->id;
+        $signer->name = 'John Doe';
+        $signer->email = 'john@example.com';
+        $signer->token = \Illuminate\Support\Str::random(64);
+        $signer->status = 'pending';
+        $signer->save();
+
+        // 1. Without token and without logged in staff -> 403
+        $res = $this->get('/documents/7001/page/1');
+        $res->assertStatus(403);
+
+        $dlRes = $this->get('/documents/7001/download-signed');
+        $dlRes->assertStatus(403);
+
+        // 2. With invalid or short token (< 32 chars) -> 403
+        $invalidRes = $this->get('/documents/7001/page/1?token=short');
+        $invalidRes->assertStatus(403);
+
+        // 3. With cancelled signer token -> 403
+        $signer->status = 'cancelled';
+        $signer->save();
+        $cancelledRes = $this->get('/documents/7001/page/1?token=' . $signer->token);
+        $cancelledRes->assertStatus(403);
+
+        // 4. Regular staff who cannot view document under policy -> 403
+        $otherStaff = new Staff();
+        $otherStaff->id = 926;
+        $otherStaff->email = 'other926@bansallawyers.com.au';
+        $otherStaff->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $otherStaff->role = 2;
+        $otherStaff->status = 1;
+        $otherStaff->save();
+
+        $this->actingAs($otherStaff, 'admin');
+        $staffRes = $this->get('/documents/7001/page/1');
+        $staffRes->assertStatus(403);
+    }
+
+    #[Test]
+    public function public_send_reminder_enforces_rate_limits_and_signer_validations(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $creatorStaff = new Staff();
+        $creatorStaff->id = 927;
+        $creatorStaff->email = 'creator927@bansallawyers.com.au';
+        $creatorStaff->password = \Illuminate\Support\Facades\Hash::make('secret');
+        $creatorStaff->role = 1;
+        $creatorStaff->status = 1;
+        $creatorStaff->save();
+
+        $document = new \App\Models\Document();
+        $document->id = 7002;
+        $document->file_name = 'Agreement.pdf';
+        $document->filetype = 'application/pdf';
+        $document->myfile = 'documents/agreement.pdf';
+        $document->file_size = 1000;
+        $document->status = 'sent';
+        $document->created_by = $creatorStaff->id;
+        $document->save();
+
+        $signer = new \App\Models\Signer();
+        $signer->id = 6002;
+        $signer->document_id = $document->id;
+        $signer->name = 'Jane Doe';
+        $signer->email = 'jane@example.com';
+        $validToken = \Illuminate\Support\Str::random(64);
+        $signer->token = $validToken;
+        $signer->status = 'pending';
+        $signer->reminder_count = 0;
+        $signer->save();
+
+        // 1. Without token and unauthenticated -> 403
+        $unauthRes = $this->postJson('/documents/7002/send-reminder', [
+            'signer_id' => $signer->id,
+        ]);
+        $unauthRes->assertStatus(403);
+
+        // 2. With invalid token -> 403
+        $badTokenRes = $this->postJson('/documents/7002/send-reminder', [
+            'signer_id' => $signer->id,
+            'token' => 'invalid_random_token_1234567890123456789012',
+        ]);
+        $badTokenRes->assertStatus(403);
+
+        // 3. When signer is already signed -> 400
+        $signer->status = 'signed';
+        $signer->save();
+
+        $signedRes = $this->postJson('/documents/7002/send-reminder', [
+            'signer_id' => $signer->id,
+            'token' => $validToken,
+        ]);
+        $signedRes->assertStatus(400);
+        $this->assertStringContainsString('already signed', $signedRes->json('message'));
+
+        // 4. When maximum reminders (3) reached -> 400
+        $signer->status = 'pending';
+        $signer->reminder_count = 3;
+        $signer->save();
+
+        $maxRes = $this->postJson('/documents/7002/send-reminder', [
+            'signer_id' => $signer->id,
+            'token' => $validToken,
+        ]);
+        $maxRes->assertStatus(400);
+        $this->assertStringContainsString('Maximum reminders already sent', $maxRes->json('message'));
+
+        // 5. When reminder cooldown is active -> 429
+        $signer->reminder_count = 1;
+        $signer->last_reminder_sent_at = now()->subHours(2);
+        $signer->save();
+
+        $cooldownRes = $this->postJson('/documents/7002/send-reminder', [
+            'signer_id' => $signer->id,
+            'token' => $validToken,
+        ]);
+        $cooldownRes->assertStatus(429);
+        $this->assertStringContainsString('cooldown active', $cooldownRes->json('message'));
+    }
 }
 
 
