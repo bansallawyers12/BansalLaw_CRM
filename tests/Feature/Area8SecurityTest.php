@@ -1440,6 +1440,182 @@ class Area8SecurityTest extends TestCase
         $afterCount = \App\Models\Admin::where('email', 'botspam@example.com')->count();
         $this->assertEquals($beforeCount, $afterCount);
     }
+
+    #[Test]
+    public function staff_cannot_toggle_own_status_via_update_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $superAdmin = new Staff();
+        $superAdmin->id = 910;
+        $superAdmin->email = 'superadmin910@bansallawyers.com.au';
+        $superAdmin->password = \Illuminate\Support\Facades\Hash::make('password');
+        $superAdmin->role = 1;
+        $superAdmin->status = 1;
+        $superAdmin->save();
+
+        $this->actingAs($superAdmin, 'admin');
+
+        $response = $this->postJson('/update_action', [
+            'table' => 'staff',
+            'id' => 910,
+            'colname' => 'status',
+            'current_status' => 1,
+        ]);
+
+        $response->assertJson(['status' => 0]);
+        $this->assertStringContainsString('cannot modify your own staff status', $response->json('message'));
+    }
+
+    #[Test]
+    public function non_superadmin_cannot_toggle_staff_status_via_update_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 3],
+            ['name' => 'Admin Console Manager', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $manager = new Staff();
+        $manager->id = 911;
+        $manager->email = 'manager911@bansallawyers.com.au';
+        $manager->password = \Illuminate\Support\Facades\Hash::make('password');
+        $manager->role = 3;
+        $manager->status = 1;
+        $manager->save();
+
+        $otherStaff = new Staff();
+        $otherStaff->id = 912;
+        $otherStaff->email = 'staff912@bansallawyers.com.au';
+        $otherStaff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $otherStaff->role = 3;
+        $otherStaff->status = 1;
+        $otherStaff->save();
+
+        $this->actingAs($manager, 'admin');
+
+        $response = $this->postJson('/update_action', [
+            'table' => 'staff',
+            'id' => 912,
+            'colname' => 'status',
+            'current_status' => 1,
+        ]);
+
+        $response->assertJson(['status' => 0]);
+        $this->assertStringContainsString('Super Admin privileges', $response->json('message'));
+    }
+
+    #[Test]
+    public function non_superadmin_cannot_delete_core_structural_tables_via_delete_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 3],
+            ['name' => 'Admin Console Manager', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $manager = new Staff();
+        $manager->id = 913;
+        $manager->email = 'manager913@bansallawyers.com.au';
+        $manager->password = \Illuminate\Support\Facades\Hash::make('password');
+        $manager->role = 3;
+        $manager->status = 1;
+        $manager->save();
+
+        $this->actingAs($manager, 'admin');
+
+        foreach (['branches', 'workflows', 'matters', 'teams'] as $table) {
+            $response = $this->postJson('/delete_action', [
+                'table' => $table,
+                'id' => 1,
+            ]);
+
+            $response->assertJson(['status' => 0]);
+            $this->assertStringContainsString('Super Admin privileges', $response->json('message'));
+        }
+    }
+
+    #[Test]
+    public function super_admin_cannot_delete_branch_with_active_staff_via_delete_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 1],
+            ['name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $superAdmin = new Staff();
+        $superAdmin->id = 914;
+        $superAdmin->email = 'superadmin914@bansallawyers.com.au';
+        $superAdmin->password = \Illuminate\Support\Facades\Hash::make('password');
+        $superAdmin->role = 1;
+        $superAdmin->status = 1;
+        $superAdmin->save();
+
+        $branchId = \Illuminate\Support\Facades\DB::table('branches')->insertGetId([
+            'office_name' => 'Test Branch Active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $assignedStaff = new Staff();
+        $assignedStaff->id = 915;
+        $assignedStaff->email = 'assigned915@bansallawyers.com.au';
+        $assignedStaff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $assignedStaff->role = 1;
+        $assignedStaff->status = 1;
+        $assignedStaff->office_id = $branchId;
+        $assignedStaff->save();
+
+        $this->actingAs($superAdmin, 'admin');
+
+        $response = $this->postJson('/delete_action', [
+            'table' => 'branches',
+            'id' => $branchId,
+        ]);
+
+        $response->assertJson(['status' => 0]);
+        $this->assertStringContainsString('Cannot delete office branch with active staff', $response->json('message'));
+    }
+
+    #[Test]
+    public function staff_without_client_access_cannot_deactivate_client_via_delete_action(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 2],
+            ['name' => 'Regular Solicitor', 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        $staff = new Staff();
+        $staff->id = 916;
+        $staff->email = 'staff916@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password');
+        $staff->role = 2; // Solicitor
+        $staff->status = 1;
+        $staff->save();
+
+        $otherClient = new \App\Models\Admin();
+        $otherClient->id = 8881;
+        $otherClient->first_name = 'Unallocated';
+        $otherClient->last_name = 'Client';
+        $otherClient->email = 'unalloc8881@example.com';
+        $otherClient->type = 'client';
+        $otherClient->status = 1;
+        $otherClient->password = bcrypt('secret');
+        $otherClient->save();
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->postJson('/delete_action', [
+            'table' => 'admins',
+            'id' => 8881,
+        ]);
+
+        $this->assertTrue(in_array($response->getStatusCode(), [200, 403], true));
+        if ($response->getStatusCode() === 200) {
+            $this->assertSame(0, $response->json('status'));
+        }
+    }
 }
 
 

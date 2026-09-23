@@ -116,9 +116,9 @@ Top issues:
 
 | Endpoint (auth:admin) | Method | Status | Notes |
 |-----------------------|--------|--------|-------|
-| `/update_action` | `updateAction` | **Partial** | Table/column allowlists + Admin Console check for system tables + client visibility for client tables. |
-| `/delete_action` | `deleteAction` | **Partial** | Allowlist + some per-table rules; still powerful. |
-| `/approved_action`, `/declined_action`, `/process_action`, `/archive_action` | approve/decline/process/archive | **OK** (Fixed) | Strict table allowlist enforced (`systemTables` and `clientTables`). Admin Console privileges required for system tables; row-level client check (`ensureCrmRecordAccess`) enforced for client tables. Arbitrary table mutation blocked. |
+| `/update_action` | `updateAction` | **OK** (Fixed) | Resolved: Strict table/column allowlists, active staff authentication, super-admin privilege check for staff management, self-status modification lockout, row-level client visibility checks (`ensureCrmRecordAccess`) on client tables and `admins`, and fail-closed task client resolution. |
+| `/delete_action` | `deleteAction` | **OK** (Fixed) | Resolved: Active staff verification, super-admin restriction on core structural tables (`branches`, `workflows`, `matters`, `teams`) with dependency protection against deleting active branches/matters, row-level client visibility checks on `admins`, `client_matters`, `client_matter_tasks`, and `quotations`, and ownership checks on `email_labels`. |
+| `/approved_action`, `/declined_action`, `/process_action`, `/archive_action` | approve/decline/process/archive | **OK** (Fixed) | Strict table allowlist enforced (`systemTables` and `clientTables`). Admin Console privileges required for system tables; row-level client check (`ensureCrmRecordAccess`) enforced for client tables and `admins`. Arbitrary table mutation blocked. |
 | `/change_password` | `change_password` | **Partial** | Requires old password; min length **6**; logs out after change; uses `Auth::user()` (OK with default admin guard). |
 
 ### 8. Public token auth (no login)
