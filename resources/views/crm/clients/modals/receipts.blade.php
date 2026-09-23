@@ -5,13 +5,7 @@
     ======================================== --}}
 @php
     $__receiptModalSolicitors = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
-    $__invoiceFeeEarners = \App\Models\Staff::query()
-        ->where('status', 1)
-        ->whereNotNull('first_name')
-        ->where('first_name', '!=', '')
-        ->orderBy('first_name')
-        ->orderBy('last_name')
-        ->get(['id', 'first_name', 'last_name']);
+    $__invoiceFeeEarners = \App\Support\InvoiceTimesheetLine::selectableFeeEarners();
 @endphp
 
 <style>

@@ -1,6 +1,6 @@
 @php
     $includeTransNo = $includeTransNo ?? false;
-    $feeEarners = $feeEarners ?? collect();
+    $feeEarners = $feeEarners ?? \App\Support\InvoiceTimesheetLine::selectableFeeEarners();
 @endphp
 <tr class="clonedrow_invoice invoice-line-block">
     <td class="invoice-line-block__cell">

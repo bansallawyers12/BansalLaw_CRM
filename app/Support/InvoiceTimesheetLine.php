@@ -2,6 +2,10 @@
 
 namespace App\Support;
 
+use App\Models\Staff;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
 /**
  * Timesheet-style tax invoice lines: hours × rate (ex GST) + per-line GST.
  * Ledger withdraw_amount remains the GST-inclusive amount the client owes.
@@ -9,6 +13,66 @@ namespace App\Support;
 class InvoiceTimesheetLine
 {
     public const GST_RATE = 0.10;
+
+    /**
+     * Role names permitted to appear in the invoice Fee Earner dropdown.
+     * Strictly Admin and Solicitor (excludes Super Admin, Accountant, Calling Team, etc.).
+     *
+     * @var array<int, string>
+     */
+    public const ALLOWED_FEE_EARNER_ROLE_NAMES = ['admin', 'solicitor'];
+
+    /**
+     * Default role IDs for Solicitor (16) and Admin (17) if role lookup fails.
+     *
+     * @var array<int, int>
+     */
+    public const DEFAULT_ALLOWED_FEE_EARNER_ROLE_IDS = [16, 17];
+
+    /**
+     * Get the database role IDs corresponding to the allowed fee earner roles.
+     *
+     * @return array<int, int>
+     */
+    public static function allowedFeeEarnerRoleIds(): array
+    {
+        try {
+            $roleIds = DB::table('user_roles')
+                ->whereIn(DB::raw('LOWER(TRIM(name))'), self::ALLOWED_FEE_EARNER_ROLE_NAMES)
+                ->where(DB::raw('LOWER(TRIM(name))'), '!=', 'super admin')
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if (! empty($roleIds)) {
+                return $roleIds;
+            }
+        } catch (\Throwable $e) {
+            // DB table might not exist or exception in tests
+        }
+
+        return self::DEFAULT_ALLOWED_FEE_EARNER_ROLE_IDS;
+    }
+
+    /**
+     * Fee earner dropdown: active staff with Admin or Solicitor roles ONLY.
+     * Excludes Super Admin, Accountant, Calling Team, Person Responsible, Person Assisting, etc.
+     *
+     * @return Collection<int, Staff>
+     */
+    public static function selectableFeeEarners(): Collection
+    {
+        $roleIds = static::allowedFeeEarnerRoleIds();
+
+        return Staff::query()
+            ->where('status', 1)
+            ->whereIn('role', $roleIds)
+            ->whereNotNull('first_name')
+            ->where('first_name', '!=', '')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'role']);
+    }
 
     /**
      * @return array<int, string>
