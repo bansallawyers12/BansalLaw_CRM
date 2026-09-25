@@ -159,12 +159,17 @@
         document.querySelectorAll('.dashboard-cal-type-option').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var type = btn.getAttribute('data-type');
-                if (!type || type === calendarElTzBookingType()) {
+                var switcher = document.getElementById('dashboardCalendarTypeSwitcher');
+                var current = switcher ? String(switcher.getAttribute('data-selected-type') || 'personal') : 'personal';
+                if (!type || type === current) {
                     return;
                 }
                 setSelectedBookingCalendarType(type);
                 if (calendar && typeof calendar.refetchEvents === 'function') {
                     calendar.refetchEvents();
+                }
+                if (typeof window.refreshUpcomingList === 'function') {
+                    window.refreshUpcomingList();
                 }
             });
         });
@@ -2155,12 +2160,7 @@
                         }
 
                         updateStats(payload.stats);
-                        var filtered = (payload.data || []).filter(function (ev) {
-                            var rawDt = ev.start || (ev.extendedProps && (ev.extendedProps.starts_at || ev.extendedProps.appointment_datetime)) || '';
-                            var ymd = String(rawDt).slice(0, 10);
-                            return !isPastDateStr(ymd, calendarElTz());
-                        });
-                        successCallback(filtered);
+                        successCallback(payload.data || []);
                     } catch (err) {
                         console.error('Dashboard calendar feed error:', err);
                         failureCallback(err);
