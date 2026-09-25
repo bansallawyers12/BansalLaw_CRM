@@ -294,13 +294,12 @@
 
                 @if($canGrantPersonalCalendar && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_access_personal_calendar'))
                 <div class="form-group">
-                    <input type="hidden" name="can_access_personal_calendar" value="0">
+                    <input type="hidden" name="can_access_personal_calendar" value="1">
                     <label class="staff-checkbox-row">
-                        <input type="checkbox" name="can_access_personal_calendar" value="1"
-                            @checked(old('can_access_personal_calendar', $isEdit ? ($fetchedData->can_access_personal_calendar ?? false) : false))>
-                        <span>Can access personal calendar</span>
+                        <input type="checkbox" value="1" checked disabled>
+                        <span>Personal calendar enabled</span>
                     </label>
-                    <small class="text-muted d-block mt-1">Shows My Calendar on the dashboard for this staff member (their reminders, follow-ups, hearings and deadlines). Only Super Admin can grant this. Super Admin always has access.</small>
+                    <small class="text-muted d-block mt-1">All active staff get the same My Calendar on the dashboard (bookings, reminders, follow-ups, hearings and deadlines). Access follows active status.</small>
                 </div>
                 @endif
 

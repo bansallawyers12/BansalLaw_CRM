@@ -47,15 +47,18 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function staff_without_calendar_permission_cannot_load_calendar_events(): void
+    public function active_staff_can_load_calendar_events_without_flag(): void
     {
         $staff = $this->createStaff(['can_access_personal_calendar' => false]);
         $this->actingAs($staff, 'admin');
 
-        $this->getJson(route('dashboard.calendar-events'))
-            ->assertStatus(403)
+        $this->getJson(route('dashboard.calendar-events', [
+            'start' => now()->toIso8601String(),
+            'end' => now()->addWeek()->toIso8601String(),
+        ]))
+            ->assertOk()
             ->assertJson([
-                'success' => false,
+                'success' => true,
             ]);
     }
 
@@ -97,20 +100,21 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function staff_without_calendar_permission_cannot_create_calendar_event(): void
+    public function active_staff_can_create_calendar_event_without_flag(): void
     {
         $staff = $this->createStaff(['can_access_personal_calendar' => false]);
         $this->actingAs($staff, 'admin');
 
+        // Use a weekday within business hours (Mon 28 Sep 2026).
         $this->postJson(route('booking.api.calendar-events.store'), [
-            'title' => 'Blocked reminder',
+            'title' => 'My reminder',
             'event_type' => 'reminder',
-            'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(),
-            'ends_at' => now()->addDay()->setTime(10, 30)->toIso8601String(),
+            'starts_at' => '2026-09-28T10:00:00+10:00',
+            'ends_at' => '2026-09-28T10:30:00+10:00',
         ])
-            ->assertStatus(403)
+            ->assertOk()
             ->assertJson([
-                'success' => false,
+                'success' => true,
             ]);
     }
 
@@ -205,7 +209,7 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function staff_calendar_list_excludes_super_admin_and_staff_without_access(): void
+    public function staff_calendar_list_includes_active_staff_and_excludes_super_admin_and_inactive(): void
     {
         $super = $this->createStaff([
             'role' => 1,
@@ -219,20 +223,50 @@ class PersonalCalendarAccessTest extends TestCase
             'first_name' => 'WithAccess',
             'email' => 'with.access.calendar@example.com',
         ]);
-        $withoutAccess = $this->createStaff([
+        $withoutFlag = $this->createStaff([
             'role' => 16,
             'can_access_personal_calendar' => false,
-            'first_name' => 'NoAccess',
-            'email' => 'no.access.calendar@example.com',
+            'first_name' => 'NoFlag',
+            'email' => 'no.flag.calendar@example.com',
+        ]);
+        $inactive = $this->createStaff([
+            'role' => 16,
+            'status' => 0,
+            'can_access_personal_calendar' => true,
+            'first_name' => 'Inactive',
+            'email' => 'inactive.calendar@example.com',
         ]);
         $this->actingAs($super, 'admin');
 
-        $options = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
+        $options = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions($super);
         $ids = collect($options)->pluck('id')->all();
 
         $this->assertNotContains($super->id, $ids);
         $this->assertContains($withAccess->id, $ids);
-        $this->assertNotContains($withoutAccess->id, $ids);
+        $this->assertContains($withoutFlag->id, $ids);
+        $this->assertNotContains($inactive->id, $ids);
+    }
+
+    #[Test]
+    public function regular_staff_nav_list_hides_other_personal_calendars(): void
+    {
+        $viewer = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Viewer',
+            'email' => 'viewer.nav.calendar@example.com',
+        ]);
+        $other = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Other',
+            'email' => 'other.nav.calendar@example.com',
+        ]);
+        $this->actingAs($viewer, 'admin');
+
+        $options = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions($viewer);
+        $ids = collect($options)->pluck('id')->all();
+
+        $this->assertNotContains($other->id, $ids);
+        $this->assertNotContains($viewer->id, $ids);
     }
 
     #[Test]
@@ -267,20 +301,63 @@ class PersonalCalendarAccessTest extends TestCase
     }
 
     #[Test]
-    public function staff_without_calendar_access_personal_page_returns_not_found(): void
+    public function regular_staff_cannot_open_another_staff_personal_calendar(): void
+    {
+        $viewer = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Viewer',
+            'email' => 'viewer.other.calendar@example.com',
+        ]);
+        $other = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Other',
+            'email' => 'other.personal.calendar@example.com',
+        ]);
+        $this->actingAs($viewer, 'admin');
+
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $other->id]))
+            ->assertForbidden();
+
+        $this->getJson(route('booking.api.appointments', [
+            'format' => 'calendar',
+            'type' => 'personal',
+            'staff_id' => $other->id,
+            'start' => now()->toIso8601String(),
+            'end' => now()->addMonth()->toIso8601String(),
+        ]))->assertNotFound();
+    }
+
+    #[Test]
+    public function regular_staff_can_open_own_personal_calendar(): void
+    {
+        $viewer = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Self',
+            'email' => 'self.personal.calendar@example.com',
+        ]);
+        $this->actingAs($viewer, 'admin');
+
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $viewer->id]))
+            ->assertOk()
+            ->assertSee('Personal calendar', false);
+    }
+
+    #[Test]
+    public function inactive_staff_personal_page_returns_not_found(): void
     {
         $viewer = $this->createStaff([
             'role' => 1,
             'email' => 'admin.no.calendar.page@example.com',
         ]);
-        $noAccess = $this->createStaff([
+        $inactive = $this->createStaff([
             'role' => 16,
-            'can_access_personal_calendar' => false,
+            'status' => 0,
+            'can_access_personal_calendar' => true,
             'email' => 'no.page.calendar@example.com',
         ]);
         $this->actingAs($viewer, 'admin');
 
-        $this->get(route('booking.appointments.calendar.staff', ['staff' => $noAccess->id]))
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $inactive->id]))
             ->assertNotFound();
     }
 

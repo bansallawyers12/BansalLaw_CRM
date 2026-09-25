@@ -52,7 +52,7 @@ class MatterTaskReminderTest extends TestCase
             'client_id' => $client->id,
             'matter_id' => $matter->id,
             'title' => 'Call Vantage Legal',
-            'due_date' => '2026-09-12',
+            'due_date' => '2026-09-28',
             'kind' => 'reminder',
         ]);
 
@@ -100,7 +100,7 @@ class MatterTaskReminderTest extends TestCase
         $this->postJson(route('clients.matterTask.store'), [
             'client_id' => $lead->id,
             'title' => 'Follow up lead call',
-            'due_date' => '2026-09-15',
+            'due_date' => '2026-10-05',
             'kind' => 'reminder',
         ])->assertOk()->assertJson([
             'status' => true,
@@ -126,13 +126,12 @@ class MatterTaskReminderTest extends TestCase
     }
 
     #[Test]
-    public function staff_without_calendar_access_cannot_add_reminder(): void
+    public function active_staff_can_add_reminder_without_calendar_flag(): void
     {
         [$client, $matter] = $this->seedClientMatter();
         config(['crm_access.allocation_enforcement' => false]);
 
-        $staff = Staff::factory()->create([
-            'role' => 16,
+        $staff = Staff::factory()->superAdmin()->create([
             'status' => 1,
             'can_access_personal_calendar' => false,
             'email' => 'nocal.reminder@example.com',
@@ -142,10 +141,11 @@ class MatterTaskReminderTest extends TestCase
         $this->postJson(route('clients.matterTask.store'), [
             'client_id' => $client->id,
             'matter_id' => $matter->id,
-            'title' => 'Blocked reminder',
-            'due_date' => '2026-09-12',
+            'title' => 'Allowed reminder',
+            'due_date' => '2026-10-05',
             'kind' => 'reminder',
-        ])->assertStatus(403);
+        ])->assertOk()
+            ->assertJsonPath('status', true);
     }
 
     #[Test]

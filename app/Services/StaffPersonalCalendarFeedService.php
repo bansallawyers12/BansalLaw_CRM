@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class StaffPersonalCalendarFeedService
@@ -167,20 +168,38 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
+     * Whether the viewer may open another staff member's personal calendar page/feed.
+     * Everyone may open their own; only Super Admin may open others'.
+     */
+    public function canViewPersonalCalendarOf(Staff $viewer, Staff $target): bool
+    {
+        if (! $viewer->canAccessPersonalCalendar() || ! $target->canAccessPersonalCalendar()) {
+            return false;
+        }
+
+        if ((int) $viewer->id === (int) $target->id) {
+            return true;
+        }
+
+        return $this->canFilterStaffCalendar($viewer);
+    }
+
+    /**
      * Staff calendars shown in booking nav / calendar switcher.
      * Native Super Admin (role 1) is omitted — e.g. "Admin One" is not a personal calendar entry.
+     * Non–Super Admin viewers only see website booking calendars (Ajay / Michael), not other
+     * staff members' personal calendars.
      *
      * @return list<array{id: int, name: string, booking_calendar_type: ?string}>
      */
-    public function staffFilterOptions(): array
+    public function staffFilterOptions(?Staff $viewer = null): array
     {
-        return Staff::query()
+        $options = Staff::query()
             ->where('status', 1)
             ->where('role', '!=', 1)
-            ->where('can_access_personal_calendar', true)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'role', 'can_access_personal_calendar'])
+            ->get(['id', 'first_name', 'last_name', 'role', 'can_access_personal_calendar', 'status'])
             ->filter(fn (Staff $s) => $s->canAccessPersonalCalendar())
             ->map(fn (Staff $s) => [
                 'id' => (int) $s->id,
@@ -189,6 +208,16 @@ class StaffPersonalCalendarFeedService
             ])
             ->values()
             ->all();
+
+        $viewer = $viewer ?? Auth::guard('admin')->user();
+        if ($viewer instanceof Staff && ! $this->canFilterStaffCalendar($viewer)) {
+            return array_values(array_filter(
+                $options,
+                fn (array $opt) => self::isValidCalendarType($opt['booking_calendar_type'] ?? null)
+            ));
+        }
+
+        return $options;
     }
 
     /**

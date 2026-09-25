@@ -643,20 +643,13 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Super Admin (including elevated), or staff with the per-user grant, may use
-     * the dashboard personal calendar (reminders, follow-ups, hearings, deadlines).
+     * All active staff use the same dashboard / personal calendar pattern
+     * (bookings, reminders, follow-ups, hearings, deadlines, shared colours).
+     * Inactive staff are excluded.
      */
     public function canAccessPersonalCalendar(): bool
     {
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
-        if ((int) ($this->role ?? 0) === 1) {
-            return true;
-        }
-
-        return (bool) ($this->can_access_personal_calendar ?? false);
+        return (int) ($this->status ?? 0) === 1;
     }
 
     /**

@@ -315,8 +315,19 @@ class BookingAppointmentsController extends Controller
                 return null;
             }
             $staff = Staff::query()->where('id', $id)->where('status', 1)->first();
+            if (! $staff || ! $staff->canAccessPersonalCalendar()) {
+                return null;
+            }
 
-            return ($staff && $staff->canAccessPersonalCalendar()) ? $staff : null;
+            $viewer = Auth::guard('admin')->user();
+            if (
+                ! $viewer instanceof Staff
+                || ! $this->personalCalendarFeed->canViewPersonalCalendarOf($viewer, $staff)
+            ) {
+                return null;
+            }
+
+            return $staff;
         }
 
         $user = Auth::guard('admin')->user();
@@ -1415,6 +1426,13 @@ class BookingAppointmentsController extends Controller
     public function calendarStatsJsonForStaff(int $staff)
     {
         $target = $this->findPersonalCalendarStaffOrAbort($staff);
+        $viewer = Auth::guard('admin')->user();
+        if (
+            ! $viewer instanceof Staff
+            || ! $this->personalCalendarFeed->canViewPersonalCalendarOf($viewer, $target)
+        ) {
+            abort(403, 'You can only view your own personal calendar.');
+        }
 
         try {
             $stats = $this->personalCalendarHeaderStatsForStaff($target);
@@ -1486,6 +1504,9 @@ class BookingAppointmentsController extends Controller
         $viewer = Auth::guard('admin')->user();
         if (! $viewer instanceof Staff || ! $viewer->canAccessPersonalCalendar()) {
             abort(403, 'Personal calendar access has not been granted.');
+        }
+        if (! $this->personalCalendarFeed->canViewPersonalCalendarOf($viewer, $target)) {
+            abort(403, 'You can only view your own personal calendar.');
         }
 
         $type = 'personal';

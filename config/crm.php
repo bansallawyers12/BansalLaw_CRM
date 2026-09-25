@@ -110,9 +110,9 @@ return [
     | Personal calendar grant (native Super Admin only)
     |--------------------------------------------------------------------------
     |
-    | Only role 1 may toggle {@see Staff::can_access_personal_calendar}. That
-    | flag shows My Calendar on the dashboard and allows the personal calendar
-    | feed / add-event APIs. Super Admin (including elevated) always has access.
+    | Only role 1 may toggle {@see Staff::can_access_personal_calendar} in Admin
+    | Console (kept for record-keeping). All active staff already receive the
+    | same dashboard / personal calendar via {@see Staff::canAccessPersonalCalendar()}.
     |
     */
     'personal_calendar_grant_role_ids' => array_values(array_filter(array_map(
