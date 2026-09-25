@@ -16,6 +16,12 @@ use Illuminate\Support\Collection;
  */
 class ManualUploadThreadMatchService
 {
+    /** @var array<int, Admin|null> */
+    protected array $clientCache = [];
+
+    /** @var array<int, ClientMatter|null> */
+    protected array $matterCache = [];
+
     public function __construct(
         private readonly EmailMatchingService $matchingService,
     ) {
@@ -272,9 +278,12 @@ class ManualUploadThreadMatchService
      */
     protected function buildMatchPayload(int $clientId, int $matterId, array $matchedEmails, bool $ambiguous): ?array
     {
-        $client = Admin::query()
-            ->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')
-            ->find($clientId);
+        if (! array_key_exists($clientId, $this->clientCache)) {
+            $this->clientCache[$clientId] = Admin::query()
+                ->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')
+                ->find($clientId);
+        }
+        $client = $this->clientCache[$clientId];
         if (! $client) {
             return null;
         }
@@ -283,15 +292,18 @@ class ManualUploadThreadMatchService
         $matterNo = '';
         $matterTitle = '';
         if ($matterId > 0) {
-            $matter = ClientMatter::query()
-                ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
-                ->where('client_matters.id', $matterId)
-                ->select(
-                    'client_matters.id',
-                    'client_matters.client_unique_matter_no',
-                    'matters.title as matter_title'
-                )
-                ->first();
+            if (! array_key_exists($matterId, $this->matterCache)) {
+                $this->matterCache[$matterId] = ClientMatter::query()
+                    ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                    ->where('client_matters.id', $matterId)
+                    ->select(
+                        'client_matters.id',
+                        'client_matters.client_unique_matter_no',
+                        'matters.title as matter_title'
+                    )
+                    ->first();
+            }
+            $matter = $this->matterCache[$matterId];
             $matterNo = (string) ($matter->client_unique_matter_no ?? '');
             $matterTitle = (string) ($matter->matter_title ?? '');
         }

@@ -5363,10 +5363,15 @@ class ClientsController extends Controller
      * Returns empty string when the Document row is missing so the reading pane does
      * not iframe a Laravel 404 page.
      */
-    protected function resolveEmailPdfPreviewUrl($email): string
+    protected function resolveEmailPdfPreviewUrl($email, bool $verifyStorage = false): string
     {
         if (empty($email->pdf_doc_id)) {
             return '';
+        }
+
+        // List views skip remote S3 existence checks for maximum performance.
+        if (! $verifyStorage) {
+            return $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, embed: true);
         }
 
         $pdfDoc = null;
@@ -5388,7 +5393,7 @@ class ClientsController extends Controller
     }
 
     /**
-     * True when the document's stored object exists on the configured S3 disk.
+     * True when the document's stored object exists on the configured S3 disk (cached).
      */
     protected function documentFileExistsInStorage(?\App\Models\Document $document): bool
     {
@@ -5411,11 +5416,13 @@ class ClientsController extends Controller
             $path = substr($path, strlen($bucket) + 1);
         }
 
-        try {
-            return Storage::disk('s3')->exists($path);
-        } catch (\Throwable) {
-            return false;
-        }
+        return \Illuminate\Support\Facades\Cache::remember('doc_s3_exists_' . $document->id, 86400, function () use ($path) {
+            try {
+                return Storage::disk('s3')->exists($path);
+            } catch (\Throwable) {
+                return false;
+            }
+        });
     }
 
     /**
