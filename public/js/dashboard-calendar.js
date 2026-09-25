@@ -116,35 +116,39 @@
 
     function calendarElTzBookingType() {
         var switcher = document.getElementById('dashboardCalendarTypeSwitcher');
-        if (switcher && switcher.getAttribute('data-selected-type')) {
-            var selected = String(switcher.getAttribute('data-selected-type'));
-            var known = window.DASHBOARD_CALENDAR_TYPES || {};
-            if (Object.prototype.hasOwnProperty.call(known, selected)) {
+        var known = window.DASHBOARD_CALENDAR_TYPES || {};
+        if (switcher) {
+            var selected = String(switcher.getAttribute('data-selected-type') || '');
+            if (selected && Object.prototype.hasOwnProperty.call(known, selected)) {
                 return selected;
+            }
+            if (selected === 'personal' || selected === '') {
+                return null;
             }
         }
         var el = document.getElementById(CALENDAR_EL_ID);
         var type = el && el.getAttribute('data-booking-calendar-type');
-        var knownTypes = window.DASHBOARD_CALENDAR_TYPES || {};
-        return type && Object.prototype.hasOwnProperty.call(knownTypes, type) ? type : null;
+        return type && Object.prototype.hasOwnProperty.call(known, type) ? type : null;
     }
 
     function setSelectedBookingCalendarType(type) {
-        var next = String(type || '');
+        var next = String(type || 'personal');
         var switcher = document.getElementById('dashboardCalendarTypeSwitcher');
         if (switcher) {
             switcher.setAttribute('data-selected-type', next);
         }
         var calEl = document.getElementById(CALENDAR_EL_ID);
+        var known = window.DASHBOARD_CALENDAR_TYPES || { ajay: 'Ajay', kunal: 'Michael' };
+        var isWebsite = Object.prototype.hasOwnProperty.call(known, next);
         if (calEl) {
-            calEl.setAttribute('data-booking-calendar-type', next);
+            calEl.setAttribute('data-booking-calendar-type', isWebsite ? next : '');
         }
         var pill = document.getElementById('dashboardCalPrimaryType');
-        var labels = window.DASHBOARD_CALENDAR_TYPES || { ajay: 'Ajay', kunal: 'Michael' };
+        var personalLabel = (switcher && switcher.getAttribute('data-personal-label')) || 'My calendar';
         if (pill) {
             pill.setAttribute('data-type', next);
             pill.innerHTML = '<i class="fa-solid fa-calendar-days" aria-hidden="true"></i> ' +
-                escapeHtml(labels[next] || next);
+                escapeHtml(isWebsite ? (known[next] || next) : personalLabel);
         }
         document.querySelectorAll('.dashboard-cal-type-option').forEach(function (btn) {
             btn.classList.toggle('active', btn.getAttribute('data-type') === next);

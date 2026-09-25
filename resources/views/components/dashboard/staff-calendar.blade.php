@@ -2,6 +2,7 @@
     'stats' => ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0],
     'timezone' => config('app.timezone'),
     'bookingCalendarType' => null,
+    'calendarPersonalLabel' => 'My calendar',
     'calendarTypeOptions' => [],
     'canFilterCalendarStaff' => false,
     'calendarStaffOptions' => [],
@@ -13,8 +14,12 @@
         : \App\Services\StaffPersonalCalendarFeedService::CALENDAR_TYPES;
     $homeType = \App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($bookingCalendarType)
         ? $bookingCalendarType
-        : \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE;
-    $homeLabel = $typeOptions[$homeType] ?? \App\Services\StaffPersonalCalendarFeedService::labelForCalendarType($homeType);
+        : null;
+    $personalLabel = trim((string) $calendarPersonalLabel) !== '' ? trim((string) $calendarPersonalLabel) : 'My calendar';
+    $homeLabel = $homeType
+        ? ($typeOptions[$homeType] ?? \App\Services\StaffPersonalCalendarFeedService::labelForCalendarType($homeType))
+        : $personalLabel;
+    $selectedType = $homeType ?? 'personal';
 @endphp
 
 <section class="dashboard-calendar-section" id="myCalendarSection" aria-label="Calendar">
@@ -38,18 +43,27 @@
                 </div>
             </div>
             <div class="dashboard-calendar-header-right">
-                <div class="dashboard-calendar-type-switcher" id="dashboardCalendarTypeSwitcher" data-selected-type="{{ $homeType }}">
-                    <span class="dashboard-cal-type-pill is-primary" id="dashboardCalPrimaryType" data-type="{{ $homeType }}">
+                <div class="dashboard-calendar-type-switcher" id="dashboardCalendarTypeSwitcher"
+                     data-selected-type="{{ $selectedType }}"
+                     data-personal-label="{{ $personalLabel }}">
+                    <span class="dashboard-cal-type-pill is-primary" id="dashboardCalPrimaryType" data-type="{{ $selectedType }}">
                         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
                         {{ $homeLabel }}
                     </span>
-                    @if(count($typeOptions) > 1)
+                    @if(count($typeOptions) > 0)
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle dashboard-cal-other-btn" type="button"
                                     id="dashboardOtherCalendarsBtn" data-bs-toggle="dropdown" aria-expanded="false">
                                 Other calendars
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardOtherCalendarsBtn">
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item dashboard-cal-type-option{{ $selectedType === 'personal' ? ' active' : '' }}"
+                                            data-type="personal">
+                                        {{ $personalLabel }}
+                                    </button>
+                                </li>
                                 @foreach($typeOptions as $typeKey => $typeLabel)
                                     <li>
                                         <button type="button"
@@ -103,7 +117,7 @@
         <div class="dashboard-calendar-body">
             <div class="dashboard-calendar-wrapper">
                 <div class="dashboard-calendar-surface">
-                    <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $homeType }}"></div>
+                    <div id="staffDashboardCalendar" class="dashboard-calendar-container" data-timezone="{{ $timezone }}" data-booking-calendar-type="{{ $homeType ?? '' }}"></div>
                     <ul class="dashboard-calendar-legend" aria-label="Event colour key">
                         <li><span class="dashboard-cal-legend-swatch event-meeting" aria-hidden="true"></span> Meeting</li>
                         <li><span class="dashboard-cal-legend-swatch event-court" aria-hidden="true"></span> Court / Hearing</li>

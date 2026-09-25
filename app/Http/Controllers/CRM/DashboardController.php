@@ -40,8 +40,10 @@ class DashboardController extends Controller
             $dashboardData['canAccessPersonalCalendar'] = $canAccessPersonalCalendar;
             $dashboardData['calendarStats'] = null;
             $dashboardData['bookingCalendarType'] = $canAccessPersonalCalendar
-                ? $this->personalCalendarFeed->defaultTypeForStaff($staff)
+                ? $this->personalCalendarFeed->ownedWebsiteCalendarType($staff)
                 : null;
+            $dashboardData['calendarPersonalLabel'] = trim((string) ($staff->first_name ?? ''))
+                ?: (trim((string) (($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''))) ?: 'My calendar');
             $dashboardData['calendarTypeOptions'] = $canAccessPersonalCalendar
                 ? StaffPersonalCalendarFeedService::CALENDAR_TYPES
                 : [];
@@ -117,7 +119,7 @@ class DashboardController extends Controller
             'stats' => $includeStats ? $this->personalCalendarFeed->statsForViewer($staff, $request) : null,
             'staff_view' => $this->personalCalendarFeed->resolveCalendarView($staff, $request)['mode'],
             'booking_calendar_type' => $this->personalCalendarFeed->resolveRequestedCalendarType($request)
-                ?? $this->personalCalendarFeed->defaultTypeForStaff($staff),
+                ?? $this->personalCalendarFeed->ownedWebsiteCalendarType($staff),
         ]);
     }
 

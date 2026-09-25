@@ -115,6 +115,22 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
+     * Website booking calendar this staff member actually owns.
+     * No firm-wide fallback — other staff keep their own dashboard calendar.
+     */
+    public function ownedWebsiteCalendarType(Staff $staff): ?string
+    {
+        $override = $staff->getAttribute('default_calendar_type');
+        if (self::isValidCalendarType(is_string($override) ? $override : null)) {
+            return (string) $override;
+        }
+
+        $owned = $this->bookingCalendarTypeForStaff($staff);
+
+        return self::isValidCalendarType($owned) ? (string) $owned : null;
+    }
+
+    /**
      * Resolve calendar type from request (dashboard switcher) or null.
      */
     public function resolveRequestedCalendarType(Request $request): ?string
@@ -290,10 +306,10 @@ class StaffPersonalCalendarFeedService
         $staffId = $staff ? (int) $staff->id : null;
         $tz = (string) config('app.timezone');
         $requestedType = $this->resolveRequestedCalendarType($request);
-        $ownedType = $staff ? $this->bookingCalendarTypeForStaff($staff) : null;
-        $calendarType = $requestedType
-            ?? $ownedType
-            ?? ($staff ? $this->defaultTypeForStaff($staff) : null);
+        $ownedType = $staff ? $this->ownedWebsiteCalendarType($staff) : null;
+        // Explicit switcher choice, otherwise only that staff member's own website calendar.
+        // Do not substitute the Ajay calendar for everyone else.
+        $calendarType = $requestedType ?? $ownedType;
 
         $bookings = $calendarType
             ? $this->websiteBookingsForCalendarType($calendarType, $request)

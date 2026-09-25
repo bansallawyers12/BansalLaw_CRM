@@ -240,6 +240,20 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
     }
 
     #[Test]
+    public function staff_without_a_website_calendar_keeps_their_own_dashboard(): void
+    {
+        $staff = new Staff([
+            'first_name' => 'Khushi',
+            'last_name' => 'Sangroya',
+            'email' => 'khushi@example.com',
+            'default_calendar_type' => null,
+        ]);
+
+        $this->assertNull($this->service()->ownedWebsiteCalendarType($staff));
+        $this->assertSame('ajay', $this->service()->defaultTypeForStaff($staff));
+    }
+
+    #[Test]
     public function default_type_for_staff_falls_back_to_ajay(): void
     {
         config(['booking_calendar.default_website_calendar_type' => 'ajay']);

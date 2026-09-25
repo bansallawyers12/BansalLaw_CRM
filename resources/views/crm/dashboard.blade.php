@@ -90,6 +90,7 @@
             :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
             :timezone="$dashboardTz"
             :booking-calendar-type="$bookingCalendarType ?? null"
+            :calendar-personal-label="$calendarPersonalLabel ?? 'My calendar'"
             :calendar-type-options="$calendarTypeOptions ?? []"
             :can-filter-calendar-staff="$canFilterCalendarStaff ?? false"
             :calendar-staff-options="$calendarStaffOptions ?? []"
