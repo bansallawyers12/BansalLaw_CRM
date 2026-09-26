@@ -29,9 +29,61 @@ class ManualUploadThreadMatchService
     /** @var Collection<int, EmailLog>|null In-memory manual uploads for bulk counting */
     protected ?Collection $matchingManualUploadCache = null;
 
+    /** @var array<string, list<EmailLog>>|null In-memory manual uploads indexed by normalized subject */
+    protected ?array $manualUploadsByExactSubject = null;
+
+    /** @var array<string, list<EmailLog>>|null In-memory manual uploads indexed by message_id */
+    protected ?array $manualUploadsByMessageId = null;
+
+    /** @var array<string, bool>|null Unique normalized subjects */
+    protected ?array $uniqueNormalizedSubjects = null;
+
     public function __construct(
         private readonly EmailMatchingService $matchingService,
     ) {
+    }
+
+    public function initManualUploadCache(): void
+    {
+        $uploads = $this->manualUploadBaseQuery()
+            ->orderByRaw('COALESCE(received_date, fetch_mail_sent_time, sent_at, created_at) desc')
+            ->get();
+
+        $this->matchingManualUploadCache = $uploads;
+        $this->manualUploadsByExactSubject = [];
+        $this->manualUploadsByMessageId = [];
+        $this->uniqueNormalizedSubjects = [];
+        $this->clientCache = [];
+        $this->matterCache = [];
+
+        foreach ($uploads as $manual) {
+            $subject = (string) ($manual->subject ?? '');
+            $norm = ClientEmailListService::normalizeThreadSubject($subject);
+            if ($norm !== '') {
+                $this->manualUploadsByExactSubject[$norm][] = $manual;
+                $this->uniqueNormalizedSubjects[$norm] = true;
+            }
+
+            $mid = trim((string) ($manual->message_id ?? ''));
+            if ($mid !== '') {
+                $bare = trim($mid, " <>\t\n\r\0\x0B");
+                $this->manualUploadsByMessageId[$mid][] = $manual;
+                if ($bare !== $mid && $bare !== '') {
+                    $this->manualUploadsByMessageId[$bare][] = $manual;
+                    $this->manualUploadsByMessageId['<' . $bare . '>'][] = $manual;
+                }
+            }
+        }
+    }
+
+    public function clearManualUploadCache(): void
+    {
+        $this->matchingManualUploadCache = null;
+        $this->manualUploadsByExactSubject = null;
+        $this->manualUploadsByMessageId = null;
+        $this->uniqueNormalizedSubjects = null;
+        $this->clientCache = [];
+        $this->matterCache = [];
     }
 
     /**
@@ -154,15 +206,26 @@ class ManualUploadThreadMatchService
      */
     public function attachMatchesToEmails(iterable $emails): void
     {
-        foreach ($emails as $email) {
-            if (! $email instanceof EmailLog) {
-                continue;
+        $wasCached = $this->matchingManualUploadCache !== null;
+        if (! $wasCached) {
+            $this->initManualUploadCache();
+        }
+
+        try {
+            foreach ($emails as $email) {
+                if (! $email instanceof EmailLog) {
+                    continue;
+                }
+                if (! $this->isUnassignedSynced($email)) {
+                    $email->manual_upload_match = null;
+                    continue;
+                }
+                $email->manual_upload_match = $this->findMatterMatches($email);
             }
-            if (! $this->isUnassignedSynced($email)) {
-                $email->manual_upload_match = null;
-                continue;
+        } finally {
+            if (! $wasCached) {
+                $this->clearManualUploadCache();
             }
-            $email->manual_upload_match = $this->findMatterMatches($email);
         }
     }
 
@@ -176,9 +239,7 @@ class ManualUploadThreadMatchService
             return 0;
         }
 
-        $this->matchingManualUploadCache = $this->manualUploadBaseQuery()->get();
-        $this->clientCache = [];
-        $this->matterCache = [];
+        $this->initManualUploadCache();
 
         try {
             $count = 0;
@@ -196,12 +257,12 @@ class ManualUploadThreadMatchService
                 'synced_email_id', 'mailbox_email', 'imap_uid', 'sync_assignment_status',
             ])->orderBy('id');
 
-            $query->chunkById(250, function ($rows) use (&$count) {
+            $query->chunkById(500, function ($rows) use (&$count) {
                 foreach ($rows as $row) {
                     if (! $row instanceof EmailLog || ! $this->isUnassignedSynced($row)) {
                         continue;
                     }
-                    if ($this->manualUploadMatchVisibleInList($this->findMatterMatches($row))) {
+                    if ($this->hasManualUploadMatchForCount($row)) {
                         $count++;
                     }
                 }
@@ -209,10 +270,39 @@ class ManualUploadThreadMatchService
 
             return $count;
         } finally {
-            $this->matchingManualUploadCache = null;
-            $this->clientCache = [];
-            $this->matterCache = [];
+            $this->clearManualUploadCache();
         }
+    }
+
+    public function hasManualUploadMatchForCount(EmailLog $unassigned): bool
+    {
+        $subject = trim((string) ($unassigned->subject ?? ''));
+        if ($subject === '') {
+            return false;
+        }
+
+        $manuals = $this->findManualUploadsForSubject($subject, $unassigned);
+        if ($manuals->isEmpty()) {
+            $byMessageId = $this->findManualUploadsByMessageLink($unassigned);
+            if ($byMessageId->isNotEmpty()) {
+                $manuals = $byMessageId;
+            }
+        }
+
+        if ($manuals->isEmpty()) {
+            return false;
+        }
+
+        $clientIds = [];
+        foreach ($manuals as $manual) {
+            $cid = (int) ($manual->client_id ?? 0);
+            $mid = (int) ($manual->client_matter_id ?? 0);
+            if ($cid > 0 && $mid > 0) {
+                $clientIds[$cid] = true;
+            }
+        }
+
+        return count($clientIds) === 1;
     }
 
     /**
@@ -399,20 +489,39 @@ class ManualUploadThreadMatchService
         if ($this->matchingManualUploadCache !== null) {
             $excludeId = (int) $unassigned->id;
 
-            return $this->matchingManualUploadCache
-                ->filter(fn (EmailLog $manual) => (int) $manual->id !== $excludeId)
-                ->filter(function (EmailLog $manual) use ($subject) {
-                    return ClientEmailListService::subjectsBelongToSameThread(
-                        (string) ($manual->subject ?? ''),
-                        $subject
-                    );
-                })
-                ->sortByDesc(fn (EmailLog $manual) => $manual->received_date
-                    ?? $manual->fetch_mail_sent_time
-                    ?? $manual->sent_at
-                    ?? $manual->created_at)
-                ->take(80)
-                ->values();
+            // 1. Direct normalized subject match (O(1) hash lookup)
+            if ($this->manualUploadsByExactSubject !== null && isset($this->manualUploadsByExactSubject[$normalized])) {
+                $exact = collect($this->manualUploadsByExactSubject[$normalized])
+                    ->filter(fn (EmailLog $manual) => (int) $manual->id !== $excludeId)
+                    ->take(80)
+                    ->values();
+
+                if ($exact->isNotEmpty()) {
+                    return $exact;
+                }
+            }
+
+            // 2. Substring match over unique normalized subjects
+            if (mb_strlen($normalized) >= 12 && $this->uniqueNormalizedSubjects !== null && $this->manualUploadsByExactSubject !== null) {
+                $matches = [];
+                foreach ($this->uniqueNormalizedSubjects as $normKey => $_) {
+                    if (mb_strlen($normKey) >= 12 && (str_contains($normKey, $normalized) || str_contains($normalized, $normKey))) {
+                        foreach ($this->manualUploadsByExactSubject[$normKey] as $manual) {
+                            if ((int) $manual->id !== $excludeId) {
+                                $matches[] = $manual;
+                                if (count($matches) >= 80) {
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+                if ($matches !== []) {
+                    return collect($matches);
+                }
+            }
+
+            return collect();
         }
 
         $query = $this->manualUploadBaseQuery()
@@ -458,18 +567,23 @@ class ManualUploadThreadMatchService
 
         if ($this->matchingManualUploadCache !== null) {
             $excludeId = (int) $unassigned->id;
-            $allowed = array_flip($normalized);
+            $matches = [];
+            if ($this->manualUploadsByMessageId !== null) {
+                foreach ($normalized as $key) {
+                    if (isset($this->manualUploadsByMessageId[$key])) {
+                        foreach ($this->manualUploadsByMessageId[$key] as $manual) {
+                            if ((int) $manual->id !== $excludeId) {
+                                $matches[(int) $manual->id] = $manual;
+                                if (count($matches) >= 40) {
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-            return $this->matchingManualUploadCache
-                ->filter(fn (EmailLog $manual) => (int) $manual->id !== $excludeId)
-                ->filter(function (EmailLog $manual) use ($allowed) {
-                    $mid = trim((string) ($manual->message_id ?? ''));
-
-                    return $mid !== '' && isset($allowed[$mid]);
-                })
-                ->sortByDesc(fn (EmailLog $manual) => (int) $manual->id)
-                ->take(40)
-                ->values();
+            return collect(array_values($matches));
         }
 
         return $this->manualUploadBaseQuery()

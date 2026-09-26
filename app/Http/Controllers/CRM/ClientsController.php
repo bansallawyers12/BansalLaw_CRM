@@ -6333,6 +6333,7 @@ class ClientsController extends Controller
 
         if (
             ! $metaOnly
+            && $includeListMeta
             && $isSyncedInboxFolder
             && $page === 1
             && $staff instanceof \App\Models\Staff

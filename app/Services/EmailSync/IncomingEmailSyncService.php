@@ -1711,15 +1711,19 @@ class IncomingEmailSyncService
      */
     public static function unassignedInboxCountBreakdown(Staff $staff, ?string $mailboxFilter = null): array
     {
-        $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
-        $manualMatchCount = app(ManualUploadThreadMatchService::class)
-            ->countUnassignedWithManualUploadMatch($staff, $mailboxFilter);
+        $cacheKey = 'unassigned_inbox_breakdown_' . $staff->id . '_' . md5((string) $mailboxFilter);
 
-        return [
-            'total' => $total,
-            'unassigned_only_count' => max(0, $total - $manualMatchCount),
-            'manual_upload_match_count' => $manualMatchCount,
-        ];
+        return Cache::remember($cacheKey, 30, function () use ($staff, $mailboxFilter) {
+            $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
+            $manualMatchCount = app(ManualUploadThreadMatchService::class)
+                ->countUnassignedWithManualUploadMatch($staff, $mailboxFilter);
+
+            return [
+                'total' => $total,
+                'unassigned_only_count' => max(0, $total - $manualMatchCount),
+                'manual_upload_match_count' => $manualMatchCount,
+            ];
+        });
     }
 
     public static function countUnassignedSyncedInboxMail(
