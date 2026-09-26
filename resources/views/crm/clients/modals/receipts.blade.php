@@ -154,35 +154,94 @@
     }
 }
 
+#createreceiptmodal.invoice-entry-open {
+    padding-bottom: 3.5rem !important;
+}
 #createreceiptmodal.invoice-entry-open .modal-dialog,
-#createinvoicereceiptmodal .modal-dialog {
-    max-width: min(1480px, 97vw);
-    width: 97vw;
-    margin: 1.25rem auto;
+#createinvoicereceiptmodal .modal-dialog,
+#createofficereceiptmodal .modal-dialog {
+    max-width: min(1480px, 96vw) !important;
+    width: 96vw !important;
+    margin: 1.25rem auto 3.5rem auto !important;
+    max-height: calc(100vh - 4.75rem) !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 #createreceiptmodal.invoice-entry-open .modal-content,
-#createinvoicereceiptmodal .modal-content {
-    border: 0;
-    border-radius: 14px;
-    box-shadow: 0 20px 45px -10px rgba(15, 39, 64, 0.22), 0 0 1px 1px rgba(15, 39, 64, 0.08);
-    overflow: hidden;
+#createinvoicereceiptmodal .modal-content,
+#createofficereceiptmodal .modal-content {
+    border: 0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 45px -10px rgba(15, 39, 64, 0.22), 0 0 1px 1px rgba(15, 39, 64, 0.08) !important;
+    overflow: hidden !important;
+    max-height: calc(100vh - 4.75rem) !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+#createreceiptmodal.invoice-entry-open .modal-header,
+#createinvoicereceiptmodal .modal-header,
+#createofficereceiptmodal .modal-header {
+    flex-shrink: 0 !important;
+    padding: 12px 20px !important;
 }
 #createreceiptmodal.invoice-entry-open .modal-body,
-#createinvoicereceiptmodal .modal-body {
+#createinvoicereceiptmodal .modal-body,
+#createofficereceiptmodal .modal-body {
     overflow: hidden !important;
-    padding: 16px 20px !important;
+    padding: 10px 16px 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+}
+#createreceiptmodal.invoice-entry-open #office_receipt_form,
+#createreceiptmodal.invoice-entry-open #invoice_receipt_form,
+#createinvoicereceiptmodal #invoice_receipt_form,
+#createofficereceiptmodal #office_receipt_form {
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
+#createreceiptmodal.invoice-entry-open form[style*="none"] {
+    display: none !important;
+}
+#createreceiptmodal.invoice-entry-open #office_receipt_form.active-entry-form,
+#createreceiptmodal.invoice-entry-open #invoice_receipt_form.active-entry-form,
+#createinvoicereceiptmodal #invoice_receipt_form,
+#createofficereceiptmodal #office_receipt_form {
+    display: flex !important;
 }
 #createreceiptmodal.invoice-entry-open .invoice-form-shell,
-#createinvoicereceiptmodal .invoice-form-shell {
-    display: flex;
-    flex-direction: column;
+#createinvoicereceiptmodal .invoice-form-shell,
+#createofficereceiptmodal .invoice-form-shell,
+#office_receipt_form .invoice-form-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+}
+#createreceiptmodal.invoice-entry-open .invoice-form-toolbar,
+#createinvoicereceiptmodal .invoice-form-toolbar,
+#office_receipt_form .invoice-form-toolbar {
+    flex-shrink: 0 !important;
+    margin-bottom: 8px !important;
+    padding: 8px 14px !important;
 }
 #createreceiptmodal.invoice-entry-open .invoice-timesheet-scroll,
-#createinvoicereceiptmodal .invoice-timesheet-scroll {
-    max-height: calc(86vh - 225px);
-    min-height: 180px;
-    overflow-y: auto;
-    overflow-x: hidden;
+#createinvoicereceiptmodal .invoice-timesheet-scroll,
+#createofficereceiptmodal .invoice-timesheet-scroll,
+#office_receipt_form .invoice-timesheet-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 6px 8px 10px 8px !important;
 }
 .invoice-timesheet-scroll::-webkit-scrollbar {
     width: 6px;
@@ -202,7 +261,9 @@
 
 #invoice_receipt_form textarea.invoice-line-description,
 #create_invoice_receipt textarea.invoice-line-description,
-#adjust_invoice_receipt_form textarea.invoice-line-description {
+#adjust_invoice_receipt_form textarea.invoice-line-description,
+#office_receipt_form textarea.invoice-line-description,
+#create_office_receipt textarea.invoice-line-description {
     min-height: 48px;
     max-height: 140px;
     resize: vertical;
@@ -564,7 +625,9 @@
     box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.12);
 }
 .invoice-work-date[readonly],
-.report_entry_date_fields_invoice[readonly] {
+.report_entry_date_fields_invoice[readonly],
+.report_date_fields_office[readonly],
+.report_entry_date_fields_office[readonly] {
     background-color: #ffffff !important;
     cursor: pointer;
 }
@@ -626,12 +689,13 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    margin-top: 12px;
-    padding: 10px 16px;
+    margin-top: 8px !important;
+    padding: 8px 16px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     box-shadow: 0 -2px 10px -2px rgba(15, 23, 42, 0.04);
+    flex-shrink: 0 !important;
 }
 .invoice-form-footer__left {
     display: flex;
@@ -708,6 +772,128 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 .invoice-final-btn:hover {
     background: #152d47 !important;
     box-shadow: 0 4px 10px rgba(30, 61, 96, 0.35);
+}
+
+/* Office Receipt Line Grid */
+.office-line-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px 14px;
+    align-items: flex-end;
+}
+@media (min-width: 1200px) {
+    .office-line-grid {
+        grid-template-columns: 1.15fr 1.1fr 1.6fr 1.4fr 1.15fr;
+    }
+}
+.office-col-trans-date { min-width: 140px; }
+.office-col-entry-date { min-width: 135px; }
+.office-col-invoice { min-width: 175px; }
+.office-col-method { min-width: 165px; }
+.office-col-amount { min-width: 135px; }
+
+/* Quick Actions in Toolbar */
+.office-quick-actions-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+}
+.office-quick-actions-toggle {
+    background: #e2e8f0;
+    padding: 3px;
+    border-radius: 24px;
+    display: inline-flex;
+    gap: 4px;
+}
+.office-quick-actions-toggle .btn {
+    border: 0 !important;
+    border-radius: 20px !important;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569 !important;
+    background: transparent !important;
+    transition: all 0.2s ease-in-out;
+    line-height: 1.4;
+}
+.office-quick-actions-toggle .btn:hover {
+    background: #ffffff !important;
+    color: #1e3d60 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Office Receipt Footer & Dropzone */
+.office-form-footer {
+    display: flex;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px !important;
+    padding: 6px 14px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0 !important;
+}
+.office-form-footer__center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 1 auto;
+}
+.office-footer-upload .office-drag-drop-zone {
+    min-height: 32px !important;
+    max-height: 36px !important;
+    padding: 2px 10px !important;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    min-width: 200px;
+    max-width: 260px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+.office-footer-upload .office-drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #f0f7ff;
+}
+.office-footer-upload .drag-zone-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+.office-footer-upload .drag-zone-inner i {
+    font-size: 15px;
+    color: #2563eb;
+}
+.office-footer-upload .drag-zone-content {
+    gap: 0;
+    text-align: left;
+}
+.office-footer-upload .drag-zone-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+    line-height: 1.2;
+}
+.office-footer-upload .drag-zone-formats {
+    font-size: 9px;
+    color: #64748b;
+    line-height: 1.1;
+}
+.office-footer-upload .ledger-selected-files-display {
+    max-width: 280px;
+    margin-bottom: 0;
+    padding: 4px 8px;
 }
 </style>
 
@@ -969,153 +1155,200 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 				</table>
 
 				<!-- Office Receipt Form -->
-				<form class="form-type"  method="post" action="{{URL::to('/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
+				<form class="form-type" method="post" action="{{URL::to('/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="2">
-                    <input type="hidden" name="client_matter_id" id="client_matter_id_office" value="">
-                    <input type="hidden" name="save_type" class="save_type_office" value="">
-					<div class="row">
-						<div class="col-3 col-md-3 col-lg-3">
-							<div class="form-group">
-								<label for="client">Client <span class="span_req">*</span></label>
-								<input type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+					<input type="hidden" name="client_matter_id" id="client_matter_id_office" value="">
+					<input type="hidden" name="save_type" class="save_type_office" value="">
+
+					<div class="invoice-form-shell office-form-shell">
+						<div class="invoice-form-toolbar">
+							<div class="form-group invoice-client-group">
+								<label for="office_receipt_client">Client <span class="span_req">*</span></label>
+								<div class="input-group input-group-sm invoice-client-input-wrap">
+									<span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+									<input id="office_receipt_client" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="Client Name" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								</div>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
+
+							<!-- Quick Actions Toolbar in matching toolbar style -->
+							<div class="invoice-billing-mode-bar office-quick-actions-bar">
+								<div class="invoice-billing-mode-bar__main">
+									<span class="invoice-billing-mode-label"><i class="fa-solid fa-bolt me-1 text-primary"></i> Quick actions</span>
+									<div class="btn-group btn-group-sm invoice-billing-mode-toggle office-quick-actions-toggle" role="group">
+										<button type="button" class="btn btn-outline-secondary paste-clipboard-btn" title="Paste amount from clipboard">
+											<i class="fa-solid fa-clipboard me-1"></i> Paste from Clipboard
+											<span class="clipboard-preview ms-1 fw-bold text-success"></span>
+										</button>
+										<button type="button" class="btn btn-outline-secondary repeat-last-entry-btn" title="Repeat last office receipt entry">
+											<i class="fa-solid fa-arrow-rotate-right me-1"></i> Repeat Last Entry
+										</button>
+									</div>
+								</div>
+								<p class="invoice-billing-mode-hint mb-0">
+									<i class="fa-solid fa-circle-info text-info me-1"></i>
+									<span>Use these shortcuts to speed up data entry</span>
+								</p>
+							</div>
 						</div>
 
-                        <div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-                                <!-- Quick Actions Toolbar -->
-                                <div class="quick-actions-toolbar" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--navy);">
-                                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                        <span style="font-weight: 600; color: var(--navy);">
-                                            <i class="fa-solid fa-bolt"></i> Quick Actions:
-                                        </span>
-                                        <button type="button" class="btn btn-sm btn-outline-primary paste-clipboard-btn" 
-                                                title="Paste amount from clipboard">
-                                            <i class="fa-solid fa-clipboard"></i> Paste from Clipboard
-                                            <span class="clipboard-preview" style="margin-left: 5px; font-weight: bold; color: #28a745;"></span>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-info repeat-last-entry-btn"
-                                                title="Repeat last office receipt entry">
-                                            <i class="fa-solid fa-arrow-rotate-right"></i> Repeat Last Entry
-                                        </button>
-                                        <small style="margin-left: auto; color: #4b5563;">
-                                            <i class="fa-solid fa-circle-info"></i> Use these shortcuts to speed up data entry
-                                        </small>
-                                    </div>
-                                </div>
+						<div class="invoice-timesheet-scroll">
+							<table class="table text_wrap table-hover table-md vertical_align invoice-lines-table">
+								<thead>
+									<tr class="invoice-lines-legend">
+										<th class="invoice-lines-legend__cell">
+											<div class="invoice-lines-legend__wrap">
+												<span class="invoice-lines-legend__icon"><i class="fa-solid fa-receipt"></i></span>
+												<div class="invoice-lines-legend__content">
+													<span class="invoice-lines-legend__title">Line items</span>
+													<span class="invoice-lines-legend__hint">Fill payment details and amounts below, then provide a clear description for the office receipt.</span>
+												</div>
+											</div>
+										</th>
+									</tr>
+								</thead>
+								<tbody class="productitem_office">
+									<tr class="clonedrow_office invoice-line-block">
+										<td class="invoice-line-block__cell">
+											<div class="invoice-line-card">
+												<div class="invoice-line-card__header">
+													<div class="invoice-line-badge">
+														<span class="invoice-line-badge__dot"></span>
+														<span class="invoice-line-badge__text">Line Item</span>
+													</div>
+													<a class="removeitems_office invoice-line-remove" href="javascript:;" title="Remove this line item" aria-label="Remove line">
+														<i class="fa-solid fa-trash-can"></i>
+													</a>
+												</div>
 
-                                <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <thead>
-                                        <tr>
-                                            <th style="width:15%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:15%;color: #34395e;">Entry Date</th>
-                                            <th style="width:15%;color: #34395e;" title="Invoice number this receipt is linked to (if any)">Invoice Ref. No.</th>
-                                            <th style="width:5%;color: #34395e;">Payment method</th>
-                                            <th style="width:25%;color: #34395e;">Description</th>
-                                            <th style="width:14%;color: #34395e;" title="Amount received into office account">Amount Received</th>
-                                            <th style="width:1%;color: #34395e;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="productitem_office">
-                                        <tr class="clonedrow_office">
-                                            <td>
-                                                <input data-valid="required"  class="form-control report_date_fields_office" name="trans_date[]" type="text" value="" />
-                                            </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields_office" name="entry_date[]" type="text" value="" />
-                                            </td>
-                                            <td>
-                                                <select class="form-control invoice_no_cls"  name="invoice_no[]">
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <select class="form-control office-receipt-payment-method" name="payment_method[]" data-valid="required" >
-                                                    <option value="">Select</option>
-													<option value="Cash">Cash</option>
-                                                    <option value="Bank transfer">Bank transfer</option>
-                                                    <option value="EFTPOS">EFTPOS</option>
-                                                    <option value="Refund">Refund</option>
-                                                </select>
-                                                <div class="office-eftpos-surcharge-block" style="display:none;margin-top:6px;">
-                                                    <label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
-                                                    <input type="text" class="form-control office-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
-                                            </td>
+												<div class="invoice-line-card__grid office-line-grid">
+													<div class="invoice-field office-col-trans-date">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Trans. date</label>
+														</div>
+														<div class="invoice-input-icon-wrap">
+															<i class="fa-regular fa-calendar-days invoice-input-icon"></i>
+															<input data-valid="required" class="form-control form-control-sm report_date_fields_office" name="trans_date[]" type="text" value="" placeholder="DD/MM/YYYY" readonly="readonly" title="Transaction date" />
+														</div>
+													</div>
 
-                                            <td>
-                                                <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control total_deposit_amount_office" name="deposit_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
-                                            </td>
+													<div class="invoice-field office-col-entry-date">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Entry date</label>
+														</div>
+														<div class="invoice-input-icon-wrap">
+															<i class="fa-regular fa-clock invoice-input-icon"></i>
+															<input data-valid="required" class="form-control form-control-sm report_entry_date_fields_office" name="entry_date[]" type="text" value="" readonly="readonly" title="Entry date" />
+														</div>
+													</div>
 
-                                            <td>
-                                                <a class="removeitems_office" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+													<div class="invoice-field office-col-invoice">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Invoice Ref. No.</label>
+														</div>
+														<select class="form-select form-select-sm invoice_no_cls" name="invoice_no[]">
+															<option value="">Select Invoice (Optional)</option>
+														</select>
+													</div>
 
-                                <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" style="width:83.6%;text-align:right;color: #34395e;">Totals</td>
-                                            <td colspan="2">
-                                                <span class="total_deposit_amount_all_rows_office" style="color: #34395e;"></span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+													<div class="invoice-field office-col-method">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Payment method</label>
+														</div>
+														<select class="form-select form-select-sm office-receipt-payment-method" name="payment_method[]" data-valid="required">
+															<option value="">Select</option>
+															<option value="Cash">Cash</option>
+															<option value="Bank transfer">Bank transfer</option>
+															<option value="EFTPOS">EFTPOS</option>
+															<option value="Refund">Refund</option>
+														</select>
+														<div class="office-eftpos-surcharge-block" style="display:none;margin-top:6px;">
+															<label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
+															<input type="text" class="form-control form-control-sm office-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+														</div>
+													</div>
+
+													<div class="invoice-field office-col-amount">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Amount received</label>
+														</div>
+														<div class="invoice-input-prefix-wrap">
+															<span class="invoice-input-prefix">$</span>
+															<input data-valid="required" class="form-control form-control-sm total_deposit_amount_office" name="deposit_amount[]" type="text" inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
+														</div>
+													</div>
+												</div>
+
+												<div class="invoice-field invoice-col-desc">
+													<div class="invoice-field__header">
+														<label class="invoice-field__label"><i class="fa-regular fa-message text-muted me-1"></i> Description</label>
+													</div>
+													<textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="2" placeholder="Describe the payment or particulars for this office receipt (e.g. client consultation fee, professional legal services)..."></textarea>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 
-                        <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_office"><i class="fa-solid fa-plus"></i> Add New Line</a>
-                        </div>
+						<div class="invoice-form-footer office-form-footer">
+							<div class="invoice-form-footer__left">
+								<a href="javascript:;" class="btn btn-sm btn-outline-primary openproductrinfo_office invoice-add-line-btn">
+									<i class="fa-solid fa-plus me-1"></i> Add line
+								</a>
+								<div class="invoice-totals-card" aria-live="polite">
+									<div class="invoice-totals-card__row invoice-totals-card__row--total">
+										<span class="invoice-totals-card__label">Total received:</span>
+										<span class="invoice-totals-card__value total_deposit_amount_all_rows_office">$0.00</span>
+									</div>
+								</div>
+							</div>
 
-						<div class="col-9 col-md-9 col-lg-9 text-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
-                            <div class="upload_office_receipt_document" style="display:inline-block;">
-                                <input type="hidden" name="type" value="client">
-                                <input type="hidden" name="doctype" value="office_receipt">
-                                
-                                <!-- NEW: Drag and Drop Zone -->
-                                <div class="ledger-drag-drop-zone office-drag-drop-zone" id="officeDragDropZone">
-                                    <div class="drag-zone-inner">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                                        <div class="drag-zone-content">
-                                            <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
-                                            <small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX (Multiple files allowed)</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Keep existing file input (hidden, used as fallback) -->
-                                <input class="docofficereceiptupload d-none" type="file" name="document_upload[]" multiple style="display: none;">
-                                
-                                <!-- File selection display (shown after files are selected) -->
-                                <div id="office-selected-files-display" class="ledger-selected-files-display" style="display: none;">
-                                    <div id="office-files-list" class="files-list"></div>
-                                    <button type="button" class="btn btn-sm btn-link text-danger remove-all-files-office" title="Remove all files">
-                                        <i class="fa-solid fa-xmark"></i> Clear All
-                                    </button>
-                                </div>
-                                
-                                <!-- Keep existing file-selection-hint for compatibility -->
-                                <span class="file-selection-hint1" style="margin-right: 10px; color: #34395e;"></span>
-                            </div>
+							<div class="office-form-footer__center">
+								<div class="upload_office_receipt_document office-footer-upload">
+									<input type="hidden" name="type" value="client">
+									<input type="hidden" name="doctype" value="office_receipt">
+									
+									<div class="ledger-drag-drop-zone office-drag-drop-zone" id="officeDragDropZone">
+										<div class="drag-zone-inner">
+											<i class="fa-solid fa-cloud-arrow-up"></i>
+											<div class="drag-zone-content">
+												<p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
+												<small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX</small>
+											</div>
+										</div>
+									</div>
+									
+									<input class="docofficereceiptupload d-none" type="file" name="document_upload[]" multiple style="display: none;">
+									
+									<div id="office-selected-files-display" class="ledger-selected-files-display" style="display: none;">
+										<div id="office-files-list" class="files-list"></div>
+										<button type="button" class="btn btn-sm btn-link text-danger remove-all-files-office" title="Remove all files">
+											<i class="fa-solid fa-xmark"></i> Clear All
+										</button>
+									</div>
+									
+									<span class="file-selection-hint1" style="display:none;"></span>
+								</div>
+							</div>
 
-                            <button onclick="customValidate('office_receipt_form','draft')" type="button" class="btn btn-secondary" style="margin: 0px !important;"><i class="fa-solid fa-floppy-disk"></i> Save Draft</button>
-                            <button onclick="customValidate('office_receipt_form','final')" type="button" class="btn btn-primary" style="margin: 0px !important;"><i class="fa-solid fa-check"></i> Save and Finalize</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							<div class="invoice-form-footer__actions">
+								<button onclick="customValidate('office_receipt_form','draft')" type="button" class="btn btn-sm btn-outline-secondary invoice-draft-btn">
+									<i class="fa-regular fa-bookmark me-1"></i> Save draft
+								</button>
+								<button onclick="customValidate('office_receipt_form','final')" type="button" class="btn btn-sm btn-primary invoice-final-btn">
+									<i class="fa-solid fa-check me-1"></i> Save and finalize
+								</button>
+								<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+							</div>
 						</div>
-                    </div>
+					</div>
 				</form>
 		  	</div>
 		</div>

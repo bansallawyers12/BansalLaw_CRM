@@ -792,7 +792,7 @@ function initAccountTabScripts() {
         
         lastOfficeReceiptEntry = {
             payment_method: $firstRow.find('select[name="payment_method[]"]').val(),
-            description: $firstRow.find('input[name="description[]"]').val(),
+            description: $firstRow.find('[name="description[]"]').val(),
             deposit_amount: $firstRow.find('input[name="deposit_amount[]"]').val(),
             eftpos_surcharge_amount: $firstRow.find('.office-eftpos-surcharge-input').val() || ''
         };
@@ -839,7 +839,7 @@ function initAccountTabScripts() {
         
         // Populate from last entry
         $firstRow.find('select[name="payment_method[]"]').val(lastOfficeReceiptEntry.payment_method);
-        $firstRow.find('input[name="description[]"]').val(lastOfficeReceiptEntry.description);
+        $firstRow.find('[name="description[]"]').val(lastOfficeReceiptEntry.description);
         $firstRow.find('input[name="deposit_amount[]"]').val(lastOfficeReceiptEntry.deposit_amount);
         if (lastOfficeReceiptEntry.eftpos_surcharge_amount) {
             $firstRow.find('.office-eftpos-surcharge-input').val(lastOfficeReceiptEntry.eftpos_surcharge_amount);

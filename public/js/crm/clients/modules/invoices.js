@@ -116,7 +116,7 @@
         $firstRow.find('input[name="trans_date[]"]').val(dateStr);
         $firstRow.find('input[name="entry_date[]"]').val(dateStr);
         $firstRow.find('input[name="deposit_amount[]"]').val(parseFloat(invoiceData.balance || 0).toFixed(2));
-        $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceData.invoiceNo + ' - ' + (invoiceData.description || ''));
+        $firstRow.find('[name="description[]"]').val('Payment for ' + invoiceData.invoiceNo + ' - ' + (invoiceData.description || ''));
         loadInvoicesForQuickReceipt(invoiceData.matterId, invoiceData.invoiceNo)
             .always(function() {
                 var $modalRef = $('#createreceiptmodal');

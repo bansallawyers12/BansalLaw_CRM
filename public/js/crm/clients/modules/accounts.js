@@ -296,7 +296,7 @@
                 }
 
                 $modal.find('.receipt-type-selector').hide();
-                $modal.toggleClass('invoice-entry-open', receiptType === '3');
+                $modal.toggleClass('invoice-entry-open', receiptType === '3' || receiptType === '2');
                 $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
                 $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
 
@@ -328,10 +328,18 @@
                 }
 
                 setTimeout(function() {
-                    $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
+                    $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form')
+                        .hide()
+                        .removeClass('active-entry-form');
                     var formId = formIdMap[receiptType];
                     if (formId) {
-                        $('#' + formId).show();
+                        var $form = $('#' + formId);
+                        $form.addClass('active-entry-form');
+                        if (formId === 'office_receipt_form' || formId === 'invoice_receipt_form') {
+                            $form.css('display', 'flex');
+                        } else {
+                            $form.show();
+                        }
                     }
                     if (receiptType === '3') {
                         $modal.find('.modal-title').html(modalTitles['3']);
@@ -356,6 +364,9 @@
                         }
                     } else if (receiptType === '2') {
                         $('#client_matter_id_office').val(selectedMatter);
+                        if (typeof window.grandtotalAccountTab_office === 'function') {
+                            window.grandtotalAccountTab_office();
+                        }
                     }
 
                     if (showCreateReceiptModal($modal)) {

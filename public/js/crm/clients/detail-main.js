@@ -393,7 +393,10 @@
                 const $modal = $('#createreceiptmodal');
                 const isQuickReceiptMode = $modal.length && $modal.data('quick-receipt-mode');
 
-                forms.forEach(form => form.style.display = 'none');
+                forms.forEach(form => {
+                    form.style.display = 'none';
+                    form.classList.remove('active-entry-form');
+                });
 
                 const selected = this.value;
 
@@ -428,7 +431,12 @@
 
                 const targetForm = document.getElementById(selected + '_form');
                 if (targetForm) {
-                    targetForm.style.display = 'block';
+                    targetForm.classList.add('active-entry-form');
+                    if (selected === 'office_receipt' || selected === 'invoice_receipt') {
+                        targetForm.style.display = 'flex';
+                    } else {
+                        targetForm.style.display = 'block';
+                    }
                 }
 
                 let selectedMatter;
@@ -448,16 +456,21 @@
                 }
 
                 if(selected == 'office_receipt'){
+                    $modal.addClass('invoice-entry-open');
 
                     if (!isQuickReceiptMode) {
                         listOfInvoice();
                     }
 
                     $('#client_matter_id_office').val(selectedMatter);
+                    if (typeof window.grandtotalAccountTab_office === 'function') {
+                        window.grandtotalAccountTab_office();
+                    }
 
                 }
 
                 else if(selected == 'invoice_receipt'){
+                    $modal.addClass('invoice-entry-open');
 
                     if($('#invoice_receipt_form input[name="function_type"]').val() == '' || $('#invoice_receipt_form input[name="function_type"]').val() == 'add' ) {
 
@@ -476,6 +489,7 @@
                 }
 
                 else if(selected == 'client_receipt'){
+                    $modal.removeClass('invoice-entry-open');
 
                     if (!isQuickReceiptMode) {
                         listOfInvoice();
@@ -1791,8 +1805,8 @@ success: function(response) {
                         $('#invoice_receipt_form input[name="function_type"]').val("edit");
                         prepareInvoiceEditModal('final');
                         $('#createreceiptmodal').modal('show');
-                        $('#client_receipt_form, #office_receipt_form').hide();
-                        $('#invoice_receipt_form').show();
+                        $('#client_receipt_form, #office_receipt_form').hide().removeClass('active-entry-form');
+                        $('#invoice_receipt_form').addClass('active-entry-form').css('display', 'flex');
 
                         if(obj.record_get){
 
@@ -1841,8 +1855,8 @@ success: function(response) {
             // A finalised invoice must stay finalised, so only offer the update action.
             $('#invoice_receipt_form .invoice-draft-btn').toggle(!isFinal);
             $('#invoice_receipt_form .invoice-final-btn').text(isFinal ? 'Update Invoice' : 'Create Invoice');
-            $('#client_receipt_form, #office_receipt_form').hide();
-            $('#invoice_receipt_form').show();
+            $('#client_receipt_form, #office_receipt_form').hide().removeClass('active-entry-form');
+            $('#invoice_receipt_form').addClass('active-entry-form').css('display', 'flex');
         }
 
         function getInfoByReceiptId(receiptid, saveType) {
@@ -1887,8 +1901,8 @@ success: function(response) {
                         prepareInvoiceEditModal(saveType);
 
                         $('#createreceiptmodal').modal('show');
-                        $('#client_receipt_form, #office_receipt_form').hide();
-                        $('#invoice_receipt_form').show();
+                        $('#client_receipt_form, #office_receipt_form').hide().removeClass('active-entry-form');
+                        $('#invoice_receipt_form').addClass('active-entry-form').css('display', 'flex');
 
                         if (obj.record_get_parent && obj.record_get_parent.length) {
                             var parentRow = obj.record_get_parent[0];
@@ -2399,40 +2413,57 @@ success: function(response) {
 
 
 
-        $(document).delegate('.openproductrinfo_office', 'click', function(){
+        $(document).delegate('.openproductrinfo_office', 'click', function(e){
+            if (e) { e.preventDefault(); e.stopPropagation(); }
 
-            var clonedval_office = $('.clonedrow_office').html();
+            var clonedval_office = $('.clonedrow_office').first().html();
 
-            var $newOfficeRow = $('<tr class="product_field_clone_office">' + clonedval_office + '</tr>');
+            var $newOfficeRow = $('<tr class="product_field_clone_office invoice-line-block">' + clonedval_office + '</tr>');
+
+            // Reset inputs and strip old picker references
+            $newOfficeRow.find('.flatpickr-calendar').remove();
+            $newOfficeRow.find('input.flatpickr-alt-input').remove();
+            $newOfficeRow.find('.report_date_fields_office, .report_entry_date_fields_office').each(function() {
+                var fp = $(this).data('flatpickr');
+                if (fp && typeof fp.destroy === 'function') {
+                    fp.destroy();
+                }
+                $(this).removeData('flatpickr').removeClass('flatpickr-input');
+            });
+            $newOfficeRow.find('input[type="text"]').val('');
+            $newOfficeRow.find('textarea').val('');
+            $newOfficeRow.find('select').prop('selectedIndex', 0);
+            $newOfficeRow.find('.office-eftpos-surcharge-block').hide();
 
             $('.productitem_office').append($newOfficeRow);
 
             // Initialize Flatpickr for office receipt date fields
-            initFlatpickrForClass('.report_date_fields_office,.report_entry_date_fields_office');
-            initFlatpickrForClass('.report_entry_date_fields_office:last', {
+            initFlatpickrForClass($newOfficeRow.find('.report_date_fields_office, .report_entry_date_fields_office'));
+            initFlatpickrForClass($newOfficeRow.find('.report_entry_date_fields_office'), {
                 defaultDate: new Date()
             });
 
             toggleOfficeEftposSurchargeRow($newOfficeRow);
-
         });
 
 
 
-        $(document).delegate('.removeitems_office', 'click', function(){
+        $(document).delegate('.removeitems_office', 'click', function(e){
+            if (e) { e.preventDefault(); e.stopPropagation(); }
 
-            var $tr_office    = $(this).closest('.product_field_clone_office');
+            var $row = $(this).closest('tr');
+            var totalRows = $('.productitem_office tr').length;
 
-            var trclone_office = $('.product_field_clone_office').length;
-
-            if(trclone_office > 0){
-
-                $tr_office.remove();
-
+            if (totalRows > 1) {
+                $row.remove();
+            } else {
+                $row.find('input[type="text"]').val('');
+                $row.find('textarea').val('');
+                $row.find('select').prop('selectedIndex', 0);
+                $row.find('.office-eftpos-surcharge-block').hide();
             }
 
             grandtotalAccountTab_office();
-
         });
 
 
