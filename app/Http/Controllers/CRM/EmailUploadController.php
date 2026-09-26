@@ -22,6 +22,8 @@ use App\Models\ClientMatter;
 use App\Models\Admin;
 use App\Logging\EmailUploadErrorLogger;
 use App\Services\Email\EmailCalendarMergeService;
+use App\Services\EmailSync\UnassignedEmailAssignmentService;
+use App\Services\EmailSync\UnassignedEmailUploadMatchService;
 use App\Support\EmailTimelineActivity;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Carbon;
@@ -236,6 +238,7 @@ class EmailUploadController extends Controller
                             'reference' => $result['reference'] ?? null,
                             'duplicate' => !empty($result['duplicate']),
                             'existing' => $result['existing'] ?? null,
+                            'unassigned_match' => $result['unassigned_match'] ?? null,
                         ];
                     }
                 } catch (\Exception $e) {
@@ -633,6 +636,17 @@ class EmailUploadController extends Controller
             }
 
             if (!$request->boolean('force_upload') && empty($syncMeta)) {
+                $unassignedMatchService = app(UnassignedEmailUploadMatchService::class);
+                $matchedUnassigned = $unassignedMatchService->findMatch($parsedData, $fileHash, $mailType);
+                if ($matchedUnassigned instanceof EmailLog) {
+                    return [
+                        'success' => false,
+                        'error_code' => 'unassigned_match',
+                        'error' => 'This email is already in Unassigned Mail. Assign that copy to this matter instead of uploading again.',
+                        'unassigned_match' => $unassignedMatchService->summarizeMatch($matchedUnassigned),
+                    ];
+                }
+
                 $existing = $this->findExistingEmailLog(
                     (int) ($clientId ?? 0),
                     $matterId,
@@ -2437,6 +2451,57 @@ class EmailUploadController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Assign an unassigned synced email to the current client matter (after manual-upload match prompt).
+     */
+    public function assignUnassignedEmailMatch(
+        Request $request,
+        UnassignedEmailAssignmentService $assignmentService,
+        UnassignedEmailUploadMatchService $matchService
+    ) {
+        $validated = $request->validate([
+            'email_log_id' => 'required|integer|min:1',
+            'client_id' => 'required|integer|min:1',
+            'client_matter_id' => 'required|integer|min:1',
+        ]);
+
+        $clientId = (int) $validated['client_id'];
+        $matterId = (int) $validated['client_matter_id'];
+        $emailLogId = (int) $validated['email_log_id'];
+
+        $this->ensureCrmRecordAccess($clientId);
+
+        $matterOk = ClientMatter::query()
+            ->where('id', $matterId)
+            ->where('client_id', $clientId)
+            ->exists();
+        if (! $matterOk) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected matter does not belong to this client.',
+            ], 422);
+        }
+
+        $emailLog = EmailLog::query()->find($emailLogId);
+        if (! $emailLog || ! $matchService->isUnassignedSynced($emailLog)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unassigned email not found or it is already assigned.',
+            ], 422);
+        }
+
+        $result = $assignmentService->assignToClient(
+            $emailLogId,
+            $clientId,
+            $matterId,
+            (int) Auth::id()
+        );
+
+        $status = ! empty($result['success']) ? 200 : 422;
+
+        return response()->json($result, $status);
     }
 
     /**

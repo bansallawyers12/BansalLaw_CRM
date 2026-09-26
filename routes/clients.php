@@ -97,6 +97,7 @@ Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEma
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
 Route::post('/preview-email-attachments', [EmailUploadController::class, 'previewEmailAttachments'])->name('email.upload.preview-attachments');
 Route::post('/log-email-upload-error', [EmailUploadController::class, 'logClientUploadError'])->name('email.upload.log-error');
+Route::post('/assign-unassigned-email-match', [EmailUploadController::class, 'assignUnassignedEmailMatch'])->name('email.upload.assign-unassigned-match');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');
 
 Route::prefix('emails/smart-import')->name('emails.smart-import.')->group(function () {

@@ -77,6 +77,7 @@
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $matterId ?? '' }}"
+    data-assign-unassigned-match-url="{{ route('email.upload.assign-unassigned-match') }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
     data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'
@@ -739,6 +740,45 @@
         <div class="outlook-ui-modal__footer">
             <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel" id="duplicateEmailReject">Reject</button>
             <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--confirm" id="duplicateEmailAccept">Upload anyway</button>
+        </div>
+    </div>
+</div>
+
+<!-- Unassigned mail match (manual upload) -->
+<div class="duplicate-email-modal-overlay outlook-modal-overlay" id="unassignedMatchModal" aria-hidden="true">
+    <div class="duplicate-email-modal outlook-ui-modal outlook-ui-modal--sm" role="dialog" aria-labelledby="unassignedMatchModalTitle" aria-modal="true">
+        <div class="outlook-ui-modal__header outlook-ui-modal__header--warn">
+            <div class="outlook-ui-modal__header-main">
+                <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                    <i class="fa-solid fa-inbox"></i>
+                </div>
+                <div class="outlook-ui-modal__header-text">
+                    <h3 class="outlook-ui-modal__title" id="unassignedMatchModalTitle">Already in Unassigned Mail</h3>
+                    <p class="outlook-ui-modal__subtitle">This file matches synced mail waiting to be assigned.</p>
+                </div>
+            </div>
+        </div>
+        <div class="outlook-ui-modal__body">
+            <p class="duplicate-email-modal__message">Upload skipped — assign the existing unassigned copy to this matter instead.</p>
+            <div class="outlook-ui-modal__preview-card">
+                <div>
+                    <div class="outlook-ui-modal__preview-label">Upload file</div>
+                    <div class="outlook-ui-modal__preview-value" id="unassignedMatchFileName">—</div>
+                </div>
+                <div>
+                    <div class="outlook-ui-modal__preview-label">Unassigned subject</div>
+                    <div class="outlook-ui-modal__preview-value" id="unassignedMatchSubject">—</div>
+                </div>
+                <div>
+                    <div class="outlook-ui-modal__preview-label">From</div>
+                    <div class="outlook-ui-modal__preview-value" id="unassignedMatchFrom">—</div>
+                </div>
+            </div>
+            <p class="outlook-ui-modal__hint">Assign links the synced email to this client matter without creating a duplicate upload.</p>
+        </div>
+        <div class="outlook-ui-modal__footer">
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel" id="unassignedMatchReject">Cancel</button>
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--confirm" id="unassignedMatchAccept">Assign to this matter</button>
         </div>
     </div>
 </div>

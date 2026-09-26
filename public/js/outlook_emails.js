@@ -147,6 +147,9 @@ function crmInitOutlookEmailsInterface() {
     const assignSelectedClientMeta = document.getElementById('assignSelectedClientMeta');
     const assignChangeClientBtn = document.getElementById('assignChangeClientBtn');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
+    const assignUnassignedMatchUrl = outlookContainer
+        ? (outlookContainer.getAttribute('data-assign-unassigned-match-url') || '')
+        : '';
     const unlinkEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-unlink-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
@@ -2618,6 +2621,116 @@ function crmInitOutlookEmailsInterface() {
             return data.errors.find(function(err) { return err && err.duplicate; }) || null;
         }
 
+        function getUnassignedMatchUploadError(data) {
+            if (!data || !Array.isArray(data.errors)) {
+                return null;
+            }
+            return data.errors.find(function(err) {
+                return err && err.error_code === 'unassigned_match' && err.unassigned_match;
+            }) || null;
+        }
+
+        function showUnassignedMatchPrompt(fileName, matchInfo) {
+            return new Promise(function(resolve) {
+                const modal = document.getElementById('unassignedMatchModal');
+                const fileNameEl = document.getElementById('unassignedMatchFileName');
+                const subjectEl = document.getElementById('unassignedMatchSubject');
+                const fromEl = document.getElementById('unassignedMatchFrom');
+                const acceptBtn = document.getElementById('unassignedMatchAccept');
+                const rejectBtn = document.getElementById('unassignedMatchReject');
+
+                const subject = (matchInfo && matchInfo.subject) ? matchInfo.subject : '(No subject)';
+                const fromMail = (matchInfo && matchInfo.from_mail) ? matchInfo.from_mail : 'Unknown sender';
+                const confirmText = 'This email is already in Unassigned Mail.\n\n'
+                    + 'Subject: ' + subject + '\nFrom: ' + fromMail
+                    + '\n\nAssign it to this client matter instead of uploading again?';
+
+                if (!modal || !acceptBtn || !rejectBtn) {
+                    resolve(window.confirm(confirmText));
+                    return;
+                }
+
+                if (fileNameEl) {
+                    fileNameEl.textContent = fileName || '—';
+                }
+                if (subjectEl) {
+                    subjectEl.textContent = subject;
+                }
+                if (fromEl) {
+                    fromEl.textContent = fromMail;
+                }
+
+                function cleanup() {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                    acceptBtn.removeEventListener('click', onAccept);
+                    rejectBtn.removeEventListener('click', onReject);
+                    modal.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onKeyDown);
+                }
+
+                function onAccept() {
+                    cleanup();
+                    resolve(true);
+                }
+
+                function onReject() {
+                    cleanup();
+                    resolve(false);
+                }
+
+                function onOverlayClick(event) {
+                    if (event.target === modal) {
+                        onReject();
+                    }
+                }
+
+                function onKeyDown(event) {
+                    if (event.key === 'Escape') {
+                        onReject();
+                    }
+                }
+
+                acceptBtn.addEventListener('click', onAccept);
+                rejectBtn.addEventListener('click', onReject);
+                modal.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onKeyDown);
+
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                acceptBtn.focus();
+            });
+        }
+
+        async function assignUnassignedEmailFromUpload(emailLogId) {
+            const matterId = getMatterId();
+            if (!assignUnassignedMatchUrl || !clientId || !matterId || !emailLogId) {
+                throw new Error('Cannot assign — open a client matter and try again.');
+            }
+
+            const response = await fetch(assignUnassignedMatchUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    email_log_id: emailLogId,
+                    client_id: clientId,
+                    client_matter_id: matterId
+                })
+            });
+
+            const data = await response.json().catch(function() { return {}; });
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || 'Could not assign unassigned email.');
+            }
+
+            return data;
+        }
+
         function getAttachmentStem(filename) {
             const lastDot = (filename || '').lastIndexOf('.');
             if (lastDot <= 0) {
@@ -3461,6 +3574,63 @@ function crmInitOutlookEmailsInterface() {
             );
 
             let result = await postOutlookEmailUpload(file, uploadUrl, false, attachmentStorage);
+            const unassignedMatchError = getUnassignedMatchUploadError(result);
+
+            if (unassignedMatchError) {
+                hideEmailUploadLoading();
+                const matchInfo = unassignedMatchError.unassigned_match || {};
+                const acceptAssign = await showUnassignedMatchPrompt(file.name, matchInfo);
+                if (acceptAssign) {
+                    showEmailUploadLoading(
+                        'Assigning email',
+                        'Linking unassigned mail to this matter…',
+                        file.name,
+                        baseProgress
+                    );
+                    try {
+                        const assignResult = await assignUnassignedEmailFromUpload(matchInfo.email_log_id);
+                        hideEmailUploadLoading();
+                        if (typeof crmToast === 'function') {
+                            crmToast(assignResult.message || 'Email assigned to this matter.', 'success');
+                        }
+                        if (typeof loadEmails === 'function') {
+                            loadEmails();
+                        }
+                        return {
+                            uploaded: 1,
+                            failed: 0,
+                            rejected: 0,
+                            assigned_unassigned: true,
+                            errors: [],
+                            warnings: result.warnings || [],
+                            notices: result.notices || [],
+                            message: assignResult.message || ''
+                        };
+                    } catch (assignError) {
+                        hideEmailUploadLoading();
+                        const assignMessage = assignError.message || 'Could not assign unassigned email.';
+                        showUploadErrorAlert(assignMessage, 'Assign failed');
+                        return {
+                            uploaded: 0,
+                            failed: 1,
+                            rejected: 0,
+                            errors: [{ filename: file.name, error: assignMessage }]
+                        };
+                    }
+                }
+
+                return {
+                    uploaded: 0,
+                    failed: 0,
+                    rejected: 1,
+                    errors: [{
+                        filename: file.name,
+                        error: unassignedMatchError.error || 'Upload cancelled — email already in Unassigned Mail.',
+                        error_code: 'unassigned_match'
+                    }]
+                };
+            }
+
             const duplicateError = getDuplicateUploadError(result);
 
             if (duplicateError) {
