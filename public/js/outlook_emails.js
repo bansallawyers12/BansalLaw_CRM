@@ -1445,6 +1445,9 @@ function crmInitOutlookEmailsInterface() {
         if (!needsSyncedFolderCountMeta(folder) || !outlookContainer) {
             return;
         }
+        if (syncedFolderCountReady) {
+            return;
+        }
 
         const badge = outlookContainer.querySelector('[data-folder-count="' + folder + '"]');
         if (badge) {
@@ -4173,7 +4176,9 @@ function crmInitOutlookEmailsInterface() {
         }
         syncedListMetaLoading = true;
         syncedListMetaFolder = folder;
-        showSyncedFolderCountLoading(folder);
+        if (!syncedFolderCountReady) {
+            showSyncedFolderCountLoading(folder);
+        }
         let metaResponse = null;
         try {
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
@@ -4290,6 +4295,8 @@ function crmInitOutlookEmailsInterface() {
             }
         }
 
+        const preserveSyncedFolderCounts = append && syncedFolderCountReady;
+
         try {
             const query = searchInput.value;
             const label = labelFilter ? labelFilter.value : '';
@@ -4392,11 +4399,12 @@ function crmInitOutlookEmailsInterface() {
                 syncedDateSummary = data.date_summary;
                 renderSyncedDateSummaryBar(syncedDateSummary);
                 finishSyncedFolderCountsFromSummary(data.date_summary, data, folderToFetch);
-            } else if (unassignedOnly && needsSyncedFolderCountMeta(folderToFetch)) {
+            } else if (!preserveSyncedFolderCounts && !append && unassignedOnly
+                && needsSyncedFolderCountMeta(folderToFetch) && !syncedFolderCountReady) {
                 syncedDateSummary = null;
                 syncedFolderCountReady = false;
                 renderSyncedDateSummaryBar(null);
-            } else if (unassignedOnly) {
+            } else if (!append && unassignedOnly && !needsSyncedFolderCountMeta(folderToFetch)) {
                 syncedDateSummary = null;
                 renderSyncedDateSummaryBar(null);
             }
@@ -4423,8 +4431,11 @@ function crmInitOutlookEmailsInterface() {
                 : (data.to || emails.length);
             if (!append) {
                 updatePaginationDisplay(total, lastPage, from, to);
-            } else if (total > 0) {
+            } else if (total > 0 && !syncedFolderCountReady) {
                 updatePaginationDisplay(total, lastPage, from, to);
+            } else if (append) {
+                listTotal = Math.max(0, Number(total) || listTotal);
+                listLastPage = Math.max(1, Number(lastPage) || listLastPage);
             }
 
             // Update sender filter dropdown (first page / meta responses only)
