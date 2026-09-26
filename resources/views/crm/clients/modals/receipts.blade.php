@@ -197,6 +197,7 @@
     min-height: 0 !important;
     height: 100% !important;
 }
+#createreceiptmodal.invoice-entry-open #client_receipt_form,
 #createreceiptmodal.invoice-entry-open #office_receipt_form,
 #createreceiptmodal.invoice-entry-open #invoice_receipt_form,
 #createinvoicereceiptmodal #invoice_receipt_form,
@@ -210,6 +211,7 @@
 #createreceiptmodal.invoice-entry-open form[style*="none"] {
     display: none !important;
 }
+#createreceiptmodal.invoice-entry-open #client_receipt_form.active-entry-form,
 #createreceiptmodal.invoice-entry-open #office_receipt_form.active-entry-form,
 #createreceiptmodal.invoice-entry-open #invoice_receipt_form.active-entry-form,
 #createinvoicereceiptmodal #invoice_receipt_form,
@@ -219,7 +221,8 @@
 #createreceiptmodal.invoice-entry-open .invoice-form-shell,
 #createinvoicereceiptmodal .invoice-form-shell,
 #createofficereceiptmodal .invoice-form-shell,
-#office_receipt_form .invoice-form-shell {
+#office_receipt_form .invoice-form-shell,
+#client_receipt_form .invoice-form-shell {
     display: flex !important;
     flex-direction: column !important;
     flex: 1 1 auto !important;
@@ -228,7 +231,8 @@
 }
 #createreceiptmodal.invoice-entry-open .invoice-form-toolbar,
 #createinvoicereceiptmodal .invoice-form-toolbar,
-#office_receipt_form .invoice-form-toolbar {
+#office_receipt_form .invoice-form-toolbar,
+#client_receipt_form .invoice-form-toolbar {
     flex-shrink: 0 !important;
     margin-bottom: 8px !important;
     padding: 8px 14px !important;
@@ -236,7 +240,8 @@
 #createreceiptmodal.invoice-entry-open .invoice-timesheet-scroll,
 #createinvoicereceiptmodal .invoice-timesheet-scroll,
 #createofficereceiptmodal .invoice-timesheet-scroll,
-#office_receipt_form .invoice-timesheet-scroll {
+#office_receipt_form .invoice-timesheet-scroll,
+#client_receipt_form .invoice-timesheet-scroll {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     overflow-y: auto !important;
@@ -584,12 +589,27 @@
 .invoice-input-prefix-wrap {
     position: relative;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     width: 100%;
+}
+.invoice-input-icon-wrap input,
+.invoice-input-prefix-wrap input {
+    width: 100%;
+}
+.invoice-input-icon-wrap .custom-error,
+.invoice-input-prefix-wrap .custom-error,
+.invoice-field .custom-error {
+    width: 100%;
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+    display: block;
 }
 .invoice-input-icon {
     position: absolute;
     left: 9px;
+    top: 9px;
     color: #94a3b8;
     font-size: 0.76rem;
     pointer-events: none;
@@ -895,6 +915,127 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
     margin-bottom: 0;
     padding: 4px 8px;
 }
+
+/* Trust Account Entry Specific Styles */
+.trust-line-card {
+    border-left: 4px solid #198754 !important;
+}
+.trust-line-card:hover {
+    border-left-color: #157347 !important;
+}
+.trust-line-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 8px 12px;
+    align-items: flex-end;
+}
+@media (min-width: 1200px) {
+    .trust-line-grid {
+        grid-template-columns: 1fr 1fr 1.35fr 1.15fr 1.15fr 1fr 1fr;
+    }
+}
+.trust-col-trans-date { min-width: 120px; }
+.trust-col-entry-date { min-width: 120px; }
+.trust-col-type { min-width: 155px; }
+.trust-col-invoice { min-width: 135px; }
+.trust-col-method { min-width: 135px; }
+.trust-col-receipt { min-width: 115px; }
+.trust-col-payment { min-width: 115px; }
+
+/* Trust Footer & Dropzone */
+.trust-form-footer {
+    display: flex;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px !important;
+    padding: 6px 14px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0 !important;
+}
+.trust-form-footer__center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 1 auto;
+}
+.trust-footer-upload .trust-drag-drop-zone {
+    min-height: 32px !important;
+    max-height: 36px !important;
+    padding: 2px 10px !important;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    min-width: 200px;
+    max-width: 260px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+.trust-footer-upload .trust-drag-drop-zone:hover {
+    border-color: #198754;
+    background: #f0fff4;
+}
+.trust-footer-upload .drag-zone-inner {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+.trust-footer-upload .drag-zone-inner i {
+    font-size: 14px !important;
+    color: #198754;
+    margin: 0 !important;
+}
+.trust-footer-upload .drag-zone-content {
+    gap: 0 !important;
+    text-align: left !important;
+}
+.trust-footer-upload .drag-zone-text {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #334155;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+.trust-footer-upload .drag-zone-formats {
+    font-size: 9px !important;
+    color: #64748b;
+    line-height: 1 !important;
+    margin: 0 !important;
+    display: block !important;
+}
+.trust-footer-upload .ledger-selected-files-display {
+    max-width: 260px;
+    margin-bottom: 0;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+.trust-final-btn {
+    background: linear-gradient(180deg, #198754 0%, #157347 100%) !important;
+    border-color: #157347 !important;
+    box-shadow: 0 2px 6px rgba(25, 135, 84, 0.25);
+    font-weight: 600;
+}
+.trust-final-btn:hover {
+    background: #157347 !important;
+    box-shadow: 0 4px 10px rgba(25, 135, 84, 0.35);
+}
+#client_receipt_form textarea.invoice-line-description {
+    min-height: 44px;
+    max-height: 110px;
+    resize: vertical;
+    line-height: 1.4;
+    font-size: 0.82rem;
+    padding: 6px 10px;
+}
 </style>
 
 {{-- 1. Create Receipt Modal (Multi-Type: Client Funds Ledger, Invoice, Office Receipt) --}}
@@ -938,156 +1079,212 @@ form.invoice-billing-mode-hourly .invoice-billing-hint-fixed { display: none !im
 					<input type="hidden" name="receipt_type" value="1">
                     <input type="hidden" name="client_ledger_balance_amount" id="client_ledger_balance_amount" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_ledger" value="">
-					<div class="row g-3">
-						<div class="col-12 col-md-6 col-lg-4">
-							<div class="form-group trust-entry-client-field">
+					<div class="invoice-form-shell trust-form-shell">
+						<div class="invoice-form-toolbar">
+							<div class="form-group invoice-client-group">
 								<label for="trust-entry-client-name">Client <span class="span_req">*</span></label>
-								<input type="text" id="trust-entry-client-name" name="client" class="form-control trust-entry-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								<div class="input-group input-group-sm invoice-client-input-wrap">
+									<span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+									<input id="trust-entry-client-name" type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="Client Name" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+								</div>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
+
+							<div class="invoice-billing-mode-bar trust-quick-actions-bar">
+								<div class="invoice-billing-mode-bar__main">
+									<span class="invoice-billing-mode-label"><i class="fa-solid fa-building-columns me-1 text-success"></i> Trust Account</span>
+									<span class="badge bg-light text-dark border ms-2 px-2 py-1"><i class="fa-solid fa-shield-halved text-success me-1"></i> Regulated Trust Account</span>
+								</div>
+								<p class="invoice-billing-mode-hint mb-0">
+									<i class="fa-solid fa-circle-info text-info me-1"></i>
+									<span>Record trust receipts, disbursements, fee transfers or client refunds</span>
+								</p>
+							</div>
 						</div>
 
-                       	<div class="col-12">
-							<div class="form-group trust-entry-lines-panel">
-                                <div class="trust-entry-lines-panel__header">
-                                    <h6 class="trust-entry-lines-panel__title"><i class="fa-solid fa-list-ul"></i> Transaction lines</h6>
-                                    <p class="trust-entry-lines-panel__hint">Add one or more trust receipts, payments, transfers, or refunds. Scroll horizontally on smaller screens to see all columns.</p>
-                                </div>
-                                <div class="trust-entry-table-scroll">
-                                <table class="table trust-entry-lines-table text_wrap vertical_align">
-                                    <thead>
-                                        <tr>
-                                            <th class="trust-entry-col-date">Trans. Date</th>
-                                            <th class="trust-entry-col-date">Entry Date</th>
-                                            <th class="trust-entry-col-type">Transaction Type</th>
-                                            <th class="trust-entry-col-invoice" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
-                                            <th class="trust-entry-col-method">Payment Method</th>
-                                            <th class="trust-entry-col-desc">Particulars / Description</th>
-                                            <th class="trust-entry-amount-col">Trust Receipts (+)</th>
-											<th class="trust-entry-amount-col">Trust Payments (−)</th>
-                                            <th class="trust-entry-action-col"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="productitem">
-                                        <tr class="clonedrow">
-                                            <td data-label="Trans. Date">
-                                                <input data-valid="required" class="form-control trust-entry-control report_date_fields" name="trans_date[]" type="text" value="" />
-                                            </td>
-                                            <td data-label="Entry Date">
-                                                <input data-valid="required" class="form-control trust-entry-control report_entry_date_fields" name="entry_date[]" type="text" value="" />
-                                            </td>
-                                            <td data-label="Transaction Type">
-                                                <select class="form-control trust-entry-control client_fund_ledger_type" name="client_fund_ledger_type[]" data-valid="required">
-                                                    <option value="">Select</option>
-                                                    <option value="Deposit" title="Money received into trust account on behalf of client">Trust Receipt</option>
-                                                    <option value="Fee Transfer" title="Transfer from trust to office account for professional fees (requires invoice)">Transfer to Office Account</option>
-                                                    <option value="Disbursement" title="Payment made from trust account on behalf of client (e.g. court fees, outlays)">Disbursement (Trust Payment)</option>
-                                                    <option value="Refund" title="Money returned to client from trust account">Refund to Client</option>
-                                                </select>
-                                            </td>
-                                            <td class="trust-entry-invoice-cell" data-label="Invoice Ref.">
-                                                <span class="ledger-invoice-placeholder trust-entry-placeholder">—</span>
-                                                <select class="form-control trust-entry-control invoice_no_cls" name="invoice_no[]" style="display:none;">
-                                                </select>
-                                            </td>
-                                            <td data-label="Payment Method">
-                                                <div class="trust-entry-cell-stack">
-                                                <select class="form-control trust-entry-control ledger-payment-method" name="payment_method[]">
-                                                    <option value="">—</option>
-                                                    <option value="Cash">Cash</option>
-                                                    <option value="Bank transfer">Bank Transfer / EFT</option>
-                                                    <option value="EFTPOS">EFTPOS / Card</option>
-                                                    <option value="Cheque">Cheque</option>
-                                                    <option value="Refund">Refund</option>
-                                                </select>
-                                                <div class="ledger-eftpos-surcharge-block" style="display:none;">
-                                                    <label class="text-muted trust-entry-sub-label">Card surcharge ($)</label>
-                                                    <input type="text" class="form-control trust-entry-control ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
-                                                </div>
-                                                </div>
-                                            </td>
-                                            <td data-label="Particulars">
-                                                <input data-valid="required" class="form-control trust-entry-control" name="description[]" type="text" value="" />
-                                            </td>
+						<div class="invoice-timesheet-scroll">
+							<table class="table text_wrap table-hover table-md vertical_align invoice-lines-table">
+								<thead>
+									<tr class="invoice-lines-legend">
+										<th class="invoice-lines-legend__cell">
+											<div class="invoice-lines-legend__wrap">
+												<span class="invoice-lines-legend__icon" style="background:#198754;"><i class="fa-solid fa-list-ul"></i></span>
+												<div class="invoice-lines-legend__content">
+													<span class="invoice-lines-legend__title">Transaction lines</span>
+													<span class="invoice-lines-legend__hint">Add one or more trust receipts, disbursements, fee transfers or refunds.</span>
+												</div>
+											</div>
+										</th>
+									</tr>
+								</thead>
+								<tbody class="productitem">
+									<tr class="clonedrow invoice-line-block">
+										<td class="invoice-line-block__cell">
+											<div class="invoice-line-card trust-line-card">
+												<div class="invoice-line-card__header">
+													<div class="invoice-line-badge">
+														<span class="invoice-line-badge__dot" style="background:#198754;"></span>
+														<span class="invoice-line-badge__text">Transaction Line</span>
+													</div>
+													<a class="removeitems invoice-line-remove" href="javascript:;" title="Remove this line" aria-label="Remove line">
+														<i class="fa-solid fa-trash-can"></i>
+													</a>
+												</div>
 
-                                            <td class="trust-entry-amount-col" data-label="Trust Receipts (+)">
-                                                <div class="trust-currency-field">
-                                                <span class="currencyinput">$</span>
-                                                <input data-valid="required" class="form-control trust-entry-control deposit_amount_per_row" name="deposit_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
-                                                </div>
-                                            </td>
+												<div class="invoice-line-card__grid trust-line-grid">
+													<div class="invoice-field trust-col-trans-date">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Trans. date</label>
+														</div>
+														<div class="invoice-input-icon-wrap">
+															<i class="fa-regular fa-calendar-days invoice-input-icon"></i>
+															<input data-valid="required" class="form-control form-control-sm report_date_fields" name="trans_date[]" type="text" value="" placeholder="DD/MM/YYYY" readonly="readonly" title="Transaction date" />
+														</div>
+													</div>
 
-											<td class="trust-entry-amount-col" data-label="Trust Payments (−)">
-                                                <div class="trust-currency-field">
-                                                <span class="currencyinput">$</span>
-                                                <input data-valid="required" class="form-control trust-entry-control withdraw_amount_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
-                                                </div>
-                                            </td>
+													<div class="invoice-field trust-col-entry-date">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Entry date</label>
+														</div>
+														<div class="invoice-input-icon-wrap">
+															<i class="fa-regular fa-clock invoice-input-icon"></i>
+															<input data-valid="required" class="form-control form-control-sm report_entry_date_fields" name="entry_date[]" type="text" value="" readonly="readonly" title="Entry date" />
+														</div>
+													</div>
 
-                                            <td class="trust-entry-action-col">
-                                                <button type="button" class="btn btn-outline-danger trust-entry-remove-btn removeitems" title="Remove line"><i class="fa-solid fa-xmark"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot class="trust-entry-tfoot">
-                                        <tr>
-                                            <td colspan="5" class="trust-entry-totals-label">Totals</td>
-                                            <td class="trust-entry-amount-col trust-entry-totals-deposit">
-                                                <span class="total_deposit_amount_all_rows">$0.00</span>
-                                            </td>
-                                            <td class="trust-entry-amount-col trust-entry-totals-withdraw">
-                                                <span class="total_withdraw_amount_all_rows">$0.00</span>
-                                            </td>
-                                            <td class="trust-entry-action-col"></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                                </div>
-                                <div class="trust-entry-totals-mobile" aria-hidden="true">
-                                    <span class="trust-entry-totals-label">Totals</span>
-                                    <span class="trust-entry-totals-deposit"><span class="total_deposit_amount_all_rows">$0.00</span></span>
-                                    <span class="trust-entry-totals-withdraw"><span class="total_withdraw_amount_all_rows">$0.00</span></span>
-                                </div>
+													<div class="invoice-field trust-col-type">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Transaction type</label>
+														</div>
+														<select class="form-select form-select-sm client_fund_ledger_type" name="client_fund_ledger_type[]" data-valid="required">
+															<option value="">Select Type</option>
+															<option value="Deposit" title="Money received into trust account on behalf of client">Trust Receipt (+)</option>
+															<option value="Fee Transfer" title="Transfer from trust to office account for professional fees (requires invoice)">Transfer to Office (−)</option>
+															<option value="Disbursement" title="Payment made from trust account on behalf of client (e.g. court fees, outlays)">Disbursement (Payment) (−)</option>
+															<option value="Refund" title="Money returned to client from trust account">Refund to Client (−)</option>
+														</select>
+													</div>
 
-                            </div>
+													<div class="invoice-field trust-col-invoice">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Invoice Ref.</label>
+														</div>
+														<div class="trust-entry-invoice-cell">
+															<span class="ledger-invoice-placeholder trust-entry-placeholder">—</span>
+															<select class="form-select form-select-sm invoice_no_cls" name="invoice_no[]" style="display:none;">
+															</select>
+														</div>
+													</div>
+
+													<div class="invoice-field trust-col-method">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label">Payment method</label>
+														</div>
+														<div class="trust-entry-cell-stack">
+															<select class="form-select form-select-sm ledger-payment-method" name="payment_method[]">
+																<option value="">—</option>
+																<option value="Cash">Cash</option>
+																<option value="Bank transfer">Bank Transfer / EFT</option>
+																<option value="EFTPOS">EFTPOS / Card</option>
+																<option value="Cheque">Cheque</option>
+																<option value="Refund">Refund</option>
+															</select>
+															<div class="ledger-eftpos-surcharge-block" style="display:none;margin-top:4px;">
+																<label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
+																<input type="text" class="form-control form-control-sm ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:3px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+															</div>
+														</div>
+													</div>
+
+													<div class="invoice-field trust-col-receipt">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label text-success">Receipt (+)</label>
+														</div>
+														<div class="invoice-input-prefix-wrap">
+															<span class="invoice-input-prefix">$</span>
+															<input class="form-control form-control-sm deposit_amount_per_row" name="deposit_amount[]" type="text" inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly />
+														</div>
+													</div>
+
+													<div class="invoice-field trust-col-payment">
+														<div class="invoice-field__header">
+															<label class="invoice-field__label text-danger">Payment (−)</label>
+														</div>
+														<div class="invoice-input-prefix-wrap">
+															<span class="invoice-input-prefix">$</span>
+															<input class="form-control form-control-sm withdraw_amount_per_row" name="withdraw_amount[]" type="text" inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly />
+														</div>
+													</div>
+												</div>
+
+												<div class="invoice-field invoice-col-desc mt-2">
+													<div class="invoice-field__header">
+														<label class="invoice-field__label"><i class="fa-regular fa-message text-muted me-1"></i> Particulars / Description</label>
+													</div>
+													<textarea data-valid="required" class="form-control invoice-line-description" name="description[]" rows="2" placeholder="Describe the transaction particulars or description (e.g. client funds received into trust, court filing fee, settlement funds)..."></textarea>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 
-                        <div class="col-12 trust-entry-form-footer">
-                            <a href="javascript:;" class="btn btn-sm btn-outline-primary trust-entry-add-line openproductrinfo"><i class="fa-solid fa-plus"></i> Add New Line</a>
+						<div class="invoice-form-footer trust-form-footer">
+							<div class="invoice-form-footer__left">
+								<a href="javascript:;" class="btn btn-sm btn-outline-primary openproductrinfo trust-entry-add-line invoice-add-line-btn">
+									<i class="fa-solid fa-plus me-1"></i> Add line
+								</a>
+								<div class="invoice-totals-card" aria-live="polite">
+									<div class="invoice-totals-card__row">
+										<span class="invoice-totals-card__label"><i class="fa-solid fa-arrow-down text-success me-1"></i> Receipts:</span>
+										<span class="invoice-totals-card__value text-success total_deposit_amount_all_rows">$0.00</span>
+									</div>
+									<div class="invoice-totals-card__row">
+										<span class="invoice-totals-card__label"><i class="fa-solid fa-arrow-up text-danger me-1"></i> Payments:</span>
+										<span class="invoice-totals-card__value text-danger total_withdraw_amount_all_rows">$0.00</span>
+									</div>
+								</div>
+							</div>
 
-                            <div class="trust-entry-form-footer__actions">
-                            <div class="upload_client_receipt_document trust-entry-upload">
-                                <input type="hidden" name="type" value="client">
-                                <input type="hidden" name="doctype" value="client_receipt">
-                                
-                                <div class="ledger-drag-drop-zone" id="ledgerDragDropZone">
-                                    <div class="drag-zone-inner">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                                        <div class="drag-zone-content">
-                                            <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
-                                            <small class="drag-zone-formats">PDF, JPG, PNG, DOC, DOCX (multiple files)</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <input class="docclientreceiptupload d-none" type="file" name="document_upload[]" multiple style="display: none;">
-                                
-                                <div id="ledger-selected-files-display" class="ledger-selected-files-display" style="display: none;">
-                                    <div id="ledger-files-list" class="files-list"></div>
-                                    <button type="button" class="btn btn-sm btn-link text-danger remove-all-files" title="Remove all files">
-                                        <i class="fa-solid fa-xmark"></i> Clear All
-                                    </button>
-                                </div>
-                                
-                                <span class="file-selection-hint"></span>
-                            </div>
-							<button onclick="customValidate('client_receipt_form')" type="button" class="btn btn-primary trust-entry-save-btn">Save Entry</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
+							<div class="trust-form-footer__center">
+								<div class="upload_client_receipt_document trust-footer-upload">
+									<input type="hidden" name="type" value="client">
+									<input type="hidden" name="doctype" value="client_receipt">
+									
+									<div class="ledger-drag-drop-zone trust-drag-drop-zone" id="ledgerDragDropZone">
+										<div class="drag-zone-inner">
+											<i class="fa-solid fa-cloud-arrow-up"></i>
+											<div class="drag-zone-content">
+												<p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
+												<small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX</small>
+											</div>
+										</div>
+									</div>
+									
+									<input class="docclientreceiptupload d-none" type="file" name="document_upload[]" multiple style="display: none;">
+									
+									<div id="ledger-selected-files-display" class="ledger-selected-files-display" style="display: none;">
+										<div id="ledger-files-list" class="files-list"></div>
+										<button type="button" class="btn btn-sm btn-link text-danger remove-all-files" title="Remove all files">
+											<i class="fa-solid fa-xmark"></i> Clear All
+										</button>
+									</div>
+									
+									<span class="file-selection-hint" style="display:none;"></span>
+								</div>
+							</div>
+
+							<div class="invoice-form-footer__actions">
+								<button onclick="customValidate('client_receipt_form')" type="button" class="btn btn-sm btn-primary trust-final-btn">
+									<i class="fa-solid fa-check me-1"></i> Save Entry
+								</button>
+								<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
 				</form>
 
 				<!-- Tax Invoice Form -->

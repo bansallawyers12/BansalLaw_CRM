@@ -296,7 +296,7 @@
                 }
 
                 $modal.find('.receipt-type-selector').hide();
-                $modal.toggleClass('invoice-entry-open', receiptType === '3' || receiptType === '2');
+                $modal.toggleClass('invoice-entry-open', receiptType === '3' || receiptType === '2' || receiptType === '1');
                 $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
                 $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
 
@@ -335,7 +335,7 @@
                     if (formId) {
                         var $form = $('#' + formId);
                         $form.addClass('active-entry-form');
-                        if (formId === 'office_receipt_form' || formId === 'invoice_receipt_form') {
+                        if (formId === 'office_receipt_form' || formId === 'invoice_receipt_form' || formId === 'client_receipt_form') {
                             $form.css('display', 'flex');
                         } else {
                             $form.show();
@@ -361,6 +361,9 @@
                         if (window._accountPendingRetainerPrefill && typeof window.getAccountCostsDisclosure === 'function' && typeof window.prefillTrustRetainerFromDisclosure === 'function') {
                             window.prefillTrustRetainerFromDisclosure(window.getAccountCostsDisclosure());
                             window._accountPendingRetainerPrefill = false;
+                        }
+                        if (typeof window.grandtotalAccountTab === 'function') {
+                            window.grandtotalAccountTab();
                         }
                     } else if (receiptType === '2') {
                         $('#client_matter_id_office').val(selectedMatter);

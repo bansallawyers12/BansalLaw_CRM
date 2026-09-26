@@ -432,7 +432,7 @@
                 const targetForm = document.getElementById(selected + '_form');
                 if (targetForm) {
                     targetForm.classList.add('active-entry-form');
-                    if (selected === 'office_receipt' || selected === 'invoice_receipt') {
+                    if (selected === 'office_receipt' || selected === 'invoice_receipt' || selected === 'client_receipt') {
                         targetForm.style.display = 'flex';
                     } else {
                         targetForm.style.display = 'block';
@@ -489,7 +489,7 @@
                 }
 
                 else if(selected == 'client_receipt'){
-                    $modal.removeClass('invoice-entry-open');
+                    $modal.addClass('invoice-entry-open');
 
                     if (!isQuickReceiptMode) {
                         listOfInvoice();
@@ -497,6 +497,9 @@
                     }
 
                     $('#client_matter_id_ledger').val(selectedMatter);
+                    if (typeof window.grandtotalAccountTab === 'function') {
+                        window.grandtotalAccountTab();
+                    }
 
                 }
 
@@ -1718,47 +1721,65 @@ success: function(response) {
 
 
 
-        $(document).delegate('.openproductrinfo', 'click', function() {
+        $(document).delegate('.openproductrinfo', 'click', function(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
 
-            var clonedval = $('.clonedrow').html();
+            var clonedval = $('.clonedrow').first().html();
 
-            var $newRow = $('<tr class="product_field_clone">' + clonedval + '</tr>');
+            var $newRow = $('<tr class="product_field_clone invoice-line-block">' + clonedval + '</tr>');
+
+            // Reset inputs and strip old picker references
+            $newRow.find('.flatpickr-calendar').remove();
+            $newRow.find('input.flatpickr-alt-input').remove();
+            $newRow.find('.report_date_fields, .report_entry_date_fields').each(function() {
+                var fp = $(this).data('flatpickr');
+                if (fp && typeof fp.destroy === 'function') {
+                    fp.destroy();
+                }
+                $(this).removeData('flatpickr').removeClass('flatpickr-input');
+            });
+            $newRow.find('input[type="text"]').val('');
+            $newRow.find('textarea').val('');
+            $newRow.find('select').prop('selectedIndex', 0);
 
             // Reset invoice column (placeholder visible until Fee Transfer)
-
             $newRow.find('.invoice_no_cls').hide().removeAttr('data-valid').val('');
-
             $newRow.find('.ledger-invoice-placeholder').show();
+
+            // Surcharge reset
+            $newRow.find('.ledger-eftpos-surcharge-block').hide();
 
             $('.productitem').append($newRow);
 
-            // Initialize Flatpickr for new date fields
-            initFlatpickrForClass('.report_date_fields,.report_entry_date_fields');
+            // Initialize Flatpickr for trust entry date fields
+            initFlatpickrForClass($newRow.find('.report_date_fields, .report_entry_date_fields'));
+            initFlatpickrForClass($newRow.find('.report_entry_date_fields'), {
+                defaultDate: new Date()
+            });
 
             toggleLedgerEftposSurchargeRow($newRow);
-
-            //$('.report_entry_date_fields').last().datepicker({ format: 'dd/mm/yyyy',todayHighlight: true,autoclose: true }).datepicker('setDate', new Date());
-
+            grandtotalAccountTab();
         });
 
+        $(document).delegate('.removeitems', 'click', function(e){
+            if (e) { e.preventDefault(); e.stopPropagation(); }
 
+            var $row = $(this).closest('tr');
+            var totalRows = $('.productitem tr').length;
 
-
-
-        $(document).delegate('.removeitems', 'click', function(){
-
-            var $tr    = $(this).closest('.product_field_clone');
-
-            var trclone = $('.product_field_clone').length;
-
-            if(trclone > 0){
-
-                $tr.remove();
-
+            if (totalRows > 1) {
+                $row.remove();
+            } else {
+                $row.find('input[type="text"]').val('');
+                $row.find('textarea').val('');
+                $row.find('select').prop('selectedIndex', 0);
+                $row.find('.invoice_no_cls').hide().removeAttr('data-valid').val('');
+                $row.find('.ledger-invoice-placeholder').show();
+                $row.find('.ledger-eftpos-surcharge-block').hide();
+                $row.find('.deposit_amount_per_row, .withdraw_amount_per_row').prop('readonly', true);
             }
 
             grandtotalAccountTab();
-
         });
 
 
@@ -2164,6 +2185,8 @@ success: function(response) {
             $('.total_withdraw_amount_all_rows').html("$" + total_withdraw_amount_all_rows.toFixed(2));
 
         }
+
+        window.grandtotalAccountTab = grandtotalAccountTab;
 
 
 
