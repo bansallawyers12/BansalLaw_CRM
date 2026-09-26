@@ -150,6 +150,19 @@ class UnassignedEmailAssignmentService
                 ]);
             }
 
+            if ($previousClientId <= 0) {
+                try {
+                    app(ManualUploadThreadMatchService::class)
+                        ->removeMatchingManualUploadsAfterAssign($emailLog->fresh());
+                } catch (Throwable $dedupeException) {
+                    Log::warning('Manual upload dedupe failed after email assignment', [
+                        'email_log_id' => $emailLog->id,
+                        'client_id' => $clientId,
+                        'error' => $dedupeException->getMessage(),
+                    ]);
+                }
+            }
+
             return [
                 'success' => true,
                 'message' => $isReassigning

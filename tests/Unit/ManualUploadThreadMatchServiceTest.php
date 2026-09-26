@@ -78,4 +78,48 @@ class ManualUploadThreadMatchServiceTest extends TestCase
         $this->assertCount(1, $match['matched_manual_emails']);
         $this->assertFalse($match['ambiguous']);
     }
+
+    #[Test]
+    public function it_removes_manual_upload_duplicate_when_synced_email_is_assigned(): void
+    {
+        $client = Admin::factory()->create(['type' => 'client']);
+        $matter = ClientMatter::query()->create([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'CIV_2',
+            'matter_status' => 1,
+        ]);
+
+        $manual = EmailLog::query()->create([
+            'subject' => 'Same subject line',
+            'from_mail' => 'a@example.com',
+            'message_id' => '<same@example>',
+            'client_id' => $client->id,
+            'client_matter_id' => $matter->id,
+            'sync_source' => EmailLog::SYNC_SOURCE_UPLOAD,
+            'uploaded_doc_id' => 12,
+            'mail_type' => 1,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+        ]);
+
+        $assigned = EmailLog::query()->create([
+            'subject' => 'Same subject line',
+            'from_mail' => 'a@example.com',
+            'message_id' => '<same@example>',
+            'client_id' => $client->id,
+            'client_matter_id' => $matter->id,
+            'synced_email_id' => 55,
+            'sync_assignment_status' => 'manual_assigned',
+            'mail_type' => 1,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+        ]);
+
+        $service = app(ManualUploadThreadMatchService::class);
+        $removed = $service->removeMatchingManualUploadsAfterAssign($assigned);
+
+        $this->assertContains((int) $manual->id, $removed);
+        $this->assertNull(EmailLog::query()->find($manual->id));
+        $this->assertNotNull(EmailLog::query()->find($assigned->id));
+    }
 }

@@ -327,7 +327,7 @@ class SyncedEmailController extends Controller
 
         return response()->json([
             'success' => true,
-            'count' => IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff),
+            'count' => IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff),
         ]);
     }
 

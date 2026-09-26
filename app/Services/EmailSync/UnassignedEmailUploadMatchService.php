@@ -144,6 +144,33 @@ class UnassignedEmailUploadMatchService
     /**
      * @return array<string, mixed>
      */
+    /**
+     * Reverse lookup: manual upload on a client matter → matching row still in unassigned queue.
+     */
+    public function findUnassignedMatchForClientEmail(EmailLog $email): ?EmailLog
+    {
+        if (! $this->threadMatchService->isManualClientUpload($email)) {
+            return null;
+        }
+
+        $when = $email->fetch_mail_sent_time
+            ?? $email->received_date
+            ?? $email->sent_at
+            ?? $email->created_at;
+        $sentDate = $when ? $when->toIso8601String() : '';
+
+        $parsed = [
+            'subject' => (string) ($email->subject ?? ''),
+            'sender_email' => (string) ($email->from_mail ?? ''),
+            'from_mail' => (string) ($email->from_mail ?? ''),
+            'message_id' => (string) ($email->message_id ?? ''),
+            'sent_date' => $sentDate,
+        ];
+        $mailType = (string) ($email->mail_body_type ?: 'inbox');
+
+        return $this->findMatch($parsed, (string) ($email->file_hash ?? ''), $mailType);
+    }
+
     public function summarizeMatch(EmailLog $email): array
     {
         $when = $email->received_date

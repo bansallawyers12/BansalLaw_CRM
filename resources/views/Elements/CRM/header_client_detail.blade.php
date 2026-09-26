@@ -7,7 +7,7 @@
     $_canViewAllSyncedInbox = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewAllSyncedInboxMail();
     $_unassignedMailCount = 0;
     if ($_canViewSyncedInboxNav && $_staffTop instanceof \App\Models\Staff) {
-        $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
+        $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($_staffTop);
     }
     $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
     $_pendingTaskCount = 0;

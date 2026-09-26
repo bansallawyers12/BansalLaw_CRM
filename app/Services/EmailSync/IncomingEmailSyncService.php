@@ -1681,7 +1681,15 @@ class IncomingEmailSyncService
         }
     }
 
-    public static function countUnassignedSyncedInboxMail(Staff $staff): int
+    /**
+     * Top-nav badge: unassigned synced mail only (exclude rows that already have a manual .msg/.eml twin on a matter).
+     */
+    public static function countUnassignedSyncedInboxMailForNavBadge(Staff $staff): int
+    {
+        return self::countUnassignedSyncedInboxMail($staff, excludeManualUploadTwins: true);
+    }
+
+    public static function countUnassignedSyncedInboxMail(Staff $staff, bool $excludeManualUploadTwins = false): int
     {
         if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             return 0;
@@ -1692,7 +1700,55 @@ class IncomingEmailSyncService
         self::applySyncedInboxVisibilityFilter($query, $staff);
         EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
+        if ($excludeManualUploadTwins) {
+            self::applyExcludeUnassignedWithManualUploadTwin($query);
+        }
+
         return (int) $query->count();
+    }
+
+    /**
+     * Drop unassigned synced rows that duplicate a manual upload already filed on a client matter.
+     */
+    public static function applyExcludeUnassignedWithManualUploadTwin($query): void
+    {
+        $uploadSource = EmailLog::SYNC_SOURCE_UPLOAD;
+
+        $query->whereNotExists(function ($sub) use ($uploadSource) {
+            $sub->selectRaw('1')
+                ->from('email_logs as manual')
+                ->whereNotNull('manual.client_id')
+                ->where('manual.client_id', '>', 0)
+                ->whereNotNull('manual.client_matter_id')
+                ->where('manual.client_matter_id', '>', 0)
+                ->where(function ($synced) {
+                    $synced->whereNull('manual.synced_email_id')
+                        ->orWhere('manual.synced_email_id', 0);
+                })
+                ->where(function ($origin) use ($uploadSource) {
+                    $origin->where('manual.sync_source', $uploadSource)
+                        ->orWhere('manual.conversion_type', 'conversion_email_fetch')
+                        ->orWhereNotNull('manual.uploaded_doc_id');
+                })
+                ->where(function ($match) {
+                    $match->where(function ($messageId) {
+                        $messageId->whereNotNull('email_logs.message_id')
+                            ->where('email_logs.message_id', '!=', '')
+                            ->whereNotNull('manual.message_id')
+                            ->where('manual.message_id', '!=', '')
+                            ->where(function ($ids) {
+                                $ids->whereColumn('manual.message_id', 'email_logs.message_id')
+                                    ->orWhereRaw(
+                                        'LOWER(TRIM(BOTH \'<> \' FROM manual.message_id)) = LOWER(TRIM(BOTH \'<> \' FROM email_logs.message_id))'
+                                    );
+                            });
+                    })->orWhere(function ($hash) {
+                        $hash->whereNotNull('email_logs.file_hash')
+                            ->where('email_logs.file_hash', '!=', '')
+                            ->whereColumn('manual.file_hash', 'email_logs.file_hash');
+                    });
+                });
+        });
     }
 
     /**

@@ -5954,6 +5954,26 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     color: #7c2d12 !important;
 }
 
+.email-client-badge--manual-upload-match {
+    background: #f5f3ff;
+    border: 1px solid #c4b5fd;
+    color: #5b21b6;
+}
+
+.email-client-badge--manual-upload-match i {
+    color: #7c3aed;
+}
+
+.email-client-badge--unassigned-queue-match {
+    background: #ecfeff;
+    border: 1px solid #a5f3fc;
+    color: #0e7490;
+}
+
+.email-client-badge--unassigned-queue-match i {
+    color: #0891b2;
+}
+
 .email-list-calendar--event i {
     color: #059669 !important;
 }

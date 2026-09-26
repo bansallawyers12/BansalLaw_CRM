@@ -60,4 +60,38 @@ class UnassignedEmailUploadMatchServiceTest extends TestCase
 
         $this->assertNull($match);
     }
+
+    #[Test]
+    public function it_finds_unassigned_twin_for_manual_client_upload(): void
+    {
+        $unassigned = EmailLog::query()->create([
+            'subject' => 'Twin message',
+            'from_mail' => 'client@example.com',
+            'message_id' => '<twin@example>',
+            'sync_assignment_status' => 'unassigned',
+            'synced_email_id' => 77,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $manual = EmailLog::query()->create([
+            'subject' => 'Twin message',
+            'from_mail' => 'client@example.com',
+            'message_id' => '<twin@example>',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'sync_source' => EmailLog::SYNC_SOURCE_UPLOAD,
+            'uploaded_doc_id' => 1,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(UnassignedEmailUploadMatchService::class);
+        $match = $service->findUnassignedMatchForClientEmail($manual);
+
+        $this->assertNotNull($match);
+        $this->assertSame((int) $unassigned->id, (int) $match->id);
+    }
 }

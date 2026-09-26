@@ -969,14 +969,32 @@ function crmInitOutlookEmailsInterface() {
             const title = 'Matched ' + match.matched_manual_emails.length
                 + ' manual upload'
                 + (match.matched_manual_emails.length === 1 ? '' : 's')
-                + (match.client_ref ? ' → ' + match.client_ref : '');
-            return '<span class="email-manual-match-badge" title="' + escapeHtml(title) + '"'
-                + ' role="img" aria-label="' + escapeHtml(title) + '">'
-                + '<i class="fa-solid fa-link" aria-hidden="true"></i>'
+                + (match.client_ref ? ' → ' + match.client_ref : '')
+                + (match.matter_no ? ' · ' + match.matter_no : '');
+            const label = 'Manual upload match';
+            return '<span class="email-client-badge email-client-badge--list email-client-badge--manual-upload-match" title="'
+                + escapeHtml(title) + '" role="img" aria-label="' + escapeHtml(title) + '">'
+                + '<i class="fa-solid fa-link" aria-hidden="true"></i> '
+                + escapeHtml(label)
                 + '</span>';
         }
 
         return '';
+    }
+
+    function renderMatchedUnassignedSyncBadge(email) {
+        const match = email && email.matched_unassigned_sync;
+        if (!match || !match.email_log_id) {
+            return '';
+        }
+        const title = 'Same message is in Unassigned mail (synced inbox)'
+            + (match.received_at_display ? ' · ' + match.received_at_display : '')
+            + (match.from_mail ? ' · ' + match.from_mail : '');
+        return '<span class="email-client-badge email-client-badge--unassigned-queue-match" title="'
+            + escapeHtml(title) + '" role="img" aria-label="' + escapeHtml(title) + '">'
+            + '<i class="fa-solid fa-inbox" aria-hidden="true"></i> '
+            + 'In unassigned'
+            + '</span>';
     }
 
     function renderManualUploadMatchBanner(match) {
@@ -1045,7 +1063,7 @@ function crmInitOutlookEmailsInterface() {
                     throw new Error(data.message || 'Could not assign email.');
                 }
                 crmToast(data.message || 'Email assigned to matched matter.', 'success');
-                loadEmails();
+                afterEmailAssignedFromUnassignedQueue(selectedEmailId);
             } catch (error) {
                 crmToast(error.message || 'Could not assign email.', 'error');
                 btn.disabled = false;
@@ -1096,6 +1114,42 @@ function crmInitOutlookEmailsInterface() {
             calendarBanner.innerHTML = '';
         }
         setListPaneCollapsed(false, { persist: false });
+    }
+
+    /**
+     * After an unassigned synced row is assigned, drop it from the unassigned/assigned
+     * queue UI and refresh nav counts (same as the Assign modal confirm path).
+     */
+    function afterEmailAssignedFromUnassignedQueue(emailLogId) {
+        const id = parseInt(emailLogId, 10);
+        if (!id) {
+            return;
+        }
+
+        if (selectedEmailId === id) {
+            resetReadingPane();
+        }
+
+        if (Array.isArray(emails) && emails.length) {
+            const before = emails.length;
+            emails = emails.filter(function (row) {
+                return parseInt(row.id, 10) !== id;
+            });
+            if (emails.length !== before && typeof renderEmailList === 'function') {
+                renderEmailList();
+            }
+        }
+
+        if (unassignedOnly || currentFolder === 'unassigned' || currentFolder === 'assigned') {
+            if (currentPage > 1 && emails.length === 0) {
+                currentPage -= 1;
+            }
+        }
+
+        if (typeof loadEmails === 'function') {
+            loadEmails();
+        }
+        refreshUnassignedNavCount();
     }
 
     function isGmailUiMode() {
@@ -3593,9 +3647,10 @@ function crmInitOutlookEmailsInterface() {
                         if (typeof crmToast === 'function') {
                             crmToast(assignResult.message || 'Email assigned to this matter.', 'success');
                         }
-                        if (typeof loadEmails === 'function') {
-                            loadEmails();
+                        if (!unassignedOnly && typeof switchToFolder === 'function') {
+                            switchToFolder('inbox');
                         }
+                        afterEmailAssignedFromUnassignedQueue(matchInfo.email_log_id);
                         return {
                             uploaded: 1,
                             failed: 0,
@@ -5061,6 +5116,7 @@ function crmInitOutlookEmailsInterface() {
             }
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
+            const matchedUnassignedBadge = renderMatchedUnassignedSyncBadge(email);
             const syncSourceBadge = renderSyncSourceBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
             const hearingBadge = renderHearingBadge(email);
@@ -5092,7 +5148,8 @@ function crmInitOutlookEmailsInterface() {
             } else if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const badgeRow = attachmentIcon + hearingBadge + calendarIndicator + statusBadge + syncSourceBadge + clientBadge;
+                const badgeRow = attachmentIcon + hearingBadge + calendarIndicator + statusBadge + syncSourceBadge
+                    + clientBadge + matchedUnassignedBadge;
                 const previewHtml = preview
                     ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
                     : '';
@@ -5118,7 +5175,7 @@ function crmInitOutlookEmailsInterface() {
             } else {
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${hearingBadge}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${hearingBadge}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}${matchedUnassignedBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>

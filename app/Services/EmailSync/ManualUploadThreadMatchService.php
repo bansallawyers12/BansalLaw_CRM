@@ -9,6 +9,8 @@ use App\Services\Email\ClientEmailListService;
 use App\Services\EmailMatchingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Match unassigned Zoho-synced emails to manually uploaded matter emails
@@ -159,6 +161,142 @@ class ManualUploadThreadMatchService
         }
     }
 
+    /**
+     * For client-matter mail lists: flag manual uploads that still have a synced unassigned twin.
+     *
+     * @param  iterable<int, EmailLog>  $emails
+     */
+    public function attachUnassignedMatchesToClientEmails(iterable $emails): void
+    {
+        $uploadMatchService = app(UnassignedEmailUploadMatchService::class);
+        foreach ($emails as $email) {
+            if (! $email instanceof EmailLog) {
+                continue;
+            }
+            if (! $this->isManualClientUpload($email)) {
+                $email->matched_unassigned_sync = null;
+                continue;
+            }
+            $unassigned = $uploadMatchService->findUnassignedMatchForClientEmail($email);
+            $email->matched_unassigned_sync = $unassigned
+                ? $uploadMatchService->summarizeMatch($unassigned)
+                : null;
+        }
+    }
+
+    /**
+     * After assigning a synced inbox email to a matter, drop redundant manual .msg/.eml copies.
+     *
+     * @return list<int> Removed {@see EmailLog} ids
+     */
+    public function removeMatchingManualUploadsAfterAssign(EmailLog $assignedSynced): array
+    {
+        $clientId = (int) ($assignedSynced->client_id ?? 0);
+        $matterId = (int) ($assignedSynced->client_matter_id ?? 0);
+        if ($clientId < 1 || $matterId < 1) {
+            return [];
+        }
+
+        if (empty($assignedSynced->synced_email_id) && empty($assignedSynced->mailbox_email) && empty($assignedSynced->imap_uid)) {
+            return [];
+        }
+
+        $subject = trim((string) ($assignedSynced->subject ?? ''));
+        $manuals = collect();
+        if ($subject !== '') {
+            $manuals = $this->findManualUploadsForSubject($subject, $assignedSynced)
+                ->filter(function (EmailLog $manual) use ($clientId, $matterId) {
+                    return (int) ($manual->client_id ?? 0) === $clientId
+                        && (int) ($manual->client_matter_id ?? 0) === $matterId;
+                });
+        }
+
+        $byMessage = $this->findManualUploadsByMessageLink($assignedSynced)
+            ->filter(function (EmailLog $manual) use ($clientId, $matterId) {
+                return (int) ($manual->client_id ?? 0) === $clientId
+                    && (int) ($manual->client_matter_id ?? 0) === $matterId;
+            });
+
+        $removed = [];
+        foreach ($manuals->merge($byMessage)->unique('id') as $manual) {
+            if ($this->deleteManualUploadEmailLog($manual)) {
+                $removed[] = (int) $manual->id;
+            }
+        }
+
+        if ($removed !== []) {
+            Log::info('Removed manual upload duplicates after assigning synced email', [
+                'assigned_email_log_id' => (int) $assignedSynced->id,
+                'removed_email_log_ids' => $removed,
+                'client_id' => $clientId,
+                'client_matter_id' => $matterId,
+            ]);
+        }
+
+        return $removed;
+    }
+
+    public function isManualClientUpload(EmailLog $email): bool
+    {
+        if ((int) ($email->mail_type ?? 0) !== 1) {
+            return false;
+        }
+
+        $clientId = (int) ($email->client_id ?? 0);
+        if ($clientId < 1) {
+            return false;
+        }
+
+        if (! empty($email->synced_email_id) || ! empty($email->imap_uid)) {
+            return false;
+        }
+
+        $status = (string) ($email->sync_assignment_status ?? '');
+        if (in_array($status, ['auto_assigned', 'manual_assigned', 'unassigned', 'unlinked'], true)) {
+            return false;
+        }
+
+        if (trim((string) ($email->sync_source ?? '')) === EmailLog::SYNC_SOURCE_UPLOAD) {
+            return true;
+        }
+
+        if (trim((string) ($email->mailbox_email ?? '')) !== '') {
+            return false;
+        }
+
+        if ((string) ($email->conversion_type ?? '') === 'conversion_email_fetch') {
+            return true;
+        }
+
+        return ! empty($email->uploaded_doc_id);
+    }
+
+    protected function deleteManualUploadEmailLog(EmailLog $email): bool
+    {
+        $full = EmailLog::query()->find((int) $email->id);
+        if (! $full instanceof EmailLog || ! $this->isManualClientUpload($full)) {
+            return false;
+        }
+
+        $id = (int) $full->id;
+        try {
+            DB::transaction(function () use ($id) {
+                DB::table('email_label_email_log')->where('email_log_id', $id)->delete();
+                \App\Models\EmailLogAttachment::where('email_log_id', $id)->delete();
+                EmailLog::query()->whereKey($id)->delete();
+            });
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Could not remove duplicate manual upload after assign', [
+                'email_log_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     public function isUnassignedSynced(EmailLog $email): bool
     {
         $clientId = (int) ($email->client_id ?? 0);
@@ -245,6 +383,7 @@ class ManualUploadThreadMatchService
                 'id', 'subject', 'from_mail', 'to_mail', 'client_id', 'client_matter_id',
                 'received_date', 'fetch_mail_sent_time', 'sent_at', 'created_at',
                 'message_id', 'conversion_type', 'synced_email_id', 'imap_uid', 'uploaded_doc_id',
+                'mail_type', 'sync_source', 'sync_assignment_status', 'mailbox_email', 'mail_body_type', 'file_hash',
             ])
             ->whereNotNull('client_id')
             ->where('client_id', '>', 0)
