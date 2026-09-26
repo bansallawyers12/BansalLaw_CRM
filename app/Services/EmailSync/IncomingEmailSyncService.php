@@ -23,6 +23,12 @@ class IncomingEmailSyncService
 {
     private const PARSER_DOWN_CACHE_KEY = 'inbox_sync_parser_unavailable';
 
+    /** @var list<string>|null */
+    private static ?array $syncableMailboxAddressesCache = null;
+
+    /** @var list<int>|null */
+    private static ?array $syncableMailboxIdsCache = null;
+
     private string $currentSyncSource = 'cron';
 
     public function __construct(
@@ -1222,9 +1228,8 @@ class IncomingEmailSyncService
      */
     public static function syncableMailboxAddresses(): array
     {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
+        if (self::$syncableMailboxAddressesCache !== null) {
+            return self::$syncableMailboxAddressesCache;
         }
 
         $query = Email::query()
@@ -1233,7 +1238,7 @@ class IncomingEmailSyncService
         self::applyMailboxHasZohoPasswordScope($query);
         self::applyExcludedMailboxesScope($query);
 
-        return $cached = $query
+        return self::$syncableMailboxAddressesCache = $query
             ->orderBy('email')
             ->pluck('email')
             ->map(static fn ($address) => strtolower(trim((string) $address)))
@@ -1313,9 +1318,8 @@ class IncomingEmailSyncService
      */
     public static function syncableMailboxIds(): array
     {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
+        if (self::$syncableMailboxIdsCache !== null) {
+            return self::$syncableMailboxIdsCache;
         }
 
         $query = Email::query()
@@ -1324,7 +1328,16 @@ class IncomingEmailSyncService
         self::applyMailboxHasZohoPasswordScope($query);
         self::applyExcludedMailboxesScope($query);
 
-        return $cached = $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
+        return self::$syncableMailboxIdsCache = $query->pluck('id')->map(static fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * PHPUnit only: static mailbox caches survive RefreshDatabase in the same process.
+     */
+    public static function forgetSyncableMailboxCacheForTesting(): void
+    {
+        self::$syncableMailboxAddressesCache = null;
+        self::$syncableMailboxIdsCache = null;
     }
 
     /**
@@ -1699,12 +1712,13 @@ class IncomingEmailSyncService
     public static function unassignedInboxCountBreakdown(Staff $staff, ?string $mailboxFilter = null): array
     {
         $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
-        $unassignedOnly = self::countUnassignedSyncedInboxMail($staff, true, $mailboxFilter);
+        $manualMatchCount = app(ManualUploadThreadMatchService::class)
+            ->countUnassignedWithManualUploadMatch($staff, $mailboxFilter);
 
         return [
             'total' => $total,
-            'unassigned_only_count' => $unassignedOnly,
-            'manual_upload_match_count' => max(0, $total - $unassignedOnly),
+            'unassigned_only_count' => max(0, $total - $manualMatchCount),
+            'manual_upload_match_count' => $manualMatchCount,
         ];
     }
 

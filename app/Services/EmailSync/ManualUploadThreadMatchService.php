@@ -5,12 +5,14 @@ namespace App\Services\EmailSync;
 use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\EmailLog;
+use App\Models\Staff;
 use App\Services\Email\ClientEmailListService;
 use App\Services\EmailMatchingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Match unassigned Zoho-synced emails to manually uploaded matter emails
@@ -23,6 +25,9 @@ class ManualUploadThreadMatchService
 
     /** @var array<int, ClientMatter|null> */
     protected array $matterCache = [];
+
+    /** @var Collection<int, EmailLog>|null In-memory manual uploads for bulk counting */
+    protected ?Collection $matchingManualUploadCache = null;
 
     public function __construct(
         private readonly EmailMatchingService $matchingService,
@@ -159,6 +164,70 @@ class ManualUploadThreadMatchService
             }
             $email->manual_upload_match = $this->findMatterMatches($email);
         }
+    }
+
+    /**
+     * Count unassigned synced rows that would show the "Manual upload match" list badge
+     * (same rules as {@see attachMatchesToEmails} / findMatterMatches).
+     */
+    public function countUnassignedWithManualUploadMatch(Staff $staff, ?string $mailboxFilter = null): int
+    {
+        if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+            return 0;
+        }
+
+        $this->matchingManualUploadCache = $this->manualUploadBaseQuery()->get();
+        $this->clientCache = [];
+        $this->matterCache = [];
+
+        try {
+            $count = 0;
+            $query = EmailLog::query();
+            IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
+            IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+            EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
+            if ($mailboxFilter !== null && trim($mailboxFilter) !== '') {
+                IncomingEmailSyncService::applySyncedMailboxListFilter($query, $mailboxFilter);
+            }
+
+            $query->select([
+                'id', 'subject', 'message_id', 'thread_info', 'client_id',
+                'synced_email_id', 'mailbox_email', 'imap_uid', 'sync_assignment_status',
+            ])->orderBy('id');
+
+            $query->chunkById(250, function ($rows) use (&$count) {
+                foreach ($rows as $row) {
+                    if (! $row instanceof EmailLog || ! $this->isUnassignedSynced($row)) {
+                        continue;
+                    }
+                    if ($this->manualUploadMatchVisibleInList($this->findMatterMatches($row))) {
+                        $count++;
+                    }
+                }
+            });
+
+            return $count;
+        } finally {
+            $this->matchingManualUploadCache = null;
+            $this->clientCache = [];
+            $this->matterCache = [];
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $match
+     */
+    public function manualUploadMatchVisibleInList(?array $match): bool
+    {
+        if ($match === null) {
+            return false;
+        }
+
+        $clientId = (int) ($match['client_id'] ?? 0);
+        $manuals = $match['matched_manual_emails'] ?? [];
+
+        return $clientId > 0 && is_array($manuals) && $manuals !== [];
     }
 
     /**
@@ -327,6 +396,25 @@ class ManualUploadThreadMatchService
             return collect();
         }
 
+        if ($this->matchingManualUploadCache !== null) {
+            $excludeId = (int) $unassigned->id;
+
+            return $this->matchingManualUploadCache
+                ->filter(fn (EmailLog $manual) => (int) $manual->id !== $excludeId)
+                ->filter(function (EmailLog $manual) use ($subject) {
+                    return ClientEmailListService::subjectsBelongToSameThread(
+                        (string) ($manual->subject ?? ''),
+                        $subject
+                    );
+                })
+                ->sortByDesc(fn (EmailLog $manual) => $manual->received_date
+                    ?? $manual->fetch_mail_sent_time
+                    ?? $manual->sent_at
+                    ?? $manual->created_at)
+                ->take(80)
+                ->values();
+        }
+
         $query = $this->manualUploadBaseQuery()
             ->where('id', '!=', (int) $unassigned->id)
             ->whereRaw('LOWER(subject) LIKE ?', ['%' . mb_strtolower(addcslashes($needle, '%_\\')) . '%'])
@@ -366,6 +454,22 @@ class ManualUploadThreadMatchService
         $normalized = array_values(array_unique($normalized));
         if ($normalized === []) {
             return collect();
+        }
+
+        if ($this->matchingManualUploadCache !== null) {
+            $excludeId = (int) $unassigned->id;
+            $allowed = array_flip($normalized);
+
+            return $this->matchingManualUploadCache
+                ->filter(fn (EmailLog $manual) => (int) $manual->id !== $excludeId)
+                ->filter(function (EmailLog $manual) use ($allowed) {
+                    $mid = trim((string) ($manual->message_id ?? ''));
+
+                    return $mid !== '' && isset($allowed[$mid]);
+                })
+                ->sortByDesc(fn (EmailLog $manual) => (int) $manual->id)
+                ->take(40)
+                ->values();
         }
 
         return $this->manualUploadBaseQuery()
