@@ -438,7 +438,7 @@
             </div>
         </div>
         <div class="email-list-footer email-list-footer--compact email-list-footer--unassigned" aria-live="polite">
-            <span class="email-list-footer__count" id="listTotalCount">Total: —</span>
+            <span class="email-list-footer__count" id="listTotalCount"><span class="email-count-loading"><span class="email-count-loading__spinner" aria-hidden="true"></span><span>Calculating totals...</span></span></span>
         </div>
         @else
         <div class="email-list" id="emailList">

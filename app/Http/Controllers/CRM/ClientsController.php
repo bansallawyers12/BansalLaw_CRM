@@ -6331,6 +6331,21 @@ class ClientsController extends Controller
             ? $emails->hasMorePages()
             : ($lastPage !== null ? $page < $lastPage : false);
 
+        if (
+            ! $metaOnly
+            && $isSyncedInboxFolder
+            && $page === 1
+            && $staff instanceof \App\Models\Staff
+            && in_array($folder, ['unassigned', 'assigned'], true)
+        ) {
+            $dateSummary = $this->syncedInboxDateSummary(
+                $folder,
+                $staff,
+                ! empty($mailboxFilter) ? (string) $mailboxFilter : null,
+                array_keys($autoAssignmentReviewItems)
+            );
+        }
+
         return response()->json([
             'status' => 'success',
             'emails' => $emails->items(),

@@ -4323,6 +4323,31 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     color: #1e3a5f;
 }
 
+.outlook-container--unassigned .folder-item__count--loading {
+    min-width: 1.55rem;
+    padding: 1px 4px;
+}
+
+.email-count-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.email-count-loading__spinner,
+.outlook-container--unassigned .folder-item__count--loading .email-count-loading__spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(30, 58, 138, 0.15);
+    border-top-color: #1e3a8a;
+    border-radius: 50%;
+    animation: emailInfiniteSpin 0.75s linear infinite;
+    flex-shrink: 0;
+}
+
 .outlook-container--unassigned .email-infinite-loader__spinner {
     width: 16px;
     height: 16px;

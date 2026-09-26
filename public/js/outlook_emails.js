@@ -280,6 +280,9 @@ function crmInitOutlookEmailsInterface() {
     initListPaneToggle();
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     let syncedDateSummary = null;
+    let syncedFolderCountReady = false;
+    let syncedListMetaLoading = false;
+    let syncedListMetaFolder = '';
     let assignmentModalMode = 'assign';
     let unlinkDestinationMode = 'unassigned';
     let isAssignSubmitting = false;
@@ -329,7 +332,6 @@ function crmInitOutlookEmailsInterface() {
     }
     updateUnassignedFolderChrome();
     setEmailUiMode('outlook', false);
-    loadEmails();
     updateOutboxFiltersVisibility();
 
     if (typeof jQuery !== 'undefined' && clientId) {
@@ -1411,6 +1413,69 @@ function crmInitOutlookEmailsInterface() {
         }
     }
 
+    function needsSyncedFolderCountMeta(folder) {
+        return unassignedOnly
+            && isSyncedInboxFolder(folder)
+            && (folder === 'unassigned' || folder === 'assigned');
+    }
+
+    function isSyncedFolderCountMetaReady(summary, folder) {
+        if (!summary || typeof summary !== 'object') {
+            return false;
+        }
+        if (folder === 'unassigned') {
+            return summary.unassigned_only_count != null
+                && summary.manual_upload_match_count != null;
+        }
+        if (folder === 'assigned') {
+            return summary.total != null;
+        }
+
+        return false;
+    }
+
+    function syncedFolderCountLoadingHtml() {
+        return '<span class="email-count-loading">'
+            + '<span class="email-count-loading__spinner" aria-hidden="true"></span>'
+            + '<span>Calculating totals...</span>'
+            + '</span>';
+    }
+
+    function showSyncedFolderCountLoading(folder) {
+        if (!needsSyncedFolderCountMeta(folder) || !outlookContainer) {
+            return;
+        }
+
+        const badge = outlookContainer.querySelector('[data-folder-count="' + folder + '"]');
+        if (badge) {
+            badge.hidden = false;
+            badge.classList.add('folder-item__count--loading');
+            badge.innerHTML = '<span class="email-count-loading__spinner" aria-hidden="true"></span>';
+            badge.setAttribute('aria-label', 'Calculating ' + folder + ' email count');
+        }
+
+        if (folder === currentFolder) {
+            const listTotalCount = getListTotalCountEl();
+            if (listTotalCount) {
+                listTotalCount.innerHTML = syncedFolderCountLoadingHtml();
+            }
+        }
+    }
+
+    function clearSyncedFolderCountLoading(folder) {
+        if (!outlookContainer || !folder) {
+            return;
+        }
+        const badge = outlookContainer.querySelector('[data-folder-count="' + folder + '"]');
+        if (badge) {
+            badge.classList.remove('folder-item__count--loading');
+        }
+    }
+
+    function shouldDeferSyncedFolderCounts() {
+        return needsSyncedFolderCountMeta(currentFolder) && !syncedFolderCountReady;
+    }
+
     function getUnassignedListBreakdownTotal(fallbackTotal) {
         const summary = syncedDateSummary || {};
         const manual = Math.max(0, Number(summary.manual_upload_match_count) || 0);
@@ -1483,11 +1548,20 @@ function crmInitOutlookEmailsInterface() {
         const listTotalCount = getListTotalCountEl();
 
         if (listTotalCount) {
-            listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+            if (shouldDeferSyncedFolderCounts()) {
+                showSyncedFolderCountLoading(currentFolder);
+            } else {
+                listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+            }
         }
 
         if (unassignedOnly && (currentFolder === 'unassigned' || currentFolder === 'assigned')) {
-            updateFolderTabCount(currentFolder, safeTotal);
+            if (shouldDeferSyncedFolderCounts()) {
+                showSyncedFolderCountLoading(currentFolder);
+            } else {
+                clearSyncedFolderCountLoading(currentFolder);
+                updateFolderTabCount(currentFolder, safeTotal);
+            }
         }
 
         if (compactPagination) {
@@ -4057,8 +4131,38 @@ function crmInitOutlookEmailsInterface() {
         );
     }
 
-    let syncedListMetaLoading = false;
-    let syncedListMetaFolder = '';
+    function applySyncedListMetaCounts(folder, data) {
+        if (!needsSyncedFolderCountMeta(folder)) {
+            return;
+        }
+
+        const summary = data && data.date_summary ? data.date_summary : null;
+        if (summary && isSyncedFolderCountMetaReady(summary, folder)) {
+            syncedDateSummary = summary;
+            syncedFolderCountReady = true;
+        } else if (summary && summary.total != null) {
+            syncedDateSummary = summary;
+            syncedFolderCountReady = true;
+        }
+
+        if (!syncedFolderCountReady || folder !== currentFolder) {
+            return;
+        }
+
+        const total = data.total != null
+            ? data.total
+            : (summary && summary.total != null ? summary.total : listTotal);
+        const lastPage = data.last_page != null
+            ? data.last_page
+            : Math.max(1, Math.ceil(Number(total || 0) / 20));
+        clearSyncedFolderCountLoading(folder);
+        updatePaginationDisplay(
+            total,
+            lastPage,
+            listFrom || (emails.length ? 1 : 0),
+            Math.min(Number(total) || 0, emails.length)
+        );
+    }
 
     async function loadSyncedListMeta(folder) {
         if (!unassignedOnly || !isSyncedInboxFolder(folder) || !baseUrl) {
@@ -4069,6 +4173,8 @@ function crmInitOutlookEmailsInterface() {
         }
         syncedListMetaLoading = true;
         syncedListMetaFolder = folder;
+        showSyncedFolderCountLoading(folder);
+        let metaResponse = null;
         try {
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
             url.searchParams.set('folder', folder);
@@ -4093,26 +4199,16 @@ function crmInitOutlookEmailsInterface() {
             const data = await response.json().catch(function () {
                 return {};
             });
-            if (!response.ok || folder !== currentFolder) {
+            metaResponse = data;
+            if (!response.ok) {
                 return;
             }
 
             if (data.date_summary) {
-                syncedDateSummary = data.date_summary;
-                renderSyncedDateSummaryBar(syncedDateSummary);
+                renderSyncedDateSummaryBar(data.date_summary);
             }
 
-            const total = data.total != null
-                ? data.total
-                : (data.date_summary && data.date_summary.total != null ? data.date_summary.total : listTotal);
-            const lastPage = data.last_page != null
-                ? data.last_page
-                : Math.max(1, Math.ceil(Number(total || 0) / 20));
-            updatePaginationDisplay(total, lastPage, listFrom || (emails.length ? 1 : 0), Math.min(total, emails.length));
-            const listTotalCountEl = getListTotalCountEl();
-            if (listTotalCountEl) {
-                listTotalCountEl.textContent = formatMailTotalLabel(total);
-            }
+            applySyncedListMetaCounts(folder, data);
 
             if (senderFilter && Array.isArray(data.senders) && data.senders.length) {
                 const currentSelection = senderFilter.value;
@@ -4128,6 +4224,13 @@ function crmInitOutlookEmailsInterface() {
             console.warn('Synced list meta failed', e);
         } finally {
             syncedListMetaLoading = false;
+            if (needsSyncedFolderCountMeta(folder) && !syncedFolderCountReady && folder === currentFolder) {
+                if (metaResponse && metaResponse.date_summary) {
+                    syncedDateSummary = metaResponse.date_summary;
+                }
+                syncedFolderCountReady = true;
+                applySyncedListMetaCounts(folder, metaResponse || {});
+            }
         }
     }
 
@@ -4180,6 +4283,11 @@ function crmInitOutlookEmailsInterface() {
             emailListLoadingMore = false;
             setEmailInfiniteLoader(false);
             emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
+            if (needsSyncedFolderCountMeta(currentFolder)) {
+                syncedFolderCountReady = false;
+                syncedDateSummary = null;
+                showSyncedFolderCountLoading(currentFolder);
+            }
         }
 
         try {
@@ -4236,6 +4344,21 @@ function crmInitOutlookEmailsInterface() {
             if (folderToFetch !== currentFolder) {
                 return;
             }
+
+            function finishSyncedFolderCountsFromSummary(summary, data, folder) {
+                if (!needsSyncedFolderCountMeta(folder) || !summary) {
+                    return;
+                }
+                if (isSyncedFolderCountMetaReady(summary, folder)) {
+                    syncedDateSummary = summary;
+                    syncedFolderCountReady = true;
+                    applySyncedListMetaCounts(folder, {
+                        total: data.total,
+                        last_page: data.last_page,
+                        date_summary: summary,
+                    });
+                }
+            }
             
             const fetchedEmails = Array.isArray(data.emails) ? data.emails : [];
             // Defense in depth: never render calendar invites/events in mail lists.
@@ -4268,6 +4391,11 @@ function crmInitOutlookEmailsInterface() {
             if (data.date_summary) {
                 syncedDateSummary = data.date_summary;
                 renderSyncedDateSummaryBar(syncedDateSummary);
+                finishSyncedFolderCountsFromSummary(data.date_summary, data, folderToFetch);
+            } else if (unassignedOnly && needsSyncedFolderCountMeta(folderToFetch)) {
+                syncedDateSummary = null;
+                syncedFolderCountReady = false;
+                renderSyncedDateSummaryBar(null);
             } else if (unassignedOnly) {
                 syncedDateSummary = null;
                 renderSyncedDateSummaryBar(null);
@@ -4316,7 +4444,8 @@ function crmInitOutlookEmailsInterface() {
             } else {
                 renderEmailList();
                 refreshSelectedEmailAfterReload();
-                if (unassignedOnly && isSyncedInboxFolder(folderToFetch) && pageToFetch === 1) {
+                if (unassignedOnly && isSyncedInboxFolder(folderToFetch) && pageToFetch === 1
+                    && !syncedFolderCountReady) {
                     void loadSyncedListMeta(folderToFetch);
                 }
             }
@@ -4337,6 +4466,10 @@ function crmInitOutlookEmailsInterface() {
             emailListLoading = false;
             emailListLoadingMore = false;
             setEmailInfiniteLoader(false);
+            if (!append && emailListContainer
+                && emailListContainer.querySelector('.email-list-loading')) {
+                renderEmailList();
+            }
         }
     }
 
@@ -8149,6 +8282,11 @@ function crmInitOutlookEmailsInterface() {
             }
         });
     }
+
+    if (unassignedOnly && needsSyncedFolderCountMeta(defaultFolder)) {
+        showSyncedFolderCountLoading(defaultFolder);
+    }
+    loadEmails();
 }
 
 function crmScheduleOutlookEmailsInterface() {
