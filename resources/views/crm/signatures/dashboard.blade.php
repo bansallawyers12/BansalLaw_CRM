@@ -172,8 +172,16 @@
         border: 1px solid var(--border);
         border-radius: 10px;
         box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-        overflow: hidden;
+        /* Clip rounded corners without creating an inner scrollport (overflow: hidden did). */
+        overflow: clip;
         position: relative;
+    }
+
+    @supports not (overflow: clip) {
+        .tabs-container {
+            overflow-x: hidden;
+            overflow-y: visible;
+        }
     }
 
     .stat-card.stat-card-clickable {
@@ -191,9 +199,34 @@
         padding: 0 20px;
         background: var(--page-bg);
         overflow-x: auto;
+        overflow-y: hidden;
         flex-wrap: nowrap;
         white-space: nowrap;
-        scrollbar-width: thin;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .signature-dashboard .nav-tabs::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    /* One document scroll — avoid nested scrollbars from Stisla flex main-wrapper. */
+    body.sidebar-mini:has(.signature-dashboard) .main-wrapper {
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    body.sidebar-mini:has(.signature-dashboard) .signature-dashboard,
+    body.sidebar-mini:has(.signature-dashboard) .signature-dashboard .tabs-container,
+    body.sidebar-mini:has(.signature-dashboard) .signature-dashboard .documents-table {
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    body.sidebar-mini:has(.signature-dashboard) .signature-dashboard {
+        padding-bottom: 56px;
     }
 
     .signature-dashboard .nav-tabs .nav-link {
