@@ -5,7 +5,7 @@ namespace App\Support;
 use Carbon\CarbonInterface;
 
 /**
- * Weekday + business-hours rules for staff calendar events, reminders, and follow-ups.
+ * Weekday + business-hours rules for staff personal-calendar timed events (not client matter tasks/reminders).
  */
 final class CalendarScheduleConstraints
 {

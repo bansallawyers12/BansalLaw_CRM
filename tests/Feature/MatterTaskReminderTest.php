@@ -179,6 +179,42 @@ class MatterTaskReminderTest extends TestCase
     }
 
     #[Test]
+    public function matter_task_and_reminder_can_use_weekend_due_dates(): void
+    {
+        [$client, $matter] = $this->seedClientMatter();
+        $staff = Staff::factory()->superAdmin()->create([
+            'status' => 1,
+            'can_access_personal_calendar' => true,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $this->postJson(route('clients.matterTask.store'), [
+            'client_id' => $client->id,
+            'matter_id' => $matter->id,
+            'title' => 'Weekend task',
+            'due_date' => '2026-09-26',
+            'kind' => 'task',
+        ])->assertOk()->assertJsonPath('status', true);
+
+        $this->postJson(route('clients.matterTask.store'), [
+            'client_id' => $client->id,
+            'matter_id' => $matter->id,
+            'title' => 'Weekend reminder',
+            'due_date' => '2026-09-27',
+            'kind' => 'reminder',
+        ])->assertOk()->assertJsonPath('status', true);
+
+        $this->assertDatabaseHas('client_matter_tasks', [
+            'title' => 'Weekend task',
+            'due_date' => '2026-09-26',
+        ]);
+        $this->assertDatabaseHas('staff_calendar_events', [
+            'title' => 'Weekend reminder',
+            'event_type' => 'reminder',
+        ]);
+    }
+
+    #[Test]
     public function matter_tasks_index_marks_completed_reminders_as_done(): void
     {
         [$client, $matter] = $this->seedClientMatter();

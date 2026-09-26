@@ -7,7 +7,6 @@ use App\Models\ClientMatter;
 use App\Models\Note;
 use App\Models\Notification;
 use App\Models\Staff;
-use App\Support\CalendarScheduleConstraints;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,10 +24,6 @@ class ClientTaskActionService
     {
         try {
             $requestData = $request->all();
-
-            if ($weekendReject = $this->rejectWeekendFollowUpDatetime($requestData)) {
-                return $weekendReject;
-            }
 
             if (empty($requestData['client_id'])) {
                 return $this->legacyJson(['success' => false, 'message' => 'Client ID is required']);
@@ -147,9 +142,6 @@ class ClientTaskActionService
     {
         try {
             $requestData = $request->all();
-            if ($weekendReject = $this->rejectWeekendFollowUpDatetime($requestData)) {
-                return $weekendReject;
-            }
             $clientId = null;
             $encodedClientId = null;
             $matterId = null;
@@ -236,9 +228,6 @@ class ClientTaskActionService
     public function updateTask(Request $request)
     {
         $requestData = $request->all();
-        if ($weekendReject = $this->rejectWeekendFollowUpDatetime($requestData)) {
-            return $weekendReject;
-        }
 
         try {
             $action = Note::findOrFail($requestData['note_id']);
@@ -309,9 +298,6 @@ class ClientTaskActionService
     {
         try {
             $requestData = $request->all();
-            if ($weekendReject = $this->rejectWeekendFollowUpDatetime($requestData)) {
-                return $weekendReject;
-            }
             $clientId = null;
             $clientLabel = '';
             $matterId = null;
@@ -426,24 +412,6 @@ class ClientTaskActionService
     private function findClientOrLeadForAction(int $id): ?Admin
     {
         return Admin::with('company')->whereIn('type', ['client', 'lead'])->find($id);
-    }
-
-    /**
-     * @param  array<string, mixed>  $requestData
-     * @return \Illuminate\Http\JsonResponse|null
-     */
-    private function rejectWeekendFollowUpDatetime(array $requestData)
-    {
-        if (empty($requestData['followup_datetime'])) {
-            return null;
-        }
-
-        $message = CalendarScheduleConstraints::weekendMessageIfAny($requestData['followup_datetime']);
-        if ($message === null) {
-            return null;
-        }
-
-        return $this->legacyJson(['success' => false, 'message' => $message]);
     }
 
     private function taskClientDisplayName(Admin $client): string
