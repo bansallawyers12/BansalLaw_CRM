@@ -1625,6 +1625,37 @@ function crmInitOutlookEmailsInterface() {
         }
     }
 
+    function getReadingScrollReservedHeight(readingScroll, readingBody) {
+        let reserved = 0;
+        if (!readingScroll) {
+            return reserved;
+        }
+
+        const scrollStyle = window.getComputedStyle(readingScroll);
+        reserved += (parseFloat(scrollStyle.paddingTop) || 0) + (parseFloat(scrollStyle.paddingBottom) || 0);
+
+        const children = Array.from(readingScroll.children);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (readingBody && child === readingBody) {
+                break;
+            }
+            if (child.hidden) {
+                continue;
+            }
+            reserved += child.offsetHeight;
+            const childStyle = window.getComputedStyle(child);
+            reserved += (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
+        }
+
+        const footer = readingScroll.querySelector('#gmailReadingFooter, .gmail-read-footer');
+        if (footer && !footer.hidden) {
+            reserved += footer.offsetHeight;
+        }
+
+        return reserved;
+    }
+
     function getReadingScrollFillHeight(iframe, contentHeight) {
         const readingScroll = iframe && iframe.closest ? iframe.closest('.reading-scroll') : document.querySelector('#readingPane .reading-scroll');
         const minContent = Math.max(Number(contentHeight) || 0, 180);
@@ -1632,19 +1663,8 @@ function crmInitOutlookEmailsInterface() {
             return minContent;
         }
 
-        const attachments = readingScroll.querySelector('#attachmentsContainer');
-        const footer = readingScroll.querySelector('#gmailReadingFooter, .gmail-read-footer');
         const readingBody = iframe && iframe.closest ? iframe.closest('.reading-body') : readingScroll.querySelector('.reading-body');
-        let reserved = 0;
-        if (attachments && !attachments.hidden) {
-            reserved += attachments.offsetHeight;
-        }
-        if (footer && !footer.hidden) {
-            reserved += footer.offsetHeight;
-        }
-
-        const scrollStyle = window.getComputedStyle(readingScroll);
-        reserved += (parseFloat(scrollStyle.paddingTop) || 0) + (parseFloat(scrollStyle.paddingBottom) || 0);
+        let reserved = getReadingScrollReservedHeight(readingScroll, readingBody);
         if (readingBody) {
             const bodyStyle = window.getComputedStyle(readingBody);
             reserved += (parseFloat(bodyStyle.paddingTop) || 0) + (parseFloat(bodyStyle.paddingBottom) || 0);
@@ -1681,7 +1701,7 @@ function crmInitOutlookEmailsInterface() {
                 }
                 const contentH = scrollH + 24;
                 const fillH = getReadingScrollFillHeight(iframe, contentH);
-                iframe.style.height = fillH + 'px';
+                iframe.style.height = Math.max(contentH, fillH) + 'px';
                 iframe.style.minHeight = contentH + 'px';
                 iframe.style.maxHeight = 'none';
                 iframe.style.overflow = 'hidden';
@@ -5511,6 +5531,12 @@ function crmInitOutlookEmailsInterface() {
                 assignmentReviewBanner.hidden = true;
                 assignmentReviewBanner.innerHTML = '';
             }
+            requestAnimationFrame(function () {
+                const frame = document.getElementById('readBody');
+                if (frame && selectedEmailId === email.id) {
+                    resetReadBodyIframeSizing(frame);
+                }
+            });
         }
 
         const readDateEl = document.getElementById('readDate');

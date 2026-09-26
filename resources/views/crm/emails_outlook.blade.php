@@ -567,41 +567,44 @@
                     </button>
                     @endif
                 </div>
-                <div class="email-assignment-review-banner" id="assignmentReviewBanner" hidden></div>
-
-                <div class="gmail-read-subject-row">
-                    <h2 class="email-full-subject" id="readSubject">Loading...</h2>
-                    <span class="gmail-folder-chip" id="gmailFolderChip" hidden></span>
-                </div>
-
-                <div class="email-meta">
-                    <div class="sender-avatar" id="readAvatar">?</div>
-                    <div class="meta-details">
-                        <div class="meta-sender" id="readSender">Loading...</div>
-                        <div class="meta-recipients" id="readTo">Loading...</div>
-                        <div class="meta-recipients meta-cc" id="readCc" hidden></div>
-                        <div class="meta-recipients meta-bcc" id="readBcc" hidden></div>
-                    </div>
-                    <div class="gmail-read-meta__right">
-                        <div class="meta-date" id="readDate"></div>
-        {{-- Sync source (Manual sync / Cron) hidden from reading pane.
-        <div class="meta-sync-source" id="readSyncSource" hidden></div>
-        --}}
-                        <div class="gmail-read-meta__icons">
-                            <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaReply" title="Reply">
-                                <i class="fa-solid fa-reply" aria-hidden="true"></i>
-                            </button>
-                            <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaMore" title="More actions" aria-expanded="false">
-                                <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="email-send-error" id="readSendError" hidden></div>
-                <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
             </div>
 
             <div class="reading-scroll">
+                <div class="reading-scroll-top">
+                    <div class="email-assignment-review-banner" id="assignmentReviewBanner" hidden></div>
+
+                    <div class="gmail-read-subject-row">
+                        <h2 class="email-full-subject" id="readSubject">Loading...</h2>
+                        <span class="gmail-folder-chip" id="gmailFolderChip" hidden></span>
+                    </div>
+
+                    <div class="email-meta">
+                        <div class="sender-avatar" id="readAvatar">?</div>
+                        <div class="meta-details">
+                            <div class="meta-sender" id="readSender">Loading...</div>
+                            <div class="meta-recipients" id="readTo">Loading...</div>
+                            <div class="meta-recipients meta-cc" id="readCc" hidden></div>
+                            <div class="meta-recipients meta-bcc" id="readBcc" hidden></div>
+                        </div>
+                        <div class="gmail-read-meta__right">
+                            <div class="meta-date" id="readDate"></div>
+            {{-- Sync source (Manual sync / Cron) hidden from reading pane.
+            <div class="meta-sync-source" id="readSyncSource" hidden></div>
+            --}}
+                            <div class="gmail-read-meta__icons">
+                                <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaReply" title="Reply">
+                                    <i class="fa-solid fa-reply" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaMore" title="More actions" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="email-send-error" id="readSendError" hidden></div>
+                    <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
+                </div>
+
                 <div id="attachmentsContainer" class="email-attachments-container reading-attachments reading-attachments--footer" hidden></div>
 
                 <div class="reading-body">

@@ -953,6 +953,27 @@ body, html {
     box-sizing: border-box;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.reading-scroll-top {
+    flex-shrink: 0;
+}
+
+.reading-scroll-top .gmail-read-subject-row {
+    padding: 0 24px;
+}
+
+.reading-scroll-top .email-meta {
+    margin-bottom: 0;
+}
+
+.reading-scroll-top .email-assignment-review-banner {
+    margin: 12px 24px;
+}
+
+.reading-header--toolbar-only {
+    padding-bottom: 12px;
 }
 
 .reading-scroll::-webkit-scrollbar {
@@ -6796,6 +6817,12 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     background: #fff;
     border-bottom: none;
     box-shadow: none;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .reading-scroll-top {
+    padding-top: 0;
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .outlook-container.ui-mode-gmail.gmail-reading-open .gmail-read-subject-row {
