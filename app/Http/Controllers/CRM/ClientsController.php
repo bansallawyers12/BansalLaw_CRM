@@ -6426,13 +6426,25 @@ class ClientsController extends Controller
             ]
         )->first();
 
-        return [
+        $summary = [
             'today' => (int) ($row->today ?? 0),
             'yesterday' => (int) ($row->yesterday ?? 0),
             'this_week' => (int) ($row->this_week ?? 0),
             'earlier' => (int) ($row->earlier ?? 0),
             'total' => (int) ($row->total ?? 0),
         ];
+
+        if ($folder === 'unassigned') {
+            $breakdown = \App\Services\EmailSync\IncomingEmailSyncService::unassignedInboxCountBreakdown(
+                $staff,
+                ! empty($mailboxFilter) ? (string) $mailboxFilter : null
+            );
+            $summary['unassigned_only_count'] = (int) ($breakdown['unassigned_only_count'] ?? 0);
+            $summary['manual_upload_match_count'] = (int) ($breakdown['manual_upload_match_count'] ?? 0);
+            $summary['total'] = (int) ($breakdown['total'] ?? $summary['total']);
+        }
+
+        return $summary;
     }
 
     protected function applyIncomingInboxScope($query): void

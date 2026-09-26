@@ -1689,8 +1689,30 @@ class IncomingEmailSyncService
         return self::countUnassignedSyncedInboxMail($staff, excludeManualUploadTwins: true);
     }
 
-    public static function countUnassignedSyncedInboxMail(Staff $staff, bool $excludeManualUploadTwins = false): int
+    /**
+     * @return array{
+     *     total: int,
+     *     unassigned_only_count: int,
+     *     manual_upload_match_count: int
+     * }
+     */
+    public static function unassignedInboxCountBreakdown(Staff $staff, ?string $mailboxFilter = null): array
     {
+        $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
+        $unassignedOnly = self::countUnassignedSyncedInboxMail($staff, true, $mailboxFilter);
+
+        return [
+            'total' => $total,
+            'unassigned_only_count' => $unassignedOnly,
+            'manual_upload_match_count' => max(0, $total - $unassignedOnly),
+        ];
+    }
+
+    public static function countUnassignedSyncedInboxMail(
+        Staff $staff,
+        bool $excludeManualUploadTwins = false,
+        ?string $mailboxFilter = null
+    ): int {
         if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             return 0;
         }
@@ -1699,6 +1721,10 @@ class IncomingEmailSyncService
         self::applyUnassignedSyncedInboxScope($query);
         self::applySyncedInboxVisibilityFilter($query, $staff);
         EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
+        if ($mailboxFilter !== null && trim($mailboxFilter) !== '') {
+            self::applySyncedMailboxListFilter($query, $mailboxFilter);
+        }
 
         if ($excludeManualUploadTwins) {
             self::applyExcludeUnassignedWithManualUploadTwin($query);

@@ -1411,17 +1411,42 @@ function crmInitOutlookEmailsInterface() {
         }
     }
 
+    function getUnassignedListBreakdownTotal(fallbackTotal) {
+        const summary = syncedDateSummary || {};
+        const manual = Math.max(0, Number(summary.manual_upload_match_count) || 0);
+        const pure = Math.max(0, Number(summary.unassigned_only_count) || 0);
+        if (manual > 0 || pure > 0) {
+            return manual + pure;
+        }
+
+        return Math.max(0, Number(fallbackTotal) || 0);
+    }
+
     function formatMailTotalLabel(total) {
         const safeTotal = Math.max(0, Number(total) || 0);
         if (unassignedOnly && currentFolder === 'sent') {
             return safeTotal === 1 ? 'Total: 1 sent email' : 'Total: ' + safeTotal + ' sent emails';
         }
-        if (unassignedOnly && (currentFolder === 'unassigned' || currentFolder === 'assigned')) {
-            const kind = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
-            if (safeTotal === 1) {
-                return 'Total: 1 ' + kind + ' email';
+        if (unassignedOnly && currentFolder === 'unassigned') {
+            const summary = syncedDateSummary || {};
+            const manual = Math.max(0, Number(summary.manual_upload_match_count) || 0);
+            const pure = Math.max(0, Number(summary.unassigned_only_count) || 0);
+            const combined = getUnassignedListBreakdownTotal(safeTotal);
+            if (manual > 0 || pure > 0) {
+                const manualLabel = manual === 1 ? '1 manual upload match' : manual + ' manual upload match';
+                const pureLabel = pure === 1 ? '1 unassigned' : pure + ' unassigned';
+                return 'Total: ' + combined + ' (' + pureLabel + ' + ' + manualLabel + ')';
             }
-            return 'Total: ' + safeTotal + ' ' + kind + ' emails';
+            if (combined === 1) {
+                return 'Total: 1 unassigned email';
+            }
+            return 'Total: ' + combined + ' unassigned emails';
+        }
+        if (unassignedOnly && currentFolder === 'assigned') {
+            if (safeTotal === 1) {
+                return 'Total: 1 assigned email';
+            }
+            return 'Total: ' + safeTotal + ' assigned emails';
         }
         return safeTotal === 1 ? 'Total: 1 email' : 'Total: ' + safeTotal + ' emails';
     }
@@ -1437,7 +1462,10 @@ function crmInitOutlookEmailsInterface() {
         if (!badge) {
             return;
         }
-        const safeTotal = Math.max(0, Number(total) || 0);
+        let safeTotal = Math.max(0, Number(total) || 0);
+        if (folder === 'unassigned') {
+            safeTotal = getUnassignedListBreakdownTotal(safeTotal);
+        }
         badge.textContent = String(safeTotal);
         badge.hidden = false;
         badge.setAttribute('aria-label', safeTotal + ' ' + folder + ' emails');
@@ -1445,7 +1473,10 @@ function crmInitOutlookEmailsInterface() {
 
     function updatePaginationDisplay(total, lastPage, from, to) {
         const safeLastPage = Math.max(1, Number(lastPage) || 1);
-        const safeTotal = Math.max(0, Number(total) || 0);
+        let safeTotal = Math.max(0, Number(total) || 0);
+        if (unassignedOnly && currentFolder === 'unassigned') {
+            safeTotal = getUnassignedListBreakdownTotal(safeTotal);
+        }
         listTotal = safeTotal;
         listFrom = Math.max(0, Number(from) || 0);
         listLastPage = safeLastPage;
@@ -4078,6 +4109,10 @@ function crmInitOutlookEmailsInterface() {
                 ? data.last_page
                 : Math.max(1, Math.ceil(Number(total || 0) / 20));
             updatePaginationDisplay(total, lastPage, listFrom || (emails.length ? 1 : 0), Math.min(total, emails.length));
+            const listTotalCountEl = getListTotalCountEl();
+            if (listTotalCountEl) {
+                listTotalCountEl.textContent = formatMailTotalLabel(total);
+            }
 
             if (senderFilter && Array.isArray(data.senders) && data.senders.length) {
                 const currentSelection = senderFilter.value;

@@ -68,5 +68,10 @@ class UnassignedNavCountTest extends TestCase
 
         $this->assertSame(2, IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff));
         $this->assertSame(1, IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff));
+
+        $breakdown = IncomingEmailSyncService::unassignedInboxCountBreakdown($staff);
+        $this->assertSame(2, $breakdown['total']);
+        $this->assertSame(1, $breakdown['unassigned_only_count']);
+        $this->assertSame(1, $breakdown['manual_upload_match_count']);
     }
 }
