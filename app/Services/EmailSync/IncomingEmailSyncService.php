@@ -1695,11 +1695,11 @@ class IncomingEmailSyncService
     }
 
     /**
-     * Top-nav badge: unassigned synced mail only (exclude rows that already have a manual .msg/.eml twin on a matter).
+     * Top-nav badge: rows that are unassigned only (excludes manual-upload-match rows; matches Unassigned tab badge).
      */
     public static function countUnassignedSyncedInboxMailForNavBadge(Staff $staff): int
     {
-        return self::countUnassignedSyncedInboxMail($staff, excludeManualUploadTwins: true);
+        return (int) (self::unassignedInboxCountBreakdown($staff)['unassigned_only_count'] ?? 0);
     }
 
     /**

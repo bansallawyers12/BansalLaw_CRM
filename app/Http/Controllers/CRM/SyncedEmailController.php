@@ -325,9 +325,14 @@ class SyncedEmailController extends Controller
             ], 403);
         }
 
+        $breakdown = IncomingEmailSyncService::unassignedInboxCountBreakdown($staff);
+
         return response()->json([
             'success' => true,
-            'count' => IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff),
+            'count' => (int) ($breakdown['unassigned_only_count'] ?? 0),
+            'total' => (int) ($breakdown['total'] ?? 0),
+            'unassigned_only_count' => (int) ($breakdown['unassigned_only_count'] ?? 0),
+            'manual_upload_match_count' => (int) ($breakdown['manual_upload_match_count'] ?? 0),
         ]);
     }
 

@@ -1490,6 +1490,16 @@ function crmInitOutlookEmailsInterface() {
         return Math.max(0, Number(fallbackTotal) || 0);
     }
 
+    /** Nav + Unassigned tab badge (excludes manual-upload-match rows). */
+    function getUnassignedOnlyBadgeCount(fallbackTotal) {
+        const summary = syncedDateSummary || {};
+        if (summary.unassigned_only_count != null && summary.unassigned_only_count !== '') {
+            return Math.max(0, Number(summary.unassigned_only_count) || 0);
+        }
+
+        return Math.max(0, Number(fallbackTotal) || 0);
+    }
+
     function formatMailTotalLabel(total) {
         const safeTotal = Math.max(0, Number(total) || 0);
         if (unassignedOnly && currentFolder === 'sent') {
@@ -1532,11 +1542,11 @@ function crmInitOutlookEmailsInterface() {
         }
         let safeTotal = Math.max(0, Number(total) || 0);
         if (folder === 'unassigned') {
-            safeTotal = getUnassignedListBreakdownTotal(safeTotal);
+            safeTotal = getUnassignedOnlyBadgeCount(safeTotal);
         }
         badge.textContent = String(safeTotal);
         badge.hidden = false;
-        badge.setAttribute('aria-label', safeTotal + ' ' + folder + ' emails');
+        badge.setAttribute('aria-label', safeTotal + ' unassigned emails');
     }
 
     function updatePaginationDisplay(total, lastPage, from, to) {
@@ -4185,6 +4195,9 @@ function crmInitOutlookEmailsInterface() {
             listFrom || (emails.length ? 1 : 0),
             Math.min(Number(total) || 0, emails.length)
         );
+        if (folder === 'unassigned' && summary) {
+            syncUnassignedNavBadgeFromDateSummary(summary);
+        }
     }
 
     async function loadSyncedListMeta(folder) {
@@ -4384,6 +4397,9 @@ function crmInitOutlookEmailsInterface() {
                         last_page: data.last_page,
                         date_summary: summary,
                     });
+                    if (folder === 'unassigned') {
+                        syncUnassignedNavBadgeFromDateSummary(summary);
+                    }
                 }
             }
             
@@ -7586,6 +7602,51 @@ function crmInitOutlookEmailsInterface() {
         }
     }
 
+    function applyCrmNavUnassignedBadgeCount(count) {
+        const link = document.getElementById('crmNavUnassignedMail');
+        if (!link) {
+            return;
+        }
+
+        const isAdmin = link.getAttribute('data-is-admin') === '1';
+        const safeCount = Math.max(0, Number(count) || 0);
+        let badge = link.querySelector('.crm-nav-unassigned-badge');
+
+        if (safeCount > 0) {
+            link.style.setProperty('display', '', '');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge bg-danger crm-nav-unassigned-badge';
+                badge.style.position = 'absolute';
+                badge.style.top = '-5px';
+                badge.style.right = '-5px';
+                badge.style.fontSize = '10px';
+                badge.style.padding = '2px 5px';
+                badge.style.borderRadius = '10px';
+                link.appendChild(badge);
+            }
+            badge.textContent = String(safeCount);
+        } else {
+            if (badge) {
+                badge.remove();
+            }
+            if (!isAdmin) {
+                link.style.setProperty('display', 'none', 'important');
+            }
+        }
+    }
+
+    function syncUnassignedNavBadgeFromDateSummary(summary) {
+        if (!unassignedOnly || !summary || typeof summary !== 'object') {
+            return;
+        }
+        if (summary.unassigned_only_count != null && summary.unassigned_only_count !== '') {
+            applyCrmNavUnassignedBadgeCount(summary.unassigned_only_count);
+            return;
+        }
+        applyCrmNavUnassignedBadgeCount(summary.total);
+    }
+
     async function refreshUnassignedNavCount() {
         if (!unassignedCountUrl) {
             return;
@@ -7607,37 +7668,10 @@ function crmInitOutlookEmailsInterface() {
                 return;
             }
 
-            const link = document.getElementById('crmNavUnassignedMail');
-            if (!link) {
-                return;
-            }
-
-            const isAdmin = link.getAttribute('data-is-admin') === '1';
-            const count = Math.max(0, Number(data.count) || 0);
-            let badge = link.querySelector('.crm-nav-unassigned-badge');
-
-            if (count > 0) {
-                link.style.setProperty('display', '', '');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'badge bg-danger crm-nav-unassigned-badge';
-                    badge.style.position = 'absolute';
-                    badge.style.top = '-5px';
-                    badge.style.right = '-5px';
-                    badge.style.fontSize = '10px';
-                    badge.style.padding = '2px 5px';
-                    badge.style.borderRadius = '10px';
-                    link.appendChild(badge);
-                }
-                badge.textContent = String(count);
-            } else {
-                if (badge) {
-                    badge.remove();
-                }
-                if (!isAdmin) {
-                    link.style.setProperty('display', 'none', 'important');
-                }
-            }
+            const count = data.unassigned_only_count != null
+                ? Math.max(0, Number(data.unassigned_only_count) || 0)
+                : Math.max(0, Number(data.count) || 0);
+            applyCrmNavUnassignedBadgeCount(count);
         } catch (error) {
             console.error('Failed to refresh unassigned mail count', error);
         }

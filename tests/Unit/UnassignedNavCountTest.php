@@ -23,7 +23,7 @@ class UnassignedNavCountTest extends TestCase
     }
 
     #[Test]
-    public function nav_badge_count_excludes_unassigned_synced_row_with_manual_upload_twin(): void
+    public function nav_badge_count_matches_unassigned_only_not_manual_upload_match_rows(): void
     {
         $staff = Staff::factory()->superAdmin()->create(['status' => 1]);
         $mailbox = Email::factory()->create([
@@ -72,13 +72,17 @@ class UnassignedNavCountTest extends TestCase
             'mail_type' => 1,
         ]);
 
-        $this->assertSame(2, IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff));
-        $this->assertSame(1, IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff));
-
         $breakdown = IncomingEmailSyncService::unassignedInboxCountBreakdown($staff);
         $this->assertSame(2, $breakdown['total']);
         $this->assertSame(1, $breakdown['unassigned_only_count']);
         $this->assertSame(1, $breakdown['manual_upload_match_count']);
+
+        $this->assertSame(2, IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff));
+        $this->assertSame(1, IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff));
+        $this->assertSame(
+            $breakdown['unassigned_only_count'],
+            IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($staff)
+        );
     }
 
     #[Test]
