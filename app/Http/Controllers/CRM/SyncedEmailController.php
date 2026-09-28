@@ -325,6 +325,10 @@ class SyncedEmailController extends Controller
             ], 403);
         }
 
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         $breakdown = IncomingEmailSyncService::unassignedInboxCountBreakdown($staff);
 
         return response()->json([

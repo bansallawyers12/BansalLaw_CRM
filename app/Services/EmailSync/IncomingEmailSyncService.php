@@ -1713,7 +1713,7 @@ class IncomingEmailSyncService
     {
         $cacheKey = 'unassigned_inbox_breakdown_' . $staff->id . '_' . md5((string) $mailboxFilter);
 
-        return Cache::remember($cacheKey, 30, function () use ($staff, $mailboxFilter) {
+        return Cache::remember($cacheKey, 120, function () use ($staff, $mailboxFilter) {
             $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
             $manualMatchCount = app(ManualUploadThreadMatchService::class)
                 ->countUnassignedWithManualUploadMatch($staff, $mailboxFilter);

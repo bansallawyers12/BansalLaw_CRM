@@ -6,10 +6,7 @@
     $_canViewSyncedInboxNav = $_inboxSyncMasterOn && $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
     $_canViewAllSyncedInbox = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewAllSyncedInboxMail();
     $_unassignedMailCount = 0;
-    if ($_canViewSyncedInboxNav && $_staffTop instanceof \App\Models\Staff) {
-        $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMailForNavBadge($_staffTop);
-    }
-    $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && ($_canViewAllSyncedInbox || $_unassignedMailCount > 0);
+    $_showUnassignedNavOption = $_inboxSyncMasterOn && $_canViewSyncedInboxNav && $_canViewAllSyncedInbox;
     $_pendingTaskCount = 0;
     if ($_staffTop instanceof \App\Models\Staff) {
         $_pendingTaskCount = app(\App\Services\DashboardService::class)->getPendingOpenTaskCount($_staffTop);
@@ -148,9 +145,6 @@
             @if($_canViewSyncedInboxNav)
             <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn{{ $_navActive['unassigned'] ? ' active' : '' }}" title="Unassigned Mail" data-is-admin="{{ $_canViewAllSyncedInbox ? '1' : '0' }}" style="position: relative; {{ $_showUnassignedNavOption ? '' : 'display: none !important;' }}"@if($_navActive['unassigned']) aria-current="page"@endif>
                 <i class="fa-solid fa-inbox"></i>
-                @if($_unassignedMailCount > 0)
-                    <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
-                @endif
             </a>
             @endif
             <div class="icon-dropdown js-dropdown">
@@ -339,5 +333,66 @@
             })
             .catch(function () { /* ignore */ });
     };
+
+    var unassignedBadgeUrl = @json($_canViewSyncedInboxNav ? route('clients.synced-emails.unassigned-count') : null);
+
+    function applyUnassignedBadge(count) {
+        var link = document.getElementById('crmNavUnassignedMail');
+        if (!link) return;
+        var isAdmin = link.getAttribute('data-is-admin') === '1';
+        count = Math.max(0, Number(count) || 0);
+        var badge = link.querySelector('.crm-nav-unassigned-badge');
+        if (count > 0) {
+            link.style.removeProperty('display');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge bg-danger crm-nav-unassigned-badge';
+                badge.style.position = 'absolute';
+                badge.style.top = '-5px';
+                badge.style.right = '-5px';
+                badge.style.fontSize = '10px';
+                badge.style.padding = '2px 5px';
+                badge.style.borderRadius = '10px';
+                link.appendChild(badge);
+            }
+            badge.textContent = String(count);
+            badge.style.removeProperty('display');
+        } else {
+            if (badge) {
+                badge.remove();
+            }
+            if (!isAdmin) {
+                link.style.setProperty('display', 'none', 'important');
+            }
+        }
+    }
+
+    window.refreshCrmNavUnassignedMailCount = function () {
+        if (!unassignedBadgeUrl) return Promise.resolve();
+        return fetch(unassignedBadgeUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (data) {
+                if (data && typeof data.count !== 'undefined') {
+                    applyUnassignedBadge(data.count);
+                }
+            })
+            .catch(function () { /* ignore */ });
+    };
+
+    if (unassignedBadgeUrl) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                setTimeout(window.refreshCrmNavUnassignedMailCount, 50);
+            });
+        } else {
+            setTimeout(window.refreshCrmNavUnassignedMailCount, 50);
+        }
+    }
 })();
 </script>
