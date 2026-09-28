@@ -804,11 +804,12 @@ class LeadController extends Controller
     public function detail(Request $request, $id = null)
     {
         if (isset($id) && !empty($id)) {
-            $id = $this->decodeString($id);
+            $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
             
-            if (!$id) {
+            if (!$decodedId) {
                 return Redirect::to('/leads')->with('error', config('constants.decode_string'));
             }
+            $id = $decodedId;
 
             if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
                 return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
@@ -1456,11 +1457,12 @@ class LeadController extends Controller
             return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
-        $id = $this->decodeString($id);
+        $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
         
-        if (!$id) {
+        if (!$decodedId) {
             return Redirect::to('/leads')->with('error', config('constants.decode_string'));
         }
+        $id = $decodedId;
 
         if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
             return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
@@ -1507,7 +1509,7 @@ class LeadController extends Controller
      */
     public function relatedContactRows(Request $request, $id, LeadFormDataService $formData)
     {
-        $decodedId = $this->decodeString($id);
+        $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
         if (! $decodedId) {
             return response()->json(['status' => false, 'message' => 'Invalid lead'], 422);
         }
@@ -1559,11 +1561,12 @@ class LeadController extends Controller
             return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
-        $id = $this->decodeString($id);
+        $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
         
-        if (!$id) {
+        if (!$decodedId) {
             return Redirect::to('/leads')->with('error', config('constants.decode_string'));
         }
+        $id = $decodedId;
 
         if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
             return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
@@ -1934,11 +1937,12 @@ class LeadController extends Controller
     public function history(Request $request, $id = null)
     {
         if (isset($id) && !empty($id)) {
-            $id = $this->decodeString($id);
+            $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
             
-            if (!$id) {
+            if (!$decodedId) {
                 return Redirect::to('/leads')->with('error', config('constants.decode_string'));
             }
+            $id = $decodedId;
 
             if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
                 return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
@@ -2114,8 +2118,22 @@ class LeadController extends Controller
             return false;
         }
         
-        if (base64_encode(base64_decode($string, true)) === $string) {
-            return convert_uudecode(base64_decode($string));
+        // Support direct numeric IDs
+        if (is_numeric($string) && (int) $string > 0) {
+            return (string) (int) $string;
+        }
+
+        // Support legacy base64 + uuencoded IDs
+        if (is_string($string) && base64_encode(base64_decode($string, true)) === $string) {
+            try {
+                $decoded = @convert_uudecode(base64_decode($string));
+                if ($decoded !== false && $decoded !== '') {
+                    $trimmed = trim($decoded);
+                    return is_numeric($trimmed) ? $trimmed : $decoded;
+                }
+            } catch (\Throwable $e) {
+                return false;
+            }
         }
         
         return false;
@@ -2146,7 +2164,7 @@ class LeadController extends Controller
     {
         try {
             // Decode the lead ID
-            $decodedId = $this->decodeString($id);
+            $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
             
             if (!$decodedId) {
                 return redirect()->route('leads.index')

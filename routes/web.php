@@ -185,6 +185,7 @@ Route::middleware(['auth:admin'])->group(function () {
 
         // Edit & Update (RESTful pattern)
         Route::get('/{id}/edit', [LeadController::class, 'edit'])->name('edit');
+        Route::get('/edit/{id}', fn($id) => redirect()->route('leads.edit', [$id]));
         Route::get('/{id}/related-contacts', [LeadController::class, 'relatedContactRows'])->name('related_contacts');
         Route::put('/{id}', [LeadController::class, 'update'])->name('update');
         Route::patch('/{id}', [LeadController::class, 'update'])->name('patch');
@@ -309,3 +310,5 @@ require __DIR__ . '/documents.php';
 
 // Public email verification route - no authentication required
 Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
+
+

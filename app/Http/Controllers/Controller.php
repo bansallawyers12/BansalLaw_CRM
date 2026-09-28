@@ -32,13 +32,27 @@ class Controller extends BaseController
 
 	public function decodeString($string = NULL)
 	{
-		if ( base64_encode(base64_decode($string, true)) === $string)
+		if (empty($string)) {
+			return false;
+		}
+
+		if (is_numeric($string) && (int) $string > 0) {
+			return (string) (int) $string;
+		}
+
+		if (is_string($string) && base64_encode(base64_decode($string, true)) === $string)
 		{
 			// First decode base64, then decode uuencode
 			$base64Decoded = base64_decode($string);
 			try {
 				$uuDecoded = @convert_uudecode($base64Decoded);
+				if ($uuDecoded !== false && $uuDecoded !== '') {
+					$trimmed = trim($uuDecoded);
+					return is_numeric($trimmed) ? $trimmed : $uuDecoded;
+				}
 			} catch (\ValueError $e) {
+				$uuDecoded = false;
+			} catch (\Throwable $e) {
 				$uuDecoded = false;
 			}
 			return $uuDecoded;
