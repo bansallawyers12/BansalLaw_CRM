@@ -314,9 +314,15 @@
         var $body = $('#staff-create-form-body');
         var $alert = $('#staff-create-alert');
 
-        $body.html('<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading form...</div>');
         clearFormErrors($('#staff-create-form'), $alert);
         showModal($modal);
+
+        if ($body.children().length > 0 && !$body.find('.spinner-border').length) {
+            initStaffFormBehaviors($body, 'create_staff');
+            return;
+        }
+
+        $body.html('<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading form...</div>');
 
         $.ajax({
             url: urls.create,
@@ -427,8 +433,8 @@
 
     function handleDeepLinkAction() {
         var params = new URLSearchParams(window.location.search);
-        var action = params.get('action');
-        var id = params.get('id');
+        var action = params.get('action') || $app.data('initial-action') || (window.location.pathname.endsWith('/create') ? 'create' : null);
+        var id = params.get('id') || $app.data('initial-id');
         if (action === 'create') {
             openCreateModal();
         } else if (action === 'edit' && id) {
@@ -591,9 +597,14 @@
         });
     });
 
-    $('#staffCreateModal, #staffEditModal').on('hidden.bs.modal', function () {
+    $('#staffCreateModal, #staffEditModal, #staffViewModal').on('hidden.bs.modal', function () {
         var $body = $(this).find('.modal-body');
         destroyTinyMceIn($body);
+        if (window.history && window.history.replaceState) {
+            if (window.location.pathname.endsWith('/create') || window.location.pathname.includes('/edit/') || window.location.pathname.includes('/view/') || window.location.search.includes('action=')) {
+                window.history.replaceState(null, '', urls.index);
+            }
+        }
     });
 
     handleDeepLinkAction();

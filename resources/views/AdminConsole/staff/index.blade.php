@@ -12,7 +12,9 @@
     data-update-url-template="{{ route('adminconsole.staff.update', ['id' => '__ID__']) }}"
     data-view-url-template="{{ route('adminconsole.staff.view', ['id' => '__ID__']) }}"
     data-initial-tab="{{ $tab ?? 'active' }}"
-    data-initial-search="{{ $searchBy ?? '' }}">
+    data-initial-search="{{ $searchBy ?? '' }}"
+    data-initial-action="{{ $initialAction ?? request('action', '') }}"
+    data-initial-id="{{ $actionId ?? request('id', '') }}">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -104,7 +106,16 @@
                 @csrf
                 <div class="modal-body">
                     <div id="staff-create-alert" class="alert alert-danger d-none" role="alert"></div>
-                    <div id="staff-create-form-body"></div>
+                    <div id="staff-create-form-body">
+                        @if(($initialAction ?? request('action')) === 'create')
+                            @include('AdminConsole.staff.partials.form-fields', [
+                                'mode' => 'create',
+                                'fetchedData' => null,
+                                'usertype' => $createUsertype ?? \App\Models\UserRole::orderedForSelect(),
+                                'fieldPrefix' => 'create_staff',
+                            ])
+                        @endif
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

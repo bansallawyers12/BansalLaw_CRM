@@ -86,7 +86,15 @@ class StaffController extends Controller
             ]);
         }
 
-        return redirect()->route('adminconsole.staff.index', ['action' => 'create']);
+        $tab = $this->normalizeStaffTab($request->query('tab', 'active'));
+        $data = $this->buildStaffListPayload($request, $tab);
+
+        return view('AdminConsole.staff.index', array_merge($data, [
+            'tab' => $tab,
+            'searchBy' => $request->query('search_by', ''),
+            'initialAction' => 'create',
+            'createUsertype' => $usertype,
+        ]));
     }
 
     public function store(Request $request)
@@ -250,7 +258,15 @@ class StaffController extends Controller
             ]);
         }
 
-        return redirect()->route('adminconsole.staff.index', ['action' => 'edit', 'id' => $staff->id]);
+        $tab = $this->normalizeStaffTab($request->query('tab', 'active'));
+        $data = $this->buildStaffListPayload($request, $tab);
+
+        return view('AdminConsole.staff.index', array_merge($data, [
+            'tab' => $tab,
+            'searchBy' => $request->query('search_by', ''),
+            'initialAction' => 'edit',
+            'actionId' => $staff->id,
+        ]));
     }
 
     public function update(Request $request, $id)
@@ -383,7 +399,15 @@ class StaffController extends Controller
             ]);
         }
 
-        return redirect()->route('adminconsole.staff.index', ['action' => 'view', 'id' => $staff->id]);
+        $tab = $this->normalizeStaffTab($request->query('tab', 'active'));
+        $data = $this->buildStaffListPayload($request, $tab);
+
+        return view('AdminConsole.staff.index', array_merge($data, [
+            'tab' => $tab,
+            'searchBy' => $request->query('search_by', ''),
+            'initialAction' => 'view',
+            'actionId' => $staff->id,
+        ]));
     }
 
     protected function redirectToStaffIndex(Request $request, string $tab)
