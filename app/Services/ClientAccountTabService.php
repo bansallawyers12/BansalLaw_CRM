@@ -160,14 +160,40 @@ class ClientAccountTabService
      */
     public function filterClientOptions(): Collection
     {
-        return Cache::remember('account_receipt_filter_clients_v1', $this->filterCacheTtl(), function () {
+        $raw = Cache::remember('account_receipt_filter_clients_v2', $this->filterCacheTtl(), function () {
             return DB::table('account_client_receipts as acr')
                 ->join('admins', 'admins.id', '=', 'acr.client_id')
                 ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
                 ->distinct()
                 ->orderBy('admins.first_name', 'asc')
-                ->get();
+                ->get()
+                ->map(fn ($row) => [
+                    'client_id' => $row->client_id,
+                    'first_name' => $row->first_name,
+                    'last_name' => $row->last_name,
+                    'client_unique_id' => $row->client_unique_id,
+                ])
+                ->all();
         });
+
+        if (! is_array($raw)) {
+            $this->forgetFilterCaches();
+            $raw = DB::table('account_client_receipts as acr')
+                ->join('admins', 'admins.id', '=', 'acr.client_id')
+                ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
+                ->distinct()
+                ->orderBy('admins.first_name', 'asc')
+                ->get()
+                ->map(fn ($row) => [
+                    'client_id' => $row->client_id,
+                    'first_name' => $row->first_name,
+                    'last_name' => $row->last_name,
+                    'client_unique_id' => $row->client_unique_id,
+                ])
+                ->all();
+        }
+
+        return collect($raw)->map(fn ($item) => (object) (array) $item);
     }
 
     /**
@@ -177,21 +203,48 @@ class ClientAccountTabService
      */
     public function filterMatterOptions(): Collection
     {
-        return Cache::remember('account_receipt_filter_matters_v1', $this->filterCacheTtl(), function () {
+        $raw = Cache::remember('account_receipt_filter_matters_v2', $this->filterCacheTtl(), function () {
             return DB::table('account_client_receipts as acr')
                 ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
                 ->join('admins', 'admins.id', '=', 'acr.client_id')
                 ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
                 ->distinct()
                 ->orderBy('admins.client_id', 'asc')
-                ->get();
+                ->get()
+                ->map(fn ($row) => [
+                    'client_matter_id' => $row->client_matter_id,
+                    'client_unique_matter_no' => $row->client_unique_matter_no,
+                    'client_unique_id' => $row->client_unique_id,
+                ])
+                ->all();
         });
+
+        if (! is_array($raw)) {
+            $this->forgetFilterCaches();
+            $raw = DB::table('account_client_receipts as acr')
+                ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
+                ->join('admins', 'admins.id', '=', 'acr.client_id')
+                ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
+                ->distinct()
+                ->orderBy('admins.client_id', 'asc')
+                ->get()
+                ->map(fn ($row) => [
+                    'client_matter_id' => $row->client_matter_id,
+                    'client_unique_matter_no' => $row->client_unique_matter_no,
+                    'client_unique_id' => $row->client_unique_id,
+                ])
+                ->all();
+        }
+
+        return collect($raw)->map(fn ($item) => (object) (array) $item);
     }
 
     public function forgetFilterCaches(): void
     {
         Cache::forget('account_receipt_filter_clients_v1');
+        Cache::forget('account_receipt_filter_clients_v2');
         Cache::forget('account_receipt_filter_matters_v1');
+        Cache::forget('account_receipt_filter_matters_v2');
     }
 
     /**
