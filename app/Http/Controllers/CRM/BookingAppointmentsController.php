@@ -1405,17 +1405,22 @@ class BookingAppointmentsController extends Controller
     /**
      * JSON stats for calendar header cards (retried client-side when SSR/API is cold).
      */
-    public function calendarStatsJson(string $type)
+    public function calendarStatsJson(?string $type = null)
     {
+        $type = $type !== null ? trim($type) : '';
+        $typeLower = strtolower($type);
+        if ($typeLower === 'michael') {
+            $typeLower = 'kunal';
+        }
         $validTypes = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
-        if (! in_array($type, $validTypes, true)) {
-            return response()->json(['success' => false, 'message' => 'Invalid calendar type'], 404);
+        if ($typeLower === '' || ! in_array($typeLower, $validTypes, true)) {
+            $typeLower = \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE;
         }
 
         try {
-            $stats = $this->calendarHeaderStatsForType($type);
+            $stats = $this->calendarHeaderStatsForType($typeLower);
         } catch (Exception $e) {
-            Log::error('calendarStatsJson failed', ['type' => $type, 'error' => $e->getMessage()]);
+            Log::error('calendarStatsJson failed', ['type' => $typeLower, 'error' => $e->getMessage()]);
 
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -1446,15 +1451,36 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
+     * Default calendar view (Ajay)
+     */
+    public function calendarDefault()
+    {
+        return $this->calendar(\App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE);
+    }
+
+    /**
      * Calendar view by type
      */
-    public function calendar($type)
+    public function calendar(?string $type = null)
     {
+        if ($type === null || trim($type) === '') {
+            $type = \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE;
+        }
+
+        $typeLower = strtolower(trim((string) $type));
+        if ($typeLower === 'michael') {
+            return redirect()->route('booking.appointments.calendar', ['type' => 'kunal']);
+        }
+
         $validTypes = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
 
-        if (! in_array($type, $validTypes, true)) {
-            abort(404);
+        if (! in_array($typeLower, $validTypes, true)) {
+            return redirect()->route('booking.appointments.calendar', [
+                'type' => \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE,
+            ]);
         }
+
+        $type = $typeLower;
 
         $localConsultantId = $this->calendarLocalConsultantIdForType($type);
         $appointmentsQuery = BookingAppointment::with(['client', 'consultant']);

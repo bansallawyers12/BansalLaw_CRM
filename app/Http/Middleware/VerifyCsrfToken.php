@@ -21,5 +21,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'api/*',
         'webhooks/sms/*',
+        'outlook-addin/*',
     ];
 }

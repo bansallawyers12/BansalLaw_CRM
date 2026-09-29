@@ -38,9 +38,10 @@ Route::controller(BookingAppointmentsController::class)
         Route::get('/calendar/staff/{staff}', 'calendarForStaff')
             ->name('appointments.calendar.staff')
             ->whereNumber('staff');
+        Route::get('/calendar', 'calendarDefault')
+            ->name('appointments.calendar.default');
         Route::get('/calendar/{type}', 'calendar')
-            ->name('appointments.calendar')
-            ->whereIn('type', ['ajay', 'kunal']);
+            ->name('appointments.calendar');
 
         Route::post('/appointments/{id}/update-status', 'updateStatus')
             ->name('appointments.update-status')
@@ -92,9 +93,8 @@ Route::controller(BookingAppointmentsController::class)
         Route::get('/api/calendar-stats/staff/{staff}', 'calendarStatsJsonForStaff')
             ->name('api.calendar-stats.staff')
             ->whereNumber('staff');
-        Route::get('/api/calendar-stats/{type}', 'calendarStatsJson')
-            ->name('api.calendar-stats')
-            ->whereIn('type', ['ajay', 'kunal']);
+        Route::get('/api/calendar-stats/{type?}', 'calendarStatsJson')
+            ->name('api.calendar-stats');
 
         Route::get('/api/calendar-events/reminders', 'pendingReminders')
             ->name('api.calendar-events.reminders');

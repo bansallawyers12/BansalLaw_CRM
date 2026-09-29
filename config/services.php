@@ -31,6 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-2'),
     ],
 
+    'outlook_addin' => [
+        'base_url' => env('OUTLOOK_ADDIN_BASE_URL', 'https://legal.bansalcrm.com'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Python Services Configuration

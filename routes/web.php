@@ -86,6 +86,7 @@ Route::get('/logout', [AdminLoginController::class, 'showLogoutConfirmation'])->
 Route::middleware(['auth:admin'])->group(function () {
 
     Route::post('/session/super-admin-mode', [SuperAdminElevationController::class, 'update'])->name('crm.session.super-admin-mode');
+    Route::redirect('/calendar', '/booking/calendar', 301);
 
     /*---------- Dashboard Routes ----------*/
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -310,5 +311,19 @@ require __DIR__ . '/documents.php';
 
 // Public email verification route - no authentication required
 Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
+
+/*--------------------------------------------------
+| SECTION: Outlook Add-in Routes (Local & Production)
+|--------------------------------------------------*/
+Route::prefix('outlook-addin')->name('outlook-addin.')->group(function () {
+    Route::get('/manifest.xml', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'manifest'])->name('manifest');
+    Route::get('/taskpane', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'taskpane'])->name('taskpane');
+    Route::post('/match', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'match'])->name('match');
+    Route::get('/matters', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'searchMatters'])->name('matters');
+    Route::get('/folders', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'folders'])->name('folders');
+    Route::post('/save', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'saveEmail'])->name('save');
+    Route::post('/set-staff', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'setStaff'])->name('set-staff');
+    Route::post('/log', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'logClient'])->name('log');
+});
 
 

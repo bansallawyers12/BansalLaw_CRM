@@ -42,7 +42,7 @@
 										{{ $masterOn ? 'ON' : 'OFF' }}
 									</span>
 									@if($masterOn)
-									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" onsubmit="return confirm('Turn OFF inbox auto-sync? Cron, Sync Now, and Unassigned Mail will stop for everyone.');">
+									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" class="js-crm-confirm-submit" data-confirm-title="Turn off inbox auto-sync?" data-confirm-text="Cron, Sync Now, and Unassigned Mail will stop for everyone." data-confirm-text-button="Yes, turn off" data-confirm-color="#a83020">
 										@csrf
 										<input type="hidden" name="enabled" value="0">
 										<button type="submit" class="btn btn-outline-danger btn-sm">
@@ -50,7 +50,7 @@
 										</button>
 									</form>
 									@else
-									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" onsubmit="return confirm('Turn ON inbox auto-sync? Cron and Unassigned Mail will resume for eligible staff.');">
+									<form method="POST" action="{{ route('adminconsole.features.emails.inbox-sync-master') }}" class="js-crm-confirm-submit" data-confirm-title="Turn on inbox auto-sync?" data-confirm-text="Cron and Unassigned Mail will resume for eligible staff." data-confirm-text-button="Yes, turn on" data-confirm-color="#28a745">
 										@csrf
 										<input type="hidden" name="enabled" value="1">
 										<button type="submit" class="btn btn-success btn-sm">
@@ -120,7 +120,7 @@
 											<div class="d-flex flex-column gap-1">
 												@if(($list->sync_enabled ?? 1) == 1)
 													<span class="text-success">On</span>
-													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" onsubmit="return confirm('Pause inbox sync for {{ addslashes($list->email) }}? Cron will skip this mailbox until you start it again.');">
+													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" class="js-crm-confirm-submit" data-confirm-title="Pause inbox sync?" data-confirm-text="Pause inbox sync for {{ $list->email }}? Cron will skip this mailbox until you start it again." data-confirm-text-button="Yes, pause" data-confirm-color="#a83020">
 														@csrf
 														<input type="hidden" name="email" value="{{ $list->email }}">
 														<input type="hidden" name="sync_enabled" value="0">
@@ -130,7 +130,7 @@
 													</form>
 												@else
 													<span class="text-muted">Paused</span>
-													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" onsubmit="return confirm('Start inbox sync for {{ addslashes($list->email) }}?');">
+													<form method="POST" action="{{ route('adminconsole.features.emails.toggle-inbox-sync') }}" class="js-crm-confirm-submit" data-confirm-title="Start inbox sync?" data-confirm-text="Start inbox sync for {{ $list->email }}?" data-confirm-text-button="Yes, start" data-confirm-color="#28a745">
 														@csrf
 														<input type="hidden" name="email" value="{{ $list->email }}">
 														<input type="hidden" name="sync_enabled" value="1">

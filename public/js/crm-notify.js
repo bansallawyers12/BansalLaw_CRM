@@ -301,6 +301,48 @@
         });
     }
 
+    /**
+     * Forms with class js-crm-confirm-submit use crmConfirm before POST (replaces onsubmit confirm()).
+     * data-confirm-title, data-confirm-text, data-confirm-text-button, data-confirm-color
+     */
+    if (typeof document !== 'undefined' && !global.__crmConfirmSubmitBound) {
+        global.__crmConfirmSubmitBound = true;
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form || !form.classList || !form.classList.contains('js-crm-confirm-submit')) {
+                return;
+            }
+            if (form.dataset.crmConfirmBypass === '1') {
+                delete form.dataset.crmConfirmBypass;
+                return;
+            }
+            e.preventDefault();
+            var title = form.dataset.confirmTitle || 'Confirm';
+            var text = form.dataset.confirmText || '';
+            var confirmText = form.dataset.confirmTextButton || 'Yes';
+            var confirmColor = form.dataset.confirmColor || '#1e3d60';
+            var ask = typeof global.crmConfirm === 'function'
+                ? global.crmConfirm({
+                    title: title,
+                    text: text,
+                    confirmText: confirmText,
+                    confirmColor: confirmColor
+                })
+                : Promise.resolve(false);
+            ask.then(function (ok) {
+                if (!ok) {
+                    return;
+                }
+                form.dataset.crmConfirmBypass = '1';
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            });
+        }, true);
+    }
+
     // Route native alert() to CRM toast/Swal wherever this script is loaded.
     if (typeof global.alert === 'function' && !global.__crmAlertPatched) {
         global.__crmAlertPatched = true;

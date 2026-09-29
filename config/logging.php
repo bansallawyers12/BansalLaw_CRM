@@ -134,6 +134,15 @@ return [
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
 
+        'outlook_addin' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/outlook-addin/outlook-addin.log'),
+            'level' => 'debug',
+            'days' => (int) env('OUTLOOK_ADDIN_LOG_RETENTION_DAYS', 10),
+            'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
+        ],
+
     ],
 
 ];
