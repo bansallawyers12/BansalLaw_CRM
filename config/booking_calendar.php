@@ -47,6 +47,15 @@ return [
         FILTER_VALIDATE_BOOL
     ),
 
+    /**
+     * Global "Upcoming reminders" modal on CRM pages.
+     * Off for every staff member until BOOKING_CALENDAR_REMINDER_POPUP=true.
+     */
+    'reminder_popup_enabled' => filter_var(
+        env('BOOKING_CALENDAR_REMINDER_POPUP', false),
+        FILTER_VALIDATE_BOOL
+    ),
+
     'external' => [
         'default_service_id' => (int) env('BOOKING_CALENDAR_SERVICE_ID', 1),
         'service_ids_by_type' => [

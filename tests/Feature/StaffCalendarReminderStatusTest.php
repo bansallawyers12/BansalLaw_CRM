@@ -20,6 +20,8 @@ class StaffCalendarReminderStatusTest extends TestCase
         parent::setUp();
         Auth::guard('admin')->logout();
 
+        config(['booking_calendar.reminder_popup_enabled' => true]);
+
         \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
             ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],

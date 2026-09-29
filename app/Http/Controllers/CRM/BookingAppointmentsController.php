@@ -787,6 +787,13 @@ class BookingAppointmentsController extends Controller
      */
     public function pendingReminders()
     {
+        if (! config('booking_calendar.reminder_popup_enabled')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $this->staffCalendarFeed->pendingReminderPayloads(),
