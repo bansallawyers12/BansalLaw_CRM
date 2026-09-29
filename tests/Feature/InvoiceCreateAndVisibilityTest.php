@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\Staff;
 use App\Services\ClientAccountTabService;
+use App\Support\InvoiceTimesheetLine;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
@@ -449,5 +450,117 @@ class InvoiceCreateAndVisibilityTest extends TestCase
             ->where('client_id', $client->id)
             ->first();
         $this->assertSame($matterId, (int) $parent->client_matter_id);
+    }
+
+    #[Test]
+    public function selectable_fee_earners_includes_only_admin_and_solicitor_roles(): void
+    {
+        $nextId = (int) (DB::table('user_roles')->max('id') ?? 100) + 1;
+
+        $adminRole = DB::table('user_roles')->whereRaw("LOWER(TRIM(name)) = 'admin'")->first();
+        if ($adminRole) {
+            $adminRoleId = $adminRole->id;
+        } else {
+            $adminRoleId = $nextId++;
+            DB::table('user_roles')->insert([
+                'id' => $adminRoleId,
+                'name' => 'Admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $solicitorRole = DB::table('user_roles')->whereRaw("LOWER(TRIM(name)) = 'solicitor'")->first();
+        if ($solicitorRole) {
+            $solicitorRoleId = $solicitorRole->id;
+        } else {
+            $solicitorRoleId = $nextId++;
+            DB::table('user_roles')->insert([
+                'id' => $solicitorRoleId,
+                'name' => 'Solicitor',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $accountantRole = DB::table('user_roles')->whereRaw("LOWER(TRIM(name)) = 'accountant'")->first();
+        if ($accountantRole) {
+            $accountantRoleId = $accountantRole->id;
+        } else {
+            $accountantRoleId = $nextId++;
+            DB::table('user_roles')->insert([
+                'id' => $accountantRoleId,
+                'name' => 'Accountant',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $superAdminRole = DB::table('user_roles')->whereRaw("LOWER(TRIM(name)) = 'super admin'")->first();
+        if ($superAdminRole) {
+            $superAdminRoleId = $superAdminRole->id;
+        } else {
+            $superAdminRoleId = $nextId++;
+            DB::table('user_roles')->insert([
+                'id' => $superAdminRoleId,
+                'name' => 'Super Admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $adminStaff = Staff::create([
+            'first_name' => 'TestAdmin',
+            'last_name' => 'User',
+            'email' => 'admin_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'role' => $adminRoleId,
+            'status' => 1,
+        ]);
+
+        $solicitorStaff = Staff::create([
+            'first_name' => 'TestSolicitor',
+            'last_name' => 'User',
+            'email' => 'solicitor_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'role' => $solicitorRoleId,
+            'status' => 1,
+        ]);
+
+        $accountantStaff = Staff::create([
+            'first_name' => 'TestAccountant',
+            'last_name' => 'User',
+            'email' => 'accountant_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'role' => $accountantRoleId,
+            'status' => 1,
+        ]);
+
+        $superAdminStaff = Staff::create([
+            'first_name' => 'TestSuperAdmin',
+            'last_name' => 'User',
+            'email' => 'superadmin_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'role' => $superAdminRoleId,
+            'status' => 1,
+        ]);
+
+        $inactiveAdminStaff = Staff::create([
+            'first_name' => 'InactiveAdmin',
+            'last_name' => 'User',
+            'email' => 'inactive_admin_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'role' => $adminRoleId,
+            'status' => 0,
+        ]);
+
+        $selectable = InvoiceTimesheetLine::selectableFeeEarners();
+        $selectableIds = $selectable->pluck('id')->all();
+
+        $this->assertContains($adminStaff->id, $selectableIds);
+        $this->assertContains($solicitorStaff->id, $selectableIds);
+        $this->assertNotContains($accountantStaff->id, $selectableIds);
+        $this->assertNotContains($superAdminStaff->id, $selectableIds);
+        $this->assertNotContains($inactiveAdminStaff->id, $selectableIds);
     }
 }

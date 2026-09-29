@@ -51,7 +51,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\MarkMigrationsAsRun',
 
         '\App\Console\Commands\IssueMcpStaffTokenCommand',
-        \App\Console\Commands\GenerateOutlookAddinManifest::class,
     ];
 
     /**

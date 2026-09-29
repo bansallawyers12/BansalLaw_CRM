@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 use App\Models\Lead;
 use App\Models\Admin;
@@ -144,62 +147,85 @@ class CRMUtilityController extends Controller
      */
 	public function change_password(Request $request)
 	{
-		//check authorization start
-			/* $check = $this->checkAuthorizationAction('Admin', $request->route()->getActionMethod(), Auth::user()->role);
-			if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			} */
-		//check authorization end
+		$user = Auth::guard('admin')->user();
+		$staff = $user instanceof Staff ? $user : null;
+
+		if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+			Auth::guard('admin')->logout();
+			$request->session()->invalidate();
+			$request->session()->regenerateToken();
+			return redirect()->route('crm.login')->with('error', 'Unauthorized: Active staff authentication required.');
+		}
 
 		if ($request->isMethod('post'))
 		{
+			$throttleKey = 'change-password:' . $staff->id . '|' . $request->ip();
+			if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+				$seconds = RateLimiter::availableIn($throttleKey);
+				return redirect()->back()->with('error', "Too many password change attempts. Please try again in {$seconds} seconds.");
+			}
+
 			$this->validate($request, [
-										'old_password' => 'required|min:6',
-										'password' => 'required|confirmed|min:6',
-										'password_confirmation' => 'required|min:6'
-									  ]);
+				'old_password' => 'required',
+				'password' => ['required', 'string', 'min:8', 'confirmed', 'different:old_password'],
+				'password_confirmation' => 'required',
+			], [
+				'password.min' => 'The new password must be at least 8 characters long.',
+				'password.different' => 'The new password must be different from your current password.',
+				'password.confirmed' => 'The password confirmation does not match.',
+			]);
 
-			$requestData 	= 	$request->all();
-			$admin_id = Auth::user()->id;
+			if ($request->filled('admin_id') && (int) $request->input('admin_id') !== (int) $staff->id) {
+				return redirect()->back()->with('error', 'You can change the password only for your own account.');
+			}
 
-			$fetchedData = \App\Models\Staff::where('id', '=', $admin_id)->first();
-			if(!empty($fetchedData))
-				{
-					if($admin_id == trim($requestData['admin_id']))
-						{
-							 if (!(Hash::check($request->get('old_password'), Auth::user()->password)))
-								{
-									return redirect()->back()->with("error","Your current password does not matches with the password you provided. Please try again.");
-								}
-							else
-								{
-									$admin = \App\Models\Staff::find($requestData['admin_id']);
-									$admin->password = Hash::make($requestData['password']);
-									if($admin->save())
-										{
-											Auth::guard('admin')->logout();
-											$request->session()->flush();
+			if (!Hash::check($request->input('old_password'), $staff->password)) {
+				RateLimiter::hit($throttleKey, 60);
+				return redirect()->back()->with('error', 'Your current password does not match the password you provided. Please try again.');
+			}
 
-											return redirect()->route('dashboard')->with('success', 'Your Password has been changed successfully.');
-										}
-									else
-										{
-											return redirect()->back()->with('error', config('constants.server_error'));
-										}
-								}
-						}
-					else
-						{
-							return redirect()->back()->with('error', 'You can change the password only your account.');
-						}
-				}
-			else
-				{
-					return redirect()->back()->with('error', 'Staff member does not exist, so you cannot change the password.');
-				}
+			// Clear rate limiter upon successful credential verification
+			RateLimiter::clear($throttleKey);
+
+			// Update password and rotate remember token
+			$staff->password = Hash::make($request->input('password'));
+			$staff->setRememberToken(Str::random(60));
+
+			// Revoke all existing Sanctum API tokens for this staff member
+			if (method_exists($staff, 'tokens')) {
+				$staff->tokens()->delete();
+			}
+
+			if ($staff->save()) {
+				// Record audit log
+				$loginLog = new \App\Models\StaffLoginLog();
+				$loginLog->level = 'info';
+				$loginLog->user_id = $staff->id;
+				$loginLog->ip_address = $request->getClientIp();
+				$loginLog->user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+				$loginLog->message = 'Password changed; session invalidated and logged out';
+				$loginLog->save();
+
+				// Invalidate session, regenerate CSRF token, and clear credentials
+				Auth::guard('admin')->logout();
+				$request->session()->invalidate();
+				$request->session()->regenerateToken();
+				\Illuminate\Support\Facades\Cookie::queue(\Illuminate\Support\Facades\Cookie::forget('password'));
+
+				Log::info('Staff password successfully changed and session invalidated', [
+					'staff_id' => $staff->id,
+					'ip' => $request->ip(),
+				]);
+
+				return redirect()->route('crm.login')->with('success', 'Your password has been changed successfully. Please log in with your new password.');
+			} else {
+				return redirect()->back()->with('error', config('constants.server_error'));
+			}
 		}
-		return view('crm.change_password');
+
+		return view('crm.change_password', [
+			'staff' => $staff,
+		]);
 	}
 
 	public function updateAction(Request $request)
@@ -215,14 +241,14 @@ class CRMUtilityController extends Controller
 			$allowedCols = ['status', 'is_active', 'is_archive', 'is_trash'];
 
 			$systemTables = [
-				'staff', 'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
+				'staff', 'branches', 'workflows', 'workflow_stages', 'matters',
 				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 				'templates', 'products', 'document_checklists', 'personal_document_types',
 				'matter_document_types', 'teams'
 			];
 
 			$clientTables = [
-				'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+				'admins', 'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
 			];
 
 			$allowedTables = array_merge($systemTables, $clientTables);
@@ -241,28 +267,64 @@ class CRMUtilityController extends Controller
 
 			$user = Auth::guard('admin')->user();
 			$staff = $user instanceof \App\Models\Staff ? $user : null;
+			if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+				return response()->json(['status' => 0, 'message' => 'Unauthorized: Active staff authentication required.']);
+			}
 
-			// 1. Authorization check for system-wide configuration / staff management tables
-			if (in_array($table, $systemTables, true)) {
-				$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+			// 1. Authorization check for staff management table
+			if ($table === 'staff') {
+				if ($id === (int) $staff->id) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: You cannot modify your own staff status.']);
+				}
+				if (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying staff status requires Super Admin privileges.']);
+				}
+			}
+			// 2. Authorization check for client records (admins table)
+			elseif ($table === 'admins') {
+				$client = DB::table('admins')->where('id', $id)->first();
+				if (!$client) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				$this->ensureCrmRecordAccess((int) $id);
+			}
+			// 3. Authorization check for system-wide configuration tables
+			elseif (in_array($table, $systemTables, true)) {
+				$canManageSystem = $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
 
 				if (!$canManageSystem) {
 					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system status requires Admin Console privileges.']);
 				}
 			}
-
-			// 2. Authorization check for client-specific records
-			if (in_array($table, $clientTables, true)) {
+			// 4. Authorization check for client-specific records
+			elseif (in_array($table, $clientTables, true)) {
 				$row = DB::table($table)->where('id', $id)->first();
 				if (!$row) {
 					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
 				}
 
-				$clientId = $row->client_id ?? $row->admin_id ?? null;
-				if ($clientId) {
-					$this->ensureCrmRecordAccess((int) $clientId);
-				} elseif ($table === 'email_labels' && !empty($row->user_id) && (int)$row->user_id !== (int)Auth::id()) {
-					if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+				if ($table === 'client_matter_tasks') {
+					$clientId = $row->client_id ?? null;
+					if (!$clientId && !empty($row->client_matter_id)) {
+						$clientId = DB::table('client_matters')->where('id', $row->client_matter_id)->value('client_id');
+					}
+					if ($clientId) {
+						$this->ensureCrmRecordAccess((int) $clientId);
+					} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this task.']);
+					}
+				} elseif ($table === 'client_matters' || $table === 'quotations') {
+					$clientId = $row->client_id ?? $row->admin_id ?? null;
+					if ($clientId) {
+						$this->ensureCrmRecordAccess((int) $clientId);
+					} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this record.']);
+					}
+				} elseif ($table === 'email_labels') {
+					$ownerId = (int) ($row->user_id ?? 0);
+					$isOwner = $ownerId > 0 && $ownerId === (int) $staff->id;
+					$canManageLabels = $isOwner || $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
+					if (!$canManageLabels) {
 						return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.']);
 					}
 				}
@@ -309,7 +371,7 @@ class CRMUtilityController extends Controller
 				'matter_document_types', 'teams'
 			];
 			$clientTables = [
-				'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+				'admins', 'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
 			];
 
 			$allowedTables = array_merge($systemTables, $clientTables);
@@ -328,27 +390,54 @@ class CRMUtilityController extends Controller
 
 			$user = Auth::guard('admin')->user();
 			$staff = $user instanceof \App\Models\Staff ? $user : null;
+			if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+				return response()->json(['status' => 0, 'message' => 'Unauthorized: Active staff authentication required.']);
+			}
 
-			// 1. Authorization check for system configuration tables
-			if (in_array($table, $systemTables, true)) {
-				$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+			// 1. Authorization check for client records (admins table)
+			if ($table === 'admins') {
+				$client = DB::table('admins')->where('id', $id)->first();
+				if (!$client) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				$this->ensureCrmRecordAccess((int) $id);
+			}
+			// 3. Authorization check for system configuration tables
+			elseif (in_array($table, $systemTables, true)) {
+				$canManageSystem = $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
 				if (!$canManageSystem) {
 					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.']);
 				}
 			}
-
-			// 2. Access check for client-specific records
-			if (in_array($table, $clientTables, true)) {
+			// 4. Access check for client-specific records
+			elseif (in_array($table, $clientTables, true)) {
 				$row = DB::table($table)->where('id', $id)->first();
 				if (!$row) {
 					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
 				}
 
-				$clientId = $row->client_id ?? $row->admin_id ?? null;
-				if ($clientId) {
-					$this->ensureCrmRecordAccess((int) $clientId);
-				} elseif ($table === 'email_labels' && !empty($row->user_id) && (int)$row->user_id !== (int)Auth::id()) {
-					if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+				if ($table === 'client_matter_tasks') {
+					$clientId = $row->client_id ?? null;
+					if (!$clientId && !empty($row->client_matter_id)) {
+						$clientId = DB::table('client_matters')->where('id', $row->client_matter_id)->value('client_id');
+					}
+					if ($clientId) {
+						$this->ensureCrmRecordAccess((int) $clientId);
+					} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this task.']);
+					}
+				} elseif ($table === 'client_matters' || $table === 'quotations') {
+					$clientId = $row->client_id ?? $row->admin_id ?? null;
+					if ($clientId) {
+						$this->ensureCrmRecordAccess((int) $clientId);
+					} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this record.']);
+					}
+				} elseif ($table === 'email_labels') {
+					$ownerId = (int) ($row->user_id ?? 0);
+					$isOwner = $ownerId > 0 && $ownerId === (int) $staff->id;
+					$canManageLabels = $isOwner || $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
+					if (!$canManageLabels) {
 						return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.']);
 					}
 				}
@@ -376,14 +465,14 @@ class CRMUtilityController extends Controller
 	private function validateAndAuthorizeStatusMutation(Request $request, string $targetColumn = 'status'): array
 	{
 		$systemTables = [
-			'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
+			'branches', 'workflows', 'workflow_stages', 'matters',
 			'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 			'templates', 'products', 'document_checklists', 'personal_document_types',
 			'matter_document_types', 'teams'
 		];
 
 		$clientTables = [
-			'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+			'admins', 'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
 		];
 
 		$allowedTables = array_merge($systemTables, $clientTables);
@@ -414,10 +503,27 @@ class CRMUtilityController extends Controller
 
 		$user = Auth::guard('admin')->user();
 		$staff = $user instanceof \App\Models\Staff ? $user : null;
+		if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+			return [
+				'authorized' => false,
+				'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: Active staff authentication required.'])
+			];
+		}
 
-		// 1. Authorization check for system-wide configuration tables
-		if (in_array($table, $systemTables, true)) {
-			$canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
+		// 1. Authorization check for client records (admins table)
+		if ($table === 'admins') {
+			$client = DB::table('admins')->where('id', $id)->first();
+			if (!$client) {
+				return [
+					'authorized' => false,
+					'response' => response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.'])
+				];
+			}
+			$this->ensureCrmRecordAccess((int) $id);
+		}
+		// 2. Authorization check for system-wide configuration tables
+		elseif (in_array($table, $systemTables, true)) {
+			$canManageSystem = $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
 			if (!$canManageSystem) {
 				return [
 					'authorized' => false,
@@ -425,9 +531,8 @@ class CRMUtilityController extends Controller
 				];
 			}
 		}
-
-		// 2. Authorization check for client-specific records
-		if (in_array($table, $clientTables, true)) {
+		// 3. Authorization check for client-specific records
+		elseif (in_array($table, $clientTables, true)) {
 			$row = DB::table($table)->where('id', $id)->first();
 			if (!$row) {
 				return [
@@ -436,25 +541,40 @@ class CRMUtilityController extends Controller
 				];
 			}
 
-			$clientId = $row->client_id ?? $row->admin_id ?? null;
-			if ($clientId) {
-				$this->ensureCrmRecordAccess((int) $clientId);
-			} elseif ($table === 'email_labels' && !empty($row->user_id) && (int) $row->user_id !== (int) Auth::id()) {
-				if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
+			if ($table === 'client_matter_tasks') {
+				$clientId = $row->client_id ?? null;
+				if (!$clientId && !empty($row->client_matter_id)) {
+					$clientId = DB::table('client_matters')->where('id', $row->client_matter_id)->value('client_id');
+				}
+				if ($clientId) {
+					$this->ensureCrmRecordAccess((int) $clientId);
+				} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return [
+						'authorized' => false,
+						'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this task.'])
+					];
+				}
+			} elseif ($table === 'client_matters' || $table === 'quotations') {
+				$clientId = $row->client_id ?? $row->admin_id ?? null;
+				if ($clientId) {
+					$this->ensureCrmRecordAccess((int) $clientId);
+				} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return [
+						'authorized' => false,
+						'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: No client associated with this record.'])
+					];
+				}
+			} elseif ($table === 'email_labels') {
+				$ownerId = (int) ($row->user_id ?? 0);
+				$isOwner = $ownerId > 0 && $ownerId === (int) $staff->id;
+				$canManageLabels = $isOwner || $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
+				if (!$canManageLabels) {
 					return [
 						'authorized' => false,
 						'response' => response()->json(['status' => 0, 'message' => 'Unauthorized: You can only modify your own custom email labels.'])
 					];
 				}
 			}
-		}
-
-		// General authorization check
-		if (!$this->viewerCanMutateAnyRecord() && !$staff) {
-			return [
-				'authorized' => false,
-				'response' => response()->json(['status' => 0, 'message' => 'You are not authorized person to perform this action.'])
-			];
 		}
 
 		return [
@@ -612,179 +732,232 @@ class CRMUtilityController extends Controller
 		if ($request->isMethod('post'))
 		{
 			$requestData = $request->all();
-            $id = (int) trim($requestData['id'] ?? 0);
+			$id = (int) trim($requestData['id'] ?? 0);
 			$table = trim((string)($requestData['table'] ?? ''));
 
-            $systemTables = [
-                'admins', 'branches', 'workflows', 'workflow_stages', 'matters',
-                'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
-                'templates', 'products', 'document_checklists', 'personal_document_types',
-                'matter_document_types', 'teams'
-            ];
+			$coreStructuralTables = [
+				'branches', 'workflows', 'matters', 'teams'
+			];
 
-            $clientTables = [
-                'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
-            ];
+			$systemTables = [
+				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
+				'templates', 'products', 'document_checklists', 'personal_document_types',
+				'matter_document_types', 'workflow_stages'
+			];
 
-            if ($id > 0 && !empty($table))
-			{
-				if (!in_array($table, array_merge($systemTables, $clientTables), true) || !Schema::hasTable($table))
-				{
-                    return response()->json(['status' => 0, 'message' => 'Deletion is not authorized for this table.']);
+			$clientTables = [
+				'admins', 'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
+			];
+
+			$allowedTables = array_merge($coreStructuralTables, $systemTables, $clientTables);
+
+			if ($id <= 0 || empty($table)) {
+				return response()->json(['status' => 0, 'message' => 'Id OR Table does not exist, please check it once again.']);
+			}
+
+			if (!in_array($table, $allowedTables, true) || !Schema::hasTable($table)) {
+				return response()->json(['status' => 0, 'message' => 'Deletion is not authorized for this table.']);
+			}
+
+			$user = Auth::guard('admin')->user();
+			$staff = $user instanceof \App\Models\Staff ? $user : null;
+			if (!$staff || (int) ($staff->status ?? 0) !== 1) {
+				return response()->json(['status' => 0, 'message' => 'Unauthorized: Active staff authentication required.']);
+			}
+
+			// 1. Authorization check for core structural tables
+			if (in_array($table, $coreStructuralTables, true)) {
+				if (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Deleting core structural configuration requires Super Admin privileges.']);
 				}
 
-                // 1. Authorization check for system-wide configuration tables
-                if (in_array($table, $systemTables, true)) {
-                    $user = Auth::guard('admin')->user();
-                    $staff = $user instanceof \App\Models\Staff ? $user : null;
-                    $canManageSystem = $staff && ($staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges());
-
-                    if (!$canManageSystem) {
-                        return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.']);
-                    }
-                }
-
-                $recordExist = DB::table($table)->where('id', $id)->exists();
-                if ($recordExist)
-				{
-					if ($table === 'admins') {
-                        $o = \App\Models\Admin::where('id', $id)->first();
-						$is_status = ($o && $o->status == 1) ? 0 : 1;
-						$response = DB::table($table)->where('id', $id)->update(['status' => $is_status, 'updated_at' => date('Y-m-d H:i:s')]);
-						if ($response) {
-							$status = 1;
-                            $message = ($is_status === 0) ? 'Record has been inactive successfully.' : 'Record has been active successfully.';
-                        } else {
-							$message = config('constants.server_error');
-						}
+				if ($table === 'branches') {
+					$hasStaff = (Schema::hasColumn('staff', 'office_id') && DB::table('staff')->where('office_id', $id)->where('status', 1)->exists())
+						|| (Schema::hasColumn('staff', 'branch_id') && DB::table('staff')->where('branch_id', $id)->where('status', 1)->exists());
+					$hasClients = (Schema::hasColumn('admins', 'office_id') && DB::table('admins')->where('office_id', $id)->where('status', 1)->exists())
+						|| (Schema::hasColumn('admins', 'branch_id') && DB::table('admins')->where('branch_id', $id)->where('status', 1)->exists());
+					if ($hasStaff || $hasClients) {
+						return response()->json(['status' => 0, 'message' => 'Cannot delete office branch with active staff or clients assigned.']);
 					}
-                    else if ($table === 'client_matters') {
-                        $matter = \App\Models\ClientMatter::find($id);
-                        if ($matter && $matter->client_id) {
-                            $this->ensureCrmRecordAccess((int) $matter->client_id);
-                        }
-                        $response = DB::table($table)->where('id', $id)->update(['matter_status' => 0]);
-						if ($response) {
-							$status = 1;
-							$message = 'Record has been enabled successfully.';
-							if ($matter) {
-								$emailLogIds = \App\Models\EmailLog::where('client_id', $matter->client_id)
-									->where('client_matter_id', $matter->id)
-									->pluck('id');
-								if ($emailLogIds->isNotEmpty()) {
-									DB::table('email_label_email_log')->whereIn('email_log_id', $emailLogIds)->delete();
-									DB::table('email_log_attachments')->whereIn('email_log_id', $emailLogIds)->delete();
-									\App\Models\EmailLog::whereIn('id', $emailLogIds)->delete();
-								}
-							}
-						} else {
-							$message = config('constants.server_error');
-						}
+				} elseif ($table === 'matters') {
+					$hasClientMatters = Schema::hasColumn('client_matters', 'matter_id') && DB::table('client_matters')->where('matter_id', $id)->where('matter_status', 1)->exists();
+					if ($hasClientMatters) {
+						return response()->json(['status' => 0, 'message' => 'Cannot delete matter type with active client matters.']);
 					}
-                    else if ($table === 'quotations') {
-                        $quotation = DB::table('quotations')->where('id', $id)->first();
-                        if ($quotation && !empty($quotation->client_id)) {
-                            $this->ensureCrmRecordAccess((int) $quotation->client_id);
-                        }
-                        $response = DB::table($table)->where('id', $id)->update(['is_archive' => 1]);
-						if ($response) {
-							$status = 1;
-							$message = 'Record has been enabled successfully.';
-						} else {
-							$message = config('constants.server_error');
-						}
+				} elseif ($table === 'workflows') {
+					$hasActiveMatters = Schema::hasColumn('client_matters', 'workflow_id') && DB::table('client_matters')->where('workflow_id', $id)->where('matter_status', 1)->exists();
+					if ($hasActiveMatters) {
+						return response()->json(['status' => 0, 'message' => 'Cannot delete workflow with active client matters.']);
 					}
-                    else if ($table === 'client_matter_tasks') {
-                        $task = DB::table('client_matter_tasks')->where('id', $id)->first();
-                        if ($task && !empty($task->client_id)) {
-                            $this->ensureCrmRecordAccess((int) $task->client_id);
-                        }
-                        $response = DB::table($table)->where('id', $id)->delete();
-                        if ($response) {
-                            $status = 1;
-                            $message = 'Task has been deleted successfully.';
-                        } else {
-                            $message = config('constants.server_error');
-                        }
-                    }
-                    else if ($table === 'templates') {
-                        $response = DB::table($table)->where('id', $id)->delete();
-                        DB::table('template_infos')->where('quotation_id', $id)->delete();
-                        if ($response) {
-                            $status = 1;
-                            $message = 'Record has been deleted successfully.';
-                        } else {
-                            $message = config('constants.server_error');
-                        }
-					}
-                    else if ($table === 'products') {
-                        $response = DB::table($table)->where('id', $id)->delete();
-                        DB::table('template_infos')->where('quotation_id', $id)->delete();
-                        if ($response) {
-                            $status = 1;
-                            $message = 'Record has been deleted successfully.';
-                        } else {
-                            $message = config('constants.server_error');
-                        }
-                    }
-                    else if ($table === 'email_labels') {
-                        $label = DB::table($table)->where('id', $id)->first();
-                        if ($label && $label->type === 'system') {
-                            $message = 'System labels cannot be deleted.';
-                        } else {
-                            if ($label && !empty($label->user_id) && (int)$label->user_id !== (int)Auth::id()) {
-                                $user = Auth::guard('admin')->user();
-                                $staff = $user instanceof \App\Models\Staff ? $user : null;
-                                if (!$staff || (!$staff->canAccessAdminConsole() && !$staff->hasEffectiveSuperAdminPrivileges())) {
-                                    return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only delete your own custom email labels.']);
-                                }
-                            }
-                            $response = DB::table($table)->where('id', $id)->delete();
-                            if ($response) {
-                                $status = 1;
-                                $message = 'Record has been deleted successfully.';
-                            } else {
-                                $message = config('constants.server_error');
-                            }
-                        }
-                    }
-                    else if ($table === 'workflow_stages') {
-                        $row = DB::table('workflow_stages')->where('id', $id)->first();
-                        if ($row && WorkflowStageFreeze::isFrozen($row->name)) {
-                            $message = 'This workflow stage is frozen and cannot be deleted.';
-                        } else {
-                            $response = DB::table($table)->where('id', $id)->delete();
-                            if ($response) {
-                                $status = 1;
-                                $message = 'Record has been deleted successfully.';
-                            } else {
-                                $message = config('constants.server_error');
-                            }
-                        }
-                    }
-                    else {
-                        $response = DB::table($table)->where('id', $id)->delete();
-                        if ($response) {
-                            $status = 1;
-                            $message = 'Record has been deleted successfully.';
-                        } else {
-                            $message = config('constants.server_error');
-                        }
-                    }
 				}
-                else
-                {
-                    $message = 'ID does not exist, please check it once again.';
-                }
-            }
-            else
-            {
-                $message = 'Id OR Table does not exist, please check it once again.';
-            }
-        }
-		else {
+			}
+
+			// 2. Authorization check for system-wide configuration tables
+			if (in_array($table, $systemTables, true)) {
+				$canManageSystem = $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
+				if (!$canManageSystem) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Modifying system configuration requires Admin Console privileges.']);
+				}
+			}
+
+			$recordExist = DB::table($table)->where('id', $id)->exists();
+			if (!$recordExist) {
+				return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+			}
+
+			if ($table === 'admins') {
+				$o = \App\Models\Admin::where('id', $id)->first();
+				if (!$o) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				$this->ensureCrmRecordAccess((int) $id);
+				$is_status = ($o->status == 1) ? 0 : 1;
+				$response = DB::table($table)->where('id', $id)->update(['status' => $is_status, 'updated_at' => date('Y-m-d H:i:s')]);
+				if ($response) {
+					$status = 1;
+					$message = ($is_status === 0) ? 'Record has been inactive successfully.' : 'Record has been active successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'client_matters') {
+				$matter = \App\Models\ClientMatter::find($id);
+				if (!$matter) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				if ($matter->client_id) {
+					$this->ensureCrmRecordAccess((int) $matter->client_id);
+				} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Cannot access this record.']);
+				}
+				$response = DB::table($table)->where('id', $id)->update(['matter_status' => 0]);
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been removed successfully.';
+					if ($matter && $matter->client_id) {
+						$emailLogIds = \App\Models\EmailLog::where('client_id', $matter->client_id)
+							->where('client_matter_id', $matter->id)
+							->pluck('id');
+						if ($emailLogIds->isNotEmpty()) {
+							DB::table('email_label_email_log')->whereIn('email_log_id', $emailLogIds)->delete();
+							DB::table('email_log_attachments')->whereIn('email_log_id', $emailLogIds)->delete();
+							\App\Models\EmailLog::whereIn('id', $emailLogIds)->delete();
+						}
+					}
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'quotations') {
+				$quotation = DB::table('quotations')->where('id', $id)->first();
+				if (!$quotation) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				if (!empty($quotation->client_id)) {
+					$this->ensureCrmRecordAccess((int) $quotation->client_id);
+				} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Cannot access this record.']);
+				}
+				$response = DB::table($table)->where('id', $id)->update(['is_archive' => 1]);
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been removed successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'client_matter_tasks') {
+				$task = DB::table('client_matter_tasks')->where('id', $id)->first();
+				if (!$task) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				$clientId = $task->client_id ?? null;
+				if (!$clientId && !empty($task->client_matter_id)) {
+					$clientId = DB::table('client_matters')->where('id', $task->client_matter_id)->value('client_id');
+				}
+				if ($clientId) {
+					$this->ensureCrmRecordAccess((int) $clientId);
+				} elseif (!$staff->hasEffectiveSuperAdminPrivileges()) {
+					return response()->json(['status' => 0, 'message' => 'Unauthorized: Cannot access this task.']);
+				}
+				$response = DB::table($table)->where('id', $id)->delete();
+				if ($response) {
+					$status = 1;
+					$message = 'Task has been deleted successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'templates') {
+				$response = DB::table($table)->where('id', $id)->delete();
+				DB::table('template_infos')->where('quotation_id', $id)->delete();
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been deleted successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'products') {
+				$response = DB::table($table)->where('id', $id)->delete();
+				DB::table('template_infos')->where('quotation_id', $id)->delete();
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been deleted successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+			else if ($table === 'email_labels') {
+				$label = DB::table($table)->where('id', $id)->first();
+				if (!$label) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				if ($label->type === 'system') {
+					$message = 'System labels cannot be deleted.';
+				} else {
+					$ownerId = (int) ($label->user_id ?? 0);
+					$isOwner = $ownerId > 0 && $ownerId === (int) $staff->id;
+					$canManage = $isOwner || $staff->canAccessAdminConsole() || $staff->hasEffectiveSuperAdminPrivileges();
+					if (!$canManage) {
+						return response()->json(['status' => 0, 'message' => 'Unauthorized: You can only delete your own custom email labels.']);
+					}
+					$response = DB::table($table)->where('id', $id)->delete();
+					if ($response) {
+						$status = 1;
+						$message = 'Record has been deleted successfully.';
+					} else {
+						$message = config('constants.server_error');
+					}
+				}
+			}
+			else if ($table === 'workflow_stages') {
+				$row = DB::table('workflow_stages')->where('id', $id)->first();
+				if ($row && WorkflowStageFreeze::isFrozen($row->name)) {
+					$message = 'This workflow stage is frozen and cannot be deleted.';
+				} else {
+					$response = DB::table($table)->where('id', $id)->delete();
+					if ($response) {
+						$status = 1;
+						$message = 'Record has been deleted successfully.';
+					} else {
+						$message = config('constants.server_error');
+					}
+				}
+			}
+			else {
+				$response = DB::table($table)->where('id', $id)->delete();
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been deleted successfully.';
+				} else {
+					$message = config('constants.server_error');
+				}
+			}
+		} else {
 			$message = config('constants.post_method');
 		}
+
 		return response()->json(['status' => $status, 'message' => $message]);
 	}
 
