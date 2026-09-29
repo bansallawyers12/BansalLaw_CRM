@@ -1,7 +1,8 @@
 {{-- Global personal-calendar reminder alert: polls on every CRM page (same UX as calendar-v6). --}}
 @php
     $_calReminderStaff = auth('admin')->user();
-    $_calReminderEnabled = $_calReminderStaff instanceof \App\Models\Staff
+    $_calReminderEnabled = (bool) config('booking_calendar.reminder_popup_enabled')
+        && $_calReminderStaff instanceof \App\Models\Staff
         && $_calReminderStaff->canAccessPersonalCalendar();
     $_calReminderCalendarUrl = $_calReminderEnabled
         ? route('booking.appointments.calendar.staff', ['staff' => $_calReminderStaff->id])
