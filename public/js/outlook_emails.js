@@ -5046,6 +5046,39 @@ function crmInitOutlookEmailsInterface() {
         return /<(?:!DOCTYPE|html|head|body|div|p|br|span|table|tr|td|th|ul|ol|li|a\s|img|font|center|h[1-6]|blockquote|pre|hr|style|meta|strong|em|b\b|i\b)\b/i.test(String(content));
     }
 
+    function buildEmailPreviewUnavailableBanner(reason) {
+        let detail = 'No content available.';
+        if (reason === 'pdf_missing') {
+            detail = 'The stored PDF preview is missing from storage. '
+                + 'Use Original email.msg or Parsed email.pdf under attachments if available.';
+        }
+        return '<div class="email-preview-unavailable-banner" role="alert">'
+            + '<strong>Email content could not be previewed</strong>'
+            + '<p>' + escapeHtml(detail) + '</p>'
+            + '</div>';
+    }
+
+    function renderReadingPaneBodyHtml(email, contentStr, options) {
+        const opts = options || {};
+        const hasVisibleBody = !!opts.hasVisibleBody;
+        const calendarSource = opts.calendarSource || '';
+        const isCalendarInvite = !!opts.isCalendarInvite;
+        const imageBodyHtml = opts.imageBodyHtml || '';
+        const hasCalendarInviteBody = !!opts.hasCalendarInviteBody;
+
+        let bodyHtml = hasVisibleBody ? (contentStr || '') : '';
+        if (hasCalendarInviteBody) {
+            bodyHtml = buildCalendarInviteBodyHtml(calendarSource || contentStr, email);
+        } else if (imageBodyHtml) {
+            bodyHtml = imageBodyHtml;
+        } else if (bodyHtml && emailContentLooksLikeHtml(bodyHtml)) {
+            bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
+        } else if (bodyHtml) {
+            bodyHtml = formatPlainTextEmailBody(bodyHtml);
+        }
+        return bodyHtml;
+    }
+
     function formatPlainTextEmailBody(text) {
         let escaped = escapeHtml(String(text || ''))
             .replace(/\r\n/g, '\n')
@@ -5647,17 +5680,25 @@ function crmInitOutlookEmailsInterface() {
                 hasVisibleBody = true;
             }
         }
-        const isHtmlBody = hasVisibleBody && emailContentLooksLikeHtml(contentStr);
+        const looksLikeHtmlBody = emailContentLooksLikeHtml(contentStr);
+        const isHtmlBody = hasVisibleBody && looksLikeHtmlBody;
         const hasCalendarInviteBody = isCalendarInvite || (!!calendarSource && !hasVisibleBody);
         const imageBodyHtml = (!hasVisibleBody && !hasCalendarInviteBody)
             ? buildImageAttachmentBodyHtml(email)
             : '';
+        const readingPaneBodyOpts = {
+            hasVisibleBody: hasVisibleBody,
+            calendarSource: calendarSource,
+            isCalendarInvite: isCalendarInvite,
+            imageBodyHtml: imageBodyHtml,
+            hasCalendarInviteBody: hasCalendarInviteBody
+        };
 
         // Prefer the rendered PDF when we only have plain text (no real HTML body) —
         // that matches a normal email view. Never auto-embed PDF for calendar invites
         // or image-only mail (those PDFs are often empty/black).
         let pdfToPreview = null;
-        if (!hasCalendarInviteBody && !imageBodyHtml) {
+        if (!hasCalendarInviteBody && !imageBodyHtml && !looksLikeHtmlBody) {
             if (!isHtmlBody && email.pdf_preview_url) {
                 pdfToPreview = email.pdf_preview_url;
             } else if (!hasVisibleBody) {
@@ -5680,30 +5721,23 @@ function crmInitOutlookEmailsInterface() {
             // leaves a blank reading pane when the stored body is empty.
             // Also: if Parsed email.pdf is missing from S3, /documents/preview returns
             // Laravel "404 | Not Found" inside this iframe — detect and fall back.
-            function buildUnavailableEmailBodyHtml(reason) {
-                let html = '<div style="font-family:system-ui,-apple-system,sans-serif;padding:16px;color:#374151;line-height:1.45;">'
-                    + '<p style="margin:0 0 8px;font-weight:600;">Email content could not be previewed.</p>';
-                if (reason === 'pdf_missing') {
-                    html += '<p style="margin:0 0 8px;">The stored PDF preview is missing from storage. '
-                        + 'Use <strong>Original email.msg</strong> or <strong>Parsed email.pdf</strong> under attachments if available.</p>';
-                } else {
-                    html += '<p style="margin:0 0 8px;">No content available.</p>';
-                }
-                const preview = String(contentStr || email.message || email.text_preview || '').trim();
-                if (preview && !isCalendarPayload(preview)) {
-                    html += formatPlainTextEmailBody(preview);
-                }
-                html += '</div>';
-                return html;
-            }
-
             function fallbackReadingPaneFromFailedPdf() {
                 iframe.onload = null;
                 iframe.removeAttribute('src');
                 iframe.classList.remove('read-body--pdf');
                 setReadingBodyMode(iframe, '');
                 iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
-                renderHtmlIframe(iframe, buildUnavailableEmailBodyHtml('pdf_missing'));
+
+                const bannerHtml = buildEmailPreviewUnavailableBanner('pdf_missing');
+                let bodyHtml = renderReadingPaneBodyHtml(email, contentStr, readingPaneBodyOpts);
+                if (!bodyHtml) {
+                    const previewFallback = String(email.text_preview || '').trim();
+                    if (previewFallback && !isCalendarPayload(previewFallback)
+                        && !emailContentLooksLikeHtml(previewFallback)) {
+                        bodyHtml = formatPlainTextEmailBody(previewFallback);
+                    }
+                }
+                renderHtmlIframe(iframe, bannerHtml + (bodyHtml || ''));
                 resetReadBodyIframeSizing(iframe);
             }
 
@@ -5754,15 +5788,9 @@ function crmInitOutlookEmailsInterface() {
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
             iframe.setAttribute('sandbox', READ_BODY_SANDBOX);
-            let bodyHtml = hasVisibleBody ? contentStr : '';
-            if (hasCalendarInviteBody) {
-                bodyHtml = buildCalendarInviteBodyHtml(calendarSource || contentStr, email);
-            } else if (imageBodyHtml) {
-                bodyHtml = imageBodyHtml;
-            } else if (bodyHtml && emailContentLooksLikeHtml(bodyHtml)) {
-                bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
-            } else if (bodyHtml) {
-                bodyHtml = formatPlainTextEmailBody(bodyHtml);
+            let bodyHtml = renderReadingPaneBodyHtml(email, contentStr, readingPaneBodyOpts);
+            if (!bodyHtml && looksLikeHtmlBody) {
+                bodyHtml = replaceCidReferencesInHtml(contentStr, email.attachments || []);
             }
             renderHtmlIframe(iframe, bodyHtml || '<p>No content available.</p>');
             resetReadBodyIframeSizing(iframe);
@@ -5834,6 +5862,9 @@ function crmInitOutlookEmailsInterface() {
             '.email-photo-card a{display:block;line-height:0;}' +
             '.email-photo-card img{max-width:100%!important;max-height:420px!important;width:auto!important;height:auto!important;object-fit:contain;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;}' +
             '.email-photo-card figcaption{margin-top:8px;font-size:12px;color:#64748b;word-break:break-all;}' +
+            '.email-preview-unavailable-banner{margin:0 0 16px;padding:10px 12px;border:1px solid #efb957;border-radius:8px;background:#fff7e2;color:#704300;}' +
+            '.email-preview-unavailable-banner strong{display:block;font-size:14px;margin:0 0 4px;}' +
+            '.email-preview-unavailable-banner p{margin:0;font-size:13px;line-height:1.45;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
 
