@@ -10,6 +10,7 @@ use App\Services\LegalFormDocxService;
 use App\Services\LegalFormFileStorage;
 use App\Services\LegalFormPreviewService;
 use App\Services\LegalFormScopeAiService;
+use App\Services\LegalFormUploadRestoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,8 @@ class LegalFormsController extends Controller
     private LegalFormScopeAiService $scopeAiService;
 
     private LegalFormFileStorage $fileStorage;
+
+    private LegalFormUploadRestoreService $uploadRestoreService;
 
     /** Document extensions allowed for legal form uploads (no images or executables). */
     private const UPLOAD_ALLOWED_EXTENSIONS = [
@@ -46,12 +49,14 @@ class LegalFormsController extends Controller
         LegalFormPreviewService $previewService,
         LegalFormScopeAiService $scopeAiService,
         LegalFormFileStorage $fileStorage,
+        LegalFormUploadRestoreService $uploadRestoreService,
     ) {
         $this->middleware('auth:admin');
         $this->docxService = $docxService;
         $this->previewService = $previewService;
         $this->scopeAiService = $scopeAiService;
         $this->fileStorage = $fileStorage;
+        $this->uploadRestoreService = $uploadRestoreService;
     }
 
     public function store(Request $request): JsonResponse
@@ -426,7 +431,7 @@ class LegalFormsController extends Controller
         }
     }
 
-    private function resolveUploadedRelativePath(ClientLegalForm $legalForm): ?string
+    private function resolveUploadedRelativePath(ClientLegalForm $legalForm, bool $attemptRestore = false): ?string
     {
         $candidates = array_values(array_unique(array_filter([
             $this->fileStorage->normalize($legalForm->pdf_path),
@@ -440,12 +445,30 @@ class LegalFormsController extends Controller
             }
         }
 
+        if ($attemptRestore && $this->uploadRestoreService->restoreForm($legalForm)) {
+            $legalForm->refresh();
+            foreach ($candidates as $path) {
+                if ($this->fileStorage->exists($path)) {
+                    return $path;
+                }
+            }
+            $retry = array_values(array_unique(array_filter([
+                $this->fileStorage->normalize($legalForm->pdf_path),
+                $this->fileStorage->normalize($legalForm->attachment_path),
+            ])));
+            foreach ($retry as $path) {
+                if ($this->fileStorage->exists($path)) {
+                    return $path;
+                }
+            }
+        }
+
         return $candidates[0] ?? null;
     }
 
     private function downloadUploadedFormFile(ClientLegalForm $legalForm)
     {
-        $relativePath = $this->resolveUploadedRelativePath($legalForm);
+        $relativePath = $this->resolveUploadedRelativePath($legalForm, true);
         if ($relativePath === null || ! $this->fileStorage->exists($relativePath)) {
             abort(404, 'Uploaded form file not found.');
         }
@@ -457,7 +480,7 @@ class LegalFormsController extends Controller
 
     private function previewUploadedFormFile(Request $request, ClientLegalForm $legalForm)
     {
-        $relativePath = $this->resolveUploadedRelativePath($legalForm);
+        $relativePath = $this->resolveUploadedRelativePath($legalForm, true);
         $filename = $legalForm->attachment_original_name
             ?: ($relativePath ? basename($relativePath) : 'uploaded-form');
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
@@ -469,7 +492,10 @@ class LegalFormsController extends Controller
         if ($relativePath === null || ! $this->fileStorage->exists($relativePath)) {
             if ($request->boolean('embed')) {
                 return response(
-                    $this->legalFormPreviewErrorHtml('The uploaded file could not be found in storage. Please re-upload the form.'),
+                    $this->legalFormPreviewErrorHtml(
+                        'The uploaded file could not be found in storage. '
+                        . 'Delete this entry from Saved Forms, then use Upload to add the document again.'
+                    ),
                     404
                 )->header('Content-Type', 'text/html; charset=UTF-8');
             }
@@ -676,9 +702,16 @@ class LegalFormsController extends Controller
 
         $paginator = $query->orderByDesc('created_at')->paginate($perPage);
 
+        $forms = collect($paginator->items())->map(function (ClientLegalForm $form) {
+            $payload = $form->toArray();
+            $payload['upload_file_available'] = $this->uploadRestoreService->uploadFileAvailable($form);
+
+            return $payload;
+        })->values()->all();
+
         return response()->json([
             'success' => true,
-            'forms' => $paginator->items(),
+            'forms' => $forms,
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
             'total' => $paginator->total(),

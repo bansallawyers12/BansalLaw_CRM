@@ -5416,13 +5416,21 @@ class ClientsController extends Controller
             $path = substr($path, strlen($bucket) + 1);
         }
 
-        return \Illuminate\Support\Facades\Cache::remember('doc_s3_exists_' . $document->id, 86400, function () use ($path) {
-            try {
-                return Storage::disk('s3')->exists($path);
-            } catch (\Throwable) {
-                return false;
-            }
-        });
+        $cacheKey = 'doc_s3_exists_' . $document->id;
+        $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if ($cached !== null) {
+            return (bool) $cached;
+        }
+
+        try {
+            $exists = Storage::disk('s3')->exists($path);
+        } catch (\Throwable) {
+            $exists = false;
+        }
+
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $exists, $exists ? 86400 : 300);
+
+        return $exists;
     }
 
     /**
@@ -5658,7 +5666,7 @@ class ClientsController extends Controller
             }
 
             // Reuse generated PDF viewer document when available (no re-render).
-            $pdfPreviewUrl = $this->resolveEmailPdfPreviewUrl($emailLog);
+            $pdfPreviewUrl = $this->resolveEmailPdfPreviewUrl($emailLog, true);
             if ($pdfPreviewUrl !== '') {
                 return response()->json([
                     'success' => true,
@@ -6168,7 +6176,7 @@ class ClientsController extends Controller
                     ? $this->resolveEmailMsgDownloadUrl($email)
                     : '';
                 $email->pdf_file_url = ! empty($email->pdf_doc_id)
-                    ? $this->resolveEmailPdfPreviewUrl($email)
+                    ? $this->resolveEmailPdfPreviewUrl($email, true)
                     : '';
                 $email->pdf_download_url = ! empty($email->pdf_doc_id)
                     ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
@@ -6216,7 +6224,7 @@ class ClientsController extends Controller
             }
 
             $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
-            $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email);
+            $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email, true);
             $email->pdf_download_url = ! empty($email->pdf_doc_id)
                 ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
                 : '';

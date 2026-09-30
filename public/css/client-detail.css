@@ -3318,6 +3318,20 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     vertical-align: middle;
 }
 
+#legalforms-tab .legal-form-missing-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #9a3412;
+    background: #ffedd5;
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
 #legalforms-tab .legal-forms-list-panel .legal-forms-list,
 #legalforms-tab .legal-forms-list-panel .legal-forms-card-list {
     flex: 1 1 auto;

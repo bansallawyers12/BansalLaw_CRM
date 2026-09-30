@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\Admin;
@@ -16,7 +17,9 @@ use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\ClientMatter;
+use App\Services\EmailSync\EmailLogZohoRestoreService;
 use App\Services\EmailSync\IncomingEmailSyncService;
+use App\Services\EmailPdfBackfillService;
 // use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
@@ -2000,6 +2003,38 @@ class ClientDocumentsController extends Controller
     }
 
     /**
+     * When an email-linked document row exists but S3 bytes are missing, try Zoho IMAP or .msg backfill once.
+     */
+    private function attemptRepairMissingEmailDocument(Document $document): bool
+    {
+        $emailLog = EmailLog::query()
+            ->where(function ($q) use ($document) {
+                $q->where('pdf_doc_id', $document->id)
+                    ->orWhere('uploaded_doc_id', $document->id);
+            })
+            ->first();
+
+        if (! $emailLog) {
+            return false;
+        }
+
+        if ((int) ($emailLog->imap_uid ?? 0) > 0) {
+            $result = app(EmailLogZohoRestoreService::class)->restore($emailLog);
+
+            return ! empty($result['success']);
+        }
+
+        if (($emailLog->conversion_type ?? '') === 'conversion_email_fetch'
+            && ! empty($emailLog->uploaded_doc_id)) {
+            $backfill = app(EmailPdfBackfillService::class)->backfillEmailLog($emailLog, false, true);
+
+            return ($backfill['status'] ?? '') === 'success';
+        }
+
+        return false;
+    }
+
+    /**
      * Preview document in browser. Use ?embed=1 for in-page iframe/img preview (streams via app).
      * Without embed, S3 files redirect to a short-lived presigned URL (works in a new tab).
      */
@@ -2020,6 +2055,13 @@ class ClientDocumentsController extends Controller
         }
 
         $s3Key = $this->resolveS3KeyForDocument($document);
+        if ($s3Key === null && ! $request->boolean('repair_attempted')) {
+            if ($this->attemptRepairMissingEmailDocument($document)) {
+                Cache::forget('doc_s3_exists_' . $document->id);
+                $document->refresh();
+                $s3Key = $this->resolveS3KeyForDocument($document);
+            }
+        }
         if ($s3Key === null) {
             // Embed previews (email reading pane iframe) should not show the raw Laravel
             // "404 | Not Found" chrome — return a small HTML error the UI can detect/replace.

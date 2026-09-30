@@ -4760,7 +4760,7 @@ function crmInitOutlookEmailsInterface() {
                 downloadUrl: email.pdf_download_url || email.pdf_file_url,
                 previewUrl: email.is_calendar_invite
                     ? null
-                    : (email.pdf_preview_url || email.pdf_file_url),
+                    : (email.pdf_preview_url || null),
                 icon: 'fa-file-pdf email-attachment-icon--pdf'
             });
         }
