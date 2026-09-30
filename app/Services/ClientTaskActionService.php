@@ -169,7 +169,15 @@ class ClientTaskActionService
                 $clientLabel = $this->taskClientDisplayName($targetClient);
             }
 
-            $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
+            $assignees = $requestData['rem_cat'] ?? [];
+            if (! is_array($assignees)) {
+                $assignees = ! empty($assignees) ? [$assignees] : [];
+            }
+            $assignees = array_values(array_filter($assignees));
+            if (empty($assignees)) {
+                return response()->json(['success' => false, 'message' => 'At least one assignee must be selected'], 422);
+            }
+
             $mirroredToClientTask = false;
             $taskSync = app(ClientMatterTaskSyncService::class);
 
@@ -193,10 +201,23 @@ class ClientTaskActionService
                     $action->action_date = $requestData['followup_datetime'];
                 }
 
+                if (isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != '') {
+                    $action->note_deadline = $requestData['note_deadline_checkbox'] == 1
+                        ? ($requestData['note_deadline'] ?? null)
+                        : null;
+                } else {
+                    $action->note_deadline = null;
+                }
+
                 if ($action->save()) {
                     if ($clientId && ! $mirroredToClientTask) {
                         $taskSync->mirrorTaskNoteToClientTask($action);
                         $mirroredToClientTask = true;
+                    }
+
+                    if ($clientId && isset($targetClient) && isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                        $targetClient->followup_date = $requestData['followup_datetime'];
+                        $targetClient->save();
                     }
 
                     $notification = new Notification;

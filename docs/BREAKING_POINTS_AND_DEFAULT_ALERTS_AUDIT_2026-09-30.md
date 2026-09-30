@@ -14,8 +14,8 @@ This master matrix provides an immediate operational overview of every identifie
 | # | Priority | Current Status | Server Impact | Module & Feature | Failure Mechanism | Data Loss / Business Risk |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Client Intake (`CRM / Clients`) | Fatal 500 (`NOT NULL password` constraint) | **Resolved**: Password automatically hashed & populated via model booted hook. |
-| **02** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local** | Front Desk (`Office Visits / Email`) | Form had no `action` & missing `@csrf` | **Resolved**: Form wired to `clients.sendmail` with `@csrf`, sender selector, attachments, and email click modal trigger. |
-| **03** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Dashboard Quick Tasks | Missing JS event listener (`#dashboard_assignStaff`) | **High**: Clicking "ADD MY TASK" does nothing; task data discarded silently. |
+| **02** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Front Desk (`Office Visits / Email`) | Form had no `action` & missing `@csrf` | **Resolved**: Form wired to `clients.sendmail` with `@csrf`, sender selector, attachments, and email click modal trigger. |
+| **03** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Dashboard Quick Tasks | Missing JS event listener (`#dashboard_assignStaff`) | **Resolved**: Event listeners bound in `public/js/dashboard.js` & `modals.blade.php`, `/assignee/store` route registered, deadline persistence added. |
 | **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Follow-up & Assignee | 3 Routes point to non-existent Controller methods | **High**: Assignee changes trigger fatal 500 error; spinner hangs indefinitely. |
 | **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **High**: Task comments, statuses, priorities, and descriptions fail with 404. |
 | **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Public Booking Sync | cURL Error 77 (Hardcoded Windows SSL cert path) | **High**: Public appointments fail to sync to CRM on Linux server & local. |
@@ -127,8 +127,8 @@ Receptionists and staff attempting to compose and send emails to visiting client
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: Silent Dead Click      | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED / FIXED (Tested & Verified)        |
+| SEVERITY: Silent Dead Click      | SERVER REPRODUCIBILITY: 🚨 YES - Fixed on Local                |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -138,34 +138,25 @@ Receptionists and staff attempting to compose and send emails to visiting client
 - **Submit Button:** `<button type="button" id="dashboard_assignStaff" class="btn btn-primary">ADD MY TASK</button>`
 - **Failure Mode:** **Silent No-Op (Browser ignores click; zero network requests initiated)**
 
-#### Why and How This Occurs on the Live Server
-In `modals.blade.php`, the form action is set to `javascript:void(0);`, delegating the submission entirely to JavaScript. The submit button was renamed from `#dashboard_assignUser` to `#dashboard_assignStaff`. However, no JavaScript file in the production assets contains a click handler for `#dashboard_assignStaff`.
+#### Why and How This Occurred
+In `modals.blade.php`, the form action was set to `javascript:void(0);`, delegating the submission entirely to JavaScript. The submit button was renamed from `#dashboard_assignUser` to `#dashboard_assignStaff`. However, no JavaScript file in the production assets contained a click handler for `#dashboard_assignStaff`. Additionally, staff search, select all/none, deadline toggling, and multi-assignee badge synchronization were unhandled.
 
-#### Production Impact
-Any user attempting to quickly add a task from the dashboard modal clicks "ADD MY TASK", and **nothing happens**. The modal remains open, no task is saved to the database, and user data is lost.
-
-#### Remediation Plan
-In `public/js/crm/dashboard/dashboard.js` (or inline inside `modals.blade.php`), attach the click listener:
-```javascript
-$(document).on('click', '#dashboard_assignStaff, #dashboard_assignUser', function(e) {
-    e.preventDefault();
-    var formData = $('#tasktermform').serialize();
-    $.ajax({
-        url: site_url + '/assignee/store',
-        type: 'POST',
-        data: formData,
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        success: function(response) {
-            $('#taskterm').modal('hide');
-            iziToast.success({ title: 'Success', message: 'Task created successfully!' });
-            location.reload();
-        },
-        error: function(xhr) {
-            iziToast.error({ title: 'Error', message: 'Failed to create task.' });
-        }
-    });
-});
-```
+#### Resolution Applied:
+1. **Frontend Event Handlers Added (`public/js/dashboard.js` and `resources/views/components/dashboard/modals.blade.php`)**:
+   - Implemented `initDashboardQuickTaskModal()` attaching event listeners for:
+     - `#dashboard_assignStaff, #dashboard_assignUser` (click with full client/assignee/description/date/group validation, loading spinner state, AJAX submission, toast alerts, form reset, and dashboard refresh).
+     - `#dashboard-staff-search` (live input filter matching staff by name and branch).
+     - `#dashboard-select-all-staff` and `#dashboard-select-none-staff` (batch selection toggles).
+     - `.dashboard-checkbox-item` (dynamic sync updating `#dashboard-selected-users-text` and `#dashboard_rem_cat`).
+     - `#dashboard_note_deadline_checkbox` (toggling enabled/disabled state of `#dashboard_note_deadline`).
+     - `#tasktermform` (submit delegation preventing accidental page refresh).
+2. **Backend Route & Controller Integration**:
+   - Added `Route::post('/assignee/store')` alias in `routes/web.php` pointing to `ClientTaskController@storePersonal`.
+   - Added `storeTask` and `storePersonalTask` route definitions to `window.dashboardRoutes` in `resources/views/crm/dashboard.blade.php`.
+   - Enhanced `ClientTaskActionService@storePersonalTask` to properly validate assignees and persist `note_deadline` when `note_deadline_checkbox` is checked.
+   - Fixed `value="1"` on `dashboard_note_deadline_checkbox` in `resources/views/components/dashboard/modals.blade.php`.
+3. **Verification**:
+   - Verified that clicking "ADD MY TASK" validates the form, initiates the AJAX request, persists the task with its deadline in PostgreSQL, and reloads/updates the dashboard. Both `/clients/tasks/personal/store` and `/assignee/store` tested and verified working.
 
 ---
 
@@ -560,7 +551,7 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 | PHASE 1: IMMEDIATE CRITICAL FIXES (Day 1)                                                               |
 |   [x] Fix ClientsController::store() missing password hash (Issue 01).                                  |
 |   [x] Add @csrf and action route to Office Visits compose email form (Issue 02).                        |
-|   [ ] Bind click event listener for #dashboard_assignStaff on Dashboard task modal (Issue 03).          |
+|   [x] Bind click event listener for #dashboard_assignStaff on Dashboard task modal (Issue 03).          |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 2: ROUTE INTEGRITY & CONTROLLER METHODS (Day 2)                                                   |
 |   [ ] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |

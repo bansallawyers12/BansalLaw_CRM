@@ -119,6 +119,9 @@ function initializeEventHandlers() {
         dashboardPendingTaskId = null;
         dashboardPendingUniqueGroupId = null;
     });
+
+    // Dashboard Quick Tasks Modal (#create_task_modal / #tasktermform)
+    initDashboardQuickTaskModal();
 }
 
 function extendDeadline() {
@@ -636,3 +639,267 @@ $(document).on('keydown', '.todo-task-content[role="button"]', function (e) {
 $(document).on('click', '.task-detail-checkbox', function(e) {
     e.stopPropagation();
 });
+
+/**
+ * Dashboard Quick Tasks Modal (#create_task_modal / #tasktermform)
+ */
+function initDashboardQuickTaskModal() {
+    // Filter staff members by search query in modal
+    $(document).off('input.dashboardTask', '#dashboard-staff-search').on('input.dashboardTask', '#dashboard-staff-search', function(e) {
+        e.stopPropagation();
+        var query = $(this).val().toLowerCase().trim();
+        $('#dashboard-staff-list .modern-staff-item').each(function() {
+            var itemText = ($(this).data('name') || $(this).text()).toLowerCase();
+            if (!query || itemText.indexOf(query) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // Select all staff
+    $(document).off('click.dashboardTask', '#dashboard-select-all-staff').on('click.dashboardTask', '#dashboard-select-all-staff', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('#dashboard-staff-list .modern-staff-item:visible .dashboard-checkbox-item').prop('checked', true);
+        syncDashboardQuickTaskAssignees();
+    });
+
+    // Select none staff
+    $(document).off('click.dashboardTask', '#dashboard-select-none-staff').on('click.dashboardTask', '#dashboard-select-none-staff', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('#dashboard-staff-list .dashboard-checkbox-item').prop('checked', false);
+        syncDashboardQuickTaskAssignees();
+    });
+
+    // Individual staff checkbox change
+    $(document).off('change.dashboardTask', '.dashboard-checkbox-item').on('change.dashboardTask', '.dashboard-checkbox-item', function() {
+        syncDashboardQuickTaskAssignees();
+    });
+
+    // Toggle deadline date field enabled / disabled
+    $(document).off('change.dashboardTask', '#dashboard_note_deadline_checkbox').on('change.dashboardTask', '#dashboard_note_deadline_checkbox', function() {
+        var isChecked = $(this).is(':checked');
+        $('#dashboard_note_deadline').prop('disabled', !isChecked);
+        $(this).val(isChecked ? '1' : '');
+    });
+
+    // Clear validation error message on input change
+    $(document).off('change.dashboardTask input.dashboardTask', '#dashboard_client_select, #dashboard_assignnote, #dashboard_popoverdatetime, #dashboard_task_group').on('change.dashboardTask input.dashboardTask', '#dashboard_client_select, #dashboard_assignnote, #dashboard_popoverdatetime, #dashboard_task_group', function() {
+        var $form = $(this).closest('#tasktermform');
+        if ($(this).attr('id') === 'dashboard_client_select') {
+            $form.find('.client_error').hide().text('');
+        } else if ($(this).attr('id') === 'dashboard_assignnote') {
+            $form.find('.note_error').hide().text('');
+        } else if ($(this).attr('id') === 'dashboard_popoverdatetime') {
+            $form.find('.date_error').hide().text('');
+        } else if ($(this).attr('id') === 'dashboard_task_group') {
+            $form.find('.group_error').hide().text('');
+        }
+    });
+
+    // Reset validation errors when modal is opened
+    $(document).off('show.bs.modal.dashboardTask', '#create_task_modal, #taskterm').on('show.bs.modal.dashboardTask', '#create_task_modal, #taskterm', function() {
+        var $form = $('#tasktermform');
+        if ($form.length) {
+            $form.find('.custom-error').hide().text('');
+        }
+    });
+
+    // Form submission prevention & delegation
+    $(document).off('submit.dashboardTask', '#tasktermform').on('submit.dashboardTask', '#tasktermform', function(e) {
+        e.preventDefault();
+        $('#dashboard_assignStaff, #dashboard_assignUser').trigger('click');
+    });
+
+    // Submit button click handler
+    $(document).off('click.dashboardTask', '#dashboard_assignStaff, #dashboard_assignUser').on('click.dashboardTask', '#dashboard_assignStaff, #dashboard_assignUser', function(e) {
+        e.preventDefault();
+        submitDashboardQuickTask($(this));
+    });
+}
+
+function syncDashboardQuickTaskAssignees() {
+    var checkedBoxes = $('#dashboard-staff-list .dashboard-checkbox-item:checked');
+    var selectedVals = [];
+    var names = [];
+    checkedBoxes.each(function() {
+        selectedVals.push($(this).val());
+        var name = $(this).closest('.modern-staff-item').find('.staff-name').text().trim() || $(this).data('name') || '';
+        if (name) {
+            names.push(name);
+        }
+    });
+
+    $('#dashboard_rem_cat').val(selectedVals);
+
+    var $label = $('#dashboard-selected-users-text');
+    var $btn = $('#dashboard_dropdownMenuButton');
+    if (selectedVals.length === 0) {
+        $label.text('SELECT ASSIGNEES');
+        $btn.removeClass('has-selection');
+    } else if (selectedVals.length === 1) {
+        $label.text(names[0] || '1 Staff Selected');
+        $btn.addClass('has-selection');
+    } else {
+        $label.text(selectedVals.length + ' Staff Selected');
+        $btn.addClass('has-selection');
+    }
+
+    if (selectedVals.length > 0) {
+        $('#tasktermform .assignee_error').hide().text('');
+    }
+}
+
+function submitDashboardQuickTask($btn) {
+    var $form = $('#tasktermform');
+    if (!$form.length) {
+        return;
+    }
+
+    // Reset error spans
+    $form.find('.custom-error').hide().text('');
+
+    var isValid = true;
+    var $firstInvalid = null;
+
+    // Validate client
+    var clientId = $('#dashboard_client_select').val();
+    if (!clientId) {
+        $form.find('.client_error').text('Please select a client or lead.').show();
+        isValid = false;
+        if (!$firstInvalid) $firstInvalid = $('#dashboard_client_select');
+    }
+
+    // Validate assignees
+    var assignees = $('#dashboard_rem_cat').val() || [];
+    if (!Array.isArray(assignees)) {
+        assignees = assignees ? [assignees] : [];
+    }
+    if (assignees.length === 0) {
+        $('#dashboard-staff-list .dashboard-checkbox-item:checked').each(function() {
+            assignees.push($(this).val());
+        });
+        $('#dashboard_rem_cat').val(assignees);
+    }
+    if (assignees.length === 0) {
+        $form.find('.assignee_error').text('Please select at least one assignee.').show();
+        isValid = false;
+        if (!$firstInvalid) $firstInvalid = $('#dashboard_dropdownMenuButton');
+    }
+
+    // Validate description
+    var description = $('#dashboard_assignnote').val();
+    if (!description || !description.trim()) {
+        $form.find('.note_error').text('Task description is required.').show();
+        isValid = false;
+        if (!$firstInvalid) $firstInvalid = $('#dashboard_assignnote');
+    }
+
+    // Validate date
+    var followupDate = $('#dashboard_popoverdatetime').val();
+    if (!followupDate) {
+        $form.find('.date_error').text('Date is required.').show();
+        isValid = false;
+        if (!$firstInvalid) $firstInvalid = $('#dashboard_popoverdatetime');
+    }
+
+    // Validate group
+    var taskGroup = $('#dashboard_task_group').val();
+    if (!taskGroup) {
+        $form.find('.group_error').text('Please select a group.').show();
+        isValid = false;
+        if (!$firstInvalid) $firstInvalid = $('#dashboard_task_group');
+    }
+
+    if (!isValid) {
+        if ($firstInvalid) {
+            $firstInvalid.focus();
+        }
+        return false;
+    }
+
+    var storeUrl = (window.dashboardRoutes && (window.dashboardRoutes.storeTask || window.dashboardRoutes.storePersonalTask))
+        || '/clients/tasks/personal/store';
+
+    var originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> SAVING...');
+
+    var formData = $form.serialize();
+
+    $.ajax({
+        url: storeUrl,
+        type: 'POST',
+        data: formData,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        dataType: 'json',
+        success: function(response) {
+            $btn.prop('disabled', false).html(originalHtml);
+
+            if (response && (response.success || response.status)) {
+                $('#create_task_modal, #taskterm').modal('hide');
+
+                $form[0].reset();
+                $('#dashboard-staff-list .dashboard-checkbox-item').prop('checked', false);
+                syncDashboardQuickTaskAssignees();
+                $('#dashboard_note_deadline').prop('disabled', true);
+
+                var successMsg = response.message || 'Task created successfully!';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.success({
+                        title: 'Success',
+                        message: successMsg,
+                        position: 'topRight'
+                    });
+                } else if (typeof showNotification === 'function') {
+                    showNotification(successMsg, 'success');
+                } else if (typeof window.crmToast === 'function') {
+                    window.crmToast(successMsg, 'success');
+                }
+
+                if (typeof window.refreshDashboard === 'function') {
+                    setTimeout(function() {
+                        window.refreshDashboard();
+                    }, 400);
+                } else {
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                }
+            } else {
+                var err = (response && response.message) || 'Failed to create task.';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: err, position: 'topRight' });
+                } else if (typeof showNotification === 'function') {
+                    showNotification(err, 'error');
+                } else {
+                    alert(err);
+                }
+            }
+        },
+        error: function(xhr) {
+            $btn.prop('disabled', false).html(originalHtml);
+
+            var errorMsg = 'Failed to create task.';
+            if (xhr && xhr.responseJSON) {
+                if (xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                }
+            }
+
+            if (typeof iziToast !== 'undefined') {
+                iziToast.error({ title: 'Error', message: errorMsg, position: 'topRight' });
+            } else if (typeof showNotification === 'function') {
+                showNotification(errorMsg, 'error');
+            } else {
+                alert(errorMsg);
+            }
+        }
+    });
+}

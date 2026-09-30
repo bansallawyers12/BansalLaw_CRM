@@ -277,6 +277,7 @@ Route::middleware(['auth:admin'])->group(function () {
 
     // Get assigne list
     Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
+    Route::post('/assignee/store', [\App\Http\Controllers\CRM\Clients\ClientTaskController::class, 'storePersonal'])->name('assignee.store');
 
     Route::post('/tasks/update', [AssigneeController::class, 'updateTask'])->name('tasks.update');
     Route::get('/tasks/counts', [AssigneeController::class, 'getTaskCounts'])->name('tasks.counts');

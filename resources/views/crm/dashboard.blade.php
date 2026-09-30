@@ -220,7 +220,9 @@
         updateTaskCompleted: "{{ route('dashboard.tasks.complete') }}",
         dashboardTasks: "{{ route('dashboard.tasks') }}",
         dashboardCases: "{{ route('dashboard.cases-requiring-attention') }}",
-        assigneeAction: "{{ route('assignee.tasks') }}"
+        assigneeAction: "{{ route('assignee.tasks') }}",
+        storeTask: "{{ route('clients.tasks.personal.store') }}",
+        storePersonalTask: "{{ route('clients.tasks.personal.store') }}"
     };
 
     window.dashboardData = {};
