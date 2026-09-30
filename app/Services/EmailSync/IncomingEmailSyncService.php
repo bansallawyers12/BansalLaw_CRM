@@ -464,6 +464,7 @@ class IncomingEmailSyncService
         // Already-imported messages are skipped as duplicates and the cursor still advances.
         $cursorUid = $since !== null ? 0 : $afterUid;
         $maxUid = $afterUid;
+        $lowestFailedUid = null;
 
         for ($batch = 0; $batch < $maxBatches; $batch++) {
             try {
@@ -516,10 +517,12 @@ class IncomingEmailSyncService
                     } else {
                         $result['failed']++;
                         $result['errors'][] = $importResult['error'] ?? ('Import failed for UID ' . $uid);
+                        $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
                     }
                 } catch (Throwable $e) {
                     $result['failed']++;
                     $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
+                    $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
                     InboxSyncLogger::error('Synced email import failed', [
                         'mailbox' => $mailbox->email,
                         'uid' => $uid,
@@ -533,6 +536,12 @@ class IncomingEmailSyncService
             $fetchedCount = count($messages);
             unset($messages);
 
+            if ($lowestFailedUid !== null) {
+                $cap = max($afterUid, $lowestFailedUid - 1);
+                $batchHighestUid = min($batchHighestUid, $cap);
+                $maxUid = min($maxUid, $cap);
+            }
+
             if ($batchHighestUid <= $cursorUid) {
                 break;
             }
@@ -543,9 +552,23 @@ class IncomingEmailSyncService
             }
         }
 
-        $result['last_uid'] = max($afterUid, $maxUid);
+        $result['last_uid'] = self::clampImapWatermarkAfterFailures($afterUid, $maxUid, $lowestFailedUid);
 
         return $result;
+    }
+
+    /**
+     * Do not advance the IMAP cursor past a failed UID while higher UIDs imported in the same run.
+     */
+    public static function clampImapWatermarkAfterFailures(int $afterUid, int $maxUid, ?int $lowestFailedUid): int
+    {
+        if ($lowestFailedUid === null || $lowestFailedUid <= 0) {
+            return max($afterUid, $maxUid);
+        }
+
+        $cap = max($afterUid, $lowestFailedUid - 1);
+
+        return max($afterUid, min($maxUid, $cap));
     }
 
     /**
