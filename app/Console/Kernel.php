@@ -51,6 +51,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\MarkMigrationsAsRun',
 
         '\App\Console\Commands\IssueMcpStaffTokenCommand',
+        '\App\Console\Commands\PromotePendingUploadsToS3',
     ];
 
     /**
@@ -140,6 +141,12 @@ class Kernel extends ConsoleKernel
                 }
             }
         }
+
+        $promoteMinutes = max(5, (int) config('crm.durable_storage.promote_schedule_minutes', 15));
+        $schedule->command('storage:promote-pending-to-s3')
+            ->cron('*/'.$promoteMinutes.' * * * *')
+            ->withoutOverlapping(10)
+            ->appendOutputTo(storage_path('logs/durable-storage-promote.log'));
     }
 
     /**

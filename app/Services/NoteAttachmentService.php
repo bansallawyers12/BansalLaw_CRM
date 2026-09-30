@@ -76,19 +76,22 @@ class NoteAttachmentService
             return null;
         }
 
-        $disk = self::disk();
+        $durable = app(CrmDurableStorage::class);
         $dir = 'note_attachments/' . (int) $note->client_id . '/' . (int) $note->id;
         $matterDocumentRefresh = null;
 
         foreach ($files as $file) {
             $ext = strtolower((string) $file->getClientOriginalExtension());
             $storedName = Str::uuid()->toString() . ($ext !== '' ? '.' . $ext : '');
-            $path = $disk->putFileAs($dir, $file, $storedName);
+            $path = $dir . '/' . $storedName;
 
-            if (! $path) {
+            try {
+                $durable->putUploadedFile($file, $path);
+            } catch (\Throwable $e) {
                 Log::warning('Note attachment store failed', [
                     'note_id' => $note->id,
                     'original' => $file->getClientOriginalName(),
+                    'error' => $e->getMessage(),
                 ]);
                 continue;
             }
@@ -143,10 +146,7 @@ class NoteAttachmentService
         }
 
         try {
-            $disk = self::disk();
-            if ($disk->exists($path)) {
-                $disk->delete($path);
-            }
+            app(CrmDurableStorage::class)->delete($path);
         } catch (\Throwable $e) {
             Log::warning('Could not delete note attachment file: ' . $e->getMessage(), [
                 'path' => $path,
@@ -161,12 +161,12 @@ class NoteAttachmentService
             return null;
         }
 
-        $disk = self::disk();
-        if (! $disk->exists($path)) {
-            return null;
-        }
+        $resolved = app(CrmDurableStorage::class)->resolveReadablePath(
+            $path,
+            (string) $attachment->extension
+        );
 
-        return $disk->path($path);
+        return $resolved['path'] ?? null;
     }
 
     /**

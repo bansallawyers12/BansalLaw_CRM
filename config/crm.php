@@ -537,6 +537,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Durable uploads (S3 primary + local mirror + auto-promote)
+    |--------------------------------------------------------------------------
+    */
+    'durable_storage' => [
+        'promote_prefixes' => [
+            'legal_forms/',
+            'note_attachments/',
+            'office_receipt_uploads/',
+            'conversion_email_fetch/',
+            'email_uploads/',
+        ],
+        'promote_skip_prefixes' => [
+            'document-uploads/',
+            'framework/',
+            'logs/',
+            'temp/',
+        ],
+        'promote_scan_full_app' => filter_var(env('CRM_DURABLE_PROMOTE_FULL_SCAN', true), FILTER_VALIDATE_BOOLEAN),
+        'promote_schedule_minutes' => max(5, (int) env('CRM_DURABLE_PROMOTE_SCHEDULE_MINUTES', 15)),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Documents (folder lists + bulk non-video S3 upload)
     |--------------------------------------------------------------------------
     |

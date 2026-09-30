@@ -2194,6 +2194,18 @@ class ClientDocumentsController extends Controller
                     }
                 }
 
+                if ($this->documentUsesLocalMyfile($document)) {
+                    return app(\App\Services\CrmDurableStorage::class)->downloadResponse(
+                        $s3Key,
+                        $filename,
+                        [
+                            'Content-Type' => $mime,
+                            'Content-Disposition' => $inlineDisposition,
+                        ],
+                        false
+                    );
+                }
+
                 return $this->s3Disk()->response($s3Key, $filename, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => $inlineDisposition,
@@ -2224,11 +2236,16 @@ class ClientDocumentsController extends Controller
             }
         }
 
-        if (! $this->documentsDiskUsesS3Driver()) {
-            return $this->s3Disk()->response($s3Key, $downloadFilename, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => $contentDisposition,
-            ]);
+        if ($this->documentUsesLocalMyfile($document) || ! $this->documentsDiskUsesS3Driver()) {
+            return app(\App\Services\CrmDurableStorage::class)->downloadResponse(
+                $s3Key,
+                $downloadFilename,
+                [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $contentDisposition,
+                ],
+                $request->boolean('download')
+            );
         }
 
         try {
@@ -2707,9 +2724,23 @@ class ClientDocumentsController extends Controller
     /**
      * Resolve S3 object key for a document (full URL in myfile, or legacy path via Admin.client_id).
      */
+    private function documentUsesLocalMyfile(Document $document): bool
+    {
+        return \App\Services\CrmDurableStorage::isLocalMyfile((string) ($document->myfile ?? ''));
+    }
+
     private function resolveS3KeyForDocument(Document $document): ?string
     {
         $myfile = (string) ($document->myfile ?? '');
+        if (\App\Services\CrmDurableStorage::isLocalMyfile($myfile)) {
+            $key = \App\Services\CrmDurableStorage::parseLocalMyfileKey($myfile);
+            if ($key !== null && app(\App\Services\CrmDurableStorage::class)->localMirrorExists($key)) {
+                return $key;
+            }
+
+            return null;
+        }
+
         if ($myfile !== '' && str_starts_with($myfile, 'http')) {
             $s3Key = $this->normalizeS3KeyFromMyfileUrl($myfile);
         } else {
@@ -2795,6 +2826,12 @@ class ClientDocumentsController extends Controller
      */
     private function readDocumentFileContent(Document $document, string $primaryKey): ?string
     {
+        $durable = app(\App\Services\CrmDurableStorage::class);
+
+        if ($this->documentUsesLocalMyfile($document)) {
+            return $durable->getLocalBytes($primaryKey);
+        }
+
         $candidateKeys = [$primaryKey];
 
         $legacyKey = $this->buildLegacyS3KeyForDocument($document);
@@ -2832,7 +2869,7 @@ class ClientDocumentsController extends Controller
             }
         }
 
-        return null;
+        return $durable->getLocalBytes($primaryKey);
     }
 
     private function mimeTypeForS3Key(string $s3Key): string
@@ -2887,6 +2924,9 @@ class ClientDocumentsController extends Controller
 
             return abort($status, $message);
         };
+
+        $document = null;
+        $matchingDoc = null;
 
         try {
             if ($documentId) {
@@ -2968,6 +3008,25 @@ class ClientDocumentsController extends Controller
             }
 
             $mime = $this->mimeTypeForS3Key($s3Key);
+
+            $localOnlyDocument = (isset($document) && $document instanceof Document && $this->documentUsesLocalMyfile($document))
+                || (isset($matchingDoc) && $matchingDoc instanceof Document && $this->documentUsesLocalMyfile($matchingDoc));
+
+            if ($localOnlyDocument) {
+                if ($wantsJson) {
+                    return response()->json([
+                        'status' => true,
+                        'use_form' => true,
+                        'filename' => $filename,
+                    ]);
+                }
+
+                return app(\App\Services\CrmDurableStorage::class)->downloadResponse(
+                    $s3Key,
+                    $filename,
+                    ['Content-Type' => $mime]
+                );
+            }
 
             if (! $this->documentsDiskUsesS3Driver()) {
                 if ($wantsJson) {

@@ -2369,19 +2369,9 @@ class ClientAccountsController extends Controller
            $name = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
            $myfileUrl = null;
-           try {
-               Storage::disk('s3')->put($filePath, file_get_contents($file->getRealPath()));
-               $myfileUrl = $this->s3PublicUrl($filePath);
-           } catch (\Throwable $e) {
-               Log::warning('Office receipt document S3 upload failed; storing locally', [
-                   'error' => $e->getMessage(),
-                   'path' => $filePath,
-               ]);
-               $localRel = 'office_receipt_uploads/' . uniqid('doc_', true) . '_' . $name;
-               Storage::disk('local')->put($localRel, file_get_contents($file->getRealPath()));
-               $myfileUrl = Storage::disk('local')->path($localRel);
-               $filePath = $localRel;
-           }
+           $durable = app(\App\Services\CrmDurableStorage::class);
+           $durable->putUploadedFile($file, $filePath);
+           $myfileUrl = $durable->myfileValue($filePath);
            
            $obj = new \App\Models\Document;
            $obj->file_name = $nameWithoutExtension;

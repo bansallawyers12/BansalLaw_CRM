@@ -18,32 +18,16 @@ class ClientDocumentFileUploadService
 {
     private const CACHE_TTL_MINUTES = 60;
 
+    public function __construct(
+        private CrmDurableStorage $durableStorage
+    ) {}
+
     /**
      * Stream an uploaded file to the documents disk (avoids loading whole file into memory).
      */
     public function putUploadedFile(string $path, UploadedFile $file): void
     {
-        $realPath = $file->getRealPath();
-        if (! is_string($realPath) || $realPath === '' || ! is_file($realPath)) {
-            Storage::disk('s3')->put($path, $file->get());
-
-            return;
-        }
-
-        $stream = fopen($realPath, 'r');
-        if ($stream === false) {
-            Storage::disk('s3')->put($path, $file->get());
-
-            return;
-        }
-
-        try {
-            Storage::disk('s3')->put($path, $stream);
-        } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        }
+        $this->durableStorage->putUploadedFile($file, $path);
     }
 
     public function shouldQueueBulkNonVideo(int $fileCount): bool
@@ -163,17 +147,16 @@ class ClientDocumentFileUploadService
             return ['success' => false, 'message' => 'Staged upload file missing.'];
         }
 
-        $stream = fopen($absolute, 'r');
-        if ($stream === false) {
-            return ['success' => false, 'message' => 'Could not open staged upload file.'];
-        }
-
         try {
-            Storage::disk('s3')->put($filePath, $stream);
-        } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
+            $this->durableStorage->putStream($filePath, $absolute);
+        } catch (\Throwable $e) {
+            Log::warning('Document bulk upload durable put failed', [
+                'document_id' => $documentId,
+                'path' => $filePath,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['success' => false, 'message' => 'Could not store uploaded file.'];
         }
 
         $document->refresh();
@@ -196,7 +179,7 @@ class ClientDocumentFileUploadService
             }
         }
 
-        $fileUrl = Storage::disk('s3')->url($filePath);
+        $fileUrl = $this->durableStorage->myfileValue($filePath);
         $document->file_name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $uniqueId);
         $document->filetype = $extension;
         $document->user_id = $userId;
