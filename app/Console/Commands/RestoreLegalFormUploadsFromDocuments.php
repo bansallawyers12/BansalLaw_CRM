@@ -12,9 +12,10 @@ use Illuminate\Console\Command;
 class RestoreLegalFormUploadsFromDocuments extends Command
 {
     protected $signature = 'legal-forms:restore-uploads
-                            {--dry-run : Show matches without writing}
+                            {--dry-run : Show what would be restored without writing to S3}
                             {--client= : Limit to one client_id}
-                            {--form= : Limit to one client_legal_forms.id}';
+                            {--form= : Limit to one client_legal_forms.id}
+                            {--force : Skip confirmation when not using --dry-run}';
 
     protected $description = 'Restore missing uploaded legal form files from Documents / email attachments on S3';
 
@@ -37,6 +38,14 @@ class RestoreLegalFormUploadsFromDocuments extends Command
         $skippedOk = 0;
         $unmatched = 0;
         $failed = 0;
+
+        if (! $dryRun && ! $this->option('force')) {
+            if (! $this->confirm('Copy missing legal form files from matching S3 documents/attachments?', true)) {
+                $this->info('Cancelled.');
+
+                return self::SUCCESS;
+            }
+        }
 
         $this->info(($dryRun ? '[DRY-RUN] ' : '').'Checking '.$forms->count().' uploaded legal form(s)…');
 
