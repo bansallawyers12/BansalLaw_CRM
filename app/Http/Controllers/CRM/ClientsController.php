@@ -1029,7 +1029,12 @@ class ClientsController extends Controller
             // Staff id for lead list visibility (restrictLeadListQuery) and assignment; same for clients
             $client->user_id = $currentUserId;
 
-            $client->dob_verify_document = $requestData['dob_verify_document'];
+            $client->dob_verify_document = $requestData['dob_verify_document'] ?? null;
+
+            // Ensure password is set to satisfy PostgreSQL NOT NULL constraint on admins table
+            if (empty($client->password)) {
+                $client->password = Hash::make('CLIENT_PLACEHOLDER_' . Str::random(16));
+            }
 
             $client->created_at = now();
             $client->updated_at = now();

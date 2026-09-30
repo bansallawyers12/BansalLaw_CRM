@@ -8,6 +8,8 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class Admin extends Authenticatable
 {
@@ -97,6 +99,19 @@ class Admin extends Authenticatable
         'created_at',
         'updated_at',
     ];
+
+    /**
+     * The "booted" method of the model.
+     * Ensures password is never null to satisfy PostgreSQL NOT NULL constraint on admins table.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($admin) {
+            if (empty($admin->password)) {
+                $admin->password = Hash::make('CLIENT_PLACEHOLDER_' . Str::random(16));
+            }
+        });
+    }
 
 	public function countryData()
     {

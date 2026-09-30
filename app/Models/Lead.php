@@ -44,6 +44,8 @@ class Lead extends Admin
      */
     protected static function booted()
     {
+        parent::booted();
+
         // Automatically filter all queries to leads only
         static::addGlobalScope('lead', function (Builder $builder) {
             $builder->whereIn('type', self::LEAD_TYPE_VALUES)
