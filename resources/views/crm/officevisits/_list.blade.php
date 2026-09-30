@@ -41,11 +41,17 @@
 						@if($isWalkIn)
 							<span class="ov-contact-name text-muted">Walk-in</span>
 							@if(!empty($list->walk_in_phone))<span class="ov-contact-sub">{{ $list->walk_in_phone }}</span>@endif
-							@if(!empty($list->walk_in_email))<span class="ov-contact-sub">{{ $list->walk_in_email }}</span>@endif
+							@if(!empty($list->walk_in_email))
+								<span class="ov-contact-sub">
+									<a href="javascript:void(0);" class="open-ov-compose-email" data-email="{{ $list->walk_in_email }}" data-name="Walk-in" title="Compose Email to {{ $list->walk_in_email }}"><i class="fa-regular fa-envelope me-1"></i>{{ $list->walk_in_email }}</a>
+								</span>
+							@endif
 						@elseif($ovContact)
 							<a class="ov-contact-name" target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ \App\Models\CheckinLog::labelForCrmContact($ovContact) }}</a>
 							@if($ovName !== '' && !empty($ovContact->email))
-								<span class="ov-contact-sub">{{ $ovContact->email }}</span>
+								<span class="ov-contact-sub">
+									<a href="javascript:void(0);" class="open-ov-compose-email" data-email="{{ $ovContact->email }}" data-name="{{ $ovName }}" data-client-id="{{ $ovContact->id }}" data-client-ref="{{ $ovContact->client_id ?? '' }}" title="Compose Email to {{ $ovContact->email }}"><i class="fa-regular fa-envelope me-1"></i>{{ $ovContact->email }}</a>
+								</span>
 							@endif
 						@else
 							<span class="text-muted">—</span>

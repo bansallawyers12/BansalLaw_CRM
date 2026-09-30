@@ -446,38 +446,55 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" class="close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 			</div>
 			<div class="modal-body">
-				<form method="post" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" name="office_visits_sendmail" id="office_visits_sendmail" action="{{ route('clients.sendmail') }}" autocomplete="off" enctype="multipart/form-data">
+					@csrf
+					<input type="hidden" name="type" value="client">
+					<input type="hidden" name="mail_type" value="2">
+					<input type="hidden" name="mail_body_type" value="sent">
+					<input type="hidden" name="client_id" id="office_visits_client_id" value="">
 					<div class="row">
 						<div class="col-md-6">
 							<div class="form-group">
-								<label for="email_from">From <span class="span_req">*</span></label>
-								<input type="text" name="email_from" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter From">
+								<label for="office_visits_email_from">From <span class="span_req">*</span></label>
+								@include('partials.email-from-compose', ['email_from_id' => 'office_visits_email_from'])
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
-								<label for="email_to">To <span class="span_req">*</span></label>
-								<input type="text" name="email_to" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter To">
+								<label for="office_visits_email_to">To <span class="span_req">*</span></label>
+								<input type="text" name="email_to" id="office_visits_email_to" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter To (e.g. client@example.com)">
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
-								<label for="subject">Subject <span class="span_req">*</span></label>
-								<input type="text" name="subject" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Subject">
+								<label for="office_visits_email_cc">CC</label>
+								<input type="text" name="email_cc" id="office_visits_email_cc" class="form-control" autocomplete="off" placeholder="CC (optional, comma-separated)">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label for="office_visits_subject">Subject <span class="span_req">*</span></label>
+								<input type="text" name="subject" id="office_visits_subject" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Subject">
 							</div>
 						</div>
 						<div class="col-12">
 							<div class="form-group">
-								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="tinymce-editor" name="message"></textarea>
+								<label for="office_visits_attach">Attachments</label>
+								<input type="file" name="attach[]" id="office_visits_attach" multiple class="form-control">
 							</div>
 						</div>
 						<div class="col-12">
-							<button type="submit" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							<div class="form-group">
+								<label for="office_visits_message">Message <span class="span_req">*</span></label>
+								<textarea class="tinymce-editor" id="office_visits_message" name="message" data-valid="required"></textarea>
+							</div>
+						</div>
+						<div class="col-12">
+							<button type="submit" class="btn btn-primary" onclick="return customValidate('office_visits_sendmail')">Send Email</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -766,6 +783,22 @@
 					},
 					complete: function () { $('.popuploader').hide(); }
 				});
+			});
+
+			$(document).on('click', '.open-ov-compose-email', function (e) {
+				e.preventDefault();
+				var email = $(this).attr('data-email') || '';
+				var clientId = $(this).attr('data-client-id') || '';
+				var clientRef = $(this).attr('data-client-ref') || '';
+				var modal = $('.clientemail');
+				modal.find('#office_visits_email_to').val(email);
+				modal.find('#office_visits_client_id').val(clientId);
+				if (clientRef) {
+					modal.find('#office_visits_subject').val(clientRef + ' - ');
+				} else {
+					modal.find('#office_visits_subject').val('');
+				}
+				modal.modal('show');
 			});
 		});
 	}

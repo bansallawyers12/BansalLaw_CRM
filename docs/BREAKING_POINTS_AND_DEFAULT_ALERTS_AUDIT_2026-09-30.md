@@ -14,7 +14,7 @@ This master matrix provides an immediate operational overview of every identifie
 | # | Priority | Current Status | Server Impact | Module & Feature | Failure Mechanism | Data Loss / Business Risk |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Client Intake (`CRM / Clients`) | Fatal 500 (`NOT NULL password` constraint) | **Resolved**: Password automatically hashed & populated via model booted hook. |
-| **02** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Front Desk (`Office Visits / Email`) | Form has no `action` & missing `@csrf` | **High**: Composed emails to visiting clients are never sent or saved (HTTP 419). |
+| **02** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local** | Front Desk (`Office Visits / Email`) | Form had no `action` & missing `@csrf` | **Resolved**: Form wired to `clients.sendmail` with `@csrf`, sender selector, attachments, and email click modal trigger. |
 | **03** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Dashboard Quick Tasks | Missing JS event listener (`#dashboard_assignStaff`) | **High**: Clicking "ADD MY TASK" does nothing; task data discarded silently. |
 | **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Follow-up & Assignee | 3 Routes point to non-existent Controller methods | **High**: Assignee changes trigger fatal 500 error; spinner hangs indefinitely. |
 | **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **High**: Task comments, statuses, priorities, and descriptions fail with 404. |
@@ -90,37 +90,36 @@ $admin->save();
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED / FIXED (Tested & Verified)        |
 | SEVERITY: HTTP 419 / 405 Block   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Front Desk Reception (`CRM / Office Visits`)
-- **Source File & Lines:** [`resources/views/crm/officevisits/index.blade.php:452-480`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/officevisits/index.blade.php#L452-L480)
-- **Form Identifier:** Compose Email Modal `<form method="post" autocomplete="off" enctype="multipart/form-data">`
+- **Source File & Lines:** [`resources/views/crm/officevisits/index.blade.php:444-487`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/officevisits/index.blade.php#L444-L487) & [`resources/views/crm/officevisits/_list.blade.php:43-55`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/officevisits/_list.blade.php#L43-L55)
+- **Form Identifier:** Compose Email Modal `<form method="post" name="office_visits_sendmail" action="{{ route('clients.sendmail') }}" autocomplete="off" enctype="multipart/form-data">`
 - **Failure Mode:** **HTTP 419 (Page Expired / CSRF Token Missing)** or **HTTP 405 (Method Not Allowed)**
 
-#### Why and How This Occurs on the Live Server
-The form HTML tag is defined as:
+#### Why and How This Occurred on the Live Server
+The form HTML tag was defined with no action and no CSRF protection:
 ```html
 <form method="post" autocomplete="off" enctype="multipart/form-data">
 ```
 On the live production server:
-1. It has **no `action` attribute**, so the browser submits a POST request to the current GET page (`/crm/officevisits`).
-2. It has **no `@csrf` token**. Laravel's `VerifyCsrfToken` middleware on the production server intercepts the request and terminates it immediately with HTTP 419.
-3. No AJAX submission handler exists in JavaScript.
+1. It had **no `action` attribute**, so the browser submitted a POST request to the current GET page (`/office-visits` or `/crm/officevisits`).
+2. It had **no `@csrf` token**. Laravel's `VerifyCsrfToken` middleware on the production server intercepted the request and terminated it immediately with HTTP 419.
+3. `email_from` was a plain text input that failed backend sender authorization checks (`isAllowedComposeFromAddress`).
+4. Clicking email addresses in the visitor list had no click trigger to open the modal or prefill recipient data.
 
 #### Production Impact
-Receptionists and staff attempting to compose and send emails to visiting clients will hit an immediate HTTP 419 error page. The email is **never sent, never logged, and the message content is lost**.
+Receptionists and staff attempting to compose and send emails to visiting clients hit an immediate HTTP 419 error page. The email was **never sent, never logged, and the message content was lost**.
 
-#### Remediation Plan
-Update the form in `resources/views/crm/officevisits/index.blade.php`:
-```html
-<form action="{{ route('crm.emails.send') }}" method="POST" autocomplete="off" enctype="multipart/form-data">
-    @csrf
-    <!-- input fields -->
-</form>
-```
+#### Applied Remediation (Resolved & Verified)
+1. **Form Action & CSRF Guard:** In `resources/views/crm/officevisits/index.blade.php`, wired the form to `action="{{ route('clients.sendmail') }}"` with `@csrf`, `name="office_visits_sendmail"`, and hidden parameters (`mail_type=2`, `mail_body_type=sent`, `type=client`, `client_id`).
+2. **Authorized Sender Integration:** Replaced the plain `email_from` text input with `@include('partials.email-from-compose', ['email_from_id' => 'office_visits_email_from'])`, which automatically fetches active Zoho and AWS SES senders and defaults to the logged-in staff member's email.
+3. **CC & Multi-Attachment Support:** Added dedicated CC input and multi-file attachment input (`attach[]`).
+4. **Validation Integration:** Hooked the submit button to `customValidate('office_visits_sendmail')` to enforce required fields and flush TinyMCE message contents.
+5. **Interactive List Trigger:** In `resources/views/crm/officevisits/_list.blade.php`, wrapped contact email addresses with `.open-ov-compose-email` links that automatically open the modal and pre-fill the recipient address and client reference.
 
 ---
 
@@ -559,8 +558,8 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 ```
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 1: IMMEDIATE CRITICAL FIXES (Day 1)                                                               |
-|   [ ] Fix ClientsController::store() missing password hash (Issue 01).                                  |
-|   [ ] Add @csrf and action route to Office Visits compose email form (Issue 02).                        |
+|   [x] Fix ClientsController::store() missing password hash (Issue 01).                                  |
+|   [x] Add @csrf and action route to Office Visits compose email form (Issue 02).                        |
 |   [ ] Bind click event listener for #dashboard_assignStaff on Dashboard task modal (Issue 03).          |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 2: ROUTE INTEGRITY & CONTROLLER METHODS (Day 2)                                                   |
