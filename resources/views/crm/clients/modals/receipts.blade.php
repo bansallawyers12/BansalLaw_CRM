@@ -695,6 +695,13 @@ form.invoice-billing-mode-hourly .invoice-amount-ex-gst {
     font-weight: 600;
     color: #1e293b;
 }
+form.invoice-billing-mode-hourly tr.invoice-line--discount .invoice-amount-ex-gst {
+    background: #ffffff !important;
+}
+form.invoice-billing-mode-hourly tr.invoice-line--discount .invoice-hours-col,
+form.invoice-billing-mode-hourly tr.invoice-line--discount .invoice-col-rate {
+    opacity: 0.45;
+}
 form.invoice-billing-mode-fixed .invoice-hours-col,
 form.invoice-billing-mode-fixed .invoice-col-rate {
     display: none;

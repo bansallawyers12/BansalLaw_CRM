@@ -106,6 +106,26 @@ class InvoiceTimesheetLineTest extends TestCase
         ]));
     }
 
+    public function test_hourly_discount_line_uses_amount_without_hours(): void
+    {
+        $line = InvoiceTimesheetLine::fromRequest([
+            'invoice_billing_mode' => 'hourly',
+            'billing_basis' => ['hourly'],
+            'payment_type' => ['Discount'],
+            'hours' => [''],
+            'rate_ex_gst' => [''],
+            'amount_ex_gst' => ['250.00'],
+            'line_gst' => ['25.00'],
+        ], 0);
+
+        $this->assertSame('hourly', $line['billing_basis']);
+        $this->assertNull($line['hours']);
+        $this->assertNull($line['rate_ex_gst']);
+        $this->assertSame(250.0, $line['amount_ex_gst']);
+        $this->assertSame(25.0, $line['line_gst']);
+        $this->assertSame(275.0, $line['withdraw_amount']);
+    }
+
     public function test_display_fee_earner_shows_role_only_not_name(): void
     {
         $line = (object) [

@@ -148,6 +148,8 @@ class InvoiceTimesheetLine
         $lineGst = self::nullableFloat($requestData['line_gst'][$index] ?? null);
         $withdraw = self::nullableFloat($requestData['withdraw_amount'][$index] ?? null);
         $gstIncluded = trim((string) ($requestData['gst_included'][$index] ?? ''));
+        $paymentType = trim((string) ($requestData['payment_type'][$index] ?? ''));
+        $isDiscountLine = $paymentType === 'Discount';
         $formMode = strtolower(trim((string) ($requestData['invoice_billing_mode'] ?? '')));
         $basis = strtolower(trim((string) ($requestData['billing_basis'][$index] ?? '')));
         if (in_array($formMode, ['hourly', 'fixed'], true)) {
@@ -158,15 +160,20 @@ class InvoiceTimesheetLine
             $basis = ($hours !== null && $hours > 0 && $rate !== null && $rate > 0) ? 'hourly' : 'fixed';
         }
 
-        if ($basis === 'fixed') {
+        if ($basis === 'fixed' || $isDiscountLine) {
             $hours = null;
+            if ($isDiscountLine) {
+                $rate = null;
+            }
         }
 
         // Hourly with a real rate drives amount. A zero rate must not wipe a typed amount.
-        if ($basis === 'hourly' && $hours !== null && $rate !== null && $rate > 0) {
+        // Discount lines on hourly invoices use a typed amount only (no hours required).
+        if ($basis === 'hourly' && ! $isDiscountLine && $hours !== null && $rate !== null && $rate > 0) {
             $amountEx = self::roundMoney($hours * $rate);
         } elseif (
             $basis === 'hourly'
+            && ! $isDiscountLine
             && $hours !== null
             && $hours > 0
             && ($rate === null || $rate <= 0)

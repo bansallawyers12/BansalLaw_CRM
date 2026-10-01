@@ -8,7 +8,7 @@
     </div>
     <p class="invoice-billing-mode-hint mb-0">
         <i class="fa-solid fa-circle-info text-info me-1"></i>
-        <span class="invoice-billing-hint-hourly">Enter hours and rate — amount and GST calculate automatically.</span>
+        <span class="invoice-billing-hint-hourly">Enter hours and rate for fee lines — amount and GST calculate automatically. For <strong>Discount</strong> lines, enter the amount only (hours not required).</span>
         <span class="invoice-billing-hint-fixed" hidden>Enter the fee amount — GST is calculated automatically.</span>
     </p>
     <input type="hidden" name="invoice_billing_mode" class="invoice-billing-mode" value="hourly" />

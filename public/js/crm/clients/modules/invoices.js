@@ -344,10 +344,28 @@
         return $row.find('select[name="payment_type[]"]').val() === 'Discount' ? -1 : 1;
     }
 
+    function invoiceRowIsDiscount($row) {
+        return $row.find('select[name="payment_type[]"]').val() === 'Discount';
+    }
+
+    function syncInvoiceLineAmountReadonly($row) {
+        if (!$row || !$row.length) {
+            return;
+        }
+        var $form = $row.closest('form');
+        var mode = ($form.find('.invoice-billing-mode').val() || 'hourly');
+        var readonly = mode === 'hourly' && !invoiceRowIsDiscount($row);
+        $row.find('.invoice-amount-ex-gst').prop('readonly', readonly);
+        $row.toggleClass('invoice-line--discount', invoiceRowIsDiscount($row));
+    }
+
     function invoiceLineHasAmountInputs($row) {
         var hoursRaw = $.trim($row.find('.invoice-hours, input[name="hours[]"]').first().val() || '');
         var rateRaw = $.trim($row.find('.invoice-rate-ex-gst, input[name="rate_ex_gst[]"]').first().val() || '');
         var amountRaw = $.trim($row.find('.invoice-amount-ex-gst, input[name="amount_ex_gst[]"]').first().val() || '');
+        if (invoiceRowIsDiscount($row)) {
+            return amountRaw !== '';
+        }
         return hoursRaw !== '' || rateRaw !== '' || amountRaw !== '';
     }
 
@@ -501,6 +519,21 @@
             return;
         }
 
+        if (basis === 'hourly' && invoiceRowIsDiscount($row)) {
+            amountEx = invoiceMoney(amountRaw);
+            var discountGstRaw = $.trim($gst.val() || '');
+            var discountGstValue = invoiceMoney(discountGstRaw);
+            if (!options.keepGst || discountGstRaw === '' || (discountGstValue === 0 && amountEx > 0)) {
+                $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
+            }
+            var discountGst = invoiceMoney($gst.val());
+            var discountIncl = invoiceMoney(amountEx + discountGst);
+            $row.find('.withdraw_amount_invoice_per_row').val(discountIncl.toFixed(2));
+            $row.find('.invoice-gst-included').val(discountGst > 0.00001 ? 'Yes' : 'No');
+            syncInvoiceLineAmountReadonly($row);
+            return;
+        }
+
         if (basis === 'hourly') {
             // Amount is always hours × rate. If rate is blank/zero but amount already exists,
             // back-fill rate from amount÷hours so edit rows don't stay stuck.
@@ -533,6 +566,7 @@
         var incl = invoiceMoney(amountEx + gst);
         $row.find('.withdraw_amount_invoice_per_row').val(incl.toFixed(2));
         $row.find('.invoice-gst-included').val(gst > 0.00001 ? 'Yes' : 'No');
+        syncInvoiceLineAmountReadonly($row);
     }
 
     function invoiceLineRowFromEventTarget(el) {
@@ -651,7 +685,10 @@
 
         // Hourly: keep hours/rate/amount in sync. Derive missing/zero rate from saved amount÷hours
         // so edit doesn't leave Rate as 0.00 while Amount stays at a stale saved figure.
-        if (basis === 'hourly') {
+        if (basis === 'hourly' && normalizeInvoicePaymentType(line.payment_type) === 'Discount') {
+            $row.find('input[name="hours[]"]').val('');
+            $row.find('input[name="rate_ex_gst[]"]').val('');
+        } else if (basis === 'hourly') {
             var hoursNum = invoiceMoney(hoursVal);
             var rateNum = invoiceMoney(rateVal);
             var amountNum = invoiceMoney(amountEx);
@@ -695,7 +732,8 @@
         $row.find('.withdraw_amount_invoice_per_row').val(
             invoiceMoney(invoiceMoney(amountEx) + invoiceMoney(lineGst)).toFixed(2)
         );
-        recalcInvoiceTimesheetRow($row, { keepGst: basis !== 'hourly' });
+        recalcInvoiceTimesheetRow($row, { keepGst: basis !== 'hourly' || invoiceRowIsDiscount($row) });
+        syncInvoiceLineAmountReadonly($row);
     }
 
     function parseInvoiceLineRowHtml(html) {
@@ -810,11 +848,10 @@
             $form.find('.invoice-hours').val('');
             $form.find('.invoice-rate-ex-gst').val('');
         }
-        // Hourly amount is driven by hours × rate — keep the field read-only so it can't drift.
-        $form.find('.invoice-amount-ex-gst').prop('readonly', mode === 'hourly');
         $form.find('.productitem_invoice').children('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').each(function() {
             var $row = $(this);
             $row.find('.invoice-billing-basis').val(mode);
+            syncInvoiceLineAmountReadonly($row);
             if (mode === 'hourly') {
                 var hoursRaw = $.trim($row.find('.invoice-hours').val() || '');
                 var rateRaw = $.trim($row.find('.invoice-rate-ex-gst').val() || '');
@@ -883,6 +920,7 @@
                 return;
             }
             $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
+            syncInvoiceLineAmountReadonly($row);
             recalcInvoiceTimesheetRow($row, { keepGst: false });
             grandtotalAccountTab_invoice($row.closest('form'));
         }
