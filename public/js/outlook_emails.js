@@ -2822,6 +2822,34 @@ function crmInitOutlookEmailsInterface() {
             }) || null;
         }
 
+        function getBlockedDuplicateUploadError(data) {
+            if (!data || !Array.isArray(data.errors)) {
+                return null;
+            }
+            return data.errors.find(function(err) {
+                if (!err || err.error_code === 'unassigned_match') {
+                    return false;
+                }
+                if (err.error_code === 'existing_email') {
+                    return true;
+                }
+
+                return err.duplicate && err.block_force_upload;
+            }) || null;
+        }
+
+        function formatDuplicateLocationMessage(err) {
+            const match = (err && (err.existing_match || err.unassigned_match || err.existing)) || {};
+            let text = (err && err.error) ? String(err.error) : 'This email is already in the CRM.';
+            if (match.location_label) {
+                text += '\n\nAlready available at: ' + match.location_label;
+            }
+            if (match.assignment_label) {
+                text += '\nType: ' + match.assignment_label;
+            }
+            return text;
+        }
+
         function showUnassignedMatchPrompt(fileName, matchInfo) {
             return new Promise(function(resolve) {
                 const modal = document.getElementById('unassignedMatchModal');
@@ -2833,7 +2861,10 @@ function crmInitOutlookEmailsInterface() {
 
                 const subject = (matchInfo && matchInfo.subject) ? matchInfo.subject : '(No subject)';
                 const fromMail = (matchInfo && matchInfo.from_mail) ? matchInfo.from_mail : 'Unknown sender';
-                const confirmText = 'This email is already in Unassigned Mail.\n\n'
+                const locationLabel = (matchInfo && matchInfo.location_label)
+                    ? matchInfo.location_label
+                    : 'Unassigned Mail';
+                const confirmText = 'This email is already in ' + locationLabel + '.\n\n'
                     + 'Subject: ' + subject + '\nFrom: ' + fromMail
                     + '\n\nAssign it to this client matter instead of uploading again?';
 
@@ -3766,6 +3797,26 @@ function crmInitOutlookEmailsInterface() {
             );
 
             let result = await postOutlookEmailUpload(file, uploadUrl, false, attachmentStorage);
+            const blockedDuplicateError = getBlockedDuplicateUploadError(result);
+            if (blockedDuplicateError) {
+                hideEmailUploadLoading();
+                showUploadErrorAlert(
+                    formatDuplicateLocationMessage(blockedDuplicateError),
+                    'Duplicate email — upload blocked'
+                );
+                return {
+                    uploaded: 0,
+                    failed: 0,
+                    rejected: 1,
+                    errors: [{
+                        filename: file.name,
+                        error: blockedDuplicateError.error || 'Duplicate email',
+                        error_code: blockedDuplicateError.error_code || 'existing_email',
+                        duplicate: true
+                    }]
+                };
+            }
+
             const unassignedMatchError = getUnassignedMatchUploadError(result);
 
             if (unassignedMatchError) {
@@ -3828,6 +3879,22 @@ function crmInitOutlookEmailsInterface() {
 
             if (duplicateError) {
                 hideEmailUploadLoading();
+                if (duplicateError.block_force_upload) {
+                    showUploadErrorAlert(
+                        formatDuplicateLocationMessage(duplicateError),
+                        'Duplicate email — upload blocked'
+                    );
+                    return {
+                        uploaded: 0,
+                        failed: 0,
+                        rejected: 1,
+                        errors: [{
+                            filename: file.name,
+                            error: duplicateError.error || 'Duplicate email',
+                            duplicate: true
+                        }]
+                    };
+                }
                 const acceptUpload = await showDuplicateEmailPrompt(file.name);
                 if (acceptUpload) {
                     showEmailUploadLoading(

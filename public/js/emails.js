@@ -352,6 +352,33 @@
         return data.errors.find(function(err) { return err && err.duplicate; }) || null;
     }
 
+    function getBlockedDuplicateUploadError(data) {
+        if (!data || !Array.isArray(data.errors)) {
+            return null;
+        }
+        return data.errors.find(function(err) {
+            if (!err || err.error_code === 'unassigned_match') {
+                return false;
+            }
+            if (err.error_code === 'existing_email') {
+                return true;
+            }
+            return err.duplicate && err.block_force_upload;
+        }) || null;
+    }
+
+    function formatDuplicateLocationMessage(err) {
+        const match = (err && (err.existing_match || err.unassigned_match || err.existing)) || {};
+        let text = (err && err.error) ? String(err.error) : 'This email is already in the CRM.';
+        if (match.location_label) {
+            text += '\n\nAlready available at: ' + match.location_label;
+        }
+        if (match.assignment_label) {
+            text += '\nType: ' + match.assignment_label;
+        }
+        return text;
+    }
+
     /**
      * POST one .msg file to the upload endpoint and return parsed JSON.
      */
@@ -1214,9 +1241,33 @@
 
                 try {
                     let data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath);
+                    const blockedDuplicate = getBlockedDuplicateUploadError(data);
+                    if (blockedDuplicate) {
+                        totalFailed += 1;
+                        allErrors.push({
+                            filename: file.name,
+                            error: formatDuplicateLocationMessage(blockedDuplicate),
+                            duplicate: true,
+                            rejected: true
+                        });
+                        showUploadNotification(formatDuplicateLocationMessage(blockedDuplicate), 'warning', 'Duplicate email — upload blocked');
+                        continue;
+                    }
+
                     const duplicateError = getDuplicateUploadError(data);
 
                     if (duplicateError) {
+                        if (duplicateError.block_force_upload) {
+                            totalFailed += 1;
+                            allErrors.push({
+                                filename: file.name,
+                                error: formatDuplicateLocationMessage(duplicateError),
+                                duplicate: true,
+                                rejected: true
+                            });
+                            showUploadNotification(formatDuplicateLocationMessage(duplicateError), 'warning', 'Duplicate email — upload blocked');
+                            continue;
+                        }
                         const acceptUpload = await showDuplicateEmailPrompt(file.name);
                         if (acceptUpload) {
                             data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, true);

@@ -26,6 +26,18 @@ class UnassignedEmailUploadMatchService
     /**
      * @param  array<string, mixed>  $parsedData
      */
+    public function findMatchAcrossMailFolders(array $parsedData, string $fileHash): ?EmailLog
+    {
+        foreach (['inbox', 'sent'] as $mailType) {
+            $match = $this->findMatch($parsedData, $fileHash, $mailType);
+            if ($match instanceof EmailLog) {
+                return $match;
+            }
+        }
+
+        return null;
+    }
+
     public function findMatch(array $parsedData, string $fileHash, string $mailType): ?EmailLog
     {
         $mailType = $mailType === 'sent' ? 'sent' : 'inbox';
@@ -179,11 +191,17 @@ class UnassignedEmailUploadMatchService
             ?? $email->created_at;
         $tz = (string) config('app.timezone', 'Australia/Melbourne');
 
+        $folder = $email->mail_body_type === 'sent' ? 'Sent' : 'Incoming';
+
         return [
             'email_log_id' => (int) $email->id,
             'subject' => (string) ($email->subject ?? ''),
             'from_mail' => (string) ($email->from_mail ?? ''),
             'to_mail' => (string) ($email->to_mail ?? ''),
+            'mail_body_type' => (string) ($email->mail_body_type ?? 'inbox'),
+            'location' => $email->mail_body_type === 'sent' ? 'unassigned_sent' : 'unassigned_inbox',
+            'location_label' => 'Unassigned Mail → '.$folder,
+            'assignment_label' => 'In unassigned queue (synced)',
             'received_at_display' => $when
                 ? $when->copy()->timezone($tz)->format('d/m/Y h:i a')
                 : '',

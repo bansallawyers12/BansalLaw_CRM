@@ -236,8 +236,10 @@ class EmailUploadController extends Controller
                             'error_code' => $result['error_code'] ?? 'unknown',
                             'technical_error' => $result['technical_error'] ?? null,
                             'reference' => $result['reference'] ?? null,
-                            'duplicate' => !empty($result['duplicate']),
+                            'duplicate' => ! empty($result['duplicate']),
                             'existing' => $result['existing'] ?? null,
+                            'existing_match' => $result['existing_match'] ?? null,
+                            'block_force_upload' => ! empty($result['block_force_upload']),
                             'unassigned_match' => $result['unassigned_match'] ?? null,
                         ];
                     }
@@ -635,41 +637,16 @@ class EmailUploadController extends Controller
                 }
             }
 
-            if (!$request->boolean('force_upload') && empty($syncMeta)) {
-                $unassignedMatchService = app(UnassignedEmailUploadMatchService::class);
-                $matchedUnassigned = $unassignedMatchService->findMatch($parsedData, $fileHash, $mailType);
-                if ($matchedUnassigned instanceof EmailLog) {
-                    return [
-                        'success' => false,
-                        'error_code' => 'unassigned_match',
-                        'error' => 'This email is already in Unassigned Mail. Assign that copy to this matter instead of uploading again.',
-                        'unassigned_match' => $unassignedMatchService->summarizeMatch($matchedUnassigned),
-                    ];
-                }
-
-                $existing = $this->findExistingEmailLog(
-                    (int) ($clientId ?? 0),
-                    $matterId,
-                    $mailType,
-                    $request->type ?? 'client',
-                    $parsedData,
-                    $fileHash
-                );
-                if ($existing) {
-                    return [
-                        'success' => false,
-                        'duplicate' => true,
-                        'error_code' => 'duplicate',
-                        'error' => $this->buildDuplicateErrorMessage($existing),
-                        'existing' => [
-                            'id' => $existing->id,
-                            'subject' => $existing->subject,
-                            'from_mail' => $existing->from_mail,
-                            'sent_date' => $existing->fetch_mail_sent_time
-                                ? $existing->fetch_mail_sent_time->format('d/m/Y h:i a')
-                                : null,
-                        ],
-                    ];
+            if (! $request->boolean('force_upload') && empty($syncMeta) && $clientId) {
+                $duplicateBlock = app(\App\Services\Email\ClientEmailUploadDuplicateService::class)
+                    ->buildManualUploadBlockResponse(
+                        (int) $clientId,
+                        $matterId,
+                        $parsedData,
+                        $fileHash
+                    );
+                if ($duplicateBlock !== null) {
+                    return $duplicateBlock;
                 }
             }
 
