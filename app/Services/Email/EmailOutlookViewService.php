@@ -39,7 +39,16 @@ class EmailOutlookViewService
             ->orderByDesc('id')
             ->value('id');
 
-        return $latest ? (int) $latest : null;
+        if ($latest) {
+            return (int) $latest;
+        }
+
+        $anyMatter = ClientMatter::query()
+            ->where('client_id', (int) $client->id)
+            ->orderByDesc('id')
+            ->value('id');
+
+        return $anyMatter ? (int) $anyMatter : null;
     }
 
     /**

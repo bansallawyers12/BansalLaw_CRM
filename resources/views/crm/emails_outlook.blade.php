@@ -67,6 +67,12 @@
             ->pluck('email')
             ->values()
             ->all();
+    $emailLabelsForFilter = collect();
+    if ($clientData) {
+        $labelStaffId = $authStaff instanceof \App\Models\Staff ? (int) $authStaff->id : null;
+        $emailLabelsForFilter = app(\App\Services\Email\EmailLabelCatalogService::class)
+            ->listVisibleForStaff($labelStaffId);
+    }
 @endphp
 
 <!-- Outlook CSS -->
@@ -319,30 +325,11 @@
                     <div class="client-mail-filters__row list-header-filters list-header-filters--modern">
                         <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                             <option value="">All Labels</option>
-                            @if(isset($clientData) && isset($matterId))
-                                @php
-                                    $labels = \App\Models\EmailLabel::where(function($query) {
-                                            $query->where('user_id', \Illuminate\Support\Facades\Auth::id())
-                                                  ->orWhereNull('user_id');
-                                        })
-                                        ->where('is_active', true)
-                                        ->orderBy('type', 'desc')
-                                        ->orderBy('name')
-                                        ->get();
-                                @endphp
-                                @foreach($labels as $label)
-                                    @php
-                                        $mailFolderAttr = ($label->type === 'system' && in_array(strtolower($label->name), ['inbox', 'sent'], true))
-                                            ? strtolower($label->name)
-                                            : null;
-                                    @endphp
-                                    <option value="{{ $label->id }}"@if($mailFolderAttr) data-mail-folder="{{ $mailFolderAttr }}"@endif>{{ $label->name }}</option>
-                                @endforeach
-                            @endif
+                            @include('crm.partials.email-label-filter-options')
                         </select>
                         <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                             <option value="">All Senders</option>
-                            @if(isset($clientData) && isset($matterId))
+                            @if(isset($clientData) && ! empty($matterId))
                                 @php
                                     $senders = \App\Models\EmailLog::where('client_id', $clientData->id)
                                         ->where('client_matter_id', $matterId)
@@ -383,30 +370,11 @@
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
-                    @if(isset($clientData) && isset($matterId))
-                        @php
-                            $labels = \App\Models\EmailLabel::where(function($query) {
-                                    $query->where('user_id', \Illuminate\Support\Facades\Auth::id())
-                                          ->orWhereNull('user_id');
-                                })
-                                ->where('is_active', true)
-                                ->orderBy('type', 'desc')
-                                ->orderBy('name')
-                                ->get();
-                        @endphp
-                        @foreach($labels as $label)
-                            @php
-                                $mailFolderAttr = ($label->type === 'system' && in_array(strtolower($label->name), ['inbox', 'sent'], true))
-                                    ? strtolower($label->name)
-                                    : null;
-                            @endphp
-                            <option value="{{ $label->id }}"@if($mailFolderAttr) data-mail-folder="{{ $mailFolderAttr }}"@endif>{{ $label->name }}</option>
-                        @endforeach
-                    @endif
+                    @include('crm.partials.email-label-filter-options')
                 </select>
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>
-                    @if(isset($clientData) && isset($matterId))
+                    @if(isset($clientData) && ! empty($matterId))
                         @php
                             $senders = \App\Models\EmailLog::where('client_id', $clientData->id)
                                 ->where('client_matter_id', $matterId)

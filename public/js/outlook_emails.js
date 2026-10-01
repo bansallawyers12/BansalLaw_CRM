@@ -70,6 +70,47 @@ function crmInitOutlookEmailsInterface() {
         return labelFilter.value;
     }
 
+    async function ensureLabelFilterOptions() {
+        if (!labelFilter || unassignedOnly || labelFilter.options.length > 1) {
+            return;
+        }
+        const baseUrl = ((outlookContainer && outlookContainer.dataset.baseUrl) || '').replace(/\/$/, '');
+        if (!baseUrl) {
+            return;
+        }
+        try {
+            const response = await fetch(baseUrl + '/email-labels', {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                }
+            });
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            if (!data.success || !Array.isArray(data.labels) || data.labels.length === 0) {
+                return;
+            }
+            while (labelFilter.options.length > 1) {
+                labelFilter.remove(1);
+            }
+            data.labels.forEach(function (label) {
+                const option = document.createElement('option');
+                option.value = String(label.id);
+                option.textContent = label.name || '';
+                const labelName = String(label.name || '').trim().toLowerCase();
+                if (label.type === 'system' && (labelName === 'inbox' || labelName === 'sent')) {
+                    option.setAttribute('data-mail-folder', labelName);
+                }
+                labelFilter.appendChild(option);
+            });
+        } catch (labelError) {
+            console.error('Error fetching email labels:', labelError);
+        }
+    }
+
     function getListTotalCountEl() {
         return document.getElementById('listTotalCount');
     }
@@ -8613,7 +8654,9 @@ function crmInitOutlookEmailsInterface() {
         initialSelectEmailId = null;
     }
 
-    loadEmails(initialSelectEmailId ? { selectEmailLogId: initialSelectEmailId } : undefined);
+    ensureLabelFilterOptions().finally(function () {
+        loadEmails(initialSelectEmailId ? { selectEmailLogId: initialSelectEmailId } : undefined);
+    });
 }
 
 function crmScheduleOutlookEmailsInterface() {
