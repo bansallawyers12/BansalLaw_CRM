@@ -2740,9 +2740,19 @@ function crmInitOutlookEmailsInterface() {
             updateUploadStatusForFile(file.name, 'error', errorMessage);
         }
 
-        function showUploadErrorAlert(message, title, details) {
+        function showUploadErrorAlert(message, title, details, modalOptions) {
             const text = message || 'Upload failed. Please try again.';
             const alertTitle = title || 'Upload Failed';
+            if (typeof window.crmShowEmailUploadResultModal === 'function') {
+                return window.crmShowEmailUploadResultModal({
+                    type: 'error',
+                    title: alertTitle,
+                    message: text,
+                    details: details || '',
+                    actionLabel: modalOptions && modalOptions.actionLabel,
+                    onAction: modalOptions && modalOptions.onAction
+                });
+            }
             return showUploadResultModal('error', text, alertTitle, details);
         }
 
@@ -2848,6 +2858,80 @@ function crmInitOutlookEmailsInterface() {
                 text += '\nType: ' + match.assignment_label;
             }
             return text;
+        }
+
+        function duplicateMatchFromError(err) {
+            if (!err) {
+                return null;
+            }
+            const match = err.existing_match || err.unassigned_match || err.existing;
+            if (match && match.email_log_id) {
+                return match;
+            }
+            if (err.existing && err.existing.id) {
+                return {
+                    email_log_id: err.existing.id,
+                    subject: err.existing.subject,
+                    from_mail: err.existing.from_mail,
+                    location_label: 'Client matter',
+                    open_folder: currentFolder === 'sent' ? 'sent' : 'inbox'
+                };
+            }
+            return null;
+        }
+
+        function openExistingEmailActionLabel(match) {
+            if (!match) {
+                return 'Open existing email';
+            }
+            if (match.location_label) {
+                return 'Open: ' + match.location_label;
+            }
+            return 'Open existing email';
+        }
+
+        async function openExistingEmailFromDuplicateMatch(match) {
+            if (!match || !match.email_log_id) {
+                return;
+            }
+            const emailLogId = parseInt(match.email_log_id, 10);
+            if (!emailLogId) {
+                return;
+            }
+
+            const location = String(match.location || '');
+            if (location.indexOf('unassigned') === 0) {
+                const root = (typeof baseUrl === 'string' && baseUrl) ? baseUrl : '';
+                const folder = match.open_folder === 'sent' ? 'sent' : 'unassigned';
+                window.location.href = root + '/clients/unassigned-emails?select_email=' + emailLogId
+                    + (folder !== 'unassigned' ? '&folder=' + encodeURIComponent(folder) : '');
+                return;
+            }
+
+            const folder = match.open_folder || (match.mail_body_type === 'sent' ? 'sent' : 'inbox');
+            if (typeof switchToFolder === 'function') {
+                switchToFolder(folder);
+            }
+            currentPage = 1;
+            await loadEmails({ selectEmailLogId: emailLogId });
+        }
+
+        function showBlockedDuplicateUploadAlert(err) {
+            const match = duplicateMatchFromError(err);
+            const modalOptions = match
+                ? {
+                    actionLabel: openExistingEmailActionLabel(match),
+                    onAction: function () {
+                        void openExistingEmailFromDuplicateMatch(match);
+                    }
+                }
+                : null;
+            return showUploadErrorAlert(
+                formatDuplicateLocationMessage(err),
+                'Duplicate email — upload blocked',
+                '',
+                modalOptions
+            );
         }
 
         function showUnassignedMatchPrompt(fileName, matchInfo) {
@@ -3800,10 +3884,7 @@ function crmInitOutlookEmailsInterface() {
             const blockedDuplicateError = getBlockedDuplicateUploadError(result);
             if (blockedDuplicateError) {
                 hideEmailUploadLoading();
-                showUploadErrorAlert(
-                    formatDuplicateLocationMessage(blockedDuplicateError),
-                    'Duplicate email — upload blocked'
-                );
+                showBlockedDuplicateUploadAlert(blockedDuplicateError);
                 return {
                     uploaded: 0,
                     failed: 0,
@@ -3880,10 +3961,7 @@ function crmInitOutlookEmailsInterface() {
             if (duplicateError) {
                 hideEmailUploadLoading();
                 if (duplicateError.block_force_upload) {
-                    showUploadErrorAlert(
-                        formatDuplicateLocationMessage(duplicateError),
-                        'Duplicate email — upload blocked'
-                    );
+                    showBlockedDuplicateUploadAlert(duplicateError);
                     return {
                         uploaded: 0,
                         failed: 0,
@@ -4433,6 +4511,12 @@ function crmInitOutlookEmailsInterface() {
             if (clientId) url.searchParams.append('client_id', clientId);
             const listMatterId = getMatterId();
             if (listMatterId) url.searchParams.append('client_matter_id', listMatterId);
+            const selectEmailLogId = options && options.selectEmailLogId
+                ? parseInt(options.selectEmailLogId, 10)
+                : 0;
+            if (selectEmailLogId > 0) {
+                url.searchParams.append('email_log_id', String(selectEmailLogId));
+            }
 
             const response = await fetch(url, {
                 headers: {
@@ -4557,7 +4641,14 @@ function crmInitOutlookEmailsInterface() {
                 emailListContainer.scrollTop = scrollTop;
             } else {
                 renderEmailList();
-                refreshSelectedEmailAfterReload();
+                if (selectEmailLogId > 0) {
+                    selectEmailInListById(selectEmailLogId);
+                    window.setTimeout(function () {
+                        loadEmails();
+                    }, 0);
+                } else {
+                    refreshSelectedEmailAfterReload();
+                }
                 if (unassignedOnly && isSyncedInboxFolder(folderToFetch) && pageToFetch === 1
                     && !syncedFolderCountReady) {
                     void loadSyncedListMeta(folderToFetch);
@@ -4585,6 +4676,25 @@ function crmInitOutlookEmailsInterface() {
                 renderEmailList();
             }
         }
+    }
+
+    function selectEmailInListById(emailLogId) {
+        const id = parseInt(emailLogId, 10);
+        if (!id || !emailListContainer) {
+            return false;
+        }
+        const email = emails.find(function (row) {
+            return parseInt(row.id, 10) === id;
+        });
+        if (!email) {
+            return false;
+        }
+        const el = emailListContainer.querySelector('[data-email-id="' + id + '"]');
+        showEmail(email, el);
+        if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ block: 'nearest' });
+        }
+        return true;
     }
 
     function refreshSelectedEmailAfterReload() {
@@ -8455,7 +8565,25 @@ function crmInitOutlookEmailsInterface() {
     if (unassignedOnly && needsSyncedFolderCountMeta(defaultFolder)) {
         showSyncedFolderCountLoading(defaultFolder);
     }
-    loadEmails();
+
+    let initialSelectEmailId = null;
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const deepLinkId = parseInt(params.get('select_email') || '', 10);
+        const deepLinkFolder = params.get('folder');
+        if (deepLinkId > 0) {
+            initialSelectEmailId = deepLinkId;
+            if (deepLinkFolder === 'sent' || deepLinkFolder === 'unassigned' || deepLinkFolder === 'assigned') {
+                switchToFolder(deepLinkFolder);
+            } else if (unassignedOnly) {
+                switchToFolder('unassigned');
+            }
+        }
+    } catch (deepLinkError) {
+        initialSelectEmailId = null;
+    }
+
+    loadEmails(initialSelectEmailId ? { selectEmailLogId: initialSelectEmailId } : undefined);
 }
 
 function crmScheduleOutlookEmailsInterface() {

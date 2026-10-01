@@ -661,9 +661,11 @@
                 '.email-upload-result-modal__details-toggle{background:none;border:none;padding:0;font-size:13px;font-weight:600;color:#0078d4;cursor:pointer;text-decoration:underline;}',
                 '.email-upload-result-modal__details-toggle:hover{color:#106ebe;}',
                 '.email-upload-result-modal__details-body{margin:8px 0 0;font-size:12px;line-height:1.5;color:#605e5c;white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:180px;padding:10px 12px;background:#f3f2f1;border:1px solid #edebe9;border-radius:6px;text-align:left;}',
-                '.email-upload-result-modal__actions{display:flex;justify-content:center;}',
+                '.email-upload-result-modal__actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}',
                 '.email-upload-result-modal__btn{min-width:120px;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;background:#0078d4;color:#fff;}',
-                '.email-upload-result-modal__btn:hover{background:#106ebe;}'
+                '.email-upload-result-modal__btn:hover{background:#106ebe;}',
+                '.email-upload-result-modal__btn--secondary{background:#fff;border-color:#0078d4;color:#0078d4;}',
+                '.email-upload-result-modal__btn--secondary:hover{background:#eff6fc;}'
             ].join('');
             document.head.appendChild(style);
         }
@@ -684,6 +686,7 @@
             + '    <pre class="email-upload-result-modal__details-body" id="emailUploadResultModalDetailsBody" hidden></pre>'
             + '  </div>'
             + '  <div class="email-upload-result-modal__actions">'
+            + '    <button type="button" class="email-upload-result-modal__btn email-upload-result-modal__btn--secondary" id="emailUploadResultModalAction" hidden>Open existing email</button>'
             + '    <button type="button" class="email-upload-result-modal__btn" id="emailUploadResultModalOk">OK</button>'
             + '  </div>'
             + '</div>';
@@ -779,12 +782,52 @@
             }
         }
 
+        var actionBtn = document.getElementById('emailUploadResultModalAction');
+        var actionsRow = overlay.querySelector('.email-upload-result-modal__actions');
+        if (actionsRow && !actionBtn) {
+            actionBtn = document.createElement('button');
+            actionBtn.type = 'button';
+            actionBtn.id = 'emailUploadResultModalAction';
+            actionBtn.className = 'email-upload-result-modal__btn email-upload-result-modal__btn--secondary';
+            actionBtn.hidden = true;
+            var okBtnExisting = document.getElementById('emailUploadResultModalOk');
+            if (okBtnExisting) {
+                actionsRow.insertBefore(actionBtn, okBtnExisting);
+            } else {
+                actionsRow.appendChild(actionBtn);
+            }
+        }
+
+        if (actionBtn) {
+            actionBtn.hidden = true;
+            actionBtn.onclick = null;
+            if (options.actionLabel && typeof options.onAction === 'function') {
+                actionBtn.hidden = false;
+                actionBtn.textContent = options.actionLabel;
+                actionBtn.onclick = function () {
+                    overlay.classList.remove('active');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('email-upload-result-modal-open');
+                    if (typeof emailUploadResultModalResolve === 'function') {
+                        var resolve = emailUploadResultModalResolve;
+                        emailUploadResultModalResolve = null;
+                        resolve();
+                    }
+                    options.onAction();
+                };
+            }
+        }
+
         overlay.classList.add('active');
         overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('email-upload-result-modal-open');
 
         var okBtn = document.getElementById('emailUploadResultModalOk');
-        if (okBtn) okBtn.focus();
+        if (actionBtn && !actionBtn.hidden) {
+            actionBtn.focus();
+        } else if (okBtn) {
+            okBtn.focus();
+        }
 
         return new Promise(function (resolve) {
             emailUploadResultModalResolve = resolve;

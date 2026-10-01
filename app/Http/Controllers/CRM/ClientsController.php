@@ -5907,6 +5907,11 @@ class ClientsController extends Controller
             $query->where('client_matter_id', $clientMatterId);
         }
 
+        $selectEmailLogId = (int) $request->input('email_log_id', 0);
+        if ($selectEmailLogId > 0) {
+            $query->where('email_logs.id', $selectEmailLogId);
+        }
+
         // Apply label filter
         if (!empty($labelId)) {
             $query->whereHas('labels', function($q) use ($labelId) {

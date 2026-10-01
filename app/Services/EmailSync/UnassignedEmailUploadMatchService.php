@@ -199,6 +199,7 @@ class UnassignedEmailUploadMatchService
             'from_mail' => (string) ($email->from_mail ?? ''),
             'to_mail' => (string) ($email->to_mail ?? ''),
             'mail_body_type' => (string) ($email->mail_body_type ?? 'inbox'),
+            'open_folder' => ($email->mail_body_type === 'sent') ? 'sent' : 'unassigned',
             'location' => $email->mail_body_type === 'sent' ? 'unassigned_sent' : 'unassigned_inbox',
             'location_label' => 'Unassigned Mail → '.$folder,
             'assignment_label' => 'In unassigned queue (synced)',

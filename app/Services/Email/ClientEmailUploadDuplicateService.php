@@ -177,6 +177,7 @@ class ClientEmailUploadDuplicateService
             'from_mail' => (string) ($email->from_mail ?? ''),
             'to_mail' => (string) ($email->to_mail ?? ''),
             'mail_body_type' => (string) ($email->mail_body_type ?? 'inbox'),
+            'open_folder' => ($email->mail_body_type === 'sent') ? 'sent' : 'inbox',
             'location' => $this->locationKey($email),
             'location_label' => $this->locationLabel($email),
             'assignment_label' => $this->assignmentLabel($email),

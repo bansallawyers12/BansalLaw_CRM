@@ -1244,13 +1244,36 @@
                     const blockedDuplicate = getBlockedDuplicateUploadError(data);
                     if (blockedDuplicate) {
                         totalFailed += 1;
+                        const blockedMsg = formatDuplicateLocationMessage(blockedDuplicate);
                         allErrors.push({
                             filename: file.name,
-                            error: formatDuplicateLocationMessage(blockedDuplicate),
+                            error: blockedMsg,
                             duplicate: true,
                             rejected: true
                         });
-                        showUploadNotification(formatDuplicateLocationMessage(blockedDuplicate), 'warning', 'Duplicate email — upload blocked');
+                        const match = blockedDuplicate.existing_match || blockedDuplicate.unassigned_match || blockedDuplicate.existing;
+                        if (typeof window.crmShowEmailUploadResultModal === 'function' && match && match.email_log_id) {
+                            window.crmShowEmailUploadResultModal({
+                                type: 'error',
+                                title: 'Duplicate email — upload blocked',
+                                message: blockedMsg,
+                                actionLabel: match.location_label ? ('Open: ' + match.location_label) : 'Open existing email',
+                                onAction: function () {
+                                    const loc = String(match.location || '');
+                                    if (loc.indexOf('unassigned') === 0) {
+                                        window.location.href = '/clients/unassigned-emails?select_email=' + encodeURIComponent(match.email_log_id);
+                                        return;
+                                    }
+                                    const folder = match.open_folder || (match.mail_body_type === 'sent' ? 'sent' : 'inbox');
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.set('select_email', String(match.email_log_id));
+                                    url.searchParams.set('folder', folder);
+                                    window.location.href = url.toString();
+                                }
+                            });
+                        } else {
+                            showUploadNotification(blockedMsg, 'warning', 'Duplicate email — upload blocked');
+                        }
                         continue;
                     }
 
