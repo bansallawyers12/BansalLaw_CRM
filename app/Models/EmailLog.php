@@ -496,6 +496,65 @@ class EmailLog extends Authenticatable
     }
 
     /**
+     * Staff-uploaded .msg/.eml filed as sent (email row or linked document).
+     */
+    public function scopeManualSentUpload(Builder $query): Builder
+    {
+        return $query->where('mail_type', 1)
+            ->whereNotNull('uploaded_doc_id')
+            ->where(function ($q) {
+                $q->where('mail_body_type', 'sent')
+                    ->orWhereExists(function ($exists) {
+                        $exists->selectRaw('1')
+                            ->from('documents')
+                            ->whereColumn('documents.id', 'email_logs.uploaded_doc_id')
+                            ->where('documents.mail_type', 'sent');
+                    });
+            });
+    }
+
+    /**
+     * Imported mail (synced or staff .msg/.eml upload) that belongs in the Sent folder.
+     */
+    public function scopeImportedSentMail(Builder $query): Builder
+    {
+        return $query->where('mail_type', 1)
+            ->where(function ($q) {
+                $q->where('mail_body_type', 'sent')
+                    ->orWhere(function ($manual) {
+                        $manual->whereNotNull('uploaded_doc_id')
+                            ->whereExists(function ($exists) {
+                                $exists->selectRaw('1')
+                                    ->from('documents')
+                                    ->whereColumn('documents.id', 'email_logs.uploaded_doc_id')
+                                    ->where('documents.mail_type', 'sent');
+                            });
+                    });
+            });
+    }
+
+    /**
+     * Exclude manual sent uploads from inbox-style lists (e.g. null mail_body_type + sent document).
+     */
+    public function scopeExcludeManualSentUpload(Builder $query): Builder
+    {
+        return $query->whereNot(function ($q) {
+            $q->manualSentUpload();
+        });
+    }
+
+    public static function uploaderDisplayName(?Staff $staff): string
+    {
+        if (! $staff) {
+            return '';
+        }
+
+        $name = trim((string) (($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')));
+
+        return $name !== '' ? $name : trim((string) ($staff->email ?? ''));
+    }
+
+    /**
      * Check if the email has attachments.
      */
     public function hasAttachments(): bool

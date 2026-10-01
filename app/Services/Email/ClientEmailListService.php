@@ -137,14 +137,7 @@ class ClientEmailListService
                         });
                     }
                 })->orWhere(function ($uploaded) {
-                    $uploaded->where('mail_type', 1)
-                        ->where(function ($inner) {
-                            $inner->whereNull('conversion_type')
-                                ->orWhere(function ($sub) {
-                                    $sub->where('conversion_type', 'conversion_email_fetch')
-                                        ->where('mail_body_type', 'sent');
-                                });
-                        });
+                    $uploaded->importedSentMail();
                 });
             })
             ->with(['labels', 'attachments', 'pdfDocument'])
@@ -199,14 +192,7 @@ class ClientEmailListService
                         });
                     }
                 })->orWhere(function ($uploaded) {
-                    $uploaded->where('mail_type', 1)
-                        ->where(function ($inner) {
-                            $inner->whereNull('conversion_type')
-                                ->orWhere(function ($sub) {
-                                    $sub->where('conversion_type', 'conversion_email_fetch')
-                                        ->where('mail_body_type', 'sent');
-                                });
-                        });
+                    $uploaded->importedSentMail();
                 });
             })
             ->with(['labels', 'attachments', 'pdfDocument'])

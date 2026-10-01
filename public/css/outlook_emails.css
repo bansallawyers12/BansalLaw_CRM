@@ -1092,6 +1092,11 @@ body, html {
     margin-top: 2px;
 }
 
+.meta-uploaded-by {
+    color: #6b7280;
+    font-size: 0.8125rem;
+}
+
 .meta-cc,
 .meta-bcc {
     color: #64748b;

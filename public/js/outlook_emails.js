@@ -50,6 +50,26 @@ function crmInitOutlookEmailsInterface() {
     const PER_PAGE_OPTIONS = [10, 20, 50, 100, 200, 500];
     const PER_PAGE_STORAGE_KEY = 'outlook_emails_per_page';
 
+    /** System labels named Inbox/Sent map to mail folders, not tag filters. */
+    function getSelectedLabelMailFolder() {
+        if (!labelFilter || !labelFilter.value) {
+            return null;
+        }
+        const opt = labelFilter.options[labelFilter.selectedIndex];
+        if (!opt) {
+            return null;
+        }
+        const mailFolder = (opt.getAttribute('data-mail-folder') || '').trim().toLowerCase();
+        return mailFolder === 'inbox' || mailFolder === 'sent' ? mailFolder : null;
+    }
+
+    function getEffectiveLabelFilterValue() {
+        if (!labelFilter || !labelFilter.value || getSelectedLabelMailFolder()) {
+            return '';
+        }
+        return labelFilter.value;
+    }
+
     function getListTotalCountEl() {
         return document.getElementById('listTotalCount');
     }
@@ -1916,6 +1936,10 @@ function crmInitOutlookEmailsInterface() {
     if (labelFilter) {
         labelFilter.addEventListener('change', () => {
             currentPage = 1;
+            const mailFolder = getSelectedLabelMailFolder();
+            if (mailFolder && !unassignedOnly) {
+                switchToFolder(mailFolder);
+            }
             loadEmails();
             updateClientFilterToggleState();
         });
@@ -2257,6 +2281,12 @@ function crmInitOutlookEmailsInterface() {
         resetReadingPane();
         updateOutboxFiltersVisibility();
         updateUnassignedFolderChrome();
+        if (!unassignedOnly && (folder === 'inbox' || folder === 'sent') && labelFilter) {
+            const selectedMailFolder = getSelectedLabelMailFolder();
+            if (selectedMailFolder && selectedMailFolder !== folder) {
+                labelFilter.value = '';
+            }
+        }
     }
 
     // Send Mail
@@ -4477,7 +4507,7 @@ function crmInitOutlookEmailsInterface() {
 
         try {
             const query = searchInput.value;
-            const label = labelFilter ? labelFilter.value : '';
+            const label = getEffectiveLabelFilterValue();
             const sender = senderFilter ? senderFilter.value : '';
             const folderToFetch = currentFolder;
             const pageToFetch = Math.max(1, currentPage || 1);

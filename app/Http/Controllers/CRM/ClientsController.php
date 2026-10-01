@@ -5822,6 +5822,19 @@ class ClientsController extends Controller
 
         $search = $request->input('search');
         $labelId = $request->input('label_id');
+        if (! empty($labelId)) {
+            $systemFolderLabel = \App\Models\EmailLabel::query()
+                ->whereKey($labelId)
+                ->where('type', 'system')
+                ->first(['id', 'name']);
+            if ($systemFolderLabel) {
+                $systemFolder = strtolower(trim((string) $systemFolderLabel->name));
+                if ($systemFolder === 'inbox' || $systemFolder === 'sent') {
+                    $folder = $systemFolder;
+                    $labelId = null;
+                }
+            }
+        }
         $senderFilter = $request->input('sender_filter');
         $sendStatusFilter = $request->input('send_status', '');
         $dateFrom = $request->input('date_from');
@@ -5982,8 +5995,7 @@ class ClientsController extends Controller
                         });
                     }
                 })->orWhere(function ($sub) {
-                    $sub->where('mail_type', 1)
-                        ->where('mail_body_type', 'sent');
+                    $sub->importedSentMail();
                 });
             });
         } elseif ($folder === 'outbox') {
@@ -6488,7 +6500,8 @@ class ClientsController extends Controller
             ->where(function ($q) {
                 $q->where('mail_body_type', 'inbox')
                   ->orWhereNull('mail_body_type');
-            });
+            })
+            ->excludeManualSentUpload();
     }
 
     protected function applyUnreadEmailScope($query): void
