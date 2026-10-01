@@ -6671,6 +6671,12 @@ class ClientsController extends Controller
                 return $this->updateCheckinLogAssignee($checkinLog, $assigneeId);
             }
 
+            // Task note reassignment (from assignee views)
+            $taskNote = Note::find($id);
+            if ($taskNote) {
+                return $this->updateTaskAssignee($taskNote, $assigneeId);
+            }
+
             // Fallback: check if matching client/lead exists
             $client = Admin::find($id);
             if ($client && $client->isCrmClientOrLeadSubject()) {
@@ -6735,6 +6741,57 @@ class ClientsController extends Controller
                 $notif->notification_type = 'officevisit';
                 $notif->message = 'Office Visit Assigned by ' . (Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '');
                 $notif->save();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Assignee changed successfully',
+            ]);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Something went wrong',
+        ], 500);
+    }
+
+    /**
+     * Update task note assignee
+     *
+     * @param Note $taskNote
+     * @param int|null $assigneeId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function updateTaskAssignee(Note $taskNote, ?int $assigneeId)
+    {
+        $user = Auth::guard('admin')->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($taskNote->client_id) {
+            $this->ensureCrmRecordAccess((int) $taskNote->client_id);
+        }
+
+        $taskNote->assigned_to = $assigneeId;
+        $saved = $taskNote->save();
+
+        if ($saved) {
+            if ($taskNote->client_id && $assigneeId) {
+                $staff = Staff::find($assigneeId);
+                $staffName = $staff ? trim($staff->first_name . ' ' . $staff->last_name) : 'Staff #' . $assigneeId;
+                $log = new ActivitiesLog();
+                $log->client_id = $taskNote->client_id;
+                $log->created_by = $user->id;
+                $log->subject = "Reassigned task to {$staffName}";
+                $log->description = '<p>' . e($taskNote->description ?? '') . '</p>';
+                $log->use_for = $assigneeId;
+                $log->followup_date = $taskNote->action_date;
+                $log->task_group = $taskNote->task_group;
+                $log->task_status = (int) ($taskNote->status ?? 0);
+                $log->pin = 0;
+                $log->activity_type = 'activity';
+                $log->save();
             }
 
             return response()->json([

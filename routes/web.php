@@ -270,6 +270,14 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
     Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
 
+    /*---------- Assignee AJAX Endpoints (Issue 05) ----------*/
+    Route::post('/update_list_status', [AssigneeController::class, 'updateStatus'])->name('assignee.update_status');
+    Route::post('/update_list_priority', [AssigneeController::class, 'updatePriority'])->name('assignee.update_priority');
+    Route::post('/update_apppointment_comment', [AssigneeController::class, 'addComment'])->name('assignee.add_comment');
+    Route::post('/update_apppointment_description', [AssigneeController::class, 'updateDescription'])->name('assignee.update_description');
+    Route::match(['get', 'post'], '/get-assigne-detail', [AssigneeController::class, 'getDetail'])->name('assignee.get_detail');
+    Route::match(['get', 'post'], '/change_assignee', [ClientsController::class, 'change_assignee'])->name('assignee.change_assignee');
+
     /*---------- Task Management ----------*/
     // Task routes for email and contact uniqueness
     Route::post('/is_email_unique', [LeadController::class, 'is_email_unique']);

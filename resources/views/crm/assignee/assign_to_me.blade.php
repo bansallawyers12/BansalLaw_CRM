@@ -487,6 +487,13 @@
         </div>
     </div>
 </div>
+
+<!-- Task Details View Modal -->
+<div class="modal fade" id="openassigneview" tabindex="-1" role="dialog" aria-labelledby="openassigneviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content taskview"></div>
+    </div>
+</div>
 @endsection
 @push('scripts')
 <script>
@@ -647,21 +654,21 @@
 
 		var assinee= $('#changeassignee').val();
 		$('.popuploader').show();
-		// console.log($('#changeassignee').val());
 		$.ajax({
 			url: site_url+'/change_assignee',
 			type:'GET',
 			data:{id: appliid,assinee: assinee},
 			success: function(response){
-				// console.log(response);
-				 var obj = $.parseJSON(response);
+				var obj = typeof response === 'object' ? response : $.parseJSON(response);
 				if(obj.status){
 				    crmAlert(obj.message);
-				location.reload();
-
+				    location.reload();
 				}else{
 					crmAlert(obj.message);
 				}
+			},
+			complete: function(){
+				$('.popuploader').hide();
 			}
 		});
     });
@@ -675,15 +682,14 @@
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_comment:visitcomment},
 			success: function(responses){
-				// $('.popuploader').hide();
 				$('.taskcomment').val('');
-				// REMOVED: Deprecated endpoint /get-assigne-detail
+				$('.popuploader').hide();
+			},
+			error: function(){
 				$('.popuploader').hide();
 			}
 		});
 	});
-	// REMOVED: Deprecated appointment system functionality
-	// $(document).delegate('.openassigneview', 'click', function(){ ... });
 
 	$(document).delegate('.changestatus', 'click', function(){
 		var appliid = $(this).attr('data-id');
@@ -697,16 +703,16 @@
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,statusname:statusame,status:status},
 			success: function(responses){
 				$('.popuploader').hide();
-				var obj = JSON.parse(responses);
+				var obj = typeof responses === 'object' ? responses : JSON.parse(responses);
 				if(obj.status){
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
-				// REMOVED: Deprecated endpoint /get-assigne-detail
+			},
+			error: function(){
 				$('.popuploader').hide();
 			}
 		});
 	});
-
 
 	$(document).delegate('.changepriority', 'click', function(){
 		var appliid = $(this).attr('data-id');
@@ -718,18 +724,22 @@
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,status:status},
 			success: function(responses){
-				$('.popuploader').hide();
-
 				$.ajax({
 					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){
 						$('.popuploader').hide();
-						$('.taskview').html(responses);
-
+						$('.taskview').html(typeof responses === 'object' && responses.html ? responses.html : responses);
+						$('#openassigneview').modal('show');
+					},
+					error: function(){
+						$('.popuploader').hide();
 					}
 				});
+			},
+			error: function(){
+				$('.popuploader').hide();
 			}
 		});
 	});
@@ -753,9 +763,10 @@
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
 			success: function(responses){
-				// REMOVED: Deprecated endpoint /get-assigne-detail
 				$('.popuploader').hide();
-
+			},
+			error: function(){
+				$('.popuploader').hide();
 			}
 		});
 	});
@@ -775,10 +786,16 @@
 					data:{id:appliid},
 					success: function(responses){
 						$('.popuploader').hide();
-						$('.taskview').html(responses);
+						$('.taskview').html(typeof responses === 'object' && responses.html ? responses.html : responses);
+						$('#openassigneview').modal('show');
+					},
+					error: function(){
+						$('.popuploader').hide();
 					}
 				});
-
+			},
+			error: function(){
+				$('.popuploader').hide();
 			}
 		});
 	});

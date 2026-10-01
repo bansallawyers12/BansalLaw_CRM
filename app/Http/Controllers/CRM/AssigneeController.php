@@ -25,9 +25,12 @@ use App\Services\ClientMatterTaskSyncService;
 use App\Services\DashboardService;
 use App\Helpers\SortableHelper;
 use Illuminate\Support\Facades\URL;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 
 class AssigneeController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     /**
      * Display a listing of the resource.
      *
@@ -1106,4 +1109,286 @@ class AssigneeController extends Controller
         }
     }
 
-}
+    /**
+     * Update task status (AJAX endpoint /update_list_status).
+     */
+    public function updateStatus(Request $request)
+    {
+        $id = $request->input('id');
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task ID is required.',
+            ], 400);
+        }
+
+        $task = Note::find($id);
+        if (!$task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found.',
+            ], 404);
+        }
+
+        $this->authorizeNoteManagement($task);
+
+        $statusInput = (string) $request->input('status', '0');
+        $statusName = strtolower(trim((string) $request->input('statusname', '')));
+
+        if ($statusInput === '1' || $statusName === 'completed' || $statusName === 'closed') {
+            $normalizedStatus = '1';
+        } elseif ($statusInput === '2' || $statusName === 'in-progress' || $statusName === 'in progress') {
+            $normalizedStatus = '2';
+        } else {
+            $normalizedStatus = '0';
+        }
+
+        $task->status = $normalizedStatus;
+        $task->save();
+
+        if ($normalizedStatus === '1') {
+            app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($task, true);
+        } else {
+            app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($task, false);
+        }
+
+        // Generate badge HTML for UI replacement
+        $badge = match ($normalizedStatus) {
+            '1' => '<span class="badge bg-success">Completed</span>',
+            '2' => '<span class="badge bg-primary">In-Progress</span>',
+            default => '<span class="badge bg-warning">Pending</span>',
+        };
+
+        if ($task->client_id) {
+            $log = new ActivitiesLog();
+            $log->client_id = $task->client_id;
+            $log->created_by = Auth::guard('admin')->id() ?? Auth::id();
+            $statusLabel = match ($normalizedStatus) {
+                '1' => 'Completed',
+                '2' => 'In-Progress',
+                default => 'Pending',
+            };
+            $log->subject = "Task status updated to {$statusLabel}";
+            $log->description = '<p>' . e($task->description ?? '') . '</p>';
+            if (Auth::id() != @$task->assigned_to) {
+                $log->use_for = @$task->assigned_to;
+            }
+            $log->followup_date = @$task->action_date;
+            $log->task_group = @$task->task_group;
+            $log->task_status = (int) $normalizedStatus;
+            $log->pin = 0;
+            $log->activity_type = 'activity';
+            $log->save();
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Status updated successfully',
+            'viewstatus' => $badge,
+        ]);
+    }
+
+    /**
+     * Update task priority / group (AJAX endpoint /update_list_priority).
+     */
+    public function updatePriority(Request $request)
+    {
+        $id = $request->input('id');
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task ID is required.',
+            ], 400);
+        }
+
+        $task = Note::find($id);
+        if (!$task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found.',
+            ], 404);
+        }
+
+        $this->authorizeNoteManagement($task);
+
+        $priority = trim((string) ($request->input('status') ?? $request->input('priority') ?? 'Urgent'));
+        if (!empty($priority)) {
+            $task->task_group = $priority;
+            $task->save();
+        }
+
+        if ($task->client_id) {
+            $log = new ActivitiesLog();
+            $log->client_id = $task->client_id;
+            $log->created_by = Auth::guard('admin')->id() ?? Auth::id();
+            $log->subject = "Task priority updated to {$priority}";
+            $log->description = '<p>' . e($task->description ?? '') . '</p>';
+            if (Auth::id() != @$task->assigned_to) {
+                $log->use_for = @$task->assigned_to;
+            }
+            $log->followup_date = @$task->action_date;
+            $log->task_group = $priority;
+            $log->task_status = (int) ($task->status ?? 0);
+            $log->pin = 0;
+            $log->activity_type = 'activity';
+            $log->save();
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Priority updated successfully',
+        ]);
+    }
+
+    /**
+     * Add a comment to a task (AJAX endpoint /update_apppointment_comment).
+     */
+    public function addComment(Request $request)
+    {
+        $id = $request->input('id');
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task ID is required.',
+            ], 400);
+        }
+
+        $task = Note::find($id);
+        if (!$task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found.',
+            ], 404);
+        }
+
+        $this->authorizeNoteManagement($task);
+
+        $comment = trim((string) ($request->input('visit_comment') ?? $request->input('comment') ?? ''));
+
+        if (!empty($comment) && $task->client_id) {
+            $log = new ActivitiesLog();
+            $log->client_id = $task->client_id;
+            $log->created_by = Auth::guard('admin')->id() ?? Auth::id();
+            $log->subject = 'Task comment added';
+            $log->description = '<p>' . e($comment) . '</p>';
+            if (Auth::id() != @$task->assigned_to) {
+                $log->use_for = @$task->assigned_to;
+            }
+            $log->followup_date = @$task->action_date;
+            $log->task_group = @$task->task_group;
+            $log->task_status = (int) ($task->status ?? 0);
+            $log->pin = 0;
+            $log->activity_type = 'comment';
+            $log->save();
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Comment saved successfully',
+        ]);
+    }
+
+    /**
+     * Update task description (AJAX endpoint /update_apppointment_description).
+     */
+    public function updateDescription(Request $request)
+    {
+        $id = $request->input('id');
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task ID is required.',
+            ], 400);
+        }
+
+        $task = Note::find($id);
+        if (!$task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found.',
+            ], 404);
+        }
+
+        $this->authorizeNoteManagement($task);
+
+        $description = trim((string) ($request->input('visit_purpose') ?? $request->input('description') ?? ''));
+        $task->description = $description;
+        $task->save();
+
+        if ($task->client_id) {
+            $log = new ActivitiesLog();
+            $log->client_id = $task->client_id;
+            $log->created_by = Auth::guard('admin')->id() ?? Auth::id();
+            $log->subject = 'Task description updated';
+            $log->description = '<p>' . e($description) . '</p>';
+            if (Auth::id() != @$task->assigned_to) {
+                $log->use_for = @$task->assigned_to;
+            }
+            $log->followup_date = @$task->action_date;
+            $log->task_group = @$task->task_group;
+            $log->task_status = (int) ($task->status ?? 0);
+            $log->pin = 0;
+            $log->activity_type = 'activity';
+            $log->save();
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Description updated successfully',
+        ]);
+    }
+
+    /**
+     * Get task detail for modal view or JSON (AJAX endpoint /get-assigne-detail).
+     */
+    public function getDetail(Request $request)
+    {
+        $id = $request->input('id');
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task ID is required.',
+            ], 400);
+        }
+
+        $task = Note::with(['noteClient', 'assigned_staff', 'noteStaff'])->find($id);
+        if (!$task) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Task not found.',
+            ], 404);
+        }
+
+        $this->authorizeNoteManagement($task);
+
+        $activities = collect();
+        if ($task->client_id) {
+            $activities = ActivitiesLog::where('client_id', $task->client_id)
+                ->where(function ($query) {
+                    $query->where('subject', 'like', '%task%')
+                          ->orWhere('activity_type', 'comment');
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+        }
+
+        $renderedHtml = view('crm.assignee.partials.task_detail_modal', compact('task', 'activities'))->render();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => true,
+                'task' => $task,
+                'activities' => $activities,
+                'html' => $renderedHtml,
+            ]);
+        }
+
+        return response($renderedHtml, 200)->header('Content-Type', 'text/html');
+    }
+
+}

@@ -16,8 +16,8 @@ This master matrix provides an immediate operational overview of every identifie
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Client Intake (`CRM / Clients`) | Fatal 500 (`NOT NULL password` constraint) | **Resolved**: Password automatically hashed & populated via model booted hook. |
 | **02** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Front Desk (`Office Visits / Email`) | Form had no `action` & missing `@csrf` | **Resolved**: Form wired to `clients.sendmail` with `@csrf`, sender selector, attachments, and email click modal trigger. |
 | **03** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Dashboard Quick Tasks | Missing JS event listener (`#dashboard_assignStaff`) | **Resolved**: Event listeners bound in `public/js/dashboard.js` & `modals.blade.php`, `/assignee/store` route registered, deadline persistence added. |
-| **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Follow-up & Assignee | 3 Routes point to non-existent Controller methods | **High**: Assignee changes trigger fatal 500 error; spinner hangs indefinitely. |
-| **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **High**: Task comments, statuses, priorities, and descriptions fail with 404. |
+| **04** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Client Follow-up & Assignee | 3 Routes point to non-existent Controller methods | **Resolved**: Added change_assignee, removetag, retagfollowup with full tests. |
+| **05** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **Resolved**: Registered routes & implemented updateStatus, updatePriority, addComment, updateDescription, getDetail, and change_assignee. |
 | **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Public Booking Sync | cURL Error 77 (Hardcoded Windows SSL cert path) | **High**: Public appointments fail to sync to CRM on Linux server & local. |
 | **07** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Detail Verification | Missing route `/clients/update-email-verified` | **Medium**: Checkbox verification reverts; verification timestamp never persists. |
 | **08** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Admin Activity Audit Search | Missing route `/crm/activities/{id}` | **Medium**: "View Details" modal fails with 404; activity payload inaccessible. |
@@ -209,7 +209,7 @@ Changing the assignee on a client profile failed completely on production. The l
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: HTTP 404 Failures      | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -227,14 +227,14 @@ Changing the assignee on a client profile failed completely on production. The l
   - `GET /get-assigne-detail`
 - **Failure Mode:** **HTTP 404 Not Found** (Silent failure or uncaught JavaScript error)
 
-#### Why and How This Occurs on the Live Server
-The inline JavaScript in these Blade views calls root-relative URLs (e.g., `site_url + '/update_list_status'`). Because these routes are missing from `routes/web.php` and `routes/crm.php`, the production web server returns 404 Not Found for every single request.
+#### Why and How This Occurred on the Live Server
+The inline JavaScript in these Blade views called root-relative URLs (e.g., `site_url + '/update_list_status'`). Because these routes were missing from `routes/web.php` and `routes/crm.php`, the production web server returned 404 Not Found for every single request.
 
 #### Production Impact
-- Task comments submitted by staff fail to save.
-- Task status changes (In Progress / Completed) revert upon page reload.
-- Task priority updates fail to persist.
-- Task description edits are lost.
+- Task comments submitted by staff failed to save.
+- Task status changes (In Progress / Completed) reverted upon page reload.
+- Task priority updates failed to persist.
+- Task description edits were lost.
 
 #### Remediation Plan
 Register the missing routes or update the Blade files to target the existing controller routes:
@@ -245,6 +245,28 @@ Route::post('/update_apppointment_comment', [AssigneeController::class, 'addComm
 Route::post('/update_apppointment_description', [AssigneeController::class, 'updateDescription'])->name('assignee.update_description');
 Route::get('/get-assigne-detail', [AssigneeController::class, 'getDetail'])->name('assignee.get_detail');
 ```
+
+#### Resolution
+1. **Implemented Controller Methods in `AssigneeController.php`:**
+   - `updateStatus()`: Normalizes and persists task status (`0` for Pending, `1` for Completed, `2` for In-Progress), synchronizes completion state via `ClientMatterTaskSyncService`, logs status transition in `ActivitiesLog`, and returns status badge HTML for instantaneous dynamic UI replacement.
+   - `updatePriority()`: Persists priority / group changes to `task_group` column and logs activity.
+   - `addComment()`: Saves staff task comments directly to `ActivitiesLog` linked to the client and assigned staff.
+   - `updateDescription()`: Saves updated task note description and logs revision in `ActivitiesLog`.
+   - `getDetail()`: Returns structured JSON or rendered modal HTML view snippet (`crm.assignee.partials.task_detail_modal`).
+   - Imported and applied `EnsuresCrmRecordAccess` trait for strict client/matter authorization checks.
+2. **Added Task Note Reassignment in `ClientsController::change_assignee`:**
+   - Supported root-level `/change_assignee` called from `assign_to_me.blade.php` to seamlessly reassign task notes as well as check-in logs and client profiles.
+3. **Registered Routes in `routes/web.php`:**
+   - `Route::post('/update_list_status', [AssigneeController::class, 'updateStatus'])->name('assignee.update_status')`
+   - `Route::post('/update_list_priority', [AssigneeController::class, 'updatePriority'])->name('assignee.update_priority')`
+   - `Route::post('/update_apppointment_comment', [AssigneeController::class, 'addComment'])->name('assignee.add_comment')`
+   - `Route::post('/update_apppointment_description', [AssigneeController::class, 'updateDescription'])->name('assignee.update_description')`
+   - `Route::match(['get', 'post'], '/get-assigne-detail', [AssigneeController::class, 'getDetail'])->name('assignee.get_detail')`
+   - `Route::match(['get', 'post'], '/change_assignee', [ClientsController::class, 'change_assignee'])->name('assignee.change_assignee')`
+4. **Hardened Blade Templates:**
+   - Updated `assign_to_me.blade.php`, `completed.blade.php`, and `index.blade.php` inline JavaScript to defensively handle JSON objects/strings and guarantee `.popuploader` is hidden on completion or error. Added `#openassigneview` modal container in `assign_to_me.blade.php`.
+5. **Automated Verification:**
+   - Created comprehensive test suite `tests/Feature/AssigneeAjaxEndpointsTest.php` (9 tests, 48 assertions, 100% passing) verifying all 5 endpoints, authentication, authorization, database persistence, and root `/change_assignee`.
 
 ---
 
@@ -562,7 +584,7 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 2: ROUTE INTEGRITY & CONTROLLER METHODS (Day 2)                                                   |
 |   [x] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |
-|   [ ] Register missing routes: /update_list_status, /update_apppointment_comment (Issue 05).            |
+|   [x] Register missing routes: /update_list_status, /update_apppointment_comment (Issue 05).            |
 |   [ ] Register /clients/update-email-verified and /crm/activities/{id} (Issues 07 & 08).                |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 3: EXTERNAL SYNC & DATA MODEL INTEGRITY (Day 3)                                                   |

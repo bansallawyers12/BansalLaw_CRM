@@ -441,15 +441,16 @@
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,statusname:statusame,status:status},
 			success: function(responses){
 				$('.popuploader').hide();
-				var obj = JSON.parse(responses);
+				var obj = typeof responses === 'object' ? responses : JSON.parse(responses);
 				if(obj.status){
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
-				// REMOVED: Deprecated endpoint /get-assigne-detail
+			},
+			error: function(){
+				$('.popuploader').hide();
 			}
 		});
 	});
-
 
 	$(document).delegate('.changepriority', 'click', function(){
 		var appliid = $(this).attr('data-id');
@@ -462,8 +463,8 @@
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,status:status},
 			success: function(responses){
 				$('.popuploader').hide();
-
-				// REMOVED: Deprecated endpoint /get-assigne-detail
+			},
+			error: function(){
 				$('.popuploader').hide();
 			}
 		});
