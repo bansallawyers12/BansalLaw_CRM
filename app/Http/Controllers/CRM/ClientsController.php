@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
+use App\Models\Notification;
 use App\Models\Note;
 use App\Models\BookingAppointment;
 // clientServiceTaken model removed - table client_service_takens does not exist
@@ -6620,5 +6621,302 @@ class ClientsController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Change assignee for office check-in log or client/lead profile
+     * GET|POST /clients/change_assignee
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function change_assignee(Request $request)
+    {
+        $id = $request->input('id');
+        $assigneeVal = $request->input('assinee') ?? $request->input('assignee') ?? $request->input('val');
+        $assigneeId = ($assigneeVal !== null && $assigneeVal !== '' && (int) $assigneeVal > 0) ? (int) $assigneeVal : null;
+
+        if (empty($id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Record ID is required',
+            ], 400);
+        }
+
+        $id = (int) $id;
+        $type = strtolower(trim((string) $request->input('type', '')));
+
+        try {
+            // Explicit target type: client or lead profile
+            if ($type === 'client' || $type === 'lead') {
+                return $this->updateClientAssignee($id, $assigneeId);
+            }
+
+            // Primary: check-in log (from client detail check-in popup)
+            $checkinLog = CheckinLog::find($id);
+            if ($checkinLog) {
+                return $this->updateCheckinLogAssignee($checkinLog, $assigneeId);
+            }
+
+            // Fallback: check if matching client/lead exists
+            $client = Admin::find($id);
+            if ($client && $client->isCrmClientOrLeadSubject()) {
+                return $this->updateClientAssignee($id, $assigneeId);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Record not found',
+            ], 404);
+
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error in change_assignee: ' . $e->getMessage(), ['exception' => $e]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update check-in log assignee
+     *
+     * @param CheckinLog $checkinLog
+     * @param int|null $assigneeId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function updateCheckinLogAssignee(CheckinLog $checkinLog, ?int $assigneeId)
+    {
+        if ($checkinLog->client_id) {
+            $this->ensureCrmRecordAccessForOptionalClientId((int) $checkinLog->client_id);
+        }
+
+        if ($assigneeId && ! Staff::where('id', $assigneeId)->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Selected staff member does not exist',
+            ], 422);
+        }
+
+        $checkinLog->user_id = $assigneeId;
+        $saved = $checkinLog->save();
+
+        if ($saved) {
+            if ($assigneeId && Auth::check()) {
+                if ($checkinLog->status == 2) {
+                    $t = 'attending';
+                } elseif ($checkinLog->status == 1) {
+                    $t = 'completed';
+                } else {
+                    $t = 'waiting';
+                }
+
+                $notif = new Notification();
+                $notif->sender_id = Auth::user()->id;
+                $notif->receiver_id = $assigneeId;
+                $notif->module_id = $checkinLog->id;
+                $notif->url = URL::to('/office-visits/' . $t);
+                $notif->notification_type = 'officevisit';
+                $notif->message = 'Office Visit Assigned by ' . (Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '');
+                $notif->save();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Assignee changed successfully',
+            ]);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Something went wrong',
+        ], 500);
+    }
+
+    /**
+     * Update client or lead profile assignee
+     *
+     * @param int $clientId
+     * @param int|null $assigneeId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function updateClientAssignee(int $clientId, ?int $assigneeId)
+    {
+        $this->ensureCrmRecordAccess($clientId);
+
+        $client = Admin::find($clientId);
+        if (! $client || ! $client->isCrmClientOrLeadSubject()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Client not found',
+            ], 404);
+        }
+
+        if ($assigneeId && ! Staff::where('id', $assigneeId)->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Selected staff member does not exist',
+            ], 422);
+        }
+
+        $client->user_id = $assigneeId;
+        $client->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Assignee changed successfully',
+        ]);
+    }
+
+    /**
+     * Remove a tag from client
+     * GET|POST /clients/removetag
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function removetag(Request $request)
+    {
+        $clientId = (int) ($request->input('client_id') ?? $request->input('id'));
+        $tagToRemove = trim((string) ($request->input('tag') ?? $request->input('tag_name') ?? $request->input('name') ?? ''));
+        $tagType = strtolower(trim((string) $request->input('type', '')));
+        $wantsJson = $request->ajax() || $request->wantsJson();
+
+        if (! $clientId) {
+            $msg = 'Client ID is required';
+            return $wantsJson
+                ? response()->json(['success' => false, 'status' => false, 'message' => $msg], 400)
+                : redirect()->back()->with('error', $msg);
+        }
+
+        try {
+            $this->ensureCrmRecordAccess($clientId);
+
+            $client = Admin::find($clientId);
+            if (! $client || ! $client->isCrmClientOrLeadSubject()) {
+                $msg = 'Client not found';
+                return $wantsJson
+                    ? response()->json(['success' => false, 'status' => false, 'message' => $msg], 404)
+                    : redirect()->back()->with('error', $msg);
+            }
+
+            [$normal, $red] = ClientTagStorage::decode($client->tagname);
+
+            if ($tagToRemove === '') {
+                if ($request->has('clear_all')) {
+                    $normal = [];
+                    $red = [];
+                } else {
+                    $msg = 'Tag name is required';
+                    return $wantsJson
+                        ? response()->json(['success' => false, 'status' => false, 'message' => $msg], 400)
+                        : redirect()->back()->with('error', $msg);
+                }
+            } else {
+                if ($tagType === 'red') {
+                    $red = array_values(array_filter($red, fn($t) => strcasecmp($t, $tagToRemove) !== 0));
+                } elseif ($tagType === 'normal') {
+                    $normal = array_values(array_filter($normal, fn($t) => strcasecmp($t, $tagToRemove) !== 0));
+                } else {
+                    $normal = array_values(array_filter($normal, fn($t) => strcasecmp($t, $tagToRemove) !== 0));
+                    $red = array_values(array_filter($red, fn($t) => strcasecmp($t, $tagToRemove) !== 0));
+                }
+            }
+
+            $client->tagname = ClientTagStorage::encode($normal, $red);
+            $client->save();
+
+            $msg = 'Tag removed successfully';
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'status' => true,
+                    'message' => $msg,
+                    'tags' => ['normal' => $normal, 'red' => $red],
+                ]);
+            }
+
+            return redirect()->back()->with('success', $msg);
+
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error removing tag: ' . $e->getMessage(), ['exception' => $e]);
+
+            if ($wantsJson) {
+                return response()->json(['success' => false, 'status' => false, 'message' => 'An error occurred while removing tag'], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred while removing tag');
+        }
+    }
+
+    /**
+     * Retag client follow-up
+     * POST /clients/followup/retagfollowup
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function retagfollowup(Request $request)
+    {
+        $clientId = (int) ($request->input('client_id') ?? $request->input('id'));
+        $wantsJson = $request->ajax() || $request->wantsJson();
+
+        if (! $clientId) {
+            $msg = 'Client ID is required';
+            return $wantsJson
+                ? response()->json(['success' => false, 'status' => false, 'message' => $msg], 400)
+                : redirect()->back()->with('error', $msg);
+        }
+
+        try {
+            $this->ensureCrmRecordAccess($clientId);
+
+            $client = Admin::find($clientId);
+            if (! $client || ! $client->isCrmClientOrLeadSubject()) {
+                $msg = 'Client not found';
+                return $wantsJson
+                    ? response()->json(['success' => false, 'status' => false, 'message' => $msg], 404)
+                    : redirect()->back()->with('error', $msg);
+            }
+
+            $tagNormal = (array) $request->input('tag_normal', $request->input('tags', []));
+            $tagRed = (array) $request->input('tag_red', []);
+
+            [$existingNormal, $existingRed] = ClientTagStorage::decode($client->tagname);
+
+            $mergedNormal = ClientTagStorage::normalizeList(array_merge($existingNormal, $tagNormal));
+            $mergedRed = ClientTagStorage::normalizeList(array_merge($existingRed, $tagRed));
+
+            $client->tagname = ClientTagStorage::encode($mergedNormal, $mergedRed);
+            $client->save();
+
+            $msg = 'Follow-up retagged successfully';
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'status' => true,
+                    'message' => $msg,
+                    'tags' => ['normal' => $mergedNormal, 'red' => $mergedRed],
+                ]);
+            }
+
+            return redirect()->back()->with('success', $msg);
+
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error retagging follow-up: ' . $e->getMessage(), ['exception' => $e]);
+
+            if ($wantsJson) {
+                return response()->json(['success' => false, 'status' => false, 'message' => 'An error occurred while retagging follow-up'], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred while retagging follow-up');
+        }
     }
 }

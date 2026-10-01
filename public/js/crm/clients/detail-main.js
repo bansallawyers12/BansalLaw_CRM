@@ -3606,6 +3606,18 @@ success: function(response) {
 
                     }
 
+                },
+
+                error: function(xhr){
+                    var msg = 'Failed to change assignee.';
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    crmAlert(msg);
+                },
+
+                complete: function(){
+                    $('.popuploader').hide();
                 }
 
             });

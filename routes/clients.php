@@ -67,11 +67,11 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
 
 /*---------- Client Actions & Activities ----------*/
 Route::post('/clients/tasks/store', [ClientTaskController::class, 'store'])->name('clients.tasks.store');
-Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
+Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup'])->name('clients.followup.retag');
 Route::post('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLeadOnly'])->name('clients.convertLeadOnly');
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
-Route::get('/clients/removetag', [ClientsController::class, 'removetag']);
+Route::match(['get', 'post'], '/clients/removetag', [ClientsController::class, 'removetag'])->name('clients.removetag');
 Route::get('/clients/account-tab/{client_id}', [ClientsController::class, 'accountTabHtml'])->name('clients.account-tab-html');
 Route::get('/clients/detail-tab/{client_id}/{tab}', [ClientsController::class, 'detailTabHtml'])->name('clients.detail-tab-html');
 Route::get('/clients/detail/{client_id}/{client_unique_matter_ref_no?}/{tab?}', [ClientsController::class, 'detail'])->name('clients.detail');
@@ -82,7 +82,7 @@ Route::post('/clients/google-review-reminder/sms', [ClientsController::class, 's
 Route::get('/clients/get-recipients', [ClientsController::class, 'getrecipients'])->name('clients.getrecipients');
 Route::get('/clients/get-onlyclientrecipients', [ClientsController::class, 'getonlyclientrecipients'])->name('clients.getonlyclientrecipients');
 Route::get('/clients/get-allclients', [ClientsController::class, 'getallclients'])->name('clients.getallclients');
-Route::get('/clients/change_assignee', [ClientsController::class, 'change_assignee']);
+Route::match(['get', 'post'], '/clients/change_assignee', [ClientsController::class, 'change_assignee'])->name('clients.change_assignee');
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
 Route::get('/crm/compose-senders', [ComposeSendersController::class, 'senders'])->name('crm.compose.senders');

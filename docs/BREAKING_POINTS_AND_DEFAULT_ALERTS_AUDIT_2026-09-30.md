@@ -164,7 +164,7 @@ In `modals.blade.php`, the form action was set to `javascript:void(0);`, delegat
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: Fatal 500 Exception    | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -177,24 +177,31 @@ In `modals.blade.php`, the form action was set to `javascript:void(0);`, delegat
   3. `GET /clients/change_assignee` -> `ClientsController@change_assignee`
 - **Failure Mode:** **HTTP 500 BadMethodCallException** (`Method App\Http\Controllers\CRM\ClientsController::change_assignee does not exist.`)
 
-#### Why and How This Occurs on the Live Server
+#### Why and How This Occurred on the Live Server
 Laravel route files map incoming requests to controller methods. In `public/js/crm/clients/detail-main.js:3587`, changing a client assignee triggers an active AJAX call:
 ```javascript
 $.ajax({
     type: "GET",
     url: site_url + "/clients/change_assignee",
-    data: { id: id, val: val },
+    data: { id: appliid, assinee: $('#changeassignee').val() },
     // ...
 });
 ```
-On the production server, because `ClientsController` has no `change_assignee` method, Laravel immediately throws a fatal 500 exception.
+On the production server, because `ClientsController` had no `change_assignee` method, Laravel immediately threw a fatal 500 exception.
 
 #### Production Impact
-Changing the assignee on a client profile fails completely on production. The loading spinner spins indefinitely, and the new assignee is **never saved to the database**.
+Changing the assignee on a client profile failed completely on production. The loading spinner spun indefinitely, and the new assignee was **never saved to the database**.
 
 #### Remediation Plan
 1. Add the missing method in `ClientsController.php` or route the request to `AssigneeController@change_assignee`.
 2. Remove or implement the unused `retagfollowup` and `removetag` endpoints.
+
+#### Resolution
+1. **Implemented `change_assignee()`** in `ClientsController.php` to handle assignee updates for both check-in logs (`CheckinLog`) and client/lead profile records (`Admin`), with input normalization (`assinee`, `assignee`, `val`), staff existence validation, record-level authorization via `ensureCrmRecordAccess`, and staff notification dispatch.
+2. **Implemented `removetag()` & `retagfollowup()`** in `ClientsController.php` using `ClientTagStorage` with strict `ensureCrmRecordAccess` verification and JSON responses.
+3. **Route Integrity:** Registered route names (`clients.change_assignee`, `clients.removetag`, `clients.followup.retag`) in `routes/clients.php` and allowed `GET|POST` on `change_assignee` and `removetag`.
+4. **UI Hardening:** Added `error` and `complete` callbacks in `public/js/crm/clients/detail-main.js` `.saveassignee` handler to guarantee the loading spinner `.popuploader` is always hidden on completion.
+5. **Automated Tests:** Verified via `tests/Feature/ClientFollowupAndAssigneeRoutesTest.php` (11 tests, 33 assertions, all passing).
 
 ---
 
@@ -554,7 +561,7 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 |   [x] Bind click event listener for #dashboard_assignStaff on Dashboard task modal (Issue 03).          |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 2: ROUTE INTEGRITY & CONTROLLER METHODS (Day 2)                                                   |
-|   [ ] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |
+|   [x] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |
 |   [ ] Register missing routes: /update_list_status, /update_apppointment_comment (Issue 05).            |
 |   [ ] Register /clients/update-email-verified and /crm/activities/{id} (Issues 07 & 08).                |
 +---------------------------------------------------------------------------------------------------------+
