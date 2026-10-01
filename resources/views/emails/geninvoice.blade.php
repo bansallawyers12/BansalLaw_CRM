@@ -303,7 +303,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th style="width:32%">Description</th>
-                                <th>Fee earner</th>
+                                <th>Position</th>
                                 @if($invoiceShowHours)
                                     <th class="invoice-num-col">Hrs</th>
                                 @endif

@@ -106,6 +106,19 @@ class InvoiceTimesheetLineTest extends TestCase
         ]));
     }
 
+    public function test_display_fee_earner_shows_role_only_not_name(): void
+    {
+        $line = (object) [
+            'fee_earner_role' => 'Solicitor',
+            'feeEarner' => (object) [
+                'first_name' => 'Michael',
+                'last_name' => 'Saleh',
+            ],
+        ];
+
+        $this->assertSame('Solicitor', InvoiceTimesheetLine::displayFeeEarner($line));
+    }
+
     public function test_pdf_totals_sum_gst_column(): void
     {
         $lines = [

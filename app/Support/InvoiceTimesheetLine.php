@@ -265,27 +265,12 @@ class InvoiceTimesheetLine
         return false;
     }
 
+    /**
+     * Printed/PDF invoice column: position only (e.g. Solicitor), never staff name.
+     */
     public static function displayFeeEarner(object $line): string
     {
-        $name = '';
-        $earner = null;
-        if (isset($line->feeEarner) && $line->feeEarner) {
-            $earner = $line->feeEarner;
-        } elseif (! empty($line->fee_earner_id) && method_exists($line, 'feeEarner')) {
-            $earner = $line->feeEarner()->first();
-        }
-        if ($earner) {
-            $name = trim(($earner->first_name ?? '').' '.($earner->last_name ?? ''));
-            if ($name === '' && ! empty($earner->name)) {
-                $name = trim((string) $earner->name);
-            }
-        }
-        $role = trim((string) ($line->fee_earner_role ?? ''));
-        if ($name !== '' && $role !== '') {
-            return $name.' ('.$role.')';
-        }
-
-        return $name !== '' ? $name : $role;
+        return trim((string) ($line->fee_earner_role ?? ''));
     }
 
     /**
