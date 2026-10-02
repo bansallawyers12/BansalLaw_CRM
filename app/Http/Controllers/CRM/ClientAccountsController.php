@@ -23,6 +23,7 @@ use App\Support\InvoiceTimesheetLine;
 use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
 use App\Services\FinancialStatsService;
+use App\Services\CrmDurableStorage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -253,44 +254,112 @@ class ClientAccountsController extends Controller
     }
 
     /**
+     * Resolve durable storage service instance.
+     */
+    protected function durableStorage(): CrmDurableStorage
+    {
+        return app(CrmDurableStorage::class);
+    }
+
+    /**
+     * Normalize an object key from a stored myfile URL (handles path-style S3 and virtual-hosted S3 URLs).
+     */
+    protected function normalizeS3KeyFromMyfileUrl(?string $myfile): ?string
+    {
+        if ($myfile === null || $myfile === '') {
+            return null;
+        }
+
+        $parsed = parse_url($myfile);
+        if (! isset($parsed['path'])) {
+            return null;
+        }
+
+        $path = ltrim(urldecode((string) $parsed['path']), '/');
+        if ($path === '') {
+            return null;
+        }
+
+        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+        if ($bucket !== '' && str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
+        }
+
+        foreach (['storage/app/', 'storage/', 'app/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+                break;
+            }
+        }
+
+        return $path !== '' ? $path : null;
+    }
+
+    /**
      * Load PDF bytes for emailing: absolute local path, HTTP URL, or S3 object via myfile_key.
      */
     protected function getPdfBinaryForDocument(object $doc, int $adminsClientTableId, string $defaultDocFolder): ?string
     {
         if (!empty($doc->myfile)) {
             $mf = $doc->myfile;
+            if (CrmDurableStorage::isLocalMyfile($mf)) {
+                $relative = CrmDurableStorage::parseLocalMyfileKey($mf);
+                if ($relative) {
+                    $bytes = $this->durableStorage()->get($relative, $mf);
+                    if ($bytes !== null && $bytes !== '') {
+                        return $bytes;
+                    }
+                }
+            }
             if (is_file($mf)) {
                 $c = @file_get_contents($mf);
 
                 return ($c !== false && $c !== '') ? $c : null;
             }
+
+            // If it's an S3 URL, extract the object key and resolve via durable storage / authenticated S3
             if (preg_match('#^https?://#i', $mf)) {
-                $ctx = stream_context_create(['http' => ['timeout' => 45]]);
-                $c = @file_get_contents($mf, false, $ctx);
-                if ($c !== false && $c !== '') {
-                    return $c;
+                $urlKey = $this->normalizeS3KeyFromMyfileUrl($mf);
+                if ($urlKey !== null) {
+                    $bytes = $this->durableStorage()->get($urlKey, $mf);
+                    if ($bytes !== null && $bytes !== '') {
+                        return $bytes;
+                    }
                 }
             }
         }
 
-        if (empty($doc->myfile_key)) {
-            return null;
-        }
-
-        $path = $doc->myfile_key;
-        if (strpos($path, '/') === false) {
-            $clientInfo = DB::table('admins')->select('client_id')->where('id', $adminsClientTableId)->first();
-            $unique = $clientInfo->client_id ?? 'unknown';
-            $folder = !empty($doc->doc_type) ? $doc->doc_type : $defaultDocFolder;
-            $path = $unique . '/' . $folder . '/' . $doc->myfile_key;
-        }
-
-        try {
-            if (Storage::disk('s3')->exists($path)) {
-                return Storage::disk('s3')->get($path);
+        // Try durable storage / authenticated S3 via myfile_key
+        if (!empty($doc->myfile_key)) {
+            $path = $doc->myfile_key;
+            if (strpos($path, '/') === false) {
+                $clientInfo = DB::table('admins')->select('client_id')->where('id', $adminsClientTableId)->first();
+                $unique = $clientInfo->client_id ?? 'unknown';
+                $folder = !empty($doc->doc_type) ? $doc->doc_type : $defaultDocFolder;
+                $path = $unique . '/' . $folder . '/' . $doc->myfile_key;
             }
-        } catch (\Throwable $e) {
-            Log::warning('getPdfBinaryForDocument S3 read failed: ' . $e->getMessage(), ['path' => $path]);
+
+            $bytes = $this->durableStorage()->get($path, $doc->myfile ?? null);
+            if ($bytes !== null && $bytes !== '') {
+                return $bytes;
+            }
+
+            try {
+                if (Storage::disk('s3')->exists($path)) {
+                    return Storage::disk('s3')->get($path);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('getPdfBinaryForDocument S3 read failed: ' . $e->getMessage(), ['path' => $path]);
+            }
+        }
+
+        // Fallback for external HTTP URLs
+        if (!empty($doc->myfile) && preg_match('#^https?://#i', $doc->myfile)) {
+            $ctx = stream_context_create(['http' => ['timeout' => 15]]);
+            $c = @file_get_contents($doc->myfile, false, $ctx);
+            if ($c !== false && $c !== '') {
+                return $c;
+            }
         }
 
         return null;
@@ -513,13 +582,14 @@ class ClientAccountsController extends Controller
                 $fileExtension = $file->getClientOriginalExtension();
                 $name = time() . $file->getClientOriginalName();
                 $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                Storage::disk('s3')->put($filePath, file_get_contents($file));
+                $durable = $this->durableStorage();
+                $durable->putUploadedFile($file, $filePath);
    
                 $obj = new \App\Models\Document;
                 $obj->file_name = $nameWithoutExtension;
                 $obj->filetype = $fileExtension;
                 $obj->user_id = Auth::user()->id;
-                $obj->myfile = $this->s3PublicUrl($filePath);
+                $obj->myfile = $durable->myfileValue($filePath);
                 $obj->myfile_key = $name;
                 $obj->client_id = $requestData['client_id'];
                 $obj->type = $request->type;
@@ -1663,9 +1733,9 @@ class ClientAccountsController extends Controller
                             if ($client_unique_id) {
                                 $s3Path = $client_unique_id . '/invoices/' . $pdfDoc->myfile_key;
                                 try {
-                                    Storage::disk('s3')->delete($s3Path);
+                                    $this->durableStorage()->delete($s3Path);
                                 } catch (\Exception $e) {
-                                    Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                                    Log::warning('Failed to delete PDF from storage: ' . $e->getMessage(), ['path' => $s3Path]);
                                 }
                             }
                         }
@@ -1979,13 +2049,14 @@ class ClientAccountsController extends Controller
            $fileExtension = $file->getClientOriginalExtension();
            $name = time() . $file->getClientOriginalName();
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-           Storage::disk('s3')->put($filePath, file_get_contents($file));
+           $durable = $this->durableStorage();
+           $durable->putUploadedFile($file, $filePath);
 
            $obj = new \App\Models\Document;
            $obj->file_name = $nameWithoutExtension;
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
-           $obj->myfile = $this->s3PublicUrl($filePath);
+           $obj->myfile = $durable->myfileValue($filePath);
            $obj->myfile_key = $name;
            $obj->client_id = $requestData['client_id'];
            $obj->type = $request->type;
@@ -2593,9 +2664,9 @@ class ClientAccountsController extends Controller
                if ($client_unique_id) {
                    $s3Path = $client_unique_id . '/office_receipts/' . $pdfDoc->myfile_key;
                    try {
-                       Storage::disk('s3')->delete($s3Path);
+                       $this->durableStorage()->delete($s3Path);
                    } catch (\Exception $e) {
-                       Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                       Log::warning('Failed to delete PDF from storage: ' . $e->getMessage(), ['path' => $s3Path]);
                    }
                }
            }
@@ -3217,17 +3288,19 @@ class ClientAccountsController extends Controller
           foreach ($files as $file) {
            $size = $file->getSize();
            $fileName = $file->getClientOriginalName();
-           $explodeFileName = explode('.', $fileName);
+           $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+           $fileExtension = $file->getClientOriginalExtension();
            $name = time() . $file->getClientOriginalName();
-           $filePath = $client_unique_id.'/'.$doctype.'/'. $name;
-           Storage::disk('s3')->put($filePath, file_get_contents($file));
-           $exploadename = explode('.', $name);
+           $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+           $durable = $this->durableStorage();
+           $durable->putUploadedFile($file, $filePath);
 
            $obj = new \App\Models\Document;
-           $obj->file_name = $explodeFileName[0];
-           $obj->filetype = $exploadename[1];
+           $obj->file_name = $nameWithoutExtension;
+           $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
-           $obj->myfile = $name;
+           $obj->myfile = $durable->myfileValue($filePath);
+           $obj->myfile_key = $name;
 
            $obj->client_id = $requestData['client_id'];
            $obj->type = $request->type;
@@ -3563,15 +3636,15 @@ class ClientAccountsController extends Controller
               return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
           }
 
-          // Save final invoice PDF to AWS S3
+          // Save final invoice PDF to durable storage (local mirror + S3)
           $client_unique_id = $clientname->client_id ?? 'unknown';
-          $docType = 'invoices'; // Category for S3 storage
+          $docType = 'invoices'; // Category for storage
           $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
           $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
           
-          // Upload to S3
-          Storage::disk('s3')->put($filePath, $pdfContent);
-          $s3Url = $this->s3PublicUrl($filePath);
+          $durable = $this->durableStorage();
+          $durable->putBytes($filePath, $pdfContent);
+          $s3Url = $durable->myfileValue($filePath);
           
           // Get authenticated user ID
           $userId = Auth::check() ? Auth::user()->id : 1;
@@ -3737,21 +3810,21 @@ class ClientAccountsController extends Controller
                $filePath = $client_id.'/accounts/'. $name;
            }
            
+           $durable = $this->durableStorage();
            // CRITICAL: Start transaction for data integrity
            DB::beginTransaction();
            try {
-               Storage::disk('s3')->put($filePath, file_get_contents($file));
+               $durable->putUploadedFile($file, $filePath);
 
-               //$exploadename = explode('.', $document_upload);
-               $exploadename = explode('.', $name);
+               $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+               $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $explodeFileName[0];
-               $obj->filetype = $exploadename[1];
+               $obj->file_name = $nameWithoutExtension;
+               $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
-               //$obj->myfile = $document_upload;
-               $obj->myfile_key = $name;  // Store filename for backward compatibility
-               $obj->myfile = $name;  // Keep original behavior - stores filename not URL
+               $obj->myfile_key = $name;
+               $obj->myfile = $durable->myfileValue($filePath);
 
                $obj->client_id = $id;
                $obj->type = $request->type;
@@ -3773,8 +3846,8 @@ class ClientAccountsController extends Controller
                DB::commit();
            } catch (\Exception $e) {
                DB::rollBack();
-               // Clean up S3 file if database operations failed
-               Storage::disk('s3')->delete($filePath);
+               // Clean up stored file if database operations failed
+               $durable->delete($filePath);
                Log::error('Document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
@@ -3966,21 +4039,21 @@ class ClientAccountsController extends Controller
                $filePath = $client_id.'/accounts/'. $name;
            }
            
+           $durable = $this->durableStorage();
            // CRITICAL: Start transaction for data integrity
            DB::beginTransaction();
            try {
-               Storage::disk('s3')->put($filePath, file_get_contents($file));
+               $durable->putUploadedFile($file, $filePath);
 
-               //$exploadename = explode('.', $document_upload);
-               $exploadename = explode('.', $name);
+               $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+               $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $explodeFileName[0];
-               $obj->filetype = $exploadename[1];
+               $obj->file_name = $nameWithoutExtension;
+               $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
-               //$obj->myfile = $document_upload;
-               $obj->myfile_key = $name;  // Store filename for backward compatibility
-               $obj->myfile = $name;  // Keep original behavior - stores filename not URL
+               $obj->myfile_key = $name;
+               $obj->myfile = $durable->myfileValue($filePath);
 
                $obj->client_id = $id;
                $obj->type = $request->type;
@@ -4002,8 +4075,8 @@ class ClientAccountsController extends Controller
                DB::commit();
            } catch (\Exception $e) {
                DB::rollBack();
-               // Clean up S3 file if database operations failed
-               Storage::disk('s3')->delete($filePath);
+               // Clean up stored file if database operations failed
+               $durable->delete($filePath);
                Log::error('Office receipt document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
@@ -4194,21 +4267,21 @@ class ClientAccountsController extends Controller
                $filePath = $client_id.'/accounts/'. $name;
            }
            
+           $durable = $this->durableStorage();
            // CRITICAL: Start transaction for data integrity
            DB::beginTransaction();
            try {
-               Storage::disk('s3')->put($filePath, file_get_contents($file));
+               $durable->putUploadedFile($file, $filePath);
 
-               //$exploadename = explode('.', $document_upload);
-               $exploadename = explode('.', $name);
+               $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+               $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $explodeFileName[0];
-               $obj->filetype = $exploadename[1];
+               $obj->file_name = $nameWithoutExtension;
+               $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
-               //$obj->myfile = $document_upload;
-               $obj->myfile_key = $name;  // Store filename for backward compatibility
-               $obj->myfile = $name;  // Keep original behavior - stores filename not URL
+               $obj->myfile_key = $name;
+               $obj->myfile = $durable->myfileValue($filePath);
 
                $obj->client_id = $id;
                $obj->type = $request->type;
@@ -4230,8 +4303,8 @@ class ClientAccountsController extends Controller
                DB::commit();
            } catch (\Exception $e) {
                DB::rollBack();
-               // Clean up S3 file if database operations failed
-               Storage::disk('s3')->delete($filePath);
+               // Clean up stored file if database operations failed
+               $durable->delete($filePath);
                Log::error('Journal receipt document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
@@ -5456,9 +5529,9 @@ class ClientAccountsController extends Controller
         $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
         $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
         
-        // Upload to S3
-        Storage::disk('s3')->put($filePath, $pdfContent);
-        $s3Url = $this->s3PublicUrl($filePath);
+        $durable = $this->durableStorage();
+        $durable->putBytes($filePath, $pdfContent);
+        $s3Url = $durable->myfileValue($filePath);
         
         // Get authenticated user ID
         $userId = Auth::check() ? Auth::user()->id : 1;
@@ -5785,13 +5858,13 @@ public function genofficereceiptInvoice(Request $request, $id){
         $pdfContent = $pdf->output();
         $fileName = 'Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
         $client_unique_id = $clientname->client_id ?? 'unknown';
-        $docType = 'office_receipts'; // Category for S3 storage
+        $docType = 'office_receipts'; // Category for storage
         $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
         $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
         
-        // Upload to S3
-        Storage::disk('s3')->put($filePath, $pdfContent);
-        $s3Url = $this->s3PublicUrl($filePath);
+        $durable = $this->durableStorage();
+        $durable->putBytes($filePath, $pdfContent);
+        $s3Url = $durable->myfileValue($filePath);
         
         // Get authenticated user ID
         $userId = Auth::check() ? Auth::user()->id : 1;
@@ -5886,13 +5959,14 @@ public function genofficereceiptInvoice(Request $request, $id){
          $fileExtension = $file->getClientOriginalExtension();
          $name = time() . $file->getClientOriginalName();
          $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-         Storage::disk('s3')->put($filePath, file_get_contents($file));
+         $durable = $this->durableStorage();
+         $durable->putUploadedFile($file, $filePath);
 
          $obj = new \App\Models\Document;
          $obj->file_name = $nameWithoutExtension;
          $obj->filetype = $fileExtension;
          $obj->user_id = Auth::user()->id;
-         $obj->myfile = $this->s3PublicUrl($filePath);
+         $obj->myfile = $durable->myfileValue($filePath);
          $obj->myfile_key = $name;
          $obj->client_id = $requestData['client_id'];
          $obj->type = $request->type;
@@ -5949,9 +6023,9 @@ public function genofficereceiptInvoice(Request $request, $id){
              if ($client_unique_id) {
                  $s3Path = $client_unique_id . '/receipts/' . $pdfDoc->myfile_key;
                  try {
-                     Storage::disk('s3')->delete($s3Path);
+                     $this->durableStorage()->delete($s3Path);
                  } catch (\Exception $e) {
-                     Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                     Log::warning('Failed to delete PDF from storage: ' . $e->getMessage(), ['path' => $s3Path]);
                  }
              }
          }
@@ -6032,13 +6106,14 @@ public function updateClientFundsLedger(Request $request)
             $fileExtension = $file->getClientOriginalExtension();
             $name = time() . $file->getClientOriginalName();
             $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-            Storage::disk('s3')->put($filePath, file_get_contents($file));
+            $durable = $this->durableStorage();
+            $durable->putUploadedFile($file, $filePath);
 
             $obj = new \App\Models\Document;
             $obj->file_name = $nameWithoutExtension;
             $obj->filetype = $fileExtension;
             $obj->user_id = Auth::user()->id;
-            $obj->myfile = $this->s3PublicUrl($filePath);
+            $obj->myfile = $durable->myfileValue($filePath);
             $obj->myfile_key = $name;
             $obj->client_id = $requestData['client_id'];
             $obj->type = $request->type;

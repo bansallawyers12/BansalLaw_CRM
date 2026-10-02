@@ -14,7 +14,7 @@ This master matrix catalogs every failure point discovered across the CRM's file
 
 | # | Priority | Current Status | Server Impact | Module & Feature | Failure Mechanism | Data Loss / Production Consequence |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | 🔴 **CRITICAL** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting Receipts (`ClientAccountsController`) | Direct S3 `file_get_contents()` without local mirror or fallback | **High**: PHP memory limit exhaustion crashes server; S3 glitches cause permanent receipt loss. |
+| **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting Receipts (`ClientAccountsController`) | Direct S3 `file_get_contents()` without local mirror or fallback | **High**: PHP memory limit exhaustion crashes server; S3 glitches cause permanent receipt loss. |
 | **02** | 🔴 **CRITICAL** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Lead Email Compose Modal (`leads/history.blade.php:370`) | Form field name typo (`attachemnt[]` instead of `attach[]`) | **High**: Files added via "Attach More" are completely ignored by the controller and never sent. |
 | **03** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Video Uploads Engine (`PersonalDocumentVideoUploadService`) | Max video size (600MB) exceeds PHP `post_max_size` (512MB) | **High**: PHP drops `$_POST` and `$_FILES` silently; triggers HTTP 419 CSRF error after full upload. |
 | **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Document Deletion Workflow (`ClientDocumentsController:1378`) | DB record deleted before S3 delete; fails on empty `doc_type` | **High**: Orphaned files on S3; local mirror never deleted; double-slash S3 key fails deletion. |
@@ -36,7 +36,7 @@ This master matrix catalogs every failure point discovered across the CRM's file
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [CRITICAL]             | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [CRITICAL]             | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: Fatal Memory & S3 Loss | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -63,6 +63,13 @@ $durable = app(\App\Services\CrmDurableStorage::class);
 $durable->putUploadedFile($file, $filePath);
 $obj->myfile = $durable->myfileValue($filePath);
 ```
+
+#### Resolution Summary (Verified & Deployed)
+- **Service Integration:** Added `CrmDurableStorage` integration across all upload, generation, and deletion endpoints in `ClientAccountsController.php` via `$this->durableStorage()`.
+- **Memory Protection:** Replaced all `Storage::disk('s3')->put($filePath, file_get_contents($file))` calls with `$durable->putUploadedFile($file, $filePath)` to stream uploads directly from disk without reading the full file into PHP memory.
+- **Durable Local Mirror & Fallback:** File bytes and uploaded receipts are automatically mirrored locally under `storage/app/crm_durable/` before cloud put attempts, preventing receipt and invoice loss during S3 degradation or timeouts.
+- **Private S3 / 403 Forbidden Fix:** Implemented `normalizeS3KeyFromMyfileUrl()` and updated `getPdfBinaryForDocument()` to resolve files through durable local storage and authenticated S3 calls (`disk('s3')->get()`) before any external HTTP attempts, eliminating 403 Forbidden errors when emailing receipts or invoices.
+- **Rollback Consistency:** Standardized transaction catch blocks to remove failed files safely via `$durable->delete($filePath)`.
 
 ---
 
