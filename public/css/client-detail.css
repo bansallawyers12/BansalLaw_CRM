@@ -703,8 +703,37 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #personaldocuments-tab.client-documents-tab.tab-pane.active {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 570px;
+  overflow: visible;
+  min-height: 100vh;
+}
+
+/* Matter/Personal docs: folder bar + preview fill viewport when a document is open */
+#matterdocuments-tab.client-documents-tab.tab-pane.active.client-doc-viewport-fill,
+#personaldocuments-tab.client-documents-tab.tab-pane.active.client-doc-viewport-fill {
+  overflow: visible;
+  max-height: none;
+}
+
+#matterdocuments-tab.client-documents-tab.client-doc-viewport-fill .documentalls-container,
+#personaldocuments-tab.client-documents-tab.client-doc-viewport-fill .documentalls-container {
+  min-height: 100vh;
+  height: auto;
+  max-height: none;
+}
+
+#matterdocuments-tab.client-documents-tab.client-doc-viewport-fill .visa-documents-content,
+#personaldocuments-tab.client-documents-tab.client-doc-viewport-fill .personal-documents-content {
+  flex: 1 1 auto;
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#matterdocuments-tab.client-documents-tab.client-doc-viewport-fill .subtab6-content,
+#personaldocuments-tab.client-documents-tab.client-doc-viewport-fill .subtab2-content {
+  flex: 1 1 auto;
+  min-height: 100vh;
 }
 
 #matterdocuments-tab.client-documents-tab .documentalls-container,
@@ -712,8 +741,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
   margin-top: 0;
   border: none;
   box-shadow: none;
@@ -724,8 +754,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
 }
 
 #matterdocuments-tab.client-documents-tab .subtab-header-container,
@@ -762,27 +793,30 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 /* Personal documents: list + preview row fills tab panel (avoid nested 100vh overflow) */
 #personaldocuments-tab.client-documents-tab.tab-pane.active .subtab2-content {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 100vh;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .subtab2-pane.active {
   align-items: stretch;
   flex: 1 1 auto;
-  min-height: 480px;
+  min-height: 100vh;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
   flex: 0 0 380px;
-  min-height: 0;
-  max-height: none;
+  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
 }
 
 #personaldocuments-tab.client-documents-tab.tab-pane.active .client-doc-preview-pane.preview-pane {
   flex: 1 1 auto;
-  min-height: 480px;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
   align-self: stretch;
   justify-content: flex-start;
 }
@@ -816,27 +850,30 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 /* Matter documents: list + preview row fills tab panel (avoid nested 100vh overflow) */
 #matterdocuments-tab.client-documents-tab.tab-pane.active .subtab6-content {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 100vh;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .subtab6-pane.active {
   align-items: stretch;
   flex: 1 1 auto;
-  min-height: 480px;
+  min-height: 100vh;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
   flex: 0 0 380px;
-  min-height: 0;
-  max-height: none;
+  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
 }
 
 #matterdocuments-tab.client-documents-tab.tab-pane.active .client-doc-preview-pane.preview-pane {
   flex: 1 1 auto;
-  min-height: 480px;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
   align-self: stretch;
   justify-content: flex-start;
 }
@@ -873,9 +910,11 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   min-width: 320px;
   width: 380px;
   max-width: 42%;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   overflow: hidden;
   margin-top: 0;
 }
@@ -1002,17 +1041,22 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .client-doc-preview-pane.preview-pane,
-#personaldocuments-tab .client-doc-preview-pane.preview-pane {
+#personaldocuments-tab .client-doc-preview-pane.preview-pane,
+#notuseddocuments-tab .client-doc-preview-pane.preview-pane,
+#legalforms-tab .client-doc-preview-pane.preview-pane,
+.client-doc-preview-pane.preview-pane {
   flex: 1 1 560px;
   width: auto;
   max-width: none;
   min-width: 420px;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
   align-self: stretch;
   display: flex !important;
   flex-direction: column;
   margin-top: 0;
   overflow: hidden;
-  min-height: 0;
   position: relative;
   top: auto;
   padding: 0;
@@ -1023,9 +1067,14 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .client-doc-preview-pane .preview-content,
-#personaldocuments-tab .client-doc-preview-pane .preview-content {
+#personaldocuments-tab .client-doc-preview-pane .preview-content,
+#notuseddocuments-tab .client-doc-preview-pane .preview-content,
+#legalforms-tab .client-doc-preview-pane .preview-content,
+.client-doc-preview-pane .preview-content {
   flex: 1 1 auto;
   min-height: 0;
+  height: 100% !important;
+  max-height: 100% !important;
   overflow: hidden;
   width: 100%;
   display: flex;
@@ -1033,20 +1082,29 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .client-doc-preview-pane .preview-iframe-wrap,
-#personaldocuments-tab .client-doc-preview-pane .preview-iframe-wrap {
+#personaldocuments-tab .client-doc-preview-pane .preview-iframe-wrap,
+#notuseddocuments-tab .client-doc-preview-pane .preview-iframe-wrap,
+#legalforms-tab .client-doc-preview-pane .preview-iframe-wrap,
+.client-doc-preview-pane .preview-iframe-wrap {
   flex: 1 1 auto;
   position: relative;
   width: 100%;
+  height: 100% !important;
   min-height: 0;
   overflow: hidden;
   background: #f8fafc;
 }
 
 #matterdocuments-tab .client-doc-preview-pane .preview-iframe,
-#personaldocuments-tab .client-doc-preview-pane .preview-iframe {
+#personaldocuments-tab .client-doc-preview-pane .preview-iframe,
+#notuseddocuments-tab .client-doc-preview-pane .preview-iframe,
+#legalforms-tab .client-doc-preview-pane .preview-iframe,
+.client-doc-preview-pane .preview-iframe {
   display: block;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
   min-height: 0;
   border: none;
   background: #fff;
@@ -1200,12 +1258,19 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
     width: 100%;
     max-width: 42%;
     flex: 0 1 300px;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
   }
 
   #matterdocuments-tab .client-doc-preview-pane.preview-pane,
-  #personaldocuments-tab .client-doc-preview-pane.preview-pane {
+  #personaldocuments-tab .client-doc-preview-pane.preview-pane,
+  .client-doc-preview-pane.preview-pane {
     min-width: 300px;
     flex: 1 1 360px;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
   }
 
   #matterdocuments-tab .client-doc-preview-header-meta,
@@ -1219,13 +1284,16 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 @media (max-width: 768px) {
   #matterdocuments-tab.client-documents-tab.tab-pane.active,
   #personaldocuments-tab.client-documents-tab.tab-pane.active {
-    min-height: 480px;
+    min-height: 100vh;
   }
 
   #matterdocuments-tab .subtab6-pane.active,
   #personaldocuments-tab .subtab2-pane.active {
     flex-direction: column;
     gap: 12px;
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
   }
 
   #matterdocuments-tab.client-documents-tab .checklist-table-container,
@@ -1233,21 +1301,26 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
     width: 100%;
     max-width: 100%;
     flex: 0 1 auto;
-    max-height: 45%;
+    height: auto;
+    min-height: 0;
+    max-height: 45vh;
   }
 
   #matterdocuments-tab .checklist-table-scroll,
   #personaldocuments-tab .checklist-table-scroll {
-    max-height: none;
+    max-height: 40vh;
   }
 
   #matterdocuments-tab .client-doc-preview-pane.preview-pane,
-  #personaldocuments-tab .client-doc-preview-pane.preview-pane {
+  #personaldocuments-tab .client-doc-preview-pane.preview-pane,
+  .client-doc-preview-pane.preview-pane {
     width: 100%;
     max-width: 100%;
     min-width: 0;
     flex: 1 1 auto;
-    min-height: 240px;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
   }
 
   #matterdocuments-tab .md-folder-tabs,
@@ -1309,7 +1382,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 .checklist-table td a.file-link { color: var(--sidebar-active, #3a6fa8); text-decoration: none; font-weight: 600; }
 .checklist-table td a.file-link:hover { color: var(--navy, #1e3d60); text-decoration: underline; }
 .checklist-table td small { color: var(--text-muted, #5e7a90); }
-.preview-pane { flex: 1; background: var(--card-bg, #fff); border-radius: 8px; padding: 0; color: var(--text-dark, #1a2c40); border: 1px solid var(--border, #c8dcef); box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); min-height: 200px; display: flex; align-items: stretch; justify-content: center; height: 100%; }
+.preview-pane { flex: 1; background: var(--card-bg, #fff); border-radius: 8px; padding: 0; color: var(--text-dark, #1a2c40); border: 1px solid var(--border, #c8dcef); box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); min-height: 100vh; height: 100vh; display: flex; align-items: stretch; justify-content: center; }
 .preview-content { width: 100%; height: 100%; }
 @media (max-width: 768px) {
   .subtabs { flex-direction: column; padding: 10px; }
@@ -1318,7 +1391,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   .subtab-pane.active { flex-direction: column; }
   .subtab-header { flex-direction: column; gap: 10px; align-items: flex-start; }
   .checklist-table th, .checklist-table td { padding: 8px; font-size: 0.9rem; }
-  .preview-pane { min-height: 150px; margin-top: 20px; }
+  .preview-pane { min-height: 100vh; height: 100vh; margin-top: 20px; }
   
   /* Mobile responsive for subtab3 form headers */
   .subtab3-pane .form-header {
@@ -3497,8 +3570,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 #legalforms-tab .preview-container-legal-forms.client-doc-preview-pane {
     flex: 1 1 auto;
     min-width: 0;
-    height: 100%;
-    min-height: 0;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
     align-self: stretch;
     justify-content: flex-start;
     border-radius: 10px;
@@ -3672,8 +3746,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     }
 
     #legalforms-tab .preview-container-legal-forms.client-doc-preview-pane {
-        min-height: 55vh;
-        height: 55vh;
+        min-height: 100vh !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
     }
 }
 
@@ -8393,37 +8468,51 @@ body > .ts-dropdown {
 #personaldocuments-tab.client-documents-tab .subtab2-pane.active.hide-list-view {
   gap: 0;
   width: 100%;
+  height: 100vh;
+  min-height: 100vh;
 }
 
 #matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane.preview-pane,
-#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane.preview-pane {
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane.preview-pane,
+.hide-list-view .client-doc-preview-pane.preview-pane {
   flex: 1 1 100%;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
   align-self: stretch;
 }
 
 #matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-content,
-#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-content {
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-content,
+.hide-list-view .client-doc-preview-pane .preview-content {
   min-height: 0;
+  height: 100% !important;
+  max-height: 100% !important;
   flex: 1 1 auto;
 }
 
 #matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe-wrap,
-#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe-wrap {
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe-wrap,
+.hide-list-view .client-doc-preview-pane .preview-iframe-wrap {
   flex: 1 1 auto;
+  height: 100% !important;
   min-height: 0;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  position: relative;
+  overflow: hidden;
 }
 
 #matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe,
-#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe {
-  position: relative;
-  inset: auto;
-  min-height: 100%;
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe,
+.hide-list-view .client-doc-preview-pane .preview-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
+  border: none;
+  background: #fff;
 }
 
 /* Send SMS (#sendSmsModal) ÃƒÂ¢Ã‚Â€Ã‚Â” same navy gradient header as Add matter / Compose Email */

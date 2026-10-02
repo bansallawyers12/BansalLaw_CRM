@@ -573,7 +573,9 @@
                     border: 1px solid var(--border, #c8dcef);
                     border-radius: 10px;
                     background: var(--page-bg, #f0f6ff);
-                    min-height: 360px;
+                    height: 100vh !important;
+                    min-height: 100vh !important;
+                    max-height: 100vh !important;
                     padding: 16px;
                 }
 
@@ -644,7 +646,9 @@
 
                     #notuseddocuments-tab .not-used-preview-pane {
                         width: 100%;
-                        min-height: 280px;
+                        height: 100vh !important;
+                        min-height: 100vh !important;
+                        max-height: 100vh !important;
                     }
                 }
             </style>

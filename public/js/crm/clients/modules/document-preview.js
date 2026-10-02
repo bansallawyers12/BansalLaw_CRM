@@ -46,11 +46,7 @@
     }
 
     function getPreviewFrameHeight($container, isOfficePreview) {
-        if (isClientDocPreviewPane($container)) {
-            return '100%';
-        }
-
-        return 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)';
+        return isOfficePreview ? 'calc(100vh - 100px)' : 'calc(100vh - 56px)';
     }
 
     function buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, options) {
@@ -68,7 +64,7 @@
             ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
             : '';
         var toggleBtn = showToggleList
-            ? '<button type="button" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-toggle-list-btn" title="Toggle document list" aria-label="Toggle document list" onclick="var $pane=$(this).closest(\'.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane\'); $pane.toggleClass(\'hide-list-view\'); $(this).toggleClass(\'is-active\');"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>'
+            ? '<button type="button" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-toggle-list-btn" title="Toggle document list" aria-label="Toggle document list" onclick="var $pane=$(this).closest(\'.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane\'); $pane.toggleClass(\'hide-list-view\'); $(this).toggleClass(\'is-active\'); if (typeof window.scheduleClientDocumentsPanelHeightAdjust === \'function\') { window.scheduleClientDocumentsPanelHeightAdjust(); }"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>'
             : '';
         var uploadedMeta = safeUploadedAt
             ? '<div class="client-doc-preview-header-meta" title="Uploaded ' + safeUploadedAt + '">'
@@ -131,10 +127,10 @@
         const onError = typeof options.onError === 'function' ? options.onError : function() {};
 
         container.html(`
-            <div class="preview-content preview-content-with-loader" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; position: relative; min-height: 0;">
+            <div class="preview-content preview-content-with-loader" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; position: relative; min-height: 0; height: 100%;">
                 ${headerHtml}
                 ${toolbarHtml}
-                <div class="preview-iframe-wrap">
+                <div class="preview-iframe-wrap" style="flex: 1; height: 100%; min-height: 0; position: relative; overflow: hidden;">
                     ${renderPreviewLoadingOverlay(loadingMessage)}
                     <iframe class="preview-iframe" src="${embeddedPreviewUrl}" title="Document preview" style="width: 100%; height: ${frameHeight}; border: none; background: #fff;"></iframe>
                 </div>
@@ -327,6 +323,9 @@
             $pane.addClass('hide-list-view');
             $pane.find('.client-doc-preview-toggle-list-btn').addClass('is-active');
         }
+        if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
+            window.scheduleClientDocumentsPanelHeightAdjust();
+        }
     }
 
     function previewFile(fileType, fileUrl, containerId, fileLabel) {
@@ -372,7 +371,7 @@
             showToggleList: true,
             uploadedAt: uploadedAt
         });
-        const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
+        const mediaMaxHeight = 'calc(100vh - 60px)';
 
         // Client doc pane: full-width preview (list hidden; toolbar toggle restores it).
         if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview || normalizedType === 'eml')) {
@@ -563,8 +562,8 @@
             'flex-direction': 'column',
             'margin-top': '15px',
             width: '499px',
-            'min-height': '500px',
-            height: 'calc(100vh - 200px)',
+            'min-height': '100vh',
+            height: '100vh',
             border: '1px solid #dee2e6',
             'border-radius': '4px',
             padding: '15px',
