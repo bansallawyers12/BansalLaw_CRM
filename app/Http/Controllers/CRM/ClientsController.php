@@ -6989,4 +6989,189 @@ class ClientsController extends Controller
             return redirect()->back()->with('error', 'An error occurred while retagging follow-up');
         }
     }
+
+    /**
+     * Manually update email and phone verification status for a client.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateEmailVerified(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|integer|exists:admins,id',
+            'manual_email_phone_verified' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        try {
+            $clientId = (int) $request->input('client_id');
+            $this->ensureCrmRecordAccess($clientId);
+
+            $client = Admin::findOrFail($clientId);
+            $rawVerified = $request->input('manual_email_phone_verified');
+            $isVerified = filter_var($rawVerified, FILTER_VALIDATE_BOOLEAN) || (int) $rawVerified === 1 || $rawVerified === '1';
+
+            $staffId = Auth::guard('admin')->id();
+            $now = Carbon::now();
+
+            if ($isVerified) {
+                // Update existing ClientEmail records
+                $clientEmails = ClientEmail::where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId)->orWhere('admin_id', $clientId);
+                })->get();
+
+                if ($clientEmails->isNotEmpty()) {
+                    foreach ($clientEmails as $email) {
+                        $email->update([
+                            'is_verified' => true,
+                            'verified_at' => $now,
+                            'verified_by' => $staffId,
+                        ]);
+                        if (class_exists(\App\Models\EmailVerification::class)) {
+                            \App\Models\EmailVerification::where('client_email_id', $email->id)
+                                ->where('status', \App\Models\EmailVerification::STATUS_PENDING)
+                                ->update([
+                                    'status' => \App\Models\EmailVerification::STATUS_VERIFIED,
+                                    'is_verified' => true,
+                                    'verified_at' => $now,
+                                    'verified_by' => $staffId,
+                                ]);
+                        }
+                    }
+                } elseif (!empty($client->email)) {
+                    // Create verified ClientEmail record if client has email on admin model
+                    ClientEmail::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'email' => $client->email,
+                        'email_type' => $client->email_type ?: 'Primary',
+                        'is_verified' => true,
+                        'verified_at' => $now,
+                        'verified_by' => $staffId,
+                    ]);
+                }
+
+                // Update existing ClientContact records
+                $clientContacts = ClientContact::where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId)->orWhere('admin_id', $clientId);
+                })->get();
+
+                if ($clientContacts->isNotEmpty()) {
+                    foreach ($clientContacts as $contact) {
+                        $contact->update([
+                            'is_verified' => true,
+                            'verified_at' => $now,
+                            'verified_by' => $staffId,
+                        ]);
+                        if (class_exists(\App\Models\PhoneVerification::class)) {
+                            \App\Models\PhoneVerification::where('client_contact_id', $contact->id)
+                                ->where('status', \App\Models\PhoneVerification::STATUS_PENDING)
+                                ->update([
+                                    'status' => \App\Models\PhoneVerification::STATUS_VERIFIED,
+                                    'is_verified' => true,
+                                    'verified_at' => $now,
+                                    'verified_by' => $staffId,
+                                ]);
+                        }
+                    }
+                } elseif (!empty($client->phone)) {
+                    // Create verified ClientContact record if client has phone on admin model
+                    ClientContact::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'phone' => $client->phone,
+                        'country_code' => $client->country_code ?: '+61',
+                        'contact_type' => $client->contact_type ?: 'Primary',
+                        'is_verified' => true,
+                        'verified_at' => $now,
+                        'verified_by' => $staffId,
+                    ]);
+                }
+
+                if (Schema::hasColumn('admins', 'manual_email_phone_verified')) {
+                    $client->manual_email_phone_verified = 1;
+                    $client->save();
+                }
+
+                $this->logClientActivity(
+                    $clientId,
+                    'Marked email and phone as verified',
+                    'Staff manually marked client email and phone contact details as verified.'
+                );
+            } else {
+                // Revert ClientEmail records
+                $clientEmails = ClientEmail::where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId)->orWhere('admin_id', $clientId);
+                })->get();
+
+                foreach ($clientEmails as $email) {
+                    if (app()->bound(\App\Services\ContactVerificationService::class) || class_exists(\App\Services\ContactVerificationService::class)) {
+                        app(\App\Services\ContactVerificationService::class)->invalidateEmailVerification($email);
+                    } else {
+                        $email->update([
+                            'is_verified' => false,
+                            'verified_at' => null,
+                            'verified_by' => null,
+                        ]);
+                    }
+                }
+
+                // Revert ClientContact records
+                $clientContacts = ClientContact::where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId)->orWhere('admin_id', $clientId);
+                })->get();
+
+                foreach ($clientContacts as $contact) {
+                    if (app()->bound(\App\Services\ContactVerificationService::class) || class_exists(\App\Services\ContactVerificationService::class)) {
+                        app(\App\Services\ContactVerificationService::class)->invalidatePhoneVerification($contact);
+                    } else {
+                        $contact->update([
+                            'is_verified' => false,
+                            'verified_at' => null,
+                            'verified_by' => null,
+                        ]);
+                    }
+                }
+
+                if (Schema::hasColumn('admins', 'manual_email_phone_verified')) {
+                    $client->manual_email_phone_verified = 0;
+                    $client->save();
+                }
+
+                $this->logClientActivity(
+                    $clientId,
+                    'Marked email and phone as unverified',
+                    'Staff manually removed verified status from client email and phone contact details.'
+                );
+            }
+
+            return response()->json([
+                'status' => true,
+                'success' => true,
+                'is_verified' => $isVerified,
+                'message' => $isVerified
+                    ? 'Client contact details marked as verified successfully.'
+                    : 'Client contact verification status removed successfully.',
+            ]);
+
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error updating email/phone verification: ' . $e->getMessage(), ['exception' => $e]);
+
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'An error occurred while updating verification status.',
+            ], 500);
+        }
+    }
 }

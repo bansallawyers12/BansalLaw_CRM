@@ -19,7 +19,7 @@ This master matrix provides an immediate operational overview of every identifie
 | **04** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Client Follow-up & Assignee | 3 Routes point to non-existent Controller methods | **Resolved**: Added change_assignee, removetag, retagfollowup with full tests. |
 | **05** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **Resolved**: Registered routes & implemented updateStatus, updatePriority, addComment, updateDescription, getDetail, and change_assignee. |
 | **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Public Booking Sync | cURL Error 77 (Hardcoded Windows SSL cert path) | **High**: Public appointments fail to sync to CRM on Linux server & local. |
-| **07** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Detail Verification | Missing route `/clients/update-email-verified` | **Medium**: Checkbox verification reverts; verification timestamp never persists. |
+| **07** | 🟡 **MEDIUM** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local** | Client Detail Verification | Missing route `/clients/update-email-verified` | **Resolved**: Route registered in `routes/clients.php`, `ClientsController::updateEmailVerified` implemented, contact verification persisted, UI toggle added. |
 | **08** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Admin Activity Audit Search | Missing route `/crm/activities/{id}` | **Medium**: "View Details" modal fails with 404; activity payload inaccessible. |
 | **09** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Booking & Appointments Model | Model `$fillable` contains non-existent DB column | **Medium**: Direct mass assignment (`create($request->all())`) throws SQL error. |
 | **10** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting & Receipts | Fatal `TypeError` (`__PHP_Incomplete_Class`) | **Medium**: Accounting tab crashes when cached Eloquent objects deserialize. |
@@ -308,8 +308,8 @@ $response = Http::withOptions(['verify' => $caBundle])->...
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: HTTP 404 Not Found     | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED / FIXED                            |
+| SEVERITY: HTTP 404 Not Found     | SERVER REPRODUCIBILITY: 🚨 Fixed on Local                      |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -318,17 +318,22 @@ $response = Http::withOptions(['verify' => $caBundle])->...
 - **Dead Endpoint:** `POST /clients/update-email-verified`
 - **Failure Mode:** **HTTP 404 Not Found**
 
-#### Why and How This Occurs on the Live Server
-In `detail-main.js`, clicking the verification checkbox sends an AJAX POST request to `/clients/update-email-verified`. This route is missing from `routes/clients.php`.
+#### Why and How This Occurred on the Live Server
+In `detail-main.js`, clicking the verification checkbox sends an AJAX POST request to `/clients/update-email-verified`. This route was missing from `routes/clients.php`, and `updateEmailVerified` was missing from `ClientsController`.
 
 #### Production Impact
-Staff cannot manually mark client contact details as verified. The checkbox reverts upon page refresh, and verification status is never persisted.
+Staff could not manually mark client contact details as verified. The checkbox reverted upon page refresh, and verification status was never persisted.
 
-#### Remediation Plan
-Add the missing route in `routes/clients.php`:
-```php
-Route::post('/update-email-verified', [ClientsController::class, 'updateEmailVerified'])->name('clients.update_email_verified');
-```
+#### Resolution
+1. Added route `/clients/update-email-verified` and alias `/update-email-verified` in `routes/clients.php`.
+2. Implemented `updateEmailVerified(Request $request)` in `ClientsController`:
+   - Validates `client_id` and `manual_email_phone_verified`.
+   - Enforces record authorization using `EnsuresCrmRecordAccess`.
+   - Updates `ClientEmail` and `ClientContact` models (`is_verified`, `verified_at`, `verified_by`).
+   - Updates `EmailVerification` and `PhoneVerification` audit records.
+   - Logs action in timeline using `LogsClientActivity`.
+3. Added `.manual_email_phone_verified` toggle in `personal_details.blade.php` and `company_overview_unified.blade.php` with initial state reflection.
+4. Added feature test suite `tests/Feature/ClientManualVerificationTest.php` with 100% pass rate.
 
 ---
 
@@ -585,7 +590,8 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 | PHASE 2: ROUTE INTEGRITY & CONTROLLER METHODS (Day 2)                                                   |
 |   [x] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |
 |   [x] Register missing routes: /update_list_status, /update_apppointment_comment (Issue 05).            |
-|   [ ] Register /clients/update-email-verified and /crm/activities/{id} (Issues 07 & 08).                |
+|   [x] Register /clients/update-email-verified (Issue 07).                                               |
+|   [ ] Register /crm/activities/{id} (Issue 08).                                                         |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 3: EXTERNAL SYNC & DATA MODEL INTEGRITY (Day 3)                                                   |
 |   [ ] Remove hardcoded Windows CA cert path in BansalApiClient.php (Issue 06).                          |

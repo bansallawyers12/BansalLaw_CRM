@@ -1,4 +1,15 @@
-@php $comp = $fetchedData->company ?? null; @endphp
+@php
+    $comp = $fetchedData->company ?? null;
+    $compEmails = \App\Models\ClientEmail::where('client_id', $fetchedData->id)->get();
+    $compContacts = \App\Models\ClientContact::where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
+    $hasCompEmail = $compEmails->isNotEmpty();
+    $hasCompPhone = $compContacts->isNotEmpty();
+    $allCompEmailsVerified = $hasCompEmail && $compEmails->every(fn($e) => !empty($e->is_verified));
+    $allCompPhonesVerified = $hasCompPhone && $compContacts->every(fn($c) => !empty($c->is_verified));
+    $compManualVerifiedChecked = ($hasCompEmail || $hasCompPhone)
+        && (!$hasCompEmail || $allCompEmailsVerified)
+        && (!$hasCompPhone || $allCompPhonesVerified);
+@endphp
 {{-- Company Information Card --}}
 <article class="card cdn-ov-card">
     <header class="cdn-ov-card__head">
@@ -6,12 +17,23 @@
             <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
             <h3>Company Information</h3>
         </div>
-        @if(empty($isClosedMatterView))
-        <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
-           class="cdn-ov-card__action">
-            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit
-        </a>
-        @endif
+        <div class="d-flex align-items-center gap-2">
+            <label class="d-inline-flex align-items-center gap-1 m-0 text-muted" style="cursor: pointer; font-size: 0.8125rem; font-weight: 500;" title="Manually verify company email and phone contact details">
+                <input type="checkbox"
+                       class="manual_email_phone_verified form-check-input mt-0"
+                       data-client-id="{{ $fetchedData->id }}"
+                       value="{{ $compManualVerifiedChecked ? 1 : 0 }}"
+                       {{ $compManualVerifiedChecked ? 'checked' : '' }}
+                       style="cursor: pointer; width: 15px; height: 15px;">
+                <span style="user-select: none;">Verified Contact</span>
+            </label>
+            @if(empty($isClosedMatterView))
+            <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
+               class="cdn-ov-card__action">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit
+            </a>
+            @endif
+        </div>
     </header>
     <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
         <div class="cdn-ov-field">

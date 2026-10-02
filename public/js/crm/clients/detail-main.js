@@ -2798,44 +2798,43 @@ success: function(response) {
 
         // Appointment booking, time slots, getDisabledDateTime, calendar UI - see modules/appointments.js
 
-        $('.manual_email_phone_verified').on('change', function(){
+        $(document).on('change', '.manual_email_phone_verified', function(){
+            var $cb = $(this);
+            var isChecked = $cb.is(":checked");
+            var manual_email_phone_verified = isChecked ? 1 : 0;
+            $('.manual_email_phone_verified').val(manual_email_phone_verified);
 
-            if( $(this).is(":checked") ) {
+            var client_id = (window.ClientDetailConfig && window.ClientDetailConfig.clientId)
+                ? window.ClientDetailConfig.clientId
+                : $cb.data('clientId');
 
-                $('.manual_email_phone_verified').val(1);
-
-                var manual_email_phone_verified = 1;
-
-            } else {
-
-                $('.manual_email_phone_verified').val(0);
-
-                var manual_email_phone_verified = 0;
-
-            }
-
-
-
-            var client_id = window.ClientDetailConfig.clientId;
+            var updateUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.updateEmailVerified)
+                ? window.ClientDetailConfig.urls.updateEmailVerified
+                : (site_url + '/clients/update-email-verified');
 
             $.ajax({
-
-                url: site_url+'/clients/update-email-verified',
-
+                url: updateUrl,
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-
-                type:'POST',
-
-                data:{manual_email_phone_verified:manual_email_phone_verified,client_id:client_id},
-
+                type: 'POST',
+                data: {
+                    manual_email_phone_verified: manual_email_phone_verified,
+                    client_id: client_id
+                },
                 success: function(responses){
-
                     location.reload();
-
+                },
+                error: function(xhr, status, error) {
+                    $cb.prop('checked', !isChecked);
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to update verification status.';
+                    if (typeof toastr !== 'undefined' && toastr.error) {
+                        toastr.error(msg);
+                    } else if (typeof showAlert !== 'undefined') {
+                        showAlert('danger', msg);
+                    } else {
+                        alert(msg);
+                    }
                 }
-
             });
-
         });
 
 

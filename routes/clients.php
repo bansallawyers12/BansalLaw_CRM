@@ -65,6 +65,9 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
     Route::get('/status/{emailId}', [EmailVerificationController::class, 'getStatus'])->name('status');
 });
 
+Route::post('/clients/update-email-verified', [ClientsController::class, 'updateEmailVerified'])->name('clients.update_email_verified');
+Route::post('/update-email-verified', [ClientsController::class, 'updateEmailVerified']);
+
 /*---------- Client Actions & Activities ----------*/
 Route::post('/clients/tasks/store', [ClientTaskController::class, 'store'])->name('clients.tasks.store');
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup'])->name('clients.followup.retag');

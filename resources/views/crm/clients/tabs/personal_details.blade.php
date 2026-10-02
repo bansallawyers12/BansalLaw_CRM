@@ -14,10 +14,50 @@
                         @include('crm.companies.partials.company_overview_unified')
                     @else
                     <article class="card cdn-ov-card">
+                        @php
+                            if (\App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
+                                $clientEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->get();
+                            } else {
+                                if (\App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                    $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
+                                } else {
+                                    $clientEmails = collect();
+                                }
+                            }
+
+                            if (\App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
+                                $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
+                            } else {
+                                if (\App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                    $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
+                                } else {
+                                    $clientContacts = collect();
+                                }
+                            }
+
+                            $hasAnyEmail = !empty($clientEmails) && count($clientEmails) > 0;
+                            $hasAnyPhone = !empty($clientContacts) && count($clientContacts) > 0;
+                            $allEmailsVerified = $hasAnyEmail && $clientEmails->every(fn($e) => !empty($e->is_verified));
+                            $allPhonesVerified = $hasAnyPhone && $clientContacts->every(fn($c) => !empty($c->is_verified));
+                            $manualVerifiedChecked = ($hasAnyEmail || $hasAnyPhone)
+                                && (!$hasAnyEmail || $allEmailsVerified)
+                                && (!$hasAnyPhone || $allPhonesVerified);
+                        @endphp
                         <header class="cdn-ov-card__head">
                             <div class="cdn-ov-card__title">
                                 <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
                                 <h3>Personal Information</h3>
+                            </div>
+                            <div class="cdn-ov-card__action d-flex align-items-center">
+                                <label class="d-inline-flex align-items-center gap-1 m-0 text-muted" style="cursor: pointer; font-size: 0.8125rem; font-weight: 500;" title="Manually verify client email and phone contact details">
+                                    <input type="checkbox"
+                                           class="manual_email_phone_verified form-check-input mt-0"
+                                           data-client-id="{{ $fetchedData->id }}"
+                                           value="{{ $manualVerifiedChecked ? 1 : 0 }}"
+                                           {{ $manualVerifiedChecked ? 'checked' : '' }}
+                                           style="cursor: pointer; width: 15px; height: 15px;">
+                                    <span style="user-select: none;">Verified Contact</span>
+                                </label>
                             </div>
                         </header>
                         <div class="cdn-ov-card__body cdn-ov-card__body--scroll">

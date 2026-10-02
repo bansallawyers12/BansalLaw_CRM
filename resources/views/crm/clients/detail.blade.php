@@ -1733,6 +1733,7 @@ $(document).ready(function() {
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',
+            updateEmailVerified: '{{ route("clients.update_email_verified") }}',
             getNotes: '{{ URL::to("/get-notes") }}',
             matterTaskIndex: '{{ route("clients.matterTask.index") }}',
             matterTaskStore: '{{ route("clients.matterTask.store") }}',
