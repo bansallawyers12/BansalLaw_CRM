@@ -367,7 +367,7 @@ jQuery(document).ready(function($){
 	$('.attach_more').on('click', function(){
 		var numItems = $('.attfile').length;
 		if(numItems <= 4){
-		$('.filesdata').append('<div class="form-group row attfile"><div class="col-sm-12"><label for="subject" class="col-form-label col-sm-2">Attachment</label><div class="col-sm-6"><input type="file" name="attachemnt[]" class="form-control"></div><div class="col-sm-4"><a href="javascript:;" class="removeatt">Remove</a></div></div></div>');
+		$('.filesdata').append('<div class="form-group row attfile"><div class="col-sm-12"><label for="subject" class="col-form-label col-sm-2">Attachment</label><div class="col-sm-6"><input type="file" name="attach[]" class="form-control"></div><div class="col-sm-4"><a href="javascript:;" class="removeatt">Remove</a></div></div></div>');
 		}
 		var numItemss = $('.attfile').length;
 		if(numItemss <= 4){}

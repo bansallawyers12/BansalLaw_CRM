@@ -15,7 +15,7 @@ This master matrix catalogs every failure point discovered across the CRM's file
 | # | Priority | Current Status | Server Impact | Module & Feature | Failure Mechanism | Data Loss / Production Consequence |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting Receipts (`ClientAccountsController`) | Direct S3 `file_get_contents()` without local mirror or fallback | **High**: PHP memory limit exhaustion crashes server; S3 glitches cause permanent receipt loss. |
-| **02** | 🔴 **CRITICAL** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Lead Email Compose Modal (`leads/history.blade.php:370`) | Form field name typo (`attachemnt[]` instead of `attach[]`) | **High**: Files added via "Attach More" are completely ignored by the controller and never sent. |
+| **02** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Lead Email Compose Modal (`leads/history.blade.php:370`) | Form field name typo (`attachemnt[]` instead of `attach[]`) | **High**: Files added via "Attach More" are completely ignored by the controller and never sent. |
 | **03** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Video Uploads Engine (`PersonalDocumentVideoUploadService`) | Max video size (600MB) exceeds PHP `post_max_size` (512MB) | **High**: PHP drops `$_POST` and `$_FILES` silently; triggers HTTP 419 CSRF error after full upload. |
 | **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Document Deletion Workflow (`ClientDocumentsController:1378`) | DB record deleted before S3 delete; fails on empty `doc_type` | **High**: Orphaned files on S3; local mirror never deleted; double-slash S3 key fails deletion. |
 | **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Documents Preview (`ClientDocumentsController:2251`) | Raw 500 abort on S3 presigned URL failure | **High**: Viewing documents fails with 500 error if S3 has network hiccup, ignoring local mirror. |
@@ -77,7 +77,7 @@ $obj->myfile = $durable->myfileValue($filePath);
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [CRITICAL]             | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [CRITICAL]             | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: Silent File Omission   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -110,6 +110,10 @@ In [`resources/views/crm/leads/history.blade.php:370`](file:///c:/xampp_old/htdo
 -$('.filesdata').append('...<input type="file" name="attachemnt[]" class="form-control">...');
 +$('.filesdata').append('...<input type="file" name="attach[]" class="form-control">...');
 ```
+
+#### Resolution Summary (Applied Locally)
+- **Frontend Correction:** Fixed input name typo from `attachemnt[]` to `attach[]` in [`resources/views/crm/leads/history.blade.php:370`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/leads/history.blade.php#L370) so that files attached via "Attach More" match the backend expectation.
+- **Backend Defensive Fallback:** Added defensive handling in [`CRMUtilityController::sendmail()`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/CRMUtilityController.php#L1631) to also ingest any files submitted under `attachemnt` to prevent silent omission even if cached browser JavaScript or legacy forms send the misspelled field name.
 
 ---
 

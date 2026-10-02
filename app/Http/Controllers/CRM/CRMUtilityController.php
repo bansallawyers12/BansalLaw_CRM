@@ -1628,6 +1628,11 @@ class CRMUtilityController extends Controller
                     $array['filesatta'][] =  $file1;
                 }
             }
+            if ($request->hasFile('attachemnt')) {
+                foreach ($request->file('attachemnt') as $file1) {
+                    $array['filesatta'][] =  $file1;
+                }
+            }
 
             $composeAttachmentBudget = $this->assertComposeAttachmentsWithinSizeLimit(
                 $request,
