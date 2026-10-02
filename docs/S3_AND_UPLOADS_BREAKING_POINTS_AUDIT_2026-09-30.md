@@ -16,7 +16,7 @@ This master matrix catalogs every failure point discovered across the CRM's file
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting Receipts (`ClientAccountsController`) | Direct S3 `file_get_contents()` without local mirror or fallback | **High**: PHP memory limit exhaustion crashes server; S3 glitches cause permanent receipt loss. |
 | **02** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Lead Email Compose Modal (`leads/history.blade.php:370`) | Form field name typo (`attachemnt[]` instead of `attach[]`) | **High**: Files added via "Attach More" are completely ignored by the controller and never sent. |
-| **03** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Video Uploads Engine (`PersonalDocumentVideoUploadService`) | Max video size (600MB) exceeds PHP `post_max_size` (512MB) | **High**: PHP drops `$_POST` and `$_FILES` silently; triggers HTTP 419 CSRF error after full upload. |
+| **03** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Video Uploads Engine (`PersonalDocumentVideoUploadService`) | Max video size (600MB) exceeds PHP `post_max_size` (512MB) | **High**: PHP drops `$_POST` and `$_FILES` silently; triggers HTTP 419 CSRF error after full upload. |
 | **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Document Deletion Workflow (`ClientDocumentsController:1378`) | DB record deleted before S3 delete; fails on empty `doc_type` | **High**: Orphaned files on S3; local mirror never deleted; double-slash S3 key fails deletion. |
 | **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Documents Preview (`ClientDocumentsController:2251`) | Raw 500 abort on S3 presigned URL failure | **High**: Viewing documents fails with 500 error if S3 has network hiccup, ignoring local mirror. |
 | **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Outlook Email Dropzone (`emails_outlook.blade.php`) | Direct Outlook desktop drag-and-drop yields 0 bytes | **Medium**: Staff drag emails from Outlook desktop; upload fails with empty file error. |
@@ -121,14 +121,14 @@ In [`resources/views/crm/leads/history.blade.php:370`](file:///c:/xampp_old/htdo
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: HTTP 419 CSRF Crash    | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Personal Video & Audio Evidence Uploads
 - **Source File & Lines:** [`app/Services/PersonalDocumentVideoUploadService.php:157-165`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/PersonalDocumentVideoUploadService.php#L157-L165)
-- **Configuration:** `config('crm.personal_video_upload.max_size_mb', 600)`
+- **Configuration:** `config('crm.personal_video_upload.max_size_mb', 500)`
 - **PHP Environment:** `upload_max_filesize = 512M`, `post_max_size = 512M`
 - **Failure Mode:** **HTTP 419 Page Expired (CSRF Token Missing)**
 
@@ -155,6 +155,12 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
    ]
    ```
 2. Or increase PHP `upload_max_filesize` and `post_max_size` to `1024M` in `php.ini`.
+
+#### Resolution Summary (Applied Locally)
+- **Config Synchronization:** Reduced `config('crm.personal_video_upload.max_size_mb')` default from 600MB to 500MB in [`config/crm.php:422`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/config/crm.php#L422), maintaining a safe margin under the server's 512M PHP threshold.
+- **Dynamic PHP Ceiling Clamping:** Updated [`PersonalDocumentVideoUploadService::maxVideoMb()`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/PersonalDocumentVideoUploadService.php#L157) and `maxDocumentMb()` to dynamically inspect `ini_get('post_max_size')` and `ini_get('upload_max_filesize')` at runtime, capping allowed upload sizes with a 2MB header/payload safety margin.
+- **Frontend Sync & Informative Errors:** Updated Blade upload views (`detail.blade.php`, `personal_documents.blade.php`, `matter_documents.blade.php`) and [`detail-main.js`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/public/js/crm/clients/detail-main.js) to query dynamic service limits and provide clear HTTP 413 "Payload Too Large" user feedback.
+- **CSRF 419 Interception:** In [`VerifyCsrfToken`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Middleware/VerifyCsrfToken.php#L39), intercepted requests where PHP emptied `$_POST` and `$_FILES` due to exceeding `post_max_size`, throwing `PostTooLargeException` (HTTP 413) instead of a false `TokenMismatchException` (HTTP 419). Handled in [`Handler.php:58`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Exceptions/Handler.php#L58) with clean JSON 413 responses.
 
 ---
 

@@ -146,7 +146,9 @@ class PersonalDocumentVideoUploadService
 
     public static function maxDocumentMb(): int
     {
-        return max(1, (int) config('crm.document_upload.max_file_size_mb', 100));
+        $limit = max(1, (int) config('crm.document_upload.max_file_size_mb', 100));
+
+        return self::clampToPhpUploadCeiling($limit);
     }
 
     public static function maxDocumentBytes(): int
@@ -156,12 +158,63 @@ class PersonalDocumentVideoUploadService
 
     public static function maxVideoMb(): int
     {
-        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 600));
+        $limit = max(1, (int) config('crm.personal_video_upload.max_size_mb', 500));
+
+        return self::clampToPhpUploadCeiling($limit);
     }
 
     public static function maxVideoBytes(): int
     {
         return self::maxVideoMb() * 1024 * 1024;
+    }
+
+    /**
+     * Clamp maximum upload MB against PHP runtime limits (post_max_size and upload_max_filesize)
+     * so that uploads never exceed server payload capacity and trigger silent HTTP 419 CSRF drops.
+     */
+    public static function clampToPhpUploadCeiling(int $configuredMb): int
+    {
+        $postMax = self::parseIniBytes((string) ini_get('post_max_size'));
+        if ($postMax > 0) {
+            $postMb = (int) floor($postMax / (1024 * 1024));
+            // Reserve 2MB margin for form fields, headers, and CSRF token
+            $safePostMb = max(1, $postMb - 2);
+            $configuredMb = min($configuredMb, $safePostMb);
+        }
+
+        $uploadMax = self::parseIniBytes((string) ini_get('upload_max_filesize'));
+        if ($uploadMax > 0) {
+            $uploadMb = (int) floor($uploadMax / (1024 * 1024));
+            $configuredMb = min($configuredMb, $uploadMb);
+        }
+
+        return $configuredMb;
+    }
+
+    /**
+     * Parse PHP ini shorthand byte strings (e.g. 512M, 1G, 1024K) to integer bytes.
+     */
+    public static function parseIniBytes(string $val): int
+    {
+        $val = trim($val);
+        if ($val === '' || $val === '-1') {
+            return 0; // unlimited
+        }
+        $unit = strtolower(substr($val, -1));
+        $bytes = (int) $val;
+        switch ($unit) {
+            case 'g':
+                $bytes *= 1024 * 1024 * 1024;
+                break;
+            case 'm':
+                $bytes *= 1024 * 1024;
+                break;
+            case 'k':
+                $bytes *= 1024;
+                break;
+        }
+
+        return $bytes;
     }
 
     public static function sizeLimitError(UploadedFile $file, int $size): ?string

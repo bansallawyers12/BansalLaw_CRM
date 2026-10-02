@@ -5877,7 +5877,7 @@ success: function(response) {
 
             var isVideoUploadCheck = isPersonalDocVideoFile(file);
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 500;
             var maxAllowed = isVideoUploadCheck ? (maxVideoMb * 1024 * 1024) : (maxFileMb * 1024 * 1024);
             if (file.size > maxAllowed) {
                 crmAlert('File exceeds the maximum allowed size of ' + (isVideoUploadCheck ? (maxVideoMb + 'MB') : (maxFileMb + 'MB')) + '.');
@@ -5990,7 +5990,7 @@ success: function(response) {
                 return false;
             }
             var maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
+            var maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 500;
             var maxSize = maxFileMb * 1024 * 1024;
             var maxVideoSize = maxVideoMb * 1024 * 1024;
             var sizeLimit = isVideo ? maxVideoSize : maxSize;
@@ -6150,6 +6150,10 @@ success: function(response) {
                         : 'Upload failed. Please try again.';
                     if (status === 'timeout') {
                         errorMessage = 'Upload timed out. Large videos can take several minutes — please keep this tab open and try again on a stable connection.';
+                    } else if (xhr.status === 413) {
+                        errorMessage = 'Upload failed: file exceeds the server maximum upload limit.';
+                    } else if (xhr.status === 419) {
+                        errorMessage = 'Upload failed: session expired or upload exceeded server post limit. Please refresh and try again.';
                     }
                     if (isVideoUpload && typeof updatePersonalVideoUploadLoader === 'function') {
                         if (typeof clearPersonalVideoProcessingPulse === 'function') {

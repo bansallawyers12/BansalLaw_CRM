@@ -154,7 +154,7 @@
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), audio (MP3), videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings — up to {{ (int) config('crm.document_upload.max_file_size_mb', 100) }}MB ({{ (int) config('crm.personal_video_upload.max_size_mb', 600) }}MB for videos). You can select multiple files.</p>
+                                                <p class="matter-bulk-dropzone-hint">PDF, images, Word, Excel (XLS/XLSX/CSV), audio (MP3), videos (MP4, WebM, MOV, VOB, etc.), and MS Teams recordings — up to {{ \App\Services\PersonalDocumentVideoUploadService::maxDocumentMb() }}MB ({{ \App\Services\PersonalDocumentVideoUploadService::maxVideoMb() }}MB for videos). You can select multiple files.</p>
                                                 <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.mp3,.mp4,.webm,.mov,.m4v,.avi,.mkv,.vob,.mpeg,.mpg,.m2ts,.mts,video/*,audio/mpeg,audio/mp3">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
@@ -1337,7 +1337,7 @@
                     // Validate and add files to array (aligned with personal documents)
                     const invalidFiles = [];
                     const maxFileMb = (typeof window.__CRM_DOC_MAX_FILE_MB__ === 'number' && window.__CRM_DOC_MAX_FILE_MB__ > 0) ? window.__CRM_DOC_MAX_FILE_MB__ : 100;
-                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 600;
+                    const maxVideoMb = (typeof window.__CRM_DOC_MAX_VIDEO_MB__ === 'number' && window.__CRM_DOC_MAX_VIDEO_MB__ > 0) ? window.__CRM_DOC_MAX_VIDEO_MB__ : 500;
                     const maxSize = maxFileMb * 1024 * 1024;
                     const maxVideoSize = maxVideoMb * 1024 * 1024;
                     const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob', 'mpeg', 'mpg', 'm2ts', 'mts'];

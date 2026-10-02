@@ -55,13 +55,15 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-		/* if ($this->isHttpException($exception))
-		{
-			if ($exception->getStatusCode() == 404)
-				{
-					return response()->view('errors.' . '404', [], 404);
-				}
-		} */
+        if ($exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException) {
+            if ($request->expectsJson() || $request->ajax() || str_contains($request->path(), 'documents') || str_contains($request->path(), 'upload')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'The uploaded file exceeds the server maximum upload limit (post_max_size).',
+                ], 413);
+            }
+        }
+
         return parent::render($request, $exception);
     }
 
