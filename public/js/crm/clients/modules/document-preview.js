@@ -374,8 +374,8 @@
         });
         const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
 
-        // Spreadsheets open in full-width document view (list hidden; toolbar toggle restores it).
-        if (isSpreadsheet) {
+        // Client doc pane: full-width preview (list hidden; toolbar toggle restores it).
+        if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview || normalizedType === 'eml')) {
             enableFullDocumentPreviewLayout(container);
         }
 
@@ -392,7 +392,7 @@
         `);
 
         // Re-apply toggle active state after header is rendered.
-        if (isSpreadsheet) {
+        if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview || normalizedType === 'eml')) {
             enableFullDocumentPreviewLayout(container);
         }
 
@@ -461,7 +461,7 @@
                 frameHeight: getPreviewFrameHeight(container, isOfficePreview),
                 onError: showPreviewError
             });
-            if (isSpreadsheet) {
+            if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview)) {
                 enableFullDocumentPreviewLayout(container);
             }
         } else if (normalizedType === 'eml') {
@@ -472,6 +472,9 @@
                 frameHeight: getPreviewFrameHeight(container, false),
                 onError: showPreviewError
             });
+            if (inDocPane) {
+                enableFullDocumentPreviewLayout(container);
+            }
         } else if (normalizedType === 'txt') {
             fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
                 .then(function(response) {

@@ -8385,9 +8385,46 @@ body > .ts-dropdown {
 
 
 .hide-list-view .checklist-table-container { display: none !important; }
-.hide-list-view .preview-pane { flex: 0 0 100% !important; max-width: 100% !important; }
+.hide-list-view .preview-pane { flex: 1 1 100% !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
 .hide-list-view .grid_data { display: none !important; }
 .active-preview-doc { background-color: rgba(58, 111, 168, 0.1) !important; }
+
+#matterdocuments-tab.client-documents-tab .subtab6-pane.active.hide-list-view,
+#personaldocuments-tab.client-documents-tab .subtab2-pane.active.hide-list-view {
+  gap: 0;
+  width: 100%;
+}
+
+#matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane.preview-pane,
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane.preview-pane {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-self: stretch;
+}
+
+#matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-content,
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-content {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+#matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe-wrap,
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#matterdocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe,
+#personaldocuments-tab.client-documents-tab .hide-list-view .client-doc-preview-pane .preview-iframe {
+  position: relative;
+  inset: auto;
+  min-height: 100%;
+  height: 100%;
+}
 
 /* Send SMS (#sendSmsModal) ÃƒÂ¢Ã‚Â€Ã‚Â” same navy gradient header as Add matter / Compose Email */
 #sendSmsModal.custom_modal .modal-content {
