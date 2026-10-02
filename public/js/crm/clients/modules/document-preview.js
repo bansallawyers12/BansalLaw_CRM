@@ -312,7 +312,24 @@
     }
 
     /**
-     * Expand the preview pane to full width (hide checklist list) for document viewing.
+     * Default layout: checklist sidebar visible beside the preview (split view).
+     */
+    function ensureClientDocListVisible(container) {
+        if (!container || !container.length) {
+            return;
+        }
+        var $pane = container.closest('.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane');
+        if ($pane.length) {
+            $pane.removeClass('hide-list-view');
+            $pane.find('.client-doc-preview-toggle-list-btn').removeClass('is-active');
+        }
+        if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
+            window.scheduleClientDocumentsPanelHeightAdjust();
+        }
+    }
+
+    /**
+     * Expand the preview pane to full width (hide checklist list). Use only when user toggles.
      */
     function enableFullDocumentPreviewLayout(container) {
         if (!container || !container.length) {
@@ -373,11 +390,6 @@
         });
         const mediaMaxHeight = 'calc(100vh - 60px)';
 
-        // Client doc pane: full-width preview (list hidden; toolbar toggle restores it).
-        if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview || normalizedType === 'eml')) {
-            enableFullDocumentPreviewLayout(container);
-        }
-
         container.html(`
             <div class="preview-content preview-content-loading" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
                 ${previewHeaderHtml}
@@ -389,11 +401,6 @@
                 </div>
             </div>
         `);
-
-        // Re-apply toggle active state after header is rendered.
-        if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview || normalizedType === 'eml')) {
-            enableFullDocumentPreviewLayout(container);
-        }
 
         if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
             window.scheduleClientDocumentsPanelHeightAdjust();
@@ -460,9 +467,6 @@
                 frameHeight: getPreviewFrameHeight(container, isOfficePreview),
                 onError: showPreviewError
             });
-            if (inDocPane && (isSpreadsheet || normalizedType === 'pdf' || isOfficePreview)) {
-                enableFullDocumentPreviewLayout(container);
-            }
         } else if (normalizedType === 'eml') {
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
@@ -471,9 +475,6 @@
                 frameHeight: getPreviewFrameHeight(container, false),
                 onError: showPreviewError
             });
-            if (inDocPane) {
-                enableFullDocumentPreviewLayout(container);
-            }
         } else if (normalizedType === 'txt') {
             fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
                 .then(function(response) {
@@ -554,6 +555,7 @@
     window.documentFileIconClass = documentFileIconClass;
     window.downloadDocumentFile = downloadDocumentFile;
     window.isSpreadsheetFileType = isSpreadsheetFileType;
+    window.ensureClientDocListVisible = ensureClientDocListVisible;
     window.enableFullDocumentPreviewLayout = enableFullDocumentPreviewLayout;
 
     $(function () {
