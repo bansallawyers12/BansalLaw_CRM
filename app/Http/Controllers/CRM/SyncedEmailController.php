@@ -280,7 +280,26 @@ class SyncedEmailController extends Controller
             }
         }
 
-        return view('crm.unassigned_emails.index');
+        $initialData = null;
+        try {
+            $fetchReq = \Illuminate\Http\Request::create('/clients/outlook/fetch-all', 'GET', [
+                'folder' => 'unassigned',
+                'page' => 1,
+                'per_page' => 20,
+                'include_meta' => 1,
+                'sort_order' => 'desc',
+            ]);
+            $fetchRes = app(\App\Http\Controllers\CRM\ClientsController::class)->fetchAllOutlookEmails($fetchReq);
+            if ($fetchRes instanceof \Illuminate\Http\JsonResponse) {
+                $initialData = $fetchRes->getData(true);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to pre-fetch unassigned emails initial data', ['error' => $e->getMessage()]);
+        }
+
+        return view('crm.unassigned_emails.index', [
+            'initialData' => $initialData,
+        ]);
     }
 
 

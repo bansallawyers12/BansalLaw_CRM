@@ -342,6 +342,18 @@ function crmInitOutlookEmailsInterface() {
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     let syncedDateSummary = null;
     let syncedFolderCountReady = false;
+    const initialOutlookDataEl = document.getElementById('initialOutlookData');
+    if (initialOutlookDataEl) {
+        try {
+            const preData = JSON.parse(initialOutlookDataEl.textContent);
+            if (preData && preData.date_summary && (preData.date_summary.unassigned_only_count != null || preData.date_summary.total != null)) {
+                syncedDateSummary = preData.date_summary;
+                syncedFolderCountReady = true;
+            }
+        } catch (e) {
+            // ignore JSON parse error
+        }
+    }
     let syncedListMetaLoading = false;
     let syncedListMetaFolder = '';
     let assignmentModalMode = 'assign';
@@ -4526,6 +4538,27 @@ function crmInitOutlookEmailsInterface() {
             switchToFolder(currentFolder);
         }
 
+        let initialPreloadedData = null;
+        const initialDataScript = document.getElementById('initialOutlookData');
+        const canUseInitialData = initialDataScript
+            && !append
+            && currentFolder === 'unassigned'
+            && (currentPage || 1) === 1
+            && (!searchInput || !searchInput.value)
+            && (!senderFilter || !senderFilter.value)
+            && (!sortOrder || sortOrder.value === 'desc' || sortOrder.value === 'review')
+            && (!listMailboxFilter || !listMailboxFilter.value);
+
+        if (canUseInitialData) {
+            try {
+                initialPreloadedData = JSON.parse(initialDataScript.textContent);
+            } catch (parseErr) {
+                console.warn('Could not parse initialOutlookData', parseErr);
+                initialPreloadedData = null;
+            }
+            initialDataScript.remove();
+        }
+
         if (append) {
             if (emailListLoading || emailListLoadingMore) {
                 return;
@@ -4536,11 +4569,13 @@ function crmInitOutlookEmailsInterface() {
             emailListLoading = true;
             emailListLoadingMore = false;
             setEmailInfiniteLoader(false);
-            emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
-            if (needsSyncedFolderCountMeta(currentFolder)) {
-                syncedFolderCountReady = false;
-                syncedDateSummary = null;
-                showSyncedFolderCountLoading(currentFolder);
+            if (!initialPreloadedData) {
+                emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
+                if (needsSyncedFolderCountMeta(currentFolder)) {
+                    syncedFolderCountReady = false;
+                    syncedDateSummary = null;
+                    showSyncedFolderCountLoading(currentFolder);
+                }
             }
         }
 
@@ -4589,18 +4624,21 @@ function crmInitOutlookEmailsInterface() {
                 url.searchParams.append('email_log_id', String(selectEmailLogId));
             }
 
-            const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            const data = await response.json().catch(function () {
-                return {};
-            });
+            let data = initialPreloadedData;
+            if (!data) {
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                data = await response.json().catch(function () {
+                    return {};
+                });
 
-            if (!response.ok) {
-                throw new Error(data.message || ('Failed to load emails (' + response.status + ')'));
+                if (!response.ok) {
+                    throw new Error(data.message || ('Failed to load emails (' + response.status + ')'));
+                }
             }
 
             if (folderToFetch !== currentFolder) {
@@ -8633,7 +8671,7 @@ function crmInitOutlookEmailsInterface() {
         });
     }
 
-    if (unassignedOnly && needsSyncedFolderCountMeta(defaultFolder)) {
+    if (unassignedOnly && needsSyncedFolderCountMeta(defaultFolder) && !syncedFolderCountReady) {
         showSyncedFolderCountLoading(defaultFolder);
     }
 

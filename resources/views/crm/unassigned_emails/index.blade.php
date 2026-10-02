@@ -5,7 +5,10 @@
 @section('content')
     <main class="main-content unassigned-mail-page">
         <section class="unassigned-mail-section">
-            @include('crm.emails_outlook', ['unassignedOnly' => true])
+            @include('crm.emails_outlook', [
+                'unassignedOnly' => true,
+                'initialData' => $initialData ?? null,
+            ])
         </section>
     </main>
 @endsection

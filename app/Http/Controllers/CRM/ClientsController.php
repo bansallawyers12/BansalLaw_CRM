@@ -5857,9 +5857,9 @@ class ClientsController extends Controller
         }
 
         $page = max(1, (int) $request->input('page', 1));
-        // Synced unassigned/assigned lists: return rows first; totals/senders load via meta_only.
+        // Synced unassigned/assigned lists: include meta on page 1 so client does not need a second roundtrip.
         $includeListMeta = $isSyncedInboxFolder
-            ? ($request->boolean('include_meta') || $request->boolean('meta_only'))
+            ? ($page === 1 || $request->boolean('include_meta') || $request->boolean('meta_only'))
             : ($page === 1 || $request->boolean('include_meta'));
         $metaOnly = $isSyncedInboxFolder && $request->boolean('meta_only');
         $includeSenders = $request->boolean('include_senders');
@@ -6199,7 +6199,7 @@ class ClientsController extends Controller
                     ? $this->resolveEmailMsgDownloadUrl($email)
                     : '';
                 $email->pdf_file_url = ! empty($email->pdf_doc_id)
-                    ? $this->resolveEmailPdfPreviewUrl($email, true)
+                    ? $this->resolveEmailPdfPreviewUrl($email, false)
                     : '';
                 $email->pdf_download_url = ! empty($email->pdf_doc_id)
                     ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
@@ -6247,7 +6247,7 @@ class ClientsController extends Controller
             }
 
             $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
-            $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email, true);
+            $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email, false);
             $email->pdf_download_url = ! empty($email->pdf_doc_id)
                 ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
                 : '';
@@ -6376,6 +6376,11 @@ class ClientsController extends Controller
                 ! empty($mailboxFilter) ? (string) $mailboxFilter : null,
                 array_keys($autoAssignmentReviewItems)
             );
+            if ($dateSummary !== null && isset($dateSummary['total'])) {
+                $total = (int) $dateSummary['total'];
+                $lastPage = max(1, (int) ceil($total / max(1, $emails->perPage())));
+                $hasMore = $emails->currentPage() < $lastPage;
+            }
         }
 
         return response()->json([
@@ -6405,93 +6410,97 @@ class ClientsController extends Controller
         array $reviewEmailIds = []
     ): array
     {
-        $empty = [
-            'today' => 0,
-            'yesterday' => 0,
-            'this_week' => 0,
-            'earlier' => 0,
-            'total' => 0,
-        ];
+        $cacheKey = 'synced_inbox_date_summary_' . $folder . '_' . $staff->id . '_' . md5((string) $mailboxFilter . implode(',', $reviewEmailIds));
 
-        $query = \App\Models\EmailLog::query();
-        \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($folder, $staff, $mailboxFilter, $reviewEmailIds) {
+            $empty = [
+                'today' => 0,
+                'yesterday' => 0,
+                'this_week' => 0,
+                'earlier' => 0,
+                'total' => 0,
+            ];
 
-        if (! empty($mailboxFilter)) {
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($query, $mailboxFilter);
-        }
+            $query = \App\Models\EmailLog::query();
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
 
-        if ($folder === 'unassigned') {
-            \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
-        } elseif ($folder === 'inbox') {
-            \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
-        } elseif ($folder === 'review') {
-            if ($reviewEmailIds === []) {
+            if (! empty($mailboxFilter)) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($query, $mailboxFilter);
+            }
+
+            if ($folder === 'unassigned') {
+                \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
+            } elseif ($folder === 'inbox') {
+                \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
+            } elseif ($folder === 'review') {
+                if ($reviewEmailIds === []) {
+                    return $empty;
+                }
+                $query->whereIn('id', $reviewEmailIds);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+                $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
+                    ->whereNotNull('client_id');
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
+                    $query->whereNotNull('synced_email_id');
+                }
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
+            } else {
                 return $empty;
             }
-            $query->whereIn('id', $reviewEmailIds);
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
-        } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
-            $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
-                ->whereNotNull('client_id');
-            if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
-                $query->whereNotNull('synced_email_id');
+
+            \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
+            $tz = config('app.timezone', 'Australia/Melbourne');
+            $now = now()->timezone($tz);
+            $todayStart = $now->copy()->startOfDay();
+            $yesterdayStart = $todayStart->copy()->subDay();
+            $weekStart = $now->copy()->startOfWeek();
+            $effective = \App\Services\EmailSync\IncomingEmailSyncService::syncedMailEffectiveDateSql();
+
+            $todayBound = $todayStart->format('Y-m-d H:i:s');
+            $yesterdayBound = $yesterdayStart->format('Y-m-d H:i:s');
+            $weekBound = $weekStart->format('Y-m-d H:i:s');
+
+            $row = $query->toBase()->selectRaw(
+                "COUNT(*) as total,
+                SUM(CASE WHEN {$effective} >= ? THEN 1 ELSE 0 END) as today,
+                SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as yesterday,
+                SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as this_week,
+                SUM(CASE WHEN {$effective} < ? THEN 1 ELSE 0 END) as earlier",
+                [
+                    $todayBound,
+                    $yesterdayBound,
+                    $todayBound,
+                    $weekBound,
+                    $yesterdayBound,
+                    $weekBound,
+                ]
+            )->first();
+
+            $summary = [
+                'today' => (int) ($row->today ?? 0),
+                'yesterday' => (int) ($row->yesterday ?? 0),
+                'this_week' => (int) ($row->this_week ?? 0),
+                'earlier' => (int) ($row->earlier ?? 0),
+                'total' => (int) ($row->total ?? 0),
+            ];
+
+            if ($folder === 'unassigned') {
+                $breakdown = \App\Services\EmailSync\IncomingEmailSyncService::unassignedInboxCountBreakdown(
+                    $staff,
+                    ! empty($mailboxFilter) ? (string) $mailboxFilter : null
+                );
+                $summary['unassigned_only_count'] = (int) ($breakdown['unassigned_only_count'] ?? 0);
+                $summary['manual_upload_match_count'] = (int) ($breakdown['manual_upload_match_count'] ?? 0);
+                $summary['total'] = (int) ($breakdown['total'] ?? $summary['total']);
             }
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
-        } else {
-            return $empty;
-        }
 
-        \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
-
-        $tz = config('app.timezone', 'Australia/Melbourne');
-        $now = now()->timezone($tz);
-        $todayStart = $now->copy()->startOfDay();
-        $yesterdayStart = $todayStart->copy()->subDay();
-        $weekStart = $now->copy()->startOfWeek();
-        $effective = \App\Services\EmailSync\IncomingEmailSyncService::syncedMailEffectiveDateSql();
-
-        $todayBound = $todayStart->format('Y-m-d H:i:s');
-        $yesterdayBound = $yesterdayStart->format('Y-m-d H:i:s');
-        $weekBound = $weekStart->format('Y-m-d H:i:s');
-
-        $row = $query->toBase()->selectRaw(
-            "COUNT(*) as total,
-            SUM(CASE WHEN {$effective} >= ? THEN 1 ELSE 0 END) as today,
-            SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as yesterday,
-            SUM(CASE WHEN {$effective} >= ? AND {$effective} < ? THEN 1 ELSE 0 END) as this_week,
-            SUM(CASE WHEN {$effective} < ? THEN 1 ELSE 0 END) as earlier",
-            [
-                $todayBound,
-                $yesterdayBound,
-                $todayBound,
-                $weekBound,
-                $yesterdayBound,
-                $weekBound,
-            ]
-        )->first();
-
-        $summary = [
-            'today' => (int) ($row->today ?? 0),
-            'yesterday' => (int) ($row->yesterday ?? 0),
-            'this_week' => (int) ($row->this_week ?? 0),
-            'earlier' => (int) ($row->earlier ?? 0),
-            'total' => (int) ($row->total ?? 0),
-        ];
-
-        if ($folder === 'unassigned') {
-            $breakdown = \App\Services\EmailSync\IncomingEmailSyncService::unassignedInboxCountBreakdown(
-                $staff,
-                ! empty($mailboxFilter) ? (string) $mailboxFilter : null
-            );
-            $summary['unassigned_only_count'] = (int) ($breakdown['unassigned_only_count'] ?? 0);
-            $summary['manual_upload_match_count'] = (int) ($breakdown['manual_upload_match_count'] ?? 0);
-            $summary['total'] = (int) ($breakdown['total'] ?? $summary['total']);
-        }
-
-        return $summary;
+            return $summary;
+        });
     }
 
     protected function applyIncomingInboxScope($query): void

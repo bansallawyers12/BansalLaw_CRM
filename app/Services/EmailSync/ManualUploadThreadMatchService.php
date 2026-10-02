@@ -43,8 +43,20 @@ class ManualUploadThreadMatchService
     ) {
     }
 
+    /** @var array<string, mixed>|null Process-level shared cache of manual upload index */
+    private static ?array $processLevelIndex = null;
+
     public function initManualUploadCache(): void
     {
+        if (self::$processLevelIndex !== null) {
+            $this->matchingManualUploadCache = self::$processLevelIndex['uploads'];
+            $this->manualUploadsByExactSubject = self::$processLevelIndex['bySubject'];
+            $this->manualUploadsByMessageId = self::$processLevelIndex['byMessageId'];
+            $this->uniqueNormalizedSubjects = self::$processLevelIndex['uniqueSubjects'];
+
+            return;
+        }
+
         $uploads = $this->manualUploadBaseQuery()
             ->orderByRaw('COALESCE(received_date, fetch_mail_sent_time, sent_at, created_at) desc')
             ->get();
@@ -74,6 +86,18 @@ class ManualUploadThreadMatchService
                 }
             }
         }
+
+        self::$processLevelIndex = [
+            'uploads' => $this->matchingManualUploadCache,
+            'bySubject' => $this->manualUploadsByExactSubject,
+            'byMessageId' => $this->manualUploadsByMessageId,
+            'uniqueSubjects' => $this->uniqueNormalizedSubjects,
+        ];
+    }
+
+    public static function flushProcessCache(): void
+    {
+        self::$processLevelIndex = null;
     }
 
     public function clearManualUploadCache(): void
@@ -384,6 +408,7 @@ class ManualUploadThreadMatchService
         }
 
         if ($removed !== []) {
+            self::flushProcessCache();
             Log::info('Removed manual upload duplicates after assigning synced email', [
                 'assigned_email_log_id' => (int) $assignedSynced->id,
                 'removed_email_log_ids' => $removed,

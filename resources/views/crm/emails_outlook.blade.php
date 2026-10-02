@@ -171,7 +171,12 @@
                         <button type="button" class="folder-item folder-item--status active" data-folder="unassigned" role="tab" aria-selected="true">
                             <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
                             Unassigned
-                            <span class="folder-item__count" data-folder-count="unassigned" hidden>0</span>
+                            @php
+                                $preloadUnassignedBadge = isset($initialData['date_summary']['unassigned_only_count'])
+                                    ? $initialData['date_summary']['unassigned_only_count']
+                                    : (isset($initialData['date_summary']['total_unassigned']) ? $initialData['date_summary']['total_unassigned'] : null);
+                            @endphp
+                            <span class="folder-item__count" data-folder-count="unassigned"{{ $preloadUnassignedBadge !== null ? '' : ' hidden' }}>{{ $preloadUnassignedBadge ?? 0 }}</span>
                         </button>
                         <button type="button" class="folder-item folder-item--status" data-folder="assigned" role="tab" aria-selected="false">
                             <i class="fa-solid fa-user-check" aria-hidden="true"></i>
@@ -416,7 +421,27 @@
             </div>
         </div>
         <div class="email-list-footer email-list-footer--compact email-list-footer--unassigned" aria-live="polite">
-            <span class="email-list-footer__count" id="listTotalCount"><span class="email-count-loading"><span class="email-count-loading__spinner" aria-hidden="true"></span><span>Calculating totals...</span></span></span>
+            @php
+                $preloadFooterText = null;
+                if (!empty($initialData['date_summary'])) {
+                    $ds = $initialData['date_summary'];
+                    $totalAll = (int) ($ds['total'] ?? 0);
+                    $uCount = (int) ($ds['unassigned_only_count'] ?? 0);
+                    $mCount = (int) ($ds['manual_upload_match_count'] ?? 0);
+                    if ($mCount > 0) {
+                        $preloadFooterText = "Total: {$totalAll} ({$uCount} unassigned + {$mCount} manual upload match)";
+                    } else {
+                        $preloadFooterText = "Total: {$totalAll} unassigned";
+                    }
+                }
+            @endphp
+            <span class="email-list-footer__count" id="listTotalCount">
+                @if($preloadFooterText !== null)
+                    {{ $preloadFooterText }}
+                @else
+                    <span class="email-count-loading"><span class="email-count-loading__spinner" aria-hidden="true"></span><span>Calculating totals...</span></span>
+                @endif
+            </span>
         </div>
         @else
         <div class="email-list" id="emailList">
@@ -1082,6 +1107,11 @@ window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ = {{ (int) config('crm.compose_max_t
 @if($canDeleteEmail)
 <link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
 <script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
+@endif
+@if(!empty($initialData))
+<script id="initialOutlookData" type="application/json">
+{!! json_encode($initialData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}
+</script>
 @endif
 <script src="{{ asset('js/crm/emails/matter-context.js') }}?v={{ @filemtime(public_path('js/crm/emails/matter-context.js')) ?: time() }}"></script>
 <script src="{{ asset('js/outlook_emails.js') }}?v={{ @filemtime(public_path('js/outlook_emails.js')) ?: time() }}"></script>

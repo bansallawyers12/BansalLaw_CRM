@@ -251,45 +251,61 @@ class EmailLog extends Authenticatable
 
         // Emails that already created a ClientCourtHearing (notes reference Email #id).
         if (Schema::hasTable('client_court_hearings')) {
-            $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
-                $keep->whereNotExists(function ($sub) {
-                    $sub->selectRaw('1')
-                        ->from('client_court_hearings')
-                        ->whereRaw(
-                            "client_court_hearings.notes LIKE ('%Email #' || email_logs.id::text || '%')"
-                        );
-                });
-                if ($hearingFloorSql !== null) {
-                    $keep->orWhereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql]);
-                }
+            $hearingEmailIds = \Illuminate\Support\Facades\Cache::remember('email_court_hearing_ids', 120, function () {
+                return \Illuminate\Support\Facades\DB::table('client_court_hearings')
+                    ->where('notes', 'like', '%Email #%')
+                    ->pluck('notes')
+                    ->map(function ($note) {
+                        return preg_match('/Email #(\d+)/i', (string) $note, $m) ? (int) $m[1] : null;
+                    })
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
             });
+
+            if (! empty($hearingEmailIds)) {
+                $query->where(function ($keep) use ($hearingEmailIds, $hearingFloorSql, $effectiveDateSql) {
+                    $keep->whereNotIn('email_logs.id', $hearingEmailIds);
+                    if ($hearingFloorSql !== null) {
+                        $keep->orWhereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql]);
+                    }
+                });
+            }
         }
 
         // ICS attachments without a link yet still belong on the calendar, not mail lists,
         // unless they are hearing notices from the floor date.
         if (Schema::hasTable('email_log_attachments')) {
-            $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
-                $keep->whereNotExists(function ($sub) {
-                    $sub->selectRaw('1')
-                        ->from('email_log_attachments')
-                        ->whereColumn('email_log_attachments.email_log_id', 'email_logs.id')
-                        ->where(function ($att) {
-                            $att->whereRaw("LOWER(COALESCE(email_log_attachments.extension, '')) = 'ics'")
-                                ->orWhereRaw("LOWER(COALESCE(email_log_attachments.filename, '')) LIKE '%.ics'")
-                                ->orWhereRaw("LOWER(COALESCE(email_log_attachments.content_type, '')) LIKE '%calendar%'");
-                        });
-                });
-                if ($hearingFloorSql !== null) {
-                    $keep->orWhere(function ($hearingKeep) use ($hearingFloorSql, $effectiveDateSql) {
-                        $hearingKeep->whereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql])
-                            ->where(function ($subj) {
-                                $subj->whereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%hearing%'])
-                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%tribunal%'])
-                                    ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%court listing%']);
-                            });
-                    });
-                }
+            $icsEmailIds = \Illuminate\Support\Facades\Cache::remember('email_ics_attachment_ids', 120, function () {
+                return \Illuminate\Support\Facades\DB::table('email_log_attachments')
+                    ->where(function ($q) {
+                        $q->whereRaw("LOWER(COALESCE(extension, '')) = 'ics'")
+                            ->orWhereRaw("LOWER(COALESCE(filename, '')) LIKE '%.ics'")
+                            ->orWhereRaw("LOWER(COALESCE(content_type, '')) LIKE '%calendar%'");
+                    })
+                    ->pluck('email_log_id')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
             });
+
+            if (! empty($icsEmailIds)) {
+                $query->where(function ($keep) use ($icsEmailIds, $hearingFloorSql, $effectiveDateSql) {
+                    $keep->whereNotIn('email_logs.id', $icsEmailIds);
+                    if ($hearingFloorSql !== null) {
+                        $keep->orWhere(function ($hearingKeep) use ($hearingFloorSql, $effectiveDateSql) {
+                            $hearingKeep->whereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql])
+                                ->where(function ($subj) {
+                                    $subj->whereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%hearing%'])
+                                        ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%tribunal%'])
+                                        ->orWhereRaw("LOWER(COALESCE(subject, '')) LIKE ?", ['%court listing%']);
+                                });
+                        });
+                    }
+                });
+            }
         }
     }
 
