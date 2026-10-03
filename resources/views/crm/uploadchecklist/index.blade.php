@@ -74,10 +74,13 @@
 												<div class="col-12 col-md-4 col-lg-4">
 													<div class="form-group"> 
 														<label for="checklists">File <span class="span_req">*</span></label>
-														<input data-valid="required" type="file" name="checklists" id="checklists" class="form-control">
-														@if ($errors->has('file'))
+														<input data-valid="required" type="file" name="checklists" id="checklists" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+														<small class="text-muted d-block mt-1" style="font-size: 11px;">
+															<i class="fa-solid fa-cloud-arrow-up text-primary me-1"></i> Stored in cloud S3 with automatic duplicate protection.
+														</small>
+														@if ($errors->has('checklists') || $errors->has('file'))
 															<span class="custom-error" role="alert">
-																<strong>{{ @$errors->first('file') }}</strong>
+																<strong>{{ @$errors->first('checklists') ?: @$errors->first('file') }}</strong>
 															</span> 
 														@endif
 													</div>
@@ -131,7 +134,7 @@
 															@endif
 															<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 															<td>
-																<a href="{{URL::to('/public/checklists/'.$list->file)}}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"><i class="fa-solid fa-file-arrow-down me-1"></i> File</a>
+																<a href="{{ route('upload_checklists.download', $list->id) }}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"><i class="fa-solid fa-file-arrow-down me-1"></i> File</a>
 															</td>
 															<td>
 																<a href="javascript:;" class="btn btn-sm btn-outline-danger" onClick="deleteAction({{@$list->id}}, 'matter_checklists')"><i class="fa-solid fa-trash me-1"></i> Delete</a>

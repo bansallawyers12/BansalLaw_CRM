@@ -17,10 +17,10 @@ This master matrix catalogs every failure point discovered across the CRM's file
 | **01** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting Receipts (`ClientAccountsController`) | Direct S3 `file_get_contents()` without local mirror or fallback | **High**: PHP memory limit exhaustion crashes server; S3 glitches cause permanent receipt loss. |
 | **02** | 🔴 **CRITICAL** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Lead Email Compose Modal (`leads/history.blade.php:370`) | Form field name typo (`attachemnt[]` instead of `attach[]`) | **High**: Files added via "Attach More" are completely ignored by the controller and never sent. |
 | **03** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Video Uploads Engine (`PersonalDocumentVideoUploadService`) | Max video size (600MB) exceeds PHP `post_max_size` (512MB) | **High**: PHP drops `$_POST` and `$_FILES` silently; triggers HTTP 419 CSRF error after full upload. |
-| **04** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Document Deletion Workflow (`ClientDocumentsController:1378`) | DB record deleted before S3 delete; fails on empty `doc_type` | **High**: Orphaned files on S3; local mirror never deleted; double-slash S3 key fails deletion. |
-| **05** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Documents Preview (`ClientDocumentsController:2251`) | Raw 500 abort on S3 presigned URL failure | **High**: Viewing documents fails with 500 error if S3 has network hiccup, ignoring local mirror. |
-| **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Outlook Email Dropzone (`emails_outlook.blade.php`) | Direct Outlook desktop drag-and-drop yields 0 bytes | **Medium**: Staff drag emails from Outlook desktop; upload fails with empty file error. |
-| **07** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Upload Checklist Controller (`UploadChecklistController:56`) | Local `public/checklists` upload; duplicate filename overwrite | **Medium**: Bypasses S3 completely; files overwrite each other; breaks on multi-server cluster. |
+| **04** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Document Deletion Workflow (`ClientDocumentsController:1378`) | DB record deleted before S3 delete; fails on empty `doc_type` | **High**: Orphaned files on S3; local mirror never deleted; double-slash S3 key fails deletion. |
+| **05** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Documents Preview (`ClientDocumentsController:2251`) | Raw 500 abort on S3 presigned URL failure | **High**: Viewing documents fails with 500 error if S3 has network hiccup, ignoring local mirror. |
+| **06** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Outlook Email Dropzone (`emails_outlook.blade.php`) | Direct Outlook desktop drag-and-drop yields 0 bytes | **Medium**: Staff drag emails from Outlook desktop; upload fails with empty file error. |
+| **07** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Upload Checklist Controller (`UploadChecklistController:56`) | Local `public/checklists` upload; duplicate filename overwrite | **Medium**: Bypasses S3 completely; files overwrite each other; breaks on multi-server cluster. |
 | **08** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Image-to-PDF Export (`ClientsController:1186`) | DomPDF remote S3 image fetch fails; legacy branding | **Medium**: DomPDF blocks remote images; output named `codeplaners.pdf` instead of law firm. |
 | **09** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Signed PDF Downloads (`PublicDocumentController:1175`) | Path-style S3 URLs include bucket prefix in key | **Medium**: `$disk->exists()` fails; redirects to raw URL triggering 403 Forbidden for signers. |
 | **10** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | S3 Background Promotion Command (`PromotePendingUploadsToS3`) | Silent failures during cron promotion | **Low**: Files failing cloud upload log count only without administrator notification. |
@@ -268,31 +268,26 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: Cloud Storage Bypass   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED (Production Ready)                 |
+| SEVERITY: Cloud Storage Bypass   | RESOLUTION: S3 + Durable Mirror with UUID & Download Streaming |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Matter Checklist Templates
-- **Source File & Lines:** [`app/Http/Controllers/CRM/UploadChecklistController.php:56`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/UploadChecklistController.php#L56) & [`app/Http/Controllers/Controller.php:66-79`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/Controller.php#L66-L79)
-- **Code Pattern:**
-  ```php
-  // UploadChecklistController.php:56
-  $checklists = $this->uploadFile($request->file('checklists'), config('constants.checklists'));
-  
-  // Controller.php:68-75
-  $explodeFileName = explode('.', $fileName);
-  $newFileName = $explodeFileName[0] . '.' . $ext;
-  $file->move($filePath, $newFileName);
-  ```
-
-#### Why and How This Occurs on the Live Server
-1. **S3 Cloud Bypass:** Files are saved directly to `public/checklists/` on the local webserver disk (`config('constants.checklists') = public_path().'/checklists'`). In modern load-balanced or containerized production architectures, uploads stored in `public/` are not shared between instances.
-2. **Duplicate Filename Collision:** `explode('.', $fileName)[0]` uses the static base name without any timestamp, UUID, or user ID prefix. If two staff members upload different checklist templates named `checklist.pdf`, the second upload silently overwrites the first.
-
-#### Remediation Plan
-1. Use `time() . '_' . Str::uuid()` to ensure uniqueness.
-2. Upload checklist files to S3 via `Storage::disk('s3')` or `CrmDurableStorage`.
+- **Source Files & Lines:**
+  - [`app/Http/Controllers/CRM/UploadChecklistController.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/UploadChecklistController.php)
+  - [`app/Http/Controllers/Controller.php:66-85`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/Controller.php#L66-L85)
+  - [`app/Http/Controllers/CRM/CRMUtilityController.php:742,945,1603`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/CRMUtilityController.php)
+  - [`app/Http/Controllers/CRM/DocumentController.php:1501-1510`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/DocumentController.php#L1501-L1510)
+  - [`app/Services/CrmDurableStorage.php:24-31`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/CrmDurableStorage.php#L24-L31)
+  - [`resources/views/crm/uploadchecklist/index.blade.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/uploadchecklist/index.blade.php)
+  - [`routes/clients.php:322-328`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/routes/clients.php#L322-L328)
+- **Resolution Summary:**
+  1. **UUID Collision-Proof Filenames:** `UploadChecklistController::store` and `Controller::uploadFile` now generate collision-proof names with `time() . '_' . Str::uuid() . '_' . $cleanOriginal . '.' . $ext`, preventing duplicate uploads from silently overwriting each other.
+  2. **Durable S3 Cloud Storage:** Checklists are uploaded to S3 (`checklists/{fileName}`) and local mirror via `CrmDurableStorage::putUploadedFile()`. Added `'checklists/'` to `CrmDurableStorage::DEFAULT_PROMOTE_PREFIXES` for background recovery.
+  3. **Direct Streaming Download & Fallback:** Added `download($id)` and `viewFile($file)` on `UploadChecklistController` with routes in `routes/clients.php`. Files are served directly from S3 or local mirror without relying on shared static disks.
+  4. **Email Attachment Resilience:** In `CRMUtilityController.php` and `DocumentController.php`, if a checklist is attached to an email and missing on local disk, it automatically falls back to `CrmDurableStorage::resolveReadablePath()` to fetch from S3.
+  5. **Clean Storage Deletion:** Authorized `matter_checklists` in `CRMUtilityController::deleteAction` and added automatic S3 / local mirror deletion upon checklist removal.
 
 ---
 

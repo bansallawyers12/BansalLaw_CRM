@@ -742,7 +742,7 @@ class CRMUtilityController extends Controller
 			$systemTables = [
 				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 				'templates', 'products', 'document_checklists', 'personal_document_types',
-				'matter_document_types', 'workflow_stages'
+				'matter_document_types', 'workflow_stages', 'matter_checklists'
 			];
 
 			$clientTables = [
@@ -943,6 +943,31 @@ class CRMUtilityController extends Controller
 					} else {
 						$message = config('constants.server_error');
 					}
+				}
+			}
+			else if ($table === 'matter_checklists') {
+				$checklist = DB::table('matter_checklists')->where('id', $id)->first();
+				if (!$checklist) {
+					return response()->json(['status' => 0, 'message' => 'ID does not exist, please check it once again.']);
+				}
+				if (!empty($checklist->file)) {
+					$filename = basename($checklist->file);
+					try {
+						app(\App\Services\CrmDurableStorage::class)->delete('checklists/' . $filename);
+						$publicFile = public_path('checklists/' . $filename);
+						if (is_file($publicFile)) {
+							@unlink($publicFile);
+						}
+					} catch (\Throwable $e) {
+						Log::warning('Checklist file deletion failed: ' . $e->getMessage());
+					}
+				}
+				$response = DB::table($table)->where('id', $id)->delete();
+				if ($response) {
+					$status = 1;
+					$message = 'Record has been deleted successfully.';
+				} else {
+					$message = config('constants.server_error');
 				}
 			}
 			else {
@@ -1605,11 +1630,17 @@ class CRMUtilityController extends Controller
     		       $checklistfiles = $requestData['checklistfile'];
     		        foreach($checklistfiles as $checklistfile){
     		           $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
-    		           if($filechecklist){
-    		               $safePath = realpath(public_path('checklists/' . basename($filechecklist->file)));
+    		           if($filechecklist && !empty($filechecklist->file)){
+    		               $safeName = basename($filechecklist->file);
+    		               $safePath = realpath(public_path('checklists/' . $safeName));
     		               $allowedChecklistDir = realpath(public_path('checklists'));
-    		               if ($safePath && $allowedChecklistDir && str_starts_with($safePath, $allowedChecklistDir)) {
+    		               if ($safePath && $allowedChecklistDir && str_starts_with($safePath, $allowedChecklistDir) && is_file($safePath)) {
     		                   $array['files'][] = $safePath;
+    		               } else {
+    		                   $resolved = app(\App\Services\CrmDurableStorage::class)->resolveReadablePath('checklists/' . $safeName);
+    		                   if ($resolved && !empty($resolved['path']) && is_file($resolved['path'])) {
+    		                       $array['files'][] = $resolved['path'];
+    		                   }
     		               }
     		           }
     		        }

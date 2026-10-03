@@ -27,6 +27,7 @@ class CrmDurableStorage
         'office_receipt_uploads/',
         'conversion_email_fetch/',
         'email_uploads/',
+        'checklists/',
     ];
 
     public function usesCloud(): bool

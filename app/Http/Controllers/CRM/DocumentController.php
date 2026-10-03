@@ -1500,9 +1500,18 @@ class DocumentController extends Controller
                         $checklistIds = $request->input('checklistfile');
                         $checklists = UploadChecklist::whereIn('id', $checklistIds)->get();
                         foreach ($checklists as $checklist) {
-                            $filePath = public_path('checklists/' . $checklist->file);
+                            if (empty($checklist->file)) {
+                                continue;
+                            }
+                            $safeName = basename($checklist->file);
+                            $filePath = public_path('checklists/' . $safeName);
                             if (file_exists($filePath)) {
                                 $checklistFiles[] = $filePath;
+                            } else {
+                                $resolved = app(\App\Services\CrmDurableStorage::class)->resolveReadablePath('checklists/' . $safeName);
+                                if ($resolved && !empty($resolved['path']) && is_file($resolved['path'])) {
+                                    $checklistFiles[] = $resolved['path'];
+                                }
                             }
                         }
                     }

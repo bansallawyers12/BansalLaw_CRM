@@ -13,6 +13,7 @@ use App\Mail\CommonMail;
 use App\Services\MailRoutingService;
 
 use App\Models\UserRole;
+use Illuminate\Support\Str;
 
 class Controller extends BaseController
 {
@@ -65,17 +66,25 @@ class Controller extends BaseController
 
 	public function uploadFile($file = NULL, $filePath = NULL)
 	{
-		$fileName = $file->getClientOriginalName();
-		$explodeFileName = explode('.', $fileName);
-		$newFileName = $explodeFileName[0];
-		$ext = $file->getClientOriginalExtension();
-		$newFileName=str_replace(' ', '_', $newFileName);
-		$newFileName = $newFileName.'.'.$ext;
+		if (!$file) {
+			return null;
+		}
 
-		if($file->move($filePath, $newFileName))
-		{
+		$fileName = $file->getClientOriginalName();
+		$baseName = pathinfo($fileName, PATHINFO_FILENAME);
+		$cleanBase = Str::slug(str_replace(' ', '_', $baseName));
+		$ext = $file->getClientOriginalExtension();
+		$newFileName = time() . '_' . Str::uuid()->toString() . ($cleanBase !== '' ? '_' . $cleanBase : '') . ($ext ? '.' . $ext : '');
+
+		if (!is_dir($filePath)) {
+			@mkdir($filePath, 0755, true);
+		}
+
+		if ($file->move($filePath, $newFileName)) {
 			return $newFileName;
 		}
+
+		return null;
 	}
 
 	protected function crmMailRouting(): MailRoutingService

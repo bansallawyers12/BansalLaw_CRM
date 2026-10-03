@@ -322,6 +322,10 @@ Route::post('/clients/updateClientMatterAssignee', [ClientPersonalDetailsControl
 Route::get('/upload-checklists', [UploadChecklistController::class, 'index'])->name('upload_checklists.index');
 Route::get('/upload-checklists/matter/{matterId}', [UploadChecklistController::class, 'showByMatter'])->name('upload_checklists.matter');
 Route::post('/upload-checklists/store', [UploadChecklistController::class, 'store'])->name('upload_checklistsupload');
+Route::get('/upload-checklists/download/{id}', [UploadChecklistController::class, 'download'])->name('upload_checklists.download');
+Route::delete('/upload-checklists/{id}', [UploadChecklistController::class, 'destroy'])->name('upload_checklists.destroy');
+Route::get('/checklists/{file}', [UploadChecklistController::class, 'viewFile'])->name('upload_checklists.view_file');
+Route::get('/public/checklists/{file}', [UploadChecklistController::class, 'viewFile'])->name('upload_checklists.public_view_file');
 
 /*---------- Client Sessions & Actions ----------*/
 Route::post('/clients/tasks/personal/store', [ClientTaskController::class, 'storePersonal'])->name('clients.tasks.personal.store');
