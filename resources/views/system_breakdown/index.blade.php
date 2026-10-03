@@ -217,6 +217,9 @@
         .metric-card.green .metric-value { color: var(--accent-green); }
         .metric-card.blue .metric-value { color: var(--accent-blue); }
         .metric-card.purple .metric-value { color: var(--accent-purple); }
+        .metric-card.cyan .metric-value { color: #38bdf8; }
+        .metric-card.cyan { transition: transform 0.15s ease, border-color 0.15s ease; }
+        .metric-card.cyan:hover { transform: translateY(-2px); border-color: rgba(56, 189, 248, 0.4); }
 
         /* Tabs Navigation */
         .tabs-nav {
@@ -732,19 +735,70 @@
                 </div>
                 <div class="metric-value">{{ count($allLogFiles) }}</div>
             </div>
+
+            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => $userThreshold]) }}" class="metric-card cyan" style="text-decoration:none; cursor:pointer;" title="View currently active users and live sessions">
+                <div class="metric-label">
+                    <span>Active Users Online</span>
+                    <span style="display:inline-flex; align-items:center; gap:5px;">
+                        <span style="width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981; display:inline-block; animation:pulse-ring 2s infinite;"></span>
+                        <span style="color:#10b981; font-size:10px; font-weight:700;">LIVE</span>
+                    </span>
+                </div>
+                <div class="metric-value">
+                    {{ $activeUsersData['active_count'] }}
+                    <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:4px;">/ {{ $activeUsersData['total_staff_count'] }} Staff</span>
+                </div>
+            </a>
         </div>
 
         <!-- Navigation Tabs -->
         <div class="tabs-nav">
-            <a href="{{ route('system_errors.index', ['tab' => 'db']) }}" class="tab-link {{ $activeTab === 'db' ? 'active' : '' }}">
+            <a href="{{ route('system_errors.index', ['tab' => 'db', 'user_threshold' => $userThreshold]) }}" class="tab-link {{ $activeTab === 'db' ? 'active' : '' }}">
                 <span>💥 Real-Time Captured Breakdowns</span>
                 <span class="tab-badge">{{ $errors->total() }}</span>
             </a>
-            <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile]) }}" class="tab-link {{ $activeTab === 'logs' ? 'active' : '' }}">
+            <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile, 'user_threshold' => $userThreshold]) }}" class="tab-link {{ $activeTab === 'logs' ? 'active' : '' }}">
                 <span>📂 All Log Files Explorer (Uploads, Sync, Outlook, Core)</span>
                 <span class="tab-badge">{{ count($allLogFiles) }} files</span>
             </a>
+            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => $userThreshold]) }}" class="tab-link {{ $activeTab === 'users' ? 'active' : '' }}">
+                <span>👥 Currently Active Users</span>
+                <span class="tab-badge" style="{{ $activeUsersData['active_count'] > 0 ? 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.3);' : '' }}">
+                    {{ $activeUsersData['active_count'] }} Online Now
+                </span>
+            </a>
         </div>
+
+        <!-- Active Users Quick Live Banner -->
+        @if($activeUsersData['active_count'] > 0)
+            <div style="background:linear-gradient(90deg, rgba(14,21,35,0.95), rgba(15,23,42,0.9)); border:1px solid rgba(56,189,248,0.25); border-radius:10px; padding:10px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <span style="display:inline-flex; position:relative; width:9px; height:9px;">
+                        <span style="position:absolute; width:100%; height:100%; border-radius:50%; background:#10b981; animation:pulse-ring 2s infinite; opacity:0.75;"></span>
+                        <span style="position:relative; width:9px; height:9px; border-radius:50%; background:#10b981;"></span>
+                    </span>
+                    <span style="font-size:13px; font-weight:600; color:#f1f5f9;">
+                        <strong style="color:#38bdf8;">{{ $activeUsersData['active_count'] }}</strong> active {{ $activeUsersData['active_count'] === 1 ? 'user' : 'users' }} online (within {{ $activeUsersData['threshold_minutes'] }}m window):
+                    </span>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        @foreach(array_slice($activeUsersData['active_users'], 0, 5) as $u)
+                            <span style="background:rgba(30,41,59,0.85); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:3px 11px; font-size:12px; color:#e2e8f0; display:inline-flex; align-items:center; gap:6px;">
+                                <span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                                <strong>{{ $u['name'] }}</strong>
+                                <span style="color:#94a3b8; font-size:11px;">({{ $u['role_name'] }})</span>
+                                <span style="color:#64748b; font-size:10.5px;">• {{ $u['last_activity_time'] }}</span>
+                            </span>
+                        @endforeach
+                        @if(count($activeUsersData['active_users']) > 5)
+                            <span style="color:#94a3b8; font-size:11.5px; font-weight:600;">+{{ count($activeUsersData['active_users']) - 5 }} more</span>
+                        @endif
+                    </div>
+                </div>
+                <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => $userThreshold]) }}" class="btn btn-outline" style="padding:4px 12px; font-size:12px; border-color:rgba(56,189,248,0.3); color:#38bdf8;">
+                    View Live Roster & Sessions &rarr;
+                </a>
+            </div>
+        @endif
 
         @if($activeTab === 'db')
             <!-- TAB 1: Database Captured Exceptions -->
@@ -868,7 +922,7 @@
                 </div>
             @endif
 
-        @else
+        @elseif($activeTab === 'logs')
             <!-- TAB 2: Multi-File Log Explorer -->
             <div class="logs-layout">
 
@@ -1042,6 +1096,218 @@
                         </div>
                     @endif
                 </div>
+
+            </div>
+
+        @elseif($activeTab === 'users')
+            <!-- TAB 3: Currently Active Users & Live Sessions -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+
+                <!-- Sub-bar: Filter Threshold & Controls -->
+                <div class="toolbar" style="margin-bottom:0;">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <span style="font-size:13px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                            <span>⏱ Active Window:</span>
+                        </span>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 5]) }}"
+                               class="btn {{ $userThreshold == 5 ? 'btn-primary' : 'btn-outline' }}" style="padding:4px 10px; font-size:11.5px;">5 min</a>
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 15]) }}"
+                               class="btn {{ $userThreshold == 15 ? 'btn-primary' : 'btn-outline' }}" style="padding:4px 10px; font-size:11.5px;">15 min</a>
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 30]) }}"
+                               class="btn {{ $userThreshold == 30 ? 'btn-primary' : 'btn-outline' }}" style="padding:4px 10px; font-size:11.5px;">30 min (Session)</a>
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 60]) }}"
+                               class="btn {{ $userThreshold == 60 ? 'btn-primary' : 'btn-outline' }}" style="padding:4px 10px; font-size:11.5px;">60 min</a>
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 1440]) }}"
+                               class="btn {{ $userThreshold == 1440 ? 'btn-primary' : 'btn-outline' }}" style="padding:4px 10px; font-size:11.5px;">Today</a>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-wrap:wrap;">
+                        <div class="search-box" style="min-width:240px;">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="activeUserSearchInput" class="search-input" placeholder="Quick filter staff name/email..." onkeyup="filterActiveUserRows()">
+                        </div>
+                        <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => $userThreshold]) }}" class="btn btn-outline" style="padding:6px 12px; font-size:12px;" title="Refresh live status">
+                            🔄 Refresh Now
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Live Presence Summary Strip -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+                    <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(16,185,129,0.3); border-radius:10px; padding:14px 18px;">
+                        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">Currently Online</div>
+                        <div style="font-size:24px; font-weight:700; color:#34d399; margin-top:4px; display:flex; align-items:center; gap:8px;">
+                            <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 8px #10b981; animation:pulse-ring 2s infinite;"></span>
+                            {{ $activeUsersData['active_count'] }} Staff
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Seen in last {{ $userThreshold }} minutes</div>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.7); border:1px solid var(--border-subtle); border-radius:10px; padding:14px 18px;">
+                        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">Active Earlier Today</div>
+                        <div style="font-size:24px; font-weight:700; color:#cbd5e1; margin-top:4px;">
+                            {{ $activeUsersData['today_count'] }} Staff
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Unique users seen today</div>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.7); border:1px solid var(--border-subtle); border-radius:10px; padding:14px 18px;">
+                        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">Total Staff Accounts</div>
+                        <div style="font-size:24px; font-weight:700; color:#38bdf8; margin-top:4px;">
+                            {{ $activeUsersData['total_staff_count'] }} Staff
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Registered active CRM staff</div>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.7); border:1px solid var(--border-subtle); border-radius:10px; padding:14px 18px;">
+                        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">Configured Session Life</div>
+                        <div style="font-size:24px; font-weight:700; color:#d8b4fe; margin-top:4px;">
+                            {{ config('session.lifetime', 30) }} min
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Driver: {{ config('session.driver') }}</div>
+                    </div>
+                </div>
+
+                <!-- Currently Active Users Table -->
+                <div style="background-color:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; overflow:hidden;">
+                    <div style="padding:14px 20px; border-bottom:1px solid var(--border-subtle); background-color:#0e1523; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 8px #10b981; animation:pulse-ring 2s infinite;"></span>
+                            <span style="font-size:14px; font-weight:700; color:var(--text-primary);">
+                                Active Staff Online Right Now
+                            </span>
+                            <span class="badge badge-green" style="font-size:11px;">{{ count($activeUsersData['active_users']) }} Online</span>
+                        </div>
+                        <span style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">
+                            Live Clock: {{ now('Australia/Melbourne')->format('d M Y, h:i:s A') }} Melbourne
+                        </span>
+                    </div>
+
+                    @if(count($activeUsersData['active_users']) > 0)
+                        <div style="overflow-x:auto;">
+                            <table id="activeUsersTable" style="width:100%; border-collapse:collapse; text-align:left; font-size:12.5px;">
+                                <thead>
+                                    <tr style="background-color:rgba(15,23,42,0.6); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:11px; text-transform:uppercase; letter-spacing:0.05em;">
+                                        <th style="padding:12px 18px;">Status</th>
+                                        <th style="padding:12px 18px;">Staff Member</th>
+                                        <th style="padding:12px 18px;">Role</th>
+                                        <th style="padding:12px 18px;">Office / Branch</th>
+                                        <th style="padding:12px 18px;">Last Activity</th>
+                                        <th style="padding:12px 18px;">Activity Channel</th>
+                                        <th style="padding:12px 18px;">IP / Host</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($activeUsersData['active_users'] as $u)
+                                        <tr class="active-user-row" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s ease;" onmouseover="this.style.backgroundColor='var(--bg-card-hover)'" onmouseout="this.style.backgroundColor='transparent'">
+                                            <td style="padding:14px 18px; vertical-align:middle;">
+                                                <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); padding:3px 8px; border-radius:12px; color:#34d399; font-weight:700; font-size:11px;">
+                                                    <span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                                                    ONLINE
+                                                </span>
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle;">
+                                                <div style="font-weight:700; color:#fff; font-size:13px;" class="user-search-name">{{ $u['name'] }}</div>
+                                                <div style="font-family:var(--font-mono); font-size:11px; color:#94a3b8; margin-top:2px;" class="user-search-email">{{ $u['email'] }}</div>
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle;">
+                                                <span class="badge {{ str_contains(strtolower($u['role_name']), 'super') ? 'badge-purple' : 'badge-blue' }}" style="font-size:11px;">
+                                                    {{ $u['role_name'] }}
+                                                </span>
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle; color:#cbd5e1;">
+                                                🏢 {{ $u['office_name'] }}
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle;">
+                                                <div style="font-weight:600; color:#38bdf8;">{{ $u['last_activity_time'] }}</div>
+                                                <div style="font-family:var(--font-mono); font-size:10.5px; color:#64748b; margin-top:2px;">{{ $u['exact_time'] }}</div>
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle;">
+                                                <span class="badge badge-gray" style="font-family:var(--font-mono); font-size:10.5px;">
+                                                    {{ $u['source'] }}
+                                                </span>
+                                            </td>
+                                            <td style="padding:14px 18px; vertical-align:middle; font-family:var(--font-mono); font-size:11px; color:#94a3b8;">
+                                                {{ $u['ip'] }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div style="padding:50px 20px; text-align:center; color:var(--text-muted);">
+                            <div style="font-size:36px; margin-bottom:10px;">👥</div>
+                            <div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">No Staff Currently Active</div>
+                            <div style="font-size:13px; max-width:460px; margin:0 auto 16px auto;">
+                                No users have made requests in the last {{ $userThreshold }} minutes. As soon as any staff member logs in or performs an action, they will show up here immediately.
+                            </div>
+                            <a href="{{ route('system_errors.index', ['tab' => 'users', 'user_threshold' => 60]) }}" class="btn btn-outline">
+                                Expand window to 60 minutes
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Staff Logged In Earlier Today (Idle) -->
+                @if(count($activeUsersData['today_users']) > 0)
+                    <div style="background-color:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; overflow:hidden; margin-top:4px;">
+                        <div style="padding:14px 20px; border-bottom:1px solid var(--border-subtle); background-color:rgba(15,23,42,0.8); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span>🕒</span>
+                                <span style="font-size:13.5px; font-weight:700; color:var(--text-secondary);">
+                                    Other Staff Active Earlier Today (Currently Idle / Offline)
+                                </span>
+                                <span class="badge badge-gray">{{ count($activeUsersData['today_users']) }} Users</span>
+                            </div>
+                            <span style="font-size:11px; color:var(--text-muted);">Logged in today before current {{ $userThreshold }}m sliding window</span>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+                                <thead>
+                                    <tr style="background-color:rgba(15,23,42,0.4); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em;">
+                                        <th style="padding:10px 18px;">Status</th>
+                                        <th style="padding:10px 18px;">Staff Member</th>
+                                        <th style="padding:10px 18px;">Role</th>
+                                        <th style="padding:10px 18px;">Office</th>
+                                        <th style="padding:10px 18px;">Last Recorded Activity</th>
+                                        <th style="padding:10px 18px;">Source</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($activeUsersData['today_users'] as $u)
+                                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                            <td style="padding:10px 18px;">
+                                                <span style="color:#94a3b8; font-size:11px; display:inline-flex; align-items:center; gap:5px;">
+                                                    <span style="width:6px; height:6px; border-radius:50%; background:#64748b;"></span>
+                                                    Idle
+                                                </span>
+                                            </td>
+                                            <td style="padding:10px 18px;">
+                                                <div style="font-weight:600; color:#e2e8f0;">{{ $u['name'] }}</div>
+                                                <div style="font-family:var(--font-mono); font-size:10.5px; color:#64748b;">{{ $u['email'] }}</div>
+                                            </td>
+                                            <td style="padding:10px 18px;">
+                                                <span class="badge badge-gray" style="font-size:10.5px;">{{ $u['role_name'] }}</span>
+                                            </td>
+                                            <td style="padding:10px 18px; color:#94a3b8;">{{ $u['office_name'] }}</td>
+                                            <td style="padding:10px 18px;">
+                                                <div style="color:#cbd5e1;">{{ $u['last_activity_time'] }}</div>
+                                                <div style="font-family:var(--font-mono); font-size:10px; color:#64748b;">{{ $u['exact_time'] }}</div>
+                                            </td>
+                                            <td style="padding:10px 18px; font-family:var(--font-mono); font-size:10.5px; color:#64748b;">
+                                                {{ $u['source'] }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
 
             </div>
         @endif
@@ -1255,6 +1521,17 @@ ${currentErrorData.stack_trace}
         function escapeHtml(text) {
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function filterActiveUserRows() {
+            const input = document.getElementById('activeUserSearchInput');
+            if (!input) return;
+            const filter = input.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.active-user-row');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
         }
 
         document.addEventListener('keydown', function(e) {

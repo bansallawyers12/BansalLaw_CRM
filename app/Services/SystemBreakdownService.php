@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SystemBreakdownLog;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -203,7 +204,7 @@ class SystemBreakdownService
     /**
      * Get aggregate KPI statistics for the error monitor.
      */
-    public function getStats(): array
+    public function getStats(int $thresholdMinutes = 30): array
     {
         self::ensureTableExists();
 
@@ -219,6 +220,8 @@ class SystemBreakdownService
             $todayErrors = SystemBreakdownLog::where('last_seen_at', '>=', $todayStart)->sum('occurrence_count');
             $uniqueUsers = SystemBreakdownLog::whereNotNull('user_email')->distinct('user_email')->count('user_email');
 
+            $activeData = $this->getActiveUsersData($thresholdMinutes);
+
             return [
                 'total_open' => $totalOpen,
                 'total_investigating' => $totalInvestigating,
@@ -226,6 +229,8 @@ class SystemBreakdownService
                 'total_errors' => $totalErrors,
                 'today_occurrences' => $todayErrors ?: 0,
                 'unique_users' => $uniqueUsers,
+                'active_users_count' => $activeData['active_count'] ?? 0,
+                'total_staff_count' => $activeData['total_staff_count'] ?? 0,
             ];
         } catch (Throwable $e) {
             return [
@@ -235,8 +240,222 @@ class SystemBreakdownService
                 'total_errors' => 0,
                 'today_occurrences' => 0,
                 'unique_users' => 0,
+                'active_users_count' => 0,
+                'total_staff_count' => 0,
             ];
         }
+    }
+
+    /**
+     * Get real-time active users and recent session activity.
+     * Integrates database sessions, file sessions, recent activities, and login logs.
+     *
+     * @param int $thresholdMinutes Sliding window for active status (e.g. 5, 15, 30, 60 mins)
+     * @return array
+     */
+    public function getActiveUsersData(int $thresholdMinutes = 30): array
+    {
+        $now = Carbon::now('Australia/Melbourne');
+        $thresholdTimestamp = time() - ($thresholdMinutes * 60);
+        $todayStart = $now->copy()->startOfDay();
+
+        $activeUserMap = []; // userId => ['last_activity' => int, 'source' => string, 'ip' => ?string]
+        $todayUserMap = [];  // userId => ['last_activity' => int, 'source' => string, 'ip' => ?string]
+
+        // 1. Database Sessions table (if session driver is database or table populated)
+        try {
+            if (Schema::hasTable('sessions')) {
+                $dbSessions = DB::table('sessions')
+                    ->whereNotNull('user_id')
+                    ->where('last_activity', '>=', $thresholdTimestamp)
+                    ->get();
+                foreach ($dbSessions as $row) {
+                    $uid = (int) $row->user_id;
+                    $act = (int) $row->last_activity;
+                    $ip = $row->ip_address ?? null;
+                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                        $activeUserMap[$uid] = [
+                            'last_activity' => $act,
+                            'source' => 'Database Session',
+                            'ip' => $ip,
+                        ];
+                    }
+                }
+            }
+        } catch (Throwable $e) {}
+
+        // 2. File Sessions in storage/framework/sessions (standard Laravel file session storage)
+        try {
+            $sessionDir = storage_path('framework/sessions');
+            if (is_dir($sessionDir)) {
+                $sessionFiles = scandir($sessionDir);
+                foreach ($sessionFiles as $sFile) {
+                    if ($sFile === '.' || $sFile === '..' || $sFile === '.gitignore') continue;
+                    $fullPath = $sessionDir . DIRECTORY_SEPARATOR . $sFile;
+                    $mtime = @filemtime($fullPath);
+                    if ($mtime && $mtime >= $thresholdTimestamp) {
+                        $raw = @file_get_contents($fullPath);
+                        if ($raw) {
+                            $userId = null;
+                            if (preg_match('/login_(?:admin|web)_[a-f0-9]+";i:(\d+);/', $raw, $m)) {
+                                $userId = (int) $m[1];
+                            } elseif (preg_match('/login_(?:admin|web)_[a-f0-9]+";s:\d+:"(\d+)";/', $raw, $m)) {
+                                $userId = (int) $m[1];
+                            }
+                            if ($userId) {
+                                if (!isset($activeUserMap[$userId]) || $activeUserMap[$userId]['last_activity'] < $mtime) {
+                                    $activeUserMap[$userId] = [
+                                        'last_activity' => $mtime,
+                                        'source' => 'Active Web Session',
+                                        'ip' => null,
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable $e) {}
+
+        // 3. Activity Logs (activities_logs table)
+        try {
+            if (Schema::hasTable('activities_logs')) {
+                $recentActions = DB::table('activities_logs')
+                    ->select('created_by', DB::raw('MAX(created_at) as last_action'))
+                    ->whereNotNull('created_by')
+                    ->where('created_at', '>=', Carbon::now()->subMinutes($thresholdMinutes))
+                    ->groupBy('created_by')
+                    ->get();
+                foreach ($recentActions as $ra) {
+                    $uid = (int) $ra->created_by;
+                    $act = strtotime((string) $ra->last_action);
+                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                        $activeUserMap[$uid] = [
+                            'last_activity' => $act,
+                            'source' => 'Recent Operation',
+                            'ip' => null,
+                        ];
+                    }
+                }
+            }
+        } catch (Throwable $e) {}
+
+        // 4. Staff Login Logs (staff_login_logs table)
+        try {
+            if (Schema::hasTable('staff_login_logs')) {
+                $recentLogins = DB::table('staff_login_logs')
+                    ->select('user_id', DB::raw('MAX(created_at) as last_action'), DB::raw('MAX(ip_address) as ip'))
+                    ->whereNotNull('user_id')
+                    ->where('message', 'like', '%Logged in%')
+                    ->where('created_at', '>=', Carbon::now()->subMinutes($thresholdMinutes))
+                    ->groupBy('user_id')
+                    ->get();
+                foreach ($recentLogins as $rl) {
+                    $uid = (int) $rl->user_id;
+                    $act = strtotime((string) $rl->last_action);
+                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                        $activeUserMap[$uid] = [
+                            'last_activity' => $act,
+                            'source' => 'Recent Login',
+                            'ip' => $rl->ip ?? null,
+                        ];
+                    }
+                }
+
+                // Also populate today's unique logins
+                $todayLogins = DB::table('staff_login_logs')
+                    ->select('user_id', DB::raw('MAX(created_at) as last_action'), DB::raw('MAX(ip_address) as ip'))
+                    ->whereNotNull('user_id')
+                    ->where('message', 'like', '%Logged in%')
+                    ->where('created_at', '>=', $todayStart)
+                    ->groupBy('user_id')
+                    ->get();
+                foreach ($todayLogins as $tl) {
+                    $uid = (int) $tl->user_id;
+                    $todayUserMap[$uid] = [
+                        'last_activity' => strtotime((string) $tl->last_action),
+                        'source' => 'Logged in today',
+                        'ip' => $tl->ip ?? null,
+                    ];
+                }
+            }
+        } catch (Throwable $e) {}
+
+        // Hydrate staff records
+        $allUserIds = array_unique(array_merge(array_keys($activeUserMap), array_keys($todayUserMap)));
+        $staffList = empty($allUserIds) ? collect() : Staff::whereIn('id', $allUserIds)->with(['usertype', 'office'])->get()->keyBy('id');
+
+        $activeList = [];
+        foreach ($activeUserMap as $uid => $meta) {
+            $staff = $staffList->get($uid);
+            $name = $staff ? trim("{$staff->first_name} {$staff->last_name}") : "Staff #{$uid}";
+            if (empty($name)) {
+                $name = $staff?->email ?? "User #{$uid}";
+            }
+            $roleName = $staff?->usertype?->name ?? ($staff?->position ?? 'Staff');
+            $officeName = $staff?->office?->office_name ?? 'Head Office';
+            $email = $staff?->email ?? 'N/A';
+            $diffForHumans = Carbon::createFromTimestamp($meta['last_activity'])->diffForHumans();
+            $exactTime = Carbon::createFromTimestamp($meta['last_activity'])->setTimezone('Australia/Melbourne')->format('d M Y, h:i:s A');
+
+            $activeList[] = [
+                'id' => $uid,
+                'name' => $name,
+                'email' => $email,
+                'role_name' => $roleName,
+                'office_name' => $officeName,
+                'last_activity_time' => $diffForHumans,
+                'exact_time' => $exactTime,
+                'last_activity_timestamp' => $meta['last_activity'],
+                'source' => $meta['source'],
+                'ip' => $meta['ip'] ?? 'Local / Internal',
+                'is_online' => true,
+            ];
+        }
+
+        // Sort by most recently active
+        usort($activeList, fn($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
+
+        $todayList = [];
+        foreach ($todayUserMap as $uid => $meta) {
+            if (isset($activeUserMap[$uid])) continue; // already in activeList
+            $staff = $staffList->get($uid);
+            $name = $staff ? trim("{$staff->first_name} {$staff->last_name}") : "Staff #{$uid}";
+            if (empty($name)) {
+                $name = $staff?->email ?? "User #{$uid}";
+            }
+            $roleName = $staff?->usertype?->name ?? ($staff?->position ?? 'Staff');
+            $officeName = $staff?->office?->office_name ?? 'Head Office';
+            $email = $staff?->email ?? 'N/A';
+            $diffForHumans = Carbon::createFromTimestamp($meta['last_activity'])->diffForHumans();
+            $exactTime = Carbon::createFromTimestamp($meta['last_activity'])->setTimezone('Australia/Melbourne')->format('d M Y, h:i:s A');
+
+            $todayList[] = [
+                'id' => $uid,
+                'name' => $name,
+                'email' => $email,
+                'role_name' => $roleName,
+                'office_name' => $officeName,
+                'last_activity_time' => $diffForHumans,
+                'exact_time' => $exactTime,
+                'last_activity_timestamp' => $meta['last_activity'],
+                'source' => $meta['source'],
+                'ip' => $meta['ip'] ?? 'Local / Internal',
+                'is_online' => false,
+            ];
+        }
+        usort($todayList, fn($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
+
+        $totalStaffCount = Staff::where('status', 1)->count();
+
+        return [
+            'active_count' => count($activeList),
+            'active_users' => $activeList,
+            'today_count' => count($activeList) + count($todayList),
+            'today_users' => $todayList,
+            'threshold_minutes' => $thresholdMinutes,
+            'total_staff_count' => $totalStaffCount,
+        ];
     }
 
     /**

@@ -58,6 +58,43 @@ class ActiveStaffService
             $staffIds = $sessions->keys();
 
             if ($staffIds->isEmpty()) {
+                // Fallback for environments using file session storage
+                try {
+                    $sessionDir = storage_path('framework/sessions');
+                    if (is_dir($sessionDir)) {
+                        $fileSessions = [];
+                        foreach (scandir($sessionDir) as $sFile) {
+                            if ($sFile === '.' || $sFile === '..' || $sFile === '.gitignore') continue;
+                            $fPath = $sessionDir . DIRECTORY_SEPARATOR . $sFile;
+                            $mtime = @filemtime($fPath);
+                            if ($mtime && $mtime >= $threshold) {
+                                $raw = @file_get_contents($fPath);
+                                if ($raw) {
+                                    $userId = null;
+                                    if (preg_match('/login_(?:admin|web)_[a-f0-9]+";i:(\d+);/', $raw, $m)) {
+                                        $userId = (int) $m[1];
+                                    } elseif (preg_match('/login_(?:admin|web)_[a-f0-9]+";s:\d+:"(\d+)";/', $raw, $m)) {
+                                        $userId = (int) $m[1];
+                                    }
+                                    if ($userId) {
+                                        if (!isset($fileSessions[$userId]) || $fileSessions[$userId]['last_activity']->timestamp < $mtime) {
+                                            $fileSessions[$userId] = [
+                                                'last_activity' => Carbon::createFromTimestamp($mtime),
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!empty($fileSessions)) {
+                            $sessions = collect($fileSessions);
+                            $staffIds = $sessions->keys();
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
+
+            if ($staffIds->isEmpty()) {
                 return collect();
             }
 

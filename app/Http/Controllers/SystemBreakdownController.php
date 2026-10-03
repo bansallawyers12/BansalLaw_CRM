@@ -28,9 +28,15 @@ class SystemBreakdownController extends Controller
         try {
             SystemBreakdownService::ensureTableExists();
 
-            $stats = $this->service->getStats();
+            $userThreshold = (int) $request->input('user_threshold', 30);
+            if ($userThreshold < 1 || $userThreshold > 1440) {
+                $userThreshold = 30;
+            }
+
+            $stats = $this->service->getStats($userThreshold);
             $errors = $this->service->getFilteredErrors($request);
-            $activeTab = $request->input('tab', 'db'); // 'db' or 'logs'
+            $activeTab = $request->input('tab', 'db'); // 'db', 'logs', or 'users'
+            $activeUsersData = $this->service->getActiveUsersData($userThreshold);
 
             // Log files explorer
             $allLogFiles = $this->service->getAllLogFiles();
@@ -57,6 +63,7 @@ class SystemBreakdownController extends Controller
                 }
             }
 
+
             return view('system_breakdown.index', compact(
                 'stats',
                 'errors',
@@ -68,7 +75,9 @@ class SystemBreakdownController extends Controller
                 'rawLogContent',
                 'viewRaw',
                 'logLevel',
-                'logSearch'
+                'logSearch',
+                'activeUsersData',
+                'userThreshold'
             ));
         } catch (\Throwable $e) {
             // Diagnostic fallback: show the exact error message and trace rather than 500 generic page
