@@ -172,6 +172,9 @@
                             <div class="form-group">
                                <label>Upload Outlook Email ({{ $crmEmailUploadLabel }})<span class="span_req">*</span></label>
                                <input type="file" name="email_files[]" id="email_files" class="form-control" accept="{{ $crmEmailUploadAccept }}" multiple >
+                               <small class="form-text text-muted d-block mt-1" style="font-size: 11px;">
+                                   <i class="fa-solid fa-circle-info text-primary me-1"></i> Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.
+                               </small>
                             </div>
                        </div>
 
@@ -210,6 +213,9 @@
                             <div class="form-group">
                                <label>Upload Outlook Email ({{ $crmEmailUploadLabel }})<span class="span_req">*</span></label>
                                <input type="file" name="email_files[]" id="email_files1" class="form-control" accept="{{ $crmEmailUploadAccept }}" multiple >
+                               <small class="form-text text-muted d-block mt-1" style="font-size: 11px;">
+                                   <i class="fa-solid fa-circle-info text-primary me-1"></i> Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.
+                               </small>
                             </div>
                        </div>
 

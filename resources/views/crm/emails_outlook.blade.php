@@ -123,6 +123,10 @@
         <div class="drag-drop-content">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; margin-bottom: 15px;"></i>
             <h3>Drop Outlook email files here ({{ $crmEmailUploadLabel }})</h3>
+            <p style="margin-top: 10px; font-size: 13px; color: #cbd5e1; max-width: 440px; line-height: 1.45;">
+                <i class="fa-solid fa-circle-info" style="font-size: 13px; margin-right: 4px;"></i>
+                Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.
+            </p>
         </div>
     </div>
     @endif
@@ -314,7 +318,10 @@
         @if(! $unassignedOnly)
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here </span>
+            <span>Drag &amp; drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here</span>
+            <span class="inline-drop-zone-hint">
+                <i class="fa-solid fa-circle-info" style="font-size: 11px; margin-right: 3px;"></i>Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.
+            </span>
         </div>
         @endif
 

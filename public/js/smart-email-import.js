@@ -241,14 +241,14 @@
             if (state.isAnalyzing || state.isConfirming) {
                 return;
             }
-            handleFiles(e.dataTransfer.files);
+            handleFiles(e.dataTransfer.files, true);
         });
 
         fileInput.addEventListener('change', function () {
             if (state.isAnalyzing || state.isConfirming) {
                 return;
             }
-            handleFiles(fileInput.files);
+            handleFiles(fileInput.files, false);
         });
 
         if (analyzeBtn) {
@@ -256,8 +256,16 @@
         }
     }
 
-    function handleFiles(fileList) {
+    function handleFiles(fileList, isFromDrop) {
         var files = Array.from(fileList || []);
+        if (!files.length && isFromDrop) {
+            setStatus(
+                $('smart-import-upload-status'),
+                'No files detected from drop. Browsers cannot read emails dragged directly from the Outlook desktop app. Drag & drop files from your desktop or File Explorer, or use the Bansal Law Outlook Add-in.',
+                'error'
+            );
+            return;
+        }
         var valid = [];
         var rejected = [];
 

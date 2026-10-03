@@ -243,29 +243,24 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: File Upload Rejection  | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED (Production Ready)                 |
+| SEVERITY: File Upload Rejection  | RESOLUTION: Clear dropzone visual helpers & explicit messaging |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Outlook & Email Sync Uploads
 - **Source Files & Lines:**
-  - [`resources/views/crm/emails_outlook.blade.php:208`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/emails_outlook.blade.php#L208)
-  - [`storage/logs/email-upload-errors-2026-09-24.log:1-6`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/storage/logs/email-upload-errors-2026-09-24.log#L1)
-- **Runtime Error Signature:**
-  ```json
-  {"stage":"drop_failed","error":"Nothing was received from the drop. Save the email from Outlook as a .msg or .eml file, then try again.","technical_error":"No files detected"}
-  ```
-
-#### Why and How This Occurs on the Live Server
-On Windows machines, dragging an email item directly from the Outlook desktop app into Google Chrome or Edge does not provide standard HTML5 `File` objects; it passes proprietary OLE / COM virtual file streams (`FileGroupDescriptorW`), which standard browser drag-and-drop APIs cannot read without an Outlook add-in.
-
-#### Production Impact
-Staff repeatedly attempt to drag emails from Outlook into the browser. The dropzone accepts the drop animation, but immediately rejects it with a drop failure error, creating confusion and slowing down email filing.
-
-#### Remediation Plan
-Add a clear visual helper inside the dropzone in `emails_outlook.blade.php` and `smart-import.blade.php`:
-> *"Drag & drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in."*
+  - [`resources/views/crm/emails_outlook.blade.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/emails_outlook.blade.php)
+  - [`resources/views/crm/emails/smart-import.blade.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/emails/smart-import.blade.php)
+  - [`resources/views/crm/clients/modals/emails.blade.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/crm/clients/modals/emails.blade.php)
+  - [`public/js/email-upload-filename.js:365-422`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/public/js/email-upload-filename.js#L365-L422)
+  - [`public/js/smart-email-import.js:240-275`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/public/js/smart-email-import.js#L240-L275)
+- **Resolution Summary:**
+  1. **Dropzone Visual Helpers:** Added persistent, clear guidance inside `dragDropOverlay`, `inlineDropZone`, and `smart-import-dropzone`:
+     > *"Drag & drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in."*
+  2. **Accurate Error Explanation:** Replaced generic "Nothing was received from the drop / No files detected" error alerts in `email-upload-filename.js` with an explicit explanation that web browsers cannot read proprietary OLE streams dragged directly from desktop Outlook, with direct instructions to drag to the Desktop first or use the Outlook Add-in.
+  3. **Smart Import Drop Detection:** `smart-email-import.js` detects when an empty drop from desktop Outlook occurs and immediately displays a helpful error banner instead of a generic "no files selected" message.
+  4. **Manual Modal Upload Helpers:** Added helper notes under file inputs in `modals/emails.blade.php`.
 
 ---
 

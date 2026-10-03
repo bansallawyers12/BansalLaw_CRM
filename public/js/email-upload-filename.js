@@ -365,10 +365,9 @@
     function emailUploadOutlookDragInstructions() {
         return 'Browsers cannot read emails dragged directly from the Outlook desktop app.\n\n'
             + 'To upload an email:\n'
-            + '1. In Outlook, open the email\n'
-            + '2. Go to File → Save As (or drag the email to your Desktop)\n'
-            + '3. Save it as a .msg or .eml file\n'
-            + '4. Drag the saved file here, or click Browse to select it';
+            + '1. In Outlook, drag the email to your Desktop or File Explorer first (or File → Save As as .msg / .eml)\n'
+            + '2. Drag the saved file here, or click Browse to select it\n\n'
+            + 'Alternatively, use the Bansal Law Outlook Add-in to file emails directly.';
     }
 
     function emailUploadEmptyFileMessage() {
@@ -382,9 +381,9 @@
 
         if (!raw.length) {
             return {
-                title: 'No files detected',
-                message: 'Nothing was received from the drop. '
-                    + 'Save the email from Outlook as a .msg or .eml file, then try again.'
+                title: 'No files received from drop',
+                message: 'Nothing was received from the drop. Browsers cannot read emails dragged directly from the Outlook desktop app.\n\n'
+                    + 'Drag & drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.'
             };
         }
 
@@ -417,7 +416,7 @@
             return {
                 title: 'Could not read dropped file',
                 message: 'The dropped file could not be prepared for upload. '
-                    + 'Save the email from Outlook as a .msg or .eml file, then try again.'
+                    + 'Drag & drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.'
             };
         }
 
