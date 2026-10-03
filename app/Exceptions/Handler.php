@@ -6,7 +6,8 @@ use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Arr;
-
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -61,6 +62,25 @@ class Handler extends ExceptionHandler
                     'status' => false,
                     'message' => 'The uploaded file exceeds the server maximum upload limit (post_max_size).',
                 ], 413);
+            }
+        }
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            if ($exception instanceof NotFoundHttpException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The requested resource was not found.',
+                ], 404);
+            }
+
+            if ($exception instanceof HttpExceptionInterface && ! config('app.debug')) {
+                $status = $exception->getStatusCode();
+                if ($status >= 500) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Something went wrong. Please try again later.',
+                    ], $status);
+                }
             }
         }
 
