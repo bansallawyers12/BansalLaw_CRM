@@ -301,22 +301,34 @@
     }
 
     function workflowSwalConfirm(options) {
-        if (typeof Swal === 'undefined') {
-            return Promise.resolve({
-                isConfirmed: window.confirm(options.text || options.title || 'Are you sure?')
+        if (typeof window.crmConfirm === 'function') {
+            return window.crmConfirm({
+                title: options.title || 'Confirm',
+                text: options.text || undefined,
+                html: options.html || undefined,
+                icon: options.icon || 'question',
+                confirmText: options.confirmText || 'Yes',
+                cancelText: options.cancelText || 'Cancel',
+                confirmColor: options.confirmColor || '#1e3d60',
+                cancelColor: options.cancelColor || '#5e7a90'
+            }).then(function(isConfirmed) {
+                return { isConfirmed: !!isConfirmed };
             });
         }
-        return Swal.fire(Object.assign({}, workflowSwalBase(), {
-            title: options.title || 'Confirm',
-            text: options.text || undefined,
-            html: options.html || undefined,
-            icon: options.icon || 'question',
-            showCancelButton: true,
-            confirmButtonText: options.confirmText || 'Yes',
-            cancelButtonText: options.cancelText || 'Cancel',
-            confirmButtonColor: options.confirmColor || '#1e3d60',
-            cancelButtonColor: options.cancelColor || '#5e7a90'
-        }));
+        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+            return Swal.fire(Object.assign({}, workflowSwalBase(), {
+                title: options.title || 'Confirm',
+                text: options.text || undefined,
+                html: options.html || undefined,
+                icon: options.icon || 'question',
+                showCancelButton: true,
+                confirmButtonText: options.confirmText || 'Yes',
+                cancelButtonText: options.cancelText || 'Cancel',
+                confirmButtonColor: options.confirmColor || '#1e3d60',
+                cancelButtonColor: options.cancelColor || '#5e7a90'
+            }));
+        }
+        return Promise.resolve({ isConfirmed: true });
     }
 
     function workflowSwalAlert(options) {

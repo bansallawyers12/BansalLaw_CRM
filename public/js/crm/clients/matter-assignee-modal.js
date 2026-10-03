@@ -211,9 +211,34 @@
         var init = $inChangeMatterModal('#change_matter_initial_sel_matter_id').val();
         var now = $inChangeMatterModal('#change_sel_matter_id').val();
         if (init && now && String(init) !== String(now)) {
-            if (!window.confirm('You are changing the law matter type. The existing matter reference will not change automatically. Continue?')) {
-                return;
-            }
+            var confirmPromise = typeof window.crmConfirm === 'function'
+                ? window.crmConfirm({
+                    title: 'Change Matter Type?',
+                    text: 'You are changing the law matter type. The existing matter reference will not change automatically. Continue?',
+                    icon: 'warning',
+                    confirmText: 'Yes, continue',
+                    cancelText: 'Cancel',
+                    confirmColor: '#e08e0b',
+                    cancelColor: '#5e7a90'
+                })
+                : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                    ? Swal.fire({
+                        title: 'Change Matter Type?',
+                        text: 'You are changing the law matter type. The existing matter reference will not change automatically. Continue?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, continue',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#e08e0b',
+                        cancelButtonColor: '#5e7a90'
+                    }).then(function(r) { return !!(r && r.isConfirmed); })
+                    : Promise.resolve(true);
+
+            confirmPromise.then(function(confirmed) {
+                if (!confirmed) return;
+                customValidate('change_matter_assignee');
+            });
+            return;
         }
         customValidate('change_matter_assignee');
     };

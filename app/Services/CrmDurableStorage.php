@@ -627,14 +627,18 @@ class CrmDurableStorage
         return $this->downloadResponse($relativePath, $filename, $headers, $asAttachment, true);
     }
 
-    public function promotePathToCloud(?string $relativePath): bool
+    public function promotePathToCloud(?string $relativePath, ?string &$errorMessage = null): bool
     {
+        $errorMessage = null;
+
         if (! $this->usesCloud()) {
+            $errorMessage = 'Cloud storage is not configured or disabled.';
             return false;
         }
 
         $path = $this->normalize($relativePath);
         if ($path === '') {
+            $errorMessage = 'Empty file path specified.';
             return false;
         }
 
@@ -652,11 +656,13 @@ class CrmDurableStorage
             }
         }
         if ($local === null) {
+            $errorMessage = 'Local file not found on disk: ' . $path;
             return false;
         }
 
-        $stream = fopen($local, 'r');
+        $stream = @fopen($local, 'r');
         if ($stream === false) {
+            $errorMessage = 'Could not open local file for reading: ' . $local;
             return false;
         }
 
@@ -665,10 +671,13 @@ class CrmDurableStorage
             $onCloud = $this->cloudExists($path);
             if ($onCloud) {
                 app(CrmDurableStorageMyfileSync::class)->updateRecordsAfterCloudPromote($path);
+            } else {
+                $errorMessage = 'S3 put completed but cloudExists() check returned false for: ' . $path;
             }
 
             return $onCloud;
         } catch (\Throwable $e) {
+            $errorMessage = $e->getMessage();
             Log::warning('CrmDurableStorage promote to cloud failed', [
                 'path' => $path,
                 'error' => $e->getMessage(),
@@ -683,25 +692,27 @@ class CrmDurableStorage
     }
 
     /**
-     * @return array{promoted: int, skipped: int, failed: int, scanned: int}
+     * @return array{promoted: int, skipped: int, failed: int, scanned: int, errors: list<array{path: string, error: string}>}
      */
     public function promoteAllPendingToCloud(): array
     {
-        $stats = ['promoted' => 0, 'skipped' => 0, 'failed' => 0, 'scanned' => 0];
+        $stats = ['promoted' => 0, 'skipped' => 0, 'failed' => 0, 'scanned' => 0, 'errors' => []];
 
         if (! $this->usesCloud()) {
             return $stats;
         }
 
+        $seen = [];
+
         foreach ($this->promotePrefixes() as $prefix) {
-            $this->promoteTreeUnderStorageApp($prefix, $stats);
+            $this->promoteTreeUnderStorageApp($prefix, $stats, $seen);
         }
 
         if ((bool) config('crm.durable_storage.promote_scan_full_app', true)) {
-            $this->promoteFullStorageApp($stats);
+            $this->promoteFullStorageApp($stats, $seen);
         }
 
-        $this->promoteLegacyPublicTree('legal_forms/', $stats);
+        $this->promoteLegacyPublicTree('legal_forms/', $stats, $seen);
 
         return $stats;
     }
@@ -729,9 +740,10 @@ class CrmDurableStorage
     }
 
     /**
-     * @param  array{promoted: int, skipped: int, failed: int, scanned: int}  $stats
+     * @param  array{promoted: int, skipped: int, failed: int, scanned: int, errors: list<array{path: string, error: string}>}  $stats
+     * @param  array<string, bool>  $seen
      */
-    private function promoteFullStorageApp(array &$stats): void
+    private function promoteFullStorageApp(array &$stats, array &$seen = []): void
     {
         $root = storage_path('app');
         if (! is_dir($root)) {
@@ -752,6 +764,11 @@ class CrmDurableStorage
             $absolute = $file->getPathname();
             $relative = $this->normalize(substr($absolute, strlen($root) + 1));
 
+            if (isset($seen[$relative])) {
+                continue;
+            }
+            $seen[$relative] = true;
+
             foreach ($skip as $prefix) {
                 if (str_starts_with($relative, $prefix)) {
                     continue 2;
@@ -767,10 +784,17 @@ class CrmDurableStorage
                 continue;
             }
 
-            if ($this->promotePathToCloud($relative)) {
+            $errorMsg = null;
+            if ($this->promotePathToCloud($relative, $errorMsg)) {
                 $stats['promoted']++;
             } else {
                 $stats['failed']++;
+                if (count($stats['errors']) < 50) {
+                    $stats['errors'][] = [
+                        'path' => $relative,
+                        'error' => $errorMsg ?: 'Unknown cloud upload error',
+                    ];
+                }
             }
         }
     }
@@ -799,9 +823,10 @@ class CrmDurableStorage
     }
 
     /**
-     * @param  array{promoted: int, skipped: int, failed: int, scanned: int}  $stats
+     * @param  array{promoted: int, skipped: int, failed: int, scanned: int, errors: list<array{path: string, error: string}>}  $stats
+     * @param  array<string, bool>  $seen
      */
-    private function promoteTreeUnderStorageApp(string $prefix, array &$stats): void
+    private function promoteTreeUnderStorageApp(string $prefix, array &$stats, array &$seen = []): void
     {
         $root = storage_path('app/'.trim($prefix, '/'));
         if (! is_dir($root)) {
@@ -820,6 +845,12 @@ class CrmDurableStorage
 
             $absolute = $file->getPathname();
             $relative = $this->normalize(substr($absolute, strlen(storage_path('app/'))));
+
+            if (isset($seen[$relative])) {
+                continue;
+            }
+            $seen[$relative] = true;
+
             $stats['scanned']++;
 
             if ($this->cloudExists($relative)) {
@@ -829,18 +860,26 @@ class CrmDurableStorage
                 continue;
             }
 
-            if ($this->promotePathToCloud($relative)) {
+            $errorMsg = null;
+            if ($this->promotePathToCloud($relative, $errorMsg)) {
                 $stats['promoted']++;
             } else {
                 $stats['failed']++;
+                if (count($stats['errors']) < 50) {
+                    $stats['errors'][] = [
+                        'path' => $relative,
+                        'error' => $errorMsg ?: 'Unknown cloud upload error',
+                    ];
+                }
             }
         }
     }
 
     /**
-     * @param  array{promoted: int, skipped: int, failed: int, scanned: int}  $stats
+     * @param  array{promoted: int, skipped: int, failed: int, scanned: int, errors: list<array{path: string, error: string}>}  $stats
+     * @param  array<string, bool>  $seen
      */
-    private function promoteLegacyPublicTree(string $prefix, array &$stats): void
+    private function promoteLegacyPublicTree(string $prefix, array &$stats, array &$seen = []): void
     {
         $root = public_path(trim($prefix, '/'));
         if (! is_dir($root)) {
@@ -859,6 +898,12 @@ class CrmDurableStorage
 
             $absolute = $file->getPathname();
             $relative = $this->normalize(substr($absolute, strlen(public_path().DIRECTORY_SEPARATOR)));
+
+            if (isset($seen[$relative])) {
+                continue;
+            }
+            $seen[$relative] = true;
+
             $stats['scanned']++;
 
             if ($this->cloudExists($relative)) {
@@ -868,10 +913,17 @@ class CrmDurableStorage
                 continue;
             }
 
-            if ($this->promotePathToCloud($relative)) {
+            $errorMsg = null;
+            if ($this->promotePathToCloud($relative, $errorMsg)) {
                 $stats['promoted']++;
             } else {
                 $stats['failed']++;
+                if (count($stats['errors']) < 50) {
+                    $stats['errors'][] = [
+                        'path' => $relative,
+                        'error' => $errorMsg ?: 'Unknown cloud upload error',
+                    ];
+                }
             }
         }
     }

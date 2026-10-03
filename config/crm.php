@@ -547,6 +547,7 @@ return [
             'office_receipt_uploads/',
             'conversion_email_fetch/',
             'email_uploads/',
+            'checklists/',
         ],
         'promote_skip_prefixes' => [
             'document-uploads/',
@@ -556,6 +557,10 @@ return [
         ],
         'promote_scan_full_app' => filter_var(env('CRM_DURABLE_PROMOTE_FULL_SCAN', true), FILTER_VALIDATE_BOOLEAN),
         'promote_schedule_minutes' => max(5, (int) env('CRM_DURABLE_PROMOTE_SCHEDULE_MINUTES', 15)),
+        'alert_webhook_url' => env('CRM_STORAGE_ALERT_WEBHOOK', env('LOG_SLACK_WEBHOOK_URL')),
+        'alert_email' => env('CRM_STORAGE_ALERT_EMAIL'),
+        'alert_cooldown_minutes' => max(5, (int) env('CRM_STORAGE_ALERT_COOLDOWN_MINUTES', 60)),
+        'notify_in_app' => filter_var(env('CRM_STORAGE_NOTIFY_IN_APP', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     /*

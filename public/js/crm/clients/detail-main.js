@@ -2380,7 +2380,18 @@ success: function(response) {
                     icon: 'warning',
                     confirmColor: '#b91c1c'
                 })
-                : Promise.resolve(window.confirm('Are you sure you want to remove this line?'));
+                : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                    ? Swal.fire({
+                        title: 'Remove line?',
+                        text: 'Are you sure you want to remove this line?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, remove',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#b91c1c',
+                        cancelButtonColor: '#5e7a90'
+                    }).then(function(r) { return !!(r && r.isConfirmed); })
+                    : Promise.resolve(true);
 
             ask.then(function(ok) {
                 if (ok) {
@@ -2830,8 +2841,10 @@ success: function(response) {
                         toastr.error(msg);
                     } else if (typeof showAlert !== 'undefined') {
                         showAlert('danger', msg);
+                    } else if (typeof window.crmAlert === 'function') {
+                        window.crmAlert(msg);
                     } else {
-                        alert(msg);
+                        console.error(msg);
                     }
                 }
             });
@@ -4108,49 +4121,12 @@ success: function(response) {
 
         var delhref = '';
 
-        $('.deletenote').off('click').on('click', function(e) { 
-
-            e.preventDefault();
-
-            e.stopPropagation();
-
-            $('#confirmModal').modal('show');
-
-            notid = $(this).attr('data-id');
-
-            delhref = $(this).attr('data-href');
-
-           
-
-        });
-
-
-
-        $(document).on('click', '.deletenote', function(e) {
-
-            e.preventDefault();
-
-            e.stopPropagation();
-
-            $('#confirmModal').modal('show');
-
-            notid = $(this).attr('data-id');
-
-            delhref = $(this).attr('data-href');
-
-            
-
-        });
-
-
-
-        $(document).delegate('#confirmModal .accept', 'click', function(){
-
+        function performDeleteNoteOrDoc(targetId, targetHref) {
             $('.popuploader').show();
 
             // Determine the correct URL based on delhref
             var deleteUrl;
-            if(delhref == 'deletenote'){
+            if(targetHref == 'deletenote'){
                 deleteUrl = window.ClientDetailConfig.urls.deleteNote;
             } else {
                 deleteUrl = (window.ClientDetailConfig.urls.deleteDocs)
@@ -4158,42 +4134,101 @@ success: function(response) {
             }
 
             $.ajax({
-
                 url: deleteUrl,
-
                 type:'POST',
-
                 dataType:'json',
-
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-
-                data:{note_id:notid},
-
+                data:{note_id:targetId},
                 success:function(response){
-
                     $('.popuploader').hide();
-
                     var res = safeParseJsonResponse(response);
                     if (!res) return;
                     $('#confirmModal').modal('hide');
 
                     if(res.status){
-
-                        $('#note_id_'+notid).remove();
-
+                        $('#note_id_'+targetId).remove();
                         if(res.status == true){
-
-                            $('#id_'+notid).remove();
-
+                            $('#id_'+targetId).remove();
                         }
 
-
-
-                        if(delhref == 'deletedocs'){
-
-                            $('.documnetlist_'+res.doc_categry+' #id_'+notid).remove();
-
+                        if(targetHref == 'deletedocs'){
+                            $('.documnetlist_'+res.doc_categry+' #id_'+targetId).remove();
+                            if (typeof window.crmToast === 'function') {
+                                window.crmToast(res.message || 'Document deleted successfully.', 'success');
+                            }
                         }
+                    } else if (res.message) {
+                        if (typeof window.crmAlert === 'function') {
+                            window.crmAlert(res.message);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    $('#confirmModal').modal('hide');
+                    var err = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to delete.';
+                    if (typeof window.crmAlert === 'function') {
+                        window.crmAlert(err);
+                    }
+                }
+            });
+        }
+
+        function handleDeleteNoteTrigger(e, $el) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            notid = $el.attr('data-id');
+            delhref = $el.attr('data-href');
+
+            // For document deletions, show SweetAlert2 Destructive Modal directly
+            if (delhref === 'deletedocs') {
+                var confirmPromise = typeof window.crmConfirm === 'function'
+                    ? window.crmConfirm({
+                        title: 'Delete Document?',
+                        text: 'Are you sure you want to delete this document? This action cannot be undone.',
+                        icon: 'warning',
+                        confirmText: 'Yes, delete',
+                        cancelText: 'Cancel',
+                        confirmColor: '#dc3545',
+                        cancelColor: '#5e7a90'
+                    })
+                    : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                        ? Swal.fire({
+                            title: 'Delete Document?',
+                            text: 'Are you sure you want to delete this document? This action cannot be undone.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, delete',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#5e7a90'
+                        }).then(function(r) { return !!(r && r.isConfirmed); })
+                        : null;
+
+                if (confirmPromise) {
+                    confirmPromise.then(function(confirmed) {
+                        if (!confirmed) return;
+                        performDeleteNoteOrDoc(notid, delhref);
+                    });
+                    return;
+                }
+            }
+
+            $('#confirmModal').modal('show');
+        }
+
+        $('.deletenote').off('click').on('click', function(e) { 
+            handleDeleteNoteTrigger(e, $(this));
+        });
+
+        $(document).on('click', '.deletenote', function(e) {
+            handleDeleteNoteTrigger(e, $(this));
+        });
+
+        $(document).delegate('#confirmModal .accept', 'click', function(){
+            performDeleteNoteOrDoc(notid, delhref);
+        });
 
                         // deleteservices block REMOVED - route and controller method no longer exist; /get-services route also removed
 

@@ -351,44 +351,94 @@
             e.preventDefault();
             var id = $(this).data('id');
             var title = $(this).data('title') || 'this folder';
-            var warningMessage = '⚠️ WARNING: You are about to delete the folder "' + title + '"\n\n' +
-                'This action will permanently remove the folder from the system.\n\n' +
-                'Requirements:\n' +
-                '• Folder must be empty (no documents)\n' +
-                '• Only superadmin can perform this action\n\n' +
-                'This action CANNOT be undone!\n\n' +
-                'Do you want to proceed?';
-            if (confirm(warningMessage)) {
-                var confirmMessage = '⚠️ FINAL CONFIRMATION\n\n' +
-                    'Are you absolutely sure you want to delete "' + title + '"?\n\n' +
-                    'This will permanently delete the folder.\n\n' +
-                    'Click OK to delete or Cancel to abort.';
-                if (confirm(confirmMessage)) {
-                    $.ajax({
-                        url: window.ClientDetailConfig.urls.deletePersonalCategory,
-                        method: 'POST',
-                        data: {
-                            _token: $('meta[name="csrf-token"]').attr('content'),
-                            id: id
-                        },
-                        success: function(response) {
-                            if (response.status) {
-                                crmAlert('✓ Success: ' + response.message);
-                                location.reload();
+
+            var confirmPromise = typeof window.crmConfirm === 'function'
+                ? window.crmConfirm({
+                    title: 'Delete Folder "' + title + '"?',
+                    html: '<div style="text-align: left; font-size: 14px;">' +
+                        '<p class="text-danger fw-bold mb-2">This action will permanently remove the folder from the system.</p>' +
+                        '<p class="mb-1 text-muted"><strong>Requirements:</strong></p>' +
+                        '<ul class="text-muted ps-3 mb-2">' +
+                        '<li>Folder must be empty (no documents)</li>' +
+                        '<li>Only superadmin can perform this action</li>' +
+                        '</ul>' +
+                        '<p class="text-danger mb-0"><strong>This action CANNOT be undone!</strong></p>' +
+                        '</div>',
+                    icon: 'warning',
+                    confirmText: 'Yes, delete folder',
+                    cancelText: 'Cancel',
+                    confirmColor: '#dc3545',
+                    cancelColor: '#5e7a90'
+                })
+                : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                    ? Swal.fire({
+                        title: 'Delete Folder "' + title + '"?',
+                        html: '<div style="text-align: left; font-size: 14px;">' +
+                            '<p class="text-danger fw-bold mb-2">This action will permanently remove the folder from the system.</p>' +
+                            '<p class="mb-1 text-muted"><strong>Requirements:</strong></p>' +
+                            '<ul class="text-muted ps-3 mb-2">' +
+                            '<li>Folder must be empty (no documents)</li>' +
+                            '<li>Only superadmin can perform this action</li>' +
+                            '</ul>' +
+                            '<p class="text-danger mb-0"><strong>This action CANNOT be undone!</strong></p>' +
+                            '</div>',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, delete folder',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#5e7a90'
+                    }).then(function(r) { return !!(r && r.isConfirmed); })
+                    : Promise.resolve(true);
+
+            confirmPromise.then(function(confirmed) {
+                if (!confirmed) return;
+
+                $.ajax({
+                    url: window.ClientDetailConfig.urls.deletePersonalCategory,
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        id: id
+                    },
+                    success: function(response) {
+                        if (response.status) {
+                            if (typeof window.crmToast === 'function') {
+                                window.crmToast(response.message || 'Folder deleted successfully.', 'success');
+                            } else if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                                iziToast.success({ message: response.message || 'Folder deleted successfully.', position: 'topRight' });
                             } else {
-                                crmAlert('✗ Error: ' + (response.message || 'Failed to delete folder.'));
+                                crmAlert(response.message || 'Folder deleted successfully.');
                             }
-                        },
-                        error: function(xhr) {
-                            var errorMsg = 'An error occurred while deleting the folder.';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMsg = xhr.responseJSON.message;
+                            setTimeout(function() {
+                                location.reload();
+                            }, 500);
+                        } else {
+                            var errMsg = response.message || 'Failed to delete folder.';
+                            if (typeof window.crmToast === 'function') {
+                                window.crmToast(errMsg, 'error');
+                            } else if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                                iziToast.error({ message: errMsg, position: 'topRight' });
+                            } else {
+                                crmAlert(errMsg);
                             }
-                            crmAlert('✗ Error: ' + errorMsg);
                         }
-                    });
-                }
-            }
+                    },
+                    error: function(xhr) {
+                        var errorMsg = 'An error occurred while deleting the folder.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        if (typeof window.crmToast === 'function') {
+                            window.crmToast(errorMsg, 'error');
+                        } else if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                            iziToast.error({ message: errorMsg, position: 'topRight' });
+                        } else {
+                            crmAlert(errorMsg);
+                        }
+                    }
+                });
+            });
         });
 
         // ---- Rename document: Personal + matter (modal) ----

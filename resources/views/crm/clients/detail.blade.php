@@ -2265,8 +2265,12 @@ $(function () {
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('form.cdn-convert-lead-to-client-form').forEach(function (form) {
             form.addEventListener('submit', function (e) {
+                if (form.dataset.confirmedConvert === '1') {
+                    delete form.dataset.confirmedConvert;
+                    return;
+                }
+                e.preventDefault();
                 if (form.getAttribute('data-has-assigned-matter') !== '1') {
-                    e.preventDefault();
                     crmAlert('A matter must be assigned before converting this lead to a client. You will be taken to the edit page to assign a matter.');
                     var url = form.getAttribute('data-edit-url');
                     if (url) {
@@ -2274,10 +2278,38 @@ $(function () {
                     }
                     return false;
                 }
-                if (!window.confirm('Are you sure you want to convert this lead to a client?')) {
-                    e.preventDefault();
-                    return false;
-                }
+                var confirmPromise = typeof window.crmConfirm === 'function'
+                    ? window.crmConfirm({
+                        title: 'Convert Lead?',
+                        text: 'Are you sure you want to convert this lead to a client?',
+                        icon: 'question',
+                        confirmText: 'Yes, convert',
+                        cancelText: 'Cancel',
+                        confirmColor: '#1e3d60',
+                        cancelColor: '#5e7a90'
+                    })
+                    : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                        ? Swal.fire({
+                            title: 'Convert Lead?',
+                            text: 'Are you sure you want to convert this lead to a client?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, convert',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#1e3d60',
+                            cancelButtonColor: '#5e7a90'
+                        }).then(function(r) { return !!(r && r.isConfirmed); })
+                        : Promise.resolve(true);
+
+                confirmPromise.then(function(confirmed) {
+                    if (!confirmed) return;
+                    form.dataset.confirmedConvert = '1';
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                });
             });
         });
     });

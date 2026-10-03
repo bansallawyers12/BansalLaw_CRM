@@ -1686,41 +1686,66 @@
                         const fileName = $row.data('file-name');
                         const categoryId = currentCategoryId;
                         
-                        // Confirm before removing
-                        if (!confirm('Are you sure you want to remove "' + fileName + '" from the upload list?')) {
-                            return;
-                        }
-                        
-                        // Find and remove the file from the array by matching file name
-                        const fileArray = bulkUploadFiles[categoryId] || [];
-                        const fileIndex = fileArray.findIndex(f => f.name === fileName);
-                        
-                        if (fileIndex > -1) {
-                            fileArray.splice(fileIndex, 1);
-                        }
-                        
-                        // Remove the row
-                        $row.remove();
-                        
-                        // Update file count
-                        const remainingCount = fileArray.length;
-                        const container = $('#bulk-upload-' + categoryId);
-                        container.find('.file-count').text(remainingCount);
-                        
-                        // If no files left, hide the file list and modal
-                        if (remainingCount === 0) {
-                            window.hideBulkUploadModal();
-                            resetBulkUploadSelection(categoryId);
-                            crmAlert('All files have been removed. Please select files again to upload.');
-                        } else {
-                            // Reindex remaining rows to maintain correct file indices
-                            $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
-                                $(this).attr('data-file-index', newIndex);
-                                $(this).find('.checklist-select').attr('data-file-index', newIndex);
-                                $(this).find('.new-checklist-input').attr('data-file-index', newIndex);
-                                $(this).find('.remove-bulk-file').attr('data-file-index', newIndex);
-                            });
-                        }
+                        // Confirm before removing using SweetAlert2
+                        const confirmPromise = typeof window.crmConfirm === 'function'
+                            ? window.crmConfirm({
+                                title: 'Remove file?',
+                                text: 'Are you sure you want to remove "' + fileName + '" from the upload list?',
+                                icon: 'warning',
+                                confirmText: 'Yes, remove',
+                                cancelText: 'Cancel',
+                                confirmColor: '#dc3545',
+                                cancelColor: '#5e7a90'
+                            })
+                            : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                                ? Swal.fire({
+                                    title: 'Remove file?',
+                                    text: 'Are you sure you want to remove "' + fileName + '" from the upload list?',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes, remove',
+                                    cancelButtonText: 'Cancel',
+                                    confirmButtonColor: '#dc3545',
+                                    cancelButtonColor: '#5e7a90'
+                                }).then(function(r) { return !!(r && r.isConfirmed); })
+                                : Promise.resolve(true);
+
+                        confirmPromise.then(function(confirmed) {
+                            if (!confirmed) {
+                                return;
+                            }
+                            
+                            // Find and remove the file from the array by matching file name
+                            const fileArray = bulkUploadFiles[categoryId] || [];
+                            const fileIndex = fileArray.findIndex(f => f.name === fileName);
+                            
+                            if (fileIndex > -1) {
+                                fileArray.splice(fileIndex, 1);
+                            }
+                            
+                            // Remove the row
+                            $row.remove();
+                            
+                            // Update file count
+                            const remainingCount = fileArray.length;
+                            const container = $('#bulk-upload-' + categoryId);
+                            container.find('.file-count').text(remainingCount);
+                            
+                            // If no files left, hide the file list and modal
+                            if (remainingCount === 0) {
+                                window.hideBulkUploadModal();
+                                resetBulkUploadSelection(categoryId);
+                                crmAlert('All files have been removed. Please select files again to upload.');
+                            } else {
+                                // Reindex remaining rows to maintain correct file indices
+                                $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
+                                    $(this).attr('data-file-index', newIndex);
+                                    $(this).find('.checklist-select').attr('data-file-index', newIndex);
+                                    $(this).find('.new-checklist-input').attr('data-file-index', newIndex);
+                                    $(this).find('.remove-bulk-file').attr('data-file-index', newIndex);
+                                });
+                            }
+                        });
                     });
                     
                     modal.show();

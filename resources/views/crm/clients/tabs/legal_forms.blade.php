@@ -1160,57 +1160,85 @@
         var btn = event.currentTarget;
         var originalHtml = btn.innerHTML;
 
-        if (textarea.value.trim() !== '') {
-            if (!confirm('This will replace the current text. Continue?')) return;
-        }
+        function startAiGeneration() {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+            textarea.style.opacity = '0.5';
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
-        textarea.style.opacity = '0.5';
-
-        function finishAiUi(ok, message, text) {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-            textarea.style.opacity = '1';
-            if (ok && text) {
-                textarea.value = text;
-                textarea.style.borderColor = '#10b981';
-                setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
-                if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-                    iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
+            function finishAiUi(ok, message, text) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                textarea.style.opacity = '1';
+                if (ok && text) {
+                    textarea.value = text;
+                    textarea.style.borderColor = '#10b981';
+                    setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
+                    }
+                    return;
                 }
-                return;
+                var msg = message || 'Failed to generate text.';
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                } else {
+                    crmAlert(msg);
+                }
             }
-            var msg = message || 'Failed to generate text.';
-            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                iziToast.error({ message: msg, position: 'topRight' });
-            } else {
-                crmAlert(msg);
-            }
-        }
 
-        function pollAiJob(jobId, attempts) {
-            attempts = attempts || 0;
-            if (attempts >= LF_AI_POLL_MAX) {
-                finishAiUi(false, 'AI generation timed out. Please try again.');
-                return;
+            function pollAiJob(jobId, attempts) {
+                attempts = attempts || 0;
+                if (attempts >= LF_AI_POLL_MAX) {
+                    finishAiUi(false, 'AI generation timed out. Please try again.');
+                    return;
+                }
+                $.ajax({
+                    url: LF_BASE + '/generate-scope-ai/' + encodeURIComponent(jobId),
+                    method: 'GET',
+                    success: function(res) {
+                        var status = (res.status || '').toLowerCase();
+                        if (status === 'completed' && res.text) {
+                            finishAiUi(true, null, res.text);
+                            return;
+                        }
+                        if (status === 'failed' || status === 'not_found') {
+                            finishAiUi(false, res.message || 'AI generation failed.');
+                            return;
+                        }
+                        setTimeout(function() {
+                            pollAiJob(jobId, attempts + 1);
+                        }, 1500);
+                    },
+                    error: function(xhr) {
+                        var msg = 'AI generation failed.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        finishAiUi(false, msg);
+                    }
+                });
             }
+
             $.ajax({
-                url: LF_BASE + '/generate-scope-ai/' + encodeURIComponent(jobId),
-                method: 'GET',
-                success: function(res) {
-                    var status = (res.status || '').toLowerCase();
-                    if (status === 'completed' && res.text) {
-                        finishAiUi(true, null, res.text);
+                url: LF_BASE + '/generate-scope-ai',
+                method: 'POST',
+                data: {
+                    client_id: clientId,
+                    client_matter_id: matterId || null,
+                    matter_reference: (document.getElementById('lf_matter_reference') && document.getElementById('lf_matter_reference').value) || '',
+                    form_type: formType,
+                    field: fieldName
+                },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function(response) {
+                    if (response.success && response.job_id) {
+                        pollAiJob(response.job_id, 0);
                         return;
                     }
-                    if (status === 'failed' || status === 'not_found') {
-                        finishAiUi(false, res.message || 'AI generation failed.');
+                    // Backward-compatible: sync response with text
+                    if (response.success && response.text) {
+                        finishAiUi(true, null, response.text);
                         return;
                     }
-                    setTimeout(function() {
-                        pollAiJob(jobId, attempts + 1);
-                    }, 1500);
+                    finishAiUi(false, response.message || 'Failed to generate text.');
                 },
                 error: function(xhr) {
                     var msg = 'AI generation failed.';
@@ -1220,72 +1248,101 @@
             });
         }
 
-        $.ajax({
-            url: LF_BASE + '/generate-scope-ai',
-            method: 'POST',
-            data: {
-                client_id: clientId,
-                client_matter_id: matterId || null,
-                matter_reference: (document.getElementById('lf_matter_reference') && document.getElementById('lf_matter_reference').value) || '',
-                form_type: formType,
-                field: fieldName
-            },
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: function(response) {
-                if (response.success && response.job_id) {
-                    pollAiJob(response.job_id, 0);
-                    return;
+        if (textarea.value.trim() !== '') {
+            var confirmPromise = typeof window.crmConfirm === 'function'
+                ? window.crmConfirm({
+                    title: 'Replace text?',
+                    text: 'This will replace the current text. Continue?',
+                    icon: 'warning',
+                    confirmText: 'Yes, replace',
+                    cancelText: 'Cancel',
+                    confirmColor: '#e08e0b',
+                    cancelColor: '#5e7a90'
+                })
+                : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                    ? Swal.fire({
+                        title: 'Replace text?',
+                        text: 'This will replace the current text. Continue?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, replace',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#e08e0b',
+                        cancelButtonColor: '#5e7a90'
+                    }).then(function(r) { return !!(r && r.isConfirmed); })
+                    : Promise.resolve(true);
+
+            confirmPromise.then(function(confirmed) {
+                if (confirmed) {
+                    startAiGeneration();
                 }
-                // Backward-compatible: sync response with text
-                if (response.success && response.text) {
-                    finishAiUi(true, null, response.text);
-                    return;
-                }
-                finishAiUi(false, response.message || 'Failed to generate text.');
-            },
-            error: function(xhr) {
-                var msg = 'AI generation failed.';
-                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                finishAiUi(false, msg);
-            }
-        });
+            });
+            return;
+        }
+
+        startAiGeneration();
     };
 
     window.deleteLegalForm = function(formId) {
-        if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
+        var confirmPromise = typeof window.crmConfirm === 'function'
+            ? window.crmConfirm({
+                title: 'Delete Legal Form?',
+                text: 'Are you sure you want to delete this form? This action cannot be undone.',
+                icon: 'warning',
+                confirmText: 'Yes, delete',
+                cancelText: 'Cancel',
+                confirmColor: '#dc3545',
+                cancelColor: '#5e7a90'
+            })
+            : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                ? Swal.fire({
+                    title: 'Delete Legal Form?',
+                    text: 'Are you sure you want to delete this form? This action cannot be undone.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#5e7a90'
+                }).then(function(r) { return !!(r && r.isConfirmed); })
+                : Promise.resolve(true);
 
-        $.ajax({
-            url: LF_BASE + '/' + formId + '/delete',
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: function(response) {
-                if (response.success) {
-                    loadLegalForms();
-                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-                        iziToast.success({ message: response.message || 'Form deleted.', position: 'topRight' });
+        confirmPromise.then(function(confirmed) {
+            if (!confirmed) return;
+
+            $.ajax({
+                url: LF_BASE + '/' + formId + '/delete',
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function(response) {
+                    if (response.success) {
+                        loadLegalForms();
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                            iziToast.success({ message: response.message || 'Form deleted.', position: 'topRight' });
+                        } else {
+                            crmAlert(response.message || 'Form deleted.');
+                        }
                     } else {
-                        crmAlert(response.message || 'Form deleted.');
+                        var failMsg = (response && response.message) ? response.message : 'Failed to delete form.';
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                            iziToast.error({ message: failMsg, position: 'topRight' });
+                        } else {
+                            crmAlert(failMsg);
+                        }
                     }
-                } else {
-                    var failMsg = (response && response.message) ? response.message : 'Failed to delete form.';
+                },
+                error: function(xhr) {
+                    var msg = 'Failed to delete form.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
                     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                        iziToast.error({ message: failMsg, position: 'topRight' });
+                        iziToast.error({ message: msg, position: 'topRight' });
                     } else {
-                        crmAlert(failMsg);
+                        crmAlert(msg);
                     }
                 }
-            },
-            error: function(xhr) {
-                var msg = 'Failed to delete form.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                    iziToast.error({ message: msg, position: 'topRight' });
-                } else {
-                    crmAlert(msg);
-                }
-            }
+            });
         });
     };
 

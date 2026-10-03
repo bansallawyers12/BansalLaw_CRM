@@ -23,7 +23,7 @@ This master matrix catalogs every failure point discovered across the CRM's file
 | **07** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Upload Checklist Controller (`UploadChecklistController:56`) | Local `public/checklists` upload; duplicate filename overwrite | **Medium**: Bypasses S3 completely; files overwrite each other; breaks on multi-server cluster. |
 | **08** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Image-to-PDF Export (`ClientsController:1186`) | DomPDF remote S3 image fetch fails; legacy branding | **Medium**: DomPDF blocks remote images; output named `codeplaners.pdf` instead of law firm. |
 | **09** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Signed PDF Downloads (`PublicDocumentController:1175`) | Path-style S3 URLs include bucket prefix in key | **Medium**: `$disk->exists()` fails; redirects to raw URL triggering 403 Forbidden for signers. |
-| **10** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | S3 Background Promotion Command (`PromotePendingUploadsToS3`) | Silent failures during cron promotion | **Low**: Files failing cloud upload log count only without administrator notification. |
+| **10** | 🟡 **MEDIUM** | 🟢 **RESOLVED (Fixed Locally)** | 🚨 **YES — 100% on Production Server** | S3 Background Promotion Command (`PromotePendingUploadsToS3`) | Silent failures during cron promotion | **Low**: Files failing cloud upload log count only without administrator notification. |
 | **11** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Upload List Removal Dialogs (`personal_documents.blade.php:1690`) | Native `window.confirm()` used during file queue management | **Medium**: Native browser popups interrupt user flow and freeze upload progress bars. |
 
 ---
@@ -339,36 +339,47 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: Silent Sync Glitches   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED                                    |
+| SEVERITY: Silent Sync Glitches   | RESOLUTION: Multi-Channel Admin Alerts & System Breakdown Logs |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Durable Storage S3 Background Sync
-- **Source File & Lines:** [`app/Console/Commands/PromotePendingUploadsToS3.php:22-30`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Console/Commands/PromotePendingUploadsToS3.php#L22-L30) & [`app/Console/Kernel.php:146-150`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Console/Kernel.php#L146-L150)
+- **Source Files & Lines:**
+  - [`app/Console/Commands/PromotePendingUploadsToS3.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Console/Commands/PromotePendingUploadsToS3.php)
+  - [`app/Console/Kernel.php:146-153`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Console/Kernel.php#L146-L153)
+  - [`app/Services/CrmDurableStorage.php:630-798,823-905`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/CrmDurableStorage.php#L630-L798)
+  - [`config/crm.php:543-562`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/config/crm.php#L543-L562)
 - **Execution:** Runs every 15 minutes (`storage:promote-pending-to-s3`).
-
-#### Analysis
-`CrmDurableStorage::promoteAllPendingToCloud()` scans local files and pushes them to S3.
-When an item fails (e.g. AWS credential expiry, file permission lock), the command simply logs `failed=N`.
-There is no automated alert, Slack webhook, or email notification to CRM system administrators when files consistently fail promotion.
+- **Resolution Summary:**
+  1. **Detailed Error Tracking & Deduplication:** Refactored `CrmDurableStorage::promoteAllPendingToCloud()` and `promotePathToCloud()` to capture specific failure messages per file (e.g. AWS credentials error, network timeouts, read locks) and maintain a seen set to prevent duplicate file scanning.
+  2. **System Breakdown Monitor Integration:** When promotion errors occur, `PromotePendingUploadsToS3` creates an automated incident in `SystemBreakdownService`, making errors instantly visible on the `/system-errors` administrator dashboard.
+  3. **Multi-Channel Admin Alerts:** Dispatches automated in-app notifications to active Super Admins (`Staff` role 1 and 17), webhooks to Slack/Discord (`CRM_STORAGE_ALERT_WEBHOOK` or `LOG_SLACK_WEBHOOK_URL`), and email notifications (`CRM_STORAGE_ALERT_EMAIL`).
+  4. **Alert Storming Cooldown:** Alerts are throttled with a configurable cooldown period (`CRM_STORAGE_ALERT_COOLDOWN_MINUTES`, default 60 minutes) to prevent notification fatigue while still keeping the System Breakdown Monitor current.
+  5. **Accurate Command Exit Code & Scheduler Hook:** When promotion fails, `storage:promote-pending-to-s3` exits with `Command::FAILURE` (1) instead of 0, enabling the scheduled event's `onFailure()` hook in `Kernel.php` and alerting external process supervisors.
 
 ---
 
 ## 3. Upload & Document Native Dialog Audit (`confirm()`, `alert()`)
 
-Native browser popups (`confirm()`, `alert()`) in upload interfaces freeze UI animations and disrupt file upload progress meters:
+Native browser popups (`confirm()`, `alert()`) in upload interfaces freeze UI animations and disrupt file upload progress meters. All occurrences have been audited and replaced with modern non-blocking CRM dialogs (`crmConfirm()` based on SweetAlert2, `crmToast()` based on iziToast/Toastify, and `crmAlert()`):
 
-| # | Status | View / Script Path | Line | Current Code / Message | Action Context | Recommended Modern Replacement |
+| # | Status | View / Script Path | Line | Current Code / Message | Action Context | Modern Replacement Applied |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | 🔴 Active | `crm/clients/tabs/personal_documents.blade.php` | 1690 | `if (!confirm('Are you sure you want to remove "' + fileName + '" from the upload list?'))` | Remove file from upload staging queue | SweetAlert2 Modal |
-| 2 | 🔴 Active | `crm/clients/tabs/matter_documents.blade.php` | 1590 | `if (!confirm('Are you sure you want to remove "' + fileName + '" from the upload list?'))` | Remove file from upload staging queue | SweetAlert2 Modal |
-| 3 | 🔴 Active | `crm/clients/tabs/matter_documents.blade.php` | 786 | `if (!confirm('Remove signature request? The client will no longer be able to sign...')) return;` | Cancel document e-signature request | SweetAlert2 Destructive Modal |
-| 4 | 🔴 Active | `crm/clients/tabs/legal_forms.blade.php` | 1255 | `if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;` | Permanent deletion of legal form template | SweetAlert2 Destructive Modal |
-| 5 | 🔴 Active | `crm/clients/tabs/legal_forms.blade.php` | 1164 | `if (!confirm('This will replace the current text. Continue?')) return;` | Overwrite form template content | SweetAlert2 Warning Modal |
-| 6 | 🔴 Active | `crm/clients/tabs/workflow.blade.php` | 306 | `isConfirmed: window.confirm(options.text \|\| options.title \|\| 'Are you sure?')` | Fallback confirm dialog in workflow | SweetAlert2 Promise |
-| 7 | 🔴 Active | `public/js/crm/clients/detail-main.js` | 1145 | `confirm('Are you sure you want to delete this document?')` | Document row delete in detail view | SweetAlert2 Destructive Modal |
-| 8 | 🔴 Active | `public/js/crm/clients/modules/documents.js` | 376, 379 | `crmAlert('✓ Success: ' + response.message)` / `crmAlert('✗ Error: ...')` | Folder create/delete alerts | iziToast Notifications |
+| 1 | 🟢 Resolved | `crm/clients/tabs/personal_documents.blade.php` | 1690 | `crmConfirm({...})` | Remove file from upload staging queue | SweetAlert2 Warning Modal (`crmConfirm`) |
+| 2 | 🟢 Resolved | `crm/clients/tabs/matter_documents.blade.php` | 1612 | `crmConfirm({...})` | Remove file from upload staging queue | SweetAlert2 Warning Modal (`crmConfirm`) |
+| 3 | 🟢 Resolved | `crm/clients/tabs/matter_documents.blade.php` | 786 | `crmConfirm({...})` | Cancel document e-signature request | SweetAlert2 Destructive Modal (`crmConfirm`) |
+| 4 | 🟢 Resolved | `crm/clients/tabs/legal_forms.blade.php` | 1255 | `crmConfirm({...})` | Permanent deletion of legal form template | SweetAlert2 Destructive Modal (`crmConfirm`) |
+| 5 | 🟢 Resolved | `crm/clients/tabs/legal_forms.blade.php` | 1164 | `crmConfirm({...})` | Overwrite form template content | SweetAlert2 Warning Modal (`crmConfirm`) |
+| 6 | 🟢 Resolved | `crm/clients/tabs/workflow.blade.php` | 306 | `crmConfirm({...})` / `Swal.fire` | Fallback confirm dialog in workflow | SweetAlert2 Promise (`crmConfirm` & `Swal.fire`) |
+| 7 | 🟢 Resolved | `public/js/crm/clients/detail-main.js` | 2380, 2845, 4124 | `crmConfirm({...})` / `crmAlert({...})` | Document row delete in detail view & invoice line | SweetAlert2 Destructive Modal (`crmConfirm`) & `crmAlert` |
+| 8 | 🟢 Resolved | `public/js/crm/clients/modules/documents.js` | 355-395 | `crmConfirm({...})` / `crmToast({...})` | Folder create/delete alerts | SweetAlert2 Modal & `crmToast` / `iziToast` Notifications |
+
+> **Audit Resolution Summary:**
+> - Removed all synchronous native `window.confirm()` and `alert()` popups from document and upload workflows.
+> - Handlers now return asynchronous promises, preventing thread blocking, frozen progress bars, and tab freezes.
+> - Enhanced document deletion actions to display rich destructive warnings (`#dc3545`) with clear cancellation options (`#5e7a90`).
+> - Folder operations now use `crmToast` / `iziToast` non-intrusive notifications instead of blocking modal alerts.
 
 ---
 

@@ -146,7 +146,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('storage:promote-pending-to-s3')
             ->cron('*/'.$promoteMinutes.' * * * *')
             ->withoutOverlapping(10)
-            ->appendOutputTo(storage_path('logs/durable-storage-promote.log'));
+            ->appendOutputTo(storage_path('logs/durable-storage-promote.log'))
+            ->onFailure(function () {
+                \Illuminate\Support\Facades\Log::error('Scheduled durable storage promote command (storage:promote-pending-to-s3) reported errors.');
+            });
     }
 
     /**

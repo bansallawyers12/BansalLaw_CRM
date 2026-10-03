@@ -783,14 +783,40 @@
                     if (docId) $(document).trigger('openSignaturePlacementModal', { documentId: docId });
                 });
                 $(document).on('click', '.visa-sig-remove-btn', function() {
-                    if (!confirm('Remove signature request? The client will no longer be able to sign this document.')) return;
                     var $bar = $(this).closest('.visa-sig-action-bar');
                     var docId = $bar.data('doc-id');
                     var signerId = $bar.data('signer-id');
                     if (!docId || !signerId) { crmAlert('Unable to remove.'); return; }
-                    $.post('{{ url("/signatures") }}/' + docId + '/cancel', { _token: '{{ csrf_token() }}', signer_id: signerId })
-                        .done(function() { location.reload(); })
-                        .fail(function(xhr) { crmAlert(xhr.responseJSON?.message || 'Failed to remove'); });
+
+                    var confirmPromise = typeof window.crmConfirm === 'function'
+                        ? window.crmConfirm({
+                            title: 'Remove Signature Request?',
+                            text: 'The client will no longer be able to sign this document.',
+                            icon: 'warning',
+                            confirmText: 'Yes, remove',
+                            cancelText: 'Cancel',
+                            confirmColor: '#dc3545',
+                            cancelColor: '#5e7a90'
+                        })
+                        : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                            ? Swal.fire({
+                                title: 'Remove Signature Request?',
+                                text: 'The client will no longer be able to sign this document.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes, remove',
+                                cancelButtonText: 'Cancel',
+                                confirmButtonColor: '#dc3545',
+                                cancelButtonColor: '#5e7a90'
+                            }).then(function(r) { return !!(r && r.isConfirmed); })
+                            : Promise.resolve(true);
+
+                    confirmPromise.then(function(confirmed) {
+                        if (!confirmed) return;
+                        $.post('{{ url("/signatures") }}/' + docId + '/cancel', { _token: '{{ csrf_token() }}', signer_id: signerId })
+                            .done(function() { location.reload(); })
+                            .fail(function(xhr) { crmAlert(xhr.responseJSON?.message || 'Failed to remove'); });
+                    });
                 });
                 $(document).on('click', '.visa-sig-reminder-btn', function() {
                     var docId = $(this).data('doc-id');
@@ -1586,43 +1612,68 @@
                         const fileName = $row.data('file-name');
                         const categoryId = currentVisaCategoryId;
                         
-                        // Confirm before removing
-                        if (!confirm('Are you sure you want to remove "' + fileName + '" from the upload list?')) {
-                            return;
-                        }
-                        
-                        // Find and remove the file from the array by matching file name
-                        const fileArray = bulkUploadVisaFiles[categoryId] || [];
-                        const fileIndex = fileArray.findIndex(f => f.name === fileName);
-                        
-                        if (fileIndex > -1) {
-                            fileArray.splice(fileIndex, 1);
-                        }
-                        
-                        // Remove the row
-                        $row.remove();
-                        
-                        // Update file count
-                        const remainingCount = fileArray.length;
-                        const container = $('#bulk-upload-visa-' + categoryId);
-                        container.find('.file-count-visa').text(remainingCount);
-                        
-                        // If no files left, hide the file list and modal
-                        if (remainingCount === 0) {
-                            if (typeof window.hideBulkUploadModal === 'function') {
-                                window.hideBulkUploadModal();
+                        // Confirm before removing using SweetAlert2
+                        const confirmPromise = typeof window.crmConfirm === 'function'
+                            ? window.crmConfirm({
+                                title: 'Remove file?',
+                                text: 'Are you sure you want to remove "' + fileName + '" from the upload list?',
+                                icon: 'warning',
+                                confirmText: 'Yes, remove',
+                                cancelText: 'Cancel',
+                                confirmColor: '#dc3545',
+                                cancelColor: '#5e7a90'
+                            })
+                            : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                                ? Swal.fire({
+                                    title: 'Remove file?',
+                                    text: 'Are you sure you want to remove "' + fileName + '" from the upload list?',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes, remove',
+                                    cancelButtonText: 'Cancel',
+                                    confirmButtonColor: '#dc3545',
+                                    cancelButtonColor: '#5e7a90'
+                                }).then(function(r) { return !!(r && r.isConfirmed); })
+                                : Promise.resolve(true);
+
+                        confirmPromise.then(function(confirmed) {
+                            if (!confirmed) {
+                                return;
                             }
-                            resetVisaBulkUploadSelection(categoryId);
-                            crmAlert('All files have been removed. Please select files again to upload.');
-                        } else {
-                            // Reindex remaining rows to maintain correct file indices
-                            $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
-                                $(this).attr('data-file-index', newIndex);
-                                $(this).find('.checklist-select').attr('data-file-index', newIndex);
-                                $(this).find('.new-checklist-input').attr('data-file-index', newIndex);
-                                $(this).find('.remove-bulk-file').attr('data-file-index', newIndex);
-                            });
-                        }
+                            
+                            // Find and remove the file from the array by matching file name
+                            const fileArray = bulkUploadVisaFiles[categoryId] || [];
+                            const fileIndex = fileArray.findIndex(f => f.name === fileName);
+                            
+                            if (fileIndex > -1) {
+                                fileArray.splice(fileIndex, 1);
+                            }
+                            
+                            // Remove the row
+                            $row.remove();
+                            
+                            // Update file count
+                            const remainingCount = fileArray.length;
+                            const container = $('#bulk-upload-visa-' + categoryId);
+                            container.find('.file-count-visa').text(remainingCount);
+                            
+                            // If no files left, hide the file list and modal
+                            if (remainingCount === 0) {
+                                if (typeof window.hideBulkUploadModal === 'function') {
+                                    window.hideBulkUploadModal();
+                                }
+                                resetVisaBulkUploadSelection(categoryId);
+                                crmAlert('All files have been removed. Please select files again to upload.');
+                            } else {
+                                // Reindex remaining rows to maintain correct file indices
+                                $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
+                                    $(this).attr('data-file-index', newIndex);
+                                    $(this).find('.checklist-select').attr('data-file-index', newIndex);
+                                    $(this).find('.new-checklist-input').attr('data-file-index', newIndex);
+                                    $(this).find('.remove-bulk-file').attr('data-file-index', newIndex);
+                                });
+                            }
+                        });
                     });
                     
                     window._bulkUploadConfirmFn = confirmVisaBulkUpload;

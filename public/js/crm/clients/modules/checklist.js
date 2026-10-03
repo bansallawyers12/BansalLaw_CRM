@@ -212,32 +212,62 @@
             var checklistId = $(this).data('id');
             var checklistName = $(this).data('checklist');
             var $row = $(this).closest('.drow');
-            if (!confirm('Are you sure you want to delete the checklist "' + checklistName + '"? This action cannot be undone.')) {
-                return false;
-            }
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Deleting checklist...</span>');
-            var deleteUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.deleteChecklist) ?
-                window.ClientDetailConfig.urls.deleteChecklist : (typeof site_url !== 'undefined' ? site_url + '/documents/delete-checklist' : '/documents/delete-checklist');
-            $.ajax({
-                type: "POST",
-                url: deleteUrl,
-                data: {
-                    "_token": $('meta[name="csrf-token"]').attr('content'),
-                    "id": checklistId
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status) {
-                        $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
-                        $row.remove();
-                    } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+            var confirmPromise = typeof window.crmConfirm === 'function'
+                ? window.crmConfirm({
+                    title: 'Delete Checklist?',
+                    text: 'Are you sure you want to delete the checklist "' + checklistName + '"? This action cannot be undone.',
+                    icon: 'warning',
+                    confirmText: 'Yes, delete',
+                    cancelText: 'Cancel',
+                    confirmColor: '#dc3545',
+                    cancelColor: '#5e7a90'
+                })
+                : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
+                    ? Swal.fire({
+                        title: 'Delete Checklist?',
+                        text: 'Are you sure you want to delete the checklist "' + checklistName + '"? This action cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, delete',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#5e7a90'
+                    }).then(function(r) { return !!(r && r.isConfirmed); })
+                    : Promise.resolve(true);
+
+            confirmPromise.then(function(confirmed) {
+                if (!confirmed) return;
+
+                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Deleting checklist...</span>');
+                var deleteUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.deleteChecklist) ?
+                    window.ClientDetailConfig.urls.deleteChecklist : (typeof site_url !== 'undefined' ? site_url + '/documents/delete-checklist' : '/documents/delete-checklist');
+                $.ajax({
+                    type: "POST",
+                    url: deleteUrl,
+                    data: {
+                        "_token": $('meta[name="csrf-token"]').attr('content'),
+                        "id": checklistId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status) {
+                            $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
+                            $row.remove();
+                            if (typeof window.crmToast === 'function') {
+                                window.crmToast(response.message || 'Checklist deleted successfully.', 'success');
+                            }
+                        } else {
+                            $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                            if (typeof window.crmToast === 'function') {
+                                window.crmToast(response.message || 'Failed to delete checklist.', 'error');
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">An error occurred. Please try again.</span>');
+                        console.error('Error deleting checklist:', error);
                     }
-                },
-                error: function(xhr, status, error) {
-                    $('.custom-error-msg').html('<span class="alert alert-danger">An error occurred. Please try again.</span>');
-                    console.error('Error deleting checklist:', error);
-                }
+                });
             });
             return false;
         });
