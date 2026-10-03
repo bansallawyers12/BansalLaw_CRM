@@ -227,67 +227,251 @@ class SystemBreakdownService
     }
 
     /**
-     * Read and parse storage/logs/laravel-*.log files into structured records.
+    /**
+     * Discover and categorize all log files in storage/logs recursively.
+     *
+     * @return array<string, array<string, mixed>>
      */
-    public function getStorageLogEntries(int $limit = 50): array
+    public function getAllLogFiles(): array
     {
         $logDir = storage_path('logs');
         if (!File::isDirectory($logDir)) {
             return [];
         }
 
-        $files = File::glob($logDir . DIRECTORY_SEPARATOR . 'laravel-*.log');
-        if (empty($files)) {
-            $single = $logDir . DIRECTORY_SEPARATOR . 'laravel.log';
-            if (File::exists($single)) {
-                $files = [$single];
+        $allFiles = File::allFiles($logDir);
+        $result = [];
+
+        foreach ($allFiles as $file) {
+            $ext = strtolower($file->getExtension());
+            if (!in_array($ext, ['log', 'htm', 'html', 'txt'])) {
+                continue;
             }
+
+            $relativePath = str_replace(['\\', '/'], '/', substr($file->getPathname(), strlen($logDir) + 1));
+            $filename = $file->getFilename();
+
+            // Categorize by file purpose
+            $category = 'other';
+            $categoryLabel = 'Other System Logs';
+            $icon = '📋';
+
+            if (str_starts_with($filename, 'email-upload-errors') || str_contains($relativePath, 'upload-error')) {
+                $category = 'upload_errors';
+                $categoryLabel = 'Upload Error Logs';
+                $icon = '📤';
+            } elseif (str_starts_with($filename, 'inbox-sync') || str_contains($relativePath, 'inbox-sync')) {
+                $category = 'inbox_sync';
+                $categoryLabel = 'Inbox Sync Logs';
+                $icon = '🔄';
+            } elseif (str_contains($relativePath, 'outlook-addin')) {
+                $category = 'outlook_addin';
+                $categoryLabel = 'Outlook Add-in Logs';
+                $icon = '📧';
+            } elseif (str_starts_with($filename, 'db_') || str_contains($filename, 'database')) {
+                $category = 'database';
+                $categoryLabel = 'Database Operation Logs';
+                $icon = '🗄️';
+            } elseif (str_starts_with($filename, 'laravel-') || $filename === 'laravel.log') {
+                $category = 'laravel';
+                $categoryLabel = 'Laravel Core Logs';
+                $icon = '⚙️';
+            }
+
+            $sizeBytes = $file->getSize();
+            $sizeFormatted = $sizeBytes >= 1048576
+                ? round($sizeBytes / 1048576, 2) . ' MB'
+                : round($sizeBytes / 1024, 1) . ' KB';
+
+            // Quick error estimate by scanning line markers
+            $errorCount = 0;
+            try {
+                if ($sizeBytes > 0 && $sizeBytes < 5 * 1024 * 1024) {
+                    $contentSample = File::get($file->getPathname());
+                    $errorCount = substr_count($contentSample, '.ERROR:')
+                        + substr_count($contentSample, '.CRITICAL:')
+                        + substr_count($contentSample, '.ALERT:')
+                        + substr_count($contentSample, '.EMERGENCY:')
+                        + substr_count($contentSample, '] ERROR:')
+                        + substr_count($contentSample, 'IMAP sync failed')
+                        + substr_count($contentSample, 'Email upload failed');
+                }
+            } catch (Throwable $scanEx) {
+                $errorCount = 0;
+            }
+
+            $lastModified = Carbon::createFromTimestamp($file->getMTime(), 'Australia/Melbourne');
+
+            $result[$relativePath] = [
+                'filename' => $filename,
+                'relative_path' => $relativePath,
+                'category' => $category,
+                'category_label' => $categoryLabel,
+                'icon' => $icon,
+                'size_bytes' => $sizeBytes,
+                'size_formatted' => $sizeFormatted,
+                'error_count' => $errorCount,
+                'last_modified' => $lastModified->format('d M Y, H:i:s'),
+                'last_modified_timestamp' => $file->getMTime(),
+            ];
         }
 
-        rsort($files); // Most recent dates first
+        // Sort by last modified descending
+        uasort($result, fn($a, $b) => $b['last_modified_timestamp'] <=> $a['last_modified_timestamp']);
+
+        return $result;
+    }
+
+    /**
+     * Read and parse entries from any selected log file.
+     */
+    public function getLogEntriesForFile(string $relativePath, int $limit = 100, ?string $levelFilter = null, ?string $search = null): array
+    {
+        $logDir = storage_path('logs');
+        $cleanPath = str_replace(['..', "\0"], '', $relativePath);
+        $fullPath = $logDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+
+        if (!File::exists($fullPath) || !File::isFile($fullPath)) {
+            return [];
+        }
+
+        $content = File::get($fullPath);
+        if (strlen($content) > 4 * 1024 * 1024) {
+            // Keep last 4MB for high performance
+            $content = substr($content, -4 * 1024 * 1024);
+        }
 
         $entries = [];
-        $pattern = '/^\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[\+-]\d{2}:\d{2})?)\]\s+([a-zA-Z0-9_\-]+)\.([A-Z]+):\s+(.*?)(?=\n\[\d{4}-\d{2}-\d{2}|\Z)/sm';
 
-        foreach (array_slice($files, 0, 3) as $file) {
-            $filename = basename($file);
-            $content = File::get($file);
-            if (strlen($content) > 2 * 1024 * 1024) {
-                // If file is > 2MB, read last 2MB to keep memory low
-                $content = substr($content, -2 * 1024 * 1024);
-            }
+        // Dual pattern: handles both [DATE] env.LEVEL: Message AND [DATE] LEVEL: Message
+        $pattern = '/^\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[\+-]\d{2}:\d{2})?)\]\s+(?:([a-zA-Z0-9_\-]+)\.)?([A-Z]+):\s+(.*?)(?=\n\[\d{4}-\d{2}-\d{2}|\Z)/sm';
 
-            if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
-                $matches = array_reverse($matches); // Latest first
-                foreach ($matches as $match) {
-                    $timestamp = $match[1];
-                    $env = $match[2];
-                    $level = strtoupper($match[3]);
-                    $body = trim($match[4]);
+        if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+            $matches = array_reverse($matches); // Latest entries first
 
-                    // Extract first line of error as title
-                    $lines = explode("\n", $body);
-                    $firstLine = $lines[0] ?? '';
-                    $stackSnippet = implode("\n", array_slice($lines, 1, 15));
+            foreach ($matches as $match) {
+                $timestamp = $match[1];
+                $env = $match[2] ?: 'system';
+                $level = strtoupper($match[3]);
+                $body = trim($match[4]);
 
-                    $entries[] = [
-                        'file' => $filename,
-                        'timestamp' => $timestamp,
-                        'env' => $env,
-                        'level' => $level,
-                        'title' => $firstLine,
-                        'stack' => $stackSnippet,
-                        'full_body' => substr($body, 0, 3000),
-                    ];
-
-                    if (count($entries) >= $limit) {
-                        break 2;
+                // Level filtering
+                if ($levelFilter && $levelFilter !== 'all') {
+                    if ($levelFilter === 'errors' && !in_array($level, ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])) {
+                        continue;
+                    }
+                    if ($levelFilter !== 'errors' && $level !== strtoupper($levelFilter)) {
+                        continue;
                     }
                 }
+
+                // Search filtering
+                if ($search && !str_contains(strtolower($body), strtolower($search)) && !str_contains($timestamp, $search)) {
+                    continue;
+                }
+
+                // Separate title, JSON metadata, and stack trace
+                $lines = explode("\n", $body);
+                $firstLine = $lines[0] ?? '';
+
+                $jsonContext = null;
+                $stack = '';
+
+                // Try to find JSON payload in the message
+                if (preg_match('/(\{.*\})/s', $body, $jsonMatch)) {
+                    $decoded = json_decode($jsonMatch[1], true);
+                    if ($decoded && is_array($decoded)) {
+                        $jsonContext = $decoded;
+                        // Remove trace from JSON if present to keep view clean
+                        if (isset($jsonContext['trace'])) {
+                            $stack = $jsonContext['trace'];
+                            unset($jsonContext['trace']);
+                        }
+                    }
+                }
+
+                if (!$stack && count($lines) > 1) {
+                    $stack = implode("\n", array_slice($lines, 1, 30));
+                }
+
+                $entries[] = [
+                    'timestamp' => $timestamp,
+                    'env' => $env,
+                    'level' => $level,
+                    'title' => $firstLine,
+                    'json_context' => $jsonContext,
+                    'stack' => $stack,
+                    'full_body' => $body,
+                ];
+
+                if (count($entries) >= $limit) {
+                    break;
+                }
+            }
+        } else {
+            // Fallback for non-standard line-based logs (e.g. db_restore.log)
+            $lines = array_reverse(array_filter(explode("\n", $content)));
+            $count = 0;
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if (empty($trimmed)) continue;
+
+                if ($search && !str_contains(strtolower($trimmed), strtolower($search))) {
+                    continue;
+                }
+
+                $level = 'INFO';
+                if (stripos($trimmed, 'error') !== false || stripos($trimmed, 'fatal') !== false || stripos($trimmed, 'failed') !== false) {
+                    $level = 'ERROR';
+                } elseif (stripos($trimmed, 'warn') !== false) {
+                    $level = 'WARNING';
+                }
+
+                if ($levelFilter && $levelFilter === 'errors' && $level !== 'ERROR') {
+                    continue;
+                }
+
+                $entries[] = [
+                    'timestamp' => 'N/A',
+                    'env' => 'log',
+                    'level' => $level,
+                    'title' => $trimmed,
+                    'json_context' => null,
+                    'stack' => '',
+                    'full_body' => $trimmed,
+                ];
+
+                $count++;
+                if ($count >= $limit) break;
             }
         }
 
         return $entries;
+    }
+
+    /**
+     * Read raw log content safely.
+     */
+    public function getRawLogContent(string $relativePath, int $maxBytes = 500000): string
+    {
+        $logDir = storage_path('logs');
+        $cleanPath = str_replace(['..', "\0"], '', $relativePath);
+        $fullPath = $logDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+
+        if (!File::exists($fullPath) || !File::isFile($fullPath)) {
+            return 'File not found.';
+        }
+
+        $size = File::size($fullPath);
+        if ($size > $maxBytes) {
+            $handle = fopen($fullPath, 'r');
+            fseek($handle, -$maxBytes, SEEK_END);
+            $content = fread($handle, $maxBytes);
+            fclose($handle);
+            return "[Showing last " . round($maxBytes / 1024) . " KB of " . round($size / 1024) . " KB]\n...\n" . $content;
+        }
+
+        return File::get($fullPath);
     }
 
     /**

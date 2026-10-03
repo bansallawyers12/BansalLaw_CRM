@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Breakdown & Error Monitor – Bansal Law CRM</title>
+    <title>System Breakdown & All Error Logs Monitor – Bansal Law CRM</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,11 +48,10 @@
             min-height: 100vh;
         }
 
-        /* Top Header */
         header {
             background: linear-gradient(180deg, #131c2e 0%, var(--bg-page) 100%);
             border-bottom: 1px solid var(--border-subtle);
-            padding: 18px 28px;
+            padding: 16px 28px;
             position: sticky;
             top: 0;
             z-index: 50;
@@ -91,10 +90,7 @@
         .pulse-indicator::after {
             content: '';
             position: absolute;
-            top: -4px;
-            left: -4px;
-            right: -4px;
-            bottom: -4px;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
             border-radius: 50%;
             border: 2px solid currentColor;
             opacity: 0.6;
@@ -130,17 +126,9 @@
             text-transform: uppercase;
         }
 
-        .tag-pill.env {
-            background: var(--accent-blue-bg);
-            color: var(--accent-blue);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .tag-pill.live {
-            background: var(--accent-green-bg);
-            color: var(--accent-green);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
+        .tag-pill.env { background: var(--accent-blue-bg); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-pill.live { background: var(--accent-green-bg); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-pill.auth { background: var(--accent-purple-bg); color: #d8b4fe; border: 1px solid rgba(139, 92, 246, 0.3); }
 
         .header-actions {
             display: flex;
@@ -163,54 +151,19 @@
             text-decoration: none;
         }
 
-        .btn-primary {
-            background-color: var(--accent-blue);
-            color: #ffffff;
-        }
-        .btn-primary:hover {
-            background-color: #2563eb;
-        }
+        .btn-primary { background-color: var(--accent-blue); color: #ffffff; }
+        .btn-primary:hover { background-color: #2563eb; }
+        .btn-outline { background-color: var(--bg-card); border-color: var(--border-subtle); color: var(--text-secondary); }
+        .btn-outline:hover { background-color: var(--bg-card-hover); color: var(--text-primary); border-color: #3b82f6; }
+        .btn-warning { background-color: var(--accent-amber-bg); border-color: rgba(245, 158, 11, 0.3); color: #fde68a; }
+        .btn-warning:hover { background-color: rgba(245, 158, 11, 0.25); color: #fff; }
 
-        .btn-outline {
-            background-color: var(--bg-card);
-            border-color: var(--border-subtle);
-            color: var(--text-secondary);
-        }
-        .btn-outline:hover {
-            background-color: var(--bg-card-hover);
-            color: var(--text-primary);
-            border-color: #3b82f6;
-        }
-
-        .btn-danger-outline {
-            background-color: var(--accent-red-bg);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-        }
-        .btn-danger-outline:hover {
-            background-color: rgba(239, 68, 68, 0.25);
-            border-color: var(--accent-red);
-            color: #fff;
-        }
-
-        .btn-warning {
-            background-color: var(--accent-amber-bg);
-            border-color: rgba(245, 158, 11, 0.3);
-            color: #fde68a;
-        }
-        .btn-warning:hover {
-            background-color: rgba(245, 158, 11, 0.25);
-            color: #fff;
-        }
-
-        /* Container */
         .container {
             max-width: 1440px;
             margin: 0 auto;
             padding: 24px 28px;
         }
 
-        /* Alert notifications */
         .flash-alert {
             background: rgba(16, 185, 129, 0.15);
             border: 1px solid var(--accent-green);
@@ -226,7 +179,7 @@
         /* Metrics Strip */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -235,20 +188,14 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            padding: 18px 20px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            transition: transform 0.15s ease, border-color 0.15s ease;
-        }
-
-        .metric-card:hover {
-            border-color: #334155;
-            transform: translateY(-2px);
+            gap: 4px;
         }
 
         .metric-label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.05em;
@@ -259,7 +206,7 @@
         }
 
         .metric-value {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             letter-spacing: -0.03em;
             line-height: 1.1;
@@ -270,76 +217,6 @@
         .metric-card.green .metric-value { color: var(--accent-green); }
         .metric-card.blue .metric-value { color: var(--accent-blue); }
         .metric-card.purple .metric-value { color: var(--accent-purple); }
-
-        /* Toolbar & Filters */
-        .toolbar {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 280px;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            background-color: var(--bg-page);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-            padding: 9px 14px 9px 36px;
-            border-radius: 8px;
-            font-family: var(--font-sans);
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.15s ease;
-        }
-
-        .search-input:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filter-select {
-            background-color: var(--bg-page);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            padding: 9px 12px;
-            border-radius: 8px;
-            font-family: var(--font-sans);
-            font-size: 13px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            border-color: var(--accent-blue);
-            color: var(--text-primary);
-        }
 
         /* Tabs Navigation */
         .tabs-nav {
@@ -359,17 +236,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: color 0.15s ease, border-color 0.15s ease;
+            transition: all 0.15s ease;
         }
 
-        .tab-link:hover {
-            color: var(--text-primary);
-        }
-
-        .tab-link.active {
-            color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
-        }
+        .tab-link:hover { color: var(--text-primary); }
+        .tab-link.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
 
         .tab-badge {
             background-color: var(--bg-elevated);
@@ -385,7 +256,59 @@
             color: var(--accent-blue);
         }
 
-        /* Error Cards List */
+        /* Toolbar / Filter */
+        .toolbar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 260px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            background-color: var(--bg-page);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 9px 14px 9px 36px;
+            border-radius: 8px;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            outline: none;
+        }
+        .search-input:focus { border-color: var(--accent-blue); }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .filter-select {
+            background-color: var(--bg-page);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            outline: none;
+        }
+
+        /* Error Cards */
         .error-list {
             display: flex;
             flex-direction: column;
@@ -401,8 +324,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            transition: all 0.15s ease;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
 
         .error-card:hover {
@@ -411,28 +334,8 @@
             transform: translateX(2px);
         }
 
-        .error-card.investigating {
-            border-left-color: var(--accent-amber);
-        }
-
-        .error-card.resolved {
-            border-left-color: var(--accent-green);
-            opacity: 0.75;
-        }
-
-        .error-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .error-title-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-        }
+        .error-card.investigating { border-left-color: var(--accent-amber); }
+        .error-card.resolved { border-left-color: var(--accent-green); opacity: 0.75; }
 
         .error-title {
             font-family: var(--font-mono);
@@ -440,20 +343,6 @@
             font-weight: 700;
             color: #f87171;
             word-break: break-word;
-        }
-
-        .error-card.resolved .error-title {
-            color: #34d399;
-            text-decoration: line-through;
-        }
-
-        .error-meta-strip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 12px;
-            color: var(--text-muted);
         }
 
         .badge {
@@ -490,78 +379,179 @@
             padding: 2px 6px;
             border-radius: 4px;
             border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 11px;
         }
 
-        .error-footer {
+        /* TAB 2: Multi-File Log Explorer Layout */
+        .logs-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .logs-layout { grid-template-columns: 1fr; }
+        }
+
+        .log-files-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-weight: 700;
+            font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-secondary);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            padding-top: 8px;
-            margin-top: 2px;
+            background-color: #0e1523;
         }
 
-        .user-tag {
+        .log-category-title {
+            padding: 10px 18px 6px 18px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background-color: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .log-file-item {
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .log-file-item:hover {
+            background-color: var(--bg-card-hover);
             color: var(--text-primary);
         }
 
-        .user-avatar-circle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--accent-blue);
+        .log-file-item.active {
+            background-color: var(--accent-blue-bg);
+            border-left: 3px solid var(--accent-blue);
             color: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
+            font-weight: 600;
         }
 
-        .card-actions {
+        .file-meta-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Log Content Area */
+        .log-content-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-file-header-bar {
+            padding: 16px 20px;
+            background-color: #0e1523;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .log-file-name {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 700;
+            color: #93c5fd;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* Empty state */
-        .empty-state {
-            background-color: var(--bg-card);
-            border: 1px dashed var(--border-subtle);
-            border-radius: 14px;
-            padding: 60px 20px;
-            text-align: center;
+        .log-filter-bar {
+            padding: 12px 20px;
+            background-color: #121927;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .empty-icon {
-            font-size: 42px;
-            margin-bottom: 12px;
+        .parsed-log-card {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            transition: background 0.15s ease;
         }
 
-        .empty-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 6px;
+        .parsed-log-card:hover {
+            background-color: var(--bg-card-hover);
         }
 
-        .empty-desc {
-            color: var(--text-muted);
-            max-width: 420px;
-            margin: 0 auto 20px auto;
+        .json-pills-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
         }
 
-        /* Detail Modal / Drawer */
+        .json-pill {
+            background-color: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            color: #cbd5e1;
+        }
+
+        .json-pill span { color: #94a3b8; }
+        .json-pill strong { color: #38bdf8; }
+
+        .raw-text-view {
+            background-color: #050811;
+            padding: 18px;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            max-height: 650px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Inspector Modal */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(3, 7, 18, 0.85);
             backdrop-filter: blur(8px);
             z-index: 100;
@@ -570,10 +560,7 @@
             justify-content: center;
             padding: 24px;
         }
-
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
 
         .modal-content {
             background-color: var(--bg-card);
@@ -585,12 +572,6 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes modal-pop {
-            0% { transform: scale(0.96); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
         }
 
         .modal-header {
@@ -616,21 +597,14 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
             background-color: rgba(11, 15, 25, 0.5);
         }
 
         .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 20px;
-            cursor: pointer;
-            line-height: 1;
+            background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;
         }
         .close-btn:hover { color: #fff; }
 
-        /* Code Snippet Box */
         .code-box {
             background-color: #050811;
             border: 1px solid #1e293b;
@@ -651,37 +625,12 @@
             justify-content: space-between;
         }
 
-        .code-line {
-            display: flex;
-            padding: 3px 12px;
-            line-height: 1.6;
-        }
+        .code-line { display: flex; padding: 3px 12px; line-height: 1.6; }
+        .code-line.error-target { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; font-weight: 700; }
+        .line-num { width: 48px; color: #475569; user-select: none; text-align: right; padding-right: 14px; }
+        .code-line.error-target .line-num { color: #ef4444; font-weight: 700; }
+        .line-text { white-space: pre-wrap; word-break: break-all; }
 
-        .code-line.error-target {
-            background-color: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            font-weight: 700;
-        }
-
-        .line-num {
-            width: 48px;
-            color: #475569;
-            user-select: none;
-            text-align: right;
-            padding-right: 14px;
-        }
-
-        .code-line.error-target .line-num {
-            color: #ef4444;
-            font-weight: 700;
-        }
-
-        .line-text {
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        /* Stack trace pre */
         .trace-pre {
             background-color: #050811;
             border: 1px solid #1e293b;
@@ -696,42 +645,9 @@
             white-space: pre-wrap;
         }
 
-        .param-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .param-table th, .param-table td {
-            padding: 8px 12px;
-            border: 1px solid var(--border-subtle);
-            text-align: left;
-        }
-
-        .param-table th {
-            background-color: var(--bg-elevated);
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        /* Storage log card */
-        .log-entry-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 14px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            font-family: var(--font-mono);
-            font-size: 12px;
-        }
-
-        .log-entry-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        .param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .param-table th, .param-table td { padding: 8px 12px; border: 1px solid var(--border-subtle); text-align: left; }
+        .param-table th { background-color: var(--bg-elevated); color: var(--text-secondary); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -743,12 +659,13 @@
                 <div class="pulse-indicator {{ $stats['total_open'] > 0 ? '' : 'healthy' }}"></div>
                 <div>
                     <div class="brand-title">
-                        Bansal Law CRM – System Breakdown Monitor
+                        Bansal Law CRM – System Breakdown & All Logs Monitor
                         <span class="tag-pill env">{{ config('app.env') }}</span>
+                        <span class="tag-pill auth">Protected (Login Required)</span>
                         <span class="tag-pill live">Listening Active</span>
                     </div>
                     <div class="brand-subtitle">
-                        Live real-time exception capturer, diagnostics, and stack-trace inspector for all CRM users
+                        Multi-file error log inspector (Upload errors, Inbox sync errors, Outlook addin, DB logs, and Real-time exceptions)
                     </div>
                 </div>
             </div>
@@ -757,16 +674,9 @@
                 <a href="{{ route('system_errors.simulate') }}" class="btn btn-warning" title="Simulate a test exception to verify capture">
                     ⚡ Simulate Test Error
                 </a>
-                <a href="{{ route('system_errors.index') }}" class="btn btn-outline" title="Refresh dashboard">
+                <a href="{{ route('system_errors.index', ['tab' => $activeTab, 'log_file' => $selectedLogFile]) }}" class="btn btn-outline" title="Refresh dashboard">
                     🔄 Refresh
                 </a>
-                <form action="{{ route('system_errors.clear') }}" method="POST" onsubmit="return confirm('Clear all resolved errors?');" style="display:inline;">
-                    @csrf
-                    <input type="hidden" name="scope" value="resolved">
-                    <button type="submit" class="btn btn-outline">
-                        🧹 Clear Resolved
-                    </button>
-                </form>
             </div>
         </div>
     </header>
@@ -817,63 +727,62 @@
 
             <div class="metric-card blue">
                 <div class="metric-label">
-                    <span>Impacted Users</span>
-                    <span>👥</span>
+                    <span>Total Log Files Tracked</span>
+                    <span>📁</span>
                 </div>
-                <div class="metric-value">{{ $stats['unique_users'] }}</div>
+                <div class="metric-value">{{ count($allLogFiles) }}</div>
             </div>
         </div>
 
-        <!-- Toolbar / Search / Filters -->
-        <form method="GET" action="{{ route('system_errors.index') }}" class="toolbar">
-            <input type="hidden" name="tab" value="{{ $activeTab }}">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" name="search" class="search-input" placeholder="Search by error message, exception class, file path, URL, or user email..." value="{{ request('search') }}">
-            </div>
-
-            <div class="filter-group">
-                <select name="status" class="filter-select" onchange="this.form.submit()">
-                    <option value="open" {{ request('status', 'open') === 'open' ? 'selected' : '' }}>Status: Open & Active</option>
-                    <option value="investigating" {{ request('status') === 'investigating' ? 'selected' : '' }}>Status: Investigating</option>
-                    <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Status: Resolved Only</option>
-                    <option value="all" {{ request('status') === 'all' ? 'selected' : '' }}>Status: All Records</option>
-                </select>
-
-                <select name="timeframe" class="filter-select" onchange="this.form.submit()">
-                    <option value="all" {{ request('timeframe') === 'all' ? 'selected' : '' }}>Time: All Time</option>
-                    <option value="today" {{ request('timeframe') === 'today' ? 'selected' : '' }}>Time: Today Only</option>
-                    <option value="7days" {{ request('timeframe') === '7days' ? 'selected' : '' }}>Time: Past 7 Days</option>
-                </select>
-
-                <button type="submit" class="btn btn-primary">Filter</button>
-                @if(request()->anyFilled(['search', 'status', 'timeframe']))
-                    <a href="{{ route('system_errors.index', ['tab' => $activeTab]) }}" class="btn btn-outline">Reset</a>
-                @endif
-            </div>
-        </form>
-
         <!-- Navigation Tabs -->
         <div class="tabs-nav">
-            <a href="{{ route('system_errors.index', array_merge(request()->query(), ['tab' => 'db'])) }}" class="tab-link {{ $activeTab === 'db' ? 'active' : '' }}">
-                <span>Captured System Breakdowns</span>
+            <a href="{{ route('system_errors.index', ['tab' => 'db']) }}" class="tab-link {{ $activeTab === 'db' ? 'active' : '' }}">
+                <span>💥 Real-Time Captured Breakdowns</span>
                 <span class="tab-badge">{{ $errors->total() }}</span>
             </a>
-            <a href="{{ route('system_errors.index', array_merge(request()->query(), ['tab' => 'logs'])) }}" class="tab-link {{ $activeTab === 'logs' ? 'active' : '' }}">
-                <span>Storage Log Stream (laravel.log)</span>
-                <span class="tab-badge">{{ count($storageLogs) }}</span>
+            <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile]) }}" class="tab-link {{ $activeTab === 'logs' ? 'active' : '' }}">
+                <span>📂 All Log Files Explorer (Uploads, Sync, Outlook, Core)</span>
+                <span class="tab-badge">{{ count($allLogFiles) }} files</span>
             </a>
         </div>
 
         @if($activeTab === 'db')
             <!-- TAB 1: Database Captured Exceptions -->
+            <form method="GET" action="{{ route('system_errors.index') }}" class="toolbar">
+                <input type="hidden" name="tab" value="db">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" name="search" class="search-input" placeholder="Search by error message, exception class, file path, URL, or user email..." value="{{ request('search') }}">
+                </div>
+
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <select name="status" class="filter-select" onchange="this.form.submit()">
+                        <option value="open" {{ request('status', 'open') === 'open' ? 'selected' : '' }}>Status: Open & Active</option>
+                        <option value="investigating" {{ request('status') === 'investigating' ? 'selected' : '' }}>Status: Investigating</option>
+                        <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Status: Resolved Only</option>
+                        <option value="all" {{ request('status') === 'all' ? 'selected' : '' }}>Status: All Records</option>
+                    </select>
+
+                    <select name="timeframe" class="filter-select" onchange="this.form.submit()">
+                        <option value="all" {{ request('timeframe') === 'all' ? 'selected' : '' }}>Time: All Time</option>
+                        <option value="today" {{ request('timeframe') === 'today' ? 'selected' : '' }}>Time: Today Only</option>
+                        <option value="7days" {{ request('timeframe') === '7days' ? 'selected' : '' }}>Time: Past 7 Days</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    @if(request()->anyFilled(['search', 'status', 'timeframe']))
+                        <a href="{{ route('system_errors.index', ['tab' => 'db']) }}" class="btn btn-outline">Reset</a>
+                    @endif
+                </div>
+            </form>
+
             @if($errors->count() > 0)
                 <div class="error-list">
                     @foreach($errors as $item)
                         <div class="error-card {{ $item->status }}" onclick="openErrorDetail({{ $item->id }})">
-                            <div class="error-header">
-                                <div class="error-title-wrap">
-                                    <div class="error-meta-strip">
+                            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+                                <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px;">
                                         <span class="badge {{ $item->status_code >= 500 ? 'badge-red' : 'badge-amber' }}">
                                             {{ $item->http_method ?? 'ANY' }} {{ $item->status_code ?? '500' }}
                                         </span>
@@ -881,34 +790,32 @@
                                             {{ class_basename($item->exception_class) }}
                                         </span>
                                         @if($item->occurrence_count > 1)
-                                            <span class="badge-count" title="This exact error occurred {{ $item->occurrence_count }} times">
+                                            <span class="badge-count">
                                                 {{ $item->occurrence_count }}× Occurrences
                                             </span>
                                         @endif
                                         <span class="code-location" title="{{ $item->file }}">
                                             {{ $item->short_file }}
                                         </span>
-                                        <span class="badge badge-gray">
-                                            {{ $item->status }}
-                                        </span>
+                                        <span class="badge badge-gray">{{ $item->status }}</span>
                                     </div>
                                     <div class="error-title">
                                         {{ $item->message }}
                                     </div>
-                                    <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
-                                        URL: <span style="color: #93c5fd;">{{ $item->url ?? 'CLI/Background' }}</span>
+                                    <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">
+                                        URL: <span style="color:#93c5fd;">{{ $item->url ?? 'CLI/Background' }}</span>
                                     </div>
                                 </div>
 
-                                <div class="card-actions" onclick="event.stopPropagation()">
-                                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="openErrorDetail({{ $item->id }})">
+                                <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                                    <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:12px;" onclick="openErrorDetail({{ $item->id }})">
                                         Inspect
                                     </button>
                                     @if($item->status !== 'resolved')
                                         <form action="{{ route('system_errors.update_status', $item->id) }}" method="POST" style="display:inline;">
                                             @csrf
                                             <input type="hidden" name="status" value="resolved">
-                                            <button type="submit" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px; color: #10b981;">
+                                            <button type="submit" class="btn btn-outline" style="padding:4px 10px; font-size:12px; color:#10b981;">
                                                 Resolve
                                             </button>
                                         </form>
@@ -916,7 +823,7 @@
                                         <form action="{{ route('system_errors.update_status', $item->id) }}" method="POST" style="display:inline;">
                                             @csrf
                                             <input type="hidden" name="status" value="open">
-                                            <button type="submit" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;">
+                                            <button type="submit" class="btn btn-outline" style="padding:4px 10px; font-size:12px;">
                                                 Reopen
                                             </button>
                                         </form>
@@ -924,36 +831,36 @@
                                 </div>
                             </div>
 
-                            <div class="error-footer">
-                                <div class="user-tag">
-                                    <span class="user-avatar-circle">
+                            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); border-top:1px solid rgba(255,255,255,0.04); padding-top:8px; margin-top:2px;">
+                                <div style="display:flex; align-items:center; gap:6px; color:var(--text-primary);">
+                                    <span style="width:20px; height:20px; border-radius:50%; background:var(--accent-blue); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">
                                         {{ strtoupper(substr($item->user_name ?: 'G', 0, 1)) }}
                                     </span>
                                     <span>{{ $item->user_name }}</span>
                                     @if($item->user_email)
-                                        <span style="color: var(--text-muted);">({{ $item->user_email }})</span>
+                                        <span style="color:var(--text-muted);">({{ $item->user_email }})</span>
                                     @endif
                                     @if($item->ip_address)
-                                        <span style="color: var(--text-muted); font-family: var(--font-mono);">• {{ $item->ip_address }}</span>
+                                        <span style="color:var(--text-muted); font-family:var(--font-mono);">• {{ $item->ip_address }}</span>
                                     @endif
                                 </div>
-                                <div style="font-family: var(--font-mono); color: var(--text-muted);">
-                                    Last seen: <span style="color: var(--text-secondary);">{{ $item->relative_last_seen }}</span> ({{ $item->last_seen_at ? $item->last_seen_at->format('d M Y, H:i:s') : 'N/A' }})
+                                <div style="font-family:var(--font-mono); color:var(--text-muted);">
+                                    Last seen: <span style="color:var(--text-secondary);">{{ $item->relative_last_seen }}</span> ({{ $item->last_seen_at ? $item->last_seen_at->format('d M Y, H:i:s') : 'N/A' }})
                                 </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
 
-                <div style="margin-top: 24px;">
+                <div style="margin-top:24px;">
                     {{ $errors->links() }}
                 </div>
             @else
-                <div class="empty-state">
-                    <div class="empty-icon">🎉</div>
-                    <div class="empty-title">Zero System Breakdowns Found</div>
-                    <div class="empty-desc">
-                        No errors match your current filter criteria. Any error encountered by any user in the CRM will automatically be captured and displayed here in real time.
+                <div style="background-color:var(--bg-card); border:1px dashed var(--border-subtle); border-radius:14px; padding:60px 20px; text-align:center;">
+                    <div style="font-size:42px; margin-bottom:12px;">🎉</div>
+                    <div style="font-size:18px; font-weight:700; margin-bottom:6px;">Zero System Breakdowns Found</div>
+                    <div style="color:var(--text-muted); max-width:420px; margin:0 auto 20px auto;">
+                        No errors match your filter. Any failure encountered by any staff user across the CRM will appear here automatically.
                     </div>
                     <a href="{{ route('system_errors.simulate') }}" class="btn btn-primary">
                         ⚡ Simulate Test Error to Verify
@@ -962,54 +869,198 @@
             @endif
 
         @else
-            <!-- TAB 2: Storage Logs Stream (laravel.log) -->
-            @if(count($storageLogs) > 0)
-                <div class="error-list">
-                    @foreach($storageLogs as $log)
-                        <div class="log-entry-card">
-                            <div class="log-entry-header">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span class="badge {{ $log['level'] === 'ERROR' || $log['level'] === 'CRITICAL' ? 'badge-red' : 'badge-amber' }}">
-                                        {{ $log['level'] }}
-                                    </span>
-                                    <span style="color: var(--text-muted);">{{ $log['file'] }}</span>
+            <!-- TAB 2: Multi-File Log Explorer -->
+            <div class="logs-layout">
+
+                <!-- Left Sidebar: Categorized Log Files List -->
+                <div class="log-files-sidebar">
+                    <div class="sidebar-header">
+                        <span>All System Log Files</span>
+                        <span class="badge badge-gray">{{ count($allLogFiles) }} Files</span>
+                    </div>
+
+                    @php
+                        $groupedFiles = [];
+                        foreach ($allLogFiles as $path => $f) {
+                            $groupedFiles[$f['category_label']][] = $f;
+                        }
+                    @endphp
+
+                    <div style="max-height: 720px; overflow-y: auto;">
+                        @foreach($groupedFiles as $catLabel => $files)
+                            <div class="log-category-title">
+                                <span>{{ $files[0]['icon'] }}</span>
+                                <span>{{ $catLabel }}</span>
+                                <span style="margin-left:auto; font-weight:normal; opacity:0.7;">({{ count($files) }})</span>
+                            </div>
+
+                            @foreach($files as $f)
+                                <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $f['relative_path']]) }}"
+                                   class="log-file-item {{ $selectedLogFile === $f['relative_path'] ? 'active' : '' }}">
+                                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;">
+                                        <div style="font-weight:600; color: {{ $selectedLogFile === $f['relative_path'] ? '#fff' : '#e2e8f0' }};">
+                                            {{ $f['filename'] }}
+                                        </div>
+                                        <div class="file-meta-sub">
+                                            {{ $f['size_formatted'] }} • {{ $f['last_modified'] }}
+                                        </div>
+                                    </div>
+
+                                    @if($f['error_count'] > 0)
+                                        <span class="badge badge-red" style="font-size:10px; padding:2px 6px;">
+                                            {{ $f['error_count'] }} err
+                                        </span>
+                                    @endif
+                                </a>
+                            @endforeach
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Right Panel: Selected Log File Content & Controls -->
+                <div class="log-content-panel">
+                    @if($selectedFileInfo)
+                        <!-- File Header Bar -->
+                        <div class="log-file-header-bar">
+                            <div>
+                                <div class="log-file-name">
+                                    <span>{{ $selectedFileInfo['icon'] }}</span>
+                                    <span>{{ $selectedFileInfo['relative_path'] }}</span>
+                                    <span class="badge badge-purple">{{ $selectedFileInfo['category_label'] }}</span>
                                 </div>
-                                <span style="color: var(--text-muted);">{{ $log['timestamp'] }}</span>
+                                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-top:3px;">
+                                    Size: <strong>{{ $selectedFileInfo['size_formatted'] }}</strong> • Last Written: <strong>{{ $selectedFileInfo['last_modified'] }}</strong>
+                                </div>
                             </div>
-                            <div style="color: #fca5a5; font-weight: 600;">
-                                {{ $log['title'] }}
+
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <a href="{{ route('system_errors.download_log', ['file' => $selectedLogFile]) }}" class="btn btn-outline" style="padding:5px 10px; font-size:12px;">
+                                    📥 Download
+                                </a>
+                                <form action="{{ route('system_errors.clear_log_file') }}" method="POST" onsubmit="return confirm('Truncate and empty {{ $selectedFileInfo['filename'] }}?');" style="display:inline;">
+                                    @csrf
+                                    <input type="hidden" name="file" value="{{ $selectedLogFile }}">
+                                    <button type="submit" class="btn btn-outline" style="padding:5px 10px; font-size:12px; color:#f87171;">
+                                        🧹 Truncate File
+                                    </button>
+                                </form>
                             </div>
-                            @if(!empty($log['stack']))
-                                <pre style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; font-size: 11px; overflow-x: auto; color: #cbd5e1;">{{ $log['stack'] }}</pre>
-                            @endif
                         </div>
-                    @endforeach
+
+                        <!-- Filter and Search within this file -->
+                        <form method="GET" action="{{ route('system_errors.index') }}" class="log-filter-bar">
+                            <input type="hidden" name="tab" value="logs">
+                            <input type="hidden" name="log_file" value="{{ $selectedLogFile }}">
+
+                            <div style="display:flex; align-items:center; gap:8px; flex:1;">
+                                <input type="text" name="log_search" class="search-input" style="padding:6px 12px; font-size:12px;" placeholder="Search in {{ $selectedFileInfo['filename'] }}..." value="{{ $logSearch }}">
+                                <select name="log_level" class="filter-select" style="padding:6px 10px; font-size:12px;" onchange="this.form.submit()">
+                                    <option value="all" {{ $logLevel === 'all' ? 'selected' : '' }}>Level: All Levels</option>
+                                    <option value="errors" {{ $logLevel === 'errors' ? 'selected' : '' }}>Level: Errors Only</option>
+                                    <option value="warning" {{ $logLevel === 'warning' ? 'selected' : '' }}>Level: Warnings</option>
+                                    <option value="info" {{ $logLevel === 'info' ? 'selected' : '' }}>Level: Info</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:12px;">Filter</button>
+                                @if($logSearch || $logLevel !== 'all')
+                                    <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile]) }}" class="btn btn-outline" style="padding:6px 10px; font-size:12px;">Reset</a>
+                                @endif
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                @if($viewRaw)
+                                    <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile, 'log_level' => $logLevel, 'log_search' => $logSearch]) }}" class="btn btn-outline" style="padding:5px 10px; font-size:12px;">
+                                        🗂️ Parsed Cards View
+                                    </a>
+                                @else
+                                    <a href="{{ route('system_errors.index', ['tab' => 'logs', 'log_file' => $selectedLogFile, 'view_raw' => 1]) }}" class="btn btn-outline" style="padding:5px 10px; font-size:12px;">
+                                        📄 Raw Text View
+                                    </a>
+                                @endif
+                            </div>
+                        </form>
+
+                        <!-- Log Entries List or Raw Text -->
+                        @if($viewRaw)
+                            <pre class="raw-text-view">{{ $rawLogContent }}</pre>
+                        @else
+                            @if(count($logEntries) > 0)
+                                <div style="display:flex; flex-direction:column; max-height:650px; overflow-y:auto;">
+                                    @foreach($logEntries as $idx => $entry)
+                                        <div class="parsed-log-card">
+                                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                                <div style="display:flex; align-items:center; gap:8px;">
+                                                    <span class="badge {{ in_array($entry['level'], ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY']) ? 'badge-red' : ($entry['level'] === 'WARNING' ? 'badge-amber' : 'badge-blue') }}">
+                                                        {{ $entry['level'] }}
+                                                    </span>
+                                                    <span style="color:var(--text-muted); font-size:11px;">{{ $entry['env'] }}</span>
+                                                </div>
+                                                <span style="color:var(--text-muted); font-size:11px;">{{ $entry['timestamp'] }}</span>
+                                            </div>
+
+                                            <div style="color: {{ in_array($entry['level'], ['ERROR', 'CRITICAL']) ? '#fca5a5' : '#e2e8f0' }}; font-weight:600; word-break:break-word;">
+                                                {{ $entry['title'] }}
+                                            </div>
+
+                                            <!-- JSON Structured Metadata Pills (e.g. upload errors, sync error context) -->
+                                            @if(!empty($entry['json_context']))
+                                                <div class="json-pills-wrap">
+                                                    @foreach($entry['json_context'] as $jk => $jv)
+                                                        @if(!is_array($jv) && !is_object($jv))
+                                                            <div class="json-pill">
+                                                                <span>{{ $jk }}:</span> <strong>{{ $jv }}</strong>
+                                                            </div>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            <!-- Stack Trace or Technical Detail -->
+                                            @if(!empty($entry['stack']))
+                                                <details style="margin-top:4px;">
+                                                    <summary style="cursor:pointer; color:var(--accent-blue); font-size:11px; user-select:none;">
+                                                        View Stack Trace & Technical Details
+                                                    </summary>
+                                                    <pre style="background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; font-size:11px; margin-top:6px; overflow-x:auto; color:#cbd5e1; border:1px solid #1e293b;">{{ $entry['stack'] }}</pre>
+                                                </details>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div style="padding:40px 20px; text-align:center; color:var(--text-muted);">
+                                    <div style="font-size:28px; margin-bottom:8px;">🔍</div>
+                                    <div>No log entries match your filter in this file.</div>
+                                </div>
+                            @endif
+                        @endif
+
+                    @else
+                        <div style="padding:60px 20px; text-align:center; color:var(--text-muted);">
+                            <div style="font-size:36px; margin-bottom:10px;">📂</div>
+                            <div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Select a Log File from the Sidebar</div>
+                            <div>Choose any upload error, inbox sync, or core log file from the left to inspect its contents.</div>
+                        </div>
+                    @endif
                 </div>
-            @else
-                <div class="empty-state">
-                    <div class="empty-icon">📜</div>
-                    <div class="empty-title">Log Files Empty</div>
-                    <div class="empty-desc">No entries found in storage/logs/laravel-*.log.</div>
-                </div>
-            @endif
+
+            </div>
         @endif
 
     </div>
 
-    <!-- Inspector Modal -->
+    <!-- Inspector Modal for Database Breakdowns -->
     <div id="errorModal" class="modal-overlay" onclick="closeErrorModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div>
-                    <div id="modalExceptionClass" class="badge badge-purple" style="margin-bottom: 6px;">Exception</div>
-                    <div id="modalMessage" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: #f87171;"></div>
-                    <div id="modalLocation" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
+                    <div id="modalExceptionClass" class="badge badge-purple" style="margin-bottom:6px;">Exception</div>
+                    <div id="modalMessage" style="font-family:var(--font-mono); font-size:15px; font-weight:700; color:#f87171;"></div>
+                    <div id="modalLocation" style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted); margin-top:4px;"></div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeModalDirect()">✕</button>
             </div>
 
             <div class="modal-body">
-                <!-- Code Snippet -->
                 <div id="codeSnippetWrapper">
                     <div class="code-box">
                         <div class="code-box-header">
@@ -1020,54 +1071,33 @@
                     </div>
                 </div>
 
-                <!-- User & Request Context -->
                 <div>
-                    <h4 style="font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <h4 style="font-size:13px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
                         Request & User Context
                     </h4>
                     <table class="param-table">
-                        <tr>
-                            <th style="width: 160px;">URL</th>
-                            <td id="modalUrl" style="font-family: var(--font-mono); color: #93c5fd;"></td>
-                        </tr>
-                        <tr>
-                            <th>HTTP Method</th>
-                            <td id="modalMethod" style="font-family: var(--font-mono);"></td>
-                        </tr>
-                        <tr>
-                            <th>User Name / Email</th>
-                            <td id="modalUser"></td>
-                        </tr>
-                        <tr>
-                            <th>User Role</th>
-                            <td id="modalRole"></td>
-                        </tr>
-                        <tr>
-                            <th>IP & User Agent</th>
-                            <td id="modalClientInfo" style="font-family: var(--font-mono); font-size: 11px;"></td>
-                        </tr>
-                        <tr>
-                            <th>First / Last Seen</th>
-                            <td id="modalTimes" style="font-family: var(--font-mono);"></td>
-                        </tr>
+                        <tr><th style="width:160px;">URL</th><td id="modalUrl" style="font-family:var(--font-mono); color:#93c5fd;"></td></tr>
+                        <tr><th>HTTP Method</th><td id="modalMethod" style="font-family:var(--font-mono);"></td></tr>
+                        <tr><th>User Name / Email</th><td id="modalUser"></td></tr>
+                        <tr><th>User Role</th><td id="modalRole"></td></tr>
+                        <tr><th>IP & User Agent</th><td id="modalClientInfo" style="font-family:var(--font-mono); font-size:11px;"></td></tr>
+                        <tr><th>First / Last Seen</th><td id="modalTimes" style="font-family:var(--font-mono);"></td></tr>
                     </table>
                 </div>
 
-                <!-- Request Payload -->
                 <div id="payloadSection">
-                    <h4 style="font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <h4 style="font-size:13px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
                         Submitted Form Data / Payload (Sanitized)
                     </h4>
-                    <pre id="modalPayload" style="background: #050811; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 11px; overflow-x: auto; color: #a5f3fc;"></pre>
+                    <pre id="modalPayload" style="background:#050811; border:1px solid #1e293b; border-radius:8px; padding:12px; font-family:var(--font-mono); font-size:11px; overflow-x:auto; color:#a5f3fc;"></pre>
                 </div>
 
-                <!-- Stack Trace -->
                 <div>
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                        <h4 style="font-size:13px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">
                             Cleaned Stack Trace
                         </h4>
-                        <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="copyFullError()">
+                        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:11px;" onclick="copyFullError()">
                             📋 Copy Error Report
                         </button>
                     </div>
@@ -1076,12 +1106,12 @@
             </div>
 
             <div class="modal-footer">
-                <div style="display:flex; align-items:center; gap: 8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
                     <span id="modalStatusBadge" class="badge badge-gray">open</span>
-                    <span id="modalOccurrences" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);"></span>
+                    <span id="modalOccurrences" style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);"></span>
                 </div>
 
-                <div style="display:flex; align-items:center; gap: 8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
                     <button type="button" id="btnMarkInvestigating" class="btn btn-warning" onclick="changeCurrentStatus('investigating')">
                         Investigate
                     </button>
@@ -1227,7 +1257,6 @@ ${currentErrorData.stack_trace}
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Close on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeModalDirect();
         });

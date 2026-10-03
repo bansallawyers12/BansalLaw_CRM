@@ -329,6 +329,8 @@ Route::middleware(['auth:admin'])->prefix('system-errors')->name('system_errors.
     Route::post('/status/{id}', [\App\Http\Controllers\SystemBreakdownController::class, 'updateStatus'])->name('update_status');
     Route::post('/clear', [\App\Http\Controllers\SystemBreakdownController::class, 'clear'])->name('clear');
     Route::get('/simulate-test-error', [\App\Http\Controllers\SystemBreakdownController::class, 'simulateError'])->name('simulate');
+    Route::get('/download-log', [\App\Http\Controllers\SystemBreakdownController::class, 'downloadLog'])->name('download_log');
+    Route::post('/clear-log-file', [\App\Http\Controllers\SystemBreakdownController::class, 'clearLogFile'])->name('clear_log_file');
 });
 
 Route::redirect('/system-breakdowns', '/system-errors');

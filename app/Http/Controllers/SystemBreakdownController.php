@@ -7,6 +7,7 @@ use App\Models\SystemBreakdownLog;
 use App\Services\SystemBreakdownService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class SystemBreakdownController extends Controller
@@ -26,10 +27,83 @@ class SystemBreakdownController extends Controller
     {
         $stats = $this->service->getStats();
         $errors = $this->service->getFilteredErrors($request);
-        $storageLogs = $this->service->getStorageLogEntries(35);
         $activeTab = $request->input('tab', 'db'); // 'db' or 'logs'
 
-        return view('system_breakdown.index', compact('stats', 'errors', 'storageLogs', 'activeTab'));
+        // Log files explorer
+        $allLogFiles = $this->service->getAllLogFiles();
+        $selectedLogFile = $request->input('log_file');
+
+        if (!$selectedLogFile || !isset($allLogFiles[$selectedLogFile])) {
+            $selectedLogFile = array_key_first($allLogFiles) ?: '';
+        }
+
+        $logLevel = $request->input('log_level', 'all');
+        $logSearch = $request->input('log_search');
+        $viewRaw = (bool) $request->input('view_raw', false);
+
+        $selectedFileInfo = $selectedLogFile && isset($allLogFiles[$selectedLogFile]) ? $allLogFiles[$selectedLogFile] : null;
+
+        $logEntries = [];
+        $rawLogContent = '';
+
+        if ($selectedLogFile) {
+            if ($viewRaw) {
+                $rawLogContent = $this->service->getRawLogContent($selectedLogFile);
+            } else {
+                $logEntries = $this->service->getLogEntriesForFile($selectedLogFile, 150, $logLevel, $logSearch);
+            }
+        }
+
+        return view('system_breakdown.index', compact(
+            'stats',
+            'errors',
+            'activeTab',
+            'allLogFiles',
+            'selectedLogFile',
+            'selectedFileInfo',
+            'logEntries',
+            'rawLogContent',
+            'viewRaw',
+            'logLevel',
+            'logSearch'
+        ));
+    }
+
+    /**
+     * Download any log file safely.
+     */
+    public function downloadLog(Request $request): BinaryFileResponse
+    {
+        $relativePath = (string) $request->input('file');
+        $cleanPath = str_replace(['..', "\0"], '', $relativePath);
+        $fullPath = storage_path('logs/' . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath));
+
+        if (!File::exists($fullPath) || !File::isFile($fullPath)) {
+            abort(404, 'Requested log file not found.');
+        }
+
+        return response()->download($fullPath, basename($fullPath), [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Clear or truncate a selected log file.
+     */
+    public function clearLogFile(Request $request)
+    {
+        $relativePath = (string) $request->input('file');
+        $cleanPath = str_replace(['..', "\0"], '', $relativePath);
+        $fullPath = storage_path('logs/' . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath));
+
+        if (File::exists($fullPath) && File::isFile($fullPath)) {
+            File::put($fullPath, '');
+        }
+
+        return redirect()->route('system_errors.index', [
+            'tab' => 'logs',
+            'log_file' => $relativePath,
+        ])->with('success', 'Log file "' . basename($fullPath) . '" was truncated successfully.');
     }
 
     /**
@@ -127,7 +201,6 @@ class SystemBreakdownController extends Controller
             $userTrigger = $request->input('trigger', 'manual');
             throw new \RuntimeException("SIMULATED_TEST_BREAKDOWN: Test verification error triggered by {$userTrigger} at " . date('Y-m-d H:i:s'));
         } catch (Throwable $e) {
-            // Intentionally let the exception handler capture it or explicitly record it
             SystemBreakdownService::recordException($e, $request);
         }
 
