@@ -2071,8 +2071,21 @@ class DocumentController extends Controller
             }
             
             // Try S3 storage
-            if (isset($parsed['path']) && !empty($parsed['path'])) {
-                $s3Key = ltrim($parsed['path'], '/');
+            $s3Key = $document->getSignedStorageKey($fileUrl);
+            if (!$s3Key && isset($parsed['path']) && !empty($parsed['path'])) {
+                $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+                $bucket = (string) config('filesystems.disks.s3.bucket', '');
+                if ($bucket !== '' && str_starts_with($s3Key, $bucket . '/')) {
+                    $s3Key = substr($s3Key, strlen($bucket) + 1);
+                } elseif (isset($parsed['host']) && preg_match('/^s3[.-]/i', $parsed['host'])) {
+                    $parts = explode('/', $s3Key, 2);
+                    if (count($parts) === 2) {
+                        $s3Key = $parts[1];
+                    }
+                }
+            }
+
+            if ($s3Key) {
                 /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                 $disk = Storage::disk('s3');
                 
@@ -2085,7 +2098,7 @@ class DocumentController extends Controller
                     try {
                         $tempUrl = $disk->temporaryUrl(
                             $s3Key,
-                            now()->addMinutes(5),
+                            now()->addMinutes(15),
                             ['ResponseContentDisposition' => 'attachment; filename="' . $filename . '"']
                         );
                         
@@ -2100,7 +2113,7 @@ class DocumentController extends Controller
                             's3Key' => $s3Key,
                             'error' => $e->getMessage()
                         ]);
-                        // Fall through to error handling
+                        // Fall through to local fallback
                     }
                 } else {
                     Log::warning('File not found in S3', [
@@ -2108,16 +2121,31 @@ class DocumentController extends Controller
                         'url' => $fileUrl
                     ]);
                 }
+
+                // Check local mirror fallback (storage/app/public or storage/app)
+                foreach ([
+                    storage_path('app/public/' . $s3Key),
+                    storage_path('app/' . $s3Key),
+                    public_path('storage/' . $s3Key),
+                ] as $localPath) {
+                    if (is_file($localPath)) {
+                        return response()->download($localPath, $filename);
+                    }
+                }
             }
             
-            // If neither local nor S3 worked, return error
+            // If neither local nor S3 worked, return error (avoid redirecting to private S3 URL that throws 403)
+            if (!str_contains($fileUrl, 'amazonaws.com')) {
+                return redirect($fileUrl);
+            }
+
             Log::error('Unexpected URL format - not a valid storage path', [
                 'url' => $fileUrl,
                 'path' => $urlPath,
                 'parsed' => $parsed
             ]);
             
-            return abort(400, 'Invalid storage URL format or file not found');
+            return abort(404, 'The signed document could not be found in storage. Please contact the administrator.');
             
         } catch (\Exception $e) {
             Log::error('Error downloading signed document', [
@@ -2163,22 +2191,71 @@ class DocumentController extends Controller
                 ]);
             }
 
-            if (isset($parsed['path']) && $parsed['path'] !== '') {
-                $s3Key = ltrim(urldecode($parsed['path']), '/');
-                $disk = Storage::disk('s3');
-                if ($disk->exists($s3Key)) {
-                    $content = $disk->get($s3Key);
-
-                    return response($content, 200, [
-                        'Content-Type'        => 'application/pdf',
-                        'Content-Disposition' => 'inline; filename="' . $filename . '"',
-                        'Content-Length'      => strlen($content),
-                        'Cache-Control'       => 'private, max-age=300',
-                    ]);
+            $s3Key = $document->getSignedStorageKey($fileUrl);
+            if (!$s3Key && isset($parsed['path']) && $parsed['path'] !== '') {
+                $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+                $bucket = (string) config('filesystems.disks.s3.bucket', '');
+                if ($bucket !== '' && str_starts_with($s3Key, $bucket . '/')) {
+                    $s3Key = substr($s3Key, strlen($bucket) + 1);
+                } elseif (isset($parsed['host']) && preg_match('/^s3[.-]/i', $parsed['host'])) {
+                    $parts = explode('/', $s3Key, 2);
+                    if (count($parts) === 2) {
+                        $s3Key = $parts[1];
+                    }
                 }
             }
 
-            return redirect()->away($fileUrl);
+            if ($s3Key) {
+                /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                $disk = Storage::disk('s3');
+                if ($disk->exists($s3Key)) {
+                    try {
+                        $tempUrl = $disk->temporaryUrl(
+                            $s3Key,
+                            now()->addMinutes(15),
+                            ['ResponseContentDisposition' => 'inline; filename="' . $filename . '"']
+                        );
+                        return redirect()->away($tempUrl);
+                    } catch (\Throwable $e) {
+                        try {
+                            $content = $disk->get($s3Key);
+                            return response($content, 200, [
+                                'Content-Type'        => 'application/pdf',
+                                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                                'Content-Length'      => strlen($content),
+                                'Cache-Control'       => 'private, max-age=300',
+                            ]);
+                        } catch (\Throwable $e2) {
+                            Log::warning('Failed streaming S3 content in previewSigned: ' . $e2->getMessage());
+                        }
+                    }
+                }
+
+                // Check local mirror fallback
+                foreach ([
+                    storage_path('app/public/' . $s3Key),
+                    storage_path('app/' . $s3Key),
+                    public_path('storage/' . $s3Key),
+                ] as $localPath) {
+                    if (is_file($localPath)) {
+                        return response()->file($localPath, [
+                            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                        ]);
+                    }
+                }
+            }
+
+            if (!str_contains($fileUrl, 'amazonaws.com')) {
+                return redirect()->away($fileUrl);
+            }
+
+            Log::error('Signed document S3 file does not exist or bucket permission denied in previewSigned', [
+                'document_id' => $document->id,
+                'fileUrl' => $fileUrl,
+                's3Key' => $s3Key,
+            ]);
+
+            return abort(404, 'Signed document not found on storage.');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return abort(404);
         } catch (\Exception $e) {
@@ -2214,20 +2291,31 @@ class DocumentController extends Controller
                     }
                 } else {
                     // Try S3 storage
-                    if (isset($parsed['path'])) {
-                        // Remove leading slash
-                        $s3Key = ltrim($parsed['path'], '/');
+                    $s3Key = $document->getSignedStorageKey();
+                    if (!$s3Key && isset($parsed['path'])) {
+                        $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+                        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+                        if ($bucket !== '' && str_starts_with($s3Key, $bucket . '/')) {
+                            $s3Key = substr($s3Key, strlen($bucket) + 1);
+                        }
+                    }
+
+                    if ($s3Key) {
                         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                         $disk = Storage::disk('s3');
                         if ($disk->exists($s3Key)) {
                             $dlName = str_replace('"', "'", $document->getSignedDownloadFilename());
-                            $downloadUrl = $disk->temporaryUrl(
-                                $s3Key,
-                                now()->addMinutes(5),
-                                [
-                                    'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
-                                ]
-                            );
+                            try {
+                                $downloadUrl = $disk->temporaryUrl(
+                                    $s3Key,
+                                    now()->addMinutes(15),
+                                    [
+                                        'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
+                                    ]
+                                );
+                            } catch (\Throwable $e) {
+                                Log::warning('S3 temporaryUrl failed in CRM downloadSignedAndThankyou: ' . $e->getMessage());
+                            }
                         }
                     }
                 }
@@ -2240,9 +2328,9 @@ class DocumentController extends Controller
                     ]);
                 }
                 
-                // Fallback: direct download if S3 key not found or file missing
+                // Fallback: route through secure download handler instead of raw private S3 URL
                 return view('crm.documents.download_and_thankyou', [
-                    'downloadUrl' => $signedDocUrl,
+                    'downloadUrl' => route('documents.download.signed', $document->id),
                     'thankyouUrl' => route('public.documents.thankyou', ['id' => $id])
                 ]);
             }
@@ -2267,21 +2355,39 @@ class DocumentController extends Controller
                 $this->authorizeDocumentAssociatedAccess($document);
             }
             if ($document && $document->signed_doc_link) {
-                $parsed = parse_url($document->signed_doc_link);
-                if (isset($parsed['path'])) {
-                    $s3Key = ltrim($parsed['path'], '/');
+                $s3Key = $document->getSignedStorageKey();
+                if (!$s3Key) {
+                    $parsed = parse_url($document->signed_doc_link);
+                    if (isset($parsed['path'])) {
+                        $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+                        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+                        if ($bucket !== '' && str_starts_with($s3Key, $bucket . '/')) {
+                            $s3Key = substr($s3Key, strlen($bucket) + 1);
+                        }
+                    }
+                }
+
+                if ($s3Key) {
                     /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                     $disk = Storage::disk('s3');
                     if ($disk->exists($s3Key)) {
                         $dlName = str_replace('"', "'", $document->getSignedDownloadFilename());
-                        $downloadUrl = $disk->temporaryUrl(
-                            $s3Key,
-                            now()->addMinutes(5),
-                            [
-                                'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
-                            ]
-                        );
+                        try {
+                            $downloadUrl = $disk->temporaryUrl(
+                                $s3Key,
+                                now()->addMinutes(15),
+                                [
+                                    'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
+                                ]
+                            );
+                        } catch (\Throwable $e) {
+                            Log::warning('S3 temporaryUrl failed in CRM thankyou: ' . $e->getMessage());
+                        }
                     }
+                }
+
+                if (!$downloadUrl) {
+                    $downloadUrl = route('documents.download.signed', $document->id);
                 }
             }
         }

@@ -451,6 +451,40 @@ class Document extends Model
     }
 
     /**
+     * Resolves the normalized S3 storage key from signed_doc_link.
+     * Handles both path-style (https://s3.region.amazonaws.com/bucket/key)
+     * and virtual-hosted-style (https://bucket.s3.region.amazonaws.com/key) S3 URLs,
+     * stripping bucket name prefix and URL encodings.
+     */
+    public function getSignedStorageKey(?string $url = null): ?string
+    {
+        $link = $url ?? $this->signed_doc_link;
+        if (empty($link)) {
+            return null;
+        }
+
+        $parsed = parse_url($link);
+        if (! isset($parsed['path']) || empty($parsed['path'])) {
+            return null;
+        }
+
+        $path = urldecode(ltrim((string) $parsed['path'], '/'));
+        $path = str_replace('\\', '/', $path);
+
+        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+        if ($bucket !== '' && str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
+        } elseif (isset($parsed['host']) && preg_match('/^s3[.-]/i', $parsed['host'])) {
+            $parts = explode('/', $path, 2);
+            if (count($parts) === 2) {
+                $path = $parts[1];
+            }
+        }
+
+        return ltrim($path, '/');
+    }
+
+    /**
      * Human-readable filename with one extension. filetype may be a MIME string or a real extension.
      */
     public function getFilenameWithExtensionForDisplay(): string

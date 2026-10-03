@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Services\CrmDurableStorage;
 
 use App\Models\Admin;
 use App\Models\Staff;
@@ -1189,38 +1190,126 @@ class ClientsController extends Controller
         return $pdf->stream('codeplaners.pdf');
 	}*/
 
-	public function downloadpdf(Request $request, $id = NULL){
-	    $fetchd = \App\Models\Document::where('id',$id)->first();
-        if (!$fetchd || empty($fetchd->myfile)) {
-            abort(404, 'Document not found.');
-        }
-        $admin = DB::table('admins')->select('client_id')->where('id', $fetchd->client_id)->first();
-        if (!$admin) {
-            abort(404, 'Client not found.');
-        }
-        // When myfile is already a full S3 URL (modern docs with myfile_key), use it directly
-        if (str_starts_with($fetchd->myfile, 'http')) {
-            $imageUrl = $fetchd->myfile;
-        } else {
-            // Legacy: construct S3 path using myfile_key (filename) or myfile, then get URL
-            $fileName = $fetchd->myfile_key ?? $fetchd->myfile;
-            if ($fetchd->doc_type == 'migration') {
-                $filePath = $admin->client_id.'/'.$fetchd->folder_name.'/'.$fileName;
-            } else {
-                $filePath = $admin->client_id.'/'.$fetchd->doc_type.'/'.$fileName;
-            }
-            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-            $disk = Storage::disk('s3');
-            $imageUrl = $disk->url($filePath);
-        }
-        // Generate the PDF using service container to avoid facade type issues
-        /** @var \Barryvdh\DomPDF\PDF $pdf */
-        $pdf = app('dompdf.wrapper');
-        $pdf = $pdf->loadView('myPDF', compact('imageUrl'));
+	public function downloadpdf(Request $request, $id = NULL)
+	{
+		$fetchd = \App\Models\Document::where('id', $id)->first();
+		if (!$fetchd || empty($fetchd->myfile)) {
+			abort(404, 'Document not found.');
+		}
 
-        // Return the generated PDF
-        return $pdf->stream('codeplaners.pdf');
-    }
+		$admin = DB::table('admins')->select('id', 'client_id')->where('id', $fetchd->client_id)->first();
+		if (!$admin) {
+			abort(404, 'Client not found.');
+		}
+
+		// Verify staff access permissions
+		$actor = Auth::guard('admin')->user() ?: Auth::user();
+		if ($actor && ! StaffClientVisibility::canAccessClientOrLead((int) $fetchd->client_id, $actor)) {
+			abort(403, 'Unauthorized access to this client document.');
+		}
+
+		$durable = app(CrmDurableStorage::class);
+		$bytes = null;
+
+		// 1. Try candidate keys from document metadata
+		$candidateKeys = $durable->resolveCandidateKeysFromDocument($fetchd, $admin->client_id ?? null);
+		foreach ($candidateKeys as $key) {
+			$bytes = $durable->get($key, (string) $fetchd->myfile);
+			if ($bytes !== null && $bytes !== '') {
+				break;
+			}
+		}
+
+		// 2. Try parsing myfile directly if candidate keys didn't yield bytes
+		if (($bytes === null || $bytes === '') && !empty($fetchd->myfile)) {
+			$parsedKey = $durable->parseStorageKeyFromMyfile((string) $fetchd->myfile);
+			if ($parsedKey) {
+				$bytes = $durable->get($parsedKey, (string) $fetchd->myfile);
+			}
+		}
+
+		// 3. Fallback: check legacy local filesystem paths
+		if (($bytes === null || $bytes === '') && !empty($fetchd->myfile)) {
+			$localCandidate = public_path('img/documents/' . basename($fetchd->myfile));
+			if (is_file($localCandidate)) {
+				$bytes = @file_get_contents($localCandidate);
+			}
+		}
+
+		if ($bytes === null || $bytes === '') {
+			Log::warning('Document image content could not be retrieved for PDF export', [
+				'document_id' => $id,
+				'client_id'   => $admin->client_id ?? null,
+				'myfile'      => $fetchd->myfile,
+			]);
+			abort(404, 'Document file could not be retrieved from storage.');
+		}
+
+		// Determine clean, professional filename
+		$rawName = !empty($fetchd->file_name)
+			? pathinfo($fetchd->file_name, PATHINFO_FILENAME)
+			: 'Bansal_Lawyers_Document_' . $id;
+		$slugName = Str::slug($rawName);
+		$downloadName = ($slugName !== '' ? $slugName : 'Bansal_Lawyers_Document_' . $id) . '.pdf';
+
+		// Detect mime type
+		$detectedMime = null;
+		if (function_exists('finfo_open')) {
+			$finfo = finfo_open(FILEINFO_MIME_TYPE);
+			if ($finfo) {
+				$detectedMime = @finfo_buffer($finfo, $bytes);
+				finfo_close($finfo);
+			}
+		}
+
+		// If the source document is already a PDF, stream it directly
+		if ($detectedMime === 'application/pdf' || strtolower((string) pathinfo($fetchd->file_name ?: $fetchd->myfile, PATHINFO_EXTENSION)) === 'pdf') {
+			return response($bytes, 200, [
+				'Content-Type'        => 'application/pdf',
+				'Content-Disposition' => 'inline; filename="' . $downloadName . '"',
+			]);
+		}
+
+		// Map image MIME type
+		$mimeType = $detectedMime;
+		if (empty($mimeType) || !str_starts_with($mimeType, 'image/')) {
+			$ext = strtolower((string) pathinfo($fetchd->file_name ?: ($fetchd->myfile_key ?: $fetchd->myfile), PATHINFO_EXTENSION));
+			$mimeMap = [
+				'png'  => 'image/png',
+				'jpg'  => 'image/jpeg',
+				'jpeg' => 'image/jpeg',
+				'gif'  => 'image/gif',
+				'webp' => 'image/webp',
+				'svg'  => 'image/svg+xml',
+				'bmp'  => 'image/bmp',
+			];
+			$mimeType = $mimeMap[$ext] ?? 'image/jpeg';
+		}
+
+		try {
+			$base64 = 'data:' . $mimeType . ';base64,' . base64_encode($bytes);
+
+			/** @var \Barryvdh\DomPDF\PDF $pdf */
+			$pdf = app('dompdf.wrapper');
+			$pdf->setOptions([
+				'isRemoteEnabled'      => true,
+				'isHtml5ParserEnabled' => true,
+				'defaultFont'          => 'sans-serif',
+			]);
+			$pdf = $pdf->loadView('myPDF', [
+				'imageUrl' => $base64,
+				'title'    => $rawName,
+			]);
+
+			return $pdf->stream($downloadName);
+		} catch (\Throwable $e) {
+			Log::error('DomPDF image-to-pdf conversion failed: ' . $e->getMessage(), [
+				'document_id' => $id,
+				'error'       => $e->getMessage(),
+			]);
+			abort(500, 'Unable to convert image to PDF. Please try downloading the original file.');
+		}
+	}
 
     public function edit($id = null)
     {

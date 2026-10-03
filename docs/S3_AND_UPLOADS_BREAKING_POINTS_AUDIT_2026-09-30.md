@@ -21,8 +21,8 @@ This master matrix catalogs every failure point discovered across the CRM's file
 | **05** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Documents Preview (`ClientDocumentsController:2251`) | Raw 500 abort on S3 presigned URL failure | **High**: Viewing documents fails with 500 error if S3 has network hiccup, ignoring local mirror. |
 | **06** | 🟠 **HIGH** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Outlook Email Dropzone (`emails_outlook.blade.php`) | Direct Outlook desktop drag-and-drop yields 0 bytes | **Medium**: Staff drag emails from Outlook desktop; upload fails with empty file error. |
 | **07** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Upload Checklist Controller (`UploadChecklistController:56`) | Local `public/checklists` upload; duplicate filename overwrite | **Medium**: Bypasses S3 completely; files overwrite each other; breaks on multi-server cluster. |
-| **08** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Image-to-PDF Export (`ClientsController:1186`) | DomPDF remote S3 image fetch fails; legacy branding | **Medium**: DomPDF blocks remote images; output named `codeplaners.pdf` instead of law firm. |
-| **09** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Signed PDF Downloads (`PublicDocumentController:1175`) | Path-style S3 URLs include bucket prefix in key | **Medium**: `$disk->exists()` fails; redirects to raw URL triggering 403 Forbidden for signers. |
+| **08** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Client Image-to-PDF Export (`ClientsController:1186`) | DomPDF remote S3 image fetch fails; legacy branding | **Medium**: DomPDF blocks remote images; output named `codeplaners.pdf` instead of law firm. |
+| **09** | 🟡 **MEDIUM** | 🟢 **RESOLVED** | 🚨 **YES — 100% on Production Server** | Signed PDF Downloads (`PublicDocumentController:1175`) | Path-style S3 URLs include bucket prefix in key | **Medium**: `$disk->exists()` fails; redirects to raw URL triggering 403 Forbidden for signers. |
 | **10** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | S3 Background Promotion Command (`PromotePendingUploadsToS3`) | Silent failures during cron promotion | **Low**: Files failing cloud upload log count only without administrator notification. |
 | **11** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Upload List Removal Dialogs (`personal_documents.blade.php:1690`) | Native `window.confirm()` used during file queue management | **Medium**: Native browser popups interrupt user flow and freeze upload progress bars. |
 
@@ -295,32 +295,21 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: PDF Generation Crash   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED                                    |
+| SEVERITY: PDF Generation Crash   | RESOLUTION: Base64 S3 Stream Embedding & Bansal Law Branding   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Document PDF Stream Export
-- **Source File & Lines:** [`app/Http/Controllers/CRM/ClientsController.php:1186-1217`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/ClientsController.php#L1186-L1217) & [`resources/views/myPDF.blade.php:20`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/myPDF.blade.php#L20)
-- **Code Pattern:**
-  ```php
-  $pdf = $pdf->loadView('myPDF', compact('imageUrl'));
-  return $pdf->stream('codeplaners.pdf');
-  ```
-- **Blade Template:** `<img style="width:100%;" src="{{$imageUrl}}">`
-
-#### Why and How This Occurs on the Live Server
-1. **DomPDF Remote HTTP Blocks:** DomPDF requires `isRemoteEnabled => true` in its configuration options to download images over HTTP/HTTPS. When `$imageUrl` points to an S3 object in a private bucket, DomPDF receives a 403 Forbidden error, rendering an empty page or throwing an exception.
-2. **Hardcoded Legacy Branding:** Line 1216 streams the file as `codeplaners.pdf` (old agency name) instead of `BansalLawyers_Document.pdf`.
-
-#### Remediation Plan
-Fetch image bytes directly via `CrmDurableStorage::get()` and embed as base64 in DomPDF:
-```php
-$bytes = app(\App\Services\CrmDurableStorage::class)->get($s3Key);
-$base64 = 'data:image/png;base64,' . base64_encode($bytes);
-$pdf = $pdf->loadView('myPDF', ['imageUrl' => $base64]);
-return $pdf->stream('Bansal_Lawyers_Document_' . $id . '.pdf');
-```
+- **Source Files & Lines:**
+  - [`app/Http/Controllers/CRM/ClientsController.php:1192-1240`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/ClientsController.php#L1192-L1240)
+  - [`resources/views/myPDF.blade.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/resources/views/myPDF.blade.php)
+- **Resolution Summary:**
+  1. **Base64 Direct Image Stream:** In `ClientsController::downloadpdf()`, image bytes are fetched directly from storage via `CrmDurableStorage::get()` (checking candidate S3 keys and local mirrors), and embedded directly as `data:{mime};base64,...` in the DomPDF template. This eliminates external HTTP calls and 403 Forbidden errors from private S3 buckets.
+  2. **Direct PDF Passthrough:** If the user requests PDF export on an existing PDF document, the raw PDF bytes are streamed directly with proper content headers rather than wrapping a PDF inside an HTML `<img>` tag.
+  3. **Branding & Professional Filenames:** Replaced legacy `codeplaners.pdf` filename with dynamic, client-specific names based on `file_name` (e.g. `passport-copy.pdf`) or `Bansal_Lawyers_Document_{id}.pdf`.
+  4. **Print-Ready CSS:** Refactored `resources/views/myPDF.blade.php` with responsive `@page` CSS and image centering.
+  5. **Permission Verification:** Enforced `StaffClientVisibility::canAccessClientOrLead()` checks to prevent unauthorized document exports.
 
 ---
 
@@ -328,37 +317,21 @@ return $pdf->stream('Bansal_Lawyers_Document_' . $id . '.pdf');
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: 403 Forbidden on Sign  | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED                                    |
+| SEVERITY: 403 Forbidden on Sign  | RESOLUTION: Path-Style Key Sanitization & Local Fallback Route |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Digital Signatures (`Public Document Download`)
-- **Source File & Lines:** [`app/Http/Controllers/PublicDocumentController.php:1175-1192`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/PublicDocumentController.php#L1175-L1192)
-- **Code Pattern:**
-  ```php
-  $parsed = parse_url($signedDocUrl);
-  $s3Key = ltrim($parsed['path'], '/');
-  if ($disk->exists($s3Key)) { ... }
-  return redirect($signedDocUrl);
-  ```
-
-#### Why and How This Occurs on the Live Server
-If the stored signed document URL is formatted using path-style notation:
-`https://s3.ap-southeast-2.amazonaws.com/bansal-bucket/signatures/signed_doc_12.pdf`
-`parse_url()['path']` returns `/bansal-bucket/signatures/signed_doc_12.pdf`.
-`ltrim` produces `bansal-bucket/signatures/signed_doc_12.pdf`.
-When `$disk->exists($s3Key)` checks the bucket for that key, it fails because `bansal-bucket/` is the bucket name, not part of the object path!
-The code then executes `return redirect($signedDocUrl)`, sending the signer directly to the private S3 URL, which yields an **HTTP 403 Forbidden** error.
-
-#### Remediation Plan
-Strip the bucket name from `$s3Key` if present:
-```php
-$bucket = config('filesystems.disks.s3.bucket');
-if ($bucket && str_starts_with($s3Key, $bucket . '/')) {
-    $s3Key = substr($s3Key, strlen($bucket) + 1);
-}
-```
+- **Source Files & Lines:**
+  - [`app/Models/Document.php:452-485`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Models/Document.php#L452-L485)
+  - [`app/Http/Controllers/PublicDocumentController.php:1172-1325`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/PublicDocumentController.php#L1172-L1325)
+  - [`app/Http/Controllers/CRM/DocumentController.php:2070-2290`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/DocumentController.php#L2070-L2290)
+- **Resolution Summary:**
+  1. **Canonical `Document::getSignedStorageKey()` Method:** Added a centralized method on `Document` model that parses `signed_doc_link`, un-escapes characters, and strips both path-style bucket prefixes (`bucket/signatures/...` -> `signatures/...`) and AWS subdomain prefixes (`s3.region.amazonaws.com`).
+  2. **Sanitized Key Resolution:** Updated `downloadSigned()`, `previewSigned()`, `downloadSignedAndThankyou()`, and `thankyou()` in both `PublicDocumentController` and `DocumentController` to resolve sanitized S3 keys before checking existence, eliminating false negative `$disk->exists()` failures on path-style S3 URLs.
+  3. **Local Storage Fallback:** If S3 presigned URL generation encounters a network issue, `downloadSigned()` automatically checks local mirrors (`storage/app/public/`, `storage/app/`, `public/storage/`) and streams the file rather than failing.
+  4. **403 Prevention on Thank You Page:** Replaced raw `signedDocUrl` fallbacks on Thank You pages with internal download action routes (`route('public.documents.download.signed', ...)` and `route('documents.download.signed', ...)`), ensuring clients never get redirected to unauthenticated private S3 URLs.
 
 ---
 
