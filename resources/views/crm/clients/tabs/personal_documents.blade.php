@@ -656,8 +656,8 @@
                     }, 500);
                 }
                 
-                let currentContextFile = null;
-                let currentContextData = {};
+                var currentContextFile = null;
+                var currentContextData = {};
 
                 function showFileContextMenu(event, fileId, fileType, fileUrl, categoryId, fileStatus) {
                     event.preventDefault();
@@ -793,8 +793,8 @@
                 // ============================================================================
                 // MOVE DOCUMENT FUNCTIONALITY
                 // ============================================================================
-                let currentMoveDocumentId = null;
-                let currentMoveDocumentType = null;
+                var currentMoveDocumentId = null;
+                var currentMoveDocumentType = null;
 
                 function appendPersonalDocModalToBody(selector) {
                     const $modal = $(selector);
@@ -1192,9 +1192,9 @@
                 // BULK UPLOAD FUNCTIONALITY
                 // ============================================================================
                 
-                let bulkUploadFiles = {};
-                let currentCategoryId = null;
-                let currentClientId = @json($clientId ?? null);
+                var bulkUploadFiles = bulkUploadFiles || {};
+                var currentCategoryId = null;
+                var currentClientId = @json($clientId ?? null);
 
                 function resetBulkUploadFileInput(categoryId) {
                     const input = document.querySelector(

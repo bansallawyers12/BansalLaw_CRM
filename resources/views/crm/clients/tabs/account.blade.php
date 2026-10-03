@@ -676,6 +676,7 @@ function initAccountTabScripts() {
             }
             return;
         }
+    });
     
     // Remove Quick Receipt badge when modal closes
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
@@ -1600,7 +1601,7 @@ function initAccountTabScripts() {
         });
     }
     
-});
+}
 
 </script>
 
@@ -2545,7 +2546,7 @@ $(document).ready(function() {
         $('#uploadReceiptDocForm')[0].reset();
         // clearSelectedReceiptFile() is already called in the handler above
     });
-}
+});
 
 function scheduleAccountTabScriptsInit() {
     function runInit() {

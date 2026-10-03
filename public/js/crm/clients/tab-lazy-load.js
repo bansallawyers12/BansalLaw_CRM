@@ -89,7 +89,11 @@
             if (!code.trim()) {
                 return;
             }
-            $.globalEval(code);
+            try {
+                $.globalEval(code);
+            } catch (err) {
+                console.error('[ClientTabLazy] Script evaluation error:', err, code);
+            }
         });
     }
 

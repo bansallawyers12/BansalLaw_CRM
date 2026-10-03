@@ -506,8 +506,8 @@
             </div>
 
             <script>
-                let currentVisaContextFile = null;
-                let currentVisaContextData = {};
+                var currentVisaContextFile = null;
+                var currentVisaContextData = {};
 
                 function showVisaFileContextMenu(event, fileId, fileType, fileUrl, categoryId, fileStatus) {
                     event.preventDefault();
@@ -681,8 +681,8 @@
                 // ============================================================================
                 // MOVE VISA DOCUMENT FUNCTIONALITY
                 // ============================================================================
-                let currentMoveVisaDocumentId = null;
-                let currentMoveVisaDocumentType = null;
+                var currentMoveVisaDocumentId = null;
+                var currentMoveVisaDocumentType = null;
 
                 function appendMatterDocModalToBody(selector) {
                     const $modal = $(selector);
@@ -1132,10 +1132,10 @@
                 }
                 window.extractChecklistNameFromFile = extractChecklistNameFromFile;
                 
-                let bulkUploadVisaFiles = {};
-                let currentVisaCategoryId = null;
-                let currentVisaMatterId = <?= $client_selected_matter_id1 ?? 'null' ?>;
-                let currentVisaClientId = <?= $fetchedData->id ?>;
+                var bulkUploadVisaFiles = bulkUploadVisaFiles || {};
+                var currentVisaCategoryId = null;
+                var currentVisaMatterId = <?= $client_selected_matter_id1 ?? 'null' ?>;
+                var currentVisaClientId = <?= $fetchedData->id ?>;
 
                 function resetVisaBulkUploadFileInput(categoryId) {
                     const input = document.querySelector(

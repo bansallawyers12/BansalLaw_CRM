@@ -4156,6 +4156,18 @@ success: function(response) {
                             if (typeof window.crmToast === 'function') {
                                 window.crmToast(res.message || 'Document deleted successfully.', 'success');
                             }
+                        } else if(targetHref == 'deletenote'){
+                            if (typeof getallnotes === 'function') {
+                                getallnotes();
+                            }
+                        } else {
+                            if (typeof getallnotes === 'function') {
+                                getallnotes();
+                            }
+                        }
+
+                        if (typeof getallactivities === 'function') {
+                            getallactivities();
                         }
                     } else if (res.message) {
                         if (typeof window.crmAlert === 'function') {
@@ -4228,54 +4240,6 @@ success: function(response) {
 
         $(document).delegate('#confirmModal .accept', 'click', function(){
             performDeleteNoteOrDoc(notid, delhref);
-        });
-
-                        // deleteservices block REMOVED - route and controller method no longer exist; /get-services route also removed
-
-                        // DEPRECATED: Appointment system removed - deleteappointment route no longer exists
-                        if(delhref == 'deleteappointment'){
-
-                            // Commented out - appointment system removed
-                            /*
-                            $.ajax({
-
-                                url: site_url+'/get-appointments',
-
-                                type:'GET',
-
-                                data:{clientid:window.ClientDetailConfig.clientId},
-
-                                success: function(responses){
-
-                                    $('.appointmentlist').html(responses);
-
-                                }
-
-                            });
-                            */
-                            console.warn('deleteappointment route has been removed - appointment system deprecated');
-                        } else if(delhref == 'deletenote'){
-
-                            getallnotes();
-
-                            
-
-                        } else {
-
-                            getallnotes();
-
-                            
-
-                        }
-
-                        getallactivities();
-
-                    }
-
-                }
-
-            });
-
         });
 
 

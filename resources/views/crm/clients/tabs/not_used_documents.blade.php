@@ -212,8 +212,8 @@
             </div>
 
             <script>
-                let currentNotUsedContextFile = null;
-                let currentNotUsedContextData = {};
+                var currentNotUsedContextFile = null;
+                var currentNotUsedContextData = {};
 
                 function showNotUsedFileContextMenu(event, fileId, fileType, fileUrl, docType, fileStatus) {
                     event.preventDefault();
