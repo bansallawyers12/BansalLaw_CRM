@@ -116,7 +116,9 @@ class ClientDocumentsController extends Controller
     private function blockEchoUnlessStaffClientAccess(int $clientId): bool
     {
         if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
-            header('Content-Type: application/json');
+            if (! headers_sent()) {
+                header('Content-Type: application/json');
+            }
             echo json_encode(StaffClientVisibility::unauthorizedPayload());
 
             return true;
@@ -1369,63 +1371,68 @@ class ClientDocumentsController extends Controller
         
         try {
             $note_id = $request->note_id;
-            if(\App\Models\Document::where('id',$note_id)->exists()){
-            $data = DB::table('documents')->where('id', @$note_id)->first();
-            if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
-                return;
-            }
-            $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
-            $res = DB::table('documents')->where('id', @$note_id)->delete();
-            //$this->s3Disk()->delete('documents/' . $data->myfile);
-            if ($admin && !empty($admin->client_id)) {
-                if($data->doc_type == 'migration') {
-                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
-                } else {
-                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+            if (!empty($note_id) && \App\Models\Document::where('id', $note_id)->exists()) {
+                $data = DB::table('documents')->where('id', $note_id)->first();
+                if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
+                    return;
                 }
-            }
-            if($res){
-                $documentName = $data->file_name ?? 'unknown';
-                $documentType = ucfirst($data->doc_type ?? 'Document');
-                $matterRef = $this->getMatterReference($data->client_id);
-                $subject = !empty($matterRef) 
-                    ? "deleted {$documentType}: {$documentName} - {$matterRef}"
-                    : "deleted {$documentType}: {$documentName}";
-                $description = "<p>Deleted {$documentType} document</p>";
+                $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
+                $clientCode = $admin->client_id ?? null;
 
-                if (!empty($data->client_id)) {
-                    $this->logClientActivity(
-                        $data->client_id,
-                        $subject,
-                        $description,
-                        'document'
-                    );
-                }
-                $response['status'] 	= 	true;
-                $response['data']	=	'Document removed successfully';
-                if(isset($data->doc_type) && $data->doc_type == 'personal'){
-                    $response['doc_categry']	= $data->folder_name;
+                // [ISSUE-04 FIX] Delete S3 and local storage files BEFORE deleting the database record.
+                // Uses CrmDurableStorage to correctly resolve paths, handle null/empty doc_type
+                // without double slashes, and clean both S3 objects and local mirrors.
+                $storage = app(\App\Services\CrmDurableStorage::class);
+                $storage->deleteDocumentFiles($data, $clientCode);
+
+                // Transactional DB deletion
+                $res = DB::transaction(function () use ($note_id) {
+                    return DB::table('documents')->where('id', $note_id)->delete();
+                });
+
+                if ($res) {
+                    $documentName = $data->file_name ?? 'unknown';
+                    $documentType = ucfirst($data->doc_type ?? 'Document');
+                    $matterRef = $this->getMatterReference($data->client_id);
+                    $subject = !empty($matterRef) 
+                        ? "deleted {$documentType}: {$documentName} - {$matterRef}"
+                        : "deleted {$documentType}: {$documentName}";
+                    $description = "<p>Deleted {$documentType} document</p>";
+
+                    if (!empty($data->client_id)) {
+                        $this->logClientActivity(
+                            $data->client_id,
+                            $subject,
+                            $description,
+                            'document'
+                        );
+                    }
+                    $response['status'] 	= 	true;
+                    $response['message']	=	'Document removed successfully';
+                    $response['data']	=	'Document removed successfully';
+                    if (isset($data->doc_type) && $data->doc_type == 'personal') {
+                        $response['doc_categry']	= $data->folder_name;
+                    } else {
+                        $response['doc_categry']	= "";
+                    }
                 } else {
-                    $response['doc_categry']	= "";
+                    $response['status'] 	= 	false;
+                    $response['message']	=	'Please try again';
+                    if (isset($data->doc_type) && $data->doc_type == 'personal') {
+                        $response['doc_categry']	= $data->folder_name;
+                    } else {
+                        $response['doc_categry']	= "";
+                    }
                 }
-            }else{
+            } else {
                 $response['status'] 	= 	false;
                 $response['message']	=	'Please try again';
-                if(isset($data->doc_type) && $data->doc_type == 'personal'){
+                if (isset($data->doc_type) && $data->doc_type == 'personal') {
                     $response['doc_categry']	= $data->folder_name;
                 } else {
                     $response['doc_categry']	= "";
                 }
             }
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            if(isset($data->doc_type) && $data->doc_type == 'personal'){
-                $response['doc_categry']	= $data->folder_name;
-            } else {
-                $response['doc_categry']	= "";
-            }
-        }
         } catch (\Exception $e) {
             Log::error('Error deleting document', [
                 'document_id' => $request->note_id ?? null,
@@ -2211,9 +2218,31 @@ class ClientDocumentsController extends Controller
                     'Content-Disposition' => $inlineDisposition,
                 ]);
             } catch (\Exception $e) {
-                Log::error('S3 embedded preview error: ' . $e->getMessage(), ['document_id' => $id]);
+                Log::warning('S3 embedded preview error; falling back to local mirror: ' . $e->getMessage(), ['document_id' => $id]);
 
-                return abort(500, 'Error loading preview');
+                $durable = app(\App\Services\CrmDurableStorage::class);
+                $candidateKeys = $durable->resolveCandidateKeysFromDocument($document);
+                if ($s3Key && ! in_array($s3Key, $candidateKeys, true)) {
+                    array_unshift($candidateKeys, $s3Key);
+                }
+                foreach ($candidateKeys as $candidateKey) {
+                    if ($durable->localMirrorExists($candidateKey)) {
+                        return $durable->localResponse(
+                            $candidateKey,
+                            $filename,
+                            [
+                                'Content-Type' => $mime,
+                                'Content-Disposition' => $inlineDisposition,
+                            ],
+                            false
+                        );
+                    }
+                }
+
+                return response(
+                    $this->officePreviewErrorHtml('Document preview is temporarily unavailable. Please try downloading.'),
+                    503
+                )->header('Content-Type', 'text/html; charset=UTF-8');
             }
         }
 
@@ -2260,9 +2289,46 @@ class ClientDocumentsController extends Controller
 
             return redirect()->away($tempUrl);
         } catch (\Exception $e) {
-            Log::error('S3 preview error: ' . $e->getMessage(), ['document_id' => $id]);
+            Log::warning('S3 preview error; falling back to local mirror', ['document_id' => $id, 'error' => $e->getMessage()]);
 
-            return abort(500, 'Error generating preview link');
+            $durable = app(\App\Services\CrmDurableStorage::class);
+            $candidateKeys = $durable->resolveCandidateKeysFromDocument($document);
+            if ($s3Key && ! in_array($s3Key, $candidateKeys, true)) {
+                array_unshift($candidateKeys, $s3Key);
+            }
+            foreach ($candidateKeys as $candidateKey) {
+                if ($durable->localMirrorExists($candidateKey)) {
+                    return $durable->localResponse(
+                        $candidateKey,
+                        $downloadFilename,
+                        [
+                            'Content-Type' => $mime,
+                            'Content-Disposition' => $contentDisposition,
+                        ],
+                        $request->boolean('download')
+                    );
+                }
+            }
+
+            try {
+                $fileContent = $this->readDocumentFileContent($document, $s3Key);
+                if (is_string($fileContent) && $fileContent !== '') {
+                    return response($fileContent, 200, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => $contentDisposition,
+                    ]);
+                }
+            } catch (\Throwable) {
+            }
+
+            if ($request->boolean('embed')) {
+                return response(
+                    $this->officePreviewErrorHtml('Document preview is temporarily unavailable. Please try downloading the file.'),
+                    503
+                )->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+
+            return back()->with('error', 'Document preview is temporarily unavailable. Please try downloading.');
         }
     }
 
@@ -2781,14 +2847,15 @@ class ClientDocumentsController extends Controller
         }
 
         $docType = (string) ($document->doc_type ?? '');
+        $storage = app(\App\Services\CrmDurableStorage::class);
         if ($docType === 'migration') {
-            return $uniqueId . '/' . $document->folder_name . '/' . $fileName;
+            return $storage->buildStoragePath([$uniqueId, (string) $document->folder_name, $fileName]);
         }
         if ($docType === 'conversion_email_fetch' && ! empty($document->mail_type)) {
-            return $uniqueId . '/' . $docType . '/' . $document->mail_type . '/' . $fileName;
+            return $storage->buildStoragePath([$uniqueId, $docType, (string) $document->mail_type, $fileName]);
         }
 
-        return $uniqueId . '/' . $docType . '/' . $fileName;
+        return $storage->buildStoragePath([$uniqueId, $docType, $fileName]);
     }
 
     /**
@@ -3061,9 +3128,47 @@ class ClientDocumentsController extends Controller
 
             return redirect()->away($tempUrl);
         } catch (\Exception $e) {
-            Log::error('S3 download error: ' . $e->getMessage());
+            Log::warning('S3 download error; attempting fallback: ' . $e->getMessage(), ['document_id' => $id]);
 
-            return $jsonError('Error generating download link', 500);
+            $durable = app(\App\Services\CrmDurableStorage::class);
+            $candidateKeys = $durable->resolveCandidateKeysFromDocument($document);
+            if ($s3Key && ! in_array($s3Key, $candidateKeys, true)) {
+                array_unshift($candidateKeys, $s3Key);
+            }
+            foreach ($candidateKeys as $candidateKey) {
+                if ($durable->localMirrorExists($candidateKey)) {
+                    if ($wantsJson) {
+                        return response()->json([
+                            'status' => true,
+                            'use_form' => true,
+                            'filename' => $filename,
+                        ]);
+                    }
+
+                    return $durable->localResponse($candidateKey, $filename, ['Content-Type' => $mime], true);
+                }
+            }
+
+            try {
+                $fileContent = $this->readDocumentFileContent($document, $s3Key);
+                if (is_string($fileContent) && $fileContent !== '') {
+                    if ($wantsJson) {
+                        return response()->json([
+                            'status' => true,
+                            'use_form' => true,
+                            'filename' => $filename,
+                        ]);
+                    }
+
+                    return response($fileContent, 200, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => 'attachment; filename="' . str_replace('"', '\"', $filename) . '"',
+                    ]);
+                }
+            } catch (\Throwable) {
+            }
+
+            return $jsonError('Document download is temporarily unavailable. Please try again shortly.', 503);
         }
     }
 

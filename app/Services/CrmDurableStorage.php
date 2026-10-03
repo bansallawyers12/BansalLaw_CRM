@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\UnableToCheckFileExistence;
@@ -43,6 +44,7 @@ class CrmDurableStorage
     public function normalize(?string $relativePath): string
     {
         $path = str_replace('\\', '/', trim((string) $relativePath));
+        $path = preg_replace('#/+#', '/', $path) ?? $path;
         $path = ltrim($path, '/');
 
         return $path;
@@ -88,9 +90,16 @@ class CrmDurableStorage
         return self::localMyfile($path);
     }
 
-    public function localMirrorExists(string $relativePath): bool
+    public function localMirrorExists(?string $relativePath): bool
     {
+        if ($relativePath === null || trim($relativePath) === '') {
+            return false;
+        }
+
         $path = $this->normalize($relativePath);
+        if ($path === '') {
+            return false;
+        }
 
         return is_file($this->durableLocalPath($path)) || is_file($this->legacyPublicPath($path));
     }
@@ -292,9 +301,7 @@ class CrmDurableStorage
 
         if ($this->usesCloud()) {
             try {
-                if ($this->disk()->exists($path)) {
-                    $this->disk()->delete($path);
-                }
+                $this->disk()->delete($path);
             } catch (\Throwable $e) {
                 Log::warning('CrmDurableStorage cloud delete failed', [
                     'path' => $path,
@@ -306,6 +313,224 @@ class CrmDurableStorage
         foreach ([$this->durableLocalPath($path), $this->legacyPublicPath($path)] as $local) {
             if (is_file($local)) {
                 @unlink($local);
+            }
+        }
+    }
+
+    /**
+     * Builds a normalized storage path by filtering out empty/null segments.
+     * Prevents double-slash bugs (e.g., ['CL-001', '', 'file.pdf'] becomes 'CL-001/file.pdf').
+     *
+     * @param  list<string|null>  $segments
+     */
+    public function buildStoragePath(array $segments): string
+    {
+        $filtered = array_filter(
+            array_map(fn ($s) => trim((string) $s, " \t\n\r\0\x0B/"), $segments),
+            fn ($s) => $s !== ''
+        );
+
+        return implode('/', $filtered);
+    }
+
+    /**
+     * Extracts and normalizes relative storage key from a myfile URL or local-storage string.
+     */
+    public function parseStorageKeyFromMyfile(?string $myfile): ?string
+    {
+        $myfile = trim((string) $myfile);
+        if ($myfile === '') {
+            return null;
+        }
+
+        if (self::isLocalMyfile($myfile)) {
+            $key = self::parseLocalMyfileKey($myfile);
+
+            return $key !== null ? $this->normalize($key) : null;
+        }
+
+        if (str_starts_with($myfile, 'http://') || str_starts_with($myfile, 'https://')) {
+            $parsed = parse_url($myfile);
+            if (! isset($parsed['path'])) {
+                return null;
+            }
+
+            $path = urldecode((string) $parsed['path']);
+            $path = ltrim(str_replace('\\', '/', $path), '/');
+
+            // Strip S3 bucket name if path-style URL
+            $bucket = (string) config('filesystems.disks.s3.bucket', '');
+            if ($bucket !== '' && str_starts_with($path, $bucket . '/')) {
+                $path = substr($path, strlen($bucket) + 1);
+            } elseif (isset($parsed['host']) && preg_match('/^s3[.-]/i', $parsed['host'])) {
+                $parts = explode('/', $path, 2);
+                if (count($parts) === 2) {
+                    $path = $parts[1];
+                }
+            }
+
+            foreach (['storage/app/', 'storage/', 'app/'] as $prefix) {
+                if (str_starts_with($path, $prefix)) {
+                    $path = substr($path, strlen($prefix));
+                    break;
+                }
+            }
+
+            return $this->normalize($path);
+        }
+
+        return $this->normalize($myfile);
+    }
+
+    /**
+     * Resolves all candidate storage keys for a document record to guarantee complete cleanup.
+     * Returns an array of normalized relative keys with zero double-slashes.
+     *
+     * @param  \App\Models\Document|\stdClass|array|int|null  $document
+     * @return list<string>
+     */
+    public function resolveCandidateKeysFromDocument($document, ?string $clientId = null): array
+    {
+        if (is_numeric($document)) {
+            $document = DB::table('documents')->where('id', (int) $document)->first();
+        }
+
+        if (! $document) {
+            return [];
+        }
+
+        $myfile = is_object($document) ? ($document->myfile ?? null) : ($document['myfile'] ?? null);
+        $myfileKey = is_object($document) ? ($document->myfile_key ?? null) : ($document['myfile_key'] ?? null);
+        $docType = is_object($document) ? ($document->doc_type ?? null) : ($document['doc_type'] ?? null);
+        $folderName = is_object($document) ? ($document->folder_name ?? null) : ($document['folder_name'] ?? null);
+        $mailType = is_object($document) ? ($document->mail_type ?? null) : ($document['mail_type'] ?? null);
+        $docClientId = is_object($document) ? ($document->client_id ?? null) : ($document['client_id'] ?? null);
+
+        $keys = [];
+
+        // 1. Resolve key from myfile if present
+        $myfileStr = trim((string) $myfile);
+        if ($myfileStr !== '') {
+            $parsedKey = $this->parseStorageKeyFromMyfile($myfileStr);
+            if ($parsedKey !== null && $parsedKey !== '') {
+                $keys[] = $parsedKey;
+            }
+        }
+
+        // 2. Resolve client code if needed for metadata-based candidate keys
+        $clientCode = trim((string) $clientId);
+        if ($clientCode === '' && ! empty($docClientId)) {
+            if (is_numeric($docClientId)) {
+                $adminClientCode = DB::table('admins')
+                    ->where('id', (int) $docClientId)
+                    ->value('client_id');
+                if (is_string($adminClientCode) && trim($adminClientCode) !== '') {
+                    $clientCode = trim($adminClientCode);
+                }
+            } else {
+                $clientCode = trim((string) $docClientId);
+            }
+        }
+
+        $fileName = trim((string) ($myfileKey ?: basename($myfileStr)));
+        $docTypeStr = trim((string) $docType);
+
+        if ($clientCode !== '' && $fileName !== '') {
+            // Check structured subfolder
+            $subfolder = '';
+            if ($docTypeStr === 'conversion_email_fetch' && ! empty($mailType)) {
+                $subfolder = trim((string) $mailType);
+            } elseif (($docTypeStr === 'migration' || $docTypeStr === 'personal') && ! empty($folderName)) {
+                $subfolder = trim((string) $folderName);
+            }
+
+            // Key with subfolder if applicable (e.g. client/type/inbox/file.pdf or client/folder/file.pdf)
+            if ($subfolder !== '') {
+                if ($docTypeStr === 'migration') {
+                    $keys[] = $this->buildStoragePath([$clientCode, $subfolder, $fileName]);
+                } else {
+                    $keys[] = $this->buildStoragePath([$clientCode, $docTypeStr, $subfolder, $fileName]);
+                }
+            }
+
+            // Standard key: client/docType/fileName (filters empty docType to avoid double slashes)
+            $keys[] = $this->buildStoragePath([$clientCode, $docTypeStr, $fileName]);
+
+            // Flat key: client/fileName (in case doc_type was omitted or null)
+            $keys[] = $this->buildStoragePath([$clientCode, $fileName]);
+        }
+
+        // 3. Add matter <-> visa aliases
+        $additional = [];
+        foreach ($keys as $k) {
+            if (str_contains($k, '/matter/')) {
+                $additional[] = str_replace('/matter/', '/visa/', $k);
+            } elseif (str_contains($k, '/visa/')) {
+                $additional[] = str_replace('/visa/', '/matter/', $k);
+            }
+        }
+
+        $all = array_merge($keys, $additional);
+
+        // Normalize and remove duplicates and empty values
+        $unique = [];
+        foreach ($all as $k) {
+            $normalized = $this->normalize($k);
+            if ($normalized !== '' && ! in_array($normalized, $unique, true)) {
+                $unique[] = $normalized;
+            }
+        }
+
+        return $unique;
+    }
+
+    /**
+     * Resolves the primary storage key (S3 relative path) for a document record.
+     * Handles S3 URLs, local-storage markers, legacy paths, and null/empty doc_type gracefully.
+     *
+     * @param  \App\Models\Document|\stdClass|array|int|null  $document
+     */
+    public function resolveKeyFromDocument($document, ?string $clientId = null): ?string
+    {
+        $candidates = $this->resolveCandidateKeysFromDocument($document, $clientId);
+
+        return $candidates[0] ?? null;
+    }
+
+    /**
+     * Deletes all candidate files in S3 and local mirrors associated with a document record.
+     * Also checks and removes raw un-normalized paths if double-slash keys were stored on S3.
+     *
+     * @param  \App\Models\Document|\stdClass|array|int|null  $document
+     */
+    public function deleteDocumentFiles($document, ?string $clientId = null): void
+    {
+        $keys = $this->resolveCandidateKeysFromDocument($document, $clientId);
+
+        // Also check if document has a raw myfile URL/key with double slashes on S3
+        $rawPath = null;
+        if (is_object($document) && isset($document->myfile)) {
+            $rawMyfile = (string) $document->myfile;
+            if (str_starts_with($rawMyfile, 'http')) {
+                $p = parse_url($rawMyfile, PHP_URL_PATH);
+                if ($p) {
+                    $rawPath = ltrim(urldecode($p), '/');
+                }
+            }
+        }
+
+        foreach ($keys as $key) {
+            $this->delete($key);
+        }
+
+        if ($rawPath !== null && str_contains($rawPath, '//') && $this->usesCloud()) {
+            try {
+                $this->disk()->delete($rawPath);
+            } catch (\Throwable $e) {
+                Log::warning('CrmDurableStorage raw double-slash delete attempt', [
+                    'path' => $rawPath,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
     }
@@ -356,13 +581,13 @@ class CrmDurableStorage
 
     /**
      * @param  array<string, string>  $headers
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
      */
-    public function downloadResponse(string $relativePath, string $filename, array $headers = [], bool $asAttachment = true)
+    public function downloadResponse(string $relativePath, string $filename, array $headers = [], bool $asAttachment = true, bool $forceLocal = false)
     {
         $path = $this->normalize($relativePath);
 
-        if ($this->cloudExists($path) && $this->usesCloud()) {
+        if (! $forceLocal && $this->cloudExists($path) && $this->usesCloud()) {
             try {
                 return $asAttachment
                     ? $this->disk()->download($path, $filename, $headers)
@@ -388,6 +613,17 @@ class CrmDurableStorage
         }
 
         abort(404, 'File not found.');
+    }
+
+    /**
+     * Serves directly from the local mirror without making an S3 network call.
+     *
+     * @param  array<string, string>  $headers
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function localResponse(string $relativePath, string $filename, array $headers = [], bool $asAttachment = false)
+    {
+        return $this->downloadResponse($relativePath, $filename, $headers, $asAttachment, true);
     }
 
     public function promotePathToCloud(?string $relativePath): bool

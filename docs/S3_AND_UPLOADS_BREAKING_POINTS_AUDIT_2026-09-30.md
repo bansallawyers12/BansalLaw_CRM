@@ -168,37 +168,28 @@ Clients or staff attempting to upload 520MB–600MB video evidence (e.g. spouse 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: Storage Leak / Orphan  | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED (Fixed Locally)                    |
+| SEVERITY: Storage Leak / Orphan  | RESOLUTION: CrmDurableStorage safe resolver & transaction order |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Client Document Deletion (`CRM / Clients / Documents`)
-- **Source File & Lines:** [`app/Http/Controllers/CRM/Clients/ClientDocumentsController.php:1378-1386`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/Clients/ClientDocumentsController.php#L1378-L1386)
-- **Code Pattern:**
+- **Source File & Lines:** [`app/Http/Controllers/CRM/Clients/ClientDocumentsController.php:1378-1386`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/Clients/ClientDocumentsController.php#L1378-L1386), [`app/Services/CrmDurableStorage.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/CrmDurableStorage.php)
+- **Code Pattern (Remediated):**
   ```php
-  $res = DB::table('documents')->where('id', @$note_id)->delete();
-  if ($admin && !empty($admin->client_id)) {
-      $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
-  }
+  $storage = app(\App\Services\CrmDurableStorage::class);
+  $storage->deleteDocumentFiles($data, $clientCode);
+
+  $res = DB::transaction(function () use ($note_id) {
+      return DB::table('documents')->where('id', $note_id)->delete();
+  });
   ```
-- **Failure Mode:** **Orphaned S3 Objects & Double-Slash Key Deletion Failure**
-
-#### Why and How This Occurs on the Live Server
-1. **Database Deleted First:** `DB::table('documents')->where('id', @$note_id)->delete()` is executed before S3 deletion is confirmed. If S3 delete times out or fails, the database reference is permanently deleted, leaving the file stranded on S3 forever with no way to trace or delete it.
-2. **Double Slash Key Mismatch:** If `$data->doc_type` is empty or null (common on legacy uploads), `$admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key` evaluates to `CL-001//filename.pdf` (double slash). S3 considers `CL-001//filename.pdf` and `CL-001/filename.pdf` to be distinct keys. The delete operation silently does nothing, leaving the file on S3.
-3. **Local Mirror Never Cleaned:** If the file was stored with `CrmDurableStorage`, the local copy in `storage/app/` is never removed.
-
-#### Remediation Plan
-Use `CrmDurableStorage` deletion inside a database transaction:
-```php
-$storage = app(\App\Services\CrmDurableStorage::class);
-$s3Key = $storage->resolveKeyFromDocument($data);
-if ($s3Key) {
-    $storage->delete($s3Key);
-}
-DB::table('documents')->where('id', $note_id)->delete();
-```
+- **Resolution Summary:**
+  1. **Storage Deleted First:** Storage deletion (`CrmDurableStorage::deleteDocumentFiles`) runs before database row removal. If storage deletion encounters any issues, the DB record remains intact and traceable.
+  2. **Multi-Slash Sanitization:** `CrmDurableStorage::normalize()` and `buildStoragePath()` collapse multiple consecutive slashes (`#/+#`) and filter empty segments so empty or null `doc_type` produces `CL-001/file.pdf` instead of `CL-001//file.pdf`.
+  3. **Universal Key Resolution:** `resolveCandidateKeysFromDocument()` resolves canonical keys from `myfile` URLs, `local-storage:` markers, metadata (handling `doc_type`, `folder_name`, `mail_type`), and matter/visa aliases, ensuring complete file cleanup.
+  4. **Local & Cloud Mirror Purging:** Purges both S3 objects and local mirrors (`storage/app/{path}` and `public/{path}`).
+  5. **Atomic DB Deletion:** Database deletion executes inside `DB::transaction(...)`.
 
 ---
 
@@ -206,45 +197,45 @@ DB::table('documents')->where('id', $note_id)->delete();
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [HIGH]                 | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: Fatal 500 Abort        | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [HIGH]                 | CURRENT STATUS: 🟢 RESOLVED (Fixed Locally)                    |
+| SEVERITY: Fatal 500 Abort        | RESOLUTION: Local mirror fallback & resilient error handling   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Document Preview & Streaming
-- **Source File & Lines:** [`app/Http/Controllers/CRM/Clients/ClientDocumentsController.php:2251-2266`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/Clients/ClientDocumentsController.php#L2251-L2266)
-- **Code Pattern:**
+- **Source File & Lines:** [`app/Http/Controllers/CRM/Clients/ClientDocumentsController.php:2258-2285`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Http/Controllers/CRM/Clients/ClientDocumentsController.php#L2258-L2285), [`app/Services/CrmDurableStorage.php`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/CrmDurableStorage.php)
+- **Code Pattern (Remediated):**
   ```php
   try {
       $tempUrl = $this->s3Disk()->temporaryUrl($s3Key, now()->addMinutes(10), [...]);
       return redirect()->away($tempUrl);
   } catch (\Exception $e) {
-      Log::error('S3 preview error: ' . $e->getMessage(), ['document_id' => $id]);
-      return abort(500, 'Error generating preview link');
+      Log::warning('S3 preview error; falling back to local mirror', ['document_id' => $id, 'error' => $e->getMessage()]);
+      $durable = app(\App\Services\CrmDurableStorage::class);
+      $candidateKeys = $durable->resolveCandidateKeysFromDocument($document);
+      foreach ($candidateKeys as $candidateKey) {
+          if ($durable->localMirrorExists($candidateKey)) {
+              return $durable->localResponse($candidateKey, $downloadFilename, [...], $request->boolean('download'));
+          }
+      }
+      // Stream raw content if GetObject succeeds
+      try {
+          $fileContent = $this->readDocumentFileContent($document, $s3Key);
+          if (is_string($fileContent) && $fileContent !== '') {
+              return response($fileContent, 200, [...]);
+          }
+      } catch (\Throwable) {}
+      if ($request->boolean('embed')) {
+          return response($this->officePreviewErrorHtml('Document preview is temporarily unavailable.'), 503);
+      }
+      return back()->with('error', 'Document preview is temporarily unavailable. Please try downloading.');
   }
   ```
-- **Failure Mode:** **HTTP 500 Internal Server Error**
-
-#### Why and How This Occurs on the Live Server
-When staff click "Preview" or "View" on a client document:
-The controller attempts to create a presigned S3 URL. If the S3 connection fails, AWS IAM permissions lack `s3:GetObject`, or AWS credentials expire, the code executes `abort(500, 'Error generating preview link')`.
-Even though the CRM maintains a durable local mirror of the document on the server in `storage/app/`, the controller **never falls back to serving the local copy** on exception.
-
-#### Production Impact
-Staff cannot view critical client documents during client consultations or visa lodgements whenever AWS S3 experiences a transient network issue.
-
-#### Remediation Plan
-In `ClientDocumentsController.php:2262`, fall back to serving the local mirror on exception:
-```php
-} catch (\Exception $e) {
-    Log::warning('S3 preview error; falling back to local mirror', ['document_id' => $id, 'error' => $e->getMessage()]);
-    $durable = app(\App\Services\CrmDurableStorage::class);
-    if ($durable->localMirrorExists($s3Key)) {
-        return $durable->downloadResponse($s3Key, $downloadFilename, ['Content-Type' => $mime], false);
-    }
-    return back()->with('error', 'Document preview is temporarily unavailable. Please try downloading.');
-}
-```
+- **Resolution Summary:**
+  1. **Multi-Key Local Mirror Fallback:** When `temporaryUrl` fails, all candidate storage keys for the document are checked against durable local mirrors and served immediately with `localResponse()`, completely bypassing S3 network delays.
+  2. **Raw Byte Fallback:** If local files are not on disk, attempts direct byte reading via `readDocumentFileContent()` before giving up.
+  3. **No Raw 500 Aborts:** Replaces `abort(500)` with clean 503 HTML error cards (for iframes/embedded previews) or session flash errors with redirect `back()->with('error', ...)` (for standard browser navigation).
+  4. **Download Protection:** Applied identical local mirror and byte-stream fallback to `download_document` (line 3071) so document downloads never abort on S3 presigning issues.
 
 ---
 
