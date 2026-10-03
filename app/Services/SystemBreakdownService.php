@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\SystemBreakdownLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -13,6 +15,47 @@ use Throwable;
 
 class SystemBreakdownService
 {
+    /**
+     * Ensure the system_breakdown_logs table exists on PostgreSQL/MySQL.
+     * Auto-creates the table on the fly if migrations have not executed yet.
+     */
+    public static function ensureTableExists(): bool
+    {
+        try {
+            if (!Schema::hasTable('system_breakdown_logs')) {
+                Schema::create('system_breakdown_logs', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('error_hash', 64)->index();
+                    $table->string('exception_class', 255)->nullable()->index();
+                    $table->text('message');
+                    $table->text('file')->nullable();
+                    $table->integer('line')->nullable();
+                    $table->text('url')->nullable();
+                    $table->string('http_method', 10)->nullable();
+                    $table->string('status_code', 10)->nullable()->default('500');
+                    $table->unsignedBigInteger('user_id')->nullable()->index();
+                    $table->string('user_name', 191)->nullable();
+                    $table->string('user_email', 191)->nullable()->index();
+                    $table->string('user_role', 100)->nullable();
+                    $table->string('ip_address', 45)->nullable();
+                    $table->text('user_agent')->nullable();
+                    $table->json('request_payload')->nullable();
+                    $table->json('request_headers')->nullable();
+                    $table->mediumText('stack_trace')->nullable();
+                    $table->integer('occurrence_count')->default(1);
+                    $table->string('status', 20)->default('open')->index();
+                    $table->text('resolution_notes')->nullable();
+                    $table->timestamp('resolved_at')->nullable();
+                    $table->timestamp('first_seen_at')->nullable()->useCurrent();
+                    $table->timestamp('last_seen_at')->nullable()->useCurrent();
+                    $table->timestamps();
+                });
+            }
+            return true;
+        } catch (Throwable $schemaEx) {
+            return false;
+        }
+    }
     /**
      * Capture and record any system exception.
      */
@@ -162,25 +205,38 @@ class SystemBreakdownService
      */
     public function getStats(): array
     {
-        $now = Carbon::now('Australia/Melbourne');
-        $todayStart = $now->copy()->startOfDay();
+        self::ensureTableExists();
 
-        $totalOpen = SystemBreakdownLog::where('status', 'open')->count();
-        $totalInvestigating = SystemBreakdownLog::where('status', 'investigating')->count();
-        $totalResolved = SystemBreakdownLog::where('status', 'resolved')->count();
-        $totalErrors = SystemBreakdownLog::count();
+        try {
+            $now = Carbon::now('Australia/Melbourne');
+            $todayStart = $now->copy()->startOfDay();
 
-        $todayErrors = SystemBreakdownLog::where('last_seen_at', '>=', $todayStart)->sum('occurrence_count');
-        $uniqueUsers = SystemBreakdownLog::whereNotNull('user_email')->distinct('user_email')->count('user_email');
+            $totalOpen = SystemBreakdownLog::where('status', 'open')->count();
+            $totalInvestigating = SystemBreakdownLog::where('status', 'investigating')->count();
+            $totalResolved = SystemBreakdownLog::where('status', 'resolved')->count();
+            $totalErrors = SystemBreakdownLog::count();
 
-        return [
-            'total_open' => $totalOpen,
-            'total_investigating' => $totalInvestigating,
-            'total_resolved' => $totalResolved,
-            'total_errors' => $totalErrors,
-            'today_occurrences' => $todayErrors ?: 0,
-            'unique_users' => $uniqueUsers,
-        ];
+            $todayErrors = SystemBreakdownLog::where('last_seen_at', '>=', $todayStart)->sum('occurrence_count');
+            $uniqueUsers = SystemBreakdownLog::whereNotNull('user_email')->distinct('user_email')->count('user_email');
+
+            return [
+                'total_open' => $totalOpen,
+                'total_investigating' => $totalInvestigating,
+                'total_resolved' => $totalResolved,
+                'total_errors' => $totalErrors,
+                'today_occurrences' => $todayErrors ?: 0,
+                'unique_users' => $uniqueUsers,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'total_open' => 0,
+                'total_investigating' => 0,
+                'total_resolved' => 0,
+                'total_errors' => 0,
+                'today_occurrences' => 0,
+                'unique_users' => 0,
+            ];
+        }
     }
 
     /**
@@ -188,42 +244,48 @@ class SystemBreakdownService
      */
     public function getFilteredErrors(Request $request)
     {
-        $query = SystemBreakdownLog::query();
+        self::ensureTableExists();
 
-        // Status filter
-        $status = $request->input('status', 'open');
-        if ($status === 'open') {
-            $query->whereIn('status', ['open', 'investigating']);
-        } elseif ($status === 'resolved') {
-            $query->where('status', 'resolved');
-        } elseif ($status !== 'all') {
-            $query->where('status', $status);
+        try {
+            $query = SystemBreakdownLog::query();
+
+            // Status filter
+            $status = $request->input('status', 'open');
+            if ($status === 'open') {
+                $query->whereIn('status', ['open', 'investigating']);
+            } elseif ($status === 'resolved') {
+                $query->where('status', 'resolved');
+            } elseif ($status !== 'all') {
+                $query->where('status', $status);
+            }
+
+            // Search query
+            if ($request->filled('search')) {
+                $query->search($request->input('search'));
+            }
+
+            // Exception type filter
+            if ($request->filled('type')) {
+                $query->where('exception_class', 'like', '%' . $request->input('type') . '%');
+            }
+
+            // User filter
+            if ($request->filled('user')) {
+                $query->where('user_email', 'like', '%' . $request->input('user') . '%');
+            }
+
+            // Date range
+            $timeframe = $request->input('timeframe', 'all');
+            if ($timeframe === 'today') {
+                $query->where('last_seen_at', '>=', Carbon::now('Australia/Melbourne')->startOfDay());
+            } elseif ($timeframe === '7days') {
+                $query->where('last_seen_at', '>=', Carbon::now('Australia/Melbourne')->subDays(7));
+            }
+
+            return $query->orderBy('last_seen_at', 'desc')->paginate(20)->withQueryString();
+        } catch (Throwable $e) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
         }
-
-        // Search query
-        if ($request->filled('search')) {
-            $query->search($request->input('search'));
-        }
-
-        // Exception type filter
-        if ($request->filled('type')) {
-            $query->where('exception_class', 'like', '%' . $request->input('type') . '%');
-        }
-
-        // User filter
-        if ($request->filled('user')) {
-            $query->where('user_email', 'like', '%' . $request->input('user') . '%');
-        }
-
-        // Date range
-        $timeframe = $request->input('timeframe', 'all');
-        if ($timeframe === 'today') {
-            $query->where('last_seen_at', '>=', Carbon::now('Australia/Melbourne')->startOfDay());
-        } elseif ($timeframe === '7days') {
-            $query->where('last_seen_at', '>=', Carbon::now('Australia/Melbourne')->subDays(7));
-        }
-
-        return $query->orderBy('last_seen_at', 'desc')->paginate(20)->withQueryString();
     }
 
     /**
@@ -239,7 +301,16 @@ class SystemBreakdownService
             return [];
         }
 
-        $allFiles = File::allFiles($logDir);
+        $allFiles = [];
+        try {
+            $allFiles = File::allFiles($logDir);
+        } catch (Throwable $fileEx) {
+            try {
+                $allFiles = File::files($logDir);
+            } catch (Throwable $fallbackEx) {
+                $allFiles = [];
+            }
+        }
         $result = [];
 
         foreach ($allFiles as $file) {

@@ -62,6 +62,29 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        // For system-errors monitor page: Show full diagnostic error even if APP_DEBUG=false
+        if ($request->is('system-errors*')) {
+            return response()->make(
+                '<div style="background:#0b0f19; color:#f8fafc; font-family:sans-serif; padding:32px; min-height:100vh; line-height:1.6;">' .
+                '<h2 style="color:#ef4444; font-size:22px; margin-bottom:12px;">⚠️ System Breakdown Monitor Diagnostic Error</h2>' .
+                '<p style="color:#94a3b8; margin-bottom:16px;">Error intercepted on <code>/system-errors</code>:</p>' .
+                '<div style="background:#1e293b; border-left:4px solid #ef4444; padding:16px; border-radius:6px; margin-bottom:20px;">' .
+                '<p style="font-size:16px; color:#fca5a5; font-weight:bold;">' . htmlspecialchars($exception->getMessage()) . '</p>' .
+                '<p style="font-family:monospace; color:#94a3b8; font-size:12px; margin-top:6px;">' . htmlspecialchars($exception->getFile()) . ':' . $exception->getLine() . '</p>' .
+                '</div>' .
+                '<h3 style="color:#93c5fd; font-size:15px; margin-bottom:8px;">Stack Trace:</h3>' .
+                '<pre style="background:#050811; padding:16px; border-radius:8px; overflow:auto; font-size:11.5px; line-height:1.6; color:#cbd5e1; border:1px solid #1e293b; max-height:400px;">' .
+                htmlspecialchars($exception->getTraceAsString()) .
+                '</pre>' .
+                '<div style="margin-top:20px; display:flex; gap:12px;">' .
+                '<a href="' . url('/system-errors?tab=logs') . '" style="background:#3b82f6; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none; font-weight:bold;">📂 View Log Files Tab</a>' .
+                '<a href="' . url('/system-errors') . '" style="background:#334155; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none;">🔄 Retry</a>' .
+                '</div>' .
+                '</div>',
+                500
+            );
+        }
+
         if ($exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException) {
             if ($request->expectsJson() || $request->ajax() || str_contains($request->path(), 'documents') || str_contains($request->path(), 'upload')) {
                 return response()->json([

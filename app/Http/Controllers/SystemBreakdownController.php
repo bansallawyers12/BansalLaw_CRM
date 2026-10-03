@@ -25,48 +25,73 @@ class SystemBreakdownController extends Controller
      */
     public function index(Request $request)
     {
-        $stats = $this->service->getStats();
-        $errors = $this->service->getFilteredErrors($request);
-        $activeTab = $request->input('tab', 'db'); // 'db' or 'logs'
+        try {
+            SystemBreakdownService::ensureTableExists();
 
-        // Log files explorer
-        $allLogFiles = $this->service->getAllLogFiles();
-        $selectedLogFile = $request->input('log_file');
+            $stats = $this->service->getStats();
+            $errors = $this->service->getFilteredErrors($request);
+            $activeTab = $request->input('tab', 'db'); // 'db' or 'logs'
 
-        if (!$selectedLogFile || !isset($allLogFiles[$selectedLogFile])) {
-            $selectedLogFile = array_key_first($allLogFiles) ?: '';
-        }
+            // Log files explorer
+            $allLogFiles = $this->service->getAllLogFiles();
+            $selectedLogFile = $request->input('log_file');
 
-        $logLevel = $request->input('log_level', 'all');
-        $logSearch = $request->input('log_search');
-        $viewRaw = (bool) $request->input('view_raw', false);
-
-        $selectedFileInfo = $selectedLogFile && isset($allLogFiles[$selectedLogFile]) ? $allLogFiles[$selectedLogFile] : null;
-
-        $logEntries = [];
-        $rawLogContent = '';
-
-        if ($selectedLogFile) {
-            if ($viewRaw) {
-                $rawLogContent = $this->service->getRawLogContent($selectedLogFile);
-            } else {
-                $logEntries = $this->service->getLogEntriesForFile($selectedLogFile, 150, $logLevel, $logSearch);
+            if (!$selectedLogFile || !isset($allLogFiles[$selectedLogFile])) {
+                $selectedLogFile = array_key_first($allLogFiles) ?: '';
             }
-        }
 
-        return view('system_breakdown.index', compact(
-            'stats',
-            'errors',
-            'activeTab',
-            'allLogFiles',
-            'selectedLogFile',
-            'selectedFileInfo',
-            'logEntries',
-            'rawLogContent',
-            'viewRaw',
-            'logLevel',
-            'logSearch'
-        ));
+            $logLevel = $request->input('log_level', 'all');
+            $logSearch = $request->input('log_search');
+            $viewRaw = (bool) $request->input('view_raw', false);
+
+            $selectedFileInfo = $selectedLogFile && isset($allLogFiles[$selectedLogFile]) ? $allLogFiles[$selectedLogFile] : null;
+
+            $logEntries = [];
+            $rawLogContent = '';
+
+            if ($selectedLogFile) {
+                if ($viewRaw) {
+                    $rawLogContent = $this->service->getRawLogContent($selectedLogFile);
+                } else {
+                    $logEntries = $this->service->getLogEntriesForFile($selectedLogFile, 150, $logLevel, $logSearch);
+                }
+            }
+
+            return view('system_breakdown.index', compact(
+                'stats',
+                'errors',
+                'activeTab',
+                'allLogFiles',
+                'selectedLogFile',
+                'selectedFileInfo',
+                'logEntries',
+                'rawLogContent',
+                'viewRaw',
+                'logLevel',
+                'logSearch'
+            ));
+        } catch (\Throwable $e) {
+            // Diagnostic fallback: show the exact error message and trace rather than 500 generic page
+            return response()->make(
+                '<div style="background:#0b0f19; color:#f8fafc; font-family:sans-serif; padding:32px; min-height:100vh; line-height:1.6;">' .
+                '<h2 style="color:#ef4444; font-size:22px; margin-bottom:12px;">⚠️ System Breakdown Monitor Diagnostic Error</h2>' .
+                '<p style="color:#94a3b8; margin-bottom:16px;">The dashboard encountered an error while booting. Full diagnostic details are shown below:</p>' .
+                '<div style="background:#1e293b; border-left:4px solid #ef4444; padding:16px; border-radius:6px; margin-bottom:20px;">' .
+                '<p style="font-size:16px; color:#fca5a5; font-weight:bold;">' . htmlspecialchars($e->getMessage()) . '</p>' .
+                '<p style="font-family:monospace; color:#94a3b8; font-size:12px; margin-top:6px;">' . htmlspecialchars($e->getFile()) . ':' . $e->getLine() . '</p>' .
+                '</div>' .
+                '<h3 style="color:#93c5fd; font-size:15px; margin-bottom:8px;">Stack Trace:</h3>' .
+                '<pre style="background:#050811; padding:16px; border-radius:8px; overflow:auto; font-size:11.5px; line-height:1.6; color:#cbd5e1; border:1px solid #1e293b; max-height:400px;">' .
+                htmlspecialchars($e->getTraceAsString()) .
+                '</pre>' .
+                '<div style="margin-top:20px; display:flex; gap:12px;">' .
+                '<a href="' . url('/system-errors?tab=logs') . '" style="background:#3b82f6; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none; font-weight:bold;">📂 View Log Files Tab</a>' .
+                '<a href="' . url('/system-errors') . '" style="background:#334155; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none;">🔄 Retry Dashboard</a>' .
+                '</div>' .
+                '</div>',
+                200
+            );
+        }
     }
 
     /**
