@@ -319,7 +319,20 @@ require __DIR__ . '/documents.php';
 // Public email verification route loaded from clients.php
 
 // Public email verification route - no authentication required
-Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
+/*--------------------------------------------------
+| SECTION: System Error & Breakdown Monitor (Protected - Login Required)
+|--------------------------------------------------*/
+Route::middleware(['auth:admin'])->prefix('system-errors')->name('system_errors.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SystemBreakdownController::class, 'index'])->name('index');
+    Route::get('/api/stats', [\App\Http\Controllers\SystemBreakdownController::class, 'apiStats'])->name('stats');
+    Route::get('/details/{id}', [\App\Http\Controllers\SystemBreakdownController::class, 'show'])->name('show');
+    Route::post('/status/{id}', [\App\Http\Controllers\SystemBreakdownController::class, 'updateStatus'])->name('update_status');
+    Route::post('/clear', [\App\Http\Controllers\SystemBreakdownController::class, 'clear'])->name('clear');
+    Route::get('/simulate-test-error', [\App\Http\Controllers\SystemBreakdownController::class, 'simulateError'])->name('simulate');
+});
+
+Route::redirect('/system-breakdowns', '/system-errors');
+Route::redirect('/crm/system-errors', '/system-errors');
 
 // Unmatched web URLs → custom 404 page (resources/views/errors/404.blade.php)
 Route::fallback(function () {

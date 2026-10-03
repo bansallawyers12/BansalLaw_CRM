@@ -44,6 +44,12 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
+        try {
+            \App\Services\SystemBreakdownService::recordException($exception);
+        } catch (\Throwable $loggingError) {
+            // Absorb any logging error to ensure normal reporting is unaffected
+        }
+
         parent::report($exception);
     }
 
