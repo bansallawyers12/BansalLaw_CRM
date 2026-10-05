@@ -5030,11 +5030,15 @@ function crmInitOutlookEmailsInterface() {
         const items = [];
 
         if (email.msg_file_url) {
+            let msgPreviewUrl = email.msg_preview_url || null;
+            if (!msgPreviewUrl && email.uploaded_doc_id) {
+                msgPreviewUrl = baseUrl + '/documents/preview/' + encodeURIComponent(email.uploaded_doc_id);
+            }
             items.push({
                 name: 'Original email.msg',
                 size: null,
                 downloadUrl: email.msg_file_url,
-                previewUrl: null,
+                previewUrl: msgPreviewUrl,
                 icon: 'fa-envelope'
             });
         }
@@ -5544,6 +5548,44 @@ function crmInitOutlookEmailsInterface() {
         return html;
     }
 
+    function emailUserAttachmentsPending(email) {
+        if (!email || !email.id || email._attachmentsLoaded) {
+            return false;
+        }
+
+        return Number(email.attachments_count || 0) > 0 && getUserEmailAttachments(email).length === 0;
+    }
+
+    function startEmailAttachmentsFetch(email, listElement) {
+        if (!emailUserAttachmentsPending(email) || email._attachmentsFetchStarted) {
+            return;
+        }
+
+        email._attachmentsFetchStarted = true;
+        fetch(baseUrl + '/email-logs/' + encodeURIComponent(email.id) + '/attachments', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data && data.success) {
+                    if (Array.isArray(data.attachments)) {
+                        email.attachments = data.attachments;
+                    }
+                    if (data.msg_preview_url) {
+                        email.msg_preview_url = data.msg_preview_url;
+                    }
+                }
+            })
+            .catch(function () { /* keep stored copies visible */ })
+            .finally(function () {
+                email._attachmentsLoaded = true;
+                if (selectedEmailId === email.id) {
+                    showEmail(email, listElement);
+                }
+            });
+    }
+
     function renderReadingPaneAttachments(email) {
         const items = collectEmailAttachmentItems(email);
         if (!items.length) {
@@ -5898,9 +5940,24 @@ function crmInitOutlookEmailsInterface() {
 
         updateGmailReadingChrome(email);
 
-        // Render Attachments if any exist
+        // Render Attachments if any exist (synced inbox lists load file rows on demand).
         const attachmentsContainer = document.getElementById('attachmentsContainer');
-        const attachmentHtml = renderReadingPaneAttachments(email);
+        const userAttachmentsPending = emailUserAttachmentsPending(email);
+        if (userAttachmentsPending) {
+            startEmailAttachmentsFetch(email, listElement);
+        }
+
+        let attachmentHtml = renderReadingPaneAttachments(email);
+        if (userAttachmentsPending) {
+            const loadingRow = '<div class="email-att-footer__loading text-muted" style="padding:8px 12px;font-size:13px;">'
+                + '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Loading attachments…'
+                + '</div>';
+            if (attachmentHtml) {
+                attachmentHtml = attachmentHtml.replace(/<\/div>\s*$/, loadingRow + '</div>');
+            } else {
+                attachmentHtml = '<div class="email-att-footer">' + loadingRow + '</div>';
+            }
+        }
 
         if (attachmentHtml) {
             attachmentsContainer.hidden = false;

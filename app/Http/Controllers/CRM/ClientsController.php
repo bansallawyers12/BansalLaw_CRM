@@ -6287,6 +6287,9 @@ class ClientsController extends Controller
                 $email->msg_file_url = ! empty($email->uploaded_doc_id)
                     ? $this->resolveEmailMsgDownloadUrl($email)
                     : '';
+                $email->msg_preview_url = ! empty($email->uploaded_doc_id)
+                    ? $this->emailDocumentPreviewUrl((int) $email->uploaded_doc_id, download: false)
+                    : '';
                 $email->pdf_file_url = ! empty($email->pdf_doc_id)
                     ? $this->resolveEmailPdfPreviewUrl($email, false)
                     : '';

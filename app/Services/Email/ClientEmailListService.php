@@ -356,6 +356,39 @@ class ClientEmailListService
         return url('/documents/preview/' . $docId) . '?download=1';
     }
 
+    public function resolveMsgPreviewUrl(EmailLog $email): string
+    {
+        $docId = (int) ($email->uploaded_doc_id ?? 0);
+        if ($docId <= 0) {
+            return '';
+        }
+
+        return url('/documents/preview/' . $docId);
+    }
+
+    /**
+     * @return array{success: bool, attachments: list<array<string, mixed>>, msg_preview_url: string}
+     */
+    public function attachmentsPayload(EmailLog $email): array
+    {
+        $attachments = EmailLogAttachment::query()
+            ->where('email_log_id', $email->id)
+            ->where(function ($query) {
+                $query->where('is_inline', false)->orWhereNull('is_inline');
+            })
+            ->orderBy('id')
+            ->get();
+
+        return [
+            'success' => true,
+            'attachments' => $attachments
+                ->map(fn (EmailLogAttachment $attachment) => $this->formatAttachment($attachment))
+                ->values()
+                ->all(),
+            'msg_preview_url' => $this->resolveMsgPreviewUrl($email),
+        ];
+    }
+
     public function resolvePdfPreviewUrl(EmailLog $email): string
     {
         if (empty($email->pdf_doc_id)) {

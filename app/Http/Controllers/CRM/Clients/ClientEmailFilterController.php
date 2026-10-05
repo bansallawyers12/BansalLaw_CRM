@@ -8,6 +8,7 @@ use App\Models\ClientMatter;
 use App\Models\EmailLog;
 use App\Models\Staff;
 use App\Services\Email\ClientEmailListService;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -120,21 +121,24 @@ class ClientEmailFilterController extends Controller
             return response()->json(['success' => false, 'error' => 'Email not found'], 404);
         }
 
-        $clientId = (int) ($email->client_id ?? 0);
-        if ($clientId <= 0 && ! empty($email->client_matter_id)) {
-            $clientId = (int) ClientMatter::where('id', $email->client_matter_id)->value('client_id');
-        }
-
-        if ($clientId > 0) {
-            $this->ensureCrmRecordAccess($clientId);
-        } else {
-            $staff = Auth::guard('admin')->user();
-            if (! ($staff instanceof Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
-                return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
-            }
-        }
+        $this->ensureEmailLogAccess($email);
 
         return response()->json($this->lists->bodyPayload($email));
+    }
+
+    /**
+     * Deferred attachments for synced inbox list rows (lean list omits attachment payloads).
+     */
+    public function attachments(int $id): JsonResponse
+    {
+        $email = EmailLog::query()->find($id, ['id', 'client_id', 'client_matter_id', 'uploaded_doc_id']);
+        if (! $email) {
+            return response()->json(['success' => false, 'error' => 'Email not found'], 404);
+        }
+
+        $this->ensureEmailLogAccess($email);
+
+        return response()->json($this->lists->attachmentsPayload($email));
     }
 
     /**
@@ -151,19 +155,7 @@ class ClientEmailFilterController extends Controller
             return response()->json(['success' => false, 'error' => 'Email not found'], 404);
         }
 
-        $clientId = (int) ($email->client_id ?? 0);
-        if ($clientId <= 0 && ! empty($email->client_matter_id)) {
-            $clientId = (int) ClientMatter::where('id', $email->client_matter_id)->value('client_id');
-        }
-
-        if ($clientId > 0) {
-            $this->ensureCrmRecordAccess($clientId);
-        } else {
-            $staff = Auth::guard('admin')->user();
-            if (! ($staff instanceof Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
-                return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
-            }
-        }
+        $this->ensureEmailLogAccess($email);
 
         $direction = (string) $request->query('direction', 'all');
         $payload = $this->lists->listChainForEmail($email, $direction);
@@ -179,6 +171,25 @@ class ClientEmailFilterController extends Controller
         $clientId = (int) ClientMatter::where('id', $matterId)->value('client_id');
         if ($clientId > 0) {
             $this->ensureCrmRecordAccess($clientId);
+        }
+    }
+
+    private function ensureEmailLogAccess(EmailLog $email): void
+    {
+        $clientId = (int) ($email->client_id ?? 0);
+        if ($clientId <= 0 && ! empty($email->client_matter_id)) {
+            $clientId = (int) ClientMatter::where('id', $email->client_matter_id)->value('client_id');
+        }
+
+        if ($clientId > 0) {
+            $this->ensureCrmRecordAccess($clientId);
+
+            return;
+        }
+
+        $staff = Auth::guard('admin')->user();
+        if (! ($staff instanceof Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
+            throw new HttpResponseException(response()->json(['success' => false, 'error' => 'Unauthorized'], 403));
         }
     }
 
