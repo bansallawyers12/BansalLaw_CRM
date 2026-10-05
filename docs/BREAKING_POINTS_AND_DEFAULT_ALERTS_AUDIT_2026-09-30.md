@@ -372,7 +372,7 @@ Administrators could not inspect detailed payload snapshots of user audit logs. 
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: SQL Column Exception   | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -396,13 +396,13 @@ Remove `'slot_overwrite_hidden'` from the `$fillable` array in `app/Models/Booki
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED                                    |
 | SEVERITY: Fatal TypeError        | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 - **Affected Module:** Client Accounting & Receipts Tab
-- **Source File & Lines:** [`app/Services/ClientAccountTabService.php:160-195`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/ClientAccountTabService.php#L160-L195)
+- **Source File & Lines:** [`app/Services/ClientAccountTabService.php:160-248`](file:///c:/xampp_old/htdocs/crm_bansal/BansalLaw_CRM/app/Services/ClientAccountTabService.php#L160-L248)
 - **Failure Mode:** **Fatal TypeError in PHP 8.3**
   ```text
   ClientAccountTabService::filterClientOptions(): Return value must be of type Illuminate\Support\Collection, __PHP_Incomplete_Class returned

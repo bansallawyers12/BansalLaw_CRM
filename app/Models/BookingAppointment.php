@@ -64,7 +64,6 @@ class BookingAppointment extends Model
         'last_synced_at',
         'sync_status',
         'sync_error',
-        'slot_overwrite_hidden',
         'user_id'
     ];
 

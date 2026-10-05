@@ -160,23 +160,19 @@ class ClientAccountTabService
      */
     public function filterClientOptions(): Collection
     {
-        $raw = Cache::remember('account_receipt_filter_clients_v2', $this->filterCacheTtl(), function () {
-            return DB::table('account_client_receipts as acr')
-                ->join('admins', 'admins.id', '=', 'acr.client_id')
-                ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
-                ->distinct()
-                ->orderBy('admins.first_name', 'asc')
-                ->get()
-                ->map(fn ($row) => [
-                    'client_id' => $row->client_id,
-                    'first_name' => $row->first_name,
-                    'last_name' => $row->last_name,
-                    'client_unique_id' => $row->client_unique_id,
-                ])
-                ->all();
-        });
+        $cacheKey = 'account_receipt_filter_clients_v3';
+        $raw = null;
 
-        if (! is_array($raw)) {
+        try {
+            $raw = Cache::get($cacheKey);
+        } catch (\Throwable) {
+            $this->forgetFilterCaches();
+        }
+
+        // Validate payload: must be a non-empty array whose elements are not __PHP_Incomplete_Class
+        $isValid = is_array($raw) && (empty($raw) || ! ($raw[0] instanceof \__PHP_Incomplete_Class));
+
+        if (! $isValid) {
             $this->forgetFilterCaches();
             $raw = DB::table('account_client_receipts as acr')
                 ->join('admins', 'admins.id', '=', 'acr.client_id')
@@ -191,6 +187,12 @@ class ClientAccountTabService
                     'client_unique_id' => $row->client_unique_id,
                 ])
                 ->all();
+
+            try {
+                Cache::put($cacheKey, $raw, $this->filterCacheTtl());
+            } catch (\Throwable) {
+                // Ignore cache write failure
+            }
         }
 
         return collect($raw)->map(fn ($item) => (object) (array) $item);
@@ -203,23 +205,19 @@ class ClientAccountTabService
      */
     public function filterMatterOptions(): Collection
     {
-        $raw = Cache::remember('account_receipt_filter_matters_v2', $this->filterCacheTtl(), function () {
-            return DB::table('account_client_receipts as acr')
-                ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
-                ->join('admins', 'admins.id', '=', 'acr.client_id')
-                ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
-                ->distinct()
-                ->orderBy('admins.client_id', 'asc')
-                ->get()
-                ->map(fn ($row) => [
-                    'client_matter_id' => $row->client_matter_id,
-                    'client_unique_matter_no' => $row->client_unique_matter_no,
-                    'client_unique_id' => $row->client_unique_id,
-                ])
-                ->all();
-        });
+        $cacheKey = 'account_receipt_filter_matters_v3';
+        $raw = null;
 
-        if (! is_array($raw)) {
+        try {
+            $raw = Cache::get($cacheKey);
+        } catch (\Throwable) {
+            $this->forgetFilterCaches();
+        }
+
+        // Validate payload: must be a non-empty array whose elements are not __PHP_Incomplete_Class
+        $isValid = is_array($raw) && (empty($raw) || ! ($raw[0] instanceof \__PHP_Incomplete_Class));
+
+        if (! $isValid) {
             $this->forgetFilterCaches();
             $raw = DB::table('account_client_receipts as acr')
                 ->join('client_matters', 'client_matters.id', '=', 'acr.client_matter_id')
@@ -234,6 +232,12 @@ class ClientAccountTabService
                     'client_unique_id' => $row->client_unique_id,
                 ])
                 ->all();
+
+            try {
+                Cache::put($cacheKey, $raw, $this->filterCacheTtl());
+            } catch (\Throwable) {
+                // Ignore cache write failure
+            }
         }
 
         return collect($raw)->map(fn ($item) => (object) (array) $item);
@@ -243,8 +247,10 @@ class ClientAccountTabService
     {
         Cache::forget('account_receipt_filter_clients_v1');
         Cache::forget('account_receipt_filter_clients_v2');
+        Cache::forget('account_receipt_filter_clients_v3');
         Cache::forget('account_receipt_filter_matters_v1');
         Cache::forget('account_receipt_filter_matters_v2');
+        Cache::forget('account_receipt_filter_matters_v3');
     }
 
     /**
