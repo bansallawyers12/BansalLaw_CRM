@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 
 class VerifyCsrfToken extends Middleware
@@ -38,8 +39,13 @@ class VerifyCsrfToken extends Middleware
      */
     public function handle($request, \Closure $next)
     {
-        if ($request->isMethod('POST') && empty($_POST) && empty($_FILES) && (int) ($request->server('CONTENT_LENGTH') ?? 0) > 0) {
-            throw new \Illuminate\Http\Exceptions\PostTooLargeException;
+        if ($request->isMethod('POST') && empty($_POST) && empty($_FILES)) {
+            $contentLength = (int) ($request->server('CONTENT_LENGTH') ?? 0);
+            $postMaxBytes = PersonalDocumentVideoUploadService::parseIniBytes((string) ini_get('post_max_size'));
+            // JSON/API bodies leave $_POST empty — only treat as post_max_size when payload actually exceeds PHP limit.
+            if ($contentLength > 0 && $postMaxBytes > 0 && $contentLength >= $postMaxBytes) {
+                throw new \Illuminate\Http\Exceptions\PostTooLargeException;
+            }
         }
 
         return parent::handle($request, $next);

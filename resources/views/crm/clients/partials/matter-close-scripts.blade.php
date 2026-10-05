@@ -104,11 +104,16 @@
             },
             body: JSON.stringify(payload)
         })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
+            .then(function (r) {
+                return r.json().then(function (data) {
+                    return { ok: r.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                var data = result.data || {};
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = origHtml;
-                if (data.status) {
+                if (result.ok && data.status) {
                     hideModal('#discontinue-matter-modal');
                     hideModal('#complete-matter-modal');
                     crmAlert(data.message || onSuccessMessage);
@@ -121,7 +126,12 @@
                         window.location.reload();
                     }
                 } else {
-                    crmAlert(data.message || 'Request failed.');
+                    var errMsg = data.message || 'Request failed.';
+                    if (typeof window.crmToast === 'function') {
+                        window.crmToast(errMsg, 'error');
+                    } else {
+                        crmAlert(errMsg);
+                    }
                 }
             })
             .catch(function () {

@@ -209,8 +209,11 @@
      */
     function inferAlertType(message) {
         var lower = String(message || '').toLowerCase();
+        if (/exceeds|post_max_size|upload limit|maximum upload|too large|payload too large|file size/.test(lower)) {
+            return 'error';
+        }
         if (/success|successfully|saved|updated|sent|copied|completed|created|uploaded|allocated|deleted/.test(lower) &&
-            !/fail|error|unable|could not|invalid/.test(lower)) {
+            !/fail|error|unable|could not|invalid|exceeds/.test(lower)) {
             return 'success';
         }
         if (/please |select |enter |fill |required|at least|must |missing|not found|not available|choose /.test(lower)) {
