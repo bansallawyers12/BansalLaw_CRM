@@ -1,4 +1,4 @@
-﻿<!-- Activity Feed (Timeline tab; single #activity-feed instance) -->
+<!-- Activity Feed (Timeline tab; single #activity-feed instance) -->
 <aside class="activity-feed activity-feed--simple" id="activity-feed">
     @php
         $_billingViewer = Auth::guard('admin')->user() ?? Auth::user();
@@ -43,7 +43,7 @@
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-clear" title="Clear fee lines and disbursements">Clear</button>
                         <button type="button" class="btn btn-sm btn-link activity-feed-billing-close" id="activity-feed-billing-close" title="Close billing">Done</button>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -182,7 +182,7 @@
             <div class="modal-content activity-feed-billing-statement-modal__content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="activity-feed-billing-statement-title">Billing statement — selected lines</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -248,7 +248,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

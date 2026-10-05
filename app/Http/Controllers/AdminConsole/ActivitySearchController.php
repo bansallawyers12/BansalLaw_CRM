@@ -120,4 +120,66 @@ class ActivitySearchController extends Controller
 
         return response()->json($clients);
     }
+
+    /**
+     * Get single activity log detail by ID for modal viewer
+     */
+    public function show(Request $request, $id = null)
+    {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: Only Super Admins can view activity details.',
+            ], 403);
+        }
+
+        $activityId = (int) ($id ?: $request->input('id'));
+        if (! $activityId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Activity ID is required.',
+            ], 400);
+        }
+
+        $activity = \App\Models\ActivitiesLog::query()
+            ->select(
+                'activities_logs.*',
+                'creator.first_name as creator_first_name',
+                'creator.last_name as creator_last_name',
+                'creator.email as creator_email',
+                'client.first_name as client_first_name',
+                'client.last_name as client_last_name',
+                'client.email as client_email'
+            )
+            ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
+            ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id')
+            ->where('activities_logs.id', $activityId)
+            ->first();
+
+        if (! $activity) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Activity not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'id' => $activity->id,
+                'subject' => $activity->subject ?? 'N/A',
+                'description' => $activity->description ?? '',
+                'activity_type' => $activity->activity_type ?? 'N/A',
+                'task_group' => $activity->task_group ?? null,
+                'task_status' => $activity->task_status,
+                'followup_date' => $activity->followup_date ? (string) $activity->followup_date : null,
+                'created_at' => $activity->created_at ? (string) $activity->created_at : null,
+                'creator' => trim(($activity->creator_first_name ?? '') . ' ' . ($activity->creator_last_name ?? '')),
+                'client' => trim(($activity->client_first_name ?? '') . ' ' . ($activity->client_last_name ?? '')),
+                'client_id' => $activity->client_id,
+            ],
+        ]);
+    }
 }
+

@@ -180,6 +180,7 @@ Route::post('/clients/timeline-billing-rates', [TimelineBillingController::class
 Route::post('/deleteactivitylog', [ClientsController::class, 'deleteactivitylog'])->name('clients.deleteactivitylog');
 Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->name('clients.notpickedcall');
 Route::post('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
+Route::get('/crm/activities/{id?}', [\App\Http\Controllers\AdminConsole\ActivitySearchController::class, 'show'])->name('crm.activities.show');
 
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');

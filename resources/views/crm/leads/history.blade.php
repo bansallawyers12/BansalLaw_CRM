@@ -383,7 +383,11 @@ jQuery(document).ready(function($){
 		}
 	});
 	$('.composermodel').on('click', function(){
-		$('#composermodel').modal('show');
+		if ($('#composermodel').length) {
+			$('#composermodel').modal('show');
+		} else {
+			$('#emailmodal').modal('show');
+		}
 	});
 
 });

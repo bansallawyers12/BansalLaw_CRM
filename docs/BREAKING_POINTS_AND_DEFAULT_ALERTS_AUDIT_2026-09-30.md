@@ -20,7 +20,7 @@ This master matrix provides an immediate operational overview of every identifie
 | **05** | 🟠 **HIGH** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local & Server** | Assignee & Task Management | 5 Dead AJAX endpoints (`/update_list_status`, etc.) | **Resolved**: Registered routes & implemented updateStatus, updatePriority, addComment, updateDescription, getDetail, and change_assignee. |
 | **06** | 🟠 **HIGH** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Public Booking Sync | cURL Error 77 (Hardcoded Windows SSL cert path) | **High**: Public appointments fail to sync to CRM on Linux server & local. |
 | **07** | 🟡 **MEDIUM** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local** | Client Detail Verification | Missing route `/clients/update-email-verified` | **Resolved**: Route registered in `routes/clients.php`, `ClientsController::updateEmailVerified` implemented, contact verification persisted, UI toggle added. |
-| **08** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Admin Activity Audit Search | Missing route `/crm/activities/{id}` | **Medium**: "View Details" modal fails with 404; activity payload inaccessible. |
+| **08** | 🟡 **MEDIUM** | 🟢 **RESOLVED / FIXED** | 🚨 **YES — Fixed on Local** | Admin Activity Audit Search | Missing route `/crm/activities/{id}` | **Resolved**: Route registered, `ActivitySearchController::show` implemented with Super Admin authorization, activity detail modal populated. |
 | **09** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Booking & Appointments Model | Model `$fillable` contains non-existent DB column | **Medium**: Direct mass assignment (`create($request->all())`) throws SQL error. |
 | **10** | 🟡 **MEDIUM** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Client Accounting & Receipts | Fatal `TypeError` (`__PHP_Incomplete_Class`) | **Medium**: Accounting tab crashes when cached Eloquent objects deserialize. |
 | **11** | 🔵 **LOW** | 🔴 **OPEN / UNRESOLVED** | 🚨 **YES — 100% on Production Server** | Accounting Navigation Guard | Missing `client_id` aborts with raw 403 Forbidden | **Low**: Abrupt error screen instead of friendly client selector redirect. |
@@ -341,8 +341,8 @@ Staff could not manually mark client contact details as verified. The checkbox r
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🔴 OPEN (Unresolved Bug)                       |
-| SEVERITY: HTTP 404 Not Found     | SERVER REPRODUCIBILITY: 🚨 YES - 100% Reproducible on Server   |
+| PRIORITY: [MEDIUM]               | CURRENT STATUS: 🟢 RESOLVED / FIXED                            |
+| SEVERITY: HTTP 404 Not Found     | SERVER REPRODUCIBILITY: 🚨 Fixed on Local                      |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -351,14 +351,20 @@ Staff could not manually mark client contact details as verified. The checkbox r
 - **Dead Endpoint:** `GET /crm/activities/{id}`
 - **Failure Mode:** **HTTP 404 Not Found**
 
-#### Why and How This Occurs on the Live Server
-The modal detail viewer executes `fetch('/crm/activities/' + id)`, but no route matches this URI in the application's route tables.
+#### Why and How This Occurred on the Live Server
+The modal detail viewer executed `fetch('/crm/activities/' + id)`, but no route matched this URI in the application's route tables, and `ActivitySearchController` lacked a `show()` method.
 
 #### Production Impact
-Administrators cannot inspect detailed payload snapshots of user audit logs. Clicking "View Details" produces a 404 error notification.
+Administrators could not inspect detailed payload snapshots of user audit logs. Clicking "View Details" produced a 404 error notification.
 
-#### Remediation Plan
-Add the endpoint in `routes/crm.php` pointing to `ActivitySearchController@show`.
+#### Resolution
+1. Added route `/adminconsole/system/activity-search/detail/{id?}` in `routes/adminconsole.php` and alias `/crm/activities/{id?}` in `routes/clients.php`.
+2. Implemented `ActivitySearchController::show(Request $request, $id = null)`:
+   - Validates Super Admin authorization.
+   - Retrieves full activity log details including creator staff and linked client details.
+   - Returns structured JSON payload.
+3. Updated `viewActivityDetails(activityId)` in `resources/views/AdminConsole/system/activity-search/index.blade.php` to handle dynamic loading state, safe escaping, formatted dates, and detailed task/category display.
+4. Added feature test suite `tests/Feature/ActivitySearchDetailTest.php` with 100% pass rate.
 
 ---
 
@@ -591,7 +597,7 @@ Every instance below uses the native browser `confirm()` dialog on the live serv
 |   [x] Implement change_assignee() method in ClientsController or redirect route (Issue 04).            |
 |   [x] Register missing routes: /update_list_status, /update_apppointment_comment (Issue 05).            |
 |   [x] Register /clients/update-email-verified (Issue 07).                                               |
-|   [ ] Register /crm/activities/{id} (Issue 08).                                                         |
+|   [x] Register /crm/activities/{id} (Issue 08).                                                         |
 +---------------------------------------------------------------------------------------------------------+
 | PHASE 3: EXTERNAL SYNC & DATA MODEL INTEGRITY (Day 3)                                                   |
 |   [ ] Remove hardcoded Windows CA cert path in BansalApiClient.php (Issue 06).                          |

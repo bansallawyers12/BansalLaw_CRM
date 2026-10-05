@@ -205,6 +205,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/activity-search', [ActivitySearchController::class, 'index'])->name('activity-search.index');
         Route::get('/activity-search/export', [ActivitySearchController::class, 'export'])->name('activity-search.export');
         Route::get('/activity-search/search-clients', [ActivitySearchController::class, 'searchClients'])->name('activity-search.search-clients');
+        Route::get('/activity-search/detail/{id?}', [ActivitySearchController::class, 'show'])->name('activity-search.show');
         
     });
     

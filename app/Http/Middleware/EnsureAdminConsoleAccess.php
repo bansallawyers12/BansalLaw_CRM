@@ -37,6 +37,13 @@ class EnsureAdminConsoleAccess
             return $next($request);
         }
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: You do not have permission to access Admin Console.',
+            ], 403);
+        }
+
         return redirect()->route('dashboard')->with('error', 'Unauthorized: You do not have permission to access Admin Console.');
     }
 

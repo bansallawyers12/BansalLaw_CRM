@@ -431,31 +431,53 @@ function exportActivities() {
 }
 
 function viewActivityDetails(activityId) {
+    $('#activityDetailsContent').html('<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>');
     $('#activityDetailsModal').modal('show');
 
+    var detailUrl = '{{ route("adminconsole.system.activity-search.show") }}';
+
     $.ajax({
-        url: '/crm/activities',
+        url: detailUrl,
         method: 'GET',
         data: { id: activityId },
         success: function(response) {
-            if (response.status) {
-                let html = '<div class="activity-details">';
+            if (response && response.status && response.data) {
+                var d = response.data;
+                var html = '<div class="activity-details">';
                 html += '<table class="table table-borderless">';
-                html += '<tr><th width="30%">Activity ID:</th><td>#' + activityId + '</td></tr>';
-                html += '<tr><th>Subject:</th><td>' + (response.data.subject || 'N/A') + '</td></tr>';
-                html += '<tr><th>Description:</th><td>' + (response.data.description || 'N/A') + '</td></tr>';
-                html += '<tr><th>Activity Type:</th><td>' + (response.data.activity_type || 'N/A') + '</td></tr>';
-                html += '<tr><th>Created At:</th><td>' + (response.data.created_at ? (typeof formatDisplayDateTime === 'function' ? (formatDisplayDateTime(response.data.created_at) || 'N/A') : String(response.data.created_at)) : 'N/A') + '</td></tr>';
+                html += '<tr><th width="28%">Activity ID:</th><td>#' + $('<div>').text(d.id || activityId).html() + '</td></tr>';
+                html += '<tr><th>Subject:</th><td>' + $('<div>').text(d.subject || 'N/A').html() + '</td></tr>';
+                html += '<tr><th>Activity Type:</th><td>' + $('<div>').text(d.activity_type || 'N/A').html() + '</td></tr>';
+                if (d.task_group) {
+                    html += '<tr><th>Task Category:</th><td>' + $('<div>').text(d.task_group).html() + '</td></tr>';
+                    html += '<tr><th>Task Status:</th><td>' + (d.task_status == 1 ? '<span class="activity-search-pill activity-search-pill--success">Complete</span>' : '<span class="activity-search-pill activity-search-pill--gold">Pending</span>') + '</td></tr>';
+                }
+                if (d.creator) {
+                    html += '<tr><th>Logged By:</th><td>' + $('<div>').text(d.creator).html() + '</td></tr>';
+                }
+                if (d.client) {
+                    html += '<tr><th>Client / Lead:</th><td>' + $('<div>').text(d.client).html() + '</td></tr>';
+                }
+                if (d.followup_date) {
+                    html += '<tr><th>Follow-up Date:</th><td>' + $('<div>').text(typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(d.followup_date) : d.followup_date).html() + '</td></tr>';
+                }
+                html += '<tr><th>Created At:</th><td>' + $('<div>').text(d.created_at ? (typeof formatDisplayDateTime === 'function' ? (formatDisplayDateTime(d.created_at) || d.created_at) : d.created_at) : 'N/A').html() + '</td></tr>';
+                html += '<tr><th>Description:</th><td><div class="activity-details-desc-box border rounded p-2 bg-light">' + (d.description || '<em>No description provided.</em>') + '</div></td></tr>';
                 html += '</table>';
                 html += '</div>';
 
                 $('#activityDetailsContent').html(html);
             } else {
-                $('#activityDetailsContent').html('<div class="alert alert-danger">Failed to load activity details.</div>');
+                var errMsg = response && response.message ? response.message : 'Failed to load activity details.';
+                $('#activityDetailsContent').html('<div class="alert alert-danger">' + $('<div>').text(errMsg).html() + '</div>');
             }
         },
-        error: function() {
-            $('#activityDetailsContent').html('<div class="alert alert-danger">Error loading activity details.</div>');
+        error: function(xhr) {
+            var errMsg = 'Error loading activity details.';
+            if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                errMsg = xhr.responseJSON.message;
+            }
+            $('#activityDetailsContent').html('<div class="alert alert-danger">' + $('<div>').text(errMsg).html() + '</div>');
         }
     });
 }
