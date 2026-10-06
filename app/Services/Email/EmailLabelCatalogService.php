@@ -15,7 +15,7 @@ class EmailLabelCatalogService
 {
     /**
      * Active system labels plus the staff member's active custom labels.
-     * This is the set shown in CRM filter/apply UI.
+     * This is the set shown when applying labels to a single email.
      */
     public function listVisibleForStaff(?int $staffId): Collection
     {
@@ -28,6 +28,18 @@ class EmailLabelCatalogService
             })
             ->active()
             ->orderByDesc('type')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * All active labels (system + custom) for list filters — "All Labels" shows every email in the folder.
+     */
+    public function listForFilterDropdown(): Collection
+    {
+        return EmailLabel::query()
+            ->active()
+            ->orderByRaw("CASE WHEN type = 'system' THEN 0 ELSE 1 END")
             ->orderBy('name')
             ->get();
     }

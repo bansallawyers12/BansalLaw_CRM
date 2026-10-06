@@ -70,8 +70,87 @@ function crmInitOutlookEmailsInterface() {
         return labelFilter.value;
     }
 
+    function isMailFolderSystemLabel(label) {
+        const labelName = String((label && label.name) || '').trim().toLowerCase();
+        return label && label.type === 'system' && (labelName === 'inbox' || labelName === 'sent');
+    }
+
+    function resetLabelFilterToAllLabels() {
+        if (labelFilter) {
+            labelFilter.value = '';
+        }
+    }
+
+    function populateLabelFilterOptions(labels) {
+        if (!labelFilter || !Array.isArray(labels)) {
+            return;
+        }
+
+        const previousValue = labelFilter.value;
+        const allLabelsOption = labelFilter.querySelector('option[value=""]');
+        const allLabelsText = allLabelsOption ? allLabelsOption.textContent : 'All Labels';
+        labelFilter.replaceChildren();
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = allLabelsText;
+        labelFilter.appendChild(defaultOption);
+
+        const excludeFolderLabels = !unassignedOnly;
+        const systemLabels = [];
+        const customLabels = [];
+        labels.forEach(function (label) {
+            if (!label || label.id == null) {
+                return;
+            }
+            if (excludeFolderLabels && isMailFolderSystemLabel(label)) {
+                return;
+            }
+            if (label.type === 'system') {
+                systemLabels.push(label);
+            } else {
+                customLabels.push(label);
+            }
+        });
+
+        function appendLabelOption(label, parent) {
+            const option = document.createElement('option');
+            option.value = String(label.id);
+            option.textContent = label.name || '';
+            if (label.type) {
+                option.setAttribute('data-label-type', label.type);
+            }
+            const labelName = String(label.name || '').trim().toLowerCase();
+            if (!excludeFolderLabels && label.type === 'system' && (labelName === 'inbox' || labelName === 'sent')) {
+                option.setAttribute('data-mail-folder', labelName);
+            }
+            parent.appendChild(option);
+        }
+
+        if (systemLabels.length) {
+            const systemGroup = document.createElement('optgroup');
+            systemGroup.label = 'System labels';
+            systemLabels.forEach(function (label) {
+                appendLabelOption(label, systemGroup);
+            });
+            labelFilter.appendChild(systemGroup);
+        }
+
+        if (customLabels.length) {
+            const customGroup = document.createElement('optgroup');
+            customGroup.label = 'Custom labels';
+            customLabels.forEach(function (label) {
+                appendLabelOption(label, customGroup);
+            });
+            labelFilter.appendChild(customGroup);
+        }
+
+        if (previousValue && labelFilter.querySelector('option[value="' + CSS.escape(previousValue) + '"]')) {
+            labelFilter.value = previousValue;
+        }
+    }
+
     async function ensureLabelFilterOptions() {
-        if (!labelFilter || unassignedOnly || labelFilter.options.length > 1) {
+        if (!labelFilter || unassignedOnly) {
             return;
         }
         const baseUrl = ((outlookContainer && outlookContainer.dataset.baseUrl) || '').replace(/\/$/, '');
@@ -90,22 +169,10 @@ function crmInitOutlookEmailsInterface() {
                 return;
             }
             const data = await response.json();
-            if (!data.success || !Array.isArray(data.labels) || data.labels.length === 0) {
+            if (!data.success || !Array.isArray(data.labels)) {
                 return;
             }
-            while (labelFilter.options.length > 1) {
-                labelFilter.remove(1);
-            }
-            data.labels.forEach(function (label) {
-                const option = document.createElement('option');
-                option.value = String(label.id);
-                option.textContent = label.name || '';
-                const labelName = String(label.name || '').trim().toLowerCase();
-                if (label.type === 'system' && (labelName === 'inbox' || labelName === 'sent')) {
-                    option.setAttribute('data-mail-folder', labelName);
-                }
-                labelFilter.appendChild(option);
-            });
+            populateLabelFilterOptions(data.labels);
         } catch (labelError) {
             console.error('Error fetching email labels:', labelError);
         }
@@ -1989,8 +2056,8 @@ function crmInitOutlookEmailsInterface() {
     if (labelFilter) {
         labelFilter.addEventListener('change', () => {
             currentPage = 1;
-            const mailFolder = getSelectedLabelMailFolder();
-            if (mailFolder && !unassignedOnly) {
+            const mailFolder = unassignedOnly ? getSelectedLabelMailFolder() : null;
+            if (mailFolder) {
                 switchToFolder(mailFolder);
             }
             loadEmails();
@@ -2334,11 +2401,8 @@ function crmInitOutlookEmailsInterface() {
         resetReadingPane();
         updateOutboxFiltersVisibility();
         updateUnassignedFolderChrome();
-        if (!unassignedOnly && (folder === 'inbox' || folder === 'sent') && labelFilter) {
-            const selectedMailFolder = getSelectedLabelMailFolder();
-            if (selectedMailFolder && selectedMailFolder !== folder) {
-                labelFilter.value = '';
-            }
+        if (!unassignedOnly && (folder === 'inbox' || folder === 'sent')) {
+            resetLabelFilterToAllLabels();
         }
     }
 
@@ -4593,7 +4657,9 @@ function crmInitOutlookEmailsInterface() {
             url.searchParams.append('page', pageToFetch);
             url.searchParams.append('per_page', useEmailInfiniteScroll ? 20 : perPage);
             url.searchParams.append('search', query);
-            url.searchParams.append('label_id', label);
+            if (label) {
+                url.searchParams.append('label_id', label);
+            }
             url.searchParams.append('sender_filter', sender);
             const sortValue = sortOrder && sortOrder.value === 'review'
                 ? 'desc'

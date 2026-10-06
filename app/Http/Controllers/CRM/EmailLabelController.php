@@ -34,11 +34,11 @@ class EmailLabelController extends Controller
     public function index()
     {
         try {
-            $labels = $this->emailLabelCatalog->listVisibleForStaff(Auth::id());
+            $labels = $this->emailLabelCatalog->listForFilterDropdown();
 
             return response()->json([
                 'success' => true,
-                'labels' => $labels
+                'labels' => $labels,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to fetch labels', ['error' => $e->getMessage()]);

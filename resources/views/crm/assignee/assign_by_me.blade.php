@@ -432,6 +432,7 @@
         border-radius: 12px !important;
         border: 1px solid var(--border, #c8dcef) !important;
         box-shadow: 0 16px 40px rgba(30, 61, 96, 0.16) !important;
+        z-index: 10050 !important;
     }
     .popover.update-task-popover .popover-header {
         display: flex !important;
@@ -601,6 +602,48 @@
 </style>
 <script>
     jQuery(document).ready(function($) {
+        var updateTaskPopoverTriggerEl = null;
+
+        function getUpdateTaskPopoverTip(triggerEl) {
+            if (triggerEl && triggerEl.getAttribute && typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+                try {
+                    var inst = bootstrap.Popover.getInstance(triggerEl);
+                    if (inst) {
+                        var tipEl = typeof inst.getTipElement === 'function' ? inst.getTipElement() : inst.tip;
+                        if (tipEl) {
+                            return $(tipEl);
+                        }
+                    }
+                } catch (err) { /* fall through */ }
+            }
+            return $('.popover.update-task-popover.show, .popover.show').filter(function() {
+                return $(this).find('.update-task-layout').length > 0;
+            }).last();
+        }
+
+        function hideUpdateTaskPopover() {
+            var trigger = updateTaskPopoverTriggerEl;
+            if (trigger) {
+                try {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+                        var inst = bootstrap.Popover.getInstance(trigger);
+                        if (inst && typeof inst.hide === 'function') {
+                            inst.hide();
+                        }
+                    }
+                    $(trigger).popover('hide');
+                } catch (err) { /* ignore */ }
+            }
+            $('.listing-container .update_task').each(function() {
+                try {
+                    $(this).popover('hide');
+                } catch (err) { /* ignore */ }
+            });
+            getUpdateTaskPopoverTip(trigger).removeClass('show').remove();
+            $('.popover-backdrop').removeClass('show').off('click.updateTask');
+            updateTaskPopoverTriggerEl = null;
+        }
+
         function escapeHtml(text) {
             if (!text) return '';
             return String(text).replace(/[&<>"']/g, function(m) {
@@ -684,6 +727,7 @@
         $(document).on('click', '.listing-container .update_task', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            updateTaskPopoverTriggerEl = this;
             var $button = $(this);
             var assignedTo = $button.attr('data-assignedto') || '';
             var noteId = $button.attr('data-noteid') || '';
@@ -695,7 +739,7 @@
             var matterUrl = $button.attr('data-matterurl') || '';
             var clientLabel = $button.attr('data-clientlabel') || '';
 
-            $('.update_task').popover('hide');
+            hideUpdateTaskPopover();
             $button.popover('dispose');
             $button.popover({
                 html: true,
@@ -725,24 +769,26 @@
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
                 margin: '0',
-                zIndex: '1060'
+                zIndex: '10050'
             });
             if (!$('.popover-backdrop').length) {
                 $('body').append('<div class="popover-backdrop"></div>');
             }
             $('.popover-backdrop').addClass('show').off('click.updateTask').on('click.updateTask', function() {
-                $('.update_task').popover('hide');
+                hideUpdateTaskPopover();
             });
         });
 
-        $(document).on('click', '#updateTaskCancel', function() {
-            $('.update_task').popover('hide');
+        $(document).on('click', '#updateTaskCancel', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideUpdateTaskPopover();
         });
 
         $(document).on('click', '.update-task-modal-close', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            $('.update_task').popover('hide');
+            hideUpdateTaskPopover();
         });
 
         $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
@@ -751,7 +797,7 @@
 
         $(document).on('click', function(e) {
             if (!$(e.target).closest('.popover').length && !$(e.target).closest('.update_task').length) {
-                $('.update_task').popover('hide');
+                hideUpdateTaskPopover();
             }
         });
 
@@ -873,7 +919,7 @@
                     $('.popuploader').hide();
                     var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                     if (obj && obj.success) {
-                        $('.update_task').popover('hide');
+                        hideUpdateTaskPopover();
                         if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
                             window.AssignedByMeSpa.reload();
                         } else {

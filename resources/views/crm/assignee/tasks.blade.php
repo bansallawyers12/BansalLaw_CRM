@@ -341,6 +341,7 @@
     border-radius: 12px !important;
     border: 1px solid var(--border, #c8dcef) !important;
     box-shadow: 0 16px 40px rgba(30, 61, 96, 0.16) !important;
+    z-index: 10050 !important;
 }
 
 .popover.update-task-popover .popover-header {
@@ -371,6 +372,9 @@
 }
 
 .popover.update-task-popover .update-task-modal-close {
+    position: relative !important;
+    z-index: 2 !important;
+    pointer-events: auto !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -903,6 +907,48 @@ $(function () {
         $(this).popover(popoverOpts);
     });
 
+    var updateTaskPopoverTriggerEl = null;
+
+    function getUpdateTaskPopoverTip(triggerEl) {
+        if (triggerEl && triggerEl.getAttribute && typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+            try {
+                var inst = bootstrap.Popover.getInstance(triggerEl);
+                if (inst) {
+                    var tipEl = typeof inst.getTipElement === 'function' ? inst.getTipElement() : inst.tip;
+                    if (tipEl) {
+                        return $(tipEl);
+                    }
+                }
+            } catch (err) { /* fall through */ }
+        }
+        return $('.popover.update-task-popover.show, .popover.show').filter(function() {
+            return $(this).find('.update-task-layout').length > 0;
+        }).last();
+    }
+
+    function hideUpdateTaskPopover() {
+        var trigger = updateTaskPopoverTriggerEl;
+        if (trigger) {
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+                    var inst = bootstrap.Popover.getInstance(trigger);
+                    if (inst && typeof inst.hide === 'function') {
+                        inst.hide();
+                    }
+                }
+                $(trigger).popover('hide');
+            } catch (err) { /* ignore */ }
+        }
+        $('#open-tasks-spa-root .update_task, .listing-container .update_task').each(function() {
+            try {
+                $(this).popover('hide');
+            } catch (err) { /* ignore */ }
+        });
+        getUpdateTaskPopoverTip(trigger).removeClass('show').remove();
+        $('.popover-backdrop').removeClass('show').off('click.updateTask');
+        updateTaskPopoverTriggerEl = null;
+    }
+
     // Helper function to escape HTML to prevent XSS
     function escapeHtml(text) {
         if (!text) return '';
@@ -1120,25 +1166,27 @@ $(function () {
             'top': '50%',
             'transform': 'translate(-50%, -50%)',
             'margin': '0',
-            'z-index': '1060'
+            'z-index': '10050'
         });
 
         if (!$('.popover-backdrop').length) {
             $('body').append('<div class="popover-backdrop"></div>');
         }
         $('.popover-backdrop').addClass('show').off('click.updateTask').on('click.updateTask', function() {
-            $('.update_task').popover('hide');
+            hideUpdateTaskPopover();
         });
     });
 
-    $(document).on('click', '#updateTaskCancel', function() {
-        $('.update_task').popover('hide');
+    $(document).on('click', '#updateTaskCancel', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideUpdateTaskPopover();
     });
 
     $(document).on('click', '.update-task-modal-close', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        $('.update_task').popover('hide');
+        hideUpdateTaskPopover();
     });
 
     $(document).on('hide.bs.popover', '.update_task', function() {
@@ -1187,6 +1235,7 @@ $(function () {
 
     // Handle Update Task button click
     $(document).on('click', '#open-tasks-spa-root .update_task', function() {
+        updateTaskPopoverTriggerEl = this;
         var $button = $(this);
         var assignedTo = $button.data('assignedto') || '';
         var noteId = $button.data('noteid') || '';
@@ -1198,6 +1247,7 @@ $(function () {
         var matterUrl = $button.attr('data-matterurl') || '';
         var clientLabel = $button.attr('data-clientlabel') || '';
 
+        hideUpdateTaskPopover();
         // Set popover content
         $button.popover('dispose'); // Dispose of any existing popover
         $button.popover({
@@ -1217,7 +1267,7 @@ $(function () {
     // Close popover when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.popover').length && !$(e.target).closest('.update_task').length && !$(e.target).closest('.btn_readmore').length) {
-            $('.update_task').popover('hide');
+            hideUpdateTaskPopover();
             $('.btn_readmore').popover('hide');
         }
     });
@@ -1300,6 +1350,7 @@ $(function () {
                 task_group: taskGroup
             },
             success: function(response) {
+                hideUpdateTaskPopover();
                 spaReload();
                 if (typeof iziToast !== 'undefined') {
                     iziToast.success({ title: 'Updated', message: 'Task updated successfully.', position: 'topRight', timeout: 3000 });

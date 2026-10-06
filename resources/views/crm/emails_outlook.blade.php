@@ -69,9 +69,8 @@
             ->all();
     $emailLabelsForFilter = collect();
     if ($clientData) {
-        $labelStaffId = $authStaff instanceof \App\Models\Staff ? (int) $authStaff->id : null;
         $emailLabelsForFilter = app(\App\Services\Email\EmailLabelCatalogService::class)
-            ->listVisibleForStaff($labelStaffId);
+            ->listForFilterDropdown();
     }
 @endphp
 
@@ -337,7 +336,7 @@
                     <div class="client-mail-filters__row list-header-filters list-header-filters--modern">
                         <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                             <option value="">All Labels</option>
-                            @include('crm.partials.email-label-filter-options')
+                            @include('crm.partials.email-label-filter-options', ['excludeMailFolderLabels' => ! $unassignedOnly])
                         </select>
                         <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                             <option value="">All Senders</option>
@@ -382,7 +381,7 @@
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
-                    @include('crm.partials.email-label-filter-options')
+                    @include('crm.partials.email-label-filter-options', ['excludeMailFolderLabels' => ! $unassignedOnly])
                 </select>
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>
