@@ -90,7 +90,7 @@ function crmInitOutlookEmailsInterface() {
         group.label = 'Mail folder';
         [
             { value: '__mail_all__', label: 'All mail', folder: 'all' },
-            { value: '__mail_inbox__', label: 'Incoming', folder: 'inbox' },
+            { value: '__mail_inbox__', label: 'Inbox', folder: 'inbox' },
             { value: '__mail_sent__', label: 'Sent', folder: 'sent' }
         ].forEach(function (item) {
             const option = document.createElement('option');
@@ -4790,9 +4790,12 @@ function crmInitOutlookEmailsInterface() {
             
             const fetchedEmails = Array.isArray(data.emails) ? data.emails : [];
             // Defense in depth: never render calendar invites/events in mail lists.
-            const mailOnlyEmails = fetchedEmails.filter(function (email) {
+            let mailOnlyEmails = fetchedEmails.filter(function (email) {
                 return !emailIsCalendarOnlyListItem(email);
             });
+            if (!unassignedOnly && folderToFetch === 'all') {
+                mailOnlyEmails = dedupeClientMailListRows(mailOnlyEmails);
+            }
             if (append) {
                 const existingIds = {};
                 emails.forEach(function (email) {
@@ -5671,6 +5674,50 @@ function crmInitOutlookEmailsInterface() {
 
         html += '</div>';
         return html;
+    }
+
+    function preferClientMailListRow(a, b) {
+        const aSent = parseInt(a && a.mail_type, 10) === 2;
+        const bSent = parseInt(b && b.mail_type, 10) === 2;
+        if (aSent && !bSent) {
+            return a;
+        }
+        if (bSent && !aSent) {
+            return b;
+        }
+        const aId = parseInt(a && a.id, 10) || 0;
+        const bId = parseInt(b && b.id, 10) || 0;
+        return aId <= bId ? a : b;
+    }
+
+    function dedupeClientMailListRows(list) {
+        if (!Array.isArray(list) || list.length < 2) {
+            return list;
+        }
+        const kept = [];
+        const indexByKey = {};
+        list.forEach(function (row) {
+            if (!row) {
+                return;
+            }
+            const messageId = String(row.message_id || '').trim();
+            const key = messageId
+                ? ('mid:' + messageId)
+                : ('row:' + String(row.from_mail || '') + '\0' + String(row.subject || '') + '\0'
+                    + String(row.fetch_mail_sent_time || row.created_at || ''));
+            const existingIndex = indexByKey[key];
+            if (existingIndex === undefined) {
+                indexByKey[key] = kept.length;
+                kept.push(row);
+                return;
+            }
+            const existing = kept[existingIndex];
+            const winner = preferClientMailListRow(existing, row);
+            if (winner !== existing) {
+                kept[existingIndex] = winner;
+            }
+        });
+        return kept;
     }
 
     function emailUserAttachmentsPending(email) {

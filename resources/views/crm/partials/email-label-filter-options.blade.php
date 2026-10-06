@@ -15,7 +15,7 @@
 @if($includeMailFolderFilterOptions)
     <optgroup label="Mail folder">
         <option value="__mail_all__" data-mail-folder="all" selected>All mail</option>
-        <option value="__mail_inbox__" data-mail-folder="inbox">Incoming</option>
+        <option value="__mail_inbox__" data-mail-folder="inbox">Inbox</option>
         <option value="__mail_sent__" data-mail-folder="sent">Sent</option>
     </optgroup>
 @endif

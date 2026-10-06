@@ -206,7 +206,7 @@
                             <i class="fa-solid fa-envelopes-bulk"></i> All
                         </button>
                         <button type="button" class="folder-item" data-folder="inbox" role="tab" aria-selected="false">
-                            <i class="fa-solid fa-inbox"></i> Incoming
+                            <i class="fa-solid fa-inbox"></i> Inbox
                         </button>
                         <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                             <i class="fa-solid fa-paper-plane"></i> Sent

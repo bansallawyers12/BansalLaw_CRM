@@ -6147,6 +6147,10 @@ class ClientsController extends Controller
         // Calendar invites / ICS events belong on the calendar, not mail lists.
         \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
 
+        if ($folder === 'all' && ! $isGlobalSyncedMailView) {
+            $this->applyClientAllMailDuplicateScope($query);
+        }
+
         // Apply search filter if present
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -6631,6 +6635,50 @@ class ClientsController extends Controller
                     $sub->importedSentMail();
                 });
             });
+        });
+    }
+
+    /**
+     * All-mail folder can surface the same Message-ID as both CRM sent (mail_type 2) and imported/sent copy (mail_type 1).
+     */
+    protected function applyClientAllMailDuplicateScope($query): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'message_id')) {
+            return;
+        }
+
+        $query->whereNotExists(function ($sub) {
+            $sub->selectRaw('1')
+                ->from('email_logs as el_peer')
+                ->whereColumn('el_peer.client_id', 'email_logs.client_id')
+                ->whereColumn('el_peer.client_matter_id', 'email_logs.client_matter_id')
+                ->whereRaw('el_peer.id <> email_logs.id')
+                ->where(function ($sameMessage) {
+                    $sameMessage->where(function ($byMessageId) {
+                        $byMessageId->whereNotNull('email_logs.message_id')
+                            ->where('email_logs.message_id', '!=', '')
+                            ->whereColumn('el_peer.message_id', 'email_logs.message_id');
+                    })->orWhere(function ($byContent) {
+                        $byContent->where(function ($emptyMessageId) {
+                            $emptyMessageId->whereNull('email_logs.message_id')
+                                ->orWhere('email_logs.message_id', '');
+                        })
+                            ->whereColumn('el_peer.from_mail', 'email_logs.from_mail')
+                            ->whereColumn('el_peer.subject', 'email_logs.subject')
+                            ->whereRaw(
+                                'COALESCE(el_peer.fetch_mail_sent_time, el_peer.created_at) = COALESCE(email_logs.fetch_mail_sent_time, email_logs.created_at)'
+                            );
+                    });
+                })
+                ->where(function ($peerPreferred) {
+                    $peerPreferred->where(function ($sentWins) {
+                        $sentWins->where('el_peer.mail_type', 2)
+                            ->where('email_logs.mail_type', '!=', 2);
+                    })->orWhere(function ($sameTypeOlderId) {
+                        $sameTypeOlderId->whereColumn('el_peer.mail_type', 'email_logs.mail_type')
+                            ->whereColumn('el_peer.id', '<', 'email_logs.id');
+                    });
+                });
         });
     }
 
