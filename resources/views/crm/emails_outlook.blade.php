@@ -202,8 +202,11 @@
                 @else
                 <div class="{{ $compactPagination ? 'list-toolbar__folder-row' : '' }}">
                     <div class="folder-tabs" role="tablist" aria-label="Mail folders">
-                        <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                            <i class="fa-solid fa-inbox"></i> Inbox
+                        <button type="button" class="folder-item active" data-folder="all" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-envelopes-bulk"></i> All
+                        </button>
+                        <button type="button" class="folder-item" data-folder="inbox" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-inbox"></i> Incoming
                         </button>
                         <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                             <i class="fa-solid fa-paper-plane"></i> Sent
@@ -336,7 +339,10 @@
                     <div class="client-mail-filters__row list-header-filters list-header-filters--modern">
                         <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                             <option value="">All Labels</option>
-                            @include('crm.partials.email-label-filter-options', ['excludeMailFolderLabels' => ! $unassignedOnly])
+                            @include('crm.partials.email-label-filter-options', [
+                                'excludeMailFolderLabels' => ! $unassignedOnly,
+                                'includeMailFolderFilterOptions' => ! $unassignedOnly,
+                            ])
                         </select>
                         <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                             <option value="">All Senders</option>
@@ -381,7 +387,10 @@
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
-                    @include('crm.partials.email-label-filter-options', ['excludeMailFolderLabels' => ! $unassignedOnly])
+                    @include('crm.partials.email-label-filter-options', [
+                        'excludeMailFolderLabels' => ! $unassignedOnly,
+                        'includeMailFolderFilterOptions' => ! $unassignedOnly,
+                    ])
                 </select>
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>

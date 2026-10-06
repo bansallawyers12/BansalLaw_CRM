@@ -6065,7 +6065,9 @@ class ClientsController extends Controller
         }
 
         // Inbox = all incoming mail (read + unread). On synced mail page, inbox = all Zoho-synced mail.
-        if ($folder === 'inbox') {
+        if ($folder === 'all' && ! $isGlobalSyncedMailView) {
+            $this->applyClientAllMailScope($query, $hasSendStatus);
+        } elseif ($folder === 'inbox') {
             if ($isGlobalSyncedMailView) {
                 \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
                 \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
@@ -6165,6 +6167,8 @@ class ClientsController extends Controller
         }
         if ($folder === 'outbox' && $hasSendStatus) {
             $query->orderByRaw('COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at) ' . $sortDirection);
+        } elseif ($folder === 'all' && ! $isSyncedInboxFolder) {
+            $query->orderByRaw('COALESCE(fetch_mail_sent_time, sent_at, created_at) ' . $sortDirection);
         } else {
             $query->orderByRaw('COALESCE(fetch_mail_sent_time, created_at) ' . $sortDirection);
         }
@@ -6603,6 +6607,31 @@ class ClientsController extends Controller
                   ->orWhereNull('mail_body_type');
             })
             ->excludeManualSentUpload();
+    }
+
+    /**
+     * Client matter mail list: incoming + sent in one folder (excludes global synced inbox).
+     */
+    protected function applyClientAllMailScope($query, bool $hasSendStatus): void
+    {
+        $query->where(function ($q) use ($hasSendStatus) {
+            $q->where(function ($inbox) {
+                $this->applyIncomingInboxScope($inbox);
+            })->orWhere(function ($sent) use ($hasSendStatus) {
+                $sent->where(function ($crm) use ($hasSendStatus) {
+                    $crm->where('mail_type', 2);
+                    if ($hasSendStatus) {
+                        $crm->where(function ($status) {
+                            $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
+                                ->orWhereNull('send_status')
+                                ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
+                        });
+                    }
+                })->orWhere(function ($sub) {
+                    $sub->importedSentMail();
+                });
+            });
+        });
     }
 
     protected function applyUnreadEmailScope($query): void

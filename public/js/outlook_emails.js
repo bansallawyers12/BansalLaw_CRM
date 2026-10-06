@@ -22,7 +22,10 @@ function crmInitOutlookEmailsInterface() {
     let defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
     // Client matter Emails tab only has Inbox/Sent — never start on synced-mail folders.
     if (!unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
-        defaultFolder = 'inbox';
+        defaultFolder = 'all';
+    }
+    if (!unassignedOnly && defaultFolder === 'inbox' && compactPagination) {
+        defaultFolder = 'all';
     }
     if (unassignedOnly && (defaultFolder === 'unassigned' || defaultFolder === 'assigned' || defaultFolder === 'review')) {
         lastInboxFolder = defaultFolder;
@@ -60,14 +63,67 @@ function crmInitOutlookEmailsInterface() {
             return null;
         }
         const mailFolder = (opt.getAttribute('data-mail-folder') || '').trim().toLowerCase();
-        return mailFolder === 'inbox' || mailFolder === 'sent' ? mailFolder : null;
+        return mailFolder === 'all' || mailFolder === 'inbox' || mailFolder === 'sent' ? mailFolder : null;
     }
 
     function getEffectiveLabelFilterValue() {
-        if (!labelFilter || !labelFilter.value || getSelectedLabelMailFolder()) {
+        if (!labelFilter || !labelFilter.value) {
+            return '';
+        }
+        if (getSelectedLabelMailFolder()) {
+            return '';
+        }
+        if (String(labelFilter.value).indexOf('__mail_') === 0) {
             return '';
         }
         return labelFilter.value;
+    }
+
+    function appendClientMailFolderFilterGroup() {
+        if (!labelFilter || unassignedOnly) {
+            return;
+        }
+        if (labelFilter.querySelector('option[data-mail-folder="all"]')) {
+            return;
+        }
+        const group = document.createElement('optgroup');
+        group.label = 'Mail folder';
+        [
+            { value: '__mail_all__', label: 'All mail', folder: 'all' },
+            { value: '__mail_inbox__', label: 'Incoming', folder: 'inbox' },
+            { value: '__mail_sent__', label: 'Sent', folder: 'sent' }
+        ].forEach(function (item) {
+            const option = document.createElement('option');
+            option.value = item.value;
+            option.textContent = item.label;
+            option.setAttribute('data-mail-folder', item.folder);
+            group.appendChild(option);
+        });
+        const firstOption = labelFilter.querySelector('option[value=""]');
+        if (firstOption && firstOption.nextSibling) {
+            labelFilter.insertBefore(group, firstOption.nextSibling);
+        } else {
+            labelFilter.appendChild(group);
+        }
+    }
+
+    function syncMailFolderFilterOption(folder) {
+        if (!labelFilter || unassignedOnly) {
+            return;
+        }
+        const map = {
+            all: '__mail_all__',
+            inbox: '__mail_inbox__',
+            sent: '__mail_sent__'
+        };
+        const value = map[folder];
+        if (!value) {
+            return;
+        }
+        appendClientMailFolderFilterGroup();
+        if (labelFilter.querySelector('option[value="' + value + '"]')) {
+            labelFilter.value = value;
+        }
     }
 
     function isMailFolderSystemLabel(label) {
@@ -94,6 +150,7 @@ function crmInitOutlookEmailsInterface() {
         defaultOption.value = '';
         defaultOption.textContent = allLabelsText;
         labelFilter.appendChild(defaultOption);
+        appendClientMailFolderFilterGroup();
 
         const excludeFolderLabels = !unassignedOnly;
         const systemLabels = [];
@@ -146,6 +203,8 @@ function crmInitOutlookEmailsInterface() {
 
         if (previousValue && labelFilter.querySelector('option[value="' + CSS.escape(previousValue) + '"]')) {
             labelFilter.value = previousValue;
+        } else if (!unassignedOnly) {
+            syncMailFolderFilterOption(currentFolder || 'all');
         }
     }
 
@@ -2056,8 +2115,8 @@ function crmInitOutlookEmailsInterface() {
     if (labelFilter) {
         labelFilter.addEventListener('change', () => {
             currentPage = 1;
-            const mailFolder = unassignedOnly ? getSelectedLabelMailFolder() : null;
-            if (mailFolder) {
+            const mailFolder = getSelectedLabelMailFolder();
+            if (mailFolder && (mailFolder === 'inbox' || mailFolder === 'sent' || (!unassignedOnly && mailFolder === 'all'))) {
                 switchToFolder(mailFolder);
             }
             loadEmails();
@@ -2360,7 +2419,7 @@ function crmInitOutlookEmailsInterface() {
         }
         // Client Emails tab has no synced folders — coerce stray values back to inbox.
         if (!unassignedOnly && (folder === 'unassigned' || folder === 'assigned' || folder === 'review')) {
-            folder = 'inbox';
+            folder = 'all';
         }
         // On the synced-mail page, Inbox mailbox means the last Unassigned/Assigned view.
         if (unassignedOnly && folder === 'inbox') {
@@ -2401,8 +2460,8 @@ function crmInitOutlookEmailsInterface() {
         resetReadingPane();
         updateOutboxFiltersVisibility();
         updateUnassignedFolderChrome();
-        if (!unassignedOnly && (folder === 'inbox' || folder === 'sent')) {
-            resetLabelFilterToAllLabels();
+        if (!unassignedOnly && (folder === 'all' || folder === 'inbox' || folder === 'sent')) {
+            syncMailFolderFilterOption(folder);
         }
     }
 
