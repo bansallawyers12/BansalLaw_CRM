@@ -200,26 +200,21 @@
                     </button>
                 </div>
                 @else
-                <div class="{{ $compactPagination ? 'list-toolbar__folder-row' : '' }}">
-                    <div class="folder-tabs" role="tablist" aria-label="Mail folders">
-                        <button type="button" class="folder-item active" data-folder="all" role="tab" aria-selected="true">
-                            <i class="fa-solid fa-envelopes-bulk"></i> All
+                @if(! $compactPagination)
+                <div>
+                    <div class="folder-tabs folder-tabs--client-mail-hidden" role="tablist" aria-label="Mail folders" hidden>
+                        <button type="button" class="folder-item" data-folder="all" role="tab" aria-selected="false" tabindex="-1">
+                            <i class="fa-solid fa-envelopes-bulk" aria-hidden="true"></i> All
                         </button>
-                        <button type="button" class="folder-item" data-folder="inbox" role="tab" aria-selected="false">
-                            <i class="fa-solid fa-inbox"></i> Inbox
+                        <button type="button" class="folder-item" data-folder="inbox" role="tab" aria-selected="false" tabindex="-1">
+                            <i class="fa-solid fa-inbox" aria-hidden="true"></i> Inbox
                         </button>
-                        <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                            <i class="fa-solid fa-paper-plane"></i> Sent
-                        </button>
-                    </div>
-                    @if($compactPagination)
-                    <div class="list-toolbar__side-actions">
-                        <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show filters" aria-label="Show filters">
-                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false" tabindex="-1">
+                            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Sent
                         </button>
                     </div>
-                    @endif
                 </div>
+                @endif
                 @endif
             </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
@@ -330,9 +325,25 @@
         @if(! $unassignedOnly)
         @if($compactPagination)
         <div class="client-mail-filters client-mail-filters--compact">
-            <div class="search-box search-box--compact list-toolbar__search client-mail-filters__search">
-                <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                @include('crm.partials.email-search-input')
+            <div class="folder-tabs folder-tabs--client-mail-hidden" role="tablist" aria-label="Mail folders" hidden>
+                <button type="button" class="folder-item" data-folder="all" role="tab" aria-selected="false" tabindex="-1">
+                    <i class="fa-solid fa-envelopes-bulk" aria-hidden="true"></i> All
+                </button>
+                <button type="button" class="folder-item" data-folder="inbox" role="tab" aria-selected="false" tabindex="-1">
+                    <i class="fa-solid fa-inbox" aria-hidden="true"></i> Inbox
+                </button>
+                <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false" tabindex="-1">
+                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Sent
+                </button>
+            </div>
+            <div class="client-mail-filters__search-row">
+                <div class="search-box search-box--compact list-toolbar__search client-mail-filters__search">
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                    @include('crm.partials.email-search-input')
+                </div>
+                <button type="button" class="list-filter-toggle" id="btnToggleClientListFilters" aria-expanded="false" aria-controls="clientListFilters" title="Show filters" aria-label="Show filters">
+                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                </button>
             </div>
             <div class="list-filters-drawer list-filters-drawer--client" id="clientListFilters">
                 <div class="list-filters-drawer__inner">

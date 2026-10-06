@@ -6651,7 +6651,13 @@ class ClientsController extends Controller
             $sub->selectRaw('1')
                 ->from('email_logs as el_peer')
                 ->whereColumn('el_peer.client_id', 'email_logs.client_id')
-                ->whereColumn('el_peer.client_matter_id', 'email_logs.client_matter_id')
+                ->where(function ($sameMatter) {
+                    $sameMatter->whereColumn('el_peer.client_matter_id', 'email_logs.client_matter_id')
+                        ->orWhere(function ($bothNull) {
+                            $bothNull->whereNull('el_peer.client_matter_id')
+                                ->whereNull('email_logs.client_matter_id');
+                        });
+                })
                 ->whereRaw('el_peer.id <> email_logs.id')
                 ->where(function ($sameMessage) {
                     $sameMessage->where(function ($byMessageId) {
@@ -6659,24 +6665,38 @@ class ClientsController extends Controller
                             ->where('email_logs.message_id', '!=', '')
                             ->whereColumn('el_peer.message_id', 'email_logs.message_id');
                     })->orWhere(function ($byContent) {
-                        $byContent->where(function ($emptyMessageId) {
-                            $emptyMessageId->whereNull('email_logs.message_id')
-                                ->orWhere('email_logs.message_id', '');
-                        })
-                            ->whereColumn('el_peer.from_mail', 'email_logs.from_mail')
+                        $byContent->whereColumn('el_peer.from_mail', 'email_logs.from_mail')
                             ->whereColumn('el_peer.subject', 'email_logs.subject')
                             ->whereRaw(
-                                'COALESCE(el_peer.fetch_mail_sent_time, el_peer.created_at) = COALESCE(email_logs.fetch_mail_sent_time, email_logs.created_at)'
+                                'ABS(EXTRACT(EPOCH FROM (COALESCE(el_peer.fetch_mail_sent_time, el_peer.created_at) - COALESCE(email_logs.fetch_mail_sent_time, email_logs.created_at)))) <= 120'
                             );
                     });
                 })
                 ->where(function ($peerPreferred) {
                     $peerPreferred->where(function ($sentWins) {
-                        $sentWins->where('el_peer.mail_type', 2)
-                            ->where('email_logs.mail_type', '!=', 2);
-                    })->orWhere(function ($sameTypeOlderId) {
-                        $sameTypeOlderId->whereColumn('el_peer.mail_type', 'email_logs.mail_type')
-                            ->whereColumn('el_peer.id', '<', 'email_logs.id');
+                        $sentWins->where(function ($elPeerIsSent) {
+                            $elPeerIsSent->where('el_peer.mail_type', 2)
+                                ->orWhere('el_peer.mail_body_type', 'sent');
+                        })->where(function ($elCurrentNotSent) {
+                            $elCurrentNotSent->where('email_logs.mail_type', '!=', 2)
+                                ->where('email_logs.mail_body_type', '!=', 'sent');
+                        });
+                    })->orWhere(function ($tieBreaker) {
+                        $tieBreaker->where(function ($sameSentStatus) {
+                            $sameSentStatus->where(function ($bothSent) {
+                                $bothSent->where(function ($p) {
+                                    $p->where('el_peer.mail_type', 2)->orWhere('el_peer.mail_body_type', 'sent');
+                                })->where(function ($c) {
+                                    $c->where('email_logs.mail_type', 2)->orWhere('email_logs.mail_body_type', 'sent');
+                                });
+                            })->orWhere(function ($neitherSent) {
+                                $neitherSent->where(function ($p) {
+                                    $p->where('el_peer.mail_type', '!=', 2)->where('el_peer.mail_body_type', '!=', 'sent');
+                                })->where(function ($c) {
+                                    $c->where('email_logs.mail_type', '!=', 2)->where('email_logs.mail_body_type', '!=', 'sent');
+                                });
+                            });
+                        })->whereColumn('el_peer.id', '<', 'email_logs.id');
                     });
                 });
         });

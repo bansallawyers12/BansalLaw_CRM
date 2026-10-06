@@ -2434,12 +2434,17 @@ function crmInitOutlookEmailsInterface() {
             const itemFolder = f.dataset.folder || '';
             const mailbox = f.dataset.mailbox || '';
             let isActive = false;
-            if (mailbox === 'sent') {
+            if (!unassignedOnly && f.closest('.folder-tabs--client-mail-hidden')) {
+                isActive = false;
+            } else if (mailbox === 'sent') {
                 isActive = folder === 'sent';
             } else if (mailbox === 'inbox') {
                 isActive = folder !== 'sent';
             } else if (itemFolder) {
                 isActive = itemFolder === folder;
+            }
+            if (!unassignedOnly && folder === 'all' && (itemFolder === 'inbox' || itemFolder === 'sent')) {
+                isActive = false;
             }
             f.classList.toggle('active', isActive);
             f.setAttribute('aria-selected', isActive ? 'true' : 'false');
@@ -4793,7 +4798,7 @@ function crmInitOutlookEmailsInterface() {
             let mailOnlyEmails = fetchedEmails.filter(function (email) {
                 return !emailIsCalendarOnlyListItem(email);
             });
-            if (!unassignedOnly && folderToFetch === 'all') {
+            if (!unassignedOnly) {
                 mailOnlyEmails = dedupeClientMailListRows(mailOnlyEmails);
             }
             if (append) {
@@ -4815,6 +4820,9 @@ function crmInitOutlookEmailsInterface() {
                     return true;
                 });
                 emails = emails.concat(uniqueEmails);
+                if (!unassignedOnly) {
+                    emails = dedupeClientMailListRows(emails);
+                }
             } else {
                 emails = mailOnlyEmails;
             }
@@ -4854,7 +4862,10 @@ function crmInitOutlookEmailsInterface() {
                 ? Math.max(emails.length, Math.min(total, emails.length))
                 : (data.to || emails.length);
             if (!append) {
-                updatePaginationDisplay(total, lastPage, from, to);
+                const effectiveTotal = (!unassignedOnly && data.total != null && emails.length < fetchedEmails.length)
+                    ? Math.max(0, total - (fetchedEmails.length - emails.length))
+                    : total;
+                updatePaginationDisplay(effectiveTotal, lastPage, from, to);
             } else if (total > 0 && !syncedFolderCountReady) {
                 updatePaginationDisplay(total, lastPage, from, to);
             } else if (append) {
@@ -5677,8 +5688,8 @@ function crmInitOutlookEmailsInterface() {
     }
 
     function preferClientMailListRow(a, b) {
-        const aSent = parseInt(a && a.mail_type, 10) === 2;
-        const bSent = parseInt(b && b.mail_type, 10) === 2;
+        const aSent = parseInt(a && a.mail_type, 10) === 2 || String(a && a.mail_body_type || '').toLowerCase() === 'sent';
+        const bSent = parseInt(b && b.mail_type, 10) === 2 || String(b && b.mail_body_type || '').toLowerCase() === 'sent';
         if (aSent && !bSent) {
             return a;
         }
@@ -5688,6 +5699,16 @@ function crmInitOutlookEmailsInterface() {
         const aId = parseInt(a && a.id, 10) || 0;
         const bId = parseInt(b && b.id, 10) || 0;
         return aId <= bId ? a : b;
+    }
+
+    function normalizeDedupeTimestamp(val) {
+        if (!val) return '';
+        const d = new Date(val);
+        if (isNaN(d.getTime())) {
+            return String(val).trim();
+        }
+        // Round to nearest minute (60,000 ms) to group slight sync clock skews
+        return String(Math.floor(d.getTime() / 60000));
     }
 
     function dedupeClientMailListRows(list) {
@@ -5701,13 +5722,22 @@ function crmInitOutlookEmailsInterface() {
                 return;
             }
             const messageId = String(row.message_id || '').trim();
-            const key = messageId
-                ? ('mid:' + messageId)
-                : ('row:' + String(row.from_mail || '') + '\0' + String(row.subject || '') + '\0'
-                    + String(row.fetch_mail_sent_time || row.created_at || ''));
+            const fromMail = String(row.from_mail || '').trim().toLowerCase();
+            const subject = String(row.subject || '').trim().toLowerCase();
+            const timeKey = normalizeDedupeTimestamp(row.fetch_mail_sent_time || row.sent_at || row.created_at);
+
+            // Primary key based on sender + subject + time, falling back to messageId
+            const contentKey = (fromMail && subject && timeKey)
+                ? ('content:' + fromMail + '\0' + subject + '\0' + timeKey)
+                : '';
+            const key = contentKey || (messageId ? ('mid:' + messageId) : ('id:' + String(row.id)));
+
             const existingIndex = indexByKey[key];
             if (existingIndex === undefined) {
                 indexByKey[key] = kept.length;
+                if (messageId && !indexByKey['mid:' + messageId]) {
+                    indexByKey['mid:' + messageId] = kept.length;
+                }
                 kept.push(row);
                 return;
             }

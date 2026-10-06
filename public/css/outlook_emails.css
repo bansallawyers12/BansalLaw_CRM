@@ -7498,12 +7498,22 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     gap: 0;
 }
 
+/* Client matter emails (compact): folder/filter live below drop zone; hide empty top toolbar */
+#emails-tab .outlook-container--compact-pagination:not(.outlook-container--unassigned) .list-toolbar {
+    display: none;
+}
+
 #emails-tab .outlook-container--compact-pagination .list-toolbar__folder-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     width: 100%;
+}
+
+/* Client matter emails: folder tabs hidden; default folder is "all" (use Mail folder filter dropdown). */
+.outlook-container:not(.outlook-container--unassigned) .folder-tabs--client-mail-hidden {
+    display: none !important;
 }
 
 #emails-tab .outlook-container--compact-pagination .folder-tabs {
@@ -7587,19 +7597,38 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
     flex-shrink: 0;
     margin: 0;
     padding: 0;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
-#emails-tab .outlook-container--compact-pagination .client-mail-filters__search,
-#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search,
-#emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .search-box--compact {
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search-row .client-mail-filters__search,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search-row .list-toolbar__search,
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search-row .search-box--compact {
     display: block;
     position: relative;
-    width: 100%;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
     max-width: none;
-    flex: none;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+#emails-tab .outlook-container--compact-pagination .client-mail-filters__search-row .list-filter-toggle {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 2;
 }
 
 #emails-tab .outlook-container--compact-pagination .client-mail-filters--compact .list-toolbar__search .search-box-icon {

@@ -835,10 +835,13 @@ class IncomingEmailSyncService
             return false;
         }
 
+        // If same sender, same subject, and same sent time exists anywhere in email_logs
+        // or for this mailbox, detect as duplicate so cross-mailbox or multi-sync runs don't dupe it.
         $dupQuery = EmailLog::query()
             ->where(function ($q) use ($mailbox, $mailboxEmail) {
                 $q->where('synced_email_id', $mailbox->id)
-                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail])
+                    ->orWhereNotNull('client_id');
             })
             ->whereRaw('LOWER(subject) = ?', [$subject]);
 
