@@ -10719,3 +10719,126 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   color: #94a3b8;
   font-weight: 500;
 }
+
+/* ============================================================
+ * XL+ viewports (≥1400px): client overview hearings + documents layout
+ * ============================================================ */
+#personaldetails-tab.tab-pane.active {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#personaldetails-tab .cdn-ov-hearings-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1400px) {
+  #personaldetails-tab .cdn-ov-hearings-table-wrap {
+    max-width: 100%;
+  }
+
+  #personaldetails-tab .cdn-ov-hearing-notes {
+    max-width: 22rem;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  #personaldocuments-tab.client-documents-tab .personal-documents-content,
+  #matterdocuments-tab.client-documents-tab .visa-documents-content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #personaldocuments-tab .subtab2-content,
+  #matterdocuments-tab .subtab6-content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #personaldocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .subtab2-pane.active,
+  #matterdocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .subtab6-pane.active {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    align-items: flex-start;
+  }
+
+  #personaldocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .checklist-table-container,
+  #matterdocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .checklist-table-container {
+    flex: 0 0 clamp(320px, 34vw, 500px);
+    width: clamp(320px, 34vw, 500px);
+    max-width: 46%;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 56px);
+  }
+
+  #personaldocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .client-doc-preview-pane.preview-pane,
+  #matterdocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .client-doc-preview-pane.preview-pane {
+    flex: 1 1 0;
+    min-width: 280px;
+    width: auto;
+    height: auto;
+    min-height: min(70vh, 640px);
+    max-height: calc(100vh - 56px);
+  }
+
+  #personaldocuments-tab.client-documents-tab .checklist-table-container.is-bulk-upload-open,
+  #matterdocuments-tab.client-documents-tab .checklist-table-container.is-bulk-upload-open {
+    max-height: calc(100vh - 56px);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  #personaldocuments-tab .pd-section-header.subtab2-header,
+  #matterdocuments-tab .md-section-header.subtab6-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 12px;
+  }
+
+  #personaldocuments-tab .pd-section-actions,
+  #matterdocuments-tab .md-section-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 1800px) {
+  #personaldetails-tab .cdn-ov-hearing-notes {
+    max-width: 32rem;
+  }
+
+  #personaldocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .checklist-table-container,
+  #matterdocuments-tab.client-documents-tab.tab-pane.active:not(.client-doc-viewport-fill) .checklist-table-container {
+    flex: 0 0 clamp(360px, 28vw, 540px);
+    width: clamp(360px, 28vw, 540px);
+    max-width: 42%;
+  }
+}
+
+/* Prevent doc subtab strip negative margin from causing horizontal page scroll on wide layouts */
+@media (min-width: 1200px) {
+  .crm-container.crm-container--unified .main-content-with-tabs {
+    overflow-x: clip;
+  }
+
+  .cdn-doc-subtab-strip.is-visible {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}

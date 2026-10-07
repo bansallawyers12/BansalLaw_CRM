@@ -830,7 +830,7 @@
                                             {{ $ch->status ?: 'Unknown' }}
                                         </span>
                                     </td>
-                                    <td class="cdn-ov-hearing-notes">
+                                    <td class="cdn-ov-hearing-notes" @if($ch->notes) title="{{ e($ch->notes) }}" @endif>
                                         {{ $ch->notes ?: '—' }}
                                     </td>
                                 </tr>
