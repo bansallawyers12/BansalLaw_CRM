@@ -939,6 +939,12 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   flex-shrink: 0;
 }
 
+#personaldocuments-tab.client-documents-tab .checklist-table-container.is-bulk-upload-open,
+#matterdocuments-tab.client-documents-tab .checklist-table-container.is-bulk-upload-open {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 #matterdocuments-tab .checklist-table-container .subtab6-header,
 #personaldocuments-tab .checklist-table-container .subtab2-header {
   margin-bottom: 12px;

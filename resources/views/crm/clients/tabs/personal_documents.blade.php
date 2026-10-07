@@ -92,7 +92,7 @@
                                         </div>
                                         
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
-                                        <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px;">
+                                        <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" data-bulk-open="0" style="display: none; margin: 15px 0; padding: 20px;">
                                             <div class="bulk-upload-dropzone" data-categoryid="<?= $id ?>" style="text-align: center; padding: 30px; cursor: pointer;">
                                                 <i class="fa-solid fa-cloud-arrow-up bulk-upload-icon"></i>
                                                 <p class="bulk-upload-lead">
@@ -1208,65 +1208,110 @@
                 function resetBulkUploadSelection(categoryId) {
                     bulkUploadFiles[categoryId] = [];
                     resetBulkUploadFileInput(categoryId);
-                    const container = $('#bulk-upload-' + categoryId);
+                    const container = $('#personaldocuments-tab #bulk-upload-' + categoryId);
                     container.find('.bulk-upload-file-list').hide();
                     container.find('.bulk-upload-files-container').empty();
                     container.find('.file-count').text('0');
                 }
 
-                // Toggle bulk upload dropzone
-                $(document).on('click', '.bulk-upload-toggle-btn', function() {
-                    const categoryId = $(this).data('categoryid');
-                    const dropzoneContainer = $('#bulk-upload-' + categoryId);
-                    
-                    // Hide all other dropzones first
-                    $('.bulk-upload-dropzone-container').not('#bulk-upload-' + categoryId).slideUp();
-                    $('.bulk-upload-toggle-btn').not(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
-                    
-                    if (dropzoneContainer.is(':visible')) {
-                        dropzoneContainer.slideUp(200, function() {
-                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                function setPersonalBulkDropzoneOpen(categoryId, open) {
+                    const $tab = $('#personaldocuments-tab');
+                    const dropzoneContainer = $tab.find('#bulk-upload-' + categoryId);
+                    const $btn = $tab.find('.bulk-upload-toggle-btn[data-categoryid="' + categoryId + '"]');
+                    const $listPanel = dropzoneContainer.closest('.checklist-table-container');
+
+                    $tab.find('.bulk-upload-dropzone-container').not('#bulk-upload-' + categoryId).each(function () {
+                        const $other = $(this);
+                        $other.stop(true, true).slideUp(200);
+                        $other.attr('data-bulk-open', '0');
+                        $other.closest('.checklist-table-container').removeClass('is-bulk-upload-open');
+                    });
+                    $tab.find('.bulk-upload-toggle-btn').not($btn).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
+
+                    if (open) {
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
+                        dropzoneContainer.stop(true, true).slideDown(200, function () {
+                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                                scheduleClientDocumentsPanelHeightAdjust();
+                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
-                        resetBulkUploadSelection(categoryId);
-                        window.hideBulkUploadModal();
-                    } else {
-                        window.hideBulkUploadModal();
-                        dropzoneContainer.slideDown(200, function() {
-                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
-                                adjustClientDocumentsPanelHeight();
-                            }
-                        });
-                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
+                        dropzoneContainer.attr('data-bulk-open', '1');
+                        $listPanel.addClass('is-bulk-upload-open');
+                        $btn.html('<i class="fa-solid fa-xmark"></i> Close');
                         currentCategoryId = categoryId;
+                        setTimeout(function () {
+                            initBulkUploadDragDrop();
+                        }, 220);
+                    } else {
+                        dropzoneContainer.stop(true, true).slideUp(200, function () {
+                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                                scheduleClientDocumentsPanelHeightAdjust();
+                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
+                        dropzoneContainer.attr('data-bulk-open', '0');
+                        $listPanel.removeClass('is-bulk-upload-open');
+                        $btn.html('<i class="fa-solid fa-upload"></i> Bulk Upload');
+                        resetBulkUploadSelection(categoryId);
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
                     }
-                });
+                }
+
+                function initPersonalBulkUploadHandlers() {
+                    if (window.__cdnPersonalBulkUploadBound) {
+                        return;
+                    }
+                    window.__cdnPersonalBulkUploadBound = true;
+
+                    $(document)
+                        .off('click.personalBulkToggle', '#personaldocuments-tab .bulk-upload-toggle-btn')
+                        .on('click.personalBulkToggle', '#personaldocuments-tab .bulk-upload-toggle-btn', function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const categoryId = $(this).data('categoryid');
+                            const dropzoneContainer = $('#personaldocuments-tab #bulk-upload-' + categoryId);
+                            const isOpen = dropzoneContainer.attr('data-bulk-open') === '1';
+                            setPersonalBulkDropzoneOpen(categoryId, !isOpen);
+                        });
+
+                    $(document)
+                        .off('click.personalBulkDropzone', '#personaldocuments-tab .bulk-upload-dropzone')
+                        .on('click.personalBulkDropzone', '#personaldocuments-tab .bulk-upload-dropzone', function (e) {
+                            if (!$(e.target).is('input')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const categoryId = $(this).data('categoryid');
+                                $(this).closest('.bulk-upload-dropzone-container').find('.bulk-upload-file-input[data-categoryid="' + categoryId + '"]').click();
+                            }
+                        });
+
+                    $(document)
+                        .off('change.personalBulkInput', '#personaldocuments-tab .bulk-upload-file-input')
+                        .on('change.personalBulkInput', '#personaldocuments-tab .bulk-upload-file-input', function () {
+                            const categoryId = $(this).data('categoryid');
+                            const files = this.files;
+
+                            if (files.length > 0) {
+                                handleBulkFilesSelected(categoryId, files);
+                            }
+                        });
+                }
+
+                initPersonalBulkUploadHandlers();
                 
                 // Initialize bulk upload files array for each category
                 $('.bulk-upload-dropzone').each(function() {
                     const categoryId = $(this).data('categoryid');
                     if (!bulkUploadFiles[categoryId]) {
                         bulkUploadFiles[categoryId] = [];
-                    }
-                });
-                
-                // Click to browse files
-                $(document).on('click', '.bulk-upload-dropzone', function(e) {
-                    if (!$(e.target).is('input')) {
-                        const categoryId = $(this).data('categoryid');
-                        $(this).closest('.bulk-upload-dropzone-container').find('.bulk-upload-file-input[data-categoryid="' + categoryId + '"]').click();
-                    }
-                });
-                
-                // File input change
-                $(document).on('change', '.bulk-upload-file-input', function() {
-                    const categoryId = $(this).data('categoryid');
-                    const files = this.files;
-                    
-                    if (files.length > 0) {
-                        handleBulkFilesSelected(categoryId, files);
                     }
                 });
                 
@@ -1346,16 +1391,15 @@
                     });
                 }
                 
-                // Initialize bulk upload drag-drop when container becomes visible
-                $(document).on('click', '.bulk-upload-toggle-btn', function() {
-                    setTimeout(function() {
-                        initBulkUploadDragDrop();
-                    }, 300); // Wait for slideDown animation
-                });
-                
                 // Also initialize on DOM ready for any visible dropzones
                 $(document).ready(function() {
                     initBulkUploadDragDrop();
+                });
+
+                $(document).on('clientTabContentLoaded', function (_event, tabId) {
+                    if (String(tabId || '').toLowerCase() === 'personaldocuments') {
+                        initBulkUploadDragDrop();
+                    }
                 });
                 
                 // Keep delegated handlers as fallback
@@ -1406,9 +1450,9 @@
                 });
                 
                 function ensureBulkUploadOpenForCategory(categoryId) {
-                    const $container = $('#bulk-upload-' + categoryId);
-                    if (!$container.is(':visible')) {
-                        $('#personaldocuments-tab .bulk-upload-toggle-btn[data-categoryid="' + categoryId + '"]').trigger('click');
+                    const $container = $('#personaldocuments-tab #bulk-upload-' + categoryId);
+                    if ($container.attr('data-bulk-open') !== '1') {
+                        setPersonalBulkDropzoneOpen(categoryId, true);
                     }
                     currentCategoryId = categoryId;
                 }

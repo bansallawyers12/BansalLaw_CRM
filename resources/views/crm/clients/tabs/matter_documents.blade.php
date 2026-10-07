@@ -148,7 +148,7 @@
                                         </div>
                                         
                                         <!-- Bulk upload dropzone for matter documents (hidden by default) -->
-                                        <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" style="display: none;">
+                                        <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" data-bulk-open="0" style="display: none;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
                                                 <i class="fa-solid fa-cloud-arrow-up matter-bulk-dropzone-icon"></i>
                                                 <p class="matter-bulk-dropzone-lead">
@@ -1149,76 +1149,113 @@
                 function resetVisaBulkUploadSelection(categoryId) {
                     bulkUploadVisaFiles[categoryId] = [];
                     resetVisaBulkUploadFileInput(categoryId);
-                    const container = $('#bulk-upload-visa-' + categoryId);
+                    const container = $('#matterdocuments-tab #bulk-upload-visa-' + categoryId);
                     container.find('.bulk-upload-file-list-visa').hide();
                     container.find('.bulk-upload-files-container-visa').empty();
                     container.find('.file-count-visa').text('0');
                 }
-                
-                // Toggle bulk upload dropzone for visa
-                $(document).on('click', '.bulk-upload-toggle-btn-visa', function() {
-                    const categoryId = $(this).data('categoryid');
-                    const matterId = $(this).data('matterid');
-                    const dropzoneContainer = $('#bulk-upload-visa-' + categoryId);
-                    
-                    // Hide all other dropzones first
-                    $('.bulk-upload-dropzone-container-visa').not('#bulk-upload-visa-' + categoryId).slideUp();
-                    $('.bulk-upload-toggle-btn-visa').not(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
-                    
-                    if (dropzoneContainer.is(':visible')) {
-                        dropzoneContainer.slideUp(200, function() {
+
+                function setMatterBulkDropzoneOpen(categoryId, open, matterId) {
+                    const $tab = $('#matterdocuments-tab');
+                    const dropzoneContainer = $tab.find('#bulk-upload-visa-' + categoryId);
+                    const $btn = $tab.find('.bulk-upload-toggle-btn-visa[data-categoryid="' + categoryId + '"]');
+                    const $listPanel = dropzoneContainer.closest('.checklist-table-container');
+
+                    $tab.find('.bulk-upload-dropzone-container-visa').not('#bulk-upload-visa-' + categoryId).each(function () {
+                        const $other = $(this);
+                        $other.stop(true, true).slideUp(200);
+                        $other.attr('data-bulk-open', '0');
+                        $other.closest('.checklist-table-container').removeClass('is-bulk-upload-open');
+                    });
+                    $tab.find('.bulk-upload-toggle-btn-visa').not($btn).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
+
+                    if (open) {
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
+                        dropzoneContainer.stop(true, true).slideDown(200, function () {
                             if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
                                 scheduleClientDocumentsPanelHeightAdjust();
                             } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
+                        dropzoneContainer.attr('data-bulk-open', '1');
+                        $listPanel.addClass('is-bulk-upload-open');
+                        $btn.html('<i class="fa-solid fa-xmark"></i> Close');
+                        currentVisaCategoryId = categoryId;
+                        currentVisaMatterId = matterId || $btn.data('matterid') || null;
+                        setTimeout(function () {
+                            initVisaBulkUploadDragDrop();
+                        }, 220);
+                    } else {
+                        dropzoneContainer.stop(true, true).slideUp(200, function () {
+                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                                scheduleClientDocumentsPanelHeightAdjust();
+                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
+                        dropzoneContainer.attr('data-bulk-open', '0');
+                        $listPanel.removeClass('is-bulk-upload-open');
+                        $btn.html('<i class="fa-solid fa-upload"></i> Bulk Upload');
                         resetVisaBulkUploadSelection(categoryId);
                         if (typeof window.hideBulkUploadModal === 'function') {
                             window.hideBulkUploadModal();
                         }
-                    } else {
-                        if (typeof window.hideBulkUploadModal === 'function') {
-                            window.hideBulkUploadModal();
-                        }
-                        dropzoneContainer.slideDown(200, function() {
-                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
-                                scheduleClientDocumentsPanelHeightAdjust();
-                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
-                                adjustClientDocumentsPanelHeight();
+                    }
+                }
+
+                function initMatterBulkUploadHandlers() {
+                    if (window.__cdnMatterBulkUploadBound) {
+                        return;
+                    }
+                    window.__cdnMatterBulkUploadBound = true;
+
+                    $(document)
+                        .off('click.matterBulkToggle', '#matterdocuments-tab .bulk-upload-toggle-btn-visa')
+                        .on('click.matterBulkToggle', '#matterdocuments-tab .bulk-upload-toggle-btn-visa', function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const categoryId = $(this).data('categoryid');
+                            const matterId = $(this).data('matterid');
+                            const dropzoneContainer = $('#matterdocuments-tab #bulk-upload-visa-' + categoryId);
+                            const isOpen = dropzoneContainer.attr('data-bulk-open') === '1';
+                            setMatterBulkDropzoneOpen(categoryId, !isOpen, matterId);
+                        });
+
+                    $(document)
+                        .off('click.matterBulkDropzone', '#matterdocuments-tab .bulk-upload-dropzone-visa')
+                        .on('click.matterBulkDropzone', '#matterdocuments-tab .bulk-upload-dropzone-visa', function (e) {
+                            if (!$(e.target).is('input')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const categoryId = $(this).data('categoryid');
+                                $(this).closest('.bulk-upload-dropzone-container-visa').find('.bulk-upload-file-input-visa[data-categoryid="' + categoryId + '"]').click();
                             }
                         });
-                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
-                        currentVisaCategoryId = categoryId;
-                        currentVisaMatterId = matterId || null;
-                    }
-                });
+
+                    $(document)
+                        .off('change.matterBulkInput', '#matterdocuments-tab .bulk-upload-file-input-visa')
+                        .on('change.matterBulkInput', '#matterdocuments-tab .bulk-upload-file-input-visa', function () {
+                            const categoryId = $(this).data('categoryid');
+                            const matterId = $(this).data('matterid');
+                            const files = this.files;
+
+                            if (files.length > 0) {
+                                handleBulkVisaFilesSelected(categoryId, matterId, files);
+                            }
+                        });
+                }
+
+                initMatterBulkUploadHandlers();
                 
                 // Initialize bulk upload files array for each visa category
                 $('.bulk-upload-dropzone-visa').each(function() {
                     const categoryId = $(this).data('categoryid');
                     if (!bulkUploadVisaFiles[categoryId]) {
                         bulkUploadVisaFiles[categoryId] = [];
-                    }
-                });
-                
-                // Click to browse files for visa
-                $(document).on('click', '.bulk-upload-dropzone-visa', function(e) {
-                    if (!$(e.target).is('input')) {
-                        const categoryId = $(this).data('categoryid');
-                        $(this).closest('.bulk-upload-dropzone-container-visa').find('.bulk-upload-file-input-visa[data-categoryid="' + categoryId + '"]').click();
-                    }
-                });
-                
-                // File input change for visa
-                $(document).on('change', '.bulk-upload-file-input-visa', function() {
-                    const categoryId = $(this).data('categoryid');
-                    const matterId = $(this).data('matterid');
-                    const files = this.files;
-                    
-                    if (files.length > 0) {
-                        handleBulkVisaFilesSelected(categoryId, matterId, files);
                     }
                 });
                 
@@ -1294,16 +1331,15 @@
                     });
                 }
                 
-                // Initialize visa bulk upload drag-drop when container becomes visible
-                $(document).on('click', '.bulk-upload-toggle-btn-visa', function() {
-                    setTimeout(function() {
-                        initVisaBulkUploadDragDrop();
-                    }, 300); // Wait for slideDown animation
-                });
-                
                 // Also initialize on DOM ready for any visible dropzones
                 $(document).ready(function() {
                     initVisaBulkUploadDragDrop();
+                });
+
+                $(document).on('clientTabContentLoaded', function (_event, tabId) {
+                    if (String(tabId || '').toLowerCase() === 'matterdocuments') {
+                        initVisaBulkUploadDragDrop();
+                    }
                 });
                 
                 // Keep delegated handlers as fallback
