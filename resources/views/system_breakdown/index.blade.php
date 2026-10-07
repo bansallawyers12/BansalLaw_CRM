@@ -674,6 +674,11 @@
             </div>
 
             <div class="header-actions">
+                @if($showUiTestsTab ?? false)
+                    <a href="{{ route('system_errors.index', ['tab' => 'ui_tests']) }}" class="btn btn-primary" title="Local-only manual UI smoke checklist">
+                        🧪 UI Test Suite
+                    </a>
+                @endif
                 <a href="{{ route('system_errors.simulate') }}" class="btn btn-warning" title="Simulate a test exception to verify capture">
                     ⚡ Simulate Test Error
                 </a>
@@ -767,6 +772,12 @@
                     {{ $activeUsersData['active_count'] }} Online Now
                 </span>
             </a>
+            @if($showUiTestsTab ?? false)
+                <a href="{{ route('system_errors.index', ['tab' => 'ui_tests']) }}" class="tab-link {{ $activeTab === 'ui_tests' ? 'active' : '' }}">
+                    <span>🧪 Manual UI Test Suite</span>
+                    <span class="tab-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);">Local only</span>
+                </a>
+            @endif
         </div>
 
         <!-- Active Users Quick Live Banner -->
@@ -1310,6 +1321,13 @@
                 @endif
 
             </div>
+
+        @elseif(($showUiTestsTab ?? false) && $activeTab === 'ui_tests')
+            @include('system_breakdown.partials.ui_manual_tests_tab', [
+                'uiManualTestSections' => $uiManualTestSections ?? [],
+                'uiManualTestStorageKey' => $uiManualTestStorageKey ?? '',
+                'uiManualTestMeta' => $uiManualTestMeta ?? [],
+            ])
         @endif
 
     </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\SystemBreakdownLog;
 use App\Services\SystemBreakdownService;
+use App\Support\UiManualTestCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -35,7 +36,18 @@ class SystemBreakdownController extends Controller
 
             $stats = $this->service->getStats($userThreshold);
             $errors = $this->service->getFilteredErrors($request);
-            $activeTab = $request->input('tab', 'db'); // 'db', 'logs', or 'users'
+            $activeTab = $request->input('tab', 'db'); // 'db', 'logs', 'users', or 'ui_tests' (local only)
+            if ($activeTab === 'ui_tests' && ! app()->environment('local')) {
+                abort(404);
+            }
+
+            $showUiTestsTab = app()->environment('local');
+            $uiManualTestSections = ($activeTab === 'ui_tests' && $showUiTestsTab)
+                ? UiManualTestCatalog::sections()
+                : [];
+            $uiManualTestStorageKey = UiManualTestCatalog::storageKey();
+            $uiManualTestMeta = config('ui_manual_tests.meta', []);
+
             $activeUsersData = $this->service->getActiveUsersData($userThreshold);
 
             // Log files explorer
@@ -77,7 +89,11 @@ class SystemBreakdownController extends Controller
                 'logLevel',
                 'logSearch',
                 'activeUsersData',
-                'userThreshold'
+                'userThreshold',
+                'showUiTestsTab',
+                'uiManualTestSections',
+                'uiManualTestStorageKey',
+                'uiManualTestMeta'
             ));
         } catch (\Throwable $e) {
             // Diagnostic fallback: show the exact error message and trace rather than 500 generic page
