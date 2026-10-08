@@ -125,7 +125,11 @@
 
                 <div class="invoice-field invoice-col-gst">
                     <div class="invoice-field__header">
-                        <label class="invoice-field__label">GST</label>
+                        <label class="invoice-field__label">Include GST</label>
+                        <div class="btn-group btn-group-xs invoice-line-gst-mode-pills" role="group" aria-label="Include GST on this line">
+                            <button type="button" class="btn invoice-line-gst-mode-btn btn-primary" data-line-gst="yes" title="GST applies">Yes</button>
+                            <button type="button" class="btn invoice-line-gst-mode-btn btn-outline-secondary" data-line-gst="no" title="No GST on this line">No</button>
+                        </div>
                     </div>
                     <div class="invoice-input-prefix-wrap">
                         <span class="invoice-input-prefix">$</span>

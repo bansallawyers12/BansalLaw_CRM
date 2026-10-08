@@ -384,24 +384,38 @@
     display: flex;
     align-items: center;
 }
-.invoice-billing-mode-sep {
-    width: 1px;
-    height: 1.5rem;
-    background: #cbd5e1;
-    margin: 0 4px;
+.invoice-line-gst-mode-pills {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1px;
+    display: inline-flex;
+    gap: 1px;
+    flex-shrink: 0;
 }
-form.invoice-include-gst-no .invoice-totals-gst-row {
-    opacity: 0.55;
+.invoice-line-gst-mode-pills .btn {
+    padding: 1px 7px;
+    font-size: 0.66rem;
+    font-weight: 600;
+    border-radius: 10px !important;
+    border: none !important;
+    line-height: 1.3;
 }
-form.invoice-include-gst-no .invoice-billing-hint-hourly,
-form.invoice-include-gst-no .invoice-billing-hint-fixed {
-    display: none !important;
+.invoice-line-gst-mode-pills .btn-primary {
+    background: #1e3d60 !important;
+    color: #fff !important;
 }
-form.invoice-include-gst-no .invoice-gst-hint-no {
-    display: inline !important;
+.invoice-line-gst-mode-pills .btn-outline-secondary {
+    background: transparent !important;
+    color: #64748b !important;
 }
-form.invoice-include-gst-no .invoice-line-gst {
+tr.invoice-line--no-gst .invoice-line-gst {
     background-color: #f1f5f9;
+}
+.invoice-col-gst .invoice-field__header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 22px;
 }
 
 .invoice-timesheet-scroll {

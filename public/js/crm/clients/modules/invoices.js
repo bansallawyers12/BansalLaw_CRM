@@ -385,12 +385,48 @@
         return $row.find('select[name="payment_type[]"]').val() === 'Discount';
     }
 
-    function invoiceFormIncludesGst($form) {
-        if (!$form || !$form.length) {
+    function invoiceRowIncludesGst($row) {
+        if (!$row || !$row.length) {
             return true;
         }
 
-        return String($form.find('.invoice-include-gst').val() || 'Yes').toLowerCase() !== 'no';
+        return String($row.find('.invoice-gst-included').val() || 'Yes').toLowerCase() !== 'no';
+    }
+
+    function syncInvoiceRowGstButtons($row) {
+        if (!$row || !$row.length) {
+            return;
+        }
+        var includeGst = invoiceRowIncludesGst($row);
+        $row.find('.invoice-line-gst-mode-btn').each(function() {
+            var isYes = $(this).data('line-gst') === 'yes';
+            var isActive = includeGst ? isYes : !isYes;
+            $(this).toggleClass('btn-primary', isActive)
+                .toggleClass('btn-outline-secondary', !isActive);
+        });
+        $row.toggleClass('invoice-line--no-gst', !includeGst);
+    }
+
+    function applyInvoiceRowGstMode($row, mode) {
+        if (!$row || !$row.length) {
+            return;
+        }
+        var includeGst = String(mode || 'yes').toLowerCase() !== 'no';
+        $row.find('.invoice-gst-included').val(includeGst ? 'Yes' : 'No');
+        syncInvoiceRowGstButtons($row);
+        $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
+        syncInvoiceLineAmountReadonly($row);
+        recalcInvoiceTimesheetRow($row, { keepGst: false });
+        grandtotalAccountTab_invoice($row.closest('form'));
+    }
+
+    function initInvoiceLineGstModes($scope) {
+        var $root = $scope && $scope.length ? $scope : $(document);
+        $root.find('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').each(function() {
+            var $row = $(this);
+            syncInvoiceRowGstButtons($row);
+            syncInvoiceLineAmountReadonly($row);
+        });
     }
 
     function syncInvoiceLineAmountReadonly($row) {
@@ -401,7 +437,7 @@
         var mode = ($form.find('.invoice-billing-mode').val() || 'hourly');
         var readonly = mode === 'hourly' && !invoiceRowIsDiscount($row);
         $row.find('.invoice-amount-ex-gst').prop('readonly', readonly);
-        $row.find('.invoice-line-gst').prop('readonly', !invoiceFormIncludesGst($form));
+        $row.find('.invoice-line-gst').prop('readonly', !invoiceRowIncludesGst($row));
         $row.toggleClass('invoice-line--discount', invoiceRowIsDiscount($row));
     }
 
@@ -409,9 +445,9 @@
         if (!$form || !$form.length) {
             return;
         }
-        var includeGst = invoiceFormIncludesGst($form);
-        $form.find('.invoice-totals-gst-hint').text(includeGst ? '(10%)' : '(not applied)');
-        $form.find('.invoice-totals-total-hint').text(includeGst ? '(incl GST)' : '(ex GST)');
+        var totalGst = invoiceMoney($form.find('.total_invoice_gst').first().text());
+        $form.find('.invoice-totals-gst-hint').text(totalGst > 0 ? '(10%)' : '(none on lines)');
+        $form.find('.invoice-totals-total-hint').text(totalGst > 0 ? '(incl GST)' : '(ex GST)');
     }
 
     function invoiceLineHasAmountInputs($row) {
@@ -443,6 +479,7 @@
         $workDate.val('');
         destroyInvoiceDatePicker($workDate.get(0));
         syncInvoiceDateModeButtons($row, 'single');
+        applyInvoiceRowGstMode($row, 'yes');
     }
 
     function invoiceDateTodayStr() {
@@ -517,7 +554,7 @@
             });
         }
         initInvoiceWorkDates($form);
-        applyInvoiceGstMode($form, 'yes');
+        initInvoiceLineGstModes($form);
         applyInvoiceBillingMode($form, 'hourly');
     }
 
@@ -575,11 +612,10 @@
                 $gst.val('');
             }
             $row.find('.withdraw_amount_invoice_per_row').val('');
-            $row.find('.invoice-gst-included').val(invoiceFormIncludesGst($form) ? 'Yes' : 'No');
             return;
         }
 
-        if (!invoiceFormIncludesGst($form)) {
+        if (!invoiceRowIncludesGst($row)) {
             if (basis === 'hourly' && !invoiceRowIsDiscount($row)) {
                 if (hoursRaw !== '') {
                     if ((rateRaw === '' || rate === 0) && amountRaw !== '' && amountEx > 0 && hours > 0) {
@@ -603,13 +639,15 @@
             amountEx = invoiceMoney(amountRaw);
             var discountGstRaw = $.trim($gst.val() || '');
             var discountGstValue = invoiceMoney(discountGstRaw);
-            if (!options.keepGst || discountGstRaw === '' || (discountGstValue === 0 && amountEx > 0)) {
+            if (!invoiceRowIncludesGst($row)) {
+                $gst.val('0.00');
+            } else if (!options.keepGst || discountGstRaw === '' || (discountGstValue === 0 && amountEx > 0)) {
                 $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
             }
             var discountGst = invoiceMoney($gst.val());
             var discountIncl = invoiceMoney(amountEx + discountGst);
             $row.find('.withdraw_amount_invoice_per_row').val(discountIncl.toFixed(2));
-            $row.find('.invoice-gst-included').val(discountGst > 0.00001 ? 'Yes' : 'No');
+            $row.find('.invoice-gst-included').val(invoiceRowIncludesGst($row) ? 'Yes' : 'No');
             syncInvoiceLineAmountReadonly($row);
             return;
         }
@@ -638,14 +676,16 @@
         var gstRaw = $.trim($gst.val() || '');
         var gstValue = invoiceMoney(gstRaw);
         // Recompute GST when blank, or stuck at 0 while the line has a positive amount.
-        if (!options.keepGst || gstRaw === '' || (gstValue === 0 && amountEx > 0) || (basis === 'hourly' && !options.keepGst)) {
+        if (!invoiceRowIncludesGst($row)) {
+            $gst.val('0.00');
+        } else if (!options.keepGst || gstRaw === '' || (gstValue === 0 && amountEx > 0) || (basis === 'hourly' && !options.keepGst)) {
             $gst.val(invoiceMoney(amountEx * 0.10).toFixed(2));
         }
 
         var gst = invoiceMoney($gst.val());
         var incl = invoiceMoney(amountEx + gst);
         $row.find('.withdraw_amount_invoice_per_row').val(incl.toFixed(2));
-        $row.find('.invoice-gst-included').val(gst > 0.00001 ? 'Yes' : 'No');
+        $row.find('.invoice-gst-included').val(invoiceRowIncludesGst($row) ? 'Yes' : 'No');
         syncInvoiceLineAmountReadonly($row);
     }
 
@@ -710,10 +750,21 @@
         $scope.find('.total_invoice_ex_gst').text('$' + totalEx.toFixed(2));
         $scope.find('.total_invoice_gst').text('$' + totalGst.toFixed(2));
         $scope.find('.total_withdraw_amount_all_rows_invoice').text('$' + totalIncl.toFixed(2));
+        if ($form.length) {
+            syncInvoiceTotalsLabels($form);
+        }
     }
 
     function populateInvoiceLineRow($row, line) {
         line = line || {};
+        var lineGstIncluded = String(line.gst_included || '').toLowerCase();
+        if (lineGstIncluded !== 'no' && invoiceMoney(line.line_gst) > 0) {
+            lineGstIncluded = 'yes';
+        } else if (lineGstIncluded !== 'no') {
+            lineGstIncluded = 'yes';
+        }
+        $row.find('.invoice-gst-included').val(lineGstIncluded === 'no' ? 'No' : 'Yes');
+        syncInvoiceRowGstButtons($row);
         $row.find('input[name="id[]"]').val(line.id || '');
         $row.find('input[name="trans_date[]"]').val(line.trans_date || '');
         $row.find('input[name="entry_date[]"]').val(line.entry_date || '');
@@ -787,7 +838,8 @@
                 $row.find('.invoice-amount-ex-gst').val(amountEx.toFixed(2));
                 $row.find('.invoice-line-gst').val(lineGst.toFixed(2));
                 $row.find('.withdraw_amount_invoice_per_row').val(invoiceMoney(amountEx + lineGst).toFixed(2));
-                $row.find('.invoice-gst-included').val(lineGst > 0.00001 ? 'Yes' : 'No');
+                $row.find('.invoice-gst-included').val(invoiceRowIncludesGst($row) ? 'Yes' : 'No');
+                syncInvoiceRowGstButtons($row);
                 $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
                 return;
             }
@@ -882,7 +934,7 @@
                 }
                 initInvoiceWorkDates($blank);
             }
-            applyInvoiceGstMode($form, 'yes');
+            initInvoiceLineGstModes($form);
             applyInvoiceBillingMode($form, 'hourly');
             grandtotalAccountTab_invoice($form);
             return;
@@ -902,47 +954,12 @@
             initInvoiceWorkDates($row);
         });
         var mode = invoiceModeFromLines(lines);
-        applyInvoiceGstMode($form, invoiceGstModeFromLines(lines));
         applyInvoiceBillingMode($form, mode);
+        initInvoiceLineGstModes($form);
         $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice').each(function() {
             var $row = $(this);
             $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
             recalcInvoiceTimesheetRow($row, { keepGst: mode !== 'hourly' });
-        });
-        grandtotalAccountTab_invoice($form);
-    }
-
-    function invoiceGstModeFromLines(records) {
-        var includesGst = false;
-        $.each(records || [], function(_, line) {
-            if (String(line.gst_included || '').toLowerCase() === 'yes' || invoiceMoney(line.line_gst) > 0) {
-                includesGst = true;
-                return false;
-            }
-        });
-
-        return includesGst ? 'yes' : 'no';
-    }
-
-    function applyInvoiceGstMode($form, mode) {
-        if (!$form || !$form.length) {
-            return;
-        }
-        var includeGst = String(mode || 'yes').toLowerCase() !== 'no';
-        $form.find('.invoice-include-gst').val(includeGst ? 'Yes' : 'No');
-        $form.toggleClass('invoice-include-gst-no', !includeGst);
-        $form.find('.invoice-gst-mode-btn').each(function() {
-            var isYes = $(this).data('invoice-gst') === 'yes';
-            var isActive = includeGst ? isYes : !isYes;
-            $(this).toggleClass('btn-primary', isActive)
-                .toggleClass('btn-outline-secondary', !isActive);
-        });
-        syncInvoiceTotalsLabels($form);
-        $form.find('.productitem_invoice').children('tr.clonedrow_invoice, tr.product_field_clone_invoice, tr.invoice-line-block').each(function() {
-            var $row = $(this);
-            $row.removeData('invoice-gst-manual').removeAttr('data-invoice-gst-manual');
-            syncInvoiceLineAmountReadonly($row);
-            recalcInvoiceTimesheetRow($row, { keepGst: false });
         });
         grandtotalAccountTab_invoice($form);
     }
@@ -1008,7 +1025,8 @@
     window.cloneInvoiceLineRow = cloneInvoiceLineRow;
     window.renderInvoiceEditLines = renderInvoiceEditLines;
     window.applyInvoiceBillingMode = applyInvoiceBillingMode;
-    window.applyInvoiceGstMode = applyInvoiceGstMode;
+    window.applyInvoiceRowGstMode = applyInvoiceRowGstMode;
+    window.initInvoiceLineGstModes = initInvoiceLineGstModes;
     window.initInvoiceWorkDates = initInvoiceWorkDates;
     window.stripInvoiceLinePickers = stripClonedFlatpickr;
     window.invoiceLineRowIsClientBlank = invoiceLineRowIsClientBlank;
@@ -1021,9 +1039,9 @@
         applyInvoiceBillingMode($(this).closest('form'), $(this).data('invoice-mode'));
     });
 
-    $(document).on('click', '.invoice-gst-mode-btn', function(e) {
+    $(document).on('click', '.invoice-line-gst-mode-btn', function(e) {
         e.preventDefault();
-        applyInvoiceGstMode($(this).closest('form'), $(this).data('invoice-gst'));
+        applyInvoiceRowGstMode($(this).closest('tr'), $(this).data('line-gst'));
     });
 
     $(document).on('click', '.invoice-date-mode-btn', function(e) {
@@ -1075,7 +1093,9 @@
     });
 
     $(function() {
-        initInvoiceWorkDates($('#invoice_receipt_form, #create_invoice_receipt'));
+        var $forms = $('#invoice_receipt_form, #create_invoice_receipt');
+        initInvoiceWorkDates($forms);
+        initInvoiceLineGstModes($forms);
     });
 
     // createapplicationnewinvoice handler REMOVED - Create Invoice from Schedule flow unused

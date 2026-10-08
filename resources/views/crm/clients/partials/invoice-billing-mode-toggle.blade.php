@@ -5,19 +5,11 @@
             <button type="button" class="btn btn-primary invoice-mode-btn" data-invoice-mode="hourly"><i class="fa-regular fa-clock me-1"></i> Hourly</button>
             <button type="button" class="btn btn-outline-secondary invoice-mode-btn" data-invoice-mode="fixed"><i class="fa-solid fa-receipt me-1"></i> Fixed fee</button>
         </div>
-        <span class="invoice-billing-mode-sep" aria-hidden="true"></span>
-        <span class="invoice-billing-mode-label"><i class="fa-solid fa-percent me-1 text-primary"></i> Include GST</span>
-        <div class="btn-group btn-group-sm invoice-billing-mode-toggle invoice-gst-mode-toggle" role="group" aria-label="Include GST on this invoice">
-            <button type="button" class="btn btn-primary invoice-gst-mode-btn" data-invoice-gst="yes">Yes</button>
-            <button type="button" class="btn btn-outline-secondary invoice-gst-mode-btn" data-invoice-gst="no">No</button>
-        </div>
     </div>
     <p class="invoice-billing-mode-hint mb-0">
         <i class="fa-solid fa-circle-info text-info me-1"></i>
-        <span class="invoice-billing-hint-hourly">Enter hours and rate for fee lines — amount and GST calculate automatically. For <strong>Discount</strong> lines, enter the amount only (hours not required).</span>
-        <span class="invoice-billing-hint-fixed" hidden>Enter the fee amount — GST is calculated automatically.</span>
-        <span class="invoice-gst-hint-no" hidden> GST is not applied — line totals and the invoice total are ex-GST only.</span>
+        <span class="invoice-billing-hint-hourly">Enter hours and rate for fee lines — amount and GST calculate automatically. For <strong>Discount</strong> lines, enter the amount only (hours not required). Use <strong>Include GST</strong> on each line when GST does not apply.</span>
+        <span class="invoice-billing-hint-fixed" hidden>Enter the fee amount — GST is calculated per line when <strong>Include GST</strong> is Yes.</span>
     </p>
     <input type="hidden" name="invoice_billing_mode" class="invoice-billing-mode" value="hourly" />
-    <input type="hidden" name="invoice_include_gst" class="invoice-include-gst" value="Yes" />
 </div>

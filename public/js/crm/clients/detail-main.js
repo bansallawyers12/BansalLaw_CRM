@@ -2234,6 +2234,7 @@ success: function(response) {
             var $existingRows = $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice');
             var invoiceDate = invoiceRowDateFromFirst($tbody, 'trans_date[]');
             var recordedDate = invoiceRowDateFromFirst($tbody, 'entry_date[]');
+            var gstIncluded = $.trim($tbody.find('tr').first().find('.invoice-gst-included').val() || 'Yes');
 
             if (typeof window.captureInvoiceLineRowTemplate === 'function') {
                 window.captureInvoiceLineRowTemplate(!$existingRows.length);
@@ -2242,7 +2243,8 @@ success: function(response) {
             var $newRow = typeof window.cloneInvoiceLineRow === 'function'
                 ? window.cloneInvoiceLineRow($tbody, {
                     trans_date: invoiceDate,
-                    entry_date: recordedDate
+                    entry_date: recordedDate,
+                    gst_included: gstIncluded
                 })
                 : $();
 
@@ -2261,7 +2263,8 @@ success: function(response) {
                     if (typeof window.populateInvoiceLineRow === 'function') {
                         window.populateInvoiceLineRow($newRow, {
                             trans_date: invoiceDate,
-                            entry_date: recordedDate
+                            entry_date: recordedDate,
+                            gst_included: gstIncluded
                         });
                     } else {
                         $newRow.find('input[name="trans_date[]"]').val(invoiceDate || '');
