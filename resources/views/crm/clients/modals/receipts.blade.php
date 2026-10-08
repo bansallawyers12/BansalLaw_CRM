@@ -384,6 +384,25 @@
     display: flex;
     align-items: center;
 }
+.invoice-billing-mode-sep {
+    width: 1px;
+    height: 1.5rem;
+    background: #cbd5e1;
+    margin: 0 4px;
+}
+form.invoice-include-gst-no .invoice-totals-gst-row {
+    opacity: 0.55;
+}
+form.invoice-include-gst-no .invoice-billing-hint-hourly,
+form.invoice-include-gst-no .invoice-billing-hint-fixed {
+    display: none !important;
+}
+form.invoice-include-gst-no .invoice-gst-hint-no {
+    display: inline !important;
+}
+form.invoice-include-gst-no .invoice-line-gst {
+    background-color: #f1f5f9;
+}
 
 .invoice-timesheet-scroll {
     overflow-x: visible;

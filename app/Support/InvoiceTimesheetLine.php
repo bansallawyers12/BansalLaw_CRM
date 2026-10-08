@@ -208,6 +208,10 @@ class InvoiceTimesheetLine
             $lineGst = self::roundMoney($amountEx * self::GST_RATE);
         }
 
+        if (! self::requestIncludesGst($requestData)) {
+            $lineGst = 0.0;
+        }
+
         $incl = self::roundMoney($amountEx + $lineGst);
 
         $feeEarnerId = $requestData['fee_earner_id'][$index] ?? null;
@@ -241,6 +245,16 @@ class InvoiceTimesheetLine
      * @param  array<string, mixed>  $requestData
      * @param  array<string, mixed>  $timesheet
      */
+    /**
+     * @param  array<string, mixed>  $requestData
+     */
+    public static function requestIncludesGst(array $requestData): bool
+    {
+        $flag = strtolower(trim((string) ($requestData['invoice_include_gst'] ?? 'yes')));
+
+        return $flag !== 'no';
+    }
+
     public static function isBlankRequestRow(array $requestData, int $index, array $timesheet): bool
     {
         $description = trim((string) ($requestData['description'][$index] ?? ''));

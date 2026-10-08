@@ -68,6 +68,23 @@ class InvoiceTimesheetLineTest extends TestCase
         $this->assertSame('No', $line['gst_included']);
     }
 
+    public function test_invoice_include_gst_no_zeros_line_gst(): void
+    {
+        $line = InvoiceTimesheetLine::fromRequest([
+            'invoice_include_gst' => 'No',
+            'billing_basis' => ['hourly'],
+            'hours' => ['1'],
+            'rate_ex_gst' => ['500.00'],
+            'line_gst' => ['50.00'],
+            'payment_type' => ['Professional Fees'],
+        ], 0);
+
+        $this->assertSame(500.0, $line['amount_ex_gst']);
+        $this->assertSame(0.0, $line['line_gst']);
+        $this->assertSame(500.0, $line['withdraw_amount']);
+        $this->assertSame('No', $line['gst_included']);
+    }
+
     public function test_blank_cloned_row_is_detected(): void
     {
         $request = [
