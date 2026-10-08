@@ -188,6 +188,10 @@
         if (!part) {
             return null;
         }
+        var iso = part.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (iso) {
+            return new Date(parseInt(iso[1], 10), parseInt(iso[2], 10) - 1, parseInt(iso[3], 10));
+        }
         var slash = part.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (slash) {
             return new Date(parseInt(slash[3], 10), parseInt(slash[2], 10) - 1, parseInt(slash[1], 10));
@@ -279,6 +283,34 @@
         $row.find('.invoice-work-date').attr('placeholder', mode === 'range' ? 'Select range' : 'Select date');
     }
 
+    function invoiceWorkDateModeForRow($row) {
+        if ($row && $row.length && $row.find('.invoice-date-mode').val() === 'range') {
+            return 'range';
+        }
+        return 'single';
+    }
+
+    function syncInvoiceWorkDateInputFromPicker($input) {
+        if (!$input || !$input.length) {
+            return;
+        }
+        var el = $input.get(0);
+        var fp = el && (el._flatpickr || $input.data('flatpickr'));
+        if (!fp || !fp.selectedDates || !fp.selectedDates.length) {
+            return;
+        }
+        var $row = $input.closest('tr');
+        var mode = invoiceWorkDateModeForRow($row);
+        $input.val(formatInvoiceWorkDate(fp.selectedDates, mode));
+    }
+
+    function syncAllInvoiceWorkDateInputs($scope) {
+        var $root = $scope && $scope.length ? $scope : $(document);
+        $root.find('.invoice-work-date').each(function() {
+            syncInvoiceWorkDateInputFromPicker($(this));
+        });
+    }
+
     function initInvoiceWorkDatePicker($input, mode, dates) {
         if (typeof flatpickr === 'undefined' || !$input || !$input.length) {
             return;
@@ -286,11 +318,18 @@
         mode = mode === 'range' ? 'range' : 'single';
         var existing = $.trim($input.val() || '');
         var el = $input.get(0);
+        var $row = $input.closest('tr');
         destroyInvoiceDatePicker(el);
         var locale = $.extend({}, (flatpickr.l10ns && flatpickr.l10ns.default) || {}, {
             firstDayOfWeek: 1,
             rangeSeparator: ' – '
         });
+        var syncFromPicker = function(selectedDates) {
+            var activeMode = invoiceWorkDateModeForRow($row);
+            if (selectedDates && selectedDates.length) {
+                $input.val(formatInvoiceWorkDate(selectedDates, activeMode));
+            }
+        };
         var config = {
             dateFormat: 'd/m/Y',
             allowInput: false,
@@ -298,9 +337,7 @@
             disableMobile: true,
             locale: locale,
             mode: mode === 'range' ? 'range' : 'single',
-            onChange: function(selectedDates) {
-                $input.val(formatInvoiceWorkDate(selectedDates, mode));
-            }
+            onChange: syncFromPicker
         };
         if (dates && dates.length) {
             config.defaultDate = mode === 'range' ? dates.slice(0, 2) : dates[0];
@@ -384,7 +421,9 @@
         $row.find('input[name="trans_no[]"]').val('');
         $row.find('.unique_trans_no_invoice').val('');
         $row.find('.invoice-date-mode').val('single');
-        $row.find('.invoice-work-date').val('');
+        var $workDate = $row.find('.invoice-work-date');
+        $workDate.val('');
+        destroyInvoiceDatePicker($workDate.get(0));
         syncInvoiceDateModeButtons($row, 'single');
     }
 
@@ -438,7 +477,9 @@
             resetInvoiceLineRow($firstRow);
             $firstRow.removeClass('product_field_clone_invoice').addClass('clonedrow_invoice invoice-line-block');
             var today = invoiceDateTodayStr();
+            var todayDate = new Date();
             $firstRow.find('input[name="trans_date[]"]').val(today);
+            initInvoiceWorkDatePicker($firstRow.find('.invoice-work-date'), 'single', [todayDate]);
             $firstRow.find('input[name="entry_date[]"]').each(function() {
                 $(this).val(today);
                 if (this._flatpickr) {
@@ -896,6 +937,7 @@
     window.invoiceLineRowIsClientBlank = invoiceLineRowIsClientBlank;
     window.resetInvoiceLineRow = resetInvoiceLineRow;
     window.resetInvoiceFormForCreate = resetInvoiceFormForCreate;
+    window.syncAllInvoiceWorkDateInputs = syncAllInvoiceWorkDateInputs;
 
     $(document).on('click', '.invoice-mode-btn', function(e) {
         e.preventDefault();

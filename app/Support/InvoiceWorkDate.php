@@ -48,6 +48,10 @@ class InvoiceWorkDate
             return '';
         }
 
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $transDate, $match)) {
+            return sprintf('%02d/%02d/%s', (int) $match[3], (int) $match[2], $match[1]);
+        }
+
         if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})/', $transDate, $match)) {
             return sprintf('%02d/%02d/%s', (int) $match[1], (int) $match[2], $match[3]);
         }
@@ -78,6 +82,63 @@ class InvoiceWorkDate
         }
 
         return $transDate;
+    }
+
+    /**
+     * Normalize a line work date for storage (dd/mm/yyyy or a formatted range string).
+     */
+    public static function formatLineDateForStorage(?string $transDate): string
+    {
+        $transDate = trim((string) $transDate);
+        if ($transDate === '') {
+            return '';
+        }
+
+        if (preg_match_all('/(\d{1,2}\/\d{1,2}\/\d{4})/', $transDate, $slashMatches) && count($slashMatches[1]) >= 2) {
+            $start = self::normalizeSingleDatePart($slashMatches[1][0]);
+            $end = self::normalizeSingleDatePart($slashMatches[1][1]);
+            if ($start !== '' && $end !== '') {
+                return $start.' – '.$end;
+            }
+        }
+
+        $rangeParts = preg_split('/\s+[–—]\s+|\s+-\s+|\s+to\s+/iu', $transDate);
+        if (is_array($rangeParts) && count($rangeParts) >= 2) {
+            $start = self::normalizeSingleDatePart(trim((string) $rangeParts[0]));
+            $end = self::normalizeSingleDatePart(trim((string) $rangeParts[1]));
+            if ($start !== '' && $end !== '') {
+                return $start.' – '.$end;
+            }
+        }
+
+        return self::normalizeSingleDatePart($transDate);
+    }
+
+    private static function normalizeSingleDatePart(string $part): string
+    {
+        $part = trim($part);
+        if ($part === '') {
+            return '';
+        }
+
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $part, $match)) {
+            return sprintf('%02d/%02d/%s', (int) $match[3], (int) $match[2], $match[1]);
+        }
+
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $part, $match)) {
+            return sprintf('%02d/%02d/%s', (int) $match[1], (int) $match[2], $match[3]);
+        }
+
+        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $part, $match)) {
+            return sprintf('%02d/%02d/%s', (int) $match[1], (int) $match[2], $match[3]);
+        }
+
+        $normalized = self::startDate($part);
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $normalized, $match)) {
+            return sprintf('%02d/%02d/%s', (int) $match[1], (int) $match[2], $match[3]);
+        }
+
+        return $part;
     }
 
     public static function headerDate(?string $transDate): string

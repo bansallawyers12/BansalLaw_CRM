@@ -251,6 +251,73 @@ class InvoiceCreateAndVisibilityTest extends TestCase
     }
 
     #[Test]
+    public function saveinvoicereport_stores_single_work_date_unchanged(): void
+    {
+        $staff = Staff::create([
+            'first_name' => 'Inv',
+            'last_name' => 'Date',
+            'email' => 'inv_date_'.uniqid().'@bansallawyers.com.au',
+            'password' => bcrypt('password123'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+        $this->actingAs($staff, 'admin');
+
+        $client = Admin::create([
+            'first_name' => 'Work',
+            'last_name' => 'Date',
+            'email' => 'inv_wd_client_'.uniqid().'@example.com',
+            'password' => bcrypt('password123'),
+            'type' => 'client',
+            'user_type' => 3,
+            'client_id' => 'TEST'.rand(100000, 999999),
+        ]);
+
+        DB::table('client_matters')->insertGetId([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'MERITS_1',
+            'matter_status' => '1',
+            'office_id' => 1,
+            'workflow_id' => 1,
+            'workflow_stage_id' => 1,
+            'sel_matter_id' => 1,
+            'user_id' => $staff->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->postJson('/clients/saveinvoicereport', [
+            'client_id' => $client->id,
+            'receipt_type' => 3,
+            'function_type' => 'add',
+            'save_type' => 'draft',
+            'trans_date' => ['19/05/2026'],
+            'entry_date' => ['08/10/2026'],
+            'payment_type' => ['Professional Fees'],
+            'description' => ['Work on originating process'],
+            'billing_basis' => ['hourly'],
+            'hours' => ['0.5'],
+            'rate_ex_gst' => ['500.00'],
+            'fee_earner_role' => ['Solicitor'],
+        ]);
+
+        $response->assertOk()->assertJson(['status' => true]);
+        $invoiceNo = $response->json('invoice_no');
+
+        $line = DB::table('account_all_invoice_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertSame('19/05/2026', $line->trans_date);
+
+        $parent = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('invoice_no', $invoiceNo)
+            ->first();
+        $this->assertSame('19/05/2026', $parent->trans_date);
+    }
+
+    #[Test]
     public function saveinvoicereport_draft_works_with_empty_function_type_and_matter_ref(): void
     {
         $staff = Staff::create([

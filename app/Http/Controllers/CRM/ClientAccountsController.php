@@ -1307,6 +1307,11 @@ class ClientAccountsController extends Controller
         return InvoiceWorkDate::startDate($transDate);
     }
 
+    private function invoiceLineTransDate(string $transDate): string
+    {
+        return InvoiceWorkDate::formatLineDateForStorage($transDate);
+    }
+
     private function invoiceLineEntryDate(array $requestData, int $index, string $transDate): string
     {
         $entryDate = trim((string) ($requestData['entry_date'][$index] ?? ''));
@@ -1455,14 +1460,15 @@ class ClientAccountsController extends Controller
                     }
                     $withdrawAmount = (float) $timesheet['withdraw_amount'];
 
+                    $lineTransDate = $this->invoiceLineTransDate((string) $requestData['trans_date'][$i]);
                     $lineId = AccountAllInvoiceReceipt::insertGetId(array_merge([
                         'user_id' => $staffId,
                         'client_id' => $clientId,
                         'client_matter_id' => $matterId,
                         'receipt_id' => $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
-                        'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, (string) $requestData['trans_date'][$i]),
+                        'trans_date' => $lineTransDate,
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, $lineTransDate),
                         'payment_type' => $requestData['payment_type'][$i] ?? '',
                         'trans_no' => $invoice_no,
                         'description' => $requestData['description'][$i] ?? '',
@@ -1475,8 +1481,8 @@ class ClientAccountsController extends Controller
 
                     $finalArr[] = [
                         'id' => $lineId,
-                        'trans_date' => $requestData['trans_date'][$i],
-                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, (string) $requestData['trans_date'][$i]),
+                        'trans_date' => $lineTransDate,
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $i, $lineTransDate),
                         'trans_no' => $invoice_no,
                         'gst_included' => $timesheet['gst_included'],
                         'payment_type' => $requestData['payment_type'][$i] ?? '',
@@ -1663,14 +1669,15 @@ class ClientAccountsController extends Controller
                     }
                     $withdrawAmount = (float) $timesheet['withdraw_amount'];
 
+                    $lineTransDate = $this->invoiceLineTransDate((string) $transDate);
                     $entryData = array_merge([
                         'user_id' => $invoiceEditActor instanceof Staff ? $invoiceEditActor->id : null,
                         'client_id' => $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                         'receipt_type' => $requestData['receipt_type'],
                         'receipt_id' => $requestData['receipt_id'],
-                        'trans_date' => $transDate,
-                        'entry_date' => $this->invoiceLineEntryDate($requestData, $index, (string) $transDate),
+                        'trans_date' => $lineTransDate,
+                        'entry_date' => $this->invoiceLineEntryDate($requestData, $index, $lineTransDate),
                         'payment_type' => $requestData['payment_type'][$index] ?? '',
                         'trans_no' => $invoice_no,//$requestData['invoice_no'],
                         'description' => $requestData['description'][$index] ?? '',
@@ -1710,9 +1717,10 @@ class ClientAccountsController extends Controller
                     throw new \RuntimeException('At least one invoice line with a charge type, description, or amount is required.');
                 }
 
-                // Step 3: Update or Insert into account_client_receipts with total withdraw_amount and last entry data
+                // Step 3: Update or Insert into account_client_receipts (parent row mirrors first line, like create)
                 if ($lastEntryData) {
-                    $lastEntryData = $this->invoiceParentLedgerFields($lastEntryData);
+                    $parentSource = $processedEntries[0] ?? $lastEntryData;
+                    $lastEntryData = $this->invoiceParentLedgerFields($parentSource);
                     $lastEntryData['withdraw_amount'] = $totalWithdrawAmount;
                     $lastEntryData['balance_amount'] = $totalWithdrawAmount;
                     //$lastEntryData['unit_price'] = $totalWithdrawAmount; // Total unit price not applicable here, using total withdraw amount
