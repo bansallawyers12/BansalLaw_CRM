@@ -1957,6 +1957,7 @@ class ClientAccountsController extends Controller
             ->where('receipt_type', 3)
             ->where('receipt_id', $receiptid)
             ->get();
+        $record_get = InvoiceWorkDate::sortInvoiceLines($record_get);
    
         if (!empty($record_get)) {
             $response['record_get'] = $record_get;

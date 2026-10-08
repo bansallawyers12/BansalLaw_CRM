@@ -42,4 +42,29 @@ class InvoiceWorkDateTest extends TestCase
         $this->assertSame('N/A', InvoiceWorkDate::headerDate(''));
         $this->assertSame('N/A', InvoiceWorkDate::dueDate(''));
     }
+
+    public function test_chronological_sort_key_uses_start_of_range(): void
+    {
+        $this->assertSame(20260519, InvoiceWorkDate::chronologicalSortKey('19/05/2026'));
+        $this->assertSame(20260519, InvoiceWorkDate::chronologicalSortKey('19/05/2026 – 29/09/2026'));
+        $this->assertLessThan(
+            InvoiceWorkDate::chronologicalSortKey('02/10/2026'),
+            InvoiceWorkDate::chronologicalSortKey('19/05/2026')
+        );
+    }
+
+    public function test_sort_invoice_lines_orders_by_work_date(): void
+    {
+        $lines = [
+            (object) ['id' => 3, 'trans_date' => '02/10/2026'],
+            (object) ['id' => 1, 'trans_date' => '19/05/2026'],
+            (object) ['id' => 2, 'trans_date' => '14/09/2026'],
+        ];
+
+        $sorted = InvoiceWorkDate::sortInvoiceLines($lines)->all();
+
+        $this->assertSame('19/05/2026', $sorted[0]->trans_date);
+        $this->assertSame('14/09/2026', $sorted[1]->trans_date);
+        $this->assertSame('02/10/2026', $sorted[2]->trans_date);
+    }
 }

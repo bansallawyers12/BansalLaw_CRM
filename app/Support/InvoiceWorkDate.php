@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Throwable;
 
 /**
@@ -139,6 +140,38 @@ class InvoiceWorkDate
         }
 
         return $part;
+    }
+
+    /**
+     * YYYYMMDD integer for chronological sorting (uses range start date when applicable).
+     */
+    public static function chronologicalSortKey(?string $transDate): int
+    {
+        $start = self::startDate($transDate);
+        if (! preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $start, $match)) {
+            return PHP_INT_MAX;
+        }
+
+        return (int) $match[3] * 10000 + (int) $match[2] * 100 + (int) $match[1];
+    }
+
+    /**
+     * Sort invoice lines by work date (asc), then id for stable ordering.
+     *
+     * @param  iterable<int, object>  $lines
+     * @return Collection<int, object>
+     */
+    public static function sortInvoiceLines(iterable $lines): Collection
+    {
+        return collect($lines)->sort(function ($a, $b) {
+            $dateCmp = self::chronologicalSortKey($a->trans_date ?? null)
+                <=> self::chronologicalSortKey($b->trans_date ?? null);
+            if ($dateCmp !== 0) {
+                return $dateCmp;
+            }
+
+            return (int) ($a->id ?? 0) <=> (int) ($b->id ?? 0);
+        })->values();
     }
 
     public static function headerDate(?string $transDate): string

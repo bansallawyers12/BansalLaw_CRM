@@ -108,7 +108,7 @@ class InvoiceChargeTypes
                 $query->where('client_id', $clientId);
             }
 
-            $lines = $query->get();
+            $lines = InvoiceWorkDate::sortInvoiceLines($query->get());
 
             $grouped[$key] = [
                 'title' => $group['title'],
