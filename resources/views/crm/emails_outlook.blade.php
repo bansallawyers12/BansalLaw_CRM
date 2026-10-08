@@ -82,7 +82,7 @@
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $matterId ?? '' }}"
-    data-assign-unassigned-match-url="{{ route('email.upload.assign-unassigned-match') }}"
+    data-assign-unassigned-match-url="{{ url('/clients/assign-unassigned-email-match') }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
     data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'

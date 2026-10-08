@@ -94,24 +94,56 @@ class UnassignedEmailAssignmentService
 
             ClientMatter::touchRecentActivity((int) $clientMatterId, 'email');
 
-            try {
-                if ($emailLog->uploaded_doc_id) {
-                    $this->relocateDocument((int) $emailLog->uploaded_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
-                }
+            // Move S3 objects after the HTTP response so a slow/hung AWS call
+            // cannot block "Assign to this matter" on production.
+            $uploadedDocId = $emailLog->uploaded_doc_id ? (int) $emailLog->uploaded_doc_id : null;
+            $pdfDocId = $emailLog->pdf_doc_id ? (int) $emailLog->pdf_doc_id : null;
+            $attachmentIds = $this->attachmentsFor($emailLog)->pluck('id')->all();
 
-                if ($emailLog->pdf_doc_id) {
-                    $this->relocateDocument((int) $emailLog->pdf_doc_id, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
-                }
+            $relocateStorage = function () use (
+                $emailLogId,
+                $clientId,
+                $clientMatterId,
+                $staffUserId,
+                $sourcePrefix,
+                $destPrefix,
+                $docType,
+                $mailType,
+                $uploadedDocId,
+                $pdfDocId,
+                $attachmentIds
+            ): void {
+                try {
+                    if ($uploadedDocId) {
+                        $this->relocateDocument($uploadedDocId, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
+                    }
 
-                foreach ($this->attachmentsFor($emailLog) as $attachment) {
-                    $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
+                    if ($pdfDocId) {
+                        $this->relocateDocument($pdfDocId, $sourcePrefix, $destPrefix, $docType, $mailType, $clientId, $clientMatterId, $staffUserId);
+                    }
+
+                    if ($attachmentIds !== []) {
+                        EmailLogAttachment::query()
+                            ->whereIn('id', $attachmentIds)
+                            ->get()
+                            ->each(function (EmailLogAttachment $attachment) use ($sourcePrefix, $destPrefix): void {
+                                $this->relocateAttachment($attachment, $sourcePrefix, $destPrefix);
+                            });
+                    }
+                } catch (Throwable $storageException) {
+                    Log::warning('Assigned email but could not relocate storage objects', [
+                        'email_log_id' => $emailLogId,
+                        'client_id' => $clientId,
+                        'error' => $storageException->getMessage(),
+                    ]);
                 }
-            } catch (Throwable $storageException) {
-                Log::warning('Assigned email but could not relocate storage objects', [
-                    'email_log_id' => $emailLogId,
-                    'client_id' => $clientId,
-                    'error' => $storageException->getMessage(),
-                ]);
+            };
+
+            if (app()->runningUnitTests()) {
+                $relocateStorage();
+            } else {
+                // Same-process after the response is sent (no queue serialization).
+                app()->terminating($relocateStorage);
             }
 
             if ($client->type === 'client') {

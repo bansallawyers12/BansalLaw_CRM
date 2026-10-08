@@ -3221,29 +3221,69 @@ function crmInitOutlookEmailsInterface() {
         }
 
         async function assignUnassignedEmailFromUpload(emailLogId) {
-            const matterId = getMatterId();
-            if (!assignUnassignedMatchUrl || !clientId || !matterId || !emailLogId) {
+            const matterId = String(getMatterId() || '').trim();
+            const assignUrl = assignUnassignedMatchUrl
+                || ((typeof baseUrl === 'string' && baseUrl)
+                    ? String(baseUrl).replace(/\/$/, '') + '/clients/assign-unassigned-email-match'
+                    : '/clients/assign-unassigned-email-match');
+            if (!clientId || !matterId || !emailLogId) {
                 throw new Error('Cannot assign — open a client matter and try again.');
             }
 
-            const response = await fetch(assignUnassignedMatchUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    email_log_id: emailLogId,
-                    client_id: clientId,
-                    client_matter_id: matterId
-                })
-            });
+            // FormData (+ CSRF) matches upload requests and avoids JSON/WAF blocks on production.
+            const formData = new FormData();
+            formData.append('_token', getCsrfToken());
+            formData.append('email_log_id', String(emailLogId));
+            formData.append('client_id', String(clientId));
+            formData.append('client_matter_id', matterId);
+
+            const controller = typeof AbortController === 'function' ? new AbortController() : null;
+            const timeoutId = controller
+                ? setTimeout(function () { controller.abort(); }, 25000)
+                : null;
+
+            let response;
+            try {
+                response = await fetch(assignUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: formData,
+                    signal: controller ? controller.signal : undefined
+                });
+            } catch (fetchError) {
+                if (fetchError && fetchError.name === 'AbortError') {
+                    throw new Error('Assign timed out. Refresh the page — the email may already be assigned.');
+                }
+                throw fetchError;
+            } finally {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            }
 
             const data = await response.json().catch(function() { return {}; });
             if (!response.ok || data.success === false) {
-                throw new Error(data.message || 'Could not assign unassigned email.');
+                let message = data.message || 'Could not assign unassigned email.';
+                if (response.status === 419) {
+                    message = 'Session expired. Refresh the page and try again.';
+                } else if (data.errors && typeof data.errors === 'object') {
+                    const firstError = Object.keys(data.errors).reduce(function (found, key) {
+                        if (found) {
+                            return found;
+                        }
+                        const list = data.errors[key];
+                        return Array.isArray(list) && list.length ? String(list[0]) : '';
+                    }, '');
+                    if (firstError) {
+                        message = firstError;
+                    }
+                }
+                throw new Error(message);
             }
 
             return data;

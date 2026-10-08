@@ -2441,16 +2441,25 @@ class EmailUploadController extends Controller
         $validated = $request->validate([
             'email_log_id' => 'required|integer|min:1',
             'client_id' => 'required|integer|min:1',
-            'client_matter_id' => 'required|integer|min:1',
+            // Accept numeric id or matter ref string (e.g. FAM_1); resolved below.
+            'client_matter_id' => 'required',
         ]);
 
         $clientId = (int) $validated['client_id'];
-        $matterId = (int) $validated['client_matter_id'];
         $emailLogId = (int) $validated['email_log_id'];
+        $matterRaw = $validated['client_matter_id'];
+        $matterId = is_numeric($matterRaw) ? (int) $matterRaw : 0;
 
         $this->ensureCrmRecordAccess($clientId);
 
-        $matterOk = ClientMatter::query()
+        if ($matterId <= 0 && is_string($matterRaw) && trim($matterRaw) !== '') {
+            $matterId = (int) ClientMatter::query()
+                ->where('client_id', $clientId)
+                ->where('client_unique_matter_no', trim($matterRaw))
+                ->value('id');
+        }
+
+        $matterOk = $matterId > 0 && ClientMatter::query()
             ->where('id', $matterId)
             ->where('client_id', $clientId)
             ->exists();
@@ -2469,12 +2478,24 @@ class EmailUploadController extends Controller
             ], 422);
         }
 
+        $staffUserId = (int) (Auth::guard('admin')->id() ?? Auth::id() ?? 0);
+
         $result = $assignmentService->assignToClient(
             $emailLogId,
             $clientId,
             $matterId,
-            (int) Auth::id()
+            $staffUserId > 0 ? $staffUserId : null
         );
+
+        if (empty($result['success'])) {
+            Log::warning('assignUnassignedEmailMatch failed', [
+                'email_log_id' => $emailLogId,
+                'client_id' => $clientId,
+                'client_matter_id' => $matterId,
+                'staff_user_id' => $staffUserId,
+                'message' => $result['message'] ?? null,
+            ]);
+        }
 
         $status = ! empty($result['success']) ? 200 : 422;
 
