@@ -63,7 +63,9 @@ function crmInitOutlookEmailsInterface() {
             return null;
         }
         const mailFolder = (opt.getAttribute('data-mail-folder') || '').trim().toLowerCase();
-        return mailFolder === 'all' || mailFolder === 'inbox' || mailFolder === 'sent' ? mailFolder : null;
+        return (mailFolder === 'all' || mailFolder === 'inbox' || mailFolder === 'sent' || mailFolder === 'lead_history')
+            ? mailFolder
+            : null;
     }
 
     function getEffectiveLabelFilterValue() {
@@ -88,11 +90,19 @@ function crmInitOutlookEmailsInterface() {
         }
         const group = document.createElement('optgroup');
         group.label = 'Mail folder';
-        [
+        const folderOptions = [
             { value: '__mail_all__', label: 'All mail', folder: 'all' },
             { value: '__mail_inbox__', label: 'Inbox', folder: 'inbox' },
             { value: '__mail_sent__', label: 'Sent', folder: 'sent' }
-        ].forEach(function (item) {
+        ];
+        if (hasLeadMailHistory) {
+            folderOptions.push({
+                value: '__mail_lead_history__',
+                label: 'Lead history',
+                folder: 'lead_history'
+            });
+        }
+        folderOptions.forEach(function (item) {
             const option = document.createElement('option');
             option.value = item.value;
             option.textContent = item.label;
@@ -114,7 +124,8 @@ function crmInitOutlookEmailsInterface() {
         const map = {
             all: '__mail_all__',
             inbox: '__mail_inbox__',
-            sent: '__mail_sent__'
+            sent: '__mail_sent__',
+            lead_history: '__mail_lead_history__'
         };
         const value = map[folder];
         if (!value) {
@@ -492,11 +503,24 @@ function crmInitOutlookEmailsInterface() {
     // Initialize Data
     const baseUrl = outlookContainer ? outlookContainer.getAttribute('data-base-url') : '';
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
+    const recordType = outlookContainer
+        ? String(outlookContainer.getAttribute('data-record-type') || 'client').toLowerCase()
+        : 'client';
+    const leadScopedMail = !!(outlookContainer && outlookContainer.getAttribute('data-lead-scoped-mail') === '1')
+        || recordType === 'lead';
+    const hasLeadMailHistory = !!(outlookContainer && outlookContainer.getAttribute('data-has-lead-mail-history') === '1');
     function getMatterId() {
+        // Leads stay lead-scoped (no matter binding) until converted to a client.
+        if (leadScopedMail) {
+            return '';
+        }
         if (window.EmailMatterContext && typeof window.EmailMatterContext.resolve === 'function') {
             return window.EmailMatterContext.resolve(outlookContainer);
         }
         return outlookContainer ? (outlookContainer.getAttribute('data-matter-id') || '') : '';
+    }
+    function getComposeRecordType() {
+        return leadScopedMail ? 'lead' : 'client';
     }
 
     const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
@@ -2513,7 +2537,7 @@ function crmInitOutlookEmailsInterface() {
         } else {
             formData.append('message', message);
         }
-        formData.append('type', 'client');
+        formData.append('type', getComposeRecordType());
         formData.append('mail_type', 2);
         if (composeResendLogId) {
             formData.append('resend_email_log_id', composeResendLogId);
@@ -4787,6 +4811,12 @@ function crmInitOutlookEmailsInterface() {
             if (clientId) url.searchParams.append('client_id', clientId);
             const listMatterId = getMatterId();
             if (listMatterId) url.searchParams.append('client_matter_id', listMatterId);
+            if (leadScopedMail) {
+                url.searchParams.append('mail_scope', 'lead');
+            }
+            if (folderToFetch === 'lead_history') {
+                url.searchParams.append('mail_scope', 'lead_history');
+            }
             const selectEmailLogId = options && options.selectEmailLogId
                 ? parseInt(options.selectEmailLogId, 10)
                 : 0;

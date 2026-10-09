@@ -398,11 +398,23 @@ class ClientDetailService
             })
             ->exists();
 
-        if (! $accountMatterExists && ! $accountShowForConvertedClient && $activeClientMatterId === null) {
+        // Leads can use Billing before a matter exists (lead-scoped / null matter).
+        if (
+            ! $accountNavIsLead
+            && ! $accountMatterExists
+            && ! $accountShowForConvertedClient
+            && $activeClientMatterId === null
+        ) {
             return $shell;
         }
 
-        $built = app(ClientAccountTabService::class)->build($clientId, $activeClientMatterId);
+        $matterForAccount = $accountNavIsLead ? null : $activeClientMatterId;
+        $built = app(ClientAccountTabService::class)->build(
+            $clientId,
+            $matterForAccount,
+            includeLeadPreMatter: ! $accountNavIsLead,
+            autoResolveMatter: ! $accountNavIsLead
+        );
         $built['loaded'] = true;
 
         return $built;

@@ -77,11 +77,19 @@
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ @filemtime(public_path('css/outlook_emails.css')) ?: time() }}">
 
+@php
+    $outlookRecordType = $recordType ?? ((isset($clientData) && (($clientData->type ?? '') === 'lead')) ? 'lead' : 'client');
+    $outlookLeadScopedMail = ! empty($leadScopedMail) || $outlookRecordType === 'lead';
+    $outlookHasLeadMailHistory = ! empty($hasLeadMailHistory);
+@endphp
 <div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}{{ $compactPagination ? ' outlook-container--compact-pagination' : '' }}" id="outlookContainer"
     data-base-url="{{ url('/') }}"
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
-    data-matter-id="{{ $matterId ?? '' }}"
+    data-matter-id="{{ $outlookLeadScopedMail ? '' : ($matterId ?? '') }}"
+    data-record-type="{{ $outlookRecordType }}"
+    data-lead-scoped-mail="{{ $outlookLeadScopedMail ? '1' : '0' }}"
+    data-has-lead-mail-history="{{ $outlookHasLeadMailHistory ? '1' : '0' }}"
     data-assign-unassigned-match-url="{{ url('/clients/assign-unassigned-email-match') }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
@@ -353,6 +361,7 @@
                             @include('crm.partials.email-label-filter-options', [
                                 'excludeMailFolderLabels' => ! $unassignedOnly,
                                 'includeMailFolderFilterOptions' => ! $unassignedOnly,
+                                'hasLeadMailHistory' => $outlookHasLeadMailHistory,
                             ])
                         </select>
                         <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
@@ -401,6 +410,7 @@
                     @include('crm.partials.email-label-filter-options', [
                         'excludeMailFolderLabels' => ! $unassignedOnly,
                         'includeMailFolderFilterOptions' => ! $unassignedOnly,
+                        'hasLeadMailHistory' => $outlookHasLeadMailHistory,
                     ])
                 </select>
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">

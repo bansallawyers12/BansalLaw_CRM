@@ -39,21 +39,27 @@ class ClientAccountTabService
      *     officeHasMore: bool
      * }
      */
-    public function build(int $clientId, ?int $clientMatterId): array
-    {
-        $clientMatterId = $this->resolveAccountMatterId($clientId, $clientMatterId);
+    public function build(
+        int $clientId,
+        ?int $clientMatterId,
+        bool $includeLeadPreMatter = false,
+        bool $autoResolveMatter = true
+    ): array {
+        $clientMatterId = $autoResolveMatter
+            ? $this->resolveAccountMatterId($clientId, $clientMatterId)
+            : (($clientMatterId !== null && $clientMatterId > 0) ? $clientMatterId : null);
 
         $trustLimit = max(0, (int) config('crm.accounts.tab_trust_row_limit', 100));
         $invoiceLimit = max(0, (int) config('crm.accounts.tab_invoice_row_limit', 50));
         $officeLimit = max(0, (int) config('crm.accounts.tab_office_row_limit', 50));
 
-        [$trustRows, $trustHasMore] = $this->trustLedgerRows($clientId, $clientMatterId, $trustLimit);
-        [$invoiceRows, $invoiceHasMore] = $this->latestInvoiceRows($clientId, $clientMatterId, $invoiceLimit);
-        [$officeRows, $officeHasMore] = $this->officeReceiptRows($clientId, $clientMatterId, $officeLimit);
+        [$trustRows, $trustHasMore] = $this->trustLedgerRows($clientId, $clientMatterId, $trustLimit, $includeLeadPreMatter);
+        [$invoiceRows, $invoiceHasMore] = $this->latestInvoiceRows($clientId, $clientMatterId, $invoiceLimit, $includeLeadPreMatter);
+        [$officeRows, $officeHasMore] = $this->officeReceiptRows($clientId, $clientMatterId, $officeLimit, $includeLeadPreMatter);
 
         // Totals must use the full ledger, not the display window.
         [$allInvoiceRows] = $invoiceLimit > 0
-            ? $this->latestInvoiceRows($clientId, $clientMatterId, 0)
+            ? $this->latestInvoiceRows($clientId, $clientMatterId, 0, $includeLeadPreMatter)
             : [$invoiceRows, false];
 
         $docIds = $trustRows->pluck('uploaded_doc_id')
@@ -300,13 +306,13 @@ class ClientAccountTabService
     /**
      * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function trustLedgerRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
+    protected function trustLedgerRows(int $clientId, ?int $clientMatterId, int $limit = 0, bool $includeLeadPreMatter = false): array
     {
-        $total = $this->trustLedgerQuery($clientId, $clientMatterId)->count();
+        $total = $this->trustLedgerQuery($clientId, $clientMatterId, $includeLeadPreMatter)->count();
         $hasMore = $limit > 0 && $total > $limit;
 
         if ($hasMore) {
-            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId, $includeLeadPreMatter)
                 ->orderByDesc('id')
                 ->limit($limit)
                 ->get()
@@ -336,14 +342,14 @@ class ClientAccountTabService
 
             // Stale rows without persisted balances: recompute once, then re-read the window.
             $this->recalculateClientFundBalances($clientId, $clientMatterId);
-            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId, $includeLeadPreMatter)
                 ->orderByDesc('id')
                 ->limit($limit)
                 ->get()
                 ->sortBy('id')
                 ->values();
         } else {
-            $rows = $this->trustLedgerQuery($clientId, $clientMatterId)
+            $rows = $this->trustLedgerQuery($clientId, $clientMatterId, $includeLeadPreMatter)
                 ->orderBy('id', 'asc')
                 ->get();
         }
@@ -443,12 +449,12 @@ class ClientAccountTabService
      *
      * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function latestInvoiceRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
+    protected function latestInvoiceRows(int $clientId, ?int $clientMatterId, int $limit = 0, bool $includeLeadPreMatter = false): array
     {
         if ($clientMatterId !== null) {
-            // Single-matter clients: also show invoices saved without a matter id
-            // (legacy / failed matter binding) so they appear on Billing.
-            $includeNullMatter = DB::table('client_matters')
+            // Single-matter clients, or converted clients with prior lead billing:
+            // also show invoices saved without a matter id so lead-stage billing stays accessible.
+            $includeNullMatter = $includeLeadPreMatter || DB::table('client_matters')
                 ->where('client_id', $clientId)
                 ->count() === 1;
 
@@ -494,7 +500,7 @@ class ClientAccountTabService
     /**
      * @return array{0: Collection<int, object>, 1: bool}
      */
-    protected function officeReceiptRows(int $clientId, ?int $clientMatterId, int $limit = 0): array
+    protected function officeReceiptRows(int $clientId, ?int $clientMatterId, int $limit = 0, bool $includeLeadPreMatter = false): array
     {
         $q = DB::table('account_client_receipts')
             ->where('client_id', $clientId)
@@ -502,7 +508,7 @@ class ClientAccountTabService
             ->orderByRaw("CASE WHEN invoice_no IS NULL OR invoice_no = '' THEN 0 ELSE 1 END")
             ->orderByDesc('id');
 
-        $this->applyMatterScope($q, $clientMatterId);
+        $this->applyMatterScope($q, $clientMatterId, $includeLeadPreMatter);
 
         $total = (clone $q)->count();
         $hasMore = $limit > 0 && $total > $limit;
@@ -513,21 +519,28 @@ class ClientAccountTabService
         return [$q->get(), $hasMore];
     }
 
-    protected function trustLedgerQuery(int $clientId, $clientMatterId)
+    protected function trustLedgerQuery(int $clientId, $clientMatterId, bool $includeLeadPreMatter = false)
     {
         $q = DB::table('account_client_receipts')
             ->where('client_id', $clientId)
             ->where('receipt_type', AccountClientReceipt::RECEIPT_TYPE_TRUST_LEDGER);
 
-        $this->applyMatterScope($q, $clientMatterId);
+        $this->applyMatterScope($q, $clientMatterId, $includeLeadPreMatter);
 
         return $q;
     }
 
-    protected function applyMatterScope($query, $clientMatterId): void
+    protected function applyMatterScope($query, $clientMatterId, bool $includeLeadPreMatter = false): void
     {
         if ($clientMatterId !== null && $clientMatterId !== '') {
-            $query->where('client_matter_id', $clientMatterId);
+            if ($includeLeadPreMatter) {
+                $query->where(function ($q) use ($clientMatterId) {
+                    $q->where('client_matter_id', $clientMatterId)
+                        ->orWhereNull('client_matter_id');
+                });
+            } else {
+                $query->where('client_matter_id', $clientMatterId);
+            }
         }
         // No matter filter: include all matters for this client (do not force IS NULL).
     }

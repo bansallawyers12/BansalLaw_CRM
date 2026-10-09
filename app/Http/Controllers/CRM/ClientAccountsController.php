@@ -1052,8 +1052,11 @@ class ClientAccountsController extends Controller
             }
 
             $clientId = (int) $requestData['client_id'];
-            $matterId = $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
-            if ($matterId === null) {
+            $recordIsLead = $this->adminRecordIsLead($clientId);
+            $matterId = $recordIsLead
+                ? null
+                : $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
+            if ($matterId === null && ! $recordIsLead) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Please select a matter before creating an invoice.',
@@ -1207,6 +1210,14 @@ class ClientAccountsController extends Controller
      * Normalize invoice matter id: reject empty strings (PG bigint), validate ownership,
      * resolve matter refs (e.g. CIV_1), and auto-assign when the client has exactly one matter.
      */
+    private function adminRecordIsLead(int $clientId): bool
+    {
+        $type = Admin::query()->where('id', $clientId)->value('type');
+
+        return $type === 1
+            || in_array(strtolower(trim((string) $type)), ['lead', 'l', '1'], true);
+    }
+
     private function normalizeClientMatterId(mixed $rawMatterId, int $clientId): ?int
     {
         if (is_array($rawMatterId)) {
@@ -1432,8 +1443,11 @@ class ClientAccountsController extends Controller
             }
 
             $clientId = (int) $requestData['client_id'];
-            $matterId = $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
-            if ($matterId === null) {
+            $recordIsLead = $this->adminRecordIsLead($clientId);
+            $matterId = $recordIsLead
+                ? null
+                : $this->normalizeClientMatterId($requestData['client_matter_id'] ?? null, $clientId);
+            if ($matterId === null && ! $recordIsLead) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Please select a matter before creating an invoice.',

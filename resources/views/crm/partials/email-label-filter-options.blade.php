@@ -17,6 +17,9 @@
         <option value="__mail_all__" data-mail-folder="all" selected>All mail</option>
         <option value="__mail_inbox__" data-mail-folder="inbox">Inbox</option>
         <option value="__mail_sent__" data-mail-folder="sent">Sent</option>
+        @if(! empty($hasLeadMailHistory))
+        <option value="__mail_lead_history__" data-mail-folder="lead_history">Lead history</option>
+        @endif
     </optgroup>
 @endif
 @if($systemFilterLabels->isNotEmpty())

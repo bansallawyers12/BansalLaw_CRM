@@ -4475,17 +4475,21 @@ success: function(response) {
 
         $(document).delegate('.clientemail', 'click', function(){
 
-            if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+            var composeIsLead = String($('#compose_record_type').val() || '').toLowerCase() === 'lead'
+                || String((window.ClientDetailConfig && window.ClientDetailConfig.recordType) || '').toLowerCase() === 'lead';
 
-                var selectedMatterL = $('.general_matter_checkbox_client_detail').val();
-
+            if (composeIsLead) {
+                $('#compose_record_type').val('lead');
+                $('#emailmodal #compose_client_matter_id').val('');
             } else {
-
-                var selectedMatterL = $('#sel_matter_id_client_detail').val();
-
+                $('#compose_record_type').val('client');
+                if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                    var selectedMatterL = $('.general_matter_checkbox_client_detail').val();
+                } else {
+                    var selectedMatterL = $('#sel_matter_id_client_detail').val();
+                }
+                $('#emailmodal #compose_client_matter_id').val(selectedMatterL);
             }
-
-            $('#emailmodal #compose_client_matter_id').val(selectedMatterL);
 
             $('#emailmodal').modal('show');
             prefillComposeSubjectWithReference(true);

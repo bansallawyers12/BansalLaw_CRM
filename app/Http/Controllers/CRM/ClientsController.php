@@ -1495,9 +1495,18 @@ class ClientsController extends Controller
         $matterId = $request->query('client_matter_id');
         $matterId = ($matterId !== null && $matterId !== '') ? (int) $matterId : null;
 
-        $accountTabData = app(ClientAccountTabService::class)->build((int) $id, $matterId);
+        $accountIsLead = (($fetchedData->type ?? null) === 1)
+            || in_array(strtolower(trim((string) ($fetchedData->type ?? ''))), ['lead', 'l', '1'], true);
+        // Lead billing stays unscoped to a matter; converted clients keep prior lead (null-matter) rows accessible.
+        $matterForAccount = $accountIsLead ? null : $matterId;
+        $accountTabData = app(ClientAccountTabService::class)->build(
+            (int) $id,
+            $matterForAccount,
+            includeLeadPreMatter: ! $accountIsLead,
+            autoResolveMatter: ! $accountIsLead
+        );
         $accountTabData['loaded'] = true;
-        $activeClientMatterId = $matterId;
+        $activeClientMatterId = $matterForAccount;
 
         return view('crm.clients.tabs.account_content', compact(
             'accountTabData',
@@ -6003,10 +6012,27 @@ class ClientsController extends Controller
         }
 
         // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
+        $mailScope = strtolower(trim((string) $request->input('mail_scope', '')));
+        $isLeadMailScope = in_array($mailScope, ['lead', 'lead_history'], true)
+            || $folder === 'lead_history';
         if (! empty($clientId) && ! $isSyncedInboxFolder) {
             $query->where('client_id', $clientId);
-        }
-        if (! empty($clientMatterId) && ! $isSyncedInboxFolder) {
+            if ($isLeadMailScope) {
+                // Lead-stage mail (and legacy null-matter rows) stays accessible after conversion.
+                $query->where(function ($q) {
+                    $q->where('type', 'lead')
+                        ->orWhereNull('client_matter_id')
+                        ->orWhere('client_matter_id', 0);
+                });
+            } elseif (! empty($clientMatterId)) {
+                // Client matter mail is matter-specific; keep pre-matter lead mail out of this view.
+                $query->where('client_matter_id', $clientMatterId)
+                    ->where(function ($q) {
+                        $q->whereNull('type')
+                            ->orWhere('type', '!=', 'lead');
+                    });
+            }
+        } elseif (! empty($clientMatterId) && ! $isSyncedInboxFolder) {
             $query->where('client_matter_id', $clientMatterId);
         }
 
@@ -6065,7 +6091,10 @@ class ClientsController extends Controller
         }
 
         // Inbox = all incoming mail (read + unread). On synced mail page, inbox = all Zoho-synced mail.
-        if ($folder === 'all' && ! $isGlobalSyncedMailView) {
+        if ($folder === 'lead_history') {
+            // Lead history is a scope over the client inbox/sent set, not a separate mailbox type.
+            $this->applyClientAllMailScope($query, $hasSendStatus);
+        } elseif ($folder === 'all' && ! $isGlobalSyncedMailView) {
             $this->applyClientAllMailScope($query, $hasSendStatus);
         } elseif ($folder === 'inbox') {
             if ($isGlobalSyncedMailView) {

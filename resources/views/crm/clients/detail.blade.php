@@ -736,7 +736,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 			<form method="post" name="sendmail" action="{{route('clients.sendmail')}}" autocomplete="off" enctype="multipart/form-data" class="emailmodal__form">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-				<input type="hidden" name="type" value="client">
+				<input type="hidden" name="type" id="compose_record_type" value="{{ !empty($__crmIsLeadType) ? 'lead' : 'client' }}">
 				<input type="hidden" name="mail_type" value="2">
 				<input type="hidden" name="mail_body_type" value="sent">
 				<input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
@@ -1679,6 +1679,7 @@ $(document).ready(function() {
         encodeId: @json(($encodeId ?? '')),
         matterId: @json(($id1 ?? '')),
         activeTab: @json(($activeTab ?? 'personaldetails')),
+        recordType: @json(!empty($__crmIsLeadType) ? 'lead' : 'client'),
         cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
         // Human refs for compose subject (e.g. CPRE2600130 / CIV_1)
