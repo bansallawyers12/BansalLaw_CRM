@@ -581,6 +581,14 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
+                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
+                    <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                    <span>Emails</span>
+                </button>
+                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button{{ $cdnNavSelected === 'account' ? ' active' : '' }}" data-tab="account" aria-selected="{{ $cdnNavSelected === 'account' ? 'true' : 'false' }}" aria-controls="account-tab">
+                    <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <span>Billing</span>
+                </button>
             <?php
             }
             ?>
@@ -658,8 +666,16 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => 'matterdocuments'])
                 @endif
             @endif
+            {{-- Emails + Billing: available for leads/clients even before a matter exists. --}}
+            @foreach (['account' => 'crm.clients.tabs.account', 'emails' => 'crm.clients.tabs.emails'] as $cdnTabSlug => $cdnTabView)
+                @if ($cdnActiveTabSlug === $cdnTabSlug)
+                    @include($cdnTabView)
+                @else
+                    @include('crm.clients.tabs._lazy_tab_shell', ['tabSlug' => $cdnTabSlug])
+                @endif
+            @endforeach
             @if ($showMatterBundleTabs ?? false)
-                @foreach (['legalforms' => 'crm.clients.tabs.legal_forms', 'account' => 'crm.clients.tabs.account', 'emails' => 'crm.clients.tabs.emails'] as $cdnTabSlug => $cdnTabView)
+                @foreach (['legalforms' => 'crm.clients.tabs.legal_forms'] as $cdnTabSlug => $cdnTabView)
                     @if ($cdnActiveTabSlug === $cdnTabSlug)
                         @include($cdnTabView)
                     @else
@@ -1768,11 +1784,9 @@ $(document).ready(function() {
 {{-- Activity Feed: after ClientDetailConfig so clientId/urls exist; cache-bust so lazy-tab load fix is picked up --}}
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/activity-feed.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/tabs/timeline-billing.js') }}?v={{ $cdnAssetVer('js/crm/clients/tabs/timeline-billing.js') }}"></script>
-@if($showMatterBundleTabs ?? false)
 {{-- accounts.js: Billing tab entry buttons must bind before lazy tab HTML injects --}}
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/accounts.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}?v={{ $cdnAssetVer('js/crm/clients/modules/invoices.js') }}"></script>
-@endif
 
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ @filemtime(public_path('js/crm/clients/shared.js')) ?: time() }}"></script>

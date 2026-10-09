@@ -41,7 +41,12 @@ class ClientDetailTabHtmlService
             return (bool) ($matterNav['showMatterDocumentsTab'] ?? false);
         }
 
-        if (in_array($slug, ['legalforms', 'account', 'emails'], true)) {
+        // Emails + Billing stay available without a matter (leads / new enquiries).
+        if (in_array($slug, ['account', 'emails'], true)) {
+            return true;
+        }
+
+        if ($slug === 'legalforms') {
             return (bool) ($matterNav['showMatterBundleTabs'] ?? false);
         }
 
