@@ -810,7 +810,7 @@
     <div class="crm-card">
         <div class="card-title">
             <span>Matter Allocation</span>
-            <button type="button" class="toggle-change-btn" id="toggleChangeMatterBtn" onclick="toggleSearchDrawer()">Change Matter</button>
+            <button type="button" class="toggle-change-btn" id="toggleChangeMatterBtn" onclick="toggleSearchDrawer()">Change Client / Matter</button>
         </div>
 
         <div id="matchingSpinner" style="display: none; padding: 10px; text-align: center; color: var(--text-secondary); font-size: 12px;">
@@ -833,14 +833,14 @@
         <div id="noMatchBox" style="display: none; padding: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md); text-align: center; color: var(--text-secondary); font-size: 12px;">
             <i class="fa-solid fa-triangle-exclamation" style="color: var(--warning); margin-bottom: 4px;"></i><br>
             No matching client matter found automatically.<br>
-            <button type="button" class="toggle-change-btn" style="margin-top: 4px;" onclick="toggleSearchDrawer(true)">Search & Select Matter</button>
+            <button type="button" class="toggle-change-btn" style="margin-top: 4px;" onclick="toggleSearchDrawer(true)">Search & Select Client / Matter</button>
         </div>
 
         <!-- Search Drawer for Manual Assignment -->
         <div class="matter-search-drawer" id="searchDrawer">
             <div class="input-group">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" class="search-input" id="matterSearchInput" placeholder="Search matter # or client name..." oninput="handleMatterSearch(this.value)">
+                <input type="text" class="search-input" id="matterSearchInput" placeholder="Search client ID, lead, name, or matter #..." oninput="handleMatterSearch(this.value)">
             </div>
             <div class="matter-results-list" id="matterResultsList">
                 <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 11.5px;">Type to search matters...</div>
@@ -1340,11 +1340,33 @@
             isAutoMatched = !!isAuto;
             selectedClientId = matter.client_id;
             selectedMatterId = matter.client_matter_id || 0;
+            const isPersonOnly = !selectedMatterId;
+            const isLeadTarget = matter.record_type === 'lead';
+            const personLabel = isLeadTarget ? 'Lead' : 'Client';
             selectedMatterName = matter.matter_no
-                || (matter.client_matter_id ? ('Matter #' + matter.client_matter_id) : 'Lead (no matter)');
+                || (selectedMatterId ? ('Matter #' + selectedMatterId) : personLabel);
 
             document.getElementById('matchedMatterNo').textContent = selectedMatterName;
-            document.getElementById('matchedClientInfo').textContent = `${matter.client_ref} — ${matter.client_name}`;
+            document.getElementById('matchedClientInfo').textContent = isPersonOnly
+                ? `${matter.client_ref} — ${matter.client_name} (${personLabel})`
+                : `${matter.client_ref} — ${matter.client_name}`;
+
+            const destEmail = document.getElementById('destMatterEmail');
+            const destDocs = document.getElementById('destMatterDocs');
+            const saveBtnTextEl = document.getElementById('saveBtnText');
+            if (destEmail) {
+                destEmail.textContent = isPersonOnly ? `Selected ${personLabel}` : 'Selected Matter';
+            }
+            if (destDocs) {
+                destDocs.textContent = isPersonOnly
+                    ? `Selected ${personLabel} → Personal Documents`
+                    : 'Selected Matter → Matter Documents';
+            }
+            if (saveBtnTextEl && !saveBtnTextEl.textContent.includes('...')) {
+                saveBtnTextEl.textContent = isPersonOnly
+                    ? `Save to CRM ${personLabel}`
+                    : 'Save to CRM Matter';
+            }
 
             const badgeContainer = document.getElementById('assignmentBadgeContainer');
             const confidenceSub = document.getElementById('matchConfidenceSub');
@@ -1380,6 +1402,11 @@
                 personalFoldersList = Array.isArray(matter.personal_folders) ? matter.personal_folders : [];
                 selectedDefaultFolder = `matter:${matterFoldersList[0].id}`;
                 populateFolderDropdowns(selectedDefaultFolder);
+            } else if (isPersonOnly && Array.isArray(matter.personal_folders) && matter.personal_folders.length > 0) {
+                matterFoldersList = [];
+                personalFoldersList = matter.personal_folders;
+                selectedDefaultFolder = `personal:${personalFoldersList[0].id}`;
+                populateFolderDropdowns(selectedDefaultFolder);
             } else {
                 fetchMatterFolders(selectedClientId, selectedMatterId);
             }
@@ -1398,7 +1425,14 @@
                 if (data.success) {
                     matterFoldersList = data.matter_folders || [];
                     personalFoldersList = data.personal_folders || [];
-                    const defaultVal = matterFoldersList.length > 0 ? `matter:${matterFoldersList[0].id}` : 'matter:1';
+                    let defaultVal = 'email:0';
+                    if (matterFoldersList.length > 0 && Number(matterId) > 0) {
+                        defaultVal = `matter:${matterFoldersList[0].id}`;
+                    } else if (personalFoldersList.length > 0) {
+                        defaultVal = `personal:${personalFoldersList[0].id}`;
+                    } else if (Number(matterId) > 0) {
+                        defaultVal = 'matter:1';
+                    }
                     populateFolderDropdowns(defaultVal);
                 }
             } catch (e) {
@@ -1426,25 +1460,36 @@
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(async () => {
                 const resultsEl = document.getElementById('matterResultsList');
+                const q = String(query || '').trim();
+                if (q.length < 2) {
+                    resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;">Type at least 2 characters to search clients, leads, or matters.</div>';
+                    return;
+                }
+
                 resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Searching...</div>';
 
                 try {
-                    const res = await fetch(`${BASE_URL}/outlook-addin/matters?q=${encodeURIComponent(query)}`);
+                    const res = await fetch(`${BASE_URL}/outlook-addin/matters?q=${encodeURIComponent(q)}`);
                     const data = await res.json();
 
                     if (!data.matters || !data.matters.length) {
-                        resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;">No clients or matters found.</div>';
+                        resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;">No clients, leads, or matters found.</div>';
                         return;
                     }
 
                     resultsEl.innerHTML = data.matters.map(m => {
+                        const isPersonOnly = !m.client_matter_id;
+                        const personLabel = m.record_type === 'lead' ? 'Lead' : 'Client';
                         const title = m.matter_no
                             ? `${m.client_ref} / ${m.matter_no}`
                             : `${m.client_ref} — ${m.client_name}`;
+                        const sub = isPersonOnly
+                            ? `${m.client_name} • ${personLabel}${m.matter_title ? ' • ' + m.matter_title : ''}`
+                            : `${m.client_name} • ${m.matter_title || 'Matter'}`;
                         return `
                         <div class="matter-result-item" onclick='applySelectedMatter(${JSON.stringify(m)}, false)'>
                             <div class="m-title">${title}</div>
-                            <div class="m-sub">${m.client_name} • ${m.matter_title || 'Client record'}</div>
+                            <div class="m-sub">${sub}</div>
                         </div>`;
                     }).join('');
                 } catch (e) {

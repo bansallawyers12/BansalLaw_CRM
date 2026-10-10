@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use App\Support\StaffClientVisibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use App\Logging\OutlookAddinLogger;
@@ -287,6 +286,7 @@ class OutlookAddinController extends EmailUploadController
         $likeOperator = DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
         $qLower = strtolower($q);
         $seenMatterIds = [];
+        $seenPersonOnlyIds = [];
         $results = [];
 
         $pushMatter = function (ClientMatter $matter) use (&$results, &$seenMatterIds): void {
@@ -300,73 +300,81 @@ class OutlookAddinController extends EmailUploadController
             $results[] = $this->formatMatterMatch($matter, 100, 'Search result');
         };
 
-        // 1) Matter number search (e.g. FAM_1)
-        $matterNumberQuery = ClientMatter::with(['client', 'matter', 'workflowStage'])
-            ->where('matter_status', 1)
-            ->whereHas('client', fn ($clientQ) => $this->applyOutlookAssignableClientConstraints($clientQ));
+        $pushPersonOnly = function (Admin $person) use (&$results, &$seenPersonOnlyIds): void {
+            $personId = (int) $person->id;
+            if (isset($seenPersonOnlyIds[$personId])) {
+                return;
+            }
+            $seenPersonOnlyIds[$personId] = true;
+            $results[] = $this->formatClientOnlyMatch($person, 100, 'Search result');
+        };
 
-        if ($likeOperator === 'ilike') {
-            $matterNumberQuery->where('client_unique_matter_no', 'ilike', "%{$q}%");
-        } else {
-            $matterNumberQuery->where('client_unique_matter_no', 'like', "%{$q}%");
-        }
+        // 1) Client / lead search first — include records with zero matters so mail can still be assigned.
+        // Outlook add-in search intentionally skips staff allocation filters; save still enforces access.
+        $clientQuery = Admin::query();
+        $this->applyOutlookAssignableClientConstraints($clientQuery);
 
-        foreach ($matterNumberQuery->orderByDesc('updated_at')->limit(40)->get() as $matter) {
-            $pushMatter($matter);
-            if (count($results) >= 25) {
-                break;
+        $clientQuery->where(function ($outer) use ($q, $likeOperator, $qLower) {
+            $outer->whereRaw('LOWER(client_id) = ?', [$qLower])
+                ->orWhere('client_id', $likeOperator, "%{$q}%")
+                ->orWhere('first_name', $likeOperator, "%{$q}%")
+                ->orWhere('last_name', $likeOperator, "%{$q}%")
+                ->orWhere('email', $likeOperator, "%{$q}%");
+
+            if (DB::getDriverName() === 'pgsql') {
+                $outer->orWhereRaw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) ILIKE ?", ["%{$q}%"]);
+            } else {
+                $outer->orWhereRaw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) LIKE ?", ["%{$q}%"]);
+            }
+        });
+
+        $people = $clientQuery
+            ->orderByRaw('CASE WHEN LOWER(client_id) = ? THEN 0 ELSE 1 END', [$qLower])
+            ->orderByDesc('updated_at')
+            ->limit(20)
+            ->get();
+
+        foreach ($people as $person) {
+            $openMatters = ClientMatter::with(['client', 'matter', 'workflowStage'])
+                ->where('client_id', $person->id)
+                ->where('matter_status', 1)
+                ->orderByDesc('updated_at')
+                ->get()
+                ->filter(fn (ClientMatter $matter) => $this->isOpenMatter($matter))
+                ->values();
+
+            $isLead = ($person->type ?? '') === 'lead';
+
+            // Leads are always lead-scoped selectable. Clients/leads with no open matter are also selectable.
+            if ($isLead || $openMatters->isEmpty()) {
+                $pushPersonOnly($person);
+                if (count($results) >= 25) {
+                    break;
+                }
+            }
+
+            foreach ($openMatters as $matter) {
+                $matter->setRelation('client', $person);
+                $pushMatter($matter);
+                if (count($results) >= 25) {
+                    break 2;
+                }
             }
         }
 
-        // 2) Client-first search — find the client/lead, then list their open matters
+        // 2) Matter number search (e.g. FAM_1) — fill remaining slots
         if (count($results) < 25) {
-            $clientQuery = Admin::query();
-            $this->applyOutlookAssignableClientConstraints($clientQuery);
-            StaffClientVisibility::restrictAdminEloquentQuery($clientQuery);
-
-            $clientQuery->where(function ($outer) use ($q, $likeOperator, $qLower) {
-                $outer->whereRaw('LOWER(client_id) = ?', [$qLower])
-                    ->orWhere('client_id', $likeOperator, "%{$q}%")
-                    ->orWhere('first_name', $likeOperator, "%{$q}%")
-                    ->orWhere('last_name', $likeOperator, "%{$q}%")
-                    ->orWhere('email', $likeOperator, "%{$q}%");
-
-                if (DB::getDriverName() === 'pgsql') {
-                    $outer->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$q}%"]);
-                } else {
-                    $outer->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$q}%"]);
-                }
-            });
-
-            $clients = $clientQuery
-                ->orderByRaw('CASE WHEN LOWER(client_id) = ? THEN 0 ELSE 1 END', [$qLower])
+            $matterNumberQuery = ClientMatter::with(['client', 'matter', 'workflowStage'])
+                ->where('matter_status', 1)
+                ->whereHas('client', fn ($clientQ) => $this->applyOutlookAssignableClientConstraints($clientQ))
+                ->where('client_unique_matter_no', $likeOperator, "%{$q}%")
                 ->orderByDesc('updated_at')
-                ->limit(15)
-                ->get();
+                ->limit(40);
 
-            foreach ($clients as $client) {
-                $openMatters = ClientMatter::with(['client', 'matter', 'workflowStage'])
-                    ->where('client_id', $client->id)
-                    ->where('matter_status', 1)
-                    ->orderByDesc('updated_at')
-                    ->get();
-
-                $addedForClient = false;
-                foreach ($openMatters as $matter) {
-                    $matter->setRelation('client', $client);
-                    $pushMatter($matter);
-                    $addedForClient = true;
-                    if (count($results) >= 25) {
-                        break 2;
-                    }
-                }
-
-                // Lead/client with no open matter: still selectable for lead-scoped email save
-                if (!$addedForClient && $client->type === 'lead') {
-                    $results[] = $this->formatClientOnlyMatch($client, 95, 'Search result (lead)');
-                    if (count($results) >= 25) {
-                        break;
-                    }
+            foreach ($matterNumberQuery->get() as $matter) {
+                $pushMatter($matter);
+                if (count($results) >= 25) {
+                    break;
                 }
             }
         }
@@ -792,6 +800,7 @@ class OutlookAddinController extends EmailUploadController
             'client_ref' => $clientRef,
             'client_name' => $clientName,
             'client_email' => $client->email ?? '',
+            'record_type' => (string) ($client->type ?? 'client'),
             'matter_no' => $matterNo,
             'matter_title' => $matterTitle,
             'confidence' => $confidence,
@@ -805,7 +814,9 @@ class OutlookAddinController extends EmailUploadController
     protected function addUniqueSuggestion(array &$suggestions, array $newMatch): void
     {
         foreach ($suggestions as $existing) {
-            if ($existing['client_matter_id'] === $newMatch['client_matter_id']) {
+            if ((int) ($existing['client_id'] ?? 0) === (int) ($newMatch['client_id'] ?? 0)
+                && (int) ($existing['client_matter_id'] ?? 0) === (int) ($newMatch['client_matter_id'] ?? 0)
+            ) {
                 return;
             }
         }
@@ -833,7 +844,11 @@ class OutlookAddinController extends EmailUploadController
     {
         $query->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
-            ->where('is_archived', 0);
+            ->where(function ($q) {
+                $q->whereNull('is_archived')
+                    ->orWhere('is_archived', 0)
+                    ->orWhere('is_archived', '0');
+            });
     }
 
     protected function findOutlookAssignableClientByRef(string $clientRef): ?Admin
@@ -846,7 +861,6 @@ class OutlookAddinController extends EmailUploadController
         $query = Admin::query()
             ->whereRaw('LOWER(client_id) = ?', [strtolower($clientRef)]);
         $this->applyOutlookAssignableClientConstraints($query);
-        StaffClientVisibility::restrictAdminEloquentQuery($query);
 
         return $query->first();
     }
@@ -861,7 +875,6 @@ class OutlookAddinController extends EmailUploadController
         $query = Admin::query()
             ->whereRaw('LOWER(email) = ?', [$email]);
         $this->applyOutlookAssignableClientConstraints($query);
-        StaffClientVisibility::restrictAdminEloquentQuery($query);
 
         return $query->first();
     }
@@ -876,6 +889,34 @@ class OutlookAddinController extends EmailUploadController
         string $matchedBy,
         ?array &$bestMatch
     ): void {
+        // While still a lead, prefer lead-scoped assignment (Emails tab on the lead).
+        if (($client->type ?? '') === 'lead') {
+            $leadMatch = $this->formatClientOnlyMatch($client, $confidence, $matchedBy);
+            $this->addUniqueSuggestion($suggestions, $leadMatch);
+            if ($bestMatch === null) {
+                $bestMatch = $leadMatch;
+            }
+
+            $openMatters = ClientMatter::where('client_id', $client->id)
+                ->with(['client', 'matter', 'workflowStage'])
+                ->where('matter_status', 1)
+                ->orderByDesc('updated_at')
+                ->get();
+
+            foreach ($openMatters as $matter) {
+                if (!$this->isOpenMatter($matter)) {
+                    continue;
+                }
+                $matter->setRelation('client', $client);
+                $this->addUniqueSuggestion(
+                    $suggestions,
+                    $this->formatMatterMatch($matter, max(70, $confidence - 5), $matchedBy . ' (matter)')
+                );
+            }
+
+            return;
+        }
+
         $preferred = $this->resolvePreferredOpenMatterForClient((int) $client->id);
         if ($preferred) {
             $preferred->setRelation('client', $client);
@@ -888,21 +929,11 @@ class OutlookAddinController extends EmailUploadController
             return;
         }
 
-        $clientMatters = ClientMatter::where('client_id', $client->id)
-            ->with(['client', 'matter', 'workflowStage'])
-            ->orderByDesc('updated_at')
-            ->get();
-
-        foreach ($clientMatters as $matter) {
-            if (!$this->isOpenMatter($matter)) {
-                continue;
-            }
-            $matter->setRelation('client', $client);
-            $match = $this->formatMatterMatch($matter, $confidence, $matchedBy);
-            $this->addUniqueSuggestion($suggestions, $match);
-            if ($bestMatch === null) {
-                $bestMatch = $match;
-            }
+        // Client with no open matter: still assignable (client-scoped email).
+        $personMatch = $this->formatClientOnlyMatch($client, $confidence, $matchedBy);
+        $this->addUniqueSuggestion($suggestions, $personMatch);
+        if ($bestMatch === null) {
+            $bestMatch = $personMatch;
         }
     }
 
@@ -927,6 +958,10 @@ class OutlookAddinController extends EmailUploadController
     {
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
         $clientRef = (string) ($client->client_id ?? '');
+        $recordType = in_array(($client->type ?? ''), ['client', 'lead'], true)
+            ? (string) $client->type
+            : 'client';
+        $typeLabel = $recordType === 'lead' ? 'lead' : 'client';
 
         $service = app(\App\Services\Email\EmailOutlookViewService::class);
         $personalFolders = $service->personalFolders((int) $client->id);
@@ -937,11 +972,12 @@ class OutlookAddinController extends EmailUploadController
             'client_ref' => $clientRef,
             'client_name' => $clientName,
             'client_email' => $client->email ?? '',
+            'record_type' => $recordType,
             'matter_no' => '',
-            'matter_title' => 'Lead (no matter yet)',
+            'matter_title' => $recordType === 'lead' ? 'Lead (Emails tab)' : 'Client (no matter)',
             'confidence' => $confidence,
             'matched_by' => $matchedBy,
-            'label' => "{$clientRef} — {$clientName} (lead)",
+            'label' => "{$clientRef} — {$clientName} ({$typeLabel})",
             'matter_folders' => [],
             'personal_folders' => $personalFolders,
         ];
