@@ -10,6 +10,7 @@ The **BansalLaw CRM Outlook Add-in** ("Save to BansalLaw CRM") lets staff link e
 |---|---|
 | Taskpane | https://legal.bansalcrm.com/outlook-addin/taskpane |
 | Dynamic manifest | https://legal.bansalcrm.com/outlook-addin/manifest.xml |
+| Download manifest | https://legal.bansalcrm.com/outlook-addin/manifest/download |
 | Static deploy file | `public/outlook-addin/manifest.production.xml` |
 
 Local development uses a separate add-in id and display name (**Save to BansalLaw CRM (Local)**) so production and local can both be installed in Outlook at once.

@@ -219,7 +219,8 @@
                             <small class="text-muted d-block mb-2">Up to 10 files, max {{ (int) config('crm.email_upload_max_kb', 30720) / 1024 }}MB each</small>
                             <div class="alert alert-light border py-1 px-2 d-inline-block mb-0 text-start" style="font-size: 12px; color: #475569; background-color: #f8fafc; border-radius: 6px; max-width: 540px;">
                                 <i class="fa-solid fa-circle-info text-primary me-1"></i>
-                                <strong>Tip:</strong> Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the Bansal Law Outlook Add-in.
+                                <strong>Tip:</strong> Drag &amp; drop files from your desktop or File Explorer. If using Outlook, drag the email to your desktop first, or use the
+                                <a href="{{ route('outlook-addin.manifest.download') }}" class="outlook-addin-manifest-link" download="manifest-bansallaw-crm.xml" title="Download Outlook add-in manifest.xml">Bansal Law Outlook Add-in</a>.
                             </div>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-upload-status"></div>

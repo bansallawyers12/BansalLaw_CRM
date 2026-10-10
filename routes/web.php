@@ -341,6 +341,7 @@ Route::redirect('/crm/system-errors', '/system-errors');
 | Live: https://legal.bansalcrm.com/outlook-addin/*
 |--------------------------------------------------*/
 Route::prefix('outlook-addin')->name('outlook-addin.')->group(function () {
+    Route::get('/manifest/download', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'downloadManifest'])->name('manifest.download');
     Route::get('/manifest.xml', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'manifest'])->name('manifest');
     Route::get('/taskpane', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'taskpane'])->name('taskpane');
     Route::post('/match', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'match'])->name('match');

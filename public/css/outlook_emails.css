@@ -1971,6 +1971,17 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     color: #4a7eb5;
 }
 
+a.outlook-addin-manifest-link {
+    color: #1d4ed8;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+a.outlook-addin-manifest-link:hover {
+    color: #1e40af;
+}
+
 /* ========== Shared modern Outlook modals ========== */
 .outlook-modal-overlay {
     backdrop-filter: blur(4px);

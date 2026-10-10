@@ -2834,7 +2834,10 @@ function crmInitOutlookEmailsInterface() {
 
         const inlineDropZone = document.getElementById('inlineDropZone');
         if (inlineDropZone) {
-            inlineDropZone.addEventListener('click', () => {
+            inlineDropZone.addEventListener('click', (event) => {
+                if (event.target && event.target.closest && event.target.closest('a.outlook-addin-manifest-link')) {
+                    return;
+                }
                 if (isEmailUploading) return;
                 fileInput.click();
             });

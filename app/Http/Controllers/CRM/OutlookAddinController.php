@@ -109,15 +109,35 @@ class OutlookAddinController extends EmailUploadController
 
         $manifestXml = $this->buildManifestXml($baseUrl);
 
-        if ($request->query('download')) {
-            return response($manifestXml, 200, [
-                'Content-Type' => 'application/xml',
-                'Content-Disposition' => 'attachment; filename="manifest-bansallaw-crm.xml"',
-            ]);
+        if ($request->boolean('download')) {
+            return $this->manifestDownloadResponse($manifestXml);
         }
 
         return response($manifestXml, 200, [
-            'Content-Type' => 'application/xml',
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Force-download the Outlook add-in manifest.xml (for sideload / Admin Center upload).
+     * Dedicated path so the static public/outlook-addin/manifest.xml file cannot block it.
+     */
+    public function downloadManifest(Request $request)
+    {
+        $request->merge(['download' => 1]);
+
+        return $this->manifest($request);
+    }
+
+    protected function manifestDownloadResponse(string $manifestXml)
+    {
+        $filename = 'manifest-bansallaw-crm.xml';
+
+        return response($manifestXml, 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
     }
 
