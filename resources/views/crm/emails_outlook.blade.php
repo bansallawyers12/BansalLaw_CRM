@@ -2,10 +2,15 @@
     $clientData = $client ?? $fetchedData ?? null;
 
     if ($clientData && ! isset($emailUploadPersonalFolders)) {
+        $explicitMatterRef = isset($id1) && $id1 !== '' ? (string) $id1 : null;
+        // Only bind a matter when the URL has an explicit matter ref — otherwise keep
+        // the list client-scoped so Outlook saves without a matter remain visible.
         $emailOutlookCtx = app(\App\Services\Email\EmailOutlookViewService::class)->buildClientTabContext(
             $clientData,
-            isset($id1) && $id1 !== '' ? (string) $id1 : null,
-            isset($activeClientMatterId) ? (int) $activeClientMatterId : null
+            $explicitMatterRef,
+            $explicitMatterRef !== null && isset($activeClientMatterId)
+                ? (int) $activeClientMatterId
+                : null
         );
         $matterId = $emailOutlookCtx['matterId'];
         $emailUploadPersonalFolders = $emailOutlookCtx['emailUploadPersonalFolders'];
@@ -88,6 +93,7 @@
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $outlookLeadScopedMail ? '' : ($matterId ?? '') }}"
+    data-force-client-scoped-mail="{{ (! $outlookLeadScopedMail && empty($matterId)) ? '1' : '0' }}"
     data-record-type="{{ $outlookRecordType }}"
     data-lead-scoped-mail="{{ $outlookLeadScopedMail ? '1' : '0' }}"
     data-has-lead-mail-history="{{ $outlookHasLeadMailHistory ? '1' : '0' }}"

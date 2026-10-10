@@ -204,9 +204,12 @@ class ClientEmailUploadDuplicateService
                 : 'Unassigned Mail → Incoming';
         }
 
-        return $email->mail_body_type === 'sent'
-            ? 'Client matter → Sent'
-            : 'Client matter → Incoming';
+        $hasMatter = (int) ($email->client_matter_id ?? 0) > 0;
+        if ($email->mail_body_type === 'sent') {
+            return $hasMatter ? 'Client matter → Sent' : 'Client → Emails (Sent)';
+        }
+
+        return $hasMatter ? 'Client matter → Incoming' : 'Client → Emails (Incoming)';
     }
 
     public function assignmentLabel(EmailLog $email): string

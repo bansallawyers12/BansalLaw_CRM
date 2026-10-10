@@ -423,7 +423,7 @@ class OutlookAddinController extends EmailUploadController
             $precheckSubject = trim((string) $request->input('subject', ''));
             $precheckFrom = trim((string) $request->input('from_email', ''));
             $precheckMessageId = trim((string) $request->input('internet_message_id', $request->input('message_id', '')));
-            if ($clientMatterId > 0 && ($precheckSubject !== '' || $precheckMessageId !== '')) {
+            if ($clientId > 0 && ($precheckSubject !== '' || $precheckMessageId !== '')) {
                 $existing = $this->findExistingMatterEmail(
                     $clientId,
                     $clientMatterId,
@@ -1028,7 +1028,11 @@ class OutlookAddinController extends EmailUploadController
                 'success' => true,
                 'message' => $msg,
                 'attachment_count' => $attCount,
-                'detail_url' => $this->resolveMatterUrl($clientId, $clientMatterId),
+                'detail_url' => $this->resolveMatterUrl(
+                    $clientId,
+                    $clientMatterId,
+                    (int) ($result['email_log_id'] ?? 0) ?: null
+                ),
                 'document_id' => $result['document_id'] ?? null,
                 'email_log_id' => $result['email_log_id'] ?? null,
                 'assignment_tag' => $assignmentTag,
@@ -1075,7 +1079,7 @@ class OutlookAddinController extends EmailUploadController
     }
 
     /**
-     * Find an email already filed on this client matter (by Message-ID, then subject + sender).
+     * Find an email already filed on this client / matter (by Message-ID, then subject + sender).
      */
     protected function findExistingMatterEmail(
         int $clientId,
@@ -1084,13 +1088,18 @@ class OutlookAddinController extends EmailUploadController
         string $fromEmail = '',
         string $messageId = ''
     ): ?EmailLog {
-        if ($clientId <= 0 || $clientMatterId <= 0) {
+        if ($clientId <= 0) {
             return null;
         }
 
-        $base = EmailLog::query()
-            ->where('client_id', $clientId)
-            ->where('client_matter_id', $clientMatterId);
+        $base = EmailLog::query()->where('client_id', $clientId);
+        if ($clientMatterId > 0) {
+            $base->where('client_matter_id', $clientMatterId);
+        } else {
+            $base->where(function ($q) {
+                $q->whereNull('client_matter_id')->orWhere('client_matter_id', 0);
+            });
+        }
 
         $messageId = trim($messageId);
         if ($messageId !== '') {
@@ -1152,22 +1161,50 @@ class OutlookAddinController extends EmailUploadController
             'email_log_id' => $existing->id,
             'detail_url' => $this->resolveMatterUrl(
                 (int) ($existing->client_id ?: $clientId),
-                (int) ($existing->client_matter_id ?: $clientMatterId)
+                (int) ($existing->client_matter_id ?: $clientMatterId),
+                (int) $existing->id
             ),
         ], 422);
     }
 
-    protected function resolveMatterUrl(int $clientId, int $clientMatterId): string
+    /**
+     * Build a CRM client detail URL that decodeString() can open.
+     * Must use base64(convert_uuencode(id)) — plain base64 alone yields "Clients Not Exist".
+     */
+    protected function resolveMatterUrl(int $clientId, int $clientMatterId, ?int $emailLogId = null): string
     {
-        $matter = ClientMatter::find($clientMatterId);
-        $encodedClientId = base64_encode((string) $clientId);
-        $matterNo = $matter ? $matter->client_unique_matter_no : '';
-
-        if ($matterNo) {
-            return url("/clients/detail/{$encodedClientId}/{$matterNo}/emails");
+        if ($clientId <= 0) {
+            return url('/clients');
         }
 
-        return url("/clients/detail/{$encodedClientId}");
+        $encodedClientId = base64_encode(convert_uuencode((string) $clientId));
+        $matterNo = '';
+        if ($clientMatterId > 0) {
+            $matter = ClientMatter::find($clientMatterId);
+            $matterNo = $matter ? trim((string) ($matter->client_unique_matter_no ?? '')) : '';
+        }
+
+        if ($matterNo !== '') {
+            $url = url("/clients/detail/{$encodedClientId}/{$matterNo}/emails");
+        } else {
+            // No matter: open Emails tab directly (tab slug in 2nd segment is supported).
+            $url = url("/clients/detail/{$encodedClientId}/emails");
+        }
+
+        $query = [];
+        if ($emailLogId !== null && $emailLogId > 0) {
+            $query['select_email'] = $emailLogId;
+            $existing = EmailLog::query()->find($emailLogId, ['mail_body_type']);
+            if ($existing && ($existing->mail_body_type ?? '') === 'sent') {
+                $query['folder'] = 'sent';
+            }
+        }
+
+        if ($query !== []) {
+            $url .= (str_contains($url, '?') ? '&' : '?') . http_build_query($query);
+        }
+
+        return $url;
     }
 
     /**

@@ -6025,12 +6025,22 @@ class ClientsController extends Controller
                         ->orWhere('client_matter_id', 0);
                 });
             } elseif (! empty($clientMatterId)) {
-                // Client matter mail is matter-specific; keep pre-matter lead mail out of this view.
-                $query->where('client_matter_id', $clientMatterId)
-                    ->where(function ($q) {
-                        $q->whereNull('type')
-                            ->orWhere('type', '!=', 'lead');
+                // Matter mail for this matter, plus client-scoped rows filed without a matter
+                // (Outlook add-in / uploads). Lead-stage null-matter mail stays in lead history.
+                $query->where(function ($q) use ($clientMatterId) {
+                    $q->where(function ($matterOnly) use ($clientMatterId) {
+                        $matterOnly->where('client_matter_id', $clientMatterId)
+                            ->where(function ($t) {
+                                $t->whereNull('type')->orWhere('type', '!=', 'lead');
+                            });
+                    })->orWhere(function ($clientScoped) {
+                        $clientScoped->where(function ($m) {
+                            $m->whereNull('client_matter_id')->orWhere('client_matter_id', 0);
+                        })->where(function ($t) {
+                            $t->whereNull('type')->orWhere('type', 'client');
+                        });
                     });
+                });
             }
         } elseif (! empty($clientMatterId) && ! $isSyncedInboxFolder) {
             $query->where('client_matter_id', $clientMatterId);

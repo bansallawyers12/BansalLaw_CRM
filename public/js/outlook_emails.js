@@ -514,6 +514,18 @@ function crmInitOutlookEmailsInterface() {
         if (leadScopedMail) {
             return '';
         }
+        // Prefer the live matter dropdown when staff pick one for upload/filter.
+        if (window.EmailMatterContext && typeof window.EmailMatterContext.fromDropdown === 'function') {
+            const fromDropdown = window.EmailMatterContext.fromDropdown();
+            if (fromDropdown) {
+                return fromDropdown;
+            }
+        }
+        // Client detail opened without a matter in the URL: keep list client-scoped so
+        // Outlook saves with no matter remain visible (do not inherit auto-resolved config matter).
+        if (outlookContainer && outlookContainer.getAttribute('data-force-client-scoped-mail') === '1') {
+            return '';
+        }
         if (window.EmailMatterContext && typeof window.EmailMatterContext.resolve === 'function') {
             return window.EmailMatterContext.resolve(outlookContainer);
         }

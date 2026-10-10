@@ -16,11 +16,10 @@ class EmailOutlookViewService
 {
     public function resolveMatterId(Admin $client, ?string $matterRef, ?int $activeClientMatterId = null): ?int
     {
-        if ($activeClientMatterId !== null && $activeClientMatterId > 0) {
-            return $activeClientMatterId;
-        }
+        $matterRef = trim((string) ($matterRef ?? ''));
 
-        if ($matterRef !== null && $matterRef !== '') {
+        // Explicit matter in the URL / caller always wins.
+        if ($matterRef !== '') {
             $fromRef = ClientMatter::query()
                 ->where('client_id', (int) $client->id)
                 ->where('client_unique_matter_no', $matterRef)
@@ -31,24 +30,17 @@ class EmailOutlookViewService
             }
         }
 
-        $latest = ClientMatter::query()
-            ->where('client_id', (int) $client->id)
-            ->where(function ($q) {
-                $q->where('matter_status', 1)->orWhere('matter_status', '1');
-            })
-            ->orderByDesc('id')
-            ->value('id');
+        if ($activeClientMatterId !== null && $activeClientMatterId > 0) {
+            $belongs = ClientMatter::query()
+                ->where('id', $activeClientMatterId)
+                ->where('client_id', (int) $client->id)
+                ->exists();
 
-        if ($latest) {
-            return (int) $latest;
+            return $belongs ? $activeClientMatterId : null;
         }
 
-        $anyMatter = ClientMatter::query()
-            ->where('client_id', (int) $client->id)
-            ->orderByDesc('id')
-            ->value('id');
-
-        return $anyMatter ? (int) $anyMatter : null;
+        // No explicit matter: keep emails client-scoped so Outlook saves without a matter remain visible.
+        return null;
     }
 
     /**
