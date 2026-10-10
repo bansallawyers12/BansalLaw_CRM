@@ -31,6 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-2'),
     ],
 
+    'outlook_addin' => [
+        // Canonical live CRM URL used for production manifests / M365 deployment.
+        'production_url' => rtrim((string) env('OUTLOOK_ADDIN_PRODUCTION_URL', 'https://legal.bansalcrm.com'), '/'),
+        // Local/dev HTTPS tunnel override (Cloudflare / ngrok / localtunnel). Ignored when APP_ENV=production.
+        'base_url' => env('OUTLOOK_ADDIN_BASE_URL'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Python Services Configuration

@@ -90,10 +90,19 @@ class EmailUploadController extends Controller
      * Import a parsed .msg file with explicit client/matter context (smart import flow).
      *
      * @param \Illuminate\Http\UploadedFile $file
+     * @param  array<int, array<string, mixed>>  $attachmentStorage
+     * @param  array<string, mixed>  $syncMeta
      * @return array{success: bool, document_id?: int, email_log_id?: int, warnings?: list<string>, notices?: list<string>, error?: string, error_code?: string, technical_error?: string|null, reference?: string}
      */
-    public function importEmailFromContext($file, int $clientId, string $mailType, int $clientMatterId, string $recordType = 'client'): array
-    {
+    public function importEmailFromContext(
+        $file,
+        int $clientId,
+        string $mailType,
+        int $clientMatterId,
+        string $recordType = 'client',
+        array $attachmentStorage = [],
+        array $syncMeta = []
+    ): array {
         $this->ensureCrmRecordAccess($clientId);
 
         $clientInfo = Admin::select('client_id', 'type')->where('id', $clientId)->first();
@@ -124,10 +133,20 @@ class EmailUploadController extends Controller
         } else {
             $payload['upload_inbox_mail_client_matter_id'] = $clientMatterId;
         }
+        if (! empty($attachmentStorage)) {
+            $payload['attachment_storage'] = json_encode(array_values($attachmentStorage));
+        }
 
         $request = Request::create('/', 'POST', $payload);
 
-        return $this->processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request);
+        return $this->processEmailFile(
+            $file,
+            $clientId,
+            $clientUniqueId,
+            $mailType,
+            $request,
+            ! empty($syncMeta) ? $syncMeta : null
+        );
     }
 
     /**
@@ -637,7 +656,16 @@ class EmailUploadController extends Controller
                 }
             }
 
-            if (! $request->boolean('force_upload') && empty($syncMeta) && $clientId) {
+            // IMAP sync meta has mailbox / synced ids. Outlook add-in (and plain uploads) only
+            // pass tagging fields — those must use client/matter-scoped duplicate checks, not the
+            // global IMAP guard (which falsely skips saves to a different matter).
+            $isImapSyncMeta = ! empty($syncMeta) && (
+                trim((string) ($syncMeta['mailbox_email'] ?? '')) !== ''
+                || (int) ($syncMeta['synced_email_id'] ?? 0) > 0
+                || (int) ($syncMeta['imap_uid'] ?? 0) > 0
+            );
+
+            if (! $request->boolean('force_upload') && ! $isImapSyncMeta && $clientId) {
                 $duplicateBlock = app(\App\Services\Email\ClientEmailUploadDuplicateService::class)
                     ->buildManualUploadBlockResponse(
                         (int) $clientId,
@@ -650,7 +678,7 @@ class EmailUploadController extends Controller
                 }
             }
 
-            if (! $request->boolean('force_upload') && ! empty($syncMeta)) {
+            if (! $request->boolean('force_upload') && $isImapSyncMeta) {
                 $existingSynced = $this->findExistingSyncedEmailLog($parsedData, $fileHash, $syncMeta);
                 if ($existingSynced) {
                     return [

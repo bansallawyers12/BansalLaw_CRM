@@ -212,6 +212,9 @@ class ClientEmailUploadDuplicateService
     public function assignmentLabel(EmailLog $email): string
     {
         $status = (string) ($email->sync_assignment_status ?? '');
+        if ((string) ($email->sync_source ?? '') === EmailLog::SYNC_SOURCE_OUTLOOK_ADDIN) {
+            return 'Outlook add-in';
+        }
         if ($status === 'auto_assigned' || ($email->synced_email_id && $email->sync_source === EmailLog::SYNC_SOURCE_CRON)) {
             return 'Auto-assigned (inbox sync)';
         }
@@ -234,8 +237,8 @@ class ClientEmailUploadDuplicateService
         $from = $existing->from_mail ?: 'Unknown sender';
         $when = $match['received_at_display'] ?? '';
 
-        $message = 'This email is already on the file at: '.$match['location_label']
-            .' ('.$match['assignment_label'].').';
+        $message = 'Already exists — this email is already on the file at: '.$match['location_label']
+            .' ('.$match['assignment_label'].') and was not uploaded again.';
         $message .= ' Subject: "'.$subject.'" from '.$from;
         if ($when !== '') {
             $message .= ' ('.$when.')';

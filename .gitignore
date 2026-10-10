@@ -37,6 +37,9 @@ sample env need fix.txt
 # Graphify knowledge graph output (generated locally)
 /graphify-out/
 
+# Local Outlook add-in sideload manifest (contains ephemeral tunnel URLs)
+/public/outlook-addin/manifest.local.xml
+
 pdftk_server_installer.exe
 
 *.backup

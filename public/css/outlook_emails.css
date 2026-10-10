@@ -866,6 +866,14 @@ body, html {
     margin-left: auto;
 }
 
+.email-sender-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
 .email-sender {
     font-size: 13px;
     flex: 1;
@@ -873,6 +881,18 @@ body, html {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.email-item-inline-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    max-width: 55%;
+}
+
+.email-item-inline-badges .email-client-badge {
+    margin-left: 0;
 }
 
 .email-date {
@@ -5987,6 +6007,29 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     color: #ea580c;
 }
 
+.email-client-badge--outlook-addin {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+}
+
+.email-client-badge--outlook-addin i {
+    color: #2563eb;
+}
+
+.email-client-badge__logo {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+    vertical-align: -2px;
+    margin-right: 2px;
+}
+
+.email-client-badge--outlook-addin .email-client-badge__logo {
+    border-radius: 2px;
+}
+
 .email-client-badge--clickable.email-client-badge--auto:hover {
     background: #d1fae5 !important;
     border-color: #6ee7b7 !important;
@@ -6003,6 +6046,12 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     background: #ffedd5 !important;
     border-color: #fdba74 !important;
     color: #7c2d12 !important;
+}
+
+.email-client-badge--clickable.email-client-badge--outlook-addin:hover {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+    color: #1e40af !important;
 }
 
 .email-client-badge--manual-upload-match {
@@ -6688,6 +6737,12 @@ body.assign-email-modal-open .ts-dropdown .no-results,
     flex-wrap: wrap;
     gap: 10px;
     padding: 16px 24px 0;
+}
+
+.gmail-read-subject-row #readOriginBadge {
+    flex-shrink: 0;
+    margin-top: 6px;
+    margin-left: 0;
 }
 
 .gmail-folder-chip {

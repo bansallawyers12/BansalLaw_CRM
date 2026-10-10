@@ -52,6 +52,7 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\IssueMcpStaffTokenCommand',
         '\App\Console\Commands\PromotePendingUploadsToS3',
+        \App\Console\Commands\GenerateOutlookAddinManifest::class,
     ];
 
     /**

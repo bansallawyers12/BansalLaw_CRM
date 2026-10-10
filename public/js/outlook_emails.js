@@ -1018,6 +1018,10 @@ function crmInitOutlookEmailsInterface() {
             return null;
         }
 
+        if (String(email.sync_source || '').trim() === 'outlook_addin') {
+            return 'outlook_addin';
+        }
+
         const status = String(email.sync_assignment_status || '').trim();
         if (status === 'auto_assigned') {
             return 'auto_assigned';
@@ -1033,6 +1037,22 @@ function crmInitOutlookEmailsInterface() {
         }
 
         return null;
+    }
+
+    function getOutlookAddinLogoUrl() {
+        if (outlookContainer && outlookContainer.dataset.outlookAddinLogoUrl) {
+            return outlookContainer.dataset.outlookAddinLogoUrl;
+        }
+
+        const base = (outlookContainer && outlookContainer.dataset.baseUrl)
+            || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
+        return (base.replace(/\/$/, '') || '') + '/img/logo_new.png';
+    }
+
+    function renderOutlookAddinBadgeContent(label) {
+        const logoUrl = getOutlookAddinLogoUrl();
+        return '<img src="' + escapeHtml(logoUrl) + '" alt="" class="email-client-badge__logo" width="14" height="14" loading="lazy" onerror="this.style.display=\'none\'"> '
+            + escapeHtml(label || 'Outlook add-in');
     }
 
     /**
@@ -1053,9 +1073,13 @@ function crmInitOutlookEmailsInterface() {
             return false;
         }
 
-        // Explicit source set on file upload path (new records).
-        if (String(email.sync_source || '').trim() === 'upload') {
+        // Explicit source set on file upload / Outlook add-in path (new records).
+        const syncSource = String(email.sync_source || '').trim();
+        if (syncSource === 'upload') {
             return true;
+        }
+        if (syncSource === 'outlook_addin') {
+            return false;
         }
 
         // Any positive synced-mailbox id means inbox sync origin.
@@ -1071,6 +1095,11 @@ function crmInitOutlookEmailsInterface() {
         // IMAP-synced rows usually also set mailbox_email; pure uploads leave it empty.
         if (String(email.mailbox_email || '').trim()) {
             return false;
+        }
+
+        // Uploaded file present on a client matter (Outlook add-in / drag-drop) without IMAP ids.
+        if (email.uploaded_doc_id || email.pdf_doc_id) {
+            return true;
         }
 
         return true;
@@ -1149,6 +1178,27 @@ function crmInitOutlookEmailsInterface() {
                 + (clientLabel ? (' · ' + clientLabel) : '')
                 + (clientUrl ? ' — click to open client detail' : '');
             labelStr = unassignedOnly && clientLabel ? clientLabel : 'Manually assigned';
+        } else if (origin === 'outlook_addin') {
+            modifier = ' email-client-badge--outlook-addin';
+            title = 'Saved from BansalLaw Outlook add-in'
+                + (clientLabel ? (' · ' + clientLabel) : '')
+                + (clientUrl ? ' — click to open client detail' : '');
+            labelStr = unassignedOnly && clientLabel ? clientLabel : 'Outlook add-in';
+            const outlookBadgeClass = (unassignedOnly
+                ? 'email-client-badge email-client-badge--list email-client-badge--clickable'
+                : 'email-client-badge email-client-badge--clickable')
+                + modifier;
+            const outlookInner = renderOutlookAddinBadgeContent(labelStr);
+            if (clientUrl) {
+                return '<a href="' + escapeHtml(clientUrl) + '" class="' + outlookBadgeClass + '" title="'
+                    + escapeHtml(title) + '" onclick="event.stopPropagation();">'
+                    + outlookInner
+                    + '</a>';
+            }
+            return '<span class="' + outlookBadgeClass.replace(' email-client-badge--clickable', '') + '" title="'
+                + escapeHtml(title) + '">'
+                + outlookInner
+                + '</span>';
         } else if (origin === 'manual_upload') {
             iconClass = 'fa-cloud-arrow-up';
             modifier = ' email-client-badge--manual-upload';
@@ -6021,9 +6071,15 @@ function crmInitOutlookEmailsInterface() {
                     + '  </div>'
                     + '</div>';
             } else {
+                const listBadges = [attachmentIcon, hearingBadge, calendarIndicator, statusBadge, syncSourceBadge, clientBadge, matchedUnassignedBadge]
+                    .filter(Boolean)
+                    .join('');
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${hearingBadge}${calendarIndicator}${statusBadge}${syncSourceBadge}${clientBadge}${matchedUnassignedBadge}</div>
+                    <div class="email-sender-wrap">
+                        <div class="email-sender">${escapeHtml(sender)}</div>
+                        ${listBadges ? `<div class="email-item-inline-badges">${listBadges}</div>` : ''}
+                    </div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -6079,6 +6135,35 @@ function crmInitOutlookEmailsInterface() {
 
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';
+
+        const readOriginBadge = document.getElementById('readOriginBadge');
+        if (readOriginBadge) {
+            const origin = resolveEmailOrigin(email);
+            if (origin === 'outlook_addin') {
+                readOriginBadge.hidden = false;
+                readOriginBadge.className = 'email-client-badge email-client-badge--outlook-addin';
+                readOriginBadge.title = 'Saved from BansalLaw Outlook add-in';
+                readOriginBadge.innerHTML = renderOutlookAddinBadgeContent('Outlook add-in');
+            } else if (origin === 'manual_upload') {
+                readOriginBadge.hidden = false;
+                readOriginBadge.className = 'email-client-badge email-client-badge--manual-upload';
+                readOriginBadge.title = 'Uploaded manually (.msg / .eml)';
+                readOriginBadge.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Manual upload';
+            } else if (origin === 'auto_assigned') {
+                readOriginBadge.hidden = false;
+                readOriginBadge.className = 'email-client-badge email-client-badge--auto';
+                readOriginBadge.title = 'Auto assigned from synced inbox';
+                readOriginBadge.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Auto assigned';
+            } else if (origin === 'manual_assigned') {
+                readOriginBadge.hidden = false;
+                readOriginBadge.className = 'email-client-badge email-client-badge--manual-assigned';
+                readOriginBadge.title = 'Manually assigned to client';
+                readOriginBadge.innerHTML = '<i class="fa-solid fa-user-check" aria-hidden="true"></i> Manually assigned';
+            } else {
+                readOriginBadge.hidden = true;
+                readOriginBadge.innerHTML = '';
+            }
+        }
 
         const readToEl = document.getElementById('readTo');
         const readCcEl = document.getElementById('readCc');

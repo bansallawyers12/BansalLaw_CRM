@@ -336,6 +336,21 @@ Route::middleware(['auth:admin'])->prefix('system-errors')->name('system_errors.
 Route::redirect('/system-breakdowns', '/system-errors');
 Route::redirect('/crm/system-errors', '/system-errors');
 
+/*--------------------------------------------------
+| SECTION: Outlook Add-in (production + local tunnel)
+| Live: https://legal.bansalcrm.com/outlook-addin/*
+|--------------------------------------------------*/
+Route::prefix('outlook-addin')->name('outlook-addin.')->group(function () {
+    Route::get('/manifest.xml', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'manifest'])->name('manifest');
+    Route::get('/taskpane', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'taskpane'])->name('taskpane');
+    Route::post('/match', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'match'])->name('match');
+    Route::get('/matters', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'searchMatters'])->name('matters');
+    Route::get('/folders', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'folders'])->name('folders');
+    Route::post('/save', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'saveEmail'])->name('save');
+    Route::post('/set-staff', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'setStaff'])->name('set-staff');
+    Route::post('/log', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'logClient'])->name('log');
+});
+
 // Unmatched web URLs → custom 404 page (resources/views/errors/404.blade.php)
 Route::fallback(function () {
     abort(404);

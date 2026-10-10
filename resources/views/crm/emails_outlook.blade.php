@@ -84,6 +84,7 @@
 @endphp
 <div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}{{ $compactPagination ? ' outlook-container--compact-pagination' : '' }}" id="outlookContainer"
     data-base-url="{{ url('/') }}"
+    data-outlook-addin-logo-url="{{ asset('img/logo_new.png') }}"
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $outlookLeadScopedMail ? '' : ($matterId ?? '') }}"
@@ -614,6 +615,7 @@
 
                     <div class="gmail-read-subject-row">
                         <h2 class="email-full-subject" id="readSubject">Loading...</h2>
+                        <span class="email-client-badge email-client-badge--manual-upload" id="readOriginBadge" hidden title="Upload source"></span>
                         <span class="gmail-folder-chip" id="gmailFolderChip" hidden></span>
                     </div>
 

@@ -30,6 +30,9 @@ class EmailLog extends Authenticatable
     /** Staff drag/drop or file-picker upload of .msg/.eml onto a client. */
     public const SYNC_SOURCE_UPLOAD = 'upload';
 
+    /** Saved from the Outlook add-in taskpane. */
+    public const SYNC_SOURCE_OUTLOOK_ADDIN = 'outlook_addin';
+
     public static function syncSourceLabel(?string $source): string
     {
         return match ($source) {
@@ -37,6 +40,7 @@ class EmailLog extends Authenticatable
             self::SYNC_SOURCE_CRON => 'Auto fetch',
             self::SYNC_SOURCE_COMPOSE => 'CRM sent',
             self::SYNC_SOURCE_UPLOAD => 'Manual upload',
+            self::SYNC_SOURCE_OUTLOOK_ADDIN => 'Outlook add-in',
             default => '',
         };
     }
