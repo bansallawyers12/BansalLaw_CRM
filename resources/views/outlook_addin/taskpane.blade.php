@@ -1339,8 +1339,9 @@
         function applySelectedMatter(matter, isAuto = false) {
             isAutoMatched = !!isAuto;
             selectedClientId = matter.client_id;
-            selectedMatterId = matter.client_matter_id;
-            selectedMatterName = matter.matter_no || ('Matter #' + matter.client_matter_id);
+            selectedMatterId = matter.client_matter_id || 0;
+            selectedMatterName = matter.matter_no
+                || (matter.client_matter_id ? ('Matter #' + matter.client_matter_id) : 'Lead (no matter)');
 
             document.getElementById('matchedMatterNo').textContent = selectedMatterName;
             document.getElementById('matchedClientInfo').textContent = `${matter.client_ref} — ${matter.client_name}`;
@@ -1432,16 +1433,20 @@
                     const data = await res.json();
 
                     if (!data.matters || !data.matters.length) {
-                        resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;">No matters found.</div>';
+                        resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8;">No clients or matters found.</div>';
                         return;
                     }
 
-                    resultsEl.innerHTML = data.matters.map(m => `
+                    resultsEl.innerHTML = data.matters.map(m => {
+                        const title = m.matter_no
+                            ? `${m.client_ref} / ${m.matter_no}`
+                            : `${m.client_ref} — ${m.client_name}`;
+                        return `
                         <div class="matter-result-item" onclick='applySelectedMatter(${JSON.stringify(m)}, false)'>
-                            <div class="m-title">${m.client_ref} / ${m.matter_no}</div>
-                            <div class="m-sub">${m.client_name} • ${m.matter_title}</div>
-                        </div>
-                    `).join('');
+                            <div class="m-title">${title}</div>
+                            <div class="m-sub">${m.client_name} • ${m.matter_title || 'Client record'}</div>
+                        </div>`;
+                    }).join('');
                 } catch (e) {
                     resultsEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #ef4444;">Search failed.</div>';
                 }
@@ -1540,8 +1545,8 @@
 
         // Main Save Function
         async function saveEmailToCrm() {
-            if (!selectedClientId || !selectedMatterId) {
-                showError('Please select a valid client matter first.');
+            if (!selectedClientId) {
+                showError('Please select a client or matter first.');
                 return;
             }
 
