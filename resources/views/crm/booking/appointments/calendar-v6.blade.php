@@ -2159,14 +2159,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit',
             });
 
+        const matterRefLabel = (function () {
+            if (props.matter_ref_label) return String(props.matter_ref_label);
+            const bits = [];
+            if (props.client_ref) bits.push(String(props.client_ref));
+            if (props.matter_no) bits.push(String(props.matter_no));
+            return bits.length ? bits.join(' / ') : '';
+        })();
+        let clientDetailHref = props.client_detail_url || null;
+        if (!clientDetailHref && props.client_id_encoded) {
+            clientDetailHref = '/clients/detail/' + props.client_id_encoded;
+            if (props.matter_no) {
+                clientDetailHref += '/' + encodeURIComponent(String(props.matter_no));
+            }
+        }
         let clientHtml = escapeHtml(formatCalendarDetail(props.client_name));
-        if (props.client_id_encoded && props.client_name) {
+        if (clientDetailHref && props.client_name) {
             clientHtml =
-                '<a href="/clients/detail/' +
-                escapeHtml(props.client_id_encoded) +
+                '<a href="' +
+                escapeHtml(clientDetailHref) +
                 '" target="_blank" class="booking-calendar-link">' +
                 escapeHtml(props.client_name) +
                 '</a>';
+        }
+        if (matterRefLabel) {
+            clientHtml +=
+                '<div class="appt-detail-item__value--muted" style="margin-top:4px;font-size:12px;font-weight:600;">' +
+                escapeHtml(matterRefLabel) +
+                '</div>';
         }
 
         const statusRaw = props.status_label || props.status || typeLabel;
@@ -2282,7 +2302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${renderApptDetailItem('fa-location-dot', 'Location', escapeHtml(formatCalendarDetail(props.location)))}
                     ${renderApptDetailItem('fa-calendar-days', 'Calendar', escapeHtml(staffEventCalendarLabel(props)))}
                     ${props.assigned_to_name ? renderApptDetailItem('fa-user-check', 'Assigned to', escapeHtml(props.assigned_to_name)) : ''}
-                    ${props.matter_no || props.matter_title ? renderApptDetailItem('fa-briefcase', 'Matter', escapeHtml([props.matter_no, props.matter_title].filter(Boolean).join(' · '))) : ''}
+                    ${props.matter_title ? renderApptDetailItem('fa-briefcase', 'Matter type', escapeHtml(props.matter_title)) : ''}
                     ${renderApptDetailItem('fa-circle-check', 'Status', renderApptStatusPill(statusKey, String(statusRaw).toUpperCase()))}
                     ${notesHtml}
                 </div>
@@ -2327,9 +2347,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const vfd = document.getElementById('viewFullDetails');
-        if (props.client_id_encoded || props.client_detail_url) {
+        if (clientDetailHref) {
             vfd.classList.remove('d-none');
-            vfd.href = props.client_detail_url || ('/clients/detail/' + props.client_id_encoded);
+            vfd.href = clientDetailHref;
             vfd.innerHTML = '<i class="fa-solid fa-user"></i> Open Client';
             vfd.target = '_blank';
         } else if (props.action_url) {

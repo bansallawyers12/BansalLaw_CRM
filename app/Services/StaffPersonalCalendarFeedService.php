@@ -790,7 +790,7 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        $query = StaffCalendarEvent::query()->with(['client.company']);
+        $query = StaffCalendarEvent::query()->with(['client.company', 'matter.matter']);
 
         // Shared court/meeting/deadline (scoped) + own personal reminder/other.
         $query->where(function (Builder $outer) use ($staffId, $calendarType) {
@@ -844,7 +844,7 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        $query = ClientCourtHearing::query()->with(['client.company']);
+        $query = ClientCourtHearing::query()->with(['client.company', 'matter']);
         $this->applyPersonalCourtHearingScope($query, $staffId);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyHearingDateWindow($query, $request);
@@ -1178,6 +1178,11 @@ class StaffPersonalCalendarFeedService
                 $clientName = $this->clientDisplayName($note->client);
                 $taskTitle = trim((string) ($note->title ?: 'Follow-up'));
                 $title = trim(($clientName ? $clientName . ' — ' : '') . $taskTitle);
+                $sharedPreview = $this->noteSharedPayload($note);
+                $matterRefLabel = (string) ($sharedPreview['matter_ref_label'] ?? '');
+                if ($matterRefLabel !== '' && ! str_contains($title, $matterRefLabel)) {
+                    $title = trim($title . ' · ' . $matterRefLabel);
+                }
                 $noteDeadline = $note->note_deadline
                     ? Carbon::parse($note->note_deadline, $tz)->toDateString()
                     : null;
@@ -1211,7 +1216,7 @@ class StaffPersonalCalendarFeedService
                     }
                 }
 
-                return array_merge($this->noteSharedPayload($note), [
+                return array_merge($sharedPreview, [
                     'id' => 'followup-' . $note->id,
                     'event_kind' => 'follow_up',
                     'note_id' => (int) $note->id,
@@ -1264,7 +1269,16 @@ class StaffPersonalCalendarFeedService
                 $deadline = Carbon::parse($matter->deadline, $tz)->startOfDay()->setTime(17, 0);
                 $clientName = $this->clientDisplayName($matter->client);
                 $matterLabel = \App\Models\Matter::displayTitleFromJoinedRow(optional($matter->matter)->title);
+                $clientRef = trim((string) ($matter->client?->client_id ?? ''));
+                $matterNo = trim((string) ($matter->client_unique_matter_no ?? ''));
+                $matterRefLabel = $this->staffCalendarFeed->formatClientMatterRefLabel(
+                    $clientRef !== '' ? $clientRef : null,
+                    $matterNo !== '' ? $matterNo : null
+                );
                 $title = trim(($clientName ?: 'Client') . ' — Matter deadline' . ($matterLabel ? ' (' . $matterLabel . ')' : ''));
+                if ($matterRefLabel && ! str_contains($title, $matterRefLabel)) {
+                    $title = trim($title . ' · ' . $matterRefLabel);
+                }
 
                 return [
                     'id' => 'matter-deadline-' . $matter->id,
@@ -1281,12 +1295,17 @@ class StaffPersonalCalendarFeedService
                     'client_id_encoded' => $matter->client_id
                         ? base64_encode(convert_uuencode((string) $matter->client_id))
                         : null,
+                    'client_ref' => $clientRef !== '' ? $clientRef : null,
                     'client_name' => $clientName,
                     'client_email' => $this->clientEmail($matter->client),
                     'client_phone' => $this->clientPhone($matter->client),
                     'client_matter_id' => $matter->id,
-                    'matter_no' => $matter->client_unique_matter_no,
+                    'matter_no' => $matterNo !== '' ? $matterNo : null,
                     'matter_title' => $matterLabel ?: null,
+                    'matter_ref_label' => $matterRefLabel,
+                    'client_detail_url' => $matter->client_id
+                        ? url('/clients/detail/' . base64_encode(convert_uuencode((string) $matter->client_id)) . ($matterNo !== '' ? '/' . $matterNo : ''))
+                        : null,
                     'status' => 'deadline',
                     'status_label' => 'Matter Deadline',
                     'note_deadline' => $deadline->toDateString(),
@@ -1483,19 +1502,27 @@ class StaffPersonalCalendarFeedService
             ? \App\Models\Matter::displayTitleFromJoinedRow($matter->matter->title)
             : null;
 
+        $clientRef = trim((string) ($note->client?->client_id ?? ''));
+        $matterNo = $note->matterReference();
+
         return [
             'client_id' => $note->client_id,
             'client_id_encoded' => $note->client_id
                 ? base64_encode(convert_uuencode((string) $note->client_id))
                 : null,
+            'client_ref' => $clientRef !== '' ? $clientRef : null,
             'client_email' => $this->clientEmail($note->client),
             'client_phone' => $this->clientPhone($note->client) ?: (trim((string) ($note->mobile_number ?? '')) ?: null),
             'assigned_to' => $note->assigned_to,
             'assigned_to_name' => $assignee ? (string) $assignee->full_name : null,
             'task_group' => $note->task_group ? (string) $note->task_group : null,
             'client_matter_id' => $matter?->id,
-            'matter_no' => $note->matterReference(),
+            'matter_no' => $matterNo,
             'matter_title' => $matterTitle ?: null,
+            'matter_ref_label' => $this->staffCalendarFeed->formatClientMatterRefLabel(
+                $clientRef !== '' ? $clientRef : null,
+                $matterNo
+            ),
             'client_detail_url' => $note->clientDetailUrl(),
         ];
     }

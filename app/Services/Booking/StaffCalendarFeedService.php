@@ -146,7 +146,7 @@ class StaffCalendarFeedService
         }
 
         $query = StaffCalendarEvent::query()
-            ->with(['client.company'])
+            ->with(['client.company', 'matter.matter'])
             ->where('created_by_staff_id', $ownerStaffId)
             ->whereIn('event_type', ['reminder', 'other']);
 
@@ -307,7 +307,7 @@ class StaffCalendarFeedService
             return [];
         }
 
-        $query = StaffCalendarEvent::query()->with(['client.company']);
+        $query = StaffCalendarEvent::query()->with(['client.company', 'matter.matter']);
 
         if ($calendarType !== '') {
             $query->where(function (Builder $q) use ($calendarType) {
@@ -432,7 +432,7 @@ class StaffCalendarFeedService
             return [];
         }
 
-        $query = ClientCourtHearing::query()->with(['client.company']);
+        $query = ClientCourtHearing::query()->with(['client.company', 'matter']);
 
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
 
@@ -526,10 +526,25 @@ class StaffCalendarFeedService
         $encodedClientId = $event->client_id
             ? base64_encode(convert_uuencode((string) $event->client_id))
             : null;
+        $clientRef = trim((string) ($event->client?->client_id ?? ''));
+        $matter = $event->relationLoaded('matter') ? $event->matter : $event->matter()->first();
+        $matterNo = trim((string) ($matter?->client_unique_matter_no ?? ''));
+        $matterTitle = $matter && $matter->relationLoaded('matter') && $matter->matter
+            ? \App\Models\Matter::displayTitleFromJoinedRow($matter->matter->title)
+            : null;
+        $matterRefLabel = $this->formatClientMatterRefLabel($clientRef, $matterNo !== '' ? $matterNo : null);
 
         $title = CalendarEventText::displayStaffTitle((string) $event->title, (string) $event->event_type);
+        if ($matterRefLabel !== null && $matterRefLabel !== '' && ! str_contains($title, $matterRefLabel)) {
+            $title = trim($title . ' · ' . $matterRefLabel);
+        }
         $location = CalendarEventText::sanitizeLocation($event->location);
         $isAllDay = (bool) $event->is_all_day;
+
+        $clientDetailUrl = null;
+        if ($encodedClientId) {
+            $clientDetailUrl = url('/clients/detail/' . $encodedClientId . ($matterNo !== '' ? '/' . $matterNo : ''));
+        }
 
         return [
             'id' => 'staff-cal-' . $event->id,
@@ -546,16 +561,41 @@ class StaffCalendarFeedService
             'calendar_type' => $event->calendar_type,
             'client_id' => $event->client_id,
             'client_id_encoded' => $encodedClientId,
+            'client_ref' => $clientRef !== '' ? $clientRef : null,
             'client_name' => $clientName,
             'client_email' => $this->clientEmail($event->client),
             'client_phone' => $this->clientPhone($event->client),
             'client_matter_id' => $event->client_matter_id,
+            'matter_no' => $matterNo !== '' ? $matterNo : null,
+            'matter_title' => $matterTitle ?: null,
+            'matter_ref_label' => $matterRefLabel,
+            'client_detail_url' => $clientDetailUrl,
             'location' => $location,
             'notes' => $event->notes,
             'status'           => $this->staffEventStatus($event),
             'status_label'     => $this->staffEventStatusLabel($event),
             'reminder_minutes' => $event->reminder_minutes,
         ];
+    }
+
+    /**
+     * Client detail-style reference, e.g. "BANS2600060 / CIV_16".
+     */
+    public function formatClientMatterRefLabel(?string $clientRef, ?string $matterNo): ?string
+    {
+        $clientRef = trim((string) $clientRef);
+        $matterNo = trim((string) $matterNo);
+        if ($clientRef !== '' && $matterNo !== '') {
+            return $clientRef . ' / ' . $matterNo;
+        }
+        if ($matterNo !== '') {
+            return $matterNo;
+        }
+        if ($clientRef !== '') {
+            return $clientRef;
+        }
+
+        return null;
     }
 
     protected function staffEventStatus(StaffCalendarEvent $event): string
@@ -598,11 +638,23 @@ class StaffCalendarFeedService
         $end = $start->copy()->addMinutes(60);
         $clientName = $this->clientDisplayName($hearing->client);
         $encodedClientId = base64_encode(convert_uuencode((string) $hearing->client_id));
+        $clientRef = trim((string) ($hearing->client?->client_id ?? ''));
+        $matter = $hearing->relationLoaded('matter')
+            ? $hearing->matter
+            : $hearing->matter()->first();
+        $matterNo = trim((string) ($matter?->client_unique_matter_no ?? ''));
+        $matterRefLabel = $this->formatClientMatterRefLabel(
+            $clientRef !== '' ? $clientRef : null,
+            $matterNo !== '' ? $matterNo : null
+        );
 
         $typeLabel = CalendarEventText::sanitizeHearingType($hearing->hearing_type);
         $courtName = CalendarEventText::sanitizeLocation($hearing->court_name);
         $courtLabel = $courtName ? ' @ ' . $courtName : '';
         $title = trim(($clientName ?: 'Client') . ' — ' . $typeLabel . $courtLabel);
+        if ($matterRefLabel && ! str_contains($title, $matterRefLabel)) {
+            $title = trim($title . ' · ' . $matterRefLabel);
+        }
 
         return [
             'id' => 'court-' . $hearing->id,
@@ -618,10 +670,14 @@ class StaffCalendarFeedService
             'is_all_day' => $hearing->hearing_time === null,
             'client_id' => $hearing->client_id,
             'client_id_encoded' => $encodedClientId,
+            'client_ref' => $clientRef !== '' ? $clientRef : null,
             'client_name' => $clientName,
             'client_email' => $this->clientEmail($hearing->client),
             'client_phone' => $this->clientPhone($hearing->client),
             'client_matter_id' => $hearing->client_matter_id,
+            'matter_no' => $matterNo !== '' ? $matterNo : null,
+            'matter_ref_label' => $matterRefLabel,
+            'client_detail_url' => url('/clients/detail/' . $encodedClientId . ($matterNo !== '' ? '/' . $matterNo : '')),
             'court_name' => $courtName,
             'case_number' => $hearing->case_number,
             'judge_name' => $hearing->judge_name,

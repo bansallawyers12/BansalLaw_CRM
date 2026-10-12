@@ -328,4 +328,18 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
 
         $this->assertSame('Ankit Bansal', $method->invoke($this->service(), $client));
     }
+
+    #[Test]
+    public function format_client_matter_ref_label_matches_client_detail_style(): void
+    {
+        $feed = new StaffCalendarFeedService();
+
+        $this->assertSame(
+            'BANS2600060 / CIV_16',
+            $feed->formatClientMatterRefLabel('BANS2600060', 'CIV_16')
+        );
+        $this->assertSame('BANS2600060', $feed->formatClientMatterRefLabel('BANS2600060', null));
+        $this->assertSame('CIV_16', $feed->formatClientMatterRefLabel(null, 'CIV_16'));
+        $this->assertNull($feed->formatClientMatterRefLabel(null, null));
+    }
 }

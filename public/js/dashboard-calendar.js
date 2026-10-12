@@ -1139,14 +1139,30 @@
         var tz = calendarElTz();
         var canManage = !props.read_only && !!eventId;
         var clientName = props.client_name || '—';
+        var matterRefLabel = props.matter_ref_label
+            ? String(props.matter_ref_label)
+            : [props.client_ref, props.matter_no].filter(Boolean).join(' / ');
+        var clientDetailHref = props.client_detail_url || null;
+        if (!clientDetailHref && props.client_id_encoded) {
+            clientDetailHref = '/clients/detail/' + props.client_id_encoded;
+            if (props.matter_no) {
+                clientDetailHref += '/' + encodeURIComponent(String(props.matter_no));
+            }
+        }
         var clientHtml = escapeDetailHtml(clientName);
-        if (props.client_id_encoded) {
+        if (clientDetailHref && props.client_name) {
             clientHtml =
-                '<a href="/clients/detail/' +
-                escapeDetailHtml(props.client_id_encoded) +
+                '<a href="' +
+                escapeDetailHtml(clientDetailHref) +
                 '" class="booking-calendar-link" target="_blank" rel="noopener">' +
                 escapeDetailHtml(clientName) +
                 '</a>';
+        }
+        if (matterRefLabel) {
+            clientHtml +=
+                '<div class="appt-detail-item__value--muted" style="margin-top:4px;font-size:12px;font-weight:600;">' +
+                escapeDetailHtml(matterRefLabel) +
+                '</div>';
         }
 
         titleEl.textContent = 'Reminder Details';
@@ -1233,8 +1249,8 @@
             '</div>';
 
         if (openClientEl) {
-            if (props.client_id_encoded) {
-                openClientEl.href = '/clients/detail/' + props.client_id_encoded;
+            if (clientDetailHref) {
+                openClientEl.href = clientDetailHref;
                 openClientEl.classList.remove('d-none');
             } else {
                 openClientEl.classList.add('d-none');
@@ -1447,6 +1463,9 @@
         var whenLabel = formatReminderWhenLabel(props, tz);
         var duration = props.duration_minutes ? Number(props.duration_minutes) : null;
         var clientName = props.client_name || '—';
+        var matterRefLabel = props.matter_ref_label
+            ? String(props.matter_ref_label)
+            : [props.client_ref, props.matter_no].filter(Boolean).join(' / ');
         var clientUrl = props.client_detail_url || null;
         if (!clientUrl && props.client_id_encoded) {
             clientUrl = '/clients/detail/' + props.client_id_encoded;
@@ -1462,6 +1481,12 @@
                 '" class="booking-calendar-link" target="_blank" rel="noopener">' +
                 escapeDetailHtml(clientName) +
                 '</a>';
+        }
+        if (matterRefLabel) {
+            clientHtml +=
+                '<div class="appt-detail-item__value--muted" style="margin-top:4px;font-size:12px;font-weight:600;">' +
+                escapeDetailHtml(matterRefLabel) +
+                '</div>';
         }
 
         titleEl.textContent = meta.heading;
@@ -1536,11 +1561,10 @@
         if (props.assigned_to_name) {
             items.push(renderEventDetailItem('fa-user-check', 'Assigned to', escapeDetailHtml(props.assigned_to_name)));
         }
-        if (props.matter_no || props.matter_title) {
-            var matterBits = [];
-            if (props.matter_no) matterBits.push(props.matter_no);
-            if (props.matter_title) matterBits.push(props.matter_title);
-            items.push(renderEventDetailItem('fa-briefcase', 'Matter', escapeDetailHtml(matterBits.join(' · '))));
+        if (props.matter_title && !matterRefLabel) {
+            items.push(renderEventDetailItem('fa-briefcase', 'Matter', escapeDetailHtml(props.matter_title)));
+        } else if (props.matter_title && matterRefLabel) {
+            items.push(renderEventDetailItem('fa-briefcase', 'Matter type', escapeDetailHtml(props.matter_title)));
         }
         items.push(renderEventDetailItem('fa-calendar-day', 'When', escapeDetailHtml(whenLabel)));
         if (duration && !props.is_all_day) {
