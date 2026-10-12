@@ -100,12 +100,13 @@ Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEma
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
 Route::post('/preview-email-attachments', [EmailUploadController::class, 'previewEmailAttachments'])->name('email.upload.preview-attachments');
 Route::post('/log-email-upload-error', [EmailUploadController::class, 'logClientUploadError'])->name('email.upload.log-error');
-// Frontend (outlook_emails.js / emails_outlook) posts to /clients/assign-unassigned-email-match.
-// Keep the legacy root path as an alias so older cached pages still work.
-Route::post('/clients/assign-unassigned-email-match', [EmailUploadController::class, 'assignUnassignedEmailMatch'])
-    ->name('email.upload.assign-unassigned-match');
+// Assign unassigned email from client Emails upload modal.
+// Primary = /assign-unassigned-email-match (stable; works with older route caches).
+// Alias  = /clients/assign-unassigned-email-match (older JS fallbacks).
 Route::post('/assign-unassigned-email-match', [EmailUploadController::class, 'assignUnassignedEmailMatch'])
-    ->name('email.upload.assign-unassigned-match.legacy');
+    ->name('email.upload.assign-unassigned-match');
+Route::post('/clients/assign-unassigned-email-match', [EmailUploadController::class, 'assignUnassignedEmailMatch'])
+    ->name('email.upload.assign-unassigned-match.clients');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');
 
 Route::prefix('emails/smart-import')->name('emails.smart-import.')->group(function () {

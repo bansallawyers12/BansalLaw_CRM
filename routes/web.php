@@ -50,11 +50,37 @@ Route::get('/', function () {
 Route::get('/clear-cache', function () {
     Artisan::call('config:clear');
     Artisan::call('view:clear');
+    Artisan::call('cache:clear');
     Artisan::call('route:clear');
+    if (function_exists('opcache_reset')) {
+        @opcache_reset();
+    }
     Artisan::call('route:cache');
+
+    $assignPaths = [
+        'assign-unassigned-email-match',
+        'clients/assign-unassigned-email-match',
+    ];
+    $assignRouteCheck = [];
+    foreach ($assignPaths as $path) {
+        $methods = [];
+        foreach (Route::getRoutes() as $route) {
+            if (trim($route->uri(), '/') === $path) {
+                $methods = array_values(array_unique(array_merge($methods, $route->methods())));
+            }
+        }
+        $assignRouteCheck[$path] = [
+            'registered' => $methods !== [],
+            'methods' => array_values(array_filter($methods, static fn ($m) => $m !== 'HEAD')),
+            'post_ok' => in_array('POST', $methods, true),
+        ];
+    }
+
     return response()->json([
         'success' => true,
-        'message' => 'Cache cleared successfully'
+        'message' => 'Cache cleared and routes rebuilt successfully',
+        'assign_routes' => $assignRouteCheck,
+        'named_assign_url' => route('email.upload.assign-unassigned-match'),
     ]);
 })->middleware('auth:admin');
 

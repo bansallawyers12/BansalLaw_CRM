@@ -3311,55 +3311,77 @@ function crmInitOutlookEmailsInterface() {
 
         async function assignUnassignedEmailFromUpload(emailLogId) {
             const matterId = String(getMatterId() || '').trim();
-            const assignUrl = assignUnassignedMatchUrl
-                || ((typeof baseUrl === 'string' && baseUrl)
-                    ? String(baseUrl).replace(/\/$/, '') + '/clients/assign-unassigned-email-match'
-                    : '/clients/assign-unassigned-email-match');
+            const root = (typeof baseUrl === 'string' && baseUrl) ? String(baseUrl).replace(/\/$/, '') : '';
+            // Prefer blade named route, then stable root path, then /clients alias (retry on 405).
+            const assignUrlCandidates = [];
+            const pushUrl = function (url) {
+                if (!url || assignUrlCandidates.indexOf(url) !== -1) {
+                    return;
+                }
+                assignUrlCandidates.push(url);
+            };
+            pushUrl(assignUnassignedMatchUrl);
+            pushUrl(root ? (root + '/assign-unassigned-email-match') : '/assign-unassigned-email-match');
+            pushUrl(root ? (root + '/clients/assign-unassigned-email-match') : '/clients/assign-unassigned-email-match');
+
             if (!clientId || !matterId || !emailLogId) {
                 throw new Error('Cannot assign — open a client matter and try again.');
             }
 
-            // FormData (+ CSRF) matches upload requests and avoids JSON/WAF blocks on production.
-            const formData = new FormData();
-            formData.append('_token', getCsrfToken());
-            formData.append('email_log_id', String(emailLogId));
-            formData.append('client_id', String(clientId));
-            formData.append('client_matter_id', matterId);
+            async function postAssign(url) {
+                const formData = new FormData();
+                formData.append('_token', getCsrfToken());
+                formData.append('email_log_id', String(emailLogId));
+                formData.append('client_id', String(clientId));
+                formData.append('client_matter_id', matterId);
 
-            const controller = typeof AbortController === 'function' ? new AbortController() : null;
-            const timeoutId = controller
-                ? setTimeout(function () { controller.abort(); }, 25000)
-                : null;
+                const controller = typeof AbortController === 'function' ? new AbortController() : null;
+                const timeoutId = controller
+                    ? setTimeout(function () { controller.abort(); }, 25000)
+                    : null;
 
-            let response;
-            try {
-                response = await fetch(assignUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': getCsrfToken(),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin',
-                    body: formData,
-                    signal: controller ? controller.signal : undefined
-                });
-            } catch (fetchError) {
-                if (fetchError && fetchError.name === 'AbortError') {
-                    throw new Error('Assign timed out. Refresh the page — the email may already be assigned.');
-                }
-                throw fetchError;
-            } finally {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
+                try {
+                    return await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin',
+                        body: formData,
+                        signal: controller ? controller.signal : undefined
+                    });
+                } catch (fetchError) {
+                    if (fetchError && fetchError.name === 'AbortError') {
+                        throw new Error('Assign timed out. Refresh the page — the email may already be assigned.');
+                    }
+                    throw fetchError;
+                } finally {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
                 }
             }
 
-            const data = await response.json().catch(function() { return {}; });
-            if (!response.ok || data.success === false) {
-                let message = data.message || 'Could not assign unassigned email.';
-                if (response.status === 419) {
+            let response = null;
+            let data = {};
+            for (let i = 0; i < assignUrlCandidates.length; i++) {
+                response = await postAssign(assignUrlCandidates[i]);
+                data = await response.json().catch(function () { return {}; });
+                // Stale route cache may 405 on one path — retry the next candidate.
+                if (response.status === 405 && i < assignUrlCandidates.length - 1) {
+                    continue;
+                }
+                break;
+            }
+
+            if (!response || !response.ok || data.success === false) {
+                let message = data.message || data.error || 'Could not assign unassigned email.';
+                if (response && response.status === 419) {
                     message = 'Session expired. Refresh the page and try again.';
+                } else if (response && response.status === 405) {
+                    message = 'Assign route is outdated on the server. Open /clear-cache while logged in, hard-refresh (Ctrl+Shift+R), then try again.';
                 } else if (data.errors && typeof data.errors === 'object') {
                     const firstError = Object.keys(data.errors).reduce(function (found, key) {
                         if (found) {

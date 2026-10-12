@@ -160,7 +160,7 @@ class EmailUploadAssignUnassignedMatchTest extends TestCase
     }
 
     #[Test]
-    public function clients_prefixed_assign_path_accepts_post_like_outlook_ui(): void
+    public function both_assign_paths_accept_post(): void
     {
         $staff = Staff::factory()->superAdmin()->create(['status' => 1]);
         $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);
@@ -170,21 +170,33 @@ class EmailUploadAssignUnassignedMatchTest extends TestCase
             'matter_status' => 1,
         ]);
 
-        $unassigned = EmailLog::query()->create([
-            'subject' => 'UI path assign test',
-            'from_mail' => 'a@example.com',
-            'to_mail' => 'b@example.com',
-            'sync_assignment_status' => 'unassigned',
-            'synced_email_id' => 303,
-            'mail_body_type' => 'inbox',
-            'type' => 'client',
-            'mail_type' => 1,
-        ]);
+        $makeUnassigned = function (int $syncedId) use ($client) {
+            return EmailLog::query()->create([
+                'subject' => 'UI path assign test '.$syncedId,
+                'from_mail' => 'a@example.com',
+                'to_mail' => 'b@example.com',
+                'sync_assignment_status' => 'unassigned',
+                'synced_email_id' => $syncedId,
+                'mail_body_type' => 'inbox',
+                'type' => 'client',
+                'mail_type' => 1,
+            ]);
+        };
 
-        // Hard-coded path used by outlook_emails.js on production.
+        $first = $makeUnassigned(303);
+        $this->actingAs($staff, 'admin')
+            ->postJson('/assign-unassigned-email-match', [
+                'email_log_id' => $first->id,
+                'client_id' => $client->id,
+                'client_matter_id' => $matter->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $second = $makeUnassigned(304);
         $this->actingAs($staff, 'admin')
             ->postJson('/clients/assign-unassigned-email-match', [
-                'email_log_id' => $unassigned->id,
+                'email_log_id' => $second->id,
                 'client_id' => $client->id,
                 'client_matter_id' => $matter->id,
             ])
