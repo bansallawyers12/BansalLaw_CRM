@@ -46,6 +46,14 @@ Route::get('/', function () {
     return redirect()->route('crm.login');
 });
 
+// Fresh CSRF token for long-lived CRM tabs / AJAX retries (auth:admin).
+Route::get('/csrf-token', function () {
+    return response()->json([
+        'success' => true,
+        'token' => csrf_token(),
+    ]);
+})->middleware('auth:admin')->name('crm.csrf-token');
+
 // Cache clearing route — CRM staff only (auth:admin, not default web guard)
 Route::get('/clear-cache', function () {
     Artisan::call('config:clear');

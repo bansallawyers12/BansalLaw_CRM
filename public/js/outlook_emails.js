@@ -3329,11 +3329,25 @@ function crmInitOutlookEmailsInterface() {
             }
 
             async function postAssign(url) {
-                const formData = new FormData();
-                formData.append('_token', getCsrfToken());
-                formData.append('email_log_id', String(emailLogId));
-                formData.append('client_id', String(clientId));
-                formData.append('client_matter_id', matterId);
+                // URL-encoded body (not multipart FormData): production WAF/PHP has been
+                // unreliable with token-only multipart posts on this path.
+                const token = getCsrfToken();
+                const body = new URLSearchParams();
+                body.set('_token', token);
+                body.set('email_log_id', String(emailLogId));
+                body.set('client_id', String(clientId));
+                body.set('client_matter_id', matterId);
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                const xsrfCookie = getXsrfTokenFromCookie();
+                if (xsrfCookie) {
+                    headers['X-XSRF-TOKEN'] = xsrfCookie;
+                }
 
                 const controller = typeof AbortController === 'function' ? new AbortController() : null;
                 const timeoutId = controller
@@ -3343,13 +3357,9 @@ function crmInitOutlookEmailsInterface() {
                 try {
                     return await fetch(url, {
                         method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': getCsrfToken(),
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
+                        headers: headers,
                         credentials: 'same-origin',
-                        body: formData,
+                        body: body.toString(),
                         signal: controller ? controller.signal : undefined
                     });
                 } catch (fetchError) {
@@ -3366,9 +3376,20 @@ function crmInitOutlookEmailsInterface() {
 
             let response = null;
             let data = {};
+            let csrfRetried = false;
             for (let i = 0; i < assignUrlCandidates.length; i++) {
                 response = await postAssign(assignUrlCandidates[i]);
                 data = await response.json().catch(function () { return {}; });
+
+                if (response.status === 419 && !csrfRetried) {
+                    csrfRetried = true;
+                    const refreshed = await refreshCsrfToken();
+                    if (refreshed) {
+                        i -= 1; // retry same URL with fresh token
+                        continue;
+                    }
+                }
+
                 // Stale route cache may 405 on one path — retry the next candidate.
                 if (response.status === 405 && i < assignUrlCandidates.length - 1) {
                     continue;
@@ -7081,7 +7102,47 @@ function crmInitOutlookEmailsInterface() {
 
     function getCsrfToken() {
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        return csrfMeta ? csrfMeta.content : '';
+        if (csrfMeta && csrfMeta.content) {
+            return csrfMeta.content;
+        }
+        return '';
+    }
+
+    function getXsrfTokenFromCookie() {
+        const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+        if (!match) {
+            return '';
+        }
+        try {
+            return decodeURIComponent(match[1]);
+        } catch (e) {
+            return match[1] || '';
+        }
+    }
+
+    async function refreshCsrfToken() {
+        const root = (typeof baseUrl === 'string' && baseUrl) ? String(baseUrl).replace(/\/$/, '') : '';
+        const url = (root || '') + '/csrf-token';
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+            const payload = await res.json().catch(function () { return {}; });
+            const token = payload && payload.token ? String(payload.token) : '';
+            if (!res.ok || !token) {
+                return false;
+            }
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta) {
+                csrfMeta.setAttribute('content', token);
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     function emailChainApiBase() {
