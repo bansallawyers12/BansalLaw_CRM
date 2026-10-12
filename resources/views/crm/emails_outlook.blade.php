@@ -97,7 +97,7 @@
     data-record-type="{{ $outlookRecordType }}"
     data-lead-scoped-mail="{{ $outlookLeadScopedMail ? '1' : '0' }}"
     data-has-lead-mail-history="{{ $outlookHasLeadMailHistory ? '1' : '0' }}"
-    data-assign-unassigned-match-url="{{ url('/clients/assign-unassigned-email-match') }}"
+    data-assign-unassigned-match-url="{{ route('email.upload.assign-unassigned-match') }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
     data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'
