@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use App\Models\Admin;
+use App\Models\Company;
 use App\Models\Staff;
 use App\Services\Booking\StaffCalendarFeedService;
 use App\Services\StaffPersonalCalendarFeedService;
@@ -280,5 +282,50 @@ class StaffPersonalCalendarFeedServiceTest extends TestCase
             'booking_calendar_type' => 'paid',
         ]));
         $this->assertNull($bad);
+    }
+
+    #[Test]
+    public function client_display_name_uses_company_name_for_company_clients(): void
+    {
+        $client = new Admin([
+            'first_name' => 'Ankit',
+            'last_name' => 'Bansal',
+            'is_company' => true,
+            'client_id' => 'BANS2600060',
+        ]);
+        $client->setRelation('company', new Company([
+            'company_name' => 'The Trustee for BANSAL EDUCATION GROUP TRUST',
+        ]));
+
+        $method = new \ReflectionMethod(StaffPersonalCalendarFeedService::class, 'clientDisplayName');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'The Trustee for BANSAL EDUCATION GROUP TRUST',
+            $method->invoke($this->service(), $client)
+        );
+
+        $feedMethod = new \ReflectionMethod(StaffCalendarFeedService::class, 'clientDisplayName');
+        $feedMethod->setAccessible(true);
+        $this->assertSame(
+            'The Trustee for BANSAL EDUCATION GROUP TRUST',
+            $feedMethod->invoke(new StaffCalendarFeedService(), $client)
+        );
+    }
+
+    #[Test]
+    public function client_display_name_keeps_personal_name_for_individuals(): void
+    {
+        $client = new Admin([
+            'first_name' => 'Ankit',
+            'last_name' => 'Bansal',
+            'is_company' => false,
+            'client_id' => 'ANKI2600059',
+        ]);
+
+        $method = new \ReflectionMethod(StaffPersonalCalendarFeedService::class, 'clientDisplayName');
+        $method->setAccessible(true);
+
+        $this->assertSame('Ankit Bansal', $method->invoke($this->service(), $client));
     }
 }

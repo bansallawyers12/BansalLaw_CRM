@@ -659,7 +659,7 @@ class StaffPersonalCalendarFeedService
         }
 
         $query = BookingAppointment::query()
-            ->with(['client', 'consultant'])
+            ->with(['client.company', 'consultant'])
             ->whereNotIn('status', ['cancelled', 'no_show']);
 
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
@@ -790,7 +790,7 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        $query = StaffCalendarEvent::query()->with(['client']);
+        $query = StaffCalendarEvent::query()->with(['client.company']);
 
         // Shared court/meeting/deadline (scoped) + own personal reminder/other.
         $query->where(function (Builder $outer) use ($staffId, $calendarType) {
@@ -844,7 +844,7 @@ class StaffPersonalCalendarFeedService
             return [];
         }
 
-        $query = ClientCourtHearing::query()->with(['client']);
+        $query = ClientCourtHearing::query()->with(['client.company']);
         $this->applyPersonalCourtHearingScope($query, $staffId);
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
         $this->applyHearingDateWindow($query, $request);
@@ -876,7 +876,7 @@ class StaffPersonalCalendarFeedService
         }
 
         $consultantId = (int) config('booking_calendar.local_consultant_id_by_calendar_type.' . $calendarType, 0);
-        $query = BookingAppointment::query()->with(['client', 'consultant']);
+        $query = BookingAppointment::query()->with(['client.company', 'consultant']);
         if ($consultantId > 0) {
             $query->where('consultant_id', $consultantId);
         } else {
@@ -938,7 +938,7 @@ class StaffPersonalCalendarFeedService
         }
 
         $query = BookingAppointment::query()
-            ->with(['client', 'consultant'])
+            ->with(['client.company', 'consultant'])
             ->whereIn('consultant_id', $consultantIds)
             ->whereNotIn('status', ['cancelled', 'no_show']);
 
@@ -1064,7 +1064,7 @@ class StaffPersonalCalendarFeedService
     protected function actionDeadlines(?int $staffId, Request $request, string $tz): array
     {
         $query = Note::query()
-            ->with(['client', 'assignedStaff', 'clientMatter.matter'])
+            ->with(['client.company', 'assignedStaff', 'clientMatter.matter'])
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('note_deadline');
@@ -1119,7 +1119,7 @@ class StaffPersonalCalendarFeedService
         bool $createdBySelfOnly = false
     ): array {
         $query = Note::query()
-            ->with(['client', 'assignedStaff', 'clientMatter.matter'])
+            ->with(['client.company', 'assignedStaff', 'clientMatter.matter'])
             ->where('is_action', 1)
             ->where('status', 0)
             ->whereNotNull('action_date');
@@ -1246,7 +1246,7 @@ class StaffPersonalCalendarFeedService
     protected function matterDeadlines(?int $staffId, Request $request, string $tz): array
     {
         $query = ClientMatter::query()
-            ->with(['client', 'matter'])
+            ->with(['client.company', 'matter'])
             ->where('matter_status', 1)
             ->whereNotNull('deadline');
         if ($staffId !== null) {
@@ -1433,7 +1433,12 @@ class StaffPersonalCalendarFeedService
             return null;
         }
 
-        $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        // Company clients store the contact in first/last name; match client detail
+        // which shows companies.company_name (e.g. trustee) so Open Client is not confusing.
+        $name = trim((string) ($client->company_name_or_personal_name ?? ''));
+        if ($name === '') {
+            $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        }
 
         return $name !== '' ? $name : ($client->client_id ?? 'Client #' . $client->id);
     }

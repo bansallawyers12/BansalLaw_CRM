@@ -146,7 +146,7 @@ class StaffCalendarFeedService
         }
 
         $query = StaffCalendarEvent::query()
-            ->with(['client'])
+            ->with(['client.company'])
             ->where('created_by_staff_id', $ownerStaffId)
             ->whereIn('event_type', ['reminder', 'other']);
 
@@ -307,7 +307,7 @@ class StaffCalendarFeedService
             return [];
         }
 
-        $query = StaffCalendarEvent::query()->with(['client']);
+        $query = StaffCalendarEvent::query()->with(['client.company']);
 
         if ($calendarType !== '') {
             $query->where(function (Builder $q) use ($calendarType) {
@@ -432,7 +432,7 @@ class StaffCalendarFeedService
             return [];
         }
 
-        $query = ClientCourtHearing::query()->with(['client']);
+        $query = ClientCourtHearing::query()->with(['client.company']);
 
         StaffClientVisibility::restrictEloquentQueryByClientIdColumn($query, 'client_id');
 
@@ -644,7 +644,12 @@ class StaffCalendarFeedService
             return null;
         }
 
-        $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        // Company clients store the contact in first/last name; match client detail
+        // which shows companies.company_name (e.g. trustee) so Open Client is not confusing.
+        $name = trim((string) ($client->company_name_or_personal_name ?? ''));
+        if ($name === '') {
+            $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        }
 
         return $name !== '' ? $name : ($client->client_id ?? 'Client #' . $client->id);
     }
