@@ -320,6 +320,7 @@ class ClientsController extends Controller
                 ->get();
 
             $lists = $query->paginate($perPage)->appends($request->except('page'));
+            $this->attachMatterListLastActivity($lists);
         } else {
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
@@ -363,6 +364,7 @@ class ClientsController extends Controller
             $query->orderBy($sortField, $sortDirection);
             $totalData = 0;
             $lists = $query->paginate($perPage);
+            $this->attachMatterListLastActivity($lists);
         }
 
         $viewData = [
@@ -399,6 +401,90 @@ class ClientsController extends Controller
         }
 
         return view('crm.clients.matters-list-spa', $viewData);
+    }
+
+    /**
+     * Attach matter-scoped last activity text/date onto the current page of matter list rows.
+     *
+     * Prefers an activities_log subject that mentions the matter number; falls back to
+     * client_matters.updated_at_type + updated_at.
+     *
+     * @param  \Illuminate\Contracts\Pagination\Paginator|\Illuminate\Support\Collection|iterable  $lists
+     */
+    private function attachMatterListLastActivity($lists): void
+    {
+        $items = collect(method_exists($lists, 'items') ? $lists->items() : $lists);
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $clientIds = $items->pluck('client_id')->filter()->unique()->values()->all();
+        $logsByClient = collect();
+        if ($clientIds !== [] && Schema::hasTable('activities_logs')) {
+            $recentLogs = ActivitiesLog::query()
+                ->whereIn('client_id', $clientIds)
+                ->where('created_at', '>=', Carbon::now()->subDays(180))
+                ->orderByDesc('id')
+                ->limit(max(200, count($clientIds) * 25))
+                ->get(['id', 'client_id', 'subject', 'activity_type', 'created_at']);
+
+            $logsByClient = $recentLogs->groupBy('client_id');
+        }
+
+        foreach ($items as $row) {
+            $matterNo = strtolower(trim((string) ($row->client_unique_matter_no ?? '')));
+            $matchedLog = null;
+            $clientLogs = $logsByClient->get((int) ($row->client_id ?? 0));
+            if ($clientLogs && $matterNo !== '') {
+                $matchedLog = $clientLogs->first(function ($log) use ($matterNo) {
+                    $subject = strtolower((string) ($log->subject ?? ''));
+
+                    return $subject !== '' && str_contains($subject, $matterNo);
+                });
+            }
+
+            if ($matchedLog) {
+                $text = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($matchedLog->subject ?? ''))) ?? '');
+                if ($text === '') {
+                    $text = $this->formatMatterActivityTypeLabel((string) ($matchedLog->activity_type ?? ''));
+                }
+                $at = $matchedLog->created_at;
+            } else {
+                $text = $this->formatMatterActivityTypeLabel($row->updated_at_type ?? null);
+                $at = $row->updated_at ?? $row->created_at ?? null;
+            }
+
+            $row->last_activity_text = $text !== '' ? $text : '—';
+            $row->last_activity_at = $at;
+            try {
+                $row->last_activity_display = $at
+                    ? Carbon::parse($at)->timezone(config('app.timezone', 'Australia/Melbourne'))->format('d/m/Y H:i')
+                    : '—';
+            } catch (\Throwable $e) {
+                $row->last_activity_display = '—';
+            }
+        }
+    }
+
+    private function formatMatterActivityTypeLabel(?string $type): string
+    {
+        $type = strtolower(trim((string) $type));
+        if ($type === '') {
+            return 'Updated';
+        }
+
+        return match (true) {
+            str_contains($type, 'email') => 'Email',
+            str_contains($type, 'sms') => 'SMS',
+            str_contains($type, 'note') => 'Note',
+            str_contains($type, 'sign') => 'Signed document',
+            str_contains($type, 'document') || str_contains($type, 'upload') => 'Document uploaded',
+            str_contains($type, 'stage') || str_contains($type, 'workflow') => 'Stage updated',
+            str_contains($type, 'status') => 'Status changed',
+            str_contains($type, 'payment') || str_contains($type, 'invoice') => 'Payment / invoice',
+            str_contains($type, 'appointment') || str_contains($type, 'meeting') => 'Appointment',
+            default => ucfirst(str_replace(['_', '-'], ' ', $type)),
+        };
     }
 
     public function insights(Request $request)

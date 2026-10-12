@@ -251,7 +251,7 @@
                 <tr>
                     <th class="sortable-header"><a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a></th>
                     <th class="sortable-header"><a href="{{ $buildSortUrl('ad.first_name') }}">Client {!! $sortIcon('ad.first_name') !!}</a></th>
-                    <th>Team</th>
+                    <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Last activity {!! $sortIcon('cm.updated_at') !!}</a></th>
                     <th>Status</th>
                     <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed {!! $sortIcon('cm.updated_at') !!}</a></th>
                     <th>Reason</th>
@@ -269,7 +269,9 @@
                     <th class="sortable-header">
                         <a href="{{ $buildSortUrl('ad.dob') }}">DOB {!! $sortIcon('ad.dob') !!}</a>
                     </th>
-                    <th>Team</th>
+                    <th class="sortable-header">
+                        <a href="{{ $buildSortUrl('cm.updated_at') }}">Last activity {!! $sortIcon('cm.updated_at') !!}</a>
+                    </th>
                     <th class="sortable-header">
                         <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                     </th>
@@ -325,20 +327,17 @@
                                 <span class="matter-cell-meta">{{ $list->client_unique_id ?: ('#' . $list->client_id) }}</span>
                             </td>
                             <td>
-                                <div class="matter-team">
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Legal practitioner">LP</span>
-                                        <span class="name">{{ $staffName($legal_practitioner_info) }}</span>
-                                    </div>
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Person responsible">PR</span>
-                                        <span class="name">{{ $staffName($person_responsible) }}</span>
-                                    </div>
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Person assisting">PA</span>
-                                        <span class="name">{{ $staffName($person_assisting) }}</span>
-                                    </div>
-                                </div>
+                                @php
+                                    $lastActivityText = trim((string) ($list->last_activity_text ?? ''));
+                                    if ($lastActivityText === '') {
+                                        $lastActivityText = '—';
+                                    }
+                                    $lastActivityDisplay = (string) ($list->last_activity_display ?? '—');
+                                @endphp
+                                <span class="matter-cell-primary" style="font-weight:600;" title="{{ $lastActivityText }}">
+                                    {{ \Illuminate\Support\Str::limit($lastActivityText, 72) }}
+                                </span>
+                                <span class="matter-cell-meta">{{ $lastActivityDisplay }}</span>
                             </td>
                             <td>
                                 <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
@@ -431,20 +430,17 @@
                             </td>
                             <td><span class="matter-date">{{ $dobDisplay }}</span></td>
                             <td>
-                                <div class="matter-team">
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Legal practitioner">LP</span>
-                                        <span class="name">{{ $staffName($legal_practitioner_info) }}</span>
-                                    </div>
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Person responsible">PR</span>
-                                        <span class="name">{{ $staffName($person_responsible) }}</span>
-                                    </div>
-                                    <div class="matter-team-row">
-                                        <span class="role" title="Person assisting">PA</span>
-                                        <span class="name">{{ $staffName($person_assisting) }}</span>
-                                    </div>
-                                </div>
+                                @php
+                                    $lastActivityText = trim((string) ($list->last_activity_text ?? ''));
+                                    if ($lastActivityText === '') {
+                                        $lastActivityText = '—';
+                                    }
+                                    $lastActivityDisplay = (string) ($list->last_activity_display ?? '—');
+                                @endphp
+                                <span class="matter-cell-primary" style="font-weight:600;" title="{{ $lastActivityText }}">
+                                    {{ \Illuminate\Support\Str::limit($lastActivityText, 72) }}
+                                </span>
+                                <span class="matter-cell-meta">{{ $lastActivityDisplay }}</span>
                             </td>
                             <td><span class="matter-date">{{ $createdDisplay }}</span></td>
                             <td>
