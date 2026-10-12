@@ -25,17 +25,22 @@ class SyncBansalAppointments extends Command
      */
     public function handle(AppointmentSyncService $syncService): int
     {
-        $minutes = (int)$this->option('minutes');
+        $minutes = max(1, (int) $this->option('minutes'));
 
         $this->info("Starting appointment sync (last {$minutes} minutes)...");
+
+        if (! $syncService->isApiConfigured()) {
+            $this->warn('Bansal appointment API is not configured; skipping sync.');
+
+            return self::SUCCESS;
+        }
 
         try {
             $stats = $syncService->syncRecentAppointments($minutes);
 
-            $this->info('✓ Sync completed successfully!');
+            $this->info('Sync finished.');
             $this->newLine();
-            
-            // Display results table
+
             $this->table(
                 ['Metric', 'Count'],
                 [
@@ -47,14 +52,16 @@ class SyncBansalAppointments extends Command
                 ]
             );
 
-            if ($stats['failed'] > 0) {
-                $this->warn("⚠ {$stats['failed']} appointments failed to sync");
-                return self::FAILURE;
+            // Partial per-appointment failures are logged in sync stats — do not fail the
+            // scheduled run (exit 1 makes schedule:run throw and floods system-errors).
+            if (($stats['failed'] ?? 0) > 0) {
+                $this->warn("⚠ {$stats['failed']} appointment(s) failed to sync (see logs / sync_details).");
             }
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->error('✗ Sync failed: ' . $e->getMessage());
+
             return self::FAILURE;
         }
     }

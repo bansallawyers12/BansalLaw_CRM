@@ -29,6 +29,11 @@ class AppointmentSyncService
         $this->consultantAssigner = $consultantAssigner;
     }
 
+    public function isApiConfigured(): bool
+    {
+        return $this->apiClient->isConfigured();
+    }
+
     /**
      * Sync recent appointments (main polling method)
      */
@@ -52,6 +57,10 @@ class AppointmentSyncService
 
         try {
             Log::info('Starting appointment sync', ['minutes' => $minutes]);
+
+            if (! $this->apiClient->isConfigured()) {
+                throw new Exception('Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.');
+            }
 
             // Fetch appointments from Bansal API
             $appointments = $this->apiClient->getRecentAppointments($minutes);
@@ -124,15 +133,27 @@ class AppointmentSyncService
      */
     protected function processAppointment(array $appointmentData): string
     {
-        // Debug: Check $appointmentData array
         Log::info('Processing appointment data', [
-            'full_data' => $appointmentData,
+            'appointment_id' => $appointmentData['id'] ?? null,
             'status' => $appointmentData['status'] ?? 'not_set',
             'is_paid' => $appointmentData['is_paid'] ?? 'not_set',
-            'payment_data' => $appointmentData['payment'] ?? 'not_set'
+            'has_payment' => isset($appointmentData['payment']),
         ]);
-        
-        $bansalId = $appointmentData['id'];
+
+        $bansalId = $appointmentData['id'] ?? null;
+        if ($bansalId === null || $bansalId === '') {
+            throw new Exception('Appointment payload missing id');
+        }
+
+        $clientName = trim((string) ($appointmentData['full_name'] ?? ''));
+        $clientEmail = trim((string) ($appointmentData['email'] ?? ''));
+        if ($clientName === '' || $clientEmail === '') {
+            throw new Exception('Appointment payload missing full_name or email');
+        }
+
+        if (empty($appointmentData['appointment_datetime'])) {
+            throw new Exception('Appointment payload missing appointment_datetime');
+        }
 
         // Check if already exists
         $existingAppointment = BookingAppointment::where('bansal_appointment_id', $bansalId)->first();
@@ -252,8 +273,8 @@ class AppointmentSyncService
             'client_id' => $client?->id,
             'consultant_id' => $consultant?->id,
             
-            'client_name' => $appointmentData['full_name'],
-            'client_email' => $appointmentData['email'],
+            'client_name' => $clientName,
+            'client_email' => $clientEmail,
             'client_phone' => $appointmentData['phone'] ?? null,
             'client_timezone' => 'Australia/Melbourne',
             
