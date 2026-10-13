@@ -6,7 +6,9 @@ use App\Models\EmailLog;
 use App\Services\Email\ClientEmailUploadDuplicateService;
 use App\Services\EmailSync\ManualUploadThreadMatchService;
 use App\Services\EmailSync\UnassignedEmailUploadMatchService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ClientEmailUploadDuplicateServiceTest extends TestCase
@@ -117,5 +119,105 @@ class ClientEmailUploadDuplicateServiceTest extends TestCase
         );
 
         $this->assertNull($block);
+    }
+
+    #[Test]
+    public function sent_upload_is_not_blocked_when_same_thread_subject_but_different_recipient_and_date(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'Potential briefs | Rahul Saini and Gunvir Singh',
+            'from_mail' => 'michael@bansallawyers.com.au',
+            'to_mail' => 'jonathan@example.com',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'fetch_mail_sent_time' => Carbon::parse('2026-10-02 14:19:00', 'Australia/Melbourne'),
+            'mail_body_type' => 'sent',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'URGENT | Potential briefs | Rahul Saini and Gunvir Singh',
+                'sender_email' => 'michael@bansallawyers.com.au',
+                'to_recipients' => ['foleys@foleys.com.au'],
+                'sent_date' => '2026-10-12 16:23:00',
+            ],
+            '',
+            'sent'
+        );
+
+        $this->assertNull($block);
+    }
+
+    #[Test]
+    public function sent_upload_is_still_blocked_when_subject_from_to_and_sent_time_match(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'Brief for counsel',
+            'from_mail' => 'michael@bansallawyers.com.au',
+            'to_mail' => 'foleys@foleys.com.au',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'fetch_mail_sent_time' => Carbon::parse('2026-10-12 16:23:00', 'Australia/Melbourne'),
+            'mail_body_type' => 'sent',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'Brief for counsel',
+                'sender_email' => 'michael@bansallawyers.com.au',
+                'to_recipients' => ['foleys@foleys.com.au'],
+                'sent_date' => '2026-10-12 16:23:00',
+            ],
+            '',
+            'sent'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
+    }
+
+    #[Test]
+    public function inbox_thread_subject_match_still_blocks_on_matter(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'Re: FAM_1 | Court hearing',
+            'from_mail' => 'client@example.com',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'Re: Re: FAM_1 | Court hearing',
+                'sender_email' => 'client@example.com',
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
     }
 }

@@ -696,7 +696,8 @@ class EmailUploadController extends Controller
                         (int) $clientId,
                         $matterId,
                         $parsedData,
-                        $fileHash
+                        $fileHash,
+                        $mailType === 'sent' ? 'sent' : 'inbox'
                     );
                 if ($duplicateBlock !== null) {
                     return $duplicateBlock;

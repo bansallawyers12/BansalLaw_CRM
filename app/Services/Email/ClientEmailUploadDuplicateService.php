@@ -3,8 +3,11 @@
 namespace App\Services\Email;
 
 use App\Models\EmailLog;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\EmailSync\ManualUploadThreadMatchService;
 use App\Services\EmailSync\UnassignedEmailUploadMatchService;
+use Carbon\Carbon;
+
 /**
  * Block manual .msg/.eml uploads when the same message already exists
  * in Unassigned Mail or on the client matter (Inbox or Sent).
@@ -24,8 +27,10 @@ class ClientEmailUploadDuplicateService
         int $clientId,
         ?int $clientMatterId,
         array $parsedData,
-        string $fileHash
+        string $fileHash,
+        string $mailType = 'inbox'
     ): ?array {
+        $mailType = $mailType === 'sent' ? 'sent' : 'inbox';
         $unassigned = $this->unassignedMatchService->findMatchAcrossMailFolders($parsedData, $fileHash);
         if ($unassigned instanceof EmailLog) {
             if ($this->shouldAllowDuplicateManualUploadInSyncQueue($unassigned)) {
@@ -51,7 +56,7 @@ class ClientEmailUploadDuplicateService
             return null;
         }
 
-        $existing = $this->findAssignedClientDuplicate($clientId, $clientMatterId, $parsedData, $fileHash);
+        $existing = $this->findAssignedClientDuplicate($clientId, $clientMatterId, $parsedData, $fileHash, $mailType);
         if (! $existing instanceof EmailLog) {
             return null;
         }
@@ -106,8 +111,11 @@ class ClientEmailUploadDuplicateService
         int $clientId,
         ?int $clientMatterId,
         array $parsedData,
-        string $fileHash
+        string $fileHash,
+        string $mailType = 'inbox'
     ): ?EmailLog {
+        $mailType = $mailType === 'sent' ? 'sent' : 'inbox';
+
         $base = EmailLog::query()
             ->where('client_id', $clientId)
             ->where('client_id', '>', 0);
@@ -138,30 +146,31 @@ class ClientEmailUploadDuplicateService
 
         $subject = trim((string) ($parsedData['subject'] ?? ''));
         $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
-        if ($subject !== '' && $sender !== '') {
+        $sentAt = $this->resolveParsedSentTime($parsedData);
+
+        if ($subject !== '' && $sender !== '' && $sentAt instanceof Carbon) {
             $exact = (clone $base)
+                ->where('mail_body_type', $mailType)
                 ->whereRaw('LOWER(subject) = ?', [mb_strtolower($subject)])
-                ->whereRaw('LOWER(from_mail) LIKE ?', ['%'.$sender.'%']);
+                ->whereRaw('LOWER(from_mail) LIKE ?', ['%'.$sender.'%'])
+                ->whereBetween('fetch_mail_sent_time', [
+                    $sentAt->copy()->subMinutes(10),
+                    $sentAt->copy()->addMinutes(10),
+                ]);
 
-            if (! empty($parsedData['sent_date'])) {
-                try {
-                    $sentAt = \Carbon\Carbon::parse((string) $parsedData['sent_date'], (string) config('app.timezone'));
-                    $exact->whereBetween('fetch_mail_sent_time', [
-                        $sentAt->copy()->subMinutes(10),
-                        $sentAt->copy()->addMinutes(10),
-                    ]);
-                } catch (\Throwable) {
-                    // Continue to thread match.
+            foreach ($exact->orderByDesc('id')->limit(20)->get() as $row) {
+                if (! $row instanceof EmailLog) {
+                    continue;
                 }
-            }
+                if ($mailType === 'sent' && ! $this->parsedPrimaryRecipientMatchesStoredTo($parsedData, $row)) {
+                    continue;
+                }
 
-            $row = $exact->orderByDesc('id')->first();
-            if ($row) {
                 return $row;
             }
         }
 
-        if ($subject === '') {
+        if ($mailType === 'sent' || $subject === '') {
             return null;
         }
 
@@ -172,6 +181,7 @@ class ClientEmailUploadDuplicateService
         }
 
         $candidates = (clone $base)
+            ->where('mail_body_type', 'inbox')
             ->whereRaw('LOWER(subject) LIKE ?', ['%'.mb_strtolower(addcslashes($needle, '%_\\')).'%'])
             ->orderByDesc('id')
             ->limit(50)
@@ -189,6 +199,82 @@ class ClientEmailUploadDuplicateService
             }
 
             return $candidate;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     */
+    protected function resolveParsedSentTime(array $parsedData): ?Carbon
+    {
+        foreach (['sent_date', 'received_date'] as $key) {
+            if (empty($parsedData[$key])) {
+                continue;
+            }
+
+            try {
+                return Carbon::parse((string) $parsedData[$key], (string) config('app.timezone'));
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     */
+    protected function parsedPrimaryRecipientMatchesStoredTo(array $parsedData, EmailLog $existing): bool
+    {
+        $parsedPrimary = $this->primaryRecipientEmailFromParsed($parsedData);
+        $storedPrimary = $this->primaryRecipientEmailFromStored((string) ($existing->to_mail ?? ''));
+        if ($parsedPrimary === null || $storedPrimary === null) {
+            return false;
+        }
+
+        return $parsedPrimary === $storedPrimary;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     */
+    protected function primaryRecipientEmailFromParsed(array $parsedData): ?string
+    {
+        foreach (['to_recipients', 'recipients'] as $key) {
+            $list = $parsedData[$key] ?? null;
+            if (! is_array($list) || $list === []) {
+                continue;
+            }
+
+            foreach ($list as $entry) {
+                if ($entry === null) {
+                    continue;
+                }
+                $normalized = IncomingEmailSyncService::normalizeRecipientEntry((string) $entry);
+                if ($normalized !== '' && filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
+                    return strtolower($normalized);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function primaryRecipientEmailFromStored(string $toMail): ?string
+    {
+        $toMail = trim($toMail);
+        if ($toMail === '') {
+            return null;
+        }
+
+        foreach (preg_split('/\s*,\s*/', $toMail) ?: [] as $part) {
+            $normalized = IncomingEmailSyncService::normalizeRecipientEntry((string) $part);
+            if ($normalized !== '' && filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
+                return strtolower($normalized);
+            }
         }
 
         return null;
@@ -224,10 +310,10 @@ class ClientEmailUploadDuplicateService
     public function locationKey(EmailLog $email): string
     {
         if ($this->unassignedMatchService->isUnassignedSynced($email)) {
-            return ($email->mail_body_type === 'sent' ? 'unassigned_sent' : 'unassigned_inbox');
+            return $email->mail_body_type === 'sent' ? 'unassigned_sent' : 'unassigned_inbox';
         }
 
-        return ($email->mail_body_type === 'sent' ? 'client_sent' : 'client_inbox');
+        return $email->mail_body_type === 'sent' ? 'client_sent' : 'client_inbox';
     }
 
     public function locationLabel(EmailLog $email): string
