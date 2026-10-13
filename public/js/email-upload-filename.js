@@ -637,6 +637,22 @@
         return 'Notice';
     }
 
+    function injectEmailUploadResultModalRowStyles() {
+        if (document.getElementById('emailUploadResultModalRowStyles')) {
+            return;
+        }
+        var rowStyle = document.createElement('style');
+        rowStyle.id = 'emailUploadResultModalRowStyles';
+        rowStyle.textContent = [
+            '.email-upload-result-modal--wide{max-width:min(96vw,720px)!important;}',
+            '.email-upload-result-modal__actions--row{flex-wrap:nowrap!important;justify-content:stretch!important;gap:8px!important;width:100%!important;}',
+            '.email-upload-result-modal__actions--row .email-upload-result-modal__btn{min-width:0!important;flex:1 1 0!important;padding:10px 12px!important;font-size:13px!important;line-height:1.25!important;}',
+            '.email-upload-result-modal__actions--row #emailUploadResultModalAction{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}',
+            '.email-upload-result-modal__actions--row #emailUploadResultModalOk,.email-upload-result-modal__actions--row #emailUploadResultModalContinue{flex:0 0 auto!important;min-width:88px!important;}'
+        ].join('');
+        document.head.appendChild(rowStyle);
+    }
+
     function ensureEmailUploadResultModal() {
         if (emailUploadResultModalReady) return;
         emailUploadResultModalReady = true;
@@ -661,6 +677,11 @@
                 '.email-upload-result-modal__details-toggle:hover{color:#106ebe;}',
                 '.email-upload-result-modal__details-body{margin:8px 0 0;font-size:12px;line-height:1.5;color:#605e5c;white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:180px;padding:10px 12px;background:#f3f2f1;border:1px solid #edebe9;border-radius:6px;text-align:left;}',
                 '.email-upload-result-modal__actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}',
+                '.email-upload-result-modal--wide{max-width:min(96vw,720px);}',
+                '.email-upload-result-modal__actions--row{flex-wrap:nowrap;justify-content:stretch;gap:8px;width:100%;}',
+                '.email-upload-result-modal__actions--row .email-upload-result-modal__btn{min-width:0;flex:1 1 0;padding:10px 12px;font-size:13px;line-height:1.25;}',
+                '.email-upload-result-modal__actions--row #emailUploadResultModalAction{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+                '.email-upload-result-modal__actions--row #emailUploadResultModalOk,.email-upload-result-modal__actions--row #emailUploadResultModalContinue{flex:0 0 auto;min-width:88px;}',
                 '.email-upload-result-modal__btn{min-width:120px;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;background:#0078d4;color:#fff;}',
                 '.email-upload-result-modal__btn:hover{background:#106ebe;}',
                 '.email-upload-result-modal__btn--secondary{background:#fff;border-color:#0078d4;color:#0078d4;}',
@@ -668,6 +689,8 @@
             ].join('');
             document.head.appendChild(style);
         }
+
+        injectEmailUploadResultModalRowStyles();
 
         var existingModal = document.getElementById('emailUploadResultModal');
         if (existingModal) {
@@ -681,6 +704,7 @@
                 legacyContinue.textContent = 'Continue';
                 existingActions.appendChild(legacyContinue);
             }
+            injectEmailUploadResultModalRowStyles();
             return;
         }
 
@@ -753,6 +777,7 @@
 
     function showEmailUploadResultModal(options) {
         options = options || {};
+        injectEmailUploadResultModalRowStyles();
         ensureEmailUploadResultModal();
 
         var overlay = document.getElementById('emailUploadResultModal');
@@ -823,6 +848,7 @@
             if (options.actionLabel && typeof options.onAction === 'function') {
                 actionBtn.hidden = false;
                 actionBtn.textContent = options.actionLabel;
+                actionBtn.title = options.actionLabel;
                 actionBtn.onclick = function () {
                     overlay.classList.remove('active');
                     overlay.setAttribute('aria-hidden', 'true');
@@ -834,12 +860,22 @@
                     }
                     options.onAction();
                 };
+            } else if (actionBtn) {
+                actionBtn.removeAttribute('title');
             }
         }
 
         var okBtn = document.getElementById('emailUploadResultModalOk');
         var continueBtn = document.getElementById('emailUploadResultModalContinue');
         var hasContinue = options.showContinue === true;
+        var dialogEl = overlay.querySelector('.email-upload-result-modal');
+
+        if (dialogEl) {
+            dialogEl.classList.toggle('email-upload-result-modal--wide', hasContinue);
+        }
+        if (actionsRow) {
+            actionsRow.classList.toggle('email-upload-result-modal__actions--row', hasContinue);
+        }
 
         if (okBtn) {
             okBtn.textContent = options.dismissLabel || (hasContinue ? 'Cancel' : 'OK');
