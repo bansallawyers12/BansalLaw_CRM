@@ -379,6 +379,61 @@
         return text;
     }
 
+    function duplicateMatchFromUploadError(err) {
+        if (!err) {
+            return null;
+        }
+        const match = err.existing_match || err.unassigned_match || err.existing;
+        if (match && match.email_log_id) {
+            return match;
+        }
+        return null;
+    }
+
+    function openExistingEmailFromDuplicateMatch(match) {
+        if (!match || !match.email_log_id) {
+            return;
+        }
+        const loc = String(match.location || '');
+        if (loc.indexOf('unassigned') === 0) {
+            window.location.href = '/clients/unassigned-emails?select_email=' + encodeURIComponent(match.email_log_id);
+            return;
+        }
+        const folder = match.open_folder || (match.mail_body_type === 'sent' ? 'sent' : 'inbox');
+        const url = new URL(window.location.href);
+        url.searchParams.set('select_email', String(match.email_log_id));
+        url.searchParams.set('folder', folder);
+        window.location.href = url.toString();
+    }
+
+    function showBlockedDuplicateUploadAlert(err) {
+        const match = duplicateMatchFromUploadError(err);
+        const message = formatDuplicateLocationMessage(err);
+        if (typeof window.crmShowEmailUploadResultModal === 'function') {
+            return window.crmShowEmailUploadResultModal({
+                type: 'warning',
+                title: 'Email already exist',
+                message: message,
+                dismissLabel: 'Cancel',
+                showContinue: true,
+                continueLabel: 'Continue',
+                actionLabel: match && match.location_label ? ('Open: ' + match.location_label) : undefined,
+                onAction: match
+                    ? function () {
+                        openExistingEmailFromDuplicateMatch(match);
+                    }
+                    : undefined
+            });
+        }
+        showUploadNotification(message, 'warning', 'Email already exist');
+        return Promise.resolve('cancel');
+    }
+
+    async function confirmBlockedDuplicateForceUpload(err) {
+        const choice = await showBlockedDuplicateUploadAlert(err);
+        return choice === 'continue';
+    }
+
     /**
      * POST one .msg file to the upload endpoint and return parsed JSON.
      */
@@ -1243,54 +1298,38 @@
                     let data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath);
                     const blockedDuplicate = getBlockedDuplicateUploadError(data);
                     if (blockedDuplicate) {
-                        totalFailed += 1;
-                        const blockedMsg = formatDuplicateLocationMessage(blockedDuplicate);
-                        allErrors.push({
-                            filename: file.name,
-                            error: blockedMsg,
-                            duplicate: true,
-                            rejected: true
-                        });
-                        const match = blockedDuplicate.existing_match || blockedDuplicate.unassigned_match || blockedDuplicate.existing;
-                        if (typeof window.crmShowEmailUploadResultModal === 'function' && match && match.email_log_id) {
-                            window.crmShowEmailUploadResultModal({
-                                type: 'error',
-                                title: 'Duplicate email — upload blocked',
-                                message: blockedMsg,
-                                actionLabel: match.location_label ? ('Open: ' + match.location_label) : 'Open existing email',
-                                onAction: function () {
-                                    const loc = String(match.location || '');
-                                    if (loc.indexOf('unassigned') === 0) {
-                                        window.location.href = '/clients/unassigned-emails?select_email=' + encodeURIComponent(match.email_log_id);
-                                        return;
-                                    }
-                                    const folder = match.open_folder || (match.mail_body_type === 'sent' ? 'sent' : 'inbox');
-                                    const url = new URL(window.location.href);
-                                    url.searchParams.set('select_email', String(match.email_log_id));
-                                    url.searchParams.set('folder', folder);
-                                    window.location.href = url.toString();
-                                }
+                        const forceUpload = await confirmBlockedDuplicateForceUpload(blockedDuplicate);
+                        if (!forceUpload) {
+                            totalFailed += 1;
+                            const blockedMsg = formatDuplicateLocationMessage(blockedDuplicate);
+                            allErrors.push({
+                                filename: file.name,
+                                error: blockedMsg,
+                                duplicate: true,
+                                rejected: true
                             });
-                        } else {
-                            showUploadNotification(blockedMsg, 'warning', 'Duplicate email — upload blocked');
+                            continue;
                         }
-                        continue;
+                        data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, true);
                     }
 
                     const duplicateError = getDuplicateUploadError(data);
 
                     if (duplicateError) {
                         if (duplicateError.block_force_upload) {
-                            totalFailed += 1;
-                            allErrors.push({
-                                filename: file.name,
-                                error: formatDuplicateLocationMessage(duplicateError),
-                                duplicate: true,
-                                rejected: true
-                            });
-                            showUploadNotification(formatDuplicateLocationMessage(duplicateError), 'warning', 'Duplicate email — upload blocked');
-                            continue;
-                        }
+                            const forceUpload = await confirmBlockedDuplicateForceUpload(duplicateError);
+                            if (!forceUpload) {
+                                totalFailed += 1;
+                                allErrors.push({
+                                    filename: file.name,
+                                    error: formatDuplicateLocationMessage(duplicateError),
+                                    duplicate: true,
+                                    rejected: true
+                                });
+                                continue;
+                            }
+                            data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, true);
+                        } else {
                         const acceptUpload = await showDuplicateEmailPrompt(file.name);
                         if (acceptUpload) {
                             data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, true);
@@ -1304,6 +1343,7 @@
                             });
                             showUploadNotification(DUPLICATE_EXISTS_MESSAGE, 'warning', 'Duplicate Email');
                             continue;
+                        }
                         }
                     }
 

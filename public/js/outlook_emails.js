@@ -3218,20 +3218,43 @@ function crmInitOutlookEmailsInterface() {
 
         function showBlockedDuplicateUploadAlert(err) {
             const match = duplicateMatchFromError(err);
-            const modalOptions = match
-                ? {
-                    actionLabel: openExistingEmailActionLabel(match),
-                    onAction: function () {
-                        void openExistingEmailFromDuplicateMatch(match);
-                    }
-                }
-                : null;
-            return showUploadErrorAlert(
-                formatDuplicateLocationMessage(err),
-                'Duplicate email — upload blocked',
-                '',
-                modalOptions
-            );
+            const message = formatDuplicateLocationMessage(err);
+            if (typeof window.crmShowEmailUploadResultModal === 'function') {
+                return window.crmShowEmailUploadResultModal({
+                    type: 'warning',
+                    title: 'Email already exist',
+                    message: message,
+                    dismissLabel: 'Cancel',
+                    showContinue: true,
+                    continueLabel: 'Continue',
+                    actionLabel: match ? openExistingEmailActionLabel(match) : undefined,
+                    onAction: match
+                        ? function () {
+                            void openExistingEmailFromDuplicateMatch(match);
+                        }
+                        : undefined
+                });
+            }
+            return showUploadErrorAlert(message, 'Email already exist', '', null);
+        }
+
+        function rejectedBlockedDuplicateUpload(file, blockedDuplicateError) {
+            return {
+                uploaded: 0,
+                failed: 0,
+                rejected: 1,
+                errors: [{
+                    filename: file.name,
+                    error: blockedDuplicateError.error || 'Duplicate email',
+                    error_code: blockedDuplicateError.error_code || 'existing_email',
+                    duplicate: true
+                }]
+            };
+        }
+
+        async function confirmBlockedDuplicateForceUpload(blockedDuplicateError) {
+            const choice = await showBlockedDuplicateUploadAlert(blockedDuplicateError);
+            return choice === 'continue';
         }
 
         function showUnassignedMatchPrompt(fileName, matchInfo) {
@@ -4267,18 +4290,17 @@ function crmInitOutlookEmailsInterface() {
             const blockedDuplicateError = getBlockedDuplicateUploadError(result);
             if (blockedDuplicateError) {
                 hideEmailUploadLoading();
-                showBlockedDuplicateUploadAlert(blockedDuplicateError);
-                return {
-                    uploaded: 0,
-                    failed: 0,
-                    rejected: 1,
-                    errors: [{
-                        filename: file.name,
-                        error: blockedDuplicateError.error || 'Duplicate email',
-                        error_code: blockedDuplicateError.error_code || 'existing_email',
-                        duplicate: true
-                    }]
-                };
+                const forceUpload = await confirmBlockedDuplicateForceUpload(blockedDuplicateError);
+                if (!forceUpload) {
+                    return rejectedBlockedDuplicateUpload(file, blockedDuplicateError);
+                }
+                showEmailUploadLoading(
+                    'Uploading email',
+                    'Uploading email…',
+                    file.name,
+                    baseProgress
+                );
+                result = await postOutlookEmailUpload(file, uploadUrl, true, attachmentStorage);
             }
 
             const unassignedMatchError = getUnassignedMatchUploadError(result);
@@ -4344,18 +4366,18 @@ function crmInitOutlookEmailsInterface() {
             if (duplicateError) {
                 hideEmailUploadLoading();
                 if (duplicateError.block_force_upload) {
-                    showBlockedDuplicateUploadAlert(duplicateError);
-                    return {
-                        uploaded: 0,
-                        failed: 0,
-                        rejected: 1,
-                        errors: [{
-                            filename: file.name,
-                            error: duplicateError.error || 'Duplicate email',
-                            duplicate: true
-                        }]
-                    };
-                }
+                    const forceUpload = await confirmBlockedDuplicateForceUpload(duplicateError);
+                    if (!forceUpload) {
+                        return rejectedBlockedDuplicateUpload(file, duplicateError);
+                    }
+                    showEmailUploadLoading(
+                        'Uploading email',
+                        'Uploading email…',
+                        file.name,
+                        baseProgress
+                    );
+                    result = await postOutlookEmailUpload(file, uploadUrl, true, attachmentStorage);
+                } else {
                 const acceptUpload = await showDuplicateEmailPrompt(file.name);
                 if (acceptUpload) {
                     showEmailUploadLoading(
@@ -4372,6 +4394,7 @@ function crmInitOutlookEmailsInterface() {
                         rejected: 1,
                         errors: [{ filename: file.name, error: DUPLICATE_EXISTS_MESSAGE, duplicate: true }]
                     };
+                }
                 }
             }
 

@@ -669,7 +669,20 @@
             document.head.appendChild(style);
         }
 
-        if (document.getElementById('emailUploadResultModal')) return;
+        var existingModal = document.getElementById('emailUploadResultModal');
+        if (existingModal) {
+            var existingActions = existingModal.querySelector('.email-upload-result-modal__actions');
+            if (existingActions && !document.getElementById('emailUploadResultModalContinue')) {
+                var legacyContinue = document.createElement('button');
+                legacyContinue.type = 'button';
+                legacyContinue.id = 'emailUploadResultModalContinue';
+                legacyContinue.className = 'email-upload-result-modal__btn';
+                legacyContinue.hidden = true;
+                legacyContinue.textContent = 'Continue';
+                existingActions.appendChild(legacyContinue);
+            }
+            return;
+        }
 
         var overlay = document.createElement('div');
         overlay.id = 'emailUploadResultModal';
@@ -686,7 +699,8 @@
             + '  </div>'
             + '  <div class="email-upload-result-modal__actions">'
             + '    <button type="button" class="email-upload-result-modal__btn email-upload-result-modal__btn--secondary" id="emailUploadResultModalAction" hidden>Open existing email</button>'
-            + '    <button type="button" class="email-upload-result-modal__btn" id="emailUploadResultModalOk">OK</button>'
+            + '    <button type="button" class="email-upload-result-modal__btn email-upload-result-modal__btn--secondary" id="emailUploadResultModalOk">OK</button>'
+            + '    <button type="button" class="email-upload-result-modal__btn" id="emailUploadResultModalContinue" hidden>Continue</button>'
             + '  </div>'
             + '</div>';
         document.body.appendChild(overlay);
@@ -706,27 +720,33 @@
         var okBtn = document.getElementById('emailUploadResultModalOk');
         var dialog = overlay.querySelector('.email-upload-result-modal');
 
-        function closeEmailUploadResultModal() {
+        function closeEmailUploadResultModal(result) {
             overlay.classList.remove('active');
             overlay.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('email-upload-result-modal-open');
             if (typeof emailUploadResultModalResolve === 'function') {
                 var resolve = emailUploadResultModalResolve;
                 emailUploadResultModalResolve = null;
-                resolve();
+                resolve(result || 'cancel');
             }
         }
 
-        if (okBtn) okBtn.addEventListener('click', closeEmailUploadResultModal);
+        if (okBtn) {
+            okBtn.addEventListener('click', function () {
+                closeEmailUploadResultModal('cancel');
+            });
+        }
         overlay.addEventListener('click', function (event) {
-            if (event.target === overlay) closeEmailUploadResultModal();
+            if (event.target === overlay) {
+                closeEmailUploadResultModal('cancel');
+            }
         });
         if (dialog) {
             dialog.addEventListener('click', function (event) { event.stopPropagation(); });
         }
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && overlay.classList.contains('active')) {
-                closeEmailUploadResultModal();
+                closeEmailUploadResultModal('cancel');
             }
         });
     }
@@ -808,11 +828,43 @@
                     overlay.setAttribute('aria-hidden', 'true');
                     document.body.classList.remove('email-upload-result-modal-open');
                     if (typeof emailUploadResultModalResolve === 'function') {
-                        var resolve = emailUploadResultModalResolve;
+                        var resolveOpen = emailUploadResultModalResolve;
                         emailUploadResultModalResolve = null;
-                        resolve();
+                        resolveOpen('cancel');
                     }
                     options.onAction();
+                };
+            }
+        }
+
+        var okBtn = document.getElementById('emailUploadResultModalOk');
+        var continueBtn = document.getElementById('emailUploadResultModalContinue');
+        var hasContinue = options.showContinue === true;
+
+        if (okBtn) {
+            okBtn.textContent = options.dismissLabel || (hasContinue ? 'Cancel' : 'OK');
+            okBtn.className = hasContinue
+                ? 'email-upload-result-modal__btn email-upload-result-modal__btn--secondary'
+                : 'email-upload-result-modal__btn';
+        }
+
+        if (continueBtn) {
+            continueBtn.hidden = !hasContinue;
+            continueBtn.textContent = options.continueLabel || 'Continue';
+            continueBtn.onclick = null;
+            if (hasContinue) {
+                continueBtn.onclick = function () {
+                    overlay.classList.remove('active');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('email-upload-result-modal-open');
+                    if (typeof emailUploadResultModalResolve === 'function') {
+                        var resolveContinue = emailUploadResultModalResolve;
+                        emailUploadResultModalResolve = null;
+                        resolveContinue('continue');
+                    }
+                    if (typeof options.onContinue === 'function') {
+                        options.onContinue();
+                    }
                 };
             }
         }
@@ -821,8 +873,9 @@
         overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('email-upload-result-modal-open');
 
-        var okBtn = document.getElementById('emailUploadResultModalOk');
-        if (actionBtn && !actionBtn.hidden) {
+        if (hasContinue && continueBtn) {
+            continueBtn.focus();
+        } else if (actionBtn && !actionBtn.hidden) {
             actionBtn.focus();
         } else if (okBtn) {
             okBtn.focus();
