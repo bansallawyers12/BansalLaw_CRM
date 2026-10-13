@@ -3225,7 +3225,8 @@ function crmInitOutlookEmailsInterface() {
                     title: 'Duplicate Email Exist',
                     message: message,
                     dismissLabel: 'Cancel',
-                    showContinue: true,
+                    // Continue (force upload) hidden until product re-enables duplicate copies on matter.
+                    showContinue: false,
                     continueLabel: 'Continue',
                     actionLabel: match ? openExistingEmailActionLabel(match) : undefined,
                     onAction: match
