@@ -238,6 +238,7 @@ class EmailUploadController extends Controller
             $errors = [];
             $warnings = [];
             $notices = [];
+            $uploadedItems = [];
 
             foreach ($request->file('email_files') as $file) {
                 try {
@@ -245,6 +246,13 @@ class EmailUploadController extends Controller
 
                     if ($result['success']) {
                         $uploadedCount++;
+                        if (! empty($result['email_log_id'])) {
+                            $uploadedItems[] = [
+                                'email_log_id' => (int) $result['email_log_id'],
+                                'filename' => $this->sanitizedUploadFilename($file),
+                                'original_filename' => $file->getClientOriginalName(),
+                            ];
+                        }
                         if (! empty($result['warnings'])) {
                             $warnings[] = [
                                 'filename' => $this->sanitizedUploadFilename($file),
@@ -330,6 +338,7 @@ class EmailUploadController extends Controller
                 'errors' => $errors,
                 'warnings' => $warnings,
                 'notices' => $notices,
+                'uploaded_items' => $uploadedItems,
                 'total_files' => $uploadedCount + $failedCount,
             ], 200);
 

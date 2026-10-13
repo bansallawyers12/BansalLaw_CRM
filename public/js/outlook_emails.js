@@ -4398,6 +4398,8 @@ function crmInitOutlookEmailsInterface() {
                 }
             }
 
+            const emailLogIds = extractUploadedEmailLogIds(result);
+
             return {
                 uploaded: result.uploaded || 0,
                 failed: result.failed || 0,
@@ -4406,7 +4408,8 @@ function crmInitOutlookEmailsInterface() {
                 warnings: result.warnings || [],
                 notices: result.notices || [],
                 message: result.message || '',
-                attachmentStorage: attachmentStorage
+                attachmentStorage: attachmentStorage,
+                emailLogIds: emailLogIds
             };
         }
 
@@ -4485,6 +4488,7 @@ function crmInitOutlookEmailsInterface() {
             const allWarnings = [];
             const allNotices = [];
             const uploadedAttachmentStorage = [];
+            let lastUploadedEmailLogId = null;
 
             try {
                 for (let i = 0; i < msgFiles.length; i++) {
@@ -4514,6 +4518,9 @@ function crmInitOutlookEmailsInterface() {
                         totalRejected += fileResult.rejected || 0;
                         if (fileResult.attachmentStorage && fileResult.uploaded > 0) {
                             uploadedAttachmentStorage.push.apply(uploadedAttachmentStorage, fileResult.attachmentStorage);
+                        }
+                        if (fileResult.emailLogIds && fileResult.emailLogIds.length) {
+                            lastUploadedEmailLogId = fileResult.emailLogIds[fileResult.emailLogIds.length - 1];
                         }
                         if (fileResult.errors && fileResult.errors.length) {
                             allErrors.push.apply(allErrors, fileResult.errors);
@@ -4585,7 +4592,7 @@ function crmInitOutlookEmailsInterface() {
                         }
                         showUploadSuccessToast(successMsg);
                     }
-                    loadEmails();
+                    loadEmails(lastUploadedEmailLogId ? { selectEmailLogId: lastUploadedEmailLogId } : undefined);
                     refreshUploadedDocumentFolders();
                 } else if (totalUploaded > 0) {
                     updateEmailUploadLoading('Upload finished', 'Some emails were uploaded with issues.', '', 100);
@@ -4607,7 +4614,7 @@ function crmInitOutlookEmailsInterface() {
                         }
                         showUploadErrorAlert(errorMsg, undefined, technicalDetails);
                     }
-                    loadEmails();
+                    loadEmails(lastUploadedEmailLogId ? { selectEmailLogId: lastUploadedEmailLogId } : undefined);
                     refreshUploadedDocumentFolders();
                 } else if (totalRejected > 0 && totalFailed === 0) {
                     if (uploadStatus) {
@@ -5902,6 +5909,49 @@ function crmInitOutlookEmailsInterface() {
         return aId <= bId ? a : b;
     }
 
+    function isManualFileUploadListRow(row) {
+        if (!row) {
+            return false;
+        }
+        const syncedId = parseInt(row.synced_email_id, 10) || 0;
+        if (syncedId > 0) {
+            return false;
+        }
+        const imapUid = parseInt(row.imap_uid, 10) || 0;
+        if (imapUid > 0) {
+            return false;
+        }
+        return String(row.sync_source || '').toLowerCase() === 'upload';
+    }
+
+    function shouldMergeClientMailListRows(existing, row) {
+        const existingId = parseInt(existing && existing.id, 10) || 0;
+        const rowId = parseInt(row && row.id, 10) || 0;
+        if (existingId <= 0 || rowId <= 0 || existingId === rowId) {
+            return true;
+        }
+
+        if (isManualFileUploadListRow(existing) || isManualFileUploadListRow(row)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function extractUploadedEmailLogIds(uploadResult) {
+        if (!uploadResult || !Array.isArray(uploadResult.uploaded_items)) {
+            return [];
+        }
+
+        return uploadResult.uploaded_items
+            .map(function (item) {
+                return parseInt(item && item.email_log_id, 10) || 0;
+            })
+            .filter(function (id) {
+                return id > 0;
+            });
+    }
+
     function normalizeDedupeTimestamp(val) {
         if (!val) return '';
         const d = new Date(val);
@@ -5931,18 +5981,32 @@ function crmInitOutlookEmailsInterface() {
             const contentKey = (fromMail && subject && timeKey)
                 ? ('content:' + fromMail + '\0' + subject + '\0' + timeKey)
                 : '';
-            const key = contentKey || (messageId ? ('mid:' + messageId) : ('id:' + String(row.id)));
+            let key = contentKey || (messageId ? ('mid:' + messageId) : ('id:' + String(row.id)));
 
-            const existingIndex = indexByKey[key];
+            let existingIndex = indexByKey[key];
+            if (existingIndex !== undefined) {
+                const existingForKey = kept[existingIndex];
+                if (!shouldMergeClientMailListRows(existingForKey, row)) {
+                    key = 'id:' + String(row.id);
+                    existingIndex = indexByKey[key];
+                }
+            }
+
             if (existingIndex === undefined) {
                 indexByKey[key] = kept.length;
-                if (messageId && !indexByKey['mid:' + messageId]) {
+                if (messageId && !indexByKey['mid:' + messageId] && key.indexOf('id:') !== 0) {
                     indexByKey['mid:' + messageId] = kept.length;
                 }
                 kept.push(row);
                 return;
             }
             const existing = kept[existingIndex];
+            if (!shouldMergeClientMailListRows(existing, row)) {
+                key = 'id:' + String(row.id);
+                indexByKey[key] = kept.length;
+                kept.push(row);
+                return;
+            }
             const winner = preferClientMailListRow(existing, row);
             if (winner !== existing) {
                 kept[existingIndex] = winner;
