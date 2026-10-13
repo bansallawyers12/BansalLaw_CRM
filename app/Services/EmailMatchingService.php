@@ -28,7 +28,7 @@ class EmailMatchingService
     {
         $subject = (string) ($parsedData['subject'] ?? '');
         $textPreview = (string) ($parsedData['text_preview'] ?? $parsedData['text_content'] ?? '');
-        $searchText = $subject . "\n" . mb_substr(strip_tags((string) ($parsedData['html_content'] ?? '')), 0, 2000) . "\n" . $textPreview;
+        $searchText = $subject."\n".mb_substr(strip_tags((string) ($parsedData['html_content'] ?? '')), 0, 2000)."\n".$textPreview;
 
         $senderAddresses = $this->extractEmailAddresses([
             'sender_email' => $parsedData['sender_email'] ?? null,
@@ -241,7 +241,7 @@ class EmailMatchingService
                 (int) $row->client_id,
                 (int) $row->client_matter_id,
                 (string) $row->client_ref,
-                trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
+                trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
                 (string) ($row->email ?? ''),
                 (string) $row->client_unique_matter_no,
                 (string) ($row->matter_title ?? ''),
@@ -292,7 +292,7 @@ class EmailMatchingService
                 (int) $client->id,
                 (int) $matter->id,
                 (string) $client->client_id,
-                trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+                trim(($client->first_name ?? '').' '.($client->last_name ?? '')),
                 (string) ($client->email ?? ''),
                 (string) $matter->client_unique_matter_no,
                 (string) ($matter->matter_title ?? ''),
@@ -307,15 +307,14 @@ class EmailMatchingService
     }
 
     /**
-     * @param list<string> $addresses
+     * @param  list<string>  $addresses
      * @return list<array<string, mixed>>
      */
     private function matchByEmailAddresses(
         array $addresses,
         int $confidence,
         string $matchedBy
-    ): array
-    {
+    ): array {
         if ($addresses === []) {
             return [];
         }
@@ -350,7 +349,7 @@ class EmailMatchingService
                 (int) $client->id,
                 $matter ? (int) $matter['id'] : 0,
                 (string) $client->client_id,
-                trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+                trim(($client->first_name ?? '').' '.($client->last_name ?? '')),
                 (string) ($client->email ?? ''),
                 $matter ? (string) $matter['matter_no'] : '',
                 $matter ? (string) ($matter['matter_title'] ?? '') : '',
@@ -392,7 +391,7 @@ class EmailMatchingService
                 (int) $row->client_id,
                 $matter ? (int) $matter['id'] : 0,
                 (string) $row->client_ref,
-                trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
+                trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
                 (string) ($row->matched_email ?: $row->primary_email),
                 $matter ? (string) $matter['matter_no'] : '',
                 $matter ? (string) ($matter['matter_title'] ?? '') : '',
@@ -516,7 +515,7 @@ class EmailMatchingService
             if ($match === null) {
                 continue;
             }
-            $hits[$match['client_id'] . ':' . $match['client_matter_id']] = $match;
+            $hits[$match['client_id'].':'.$match['client_matter_id']] = $match;
         }
 
         if (count($hits) !== 1) {
@@ -534,7 +533,7 @@ class EmailMatchingService
         $pairs = [];
         if (preg_match_all('/\b([A-Z]{1,6}\d{7,})\s*\/\s*([A-Z]{2,6}_[0-9]{1,6})\b/i', $text, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
-                $pairs[strtoupper($match[1]) . '/' . strtoupper($match[2])] = [
+                $pairs[strtoupper($match[1]).'/'.strtoupper($match[2])] = [
                     'client_ref' => strtoupper($match[1]),
                     'matter_ref' => strtoupper($match[2]),
                 ];
@@ -656,37 +655,73 @@ class EmailMatchingService
      */
     public function findUniqueClientByRecipientEmails(array $recipientsOrParsed): ?array
     {
+        $targets = $this->autoSyncRecipientClientTargets($recipientsOrParsed);
+
+        if (count($targets) !== 1) {
+            return null;
+        }
+
+        return $targets[0];
+    }
+
+    /**
+     * Distinct clients/leads matched via To/Cc/Bcc addresses with an assignable matter.
+     * Used by IMAP auto-sync to file the same message on every matching recipient client.
+     *
+     * @param  list<string>|array<string, mixed>  $recipientsOrParsed
+     * @return list<array{
+     *     client_id: int,
+     *     client_ref: string,
+     *     client_name: string,
+     *     email: string,
+     *     record_type: string,
+     *     client_matter_id: int,
+     *     matter_no: string,
+     *     matter_title: string,
+     *     matched_by: string
+     * }>
+     */
+    public function autoSyncRecipientClientTargets(array $recipientsOrParsed): array
+    {
         $addresses = $this->normalizeRecipientAddressList($recipientsOrParsed);
         if ($addresses === []) {
-            return null;
+            return [];
         }
 
         $matches = $this->matchByEmailAddresses($addresses, 85, 'recipient_email');
-        $uniqueClients = [];
+        $byClient = [];
+
         foreach ($matches as $match) {
             $clientId = (int) ($match['client_id'] ?? 0);
-            if ($clientId > 0) {
-                $uniqueClients[$clientId] = $match;
+            $clientMatterId = (int) ($match['client_matter_id'] ?? 0);
+            if ($clientId <= 0 || $clientMatterId <= 0) {
+                continue;
+            }
+
+            $existing = $byClient[$clientId] ?? null;
+            if ($existing === null || (int) ($match['confidence'] ?? 0) > (int) ($existing['confidence'] ?? 0)) {
+                $byClient[$clientId] = $match;
             }
         }
 
-        if (count($uniqueClients) !== 1) {
-            return null;
+        $targets = [];
+        foreach ($byClient as $match) {
+            $targets[] = [
+                'client_id' => (int) $match['client_id'],
+                'client_ref' => (string) ($match['client_ref'] ?? ''),
+                'client_name' => (string) ($match['client_name'] ?? ''),
+                'email' => (string) ($match['email'] ?? ''),
+                'record_type' => (string) ($match['record_type'] ?? 'client'),
+                'client_matter_id' => (int) $match['client_matter_id'],
+                'matter_no' => (string) ($match['matter_no'] ?? ''),
+                'matter_title' => (string) ($match['matter_title'] ?? ''),
+                'matched_by' => 'recipient_email',
+            ];
         }
 
-        $match = array_values($uniqueClients)[0];
+        usort($targets, static fn (array $a, array $b) => $a['client_id'] <=> $b['client_id']);
 
-        return [
-            'client_id' => (int) $match['client_id'],
-            'client_ref' => (string) ($match['client_ref'] ?? ''),
-            'client_name' => (string) ($match['client_name'] ?? ''),
-            'email' => (string) ($match['email'] ?? ''),
-            'record_type' => (string) ($match['record_type'] ?? 'client'),
-            'client_matter_id' => (int) ($match['client_matter_id'] ?? 0),
-            'matter_no' => (string) ($match['matter_no'] ?? ''),
-            'matter_title' => (string) ($match['matter_title'] ?? ''),
-            'matched_by' => 'recipient_email',
-        ];
+        return $targets;
     }
 
     /**
@@ -726,7 +761,6 @@ class EmailMatchingService
     }
 
     /**
-     * @param  mixed  $value
      * @return list<mixed>
      */
     private function recipientFieldAsList(mixed $value): array
@@ -765,7 +799,7 @@ class EmailMatchingService
                 if (! str_contains($fullName, ' ') || strlen($fullName) < 8) {
                     continue;
                 }
-                if (preg_match('/\b' . preg_quote($fullName, '/') . '\b/u', $haystack)) {
+                if (preg_match('/\b'.preg_quote($fullName, '/').'\b/u', $haystack)) {
                     foreach ($clients as $client) {
                         $hits[(int) $client->id] = $client;
                     }
@@ -867,7 +901,7 @@ class EmailMatchingService
         return [
             'client_id' => (int) $client->id,
             'client_ref' => (string) ($client->client_id ?? $client->client_ref ?? ''),
-            'client_name' => trim((string) ($client->first_name ?? '') . ' ' . (string) ($client->last_name ?? '')),
+            'client_name' => trim((string) ($client->first_name ?? '').' '.(string) ($client->last_name ?? '')),
             'email' => (string) ($client->email ?? ''),
             'record_type' => (string) ($client->type ?? $client->record_type ?? 'client'),
         ];
@@ -894,7 +928,7 @@ class EmailMatchingService
             $full = strtolower(trim(preg_replace(
                 '/\s+/',
                 ' ',
-                (string) ($client->first_name ?? '') . ' ' . (string) ($client->last_name ?? '')
+                (string) ($client->first_name ?? '').' '.(string) ($client->last_name ?? '')
             ) ?? ''));
             if ($full === '' || ! str_contains($full, ' ')) {
                 continue;
@@ -943,7 +977,7 @@ class EmailMatchingService
             (int) $row->client_id,
             (int) $row->client_matter_id,
             (string) $row->client_ref,
-            trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
+            trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
             (string) ($row->email ?? ''),
             (string) $row->client_unique_matter_no,
             (string) ($row->matter_title ?? ''),
@@ -976,12 +1010,12 @@ class EmailMatchingService
     }
 
     /**
-     * @param array<string, array<string, mixed>> $candidates
-     * @param array<string, mixed> $match
+     * @param  array<string, array<string, mixed>>  $candidates
+     * @param  array<string, mixed>  $match
      */
     private function addCandidate(array &$candidates, array $match): void
     {
-        $key = $match['client_id'] . ':' . $match['client_matter_id'];
+        $key = $match['client_id'].':'.$match['client_matter_id'];
         if (! isset($candidates[$key])) {
             $candidates[$key] = $match;
 

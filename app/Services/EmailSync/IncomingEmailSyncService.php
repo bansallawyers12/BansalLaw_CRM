@@ -11,10 +11,12 @@ use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
 use App\Models\Staff;
 use App\Services\EmailMatchingService;
+use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
@@ -35,8 +37,7 @@ class IncomingEmailSyncService
         private ZohoImapFetcher $imapFetcher,
         private EmailMatchingService $matchingService,
         private EmailUploadController $uploadController,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -121,7 +122,7 @@ class IncomingEmailSyncService
 
         $staffUserId = $mailbox->resolveOwnerStaffId();
         if (! $staffUserId) {
-            $error = 'No staff user linked to mailbox ' . $mailbox->email;
+            $error = 'No staff user linked to mailbox '.$mailbox->email;
             $this->markSyncError($mailbox, $error);
 
             return [
@@ -372,7 +373,7 @@ class IncomingEmailSyncService
 
     protected function catchupCacheKey(Email $mailbox): string
     {
-        return 'inbox_sync_catchup_at:' . $mailbox->id;
+        return 'inbox_sync_catchup_at:'.$mailbox->id;
     }
 
     public static function markParserUnavailable(): void
@@ -476,7 +477,7 @@ class IncomingEmailSyncService
                     $since
                 );
             } catch (Throwable $e) {
-                $result['errors'][] = strtoupper($defaultMailType) . ': ' . $e->getMessage();
+                $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();
                 InboxSyncLogger::error('IMAP sync failed', [
                     'mailbox' => $mailbox->email,
                     'folder_type' => $defaultMailType,
@@ -516,12 +517,12 @@ class IncomingEmailSyncService
                         $maxUid = max($maxUid, $uid);
                     } else {
                         $result['failed']++;
-                        $result['errors'][] = $importResult['error'] ?? ('Import failed for UID ' . $uid);
+                        $result['errors'][] = $importResult['error'] ?? ('Import failed for UID '.$uid);
                         $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
                     }
                 } catch (Throwable $e) {
                     $result['failed']++;
-                    $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
+                    $result['errors'][] = 'UID '.$uid.': '.$e->getMessage();
                     $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
                     InboxSyncLogger::error('Synced email import failed', [
                         'mailbox' => $mailbox->email,
@@ -582,7 +583,7 @@ class IncomingEmailSyncService
         }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($url . '/health');
+            $response = Http::timeout(5)->get($url.'/health');
 
             return $response->successful();
         } catch (Throwable) {
@@ -615,8 +616,8 @@ class IncomingEmailSyncService
         return [
             'available' => false,
             'url' => $url,
-            'message' => 'Cannot connect to the email processing service at ' . $url
-                . '. Start the Python parser (python_services/start_services.py) or update PYTHON_SERVICE_URL.',
+            'message' => 'Cannot connect to the email processing service at '.$url
+                .'. Start the Python parser (python_services/start_services.py) or update PYTHON_SERVICE_URL.',
         ];
     }
 
@@ -631,7 +632,7 @@ class IncomingEmailSyncService
         string $subjectHint,
         string $defaultMailType = 'inbox'
     ): array {
-        $tempPath = storage_path('app/temp/imap-sync-' . Str::uuid() . '.eml');
+        $tempPath = storage_path('app/temp/imap-sync-'.Str::uuid().'.eml');
         if (! is_dir(dirname($tempPath))) {
             mkdir(dirname($tempPath), 0755, true);
         }
@@ -688,14 +689,25 @@ class IncomingEmailSyncService
                 return ['success' => true, 'skipped' => true];
             }
 
-            if ($this->isDuplicate($mailbox, $messageId, $storeImapUid ?? 0, $mailType, $parsedData, $fileHash)) {
-                return ['success' => true, 'skipped' => true];
-            }
-
             $staff = Staff::find($staffUserId);
             if ($staff) {
                 $guard->login($staff);
                 $didLoginStaff = true;
+            }
+
+            $recipientTargets = $this->matchingService->autoSyncRecipientClientTargets($parsedData);
+            if (count($recipientTargets) >= 2) {
+                return $this->importSyncedMessageForRecipientClients(
+                    $mailbox,
+                    $uploadedFile,
+                    $parsedData,
+                    $recipientTargets,
+                    $mailType,
+                    $staffUserId,
+                    $storeImapUid,
+                    $messageId,
+                    $fileHash
+                );
             }
 
             $bestMatch = $match['best'] ?? null;
@@ -710,6 +722,19 @@ class IncomingEmailSyncService
             $clientMatterId = $isAutoAssigned ? (int) ($bestMatch['client_matter_id'] ?? 0) : null;
             $clientMatterId = $clientMatterId > 0 ? $clientMatterId : null;
             $recordType = (string) ($bestMatch['record_type'] ?? 'client');
+
+            $duplicateClientScope = $clientId !== null && $clientId > 0 ? $clientId : null;
+            if ($this->isDuplicate(
+                $mailbox,
+                $messageId,
+                $storeImapUid ?? 0,
+                $mailType,
+                $parsedData,
+                $fileHash,
+                $duplicateClientScope
+            )) {
+                return ['success' => true, 'skipped' => true];
+            }
 
             $clientUniqueId = $this->resolveStoragePrefix($mailbox, $clientId);
 
@@ -758,54 +783,163 @@ class IncomingEmailSyncService
         }
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $recipientTargets
+     * @return array<string, mixed>
+     */
+    protected function importSyncedMessageForRecipientClients(
+        Email $mailbox,
+        UploadedFile $uploadedFile,
+        array $parsedData,
+        array $recipientTargets,
+        string $mailType,
+        int $staffUserId,
+        ?int $storeImapUid,
+        string $messageId,
+        string $fileHash
+    ): array {
+        $importedAny = false;
+        $errors = [];
+
+        InboxSyncLogger::info('Auto-sync filing message for multiple recipient clients', [
+            'mailbox' => $mailbox->email,
+            'message_id' => $messageId,
+            'client_ids' => array_map(static fn (array $target) => (int) ($target['client_id'] ?? 0), $recipientTargets),
+            'subject' => $parsedData['subject'] ?? null,
+        ]);
+
+        foreach ($recipientTargets as $target) {
+            $clientId = (int) ($target['client_id'] ?? 0);
+            $clientMatterId = (int) ($target['client_matter_id'] ?? 0);
+            if ($clientId <= 0 || $clientMatterId <= 0) {
+                continue;
+            }
+
+            if ($this->isDuplicate(
+                $mailbox,
+                $messageId,
+                $storeImapUid ?? 0,
+                $mailType,
+                $parsedData,
+                $fileHash,
+                $clientId
+            )) {
+                continue;
+            }
+
+            $recordType = (string) ($target['record_type'] ?? 'client');
+            $clientUniqueId = $this->resolveStoragePrefix($mailbox, $clientId);
+
+            $import = $this->uploadController->importFromSync(
+                $uploadedFile,
+                $clientId,
+                $clientMatterId,
+                $recordType,
+                $mailType,
+                $staffUserId,
+                $clientUniqueId,
+                [
+                    'mailbox_email' => strtolower(trim($mailbox->email)),
+                    'synced_email_id' => $mailbox->id,
+                    'sync_assignment_status' => 'auto_assigned',
+                    'imap_uid' => $storeImapUid,
+                    'message_id' => $messageId,
+                    'sync_source' => $this->currentSyncSource,
+                    'mail_is_read' => $mailType === 'sent',
+                ],
+                $parsedData
+            );
+
+            if (! empty($import['success']) && empty($import['skipped'])) {
+                $importedAny = true;
+
+                continue;
+            }
+
+            if (! empty($import['skipped'])) {
+                continue;
+            }
+
+            $errors[] = $import['error'] ?? ('Import failed for client '.$clientId);
+        }
+
+        if ($importedAny) {
+            return ['success' => true];
+        }
+
+        if ($errors !== []) {
+            return [
+                'success' => false,
+                'error' => implode('; ', $errors),
+            ];
+        }
+
+        return ['success' => true, 'skipped' => true];
+    }
+
     protected function isDuplicate(
         Email $mailbox,
         string $messageId,
         int $imapUid,
         string $mailType = 'inbox',
         array $parsedData = [],
-        ?string $fileHash = null
+        ?string $fileHash = null,
+        ?int $clientId = null
     ): bool {
         $mailboxEmail = strtolower(trim($mailbox->email));
         $normalizedMessageId = $this->normalizeMessageId($messageId);
+        $scopedClientId = $clientId !== null && $clientId > 0 ? $clientId : null;
 
         if ($normalizedMessageId !== '') {
-            $exists = EmailLog::query()
+            $messageQuery = EmailLog::query()
                 ->where(function ($q) use ($normalizedMessageId, $messageId) {
                     $q->where('message_id', $normalizedMessageId)
                         ->orWhere('message_id', $messageId)
-                        ->orWhere('message_id', '<' . $normalizedMessageId . '>');
-                })
-                ->exists();
+                        ->orWhere('message_id', '<'.$normalizedMessageId.'>');
+                });
 
-            if ($exists) {
+            if ($scopedClientId !== null) {
+                $messageQuery->where('client_id', $scopedClientId);
+            }
+
+            if ($messageQuery->exists()) {
                 return true;
             }
         }
 
         if ($fileHash !== null && $fileHash !== '') {
-            $hashExists = EmailLog::query()
+            $hashQuery = EmailLog::query()
                 ->where('file_hash', $fileHash)
                 ->where(function ($q) use ($mailbox, $mailboxEmail) {
                     $q->where('synced_email_id', $mailbox->id)
                         ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
-                })
-                ->exists();
+                });
 
-            if ($hashExists) {
+            if ($scopedClientId !== null) {
+                $hashQuery->where('client_id', $scopedClientId);
+            }
+
+            if ($hashQuery->exists()) {
                 return true;
             }
         }
 
-        if (EmailLog::query()
-            ->where('synced_email_id', $mailbox->id)
-            ->where('imap_uid', $imapUid)
-            ->where('mail_body_type', $mailType)
-            ->exists()) {
-            return true;
+        if ($imapUid > 0) {
+            $uidQuery = EmailLog::query()
+                ->where('synced_email_id', $mailbox->id)
+                ->where('imap_uid', $imapUid)
+                ->where('mail_body_type', $mailType);
+
+            if ($scopedClientId !== null) {
+                $uidQuery->where('client_id', $scopedClientId);
+            }
+
+            if ($uidQuery->exists()) {
+                return true;
+            }
         }
 
-        return $this->isFuzzyMailboxDuplicate($mailbox, $parsedData);
+        return $this->isFuzzyMailboxDuplicate($mailbox, $parsedData, $scopedClientId);
     }
 
     protected function normalizeMessageId(string $messageId): string
@@ -825,11 +959,12 @@ class IncomingEmailSyncService
     /**
      * Match same logical email across Sent/Inbox folders or date catch-up re-fetches.
      */
-    protected function isFuzzyMailboxDuplicate(Email $mailbox, array $parsedData): bool
+    protected function isFuzzyMailboxDuplicate(Email $mailbox, array $parsedData, ?int $clientId = null): bool
     {
         $subject = strtolower(trim((string) ($parsedData['subject'] ?? '')));
         $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
         $mailboxEmail = strtolower(trim($mailbox->email));
+        $scopedClientId = $clientId !== null && $clientId > 0 ? $clientId : null;
 
         if ($subject === '') {
             return false;
@@ -838,17 +973,23 @@ class IncomingEmailSyncService
         // If same sender, same subject, and same sent time exists anywhere in email_logs
         // or for this mailbox, detect as duplicate so cross-mailbox or multi-sync runs don't dupe it.
         $dupQuery = EmailLog::query()
-            ->where(function ($q) use ($mailbox, $mailboxEmail) {
+            ->where(function ($q) use ($mailbox, $mailboxEmail, $scopedClientId) {
                 $q->where('synced_email_id', $mailbox->id)
-                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail])
-                    ->orWhereNotNull('client_id');
+                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+                if ($scopedClientId === null) {
+                    $q->orWhereNotNull('client_id');
+                }
             })
             ->whereRaw('LOWER(subject) = ?', [$subject]);
 
+        if ($scopedClientId !== null) {
+            $dupQuery->where('client_id', $scopedClientId);
+        }
+
         if ($sender !== '') {
             $dupQuery->where(function ($q) use ($sender, $mailboxEmail) {
-                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%'])
-                    ->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
+                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%'.$sender.'%'])
+                    ->orWhereRaw('LOWER(from_mail) LIKE ?', ['%'.$mailboxEmail.'%']);
             });
         }
 
@@ -863,7 +1004,7 @@ class IncomingEmailSyncService
         return $dupQuery->exists();
     }
 
-    protected function resolveParsedSentTime(array $parsedData): ?\Carbon\Carbon
+    protected function resolveParsedSentTime(array $parsedData): ?Carbon
     {
         foreach (['sent_date', 'received_date'] as $key) {
             if (empty($parsedData[$key])) {
@@ -872,7 +1013,7 @@ class IncomingEmailSyncService
 
             try {
                 return $this->uploadController->parseEmailDateTimeForStorage((string) $parsedData[$key]);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue;
             }
         }
@@ -905,12 +1046,12 @@ class IncomingEmailSyncService
 
             return ! empty($clientRef)
                 ? (string) $clientRef
-                : 'client_' . $clientId;
+                : 'client_'.$clientId;
         }
 
         $safeMailbox = preg_replace('/[^a-zA-Z0-9\-_.@]/', '_', strtolower($mailbox->email));
 
-        return config('imap_sync.unassigned_storage_prefix', 'sync-inbox') . '/' . $safeMailbox;
+        return config('imap_sync.unassigned_storage_prefix', 'sync-inbox').'/'.$safeMailbox;
     }
 
     protected function buildEmlFilename(string $subject, int $uid): string
@@ -920,7 +1061,7 @@ class IncomingEmailSyncService
             $slug = 'message';
         }
 
-        return $slug . '-' . $uid . '.eml';
+        return $slug.'-'.$uid.'.eml';
     }
 
     protected function markSyncError(Email $mailbox, string $error): void
@@ -935,7 +1076,7 @@ class IncomingEmailSyncService
      */
     public static function todaySyncRangeLabel(): string
     {
-        return 'Today (from ' . self::formatTodaySyncStartForDisplay() . ')';
+        return 'Today (from '.self::formatTodaySyncStartForDisplay().')';
     }
 
     /**
@@ -956,7 +1097,7 @@ class IncomingEmailSyncService
             return 'From 10 Aug 2026';
         }
 
-        return 'From ' . $floor->format('j M Y') . ' (delete older unassigned)';
+        return 'From '.$floor->format('j M Y').' (delete older unassigned)';
     }
 
     /**
@@ -1033,7 +1174,7 @@ class IncomingEmailSyncService
         $floor = self::resolveUnassignedAvailableFrom();
         $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
 
-        return 'Remove before ' . $date . ' from this list (CRM DB only)';
+        return 'Remove before '.$date.' from this list (CRM DB only)';
     }
 
     public static function deleteUnassignedDbAndZohoLabel(): string
@@ -1041,7 +1182,7 @@ class IncomingEmailSyncService
         $floor = self::resolveUnassignedAvailableFrom();
         $date = $floor ? $floor->format('j M Y') : '10 Aug 2026';
 
-        return 'Remove before ' . $date . ' from this list (CRM + Zoho)';
+        return 'Remove before '.$date.' from this list (CRM + Zoho)';
     }
 
     public static function isPurgeOnlySyncRange(string $range): bool
@@ -1070,7 +1211,7 @@ class IncomingEmailSyncService
     /**
      * Earliest calendar date when unassigned synced mail may appear (app timezone).
      */
-    public static function resolveUnassignedAvailableFrom(): ?\Carbon\Carbon
+    public static function resolveUnassignedAvailableFrom(): ?Carbon
     {
         $raw = trim((string) config('imap_sync.unassigned_available_from', '2026-08-10'));
         if ($raw === '') {
@@ -1080,8 +1221,8 @@ class IncomingEmailSyncService
         try {
             $timezone = (string) config('app.timezone', 'UTC');
 
-            return \Carbon\Carbon::parse($raw, $timezone)->startOfDay();
-        } catch (\Throwable) {
+            return Carbon::parse($raw, $timezone)->startOfDay();
+        } catch (Throwable) {
             return null;
         }
     }
@@ -1090,7 +1231,7 @@ class IncomingEmailSyncService
      * Earliest calendar date for Zoho Sent-folder sync (app timezone).
      * Incoming/INBOX sync ignores this floor.
      */
-    public static function resolveSentAvailableFrom(): ?\Carbon\Carbon
+    public static function resolveSentAvailableFrom(): ?Carbon
     {
         $raw = trim((string) config('imap_sync.sent_available_from', '2026-08-12'));
         if ($raw === '') {
@@ -1100,8 +1241,8 @@ class IncomingEmailSyncService
         try {
             $timezone = (string) config('app.timezone', 'UTC');
 
-            return \Carbon\Carbon::parse($raw, $timezone)->startOfDay();
-        } catch (\Throwable) {
+            return Carbon::parse($raw, $timezone)->startOfDay();
+        } catch (Throwable) {
             return null;
         }
     }
@@ -1109,18 +1250,18 @@ class IncomingEmailSyncService
     /**
      * Sent sync never fetches earlier than sent_available_from.
      */
-    protected function clampSentSyncSince(?\DateTimeInterface $since): ?\Carbon\Carbon
+    protected function clampSentSyncSince(?\DateTimeInterface $since): ?Carbon
     {
         $floor = self::resolveSentAvailableFrom();
         if ($floor === null) {
-            return $since !== null ? \Carbon\Carbon::parse($since) : null;
+            return $since !== null ? Carbon::parse($since) : null;
         }
 
         if ($since === null) {
             return $floor->copy();
         }
 
-        $requested = \Carbon\Carbon::parse($since);
+        $requested = Carbon::parse($since);
 
         return $requested->lt($floor) ? $floor->copy() : $requested;
     }
@@ -1128,7 +1269,7 @@ class IncomingEmailSyncService
     /**
      * Earliest datetime for the "From 10 Aug" sync range (app timezone).
      */
-    public static function resolveFrom10AugSyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    public static function resolveFrom10AugSyncSince(?\DateTimeInterface $relativeTo = null): Carbon
     {
         $floor = self::resolveUnassignedAvailableFrom();
         if ($floor !== null) {
@@ -1137,7 +1278,7 @@ class IncomingEmailSyncService
 
         $timezone = (string) config('app.timezone', 'UTC');
         $base = $relativeTo !== null
-            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            ? Carbon::parse($relativeTo)->timezone($timezone)
             : now($timezone);
 
         return $base->copy()->year(2026)->month(8)->day(10)->startOfDay();
@@ -1176,11 +1317,11 @@ class IncomingEmailSyncService
     /**
      * Earliest datetime allowed for the "today" range (app timezone).
      */
-    public static function resolveTodaySyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    public static function resolveTodaySyncSince(?\DateTimeInterface $relativeTo = null): Carbon
     {
         $timezone = (string) config('app.timezone', 'UTC');
         $base = $relativeTo !== null
-            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            ? Carbon::parse($relativeTo)->timezone($timezone)
             : now($timezone);
         [$hour, $minute] = self::todaySyncStartParts();
 
@@ -1190,17 +1331,17 @@ class IncomingEmailSyncService
     /**
      * Earliest datetime allowed for the "yesterday 6:00 am" range (app timezone).
      */
-    public static function resolveYesterday6amSyncSince(?\DateTimeInterface $relativeTo = null): \Carbon\Carbon
+    public static function resolveYesterday6amSyncSince(?\DateTimeInterface $relativeTo = null): Carbon
     {
         $timezone = (string) config('app.timezone', 'UTC');
         $base = $relativeTo !== null
-            ? \Carbon\Carbon::parse($relativeTo)->timezone($timezone)
+            ? Carbon::parse($relativeTo)->timezone($timezone)
             : now($timezone);
 
         return $base->copy()->subDay()->startOfDay()->setTime(6, 0, 0);
     }
 
-    public static function resolveSyncSince(string $range): ?\Carbon\Carbon
+    public static function resolveSyncSince(string $range): ?Carbon
     {
         $normalized = strtolower(trim($range));
         if ($normalized === 'full') {
@@ -1336,7 +1477,7 @@ class IncomingEmailSyncService
         }
 
         $placeholders = implode(',', array_fill(0, count($excluded), '?'));
-        $query->whereRaw('LOWER(email) NOT IN (' . $placeholders . ')', $excluded);
+        $query->whereRaw('LOWER(email) NOT IN ('.$placeholders.')', $excluded);
     }
 
     /**
@@ -1412,7 +1553,7 @@ class IncomingEmailSyncService
     }
 
     /**
-     * @param list<string>|null $mailboxAddresses
+     * @param  list<string>|null  $mailboxAddresses
      */
     public function resetUidTracking(?string $mailboxFilter = null, ?array $mailboxAddresses = null): int
     {
@@ -1526,7 +1667,7 @@ class IncomingEmailSyncService
         }
 
         $query->whereRaw(
-            self::syncedMailEffectiveDateSql() . ' >= ?',
+            self::syncedMailEffectiveDateSql().' >= ?',
             [$availableFrom->format('Y-m-d H:i:s')]
         );
     }
@@ -1566,7 +1707,7 @@ class IncomingEmailSyncService
         $query = EmailLog::query();
         self::applyUnassignedSyncedInboxScopeWithoutAvailabilityFloor($query);
 
-        $query->whereRaw(self::syncedMailEffectiveDateSql() . ' < ?', [$cutoff]);
+        $query->whereRaw(self::syncedMailEffectiveDateSql().' < ?', [$cutoff]);
 
         if ($mailboxAddresses !== null) {
             $normalized = array_values(array_unique(array_filter(array_map(
@@ -1630,7 +1771,8 @@ class IncomingEmailSyncService
                 $mailbox = $mailboxesById->get($mailboxId);
                 if (! $mailbox) {
                     $imapFailed += array_sum(array_map('count', $folders));
-                    $imapErrors[] = 'Mailbox id ' . $mailboxId . ' not found for IMAP delete.';
+                    $imapErrors[] = 'Mailbox id '.$mailboxId.' not found for IMAP delete.';
+
                     continue;
                 }
 
@@ -1645,11 +1787,11 @@ class IncomingEmailSyncService
                         $imapMissing += (int) ($imapResult['missing'] ?? 0);
                         $imapFailed += (int) ($imapResult['failed'] ?? 0);
                         foreach (($imapResult['errors'] ?? []) as $error) {
-                            $imapErrors[] = $mailbox->email . ' / ' . $folderName . ': ' . $error;
+                            $imapErrors[] = $mailbox->email.' / '.$folderName.': '.$error;
                         }
                     } catch (Throwable $e) {
                         $imapFailed += count($uids);
-                        $imapErrors[] = $mailbox->email . ' / ' . $folderName . ': ' . $e->getMessage();
+                        $imapErrors[] = $mailbox->email.' / '.$folderName.': '.$e->getMessage();
                         InboxSyncLogger::error('IMAP purge of unassigned mail failed', [
                             'mailbox' => $mailbox->email,
                             'folder' => $folderName,
@@ -1737,7 +1879,7 @@ class IncomingEmailSyncService
      */
     public static function unassignedInboxCountBreakdown(Staff $staff, ?string $mailboxFilter = null): array
     {
-        $cacheKey = 'unassigned_inbox_breakdown_' . $staff->id . '_' . md5((string) $mailboxFilter);
+        $cacheKey = 'unassigned_inbox_breakdown_'.$staff->id.'_'.md5((string) $mailboxFilter);
 
         return Cache::remember($cacheKey, 120, function () use ($staff, $mailboxFilter) {
             $total = self::countUnassignedSyncedInboxMail($staff, false, $mailboxFilter);
@@ -1883,16 +2025,16 @@ class IncomingEmailSyncService
             return;
         }
 
-        $columnExpr = 'LOWER(COALESCE(' . $column . ', \'\'))';
+        $columnExpr = 'LOWER(COALESCE('.$column.', \'\'))';
 
-        $query->whereRaw($columnExpr . ' = ?', [$email])
-            ->orWhereRaw($columnExpr . ' LIKE ?', ['%<' . $email . '>%'])
-            ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $email . '%']);
+        $query->whereRaw($columnExpr.' = ?', [$email])
+            ->orWhereRaw($columnExpr.' LIKE ?', ['%<'.$email.'>%'])
+            ->orWhereRaw($columnExpr.' LIKE ?', ['%'.$email.'%']);
 
         foreach ([',', ';'] as $separator) {
-            $query->orWhereRaw($columnExpr . ' LIKE ?', [$email . $separator . '%'])
-                ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $separator . $email . $separator . '%'])
-                ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $separator . $email]);
+            $query->orWhereRaw($columnExpr.' LIKE ?', [$email.$separator.'%'])
+                ->orWhereRaw($columnExpr.' LIKE ?', ['%'.$separator.$email.$separator.'%'])
+                ->orWhereRaw($columnExpr.' LIKE ?', ['%'.$separator.$email]);
         }
     }
 
@@ -1913,11 +2055,13 @@ class IncomingEmailSyncService
         foreach ($accounts as $account) {
             if ($account->isSharedWithStaff($staffId)) {
                 $addresses[] = strtolower(trim($account->email));
+
                 continue;
             }
 
             if ($staffEmail && strcasecmp(trim($account->email), trim($staffEmail)) === 0) {
                 $addresses[] = strtolower(trim($account->email));
+
                 continue;
             }
 

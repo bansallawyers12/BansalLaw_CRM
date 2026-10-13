@@ -5,32 +5,42 @@ namespace App\Http\Controllers\CRM;
 use App\Exceptions\EmailUploadException;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
-use Aws\Exception\AwsException;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use Illuminate\Database\QueryException;
-use App\Models\Document;
-use App\Models\EmailLog;
-use App\Models\ActivitiesLog;
-use App\Models\ClientMatter;
-use App\Models\Admin;
 use App\Logging\EmailUploadErrorLogger;
+use App\Models\Admin;
+use App\Models\ClientMatter;
+use App\Models\Document;
+use App\Models\EmailLabel;
+use App\Models\EmailLog;
+use App\Models\EmailLogAttachment;
+use App\Services\Email\ClientEmailUploadDuplicateService;
 use App\Services\Email\EmailCalendarMergeService;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
 use App\Services\EmailSync\UnassignedEmailUploadMatchService;
+use App\Services\PythonEmailCliFallback;
+use App\Services\PythonService;
 use App\Support\EmailTimelineActivity;
 use App\Traits\LogsClientActivity;
+use Aws\Exception\AwsException;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\Process\Process;
 
 /**
  * Modern Email Upload Controller
- * 
+ *
  * Uses Python microservice for .msg email parsing and PDF rendering.
  * This provides better performance, modern code, and PHP 8.2+ compatibility.
  */
@@ -43,6 +53,7 @@ class EmailUploadController extends Controller
      * Python service configuration
      */
     protected $pythonServiceUrl;
+
     protected int $pythonServiceTimeout;
 
     public function __construct()
@@ -83,13 +94,13 @@ class EmailUploadController extends Controller
         $timezone = config('app.timezone', 'Australia/Melbourne');
         $separator = str_contains($path, '?') ? '&' : '?';
 
-        return $this->pythonServiceUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+        return $this->pythonServiceUrl.$path.$separator.'timezone='.urlencode($timezone);
     }
 
     /**
      * Import a parsed .msg file with explicit client/matter context (smart import flow).
      *
-     * @param \Illuminate\Http\UploadedFile $file
+     * @param  UploadedFile  $file
      * @param  array<int, array<string, mixed>>  $attachmentStorage
      * @param  array<string, mixed>  $syncMeta
      * @return array{success: bool, document_id?: int, email_log_id?: int, warnings?: list<string>, notices?: list<string>, error?: string, error_code?: string, technical_error?: string|null, reference?: string}
@@ -114,8 +125,8 @@ class EmailUploadController extends Controller
         $resolvedType = in_array($clientInfo->type, ['client', 'lead'], true) ? $clientInfo->type : $recordType;
 
         if ($clientMatterId > 0) {
-            $belongs = \App\Models\ClientMatter::where('id', $clientMatterId)->where('client_id', $clientId)->exists();
-            if (!$belongs) {
+            $belongs = ClientMatter::where('id', $clientMatterId)->where('client_id', $clientId)->exists();
+            if (! $belongs) {
                 return [
                     'success' => false,
                     'error_code' => 'invalid_matter',
@@ -151,7 +162,7 @@ class EmailUploadController extends Controller
 
     /**
      * Upload and process inbox emails using Python microservice
-     * 
+     *
      * Modern replacement for uploadfetchmail method
      */
     public function uploadInboxEmails(Request $request)
@@ -184,6 +195,7 @@ class EmailUploadController extends Controller
                     'client_id' => $request->client_id,
                     'response' => json_decode($validationResponse->getContent(), true),
                 ]);
+
                 return $validationResponse;
             }
 
@@ -191,13 +203,14 @@ class EmailUploadController extends Controller
 
             $clientId = $request->client_id;
             $clientInfo = Admin::select('client_id')->where('id', $clientId)->first();
-            $clientUniqueId = !empty($clientInfo) ? $clientInfo->client_id : "";
+            $clientUniqueId = ! empty($clientInfo) ? $clientInfo->client_id : '';
 
-            if (!$request->hasfile('email_files')) {
+            if (! $request->hasfile('email_files')) {
                 $this->logEmailUploadFailure('no_files', [
                     'mail_type' => $mailType,
                     'client_id' => $clientId,
                 ]);
+
                 return response()->json([
                     'status' => false,
                     'message' => 'No files uploaded',
@@ -216,7 +229,7 @@ class EmailUploadController extends Controller
                     'error_code' => 'too_many_files',
                     'uploaded' => 0,
                     'failed' => 0,
-                    'errors' => []
+                    'errors' => [],
                 ], 422);
             }
 
@@ -232,14 +245,14 @@ class EmailUploadController extends Controller
 
                     if ($result['success']) {
                         $uploadedCount++;
-                        if (!empty($result['warnings'])) {
+                        if (! empty($result['warnings'])) {
                             $warnings[] = [
                                 'filename' => $this->sanitizedUploadFilename($file),
                                 'original_filename' => $file->getClientOriginalName(),
                                 'warnings' => $result['warnings'],
                             ];
                         }
-                        if (!empty($result['notices'])) {
+                        if (! empty($result['notices'])) {
                             $notices[] = [
                                 'filename' => $this->sanitizedUploadFilename($file),
                                 'original_filename' => $file->getClientOriginalName(),
@@ -275,7 +288,7 @@ class EmailUploadController extends Controller
                         'technical_error' => $e->getMessage(),
                         'reference' => $reference,
                         'file_size' => $file->getSize(),
-                        'file_type' => $file->getMimeType()
+                        'file_type' => $file->getMimeType(),
                     ];
                     $this->logEmailUploadFailure('file_exception', [
                         'mail_type' => $mailType,
@@ -294,16 +307,16 @@ class EmailUploadController extends Controller
             $status = true;
 
             if ($uploadedCount > 0 && $failedCount == 0) {
-                $message = "Successfully uploaded {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '');
+                $message = "Successfully uploaded {$uploadedCount} email".($uploadedCount > 1 ? 's' : '');
                 $status = true;
             } elseif ($uploadedCount > 0 && $failedCount > 0) {
-                $message = "Partially successful: {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '') . " uploaded, {$failedCount} failed";
+                $message = "Partially successful: {$uploadedCount} email".($uploadedCount > 1 ? 's' : '')." uploaded, {$failedCount} failed";
                 $status = true; // Partial success is still considered success
             } elseif ($failedCount > 0) {
-                $message = "Upload failed: {$failedCount} email" . ($failedCount > 1 ? 's' : '') . " could not be processed";
+                $message = "Upload failed: {$failedCount} email".($failedCount > 1 ? 's' : '').' could not be processed';
                 $status = false;
             } else {
-                $message = "No emails were processed";
+                $message = 'No emails were processed';
                 $status = false;
             }
 
@@ -317,13 +330,13 @@ class EmailUploadController extends Controller
                 'errors' => $errors,
                 'warnings' => $warnings,
                 'notices' => $notices,
-                'total_files' => $uploadedCount + $failedCount
+                'total_files' => $uploadedCount + $failedCount,
             ], 200);
 
         } catch (HttpResponseException $e) {
             // Permission failures (ensureCrmRecordAccess) must keep their 403 response.
             throw $e;
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+        } catch (HttpExceptionInterface $e) {
             // abort(403) etc. must keep their HTTP status instead of becoming a 200 JSON.
             throw $e;
         } catch (\Exception $e) {
@@ -332,7 +345,7 @@ class EmailUploadController extends Controller
 
             if (strpos($errorMessage, 'Validation failed') !== false) {
                 $errorMessage = 'File validation failed. Please ensure you\'re uploading Outlook email files only ('
-                    . $this->emailUploadExtensionsLabel() . ', max 30MB each).';
+                    .$this->emailUploadExtensionsLabel().', max 30MB each).';
             } elseif (strpos($errorMessage, 'No files uploaded') !== false) {
                 $errorMessage = 'No files were selected for upload. Please select at least one Outlook email file.';
             }
@@ -346,7 +359,7 @@ class EmailUploadController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Upload failed: ' . $errorMessage,
+                'message' => 'Upload failed: '.$errorMessage,
                 'error_code' => 'unknown',
                 'technical_error' => $e->getMessage(),
                 'reference' => $reference,
@@ -366,16 +379,18 @@ class EmailUploadController extends Controller
                     'client_id' => $request->client_id,
                     'response' => json_decode($validationResponse->getContent(), true),
                 ]);
+
                 return $validationResponse;
             }
 
             $this->ensureCrmRecordAccess((int) $request->client_id);
 
             $file = $request->file('email_files')[0] ?? null;
-            if (!$file) {
+            if (! $file) {
                 $this->logEmailUploadFailure('preview_no_file', [
                     'client_id' => $request->client_id,
                 ]);
+
                 return response()->json([
                     'status' => false,
                     'message' => 'No file uploaded',
@@ -383,13 +398,14 @@ class EmailUploadController extends Controller
             }
 
             $parsedData = $this->parseEmailMetadataWithPython($file);
-            if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
+            if (! $parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && ! $parsedData['success'])) {
                 $this->logEmailUploadFailure('preview_parse', [
                     'client_id' => $request->client_id,
                     'filename' => $file->getClientOriginalName(),
                     'error' => $parsedData['error'] ?? 'Failed to parse email',
                     'technical_error' => $parsedData['technical_error'] ?? null,
                 ]);
+
                 return response()->json([
                     'status' => false,
                     'message' => $parsedData['error'] ?? 'Failed to parse email',
@@ -400,10 +416,10 @@ class EmailUploadController extends Controller
 
             $attachments = [];
             foreach ($parsedData['attachments'] ?? [] as $index => $attachmentData) {
-                if (!$this->shouldPromptAttachmentStorage($attachmentData)) {
+                if (! $this->shouldPromptAttachmentStorage($attachmentData)) {
                     continue;
                 }
-                $filename = $attachmentData['display_name'] ?? $attachmentData['filename'] ?? ('attachment_' . ($index + 1));
+                $filename = $attachmentData['display_name'] ?? $attachmentData['filename'] ?? ('attachment_'.($index + 1));
                 $attachments[] = [
                     'index' => $index,
                     'filename' => $filename,
@@ -425,7 +441,7 @@ class EmailUploadController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to preview attachments: ' . $e->getMessage(),
+                'message' => 'Failed to preview attachments: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -470,7 +486,7 @@ class EmailUploadController extends Controller
                 ->where('subject', $subject)
                 ->where('from_mail', $sender);
 
-            if (!empty($parsedData['sent_date'])) {
+            if (! empty($parsedData['sent_date'])) {
                 $sentDate = $this->parseEmailDateTimeForStorage($parsedData['sent_date']);
                 if ($sentDate) {
                     $dupQuery->where('fetch_mail_sent_time', $sentDate);
@@ -492,12 +508,17 @@ class EmailUploadController extends Controller
      * @param  array<string, mixed>  $parsedData
      * @param  array<string, mixed>  $syncMeta
      */
-    protected function findExistingSyncedEmailLog(array $parsedData, string $fileHash, array $syncMeta): ?EmailLog
-    {
+    protected function findExistingSyncedEmailLog(
+        array $parsedData,
+        string $fileHash,
+        array $syncMeta,
+        ?int $clientId = null
+    ): ?EmailLog {
         $mailboxEmail = strtolower(trim((string) ($syncMeta['mailbox_email'] ?? '')));
         $syncedEmailId = (int) ($syncMeta['synced_email_id'] ?? 0);
         $imapUid = (int) ($syncMeta['imap_uid'] ?? 0);
         $mailType = (string) ($syncMeta['mail_body_type'] ?? $syncMeta['mail_type'] ?? 'inbox');
+        $clientId = $clientId !== null && $clientId > 0 ? $clientId : null;
 
         $scope = EmailLog::query()->where(function ($q) use ($syncedEmailId, $mailboxEmail) {
             if ($syncedEmailId > 0) {
@@ -507,6 +528,10 @@ class EmailUploadController extends Controller
                 $q->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
             }
         });
+
+        if ($clientId !== null) {
+            $scope->where('client_id', $clientId);
+        }
 
         if ($fileHash !== '') {
             $byHash = (clone $scope)->where('file_hash', $fileHash)->first();
@@ -521,7 +546,7 @@ class EmailUploadController extends Controller
             $byMessageId = (clone $scope)->where(function ($q) use ($messageId, $normalized) {
                 $q->where('message_id', $messageId)
                     ->orWhere('message_id', $normalized)
-                    ->orWhere('message_id', '<' . $normalized . '>');
+                    ->orWhere('message_id', '<'.$normalized.'>');
             })->first();
             if ($byMessageId) {
                 return $byMessageId;
@@ -547,9 +572,9 @@ class EmailUploadController extends Controller
         $fuzzy = (clone $scope)->whereRaw('LOWER(subject) = ?', [$subject]);
         if ($sender !== '') {
             $fuzzy->where(function ($q) use ($sender, $mailboxEmail) {
-                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%']);
+                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%'.$sender.'%']);
                 if ($mailboxEmail !== '') {
-                    $q->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
+                    $q->orWhereRaw('LOWER(from_mail) LIKE ?', ['%'.$mailboxEmail.'%']);
                 }
             });
         }
@@ -581,9 +606,9 @@ class EmailUploadController extends Controller
             : null;
 
         $message = 'This email already exists for this matter.';
-        $message .= ' Subject: "' . $subject . '" from ' . $from;
+        $message .= ' Subject: "'.$subject.'" from '.$from;
         if ($sent) {
-            $message .= ' (sent ' . $sent . ')';
+            $message .= ' (sent '.$sent.')';
         }
 
         return $message;
@@ -591,13 +616,13 @@ class EmailUploadController extends Controller
 
     /**
      * Process individual email file using Python microservice
-     * 
-     * @param \Illuminate\Http\UploadedFile $file
-     * @param int $clientId
-     * @param string $clientUniqueId
-     * @param string $mailType (inbox|sent)
-     * @param Request $request
-     * @param array<string, mixed>|null $syncMeta
+     *
+     * @param  UploadedFile  $file
+     * @param  int  $clientId
+     * @param  string  $clientUniqueId
+     * @param  string  $mailType  (inbox|sent)
+     * @param  Request  $request
+     * @param  array<string, mixed>|null  $syncMeta
      * @return array
      */
     protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request, ?array $syncMeta = null, ?array $preParsedData = null)
@@ -612,7 +637,7 @@ class EmailUploadController extends Controller
                 throw new EmailUploadException(
                     'file_empty',
                     'The email file is empty (0 bytes). Browsers cannot read emails dragged directly from Outlook. '
-                    . 'Save the email from Outlook as a .msg or .eml file, then upload the saved file.'
+                    .'Save the email from Outlook as a .msg or .eml file, then upload the saved file.'
                 );
             }
 
@@ -621,13 +646,13 @@ class EmailUploadController extends Controller
 
             // Sanitized name is used for S3 keys, document records, and Python parsing.
             $sanitizedFileName = $fileName;
-            $uniqueFileName = time() . '_' . $sanitizedFileName;
+            $uniqueFileName = time().'_'.$sanitizedFileName;
             $docType = 'conversion_email_fetch';
 
             // 1. Parse email using Python microservice (reuse sync pre-parse when PDF already present)
             $parsedData = $this->resolveParsedEmailData($file, $preParsedData, ! empty($syncMeta));
 
-            if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
+            if (! $parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && ! $parsedData['success'])) {
                 $parseError = (string) ($parsedData['error'] ?? 'Failed to parse email');
                 if (in_array($parseError, ['Failed to parse email', 'Email parsing failed'], true)) {
                     $parseError = 'Failed to parse email file. The file may be corrupted or in an unsupported format.';
@@ -645,9 +670,9 @@ class EmailUploadController extends Controller
                 : ($request->upload_inbox_mail_client_matter_id ?? $request->client_matter_id ?? $request->matter_id);
             $matterId = empty($matterId) ? null : (int) $matterId;
 
-            if ($matterId && !empty($clientId)) {
-                $belongs = \App\Models\ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
-                if (!$belongs) {
+            if ($matterId && ! empty($clientId)) {
+                $belongs = ClientMatter::where('id', $matterId)->where('client_id', $clientId)->exists();
+                if (! $belongs) {
                     return [
                         'success' => false,
                         'error_code' => 'invalid_matter',
@@ -666,7 +691,7 @@ class EmailUploadController extends Controller
             );
 
             if (! $request->boolean('force_upload') && ! $isImapSyncMeta && $clientId) {
-                $duplicateBlock = app(\App\Services\Email\ClientEmailUploadDuplicateService::class)
+                $duplicateBlock = app(ClientEmailUploadDuplicateService::class)
                     ->buildManualUploadBlockResponse(
                         (int) $clientId,
                         $matterId,
@@ -679,7 +704,7 @@ class EmailUploadController extends Controller
             }
 
             if (! $request->boolean('force_upload') && $isImapSyncMeta) {
-                $existingSynced = $this->findExistingSyncedEmailLog($parsedData, $fileHash, $syncMeta);
+                $existingSynced = $this->findExistingSyncedEmailLog($parsedData, $fileHash, $syncMeta, $clientId);
                 if ($existingSynced) {
                     return [
                         'success' => true,
@@ -689,12 +714,12 @@ class EmailUploadController extends Controller
                     ];
                 }
             }
-            
+
             // 2. Upload file to S3 (use sanitized filename in path)
             // Ensure all path components are sanitized to prevent 403 errors
             $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
-            $filePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
-            
+            $filePath = $sanitizedClientId.'/'.$docType.'/'.$mailType.'/'.$uniqueFileName;
+
             // Upload to S3 with error handling
             try {
                 $fileContents = file_get_contents($file->getPathname());
@@ -706,11 +731,11 @@ class EmailUploadController extends Controller
                 }
 
                 $uploadResult = $this->emailUploadStorage()->put($filePath, $fileContents);
-                if (!$uploadResult) {
+                if (! $uploadResult) {
                     throw new EmailUploadException(
                         'storage_upload_failed',
                         'The email file could not be written to S3 storage (the storage service rejected the write). '
-                        . 'Check the S3 bucket configuration and credentials.'
+                        .'Check the S3 bucket configuration and credentials.'
                     );
                 }
             } catch (EmailUploadException $e) {
@@ -733,14 +758,14 @@ class EmailUploadController extends Controller
             } catch (\Exception $urlException) {
                 throw new EmailUploadException(
                     'storage_url_failed',
-                    'The email file was stored but its URL could not be generated: ' . $urlException->getMessage(),
+                    'The email file was stored but its URL could not be generated: '.$urlException->getMessage(),
                     $urlException->getMessage(),
                     $urlException
                 );
             }
 
             // 3. Save document record
-            $document = new Document();
+            $document = new Document;
             $document->file_name = pathinfo($fileName, PATHINFO_FILENAME);
             $document->filetype = pathinfo($fileName, PATHINFO_EXTENSION);
             $document->user_id = $actingUserId;
@@ -776,7 +801,7 @@ class EmailUploadController extends Controller
             }
 
             // 4. Save to EmailLog
-            $mailReport = new EmailLog();
+            $mailReport = new EmailLog;
             $mailReport->user_id = $actingUserId;
             $mailReport->from_mail = $parsedData['sender_email'] ?? '';
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
@@ -805,10 +830,10 @@ class EmailUploadController extends Controller
             $mailReport->pdf_doc_id = $pdfDocumentId;
             $mailReport->client_matter_id = $document->client_matter_id;
 
-            if (!empty($parsedData['text_preview'])) {
+            if (! empty($parsedData['text_preview'])) {
                 $preview = (string) $parsedData['text_preview'];
-                $mailReport->text_preview = \App\Models\EmailLog::isCalendarPayload($preview)
-                    ? \App\Models\EmailLog::plainTextPreview($preview, 200)
+                $mailReport->text_preview = EmailLog::isCalendarPayload($preview)
+                    ? EmailLog::plainTextPreview($preview, 200)
                     : $preview;
             }
 
@@ -817,16 +842,16 @@ class EmailUploadController extends Controller
             // pane does not fall back to an attachment photo gallery.
             if (($mailReport->message === null || trim((string) $mailReport->message) === '')
                 && ! empty($mailReport->text_preview)
-                && ! \App\Models\EmailLog::isCalendarPayload($mailReport->text_preview)
+                && ! EmailLog::isCalendarPayload($mailReport->text_preview)
             ) {
                 $mailReport->message = $this->sanitizeEmailBodyForStorage($mailReport->text_preview);
             }
-            
+
             // Sent time: store a real datetime for PostgreSQL — never locale strings like d/m/Y (DateStyle-dependent)
-            if (!empty($parsedData['sent_date'])) {
+            if (! empty($parsedData['sent_date'])) {
                 $mailReport->fetch_mail_sent_time = $this->parseEmailDateTimeForStorage($parsedData['sent_date']);
             }
-            
+
             // NEW: Add Python AI analysis (optional during IMAP sync to avoid per-message HTTP)
             $skipAnalysis = ! empty($syncMeta) && filter_var(
                 config('imap_sync.skip_python_analysis', true),
@@ -849,16 +874,16 @@ class EmailUploadController extends Controller
                     $mailReport->processed_at = now();
                 }
             }
-            
+
             // NEW: Add metadata
             $mailReport->message_id = $parsedData['message_id'] ?? null;
-            
-            if (!empty($parsedData['received_date'])) {
+
+            if (! empty($parsedData['received_date'])) {
                 $mailReport->received_date = $this->parseEmailDateTimeForStorage($parsedData['received_date']);
             } else {
                 $mailReport->received_date = now();
             }
-            
+
             $mailReport->file_hash = $fileHash;
 
             if (! empty($syncMeta)) {
@@ -866,7 +891,7 @@ class EmailUploadController extends Controller
                 $mailReport->synced_email_id = $syncMeta['synced_email_id'] ?? null;
                 $mailReport->sync_assignment_status = $syncMeta['sync_assignment_status'] ?? null;
                 $mailReport->imap_uid = $syncMeta['imap_uid'] ?? null;
-                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+                if (Schema::hasColumn('email_logs', 'sync_source')) {
                     $mailReport->sync_source = $syncMeta['sync_source'] ?? null;
                 }
                 if (array_key_exists('mail_is_read', $syncMeta) && $syncMeta['mail_is_read'] !== null) {
@@ -878,11 +903,11 @@ class EmailUploadController extends Controller
                 $mailReport->sync_assignment_status = null;
                 $mailReport->imap_uid = null;
                 $mailReport->mailbox_email = null;
-                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+                if (Schema::hasColumn('email_logs', 'sync_source')) {
                     $mailReport->sync_source = EmailLog::SYNC_SOURCE_UPLOAD;
                 }
             }
-            
+
             try {
                 $mailReport->save();
             } catch (QueryException $e) {
@@ -897,26 +922,26 @@ class EmailUploadController extends Controller
             if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
                 foreach ($parsedData['attachments'] as $index => $attachmentData) {
                     try {
-            $origName = $attachmentData['filename'] ?? '';
-            if ($calendarMergeService->isCalendarAttachment(
-                $origName,
-                $attachmentData['content_type'] ?? '',
-                pathinfo($origName, PATHINFO_EXTENSION)
-            )) {
-                $rawIcs = $attachmentData['content'] ?? $attachmentData['data'] ?? null;
-                if (! empty($rawIcs)) {
-                    $decodedIcs = base64_decode((string) $rawIcs, true);
-                    if ($decodedIcs !== false && trim($decodedIcs) !== '') {
-                        $icsAttachments[] = [
-                            'filename' => $origName,
-                            'content' => $decodedIcs,
-                        ];
-                    }
-                }
-            }
-            $storageConfig = $attachmentStorageMap[$origName]
-                ?? $attachmentStorageMap[$attachmentData['display_name'] ?? '']
-                ?? null;
+                        $origName = $attachmentData['filename'] ?? '';
+                        if ($calendarMergeService->isCalendarAttachment(
+                            $origName,
+                            $attachmentData['content_type'] ?? '',
+                            pathinfo($origName, PATHINFO_EXTENSION)
+                        )) {
+                            $rawIcs = $attachmentData['content'] ?? $attachmentData['data'] ?? null;
+                            if (! empty($rawIcs)) {
+                                $decodedIcs = base64_decode((string) $rawIcs, true);
+                                if ($decodedIcs !== false && trim($decodedIcs) !== '') {
+                                    $icsAttachments[] = [
+                                        'filename' => $origName,
+                                        'content' => $decodedIcs,
+                                    ];
+                                }
+                            }
+                        }
+                        $storageConfig = $attachmentStorageMap[$origName]
+                            ?? $attachmentStorageMap[$attachmentData['display_name'] ?? '']
+                            ?? null;
                         $attachmentWarning = $this->saveAttachment(
                             $mailReport->id,
                             $attachmentData,
@@ -934,8 +959,8 @@ class EmailUploadController extends Controller
                         unset($parsedData['attachments'][$index]['content']);
                         unset($parsedData['attachments'][$index]['data']);
                     } catch (\Exception $e) {
-                        $warnings[] = 'Attachment "' . ($attachmentData['filename'] ?? 'unknown')
-                            . '" could not be saved: ' . $e->getMessage();
+                        $warnings[] = 'Attachment "'.($attachmentData['filename'] ?? 'unknown')
+                            .'" could not be saved: '.$e->getMessage();
                         $this->logEmailUploadFailure('attachment_save', [
                             'mail_type' => $mailType,
                             'client_id' => $clientId,
@@ -961,7 +986,7 @@ class EmailUploadController extends Controller
                     if (($calendarResult['merged'] ?? 0) > 0 || ($calendarResult['pending'] ?? 0) > 0) {
                         // Informational only — not a save failure; keep out of warnings[].
                         $notices[] = 'Detected schedule date(s) in this email'
-                            . (($calendarResult['merged'] ?? 0) > 0 ? ' and added to calendar.' : ' (will merge when assigned to a client).');
+                            .(($calendarResult['merged'] ?? 0) > 0 ? ' and added to calendar.' : ' (will merge when assigned to a client).');
                     }
                 } catch (\Throwable $calendarException) {
                     Log::warning('Email calendar merge skipped after upload', [
@@ -973,7 +998,7 @@ class EmailUploadController extends Controller
 
             // 5. Update client matter timestamp
             $matterId = $document->client_matter_id;
-            if (!empty($matterId)) {
+            if (! empty($matterId)) {
                 ClientMatter::touchRecentActivity((int) $matterId, 'email');
             }
 
@@ -987,7 +1012,7 @@ class EmailUploadController extends Controller
                         $matterReference = $matter->client_unique_matter_no;
                     }
                 }
-                
+
                 // Fall back to latest active matter if none found
                 if (empty($matterReference)) {
                     $latestMatter = ClientMatter::where('client_id', $clientId)
@@ -998,7 +1023,7 @@ class EmailUploadController extends Controller
                         $matterReference = $latestMatter->client_unique_matter_no;
                     }
                 }
-                
+
                 // Format subject with matter reference — inbox mail linked to a client is "received"
                 $emailSubject = $parsedData['subject'] ?? 'Email';
                 $subject = $mailType === 'inbox'
@@ -1079,7 +1104,7 @@ class EmailUploadController extends Controller
             if (stripos($rawMessage, 'Failed to connect') !== false || stripos($rawMessage, 'Connection refused') !== false) {
                 $errorCode = 'service_unreachable';
                 $errorMessage = "Cannot connect to the email processing service at {$this->pythonServiceUrl}. "
-                    . "Ensure the Python service is running. ({$rawMessage})";
+                    ."Ensure the Python service is running. ({$rawMessage})";
             } elseif (stripos($rawMessage, 'timed out') !== false || stripos($rawMessage, 'timeout') !== false) {
                 $errorCode = 'timeout';
                 $errorMessage = "The upload timed out. The file may be very large — try again or upload a smaller file. ({$rawMessage})";
@@ -1113,7 +1138,7 @@ class EmailUploadController extends Controller
      */
     protected function newUploadErrorReference(): string
     {
-        return 'EU-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+        return 'EU-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
     }
 
     /**
@@ -1123,7 +1148,7 @@ class EmailUploadController extends Controller
     protected function buildStorageException(\Throwable $e, string $context): EmailUploadException
     {
         $aws = $e;
-        while ($aws !== null && !$aws instanceof AwsException) {
+        while ($aws !== null && ! $aws instanceof AwsException) {
             $aws = $aws->getPrevious();
         }
 
@@ -1132,14 +1157,10 @@ class EmailUploadController extends Controller
             $awsMessage = (string) ($aws->getAwsErrorMessage() ?? $aws->getMessage());
 
             $message = match (true) {
-                in_array($awsCode, ['AccessDenied', 'InvalidAccessKeyId', 'SignatureDoesNotMatch', 'ExpiredToken', 'TokenRefreshRequired'], true)
-                    => "Storage access denied while {$context}. The S3 credentials are invalid, expired, or missing permission for this bucket.",
-                $awsCode === 'NoSuchBucket'
-                    => "Storage bucket not found while {$context}. Check the configured S3 bucket name.",
-                in_array($awsCode, ['RequestTimeout', 'SlowDown', 'ServiceUnavailable'], true)
-                    => "The storage service timed out or is throttling requests while {$context}. Please try again.",
-                default
-                    => "Storage error while {$context}" . ($awsCode !== '' ? " ({$awsCode})" : '') . ': ' . $awsMessage,
+                in_array($awsCode, ['AccessDenied', 'InvalidAccessKeyId', 'SignatureDoesNotMatch', 'ExpiredToken', 'TokenRefreshRequired'], true) => "Storage access denied while {$context}. The S3 credentials are invalid, expired, or missing permission for this bucket.",
+                $awsCode === 'NoSuchBucket' => "Storage bucket not found while {$context}. Check the configured S3 bucket name.",
+                in_array($awsCode, ['RequestTimeout', 'SlowDown', 'ServiceUnavailable'], true) => "The storage service timed out or is throttling requests while {$context}. Please try again.",
+                default => "Storage error while {$context}".($awsCode !== '' ? " ({$awsCode})" : '').': '.$awsMessage,
             };
 
             return new EmailUploadException('storage_upload_failed', $message, $e->getMessage(), $e);
@@ -1147,7 +1168,7 @@ class EmailUploadController extends Controller
 
         return new EmailUploadException(
             'storage_upload_failed',
-            "Storage error while {$context}: " . $e->getMessage(),
+            "Storage error while {$context}: ".$e->getMessage(),
             $e->getMessage(),
             $e
         );
@@ -1163,16 +1184,11 @@ class EmailUploadController extends Controller
         $detail = (string) ($errorInfo[2] ?? $e->getMessage());
 
         [$errorCode, $message] = match (true) {
-            $sqlState === '23502'
-                => ['db_constraint', "Database error while {$context}: a required field is missing ({$detail})."],
-            $sqlState === '23505'
-                => ['db_constraint', "Database error while {$context}: duplicate entry — this email may already exist ({$detail})."],
-            $sqlState === '22P02' || str_contains($e->getMessage(), 'invalid input syntax')
-                => ['db_constraint', "Database error while {$context}: invalid data format for one or more fields ({$detail})."],
-            stripos($e->getMessage(), 'json') !== false
-                => ['db_error', "Database error while {$context}: the email metadata could not be saved as JSON ({$detail})."],
-            default
-                => ['db_error', "Database error while {$context}: {$detail}"],
+            $sqlState === '23502' => ['db_constraint', "Database error while {$context}: a required field is missing ({$detail})."],
+            $sqlState === '23505' => ['db_constraint', "Database error while {$context}: duplicate entry — this email may already exist ({$detail})."],
+            $sqlState === '22P02' || str_contains($e->getMessage(), 'invalid input syntax') => ['db_constraint', "Database error while {$context}: invalid data format for one or more fields ({$detail})."],
+            stripos($e->getMessage(), 'json') !== false => ['db_error', "Database error while {$context}: the email metadata could not be saved as JSON ({$detail})."],
+            default => ['db_error', "Database error while {$context}: {$detail}"],
         };
 
         return new EmailUploadException($errorCode, $message, $e->getMessage(), $e);
@@ -1199,44 +1215,47 @@ class EmailUploadController extends Controller
         $warning = null;
 
         if (empty($parsedData['pdf_base64']) && empty($parsedData['pdf_file_path'])) {
-            if (!empty($parsedData['pdf_error'])) {
-                $warning = 'A PDF preview could not be generated for this email: ' . $parsedData['pdf_error'];
+            if (! empty($parsedData['pdf_error'])) {
+                $warning = 'A PDF preview could not be generated for this email: '.$parsedData['pdf_error'];
                 Log::warning('Email PDF not generated', [
                     'file' => $fileName,
                     'error' => $parsedData['pdf_error'],
                 ]);
             }
+
             return null;
         }
 
         try {
-            $pdfBytes = \App\Services\PythonService::resolvePdfBytesFromParsed($parsedData);
+            $pdfBytes = PythonService::resolvePdfBytesFromParsed($parsedData);
             if ($pdfBytes === null || $pdfBytes === '') {
                 $warning = 'A PDF preview could not be generated for this email (invalid PDF data from the parsing service).';
                 Log::warning('Failed to resolve email PDF from Python service', ['file' => $fileName]);
+
                 return null;
             }
 
             $pdfUniqueFileName = preg_replace('/\.(msg|eml)$/i', '.pdf', $uniqueFileName);
             if ($pdfUniqueFileName === $uniqueFileName) {
-                $pdfUniqueFileName = pathinfo($uniqueFileName, PATHINFO_FILENAME) . '.pdf';
+                $pdfUniqueFileName = pathinfo($uniqueFileName, PATHINFO_FILENAME).'.pdf';
             }
 
-            $pdfFilePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $pdfUniqueFileName;
+            $pdfFilePath = $sanitizedClientId.'/'.$docType.'/'.$mailType.'/'.$pdfUniqueFileName;
 
             $uploadResult = $this->emailUploadStorage()->put($pdfFilePath, $pdfBytes);
-            if (!$uploadResult) {
+            if (! $uploadResult) {
                 $warning = 'The PDF preview for this email could not be stored (the storage service rejected the write).';
                 Log::warning('Failed to upload email PDF to S3', [
                     'file' => $fileName,
                     's3_path' => $pdfFilePath,
                 ]);
+
                 return null;
             }
 
             $pdfFileUrl = $this->emailUploadStorage()->url($pdfFilePath);
 
-            $pdfDocument = new Document();
+            $pdfDocument = new Document;
             $pdfDocument->file_name = pathinfo($fileName, PATHINFO_FILENAME);
             $pdfDocument->filetype = 'pdf';
             $pdfDocument->user_id = Auth::id();
@@ -1252,11 +1271,12 @@ class EmailUploadController extends Controller
 
             return (int) $pdfDocument->id;
         } catch (\Exception $e) {
-            $warning = 'The PDF preview for this email could not be saved: ' . $e->getMessage();
+            $warning = 'The PDF preview for this email could not be saved: '.$e->getMessage();
             Log::warning('Email PDF save failed (upload continues)', [
                 'file' => $fileName,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -1264,7 +1284,7 @@ class EmailUploadController extends Controller
     /**
      * Parse email metadata only (no PDF render) — used for attachment preview before upload.
      *
-     * @param \Illuminate\Http\UploadedFile $file
+     * @param  UploadedFile  $file
      * @return array|null
      */
     protected function parseEmailMetadataWithPython($file)
@@ -1274,8 +1294,8 @@ class EmailUploadController extends Controller
 
     /**
      * Parse email file using Python microservice
-     * 
-     * @param \Illuminate\Http\UploadedFile $file
+     *
+     * @param  UploadedFile  $file
      * @return array|null
      */
     protected function parseEmailWithPython($file)
@@ -1398,8 +1418,8 @@ class EmailUploadController extends Controller
         }
 
         // If HTTP failed or threw connection error, try direct CLI fallback
-        if ($file instanceof \Illuminate\Http\UploadedFile) {
-            $cliFallback = app(\App\Services\PythonEmailCliFallback::class);
+        if ($file instanceof UploadedFile) {
+            $cliFallback = app(PythonEmailCliFallback::class);
             if ($cliFallback->isAvailable()) {
                 $mode = str_contains($path, 'parse-render-pdf') ? 'parse-render-pdf' : 'parse';
                 $cliResult = $cliFallback->parse($file, $mode, $metadataOnly, $timeout);
@@ -1432,9 +1452,9 @@ class EmailUploadController extends Controller
                 'success' => false,
                 'error_code' => $isTimeout ? 'timeout' : 'service_unreachable',
                 'error' => $isTimeout
-                    ? 'Email processing timed out. The file may be very large — try again or upload a smaller file. (' . $rawMessage . ')'
-                    : 'Cannot connect to the email processing service at ' . $this->pythonServiceUrl
-                        . '. Ensure the Python service is running. (' . $rawMessage . ')',
+                    ? 'Email processing timed out. The file may be very large — try again or upload a smaller file. ('.$rawMessage.')'
+                    : 'Cannot connect to the email processing service at '.$this->pythonServiceUrl
+                        .'. Ensure the Python service is running. ('.$rawMessage.')',
                 'technical_error' => $rawMessage,
             ];
         }
@@ -1475,17 +1495,18 @@ class EmailUploadController extends Controller
 
         try {
             Log::info('Python service unreachable. Auto-starting via ensure_python_service.sh...');
-            $process = new \Symfony\Component\Process\Process(['bash', $script]);
+            $process = new Process(['bash', $script]);
             $process->setTimeout(10);
             $process->run();
 
-            $healthUrl = rtrim($this->pythonServiceUrl, '/') . '/health';
+            $healthUrl = rtrim($this->pythonServiceUrl, '/').'/health';
             for ($i = 0; $i < 4; $i++) {
                 usleep(750000); // 0.75s
                 try {
                     $check = Http::timeout(2)->get($healthUrl);
                     if ($check->successful()) {
                         Log::info('Python service recovered via auto-start');
+
                         return true;
                     }
                 } catch (\Throwable) {
@@ -1493,7 +1514,7 @@ class EmailUploadController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('Auto-start of Python service failed: ' . $e->getMessage());
+            Log::warning('Auto-start of Python service failed: '.$e->getMessage());
         }
 
         return false;
@@ -1512,7 +1533,7 @@ class EmailUploadController extends Controller
         };
     }
 
-    protected function extractPythonServiceError(\Illuminate\Http\Client\Response $response): string
+    protected function extractPythonServiceError(Response $response): string
     {
         $body = trim((string) $response->body());
 
@@ -1540,23 +1561,23 @@ class EmailUploadController extends Controller
         }
 
         if ($response->status() >= 500) {
-            return 'Email processing service error (HTTP ' . $response->status() . '). Ensure the Python service is running and up to date.';
+            return 'Email processing service error (HTTP '.$response->status().'). Ensure the Python service is running and up to date.';
         }
 
-        return 'Python service returned status: ' . $response->status();
+        return 'Python service returned status: '.$response->status();
     }
 
     /**
      * Check if Python service is available
-     * 
+     *
      * @return array
      */
     public function checkPythonService()
     {
-        $cliAvailable = app(\App\Services\PythonEmailCliFallback::class)->isAvailable();
+        $cliAvailable = app(PythonEmailCliFallback::class)->isAvailable();
 
         try {
-            $response = Http::timeout(5)->get($this->pythonServiceUrl . '/health');
+            $response = Http::timeout(5)->get($this->pythonServiceUrl.'/health');
 
             return [
                 'status' => $response->successful(),
@@ -1574,17 +1595,17 @@ class EmailUploadController extends Controller
             ];
         }
     }
-    
+
     /**
      * Analyze email content with Python AI service
-     * 
-     * @param array $parsedData
+     *
+     * @param  array  $parsedData
      * @return array|null
      */
     protected function analyzeEmailWithPython($parsedData)
     {
         try {
-            $response = Http::timeout(30)->post($this->pythonServiceUrl . '/email/analyze', [
+            $response = Http::timeout(30)->post($this->pythonServiceUrl.'/email/analyze', [
                 'subject' => $parsedData['subject'] ?? '',
                 'text_content' => $parsedData['text_content'] ?? '',
                 'html_content' => $parsedData['html_content'] ?? '',
@@ -1595,11 +1616,13 @@ class EmailUploadController extends Controller
             if ($response->successful()) {
                 return $response->json();
             }
-            
+
             Log::warning('Python analyzer service unavailable', ['status' => $response->status()]);
+
             return null;
         } catch (\Exception $e) {
             Log::warning('Python analyzer service error', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -1611,18 +1634,18 @@ class EmailUploadController extends Controller
      */
     protected function parseAttachmentStorageMap(Request $request): array
     {
-        if (!$request->filled('attachment_storage')) {
+        if (! $request->filled('attachment_storage')) {
             return [];
         }
 
         $decoded = json_decode((string) $request->input('attachment_storage'), true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
 
         $map = [];
         foreach ($decoded as $item) {
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 continue;
             }
             $key = $item['original_filename'] ?? $item['filename'] ?? null;
@@ -1636,14 +1659,14 @@ class EmailUploadController extends Controller
 
     /**
      * Save attachment to database and S3
-     * 
-     * @param int $mailReportId
-     * @param array $attachmentData
-     * @param string $clientUniqueId
-     * @param array|null $storageConfig
-     * @param Request|null $request
-     * @param int|null $clientId
-     * @param int|null $clientMatterId
+     *
+     * @param  int  $mailReportId
+     * @param  array  $attachmentData
+     * @param  string  $clientUniqueId
+     * @param  array|null  $storageConfig
+     * @param  Request|null  $request
+     * @param  int|null  $clientId
+     * @param  int|null  $clientMatterId
      * @return string|null Warning message when the attachment file could not be stored (record may still exist)
      */
     protected function saveAttachment(
@@ -1654,41 +1677,40 @@ class EmailUploadController extends Controller
         $request = null,
         $clientId = null,
         $clientMatterId = null
-    )
-    {
+    ) {
         $s3Path = null;
         $s3Key = null;
         $warning = null;
         $fileSize = $attachmentData['file_size'] ?? $attachmentData['size'] ?? 0;
         $originalFilename = $attachmentData['filename'] ?? 'unknown';
         $contentType = $attachmentData['content_type'] ?? 'application/octet-stream';
-        $customStem = is_array($storageConfig) && !empty($storageConfig['file_name'])
+        $customStem = is_array($storageConfig) && ! empty($storageConfig['file_name'])
             ? (string) $storageConfig['file_name']
             : null;
         $displayName = $this->buildAttachmentDisplayName($originalFilename, $contentType, $customStem);
-        
+
         try {
             // Check for both 'content' and 'data' keys (Python service uses 'data')
             $attachmentContent = $attachmentData['content'] ?? $attachmentData['data'] ?? null;
-            
+
             $decodedData = null;
-            if (!empty($attachmentContent)) {
+            if (! empty($attachmentContent)) {
                 // Decode base64-encoded attachment data
                 $decodedData = base64_decode($attachmentContent, true);
-                
+
                 // Validate base64 decode succeeded
                 if ($decodedData === false) {
-                    $warning = 'Attachment "' . $displayName . '" could not be decoded and was recorded without its file.';
+                    $warning = 'Attachment "'.$displayName.'" could not be decoded and was recorded without its file.';
                     Log::warning('Failed to decode base64 attachment data', [
                         'filename' => $attachmentData['filename'] ?? 'unknown',
-                        'content_length' => strlen($attachmentContent)
+                        'content_length' => strlen($attachmentContent),
                     ]);
                     // Continue to create attachment record without file
                 } else {
                     // Validate decoded data size matches expected size (with some tolerance for base64 padding)
                     $expectedSize = $fileSize;
                     $actualSize = strlen($decodedData);
-                    
+
                     // Allow up to 3 bytes difference (base64 padding can cause small differences)
                     if ($expectedSize > 0) {
                         $sizeDifference = abs($actualSize - $expectedSize);
@@ -1697,17 +1719,17 @@ class EmailUploadController extends Controller
                                 'filename' => $attachmentData['filename'] ?? 'unknown',
                                 'expected' => $expectedSize,
                                 'actual' => $actualSize,
-                                'difference' => $sizeDifference
+                                'difference' => $sizeDifference,
                             ]);
                             // Continue anyway, but log the warning
                         }
                     }
-                    
+
                     // Validate minimum size (empty files are suspicious)
                     if ($actualSize === 0) {
-                        $warning = 'Attachment "' . $displayName . '" was empty after decoding and was recorded without its file.';
+                        $warning = 'Attachment "'.$displayName.'" was empty after decoding and was recorded without its file.';
                         Log::warning('Decoded attachment data is empty', [
-                            'filename' => $attachmentData['filename'] ?? 'unknown'
+                            'filename' => $attachmentData['filename'] ?? 'unknown',
                         ]);
                         $decodedData = null;
                     }
@@ -1737,20 +1759,20 @@ class EmailUploadController extends Controller
                 // Default: store under client attachments path (email-only)
                 $attachmentFileName = $displayName;
                 $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
-                $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . uniqid() . '_' . $sanitizedAttachmentFileName;
+                $s3Key = $clientUniqueId.'/attachments/'.time().'_'.uniqid().'_'.$sanitizedAttachmentFileName;
 
                 try {
                     $uploadSuccess = $this->emailUploadStorage()->put($s3Key, $decodedData);
-                    if (!$uploadSuccess) {
+                    if (! $uploadSuccess) {
                         throw new \Exception('S3 upload returned false');
                     }
-                    if (!$this->emailUploadStorage()->exists($s3Key)) {
+                    if (! $this->emailUploadStorage()->exists($s3Key)) {
                         throw new \Exception('File not found in S3 after upload');
                     }
                     $s3Path = $this->emailUploadStorage()->url($s3Key);
                     $fileSize = strlen($decodedData);
                 } catch (\Exception $s3Exception) {
-                    $warning = 'Attachment "' . $displayName . '" could not be stored: ' . $s3Exception->getMessage();
+                    $warning = 'Attachment "'.$displayName.'" could not be stored: '.$s3Exception->getMessage();
                     $this->logEmailUploadFailure('attachment_s3', [
                         'client_id' => $clientId,
                         'email_log_id' => $mailReportId,
@@ -1768,7 +1790,7 @@ class EmailUploadController extends Controller
                 $resolvedExtension = $this->resolveAttachmentExtension($displayName, $contentType);
             }
 
-            \App\Models\EmailLogAttachment::create([
+            EmailLogAttachment::create([
                 'email_log_id' => $mailReportId,
                 'filename' => $displayName,
                 'display_name' => $displayName,
@@ -1788,9 +1810,10 @@ class EmailUploadController extends Controller
                 'email_log_id' => $mailReportId,
                 'attachment' => $attachmentData['filename'] ?? 'unknown',
             ], $e);
+
             // Don't re-throw - allow email upload to continue even if attachment fails
             // Attachment record will still be created (if we got that far) but without file
-            return 'Attachment "' . $displayName . '" could not be saved: ' . $e->getMessage();
+            return 'Attachment "'.$displayName.'" could not be saved: '.$e->getMessage();
         }
     }
 
@@ -1809,7 +1832,7 @@ class EmailUploadController extends Controller
         string $decodedData
     ): ?array {
         $storageType = $storageConfig['storage_type'] ?? '';
-        if (!in_array($storageType, ['personal', 'matter'], true)) {
+        if (! in_array($storageType, ['personal', 'matter'], true)) {
             return null;
         }
 
@@ -1829,18 +1852,18 @@ class EmailUploadController extends Controller
         $customStem = pathinfo($displayName, PATHINFO_FILENAME);
 
         $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
-        $uniqueFileName = time() . '_' . uniqid() . '_' . $this->sanitizeFilename($displayName);
-        $filePath = $sanitizedClientId . '/' . $storageType . '/' . $uniqueFileName;
+        $uniqueFileName = time().'_'.uniqid().'_'.$this->sanitizeFilename($displayName);
+        $filePath = $sanitizedClientId.'/'.$storageType.'/'.$uniqueFileName;
 
         $uploadSuccess = $this->emailUploadStorage()->put($filePath, $decodedData);
-        if (!$uploadSuccess) {
+        if (! $uploadSuccess) {
             throw new \Exception('Failed to upload attachment to document storage.');
         }
 
         $fileUrl = $this->emailUploadStorage()->url($filePath);
         $fileSize = strlen($decodedData);
 
-        $document = new Document();
+        $document = new Document;
         $document->file_name = $customStem;
         $document->filetype = $extension ?: pathinfo($displayName, PATHINFO_EXTENSION);
         $document->user_id = Auth::user()->id;
@@ -1916,7 +1939,7 @@ class EmailUploadController extends Controller
         $extension = $this->resolveAttachmentExtension($originalFilename, $contentType);
 
         if ($extension === '') {
-            $extension = $this->resolveAttachmentExtension('file.' . pathinfo($originalFilename, PATHINFO_EXTENSION), $contentType);
+            $extension = $this->resolveAttachmentExtension('file.'.pathinfo($originalFilename, PATHINFO_EXTENSION), $contentType);
         }
 
         $stemSource = $customStem ?? pathinfo($originalFilename, PATHINFO_FILENAME);
@@ -1925,7 +1948,7 @@ class EmailUploadController extends Controller
             $stem = 'attachment';
         }
 
-        return $extension !== '' ? ($stem . '.' . $extension) : $stem;
+        return $extension !== '' ? ($stem.'.'.$extension) : $stem;
     }
 
     /**
@@ -1960,7 +1983,7 @@ class EmailUploadController extends Controller
             $text = '';
         }
         if ($calendarSource !== '' && ! $this->emailBodyHasVisibleText($text) && ! $this->emailBodyHasVisibleText($html)) {
-            $text = \App\Models\EmailLog::summarizeCalendarPayload($calendarSource);
+            $text = EmailLog::summarizeCalendarPayload($calendarSource);
         }
 
         // Prefer HTML only when it has readable text (not merely signature <img> tags).
@@ -1982,7 +2005,7 @@ class EmailUploadController extends Controller
 
     protected function isCalendarPayload(?string $content): bool
     {
-        return \App\Models\EmailLog::isCalendarPayload($content);
+        return EmailLog::isCalendarPayload($content);
     }
 
     /**
@@ -2033,9 +2056,9 @@ class EmailUploadController extends Controller
 
     /**
      * Auto-assign labels based on sender domain
-     * 
-     * @param \App\Models\EmailLog $mailReport
-     * @param string $mailType
+     *
+     * @param  EmailLog  $mailReport
+     * @param  string  $mailType
      */
     protected function autoAssignLabels($mailReport, $mailType)
     {
@@ -2048,25 +2071,25 @@ class EmailUploadController extends Controller
             if (! is_array($companyDomains)) {
                 $companyDomains = [];
             }
-            
+
             // Check if email is from our company domains
             $isFromCompany = false;
             $senderEmail = strtolower($mailReport->from_mail);
-            
+
             foreach ($companyDomains as $domain) {
                 if (str_contains($senderEmail, $domain)) {
                     $isFromCompany = true;
                     break;
                 }
             }
-            
+
             // Assign "Sent" label if from company domain, otherwise "Inbox" label
             $labelName = $isFromCompany ? 'Sent' : 'Inbox';
-            
-            $label = \App\Models\EmailLabel::where('name', $labelName)
+
+            $label = EmailLabel::where('name', $labelName)
                 ->where('type', 'system')
                 ->first();
-            
+
             if ($label) {
                 $mailReport->labels()->attach($label->id);
             }
@@ -2078,8 +2101,8 @@ class EmailUploadController extends Controller
     /**
      * Sanitize filename for use in S3 file paths
      * Prevents 403 errors caused by special characters in filenames
-     * 
-     * @param string $filename Original filename
+     *
+     * @param  string  $filename  Original filename
      * @return string Sanitized filename safe for S3 paths
      */
     protected function sanitizeFilename(string $filename): string
@@ -2094,18 +2117,18 @@ class EmailUploadController extends Controller
         $sanitizedName = trim($sanitizedName, '_');
 
         if ($sanitizedName === '') {
-            $sanitizedName = 'email_' . time();
+            $sanitizedName = 'email_'.time();
         }
 
-        $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
+        $sanitizedFilename = $extension !== '' ? $sanitizedName.'.'.$extension : $sanitizedName;
 
         if (strlen($sanitizedFilename) > 100) {
             $maxNameLength = 100 - strlen($extension) - ($extension !== '' ? 1 : 0);
             if ($maxNameLength > 16) {
                 $sanitizedName = substr($sanitizedName, 0, $maxNameLength);
-                $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
+                $sanitizedFilename = $extension !== '' ? $sanitizedName.'.'.$extension : $sanitizedName;
             } else {
-                $sanitizedFilename = 'email_' . time() . ($extension !== '' ? '.' . $extension : '');
+                $sanitizedFilename = 'email_'.time().($extension !== '' ? '.'.$extension : '');
             }
         }
 
@@ -2122,9 +2145,8 @@ class EmailUploadController extends Controller
     /**
      * Join parsed recipient lists from the Python service for email_logs storage.
      *
-     * @param array  $parsedData
-     * @param string $primaryKey   e.g. to_recipients, cc_recipients
-     * @param string|null $fallbackKey Legacy key (recipients = To only)
+     * @param  string  $primaryKey  e.g. to_recipients, cc_recipients
+     * @param  string|null  $fallbackKey  Legacy key (recipients = To only)
      */
     protected function formatParsedRecipientList(array $parsedData, string $primaryKey, ?string $fallbackKey = null): string
     {
@@ -2145,7 +2167,7 @@ class EmailUploadController extends Controller
             if ($entry === '' || str_contains($entry, 'object at 0x')) {
                 continue;
             }
-            $normalizedEntry = \App\Services\EmailSync\IncomingEmailSyncService::normalizeRecipientEntry($entry);
+            $normalizedEntry = IncomingEmailSyncService::normalizeRecipientEntry($entry);
             if ($normalizedEntry !== '') {
                 $normalized[] = $normalizedEntry;
             }
@@ -2230,7 +2252,7 @@ class EmailUploadController extends Controller
     protected function emailUploadExtensionsLabel(): string
     {
         return implode(', ', array_map(
-            static fn (string $ext) => '.' . $ext,
+            static fn (string $ext) => '.'.$ext,
             $this->allowedEmailUploadExtensions()
         ));
     }
@@ -2255,7 +2277,7 @@ class EmailUploadController extends Controller
         }
 
         $path = $file->getRealPath();
-        if (!$path || !is_readable($path)) {
+        if (! $path || ! is_readable($path)) {
             return null;
         }
 
@@ -2280,20 +2302,20 @@ class EmailUploadController extends Controller
 
     protected function resolveEmailUploadFilename($file): string
     {
-        $originalName = $file instanceof \Illuminate\Http\UploadedFile
+        $originalName = $file instanceof UploadedFile
             ? (string) $file->getClientOriginalName()
             : (string) $file;
 
         $originalName = $originalName !== '' ? $originalName : 'email.eml';
         $extension = strtolower(ltrim((string) pathinfo($originalName, PATHINFO_EXTENSION), '.'));
 
-        if (!$this->isAllowedEmailUploadExtension($extension) && $file instanceof \Illuminate\Http\UploadedFile) {
+        if (! $this->isAllowedEmailUploadExtension($extension) && $file instanceof UploadedFile) {
             $detected = $this->detectEmailUploadExtension($file);
             if ($detected) {
                 $stem = pathinfo($originalName, PATHINFO_FILENAME);
-                $stem = $stem !== '' ? $stem : 'email_' . time();
+                $stem = $stem !== '' ? $stem : 'email_'.time();
 
-                return $stem . '.' . $detected;
+                return $stem.'.'.$detected;
             }
         }
 
@@ -2364,15 +2386,15 @@ class EmailUploadController extends Controller
 
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1',
-            'email_files.*' => 'file|max:' . $maxKb,
+            'email_files.*' => 'file|max:'.$maxKb,
             'client_id' => 'required',
             'type' => 'required|in:client,lead',
         ], [
-            'email_files.required' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
-            'email_files.min' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
+            'email_files.required' => 'Please choose at least one Outlook email file ('.$allowedLabel.').',
+            'email_files.min' => 'Please choose at least one Outlook email file ('.$allowedLabel.').',
             'email_files.*.uploaded' => 'The email file did not finish uploading. This often means the file is larger than PHP allows (upload_max_filesize or post_max_size), the upload was interrupted, or your session expired. Try a smaller .msg/.eml file or refresh the page.',
             'email_files.*.file' => 'One of the selected items is not a valid uploaded file. Refresh the page and try again.',
-            'email_files.*.max' => 'Each Outlook email file must be ' . $maxMbLabel . ' MB or smaller.',
+            'email_files.*.max' => 'Each Outlook email file must be '.$maxMbLabel.' MB or smaller.',
             'client_id.required' => 'Client is required for email upload.',
             'type.required' => 'Upload type is required.',
             'type.in' => 'Upload type must be client or lead.',
@@ -2390,9 +2412,9 @@ class EmailUploadController extends Controller
         }
 
         $matterId = $request->upload_sent_mail_client_matter_id ?? $request->upload_inbox_mail_client_matter_id ?? $request->client_matter_id ?? $request->matter_id;
-        if (!empty($matterId) && !empty($request->client_id)) {
-            $belongs = \App\Models\ClientMatter::where('id', (int)$matterId)->where('client_id', (int)$request->client_id)->exists();
-            if (!$belongs) {
+        if (! empty($matterId) && ! empty($request->client_id)) {
+            $belongs = ClientMatter::where('id', (int) $matterId)->where('client_id', (int) $request->client_id)->exists();
+            if (! $belongs) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Selected matter does not belong to this client.',
@@ -2408,28 +2430,29 @@ class EmailUploadController extends Controller
 
             if ($file->getSize() <= 0) {
                 $emptyFiles[] = $originalName ?: 'Unknown file';
+
                 continue;
             }
 
             $extension = strtolower((string) $file->getClientOriginalExtension());
 
-            if (!$this->isAllowedEmailUploadExtension($extension)) {
+            if (! $this->isAllowedEmailUploadExtension($extension)) {
                 $detected = $this->detectEmailUploadExtension($file);
-                if (!$detected) {
+                if (! $detected) {
                     $invalidFiles[] = $originalName ?: 'Unknown file';
                 }
             }
         }
 
-        if (!empty($emptyFiles)) {
+        if (! empty($emptyFiles)) {
             return response()->json([
                 'status' => false,
                 'message' => 'One or more uploaded files are empty (0 bytes). '
-                    . 'Browsers cannot read emails dragged directly from Outlook. '
-                    . 'Save the email from Outlook as a .msg or .eml file, then upload the saved file.',
+                    .'Browsers cannot read emails dragged directly from Outlook. '
+                    .'Save the email from Outlook as a .msg or .eml file, then upload the saved file.',
                 'errors' => [
                     'email_files' => array_map(
-                        fn (string $name) => $name . ': file is empty',
+                        fn (string $name) => $name.': file is empty',
                         $emptyFiles
                     ),
                 ],
@@ -2437,8 +2460,8 @@ class EmailUploadController extends Controller
             ], 422);
         }
 
-        if (!empty($invalidFiles)) {
-            $extensionMessage = 'Only Outlook email files are allowed (' . $allowedLabel . ').';
+        if (! empty($invalidFiles)) {
+            $extensionMessage = 'Only Outlook email files are allowed ('.$allowedLabel.').';
 
             return response()->json([
                 'status' => false,
@@ -2568,8 +2591,8 @@ class EmailUploadController extends Controller
     /**
      * Import a synced IMAP message using the same pipeline as manual upload.
      *
-     * @param array<string, mixed> $syncMeta
-     * @param array<string, mixed>|null $preParsedData Reuse sync parse; upgrades to PDF if metadata-only
+     * @param  array<string, mixed>  $syncMeta
+     * @param  array<string, mixed>|null  $preParsedData  Reuse sync parse; upgrades to PDF if metadata-only
      * @return array<string, mixed>
      */
     public function importFromSync(
@@ -2608,4 +2631,3 @@ class EmailUploadController extends Controller
         );
     }
 }
-
