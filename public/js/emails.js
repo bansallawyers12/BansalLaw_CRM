@@ -412,9 +412,9 @@
         if (typeof window.crmShowEmailUploadResultModal === 'function') {
             return window.crmShowEmailUploadResultModal({
                 type: 'warning',
-                title: 'Duplicate Email Exist',
+                title: 'Duplicate Email',
                 message: message,
-                dismissLabel: 'Cancel',
+                dismissLabel: 'Ok',
                 // Continue (force upload) hidden until product re-enables duplicate copies on matter.
                 showContinue: false,
                 continueLabel: 'Continue',
@@ -426,7 +426,7 @@
                     : undefined
             });
         }
-        showUploadNotification(message, 'warning', 'Duplicate Email Exist');
+        showUploadNotification(message, 'warning', 'Duplicate Email');
         return Promise.resolve('cancel');
     }
 

@@ -3222,9 +3222,9 @@ function crmInitOutlookEmailsInterface() {
             if (typeof window.crmShowEmailUploadResultModal === 'function') {
                 return window.crmShowEmailUploadResultModal({
                     type: 'warning',
-                    title: 'Duplicate Email Exist',
+                    title: 'Duplicate Email',
                     message: message,
-                    dismissLabel: 'Cancel',
+                    dismissLabel: 'Ok',
                     // Continue (force upload) hidden until product re-enables duplicate copies on matter.
                     showContinue: false,
                     continueLabel: 'Continue',
@@ -3236,7 +3236,7 @@ function crmInitOutlookEmailsInterface() {
                         : undefined
                 });
             }
-            return showUploadErrorAlert(message, 'Duplicate Email Exist', '', null);
+            return showUploadErrorAlert(message, 'Duplicate Email', '', null);
         }
 
         function rejectedBlockedDuplicateUpload(file, blockedDuplicateError) {
