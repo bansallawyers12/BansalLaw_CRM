@@ -144,32 +144,45 @@ class ClientsController extends Controller
     */
     public function index(Request $request)
 	{
+        $listScope = strtolower(trim((string) $request->get('list', 'master')));
+        if (! in_array($listScope, ['master', 'clients'], true)) {
+            $listScope = 'master';
+        }
+
 		// Check authorization using trait
 		if ($this->hasClientListModuleAccess()) {
-		    $query = $this->getBaseClientQuery();
-            $totalData = $query->count();
-            
-            // Apply filters using trait
-            $query = $this->applyClientFilters($query, $request);
-
             $allowedPerPage = [10, 20, 50, 100, 200];
             $perPage = (int) $request->get('per_page', 20);
-            if (!in_array($perPage, $allowedPerPage, true)) {
+            if (! in_array($perPage, $allowedPerPage, true)) {
                 $perPage = 20;
             }
-            // Clients listing uses infinite scroll in fixed batches of 20.
             $perPage = 20;
-            
-            $lists = $query->sortable(['id' => 'desc'])
-                ->paginate($perPage)
-                ->appends($request->except('page'));
 
-            $unreadEmailCounts = $this->getUnreadEmailCountsByClientIds(
-                $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
-            );
-            $unreadEmailMatterRefs = $this->getUnreadEmailMatterRefsByClientIds(
-                $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
-            );
+            if ($listScope === 'clients') {
+                $baseMatterQuery = $this->getClientsTabMatterListingQuery();
+                $totalData = $baseMatterQuery->count();
+                $query = $this->applyClientMatterListingFilters($baseMatterQuery, $request);
+                $lists = $query->orderByDesc('cm.id')
+                    ->paginate($perPage)
+                    ->appends($request->except('page'));
+                $this->attachMatterListingOpposingPartyNames($lists);
+                $activeMatterRefsByClientId = [];
+                $primaryOpposingPartyByClientId = [];
+            } else {
+                $query = $this->getBaseMasterListQuery();
+                $totalData = $query->count();
+                $query = $this->applyClientFilters($query, $request);
+                $lists = $query->sortable(['id' => 'desc'])
+                    ->paginate($perPage)
+                    ->appends($request->except('page'));
+                $pageClientIds = $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+                $activeMatterRefsByClientId = $this->getActiveMatterRefsByClientIds($pageClientIds);
+                $primaryOpposingPartyByClientId = $this->getPrimaryOpposingPartyNamesByClientIds($pageClientIds);
+            }
+
+            $pageClientIds = $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+            $unreadEmailCounts = $this->getUnreadEmailCountsByClientIds($pageClientIds);
+            $unreadEmailMatterRefs = $this->getUnreadEmailMatterRefsByClientIds($pageClientIds);
 		} else {
 		    $query = $this->getEmptyClientQuery();
             $allowedPerPage = [10, 20, 50, 100, 200];
@@ -182,9 +195,177 @@ class ClientsController extends Controller
 		    $totalData = 0;
             $unreadEmailCounts = [];
             $unreadEmailMatterRefs = [];
+            $activeMatterRefsByClientId = [];
+            $primaryOpposingPartyByClientId = [];
 		}
 		
-		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage', 'unreadEmailCounts', 'unreadEmailMatterRefs']));
+		return view('crm.clients.index', compact([
+            'lists',
+            'totalData',
+            'perPage',
+            'unreadEmailCounts',
+            'unreadEmailMatterRefs',
+            'activeMatterRefsByClientId',
+            'primaryOpposingPartyByClientId',
+            'listScope',
+        ]));
+    }
+
+    /**
+     * Active matter numbers keyed by client id (newest first).
+     *
+     * @param  list<int>  $clientIds
+     * @return array<int, list<string>>
+     */
+    private function getActiveMatterRefsByClientIds(array $clientIds): array
+    {
+        $clientIds = array_values(array_unique(array_filter(array_map('intval', $clientIds))));
+        if ($clientIds === []) {
+            return [];
+        }
+
+        $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
+
+        $rows = DB::table('client_matters as cm')
+            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+            ->whereIn('cm.client_id', $clientIds)
+            ->where('cm.matter_status', 1)
+            ->whereNotNull('cm.client_unique_matter_no')
+            ->where('cm.client_unique_matter_no', '!=', '')
+            ->where(function ($q) use ($closedStages) {
+                $q->whereNull('ws.name')
+                    ->orWhereRaw(
+                        'LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                        $closedStages
+                    );
+            })
+            ->orderByDesc('cm.id')
+            ->get(['cm.client_id', 'cm.client_unique_matter_no']);
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $cid = (int) $row->client_id;
+            $ref = trim((string) $row->client_unique_matter_no);
+            if ($ref === '') {
+                continue;
+            }
+            $grouped[$cid] ??= [];
+            if (! in_array($ref, $grouped[$cid], true)) {
+                $grouped[$cid][] = $ref;
+            }
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Primary other-party name for each client's newest active matter.
+     *
+     * @param  list<int>  $clientIds
+     * @return array<int, string>
+     */
+    private function getPrimaryOpposingPartyNamesByClientIds(array $clientIds): array
+    {
+        $clientIds = array_values(array_unique(array_filter(array_map('intval', $clientIds))));
+        if ($clientIds === [] || ! Schema::hasTable('client_matter_opposing_parties')) {
+            return [];
+        }
+
+        $matters = DB::table('client_matters')
+            ->whereIn('client_id', $clientIds)
+            ->where('matter_status', 1)
+            ->orderByDesc('id')
+            ->get(['id', 'client_id']);
+
+        $matterIdByClient = [];
+        foreach ($matters as $matter) {
+            $cid = (int) $matter->client_id;
+            if (! isset($matterIdByClient[$cid])) {
+                $matterIdByClient[$cid] = (int) $matter->id;
+            }
+        }
+
+        if ($matterIdByClient === []) {
+            return [];
+        }
+
+        $partyNamesByMatterId = $this->getPrimaryOpposingPartyNamesByMatterIds(array_values($matterIdByClient));
+        $result = [];
+        foreach ($matterIdByClient as $clientId => $matterId) {
+            $name = $partyNamesByMatterId[$matterId] ?? '';
+            if ($name !== '') {
+                $result[$clientId] = $name;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * First other-party name keyed by client_matter id (sort_order, then id).
+     *
+     * @param  list<int>  $matterIds
+     * @return array<int, string>
+     */
+    private function getPrimaryOpposingPartyNamesByMatterIds(array $matterIds): array
+    {
+        $matterIds = array_values(array_unique(array_filter(array_map('intval', $matterIds))));
+        if ($matterIds === [] || ! Schema::hasTable('client_matter_opposing_parties')) {
+            return [];
+        }
+
+        $partyColumns = ['client_matter_id', 'name'];
+        if (Schema::hasColumn('client_matter_opposing_parties', 'party_role')) {
+            $partyColumns[] = 'party_role';
+        }
+
+        $parties = DB::table('client_matter_opposing_parties')
+            ->whereIn('client_matter_id', $matterIds)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get($partyColumns);
+
+        $result = [];
+        $defendantLocked = [];
+        foreach ($parties as $party) {
+            $matterId = (int) $party->client_matter_id;
+            $name = trim((string) ($party->name ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $role = strtolower(trim((string) ($party->party_role ?? '')));
+            if ($role === 'defendant') {
+                $result[$matterId] = $name;
+                $defendantLocked[$matterId] = true;
+                continue;
+            }
+
+            if (! isset($result[$matterId]) && empty($defendantLocked[$matterId])) {
+                $result[$matterId] = $name;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Opposing-party display name on Clients-tab matter rows (keyed by client_matter id).
+     */
+    private function attachMatterListingOpposingPartyNames($lists): void
+    {
+        $items = collect(method_exists($lists, 'items') ? $lists->items() : $lists);
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $matterIds = $items->pluck('listing_client_matter_id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+        $namesByMatterId = $this->getPrimaryOpposingPartyNamesByMatterIds($matterIds);
+
+        foreach ($items as $row) {
+            $matterId = (int) ($row->listing_client_matter_id ?? 0);
+            $row->listing_opposing_party_name = $namesByMatterId[$matterId] ?? '';
+        }
     }
 
     public function clientsmatterslist(Request $request)
@@ -233,7 +414,7 @@ class ClientsController extends Controller
                     'ws.name as workflow_stage_name'
                 )
                 ->where('ad.is_archived', '=', '0')
-                ->whereIn('ad.type', ['client', 'lead'])
+                ->where('ad.type', '=', 'client')
                 ->whereNull('ad.is_deleted');
 
             if ($isClosed) {
@@ -246,6 +427,8 @@ class ClientsController extends Controller
                 });
             } else {
                 $query->where('cm.matter_status', '=', '1')
+                    ->whereNotNull('cm.client_unique_matter_no')
+                    ->where('cm.client_unique_matter_no', '!=', '')
                     ->where(function ($q) use ($closedStages) {
                         $q->whereNull('ws.name')
                             ->orWhereRaw(
@@ -321,6 +504,7 @@ class ClientsController extends Controller
 
             $lists = $query->paginate($perPage)->appends($request->except('page'));
             $this->attachMatterListLastActivity($lists);
+            $this->attachMatterListOpposingPartyNames($lists);
         } else {
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
@@ -338,7 +522,7 @@ class ClientsController extends Controller
                     'ws.name as workflow_stage_name'
                 )
                 ->where('ad.is_archived', '=', '0')
-                ->whereIn('ad.type', ['client', 'lead'])
+                ->where('ad.type', '=', 'client')
                 ->whereNull('ad.is_deleted');
 
             if ($isClosed) {
@@ -351,6 +535,8 @@ class ClientsController extends Controller
                 });
             } else {
                 $query->where('cm.matter_status', '=', '1')
+                    ->whereNotNull('cm.client_unique_matter_no')
+                    ->where('cm.client_unique_matter_no', '!=', '')
                     ->where(function ($q) use ($closedStages) {
                         $q->whereNull('ws.name')
                             ->orWhereRaw(
@@ -365,6 +551,7 @@ class ClientsController extends Controller
             $totalData = 0;
             $lists = $query->paginate($perPage);
             $this->attachMatterListLastActivity($lists);
+            $this->attachMatterListOpposingPartyNames($lists);
         }
 
         $viewData = [
@@ -463,6 +650,24 @@ class ClientsController extends Controller
             } catch (\Throwable $e) {
                 $row->last_activity_display = '—';
             }
+        }
+    }
+
+    /**
+     * Attach primary other-party display name onto each matter list row.
+     */
+    private function attachMatterListOpposingPartyNames($lists): void
+    {
+        $items = collect(method_exists($lists, 'items') ? $lists->items() : $lists);
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $matterIds = $items->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+        $namesByMatterId = $this->getPrimaryOpposingPartyNamesByMatterIds($matterIds);
+
+        foreach ($items as $row) {
+            $row->opposing_party_name = $namesByMatterId[(int) ($row->id ?? 0)] ?? '';
         }
     }
 

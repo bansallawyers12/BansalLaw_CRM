@@ -139,6 +139,17 @@
 
                 <div class="card-body">
                     <div class="matters-toolbar">
+                        <ul class="clients-tabs nav" role="tablist" style="margin-bottom: 0.75rem;">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="{{ route('clients.clientsmatterslist') }}">Matters</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ URL::to('/archived') }}">Archived</a>
+                            </li>
+                        </ul>
                         <div class="matters-tabs" role="tablist" aria-label="Matter lists">
                             <button type="button"
                                     class="matters-tab matters-spa-tab {{ $listTab === 'active' ? 'is-active active' : '' }}"

@@ -27,6 +27,22 @@ trait ClientQueries
     }
 
     /**
+     * Non-archived clients and leads (Master List).
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function getBaseMasterListQuery()
+    {
+        $query = Admin::where('is_archived', '=', '0')
+            ->whereIn('type', ['client', 'lead'])
+            ->whereNull('is_deleted');
+
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
+
+        return $query;
+    }
+
+    /**
      * Get empty client query (for no access scenarios)
      *
      * @return \Illuminate\Database\Eloquent\Builder
@@ -121,6 +137,126 @@ trait ClientQueries
 
             if ($start && $end) {
                 $query->whereBetween($dateColumn, [$start, $end]);
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * Active client_matters joined to admins — one row per matter (Clients tab).
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getClientsTabMatterListingQuery()
+    {
+        $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
+
+        $query = DB::table('client_matters as cm')
+            ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+            ->select(
+                'ad.*',
+                'cm.id as listing_client_matter_id',
+                'cm.client_unique_matter_no as listing_matter_ref',
+                'cm.updated_at as matter_row_updated_at'
+            )
+            ->where('ad.is_archived', '=', '0')
+            ->where('ad.type', '=', 'client')
+            ->whereNull('ad.is_deleted')
+            ->where('cm.matter_status', '=', '1')
+            ->whereNotNull('cm.client_unique_matter_no')
+            ->where('cm.client_unique_matter_no', '!=', '')
+            ->where(function ($q) use ($closedStages) {
+                $q->whereNull('ws.name')
+                    ->orWhereRaw(
+                        'LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                        $closedStages
+                    );
+            });
+
+        StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
+        StaffClientVisibility::restrictMatterListToAllocatedClients($query, 'cm', 'ad');
+
+        return $query;
+    }
+
+    /**
+     * Filters for Clients tab matter listing (admins + client_matters join).
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function applyClientMatterListingFilters($query, $request)
+    {
+        if ($request->has('client_id')) {
+            $client_id = $request->input('client_id');
+            if (trim((string) $client_id) !== '') {
+                $query->where('ad.client_id', '=', $client_id);
+            }
+        }
+
+        if ($request->has('name')) {
+            $name = trim((string) $request->input('name'));
+            if ($name !== '') {
+                CrmListingTextSearch::applyToClientMattersJoinQuery($query, $name);
+            }
+        }
+
+        if ($request->has('email')) {
+            $email = $request->input('email');
+            if (trim((string) $email) !== '') {
+                $email = (string) $email;
+                if ($email === 'demo@gmail.com') {
+                    $emailLower = strtolower($email);
+                    $query->where(function ($q) use ($email, $emailLower) {
+                        $q->whereRaw('LOWER(ad.email) = ?', [$emailLower])
+                            ->orWhereRaw('LOWER(ad.email) LIKE ?', ['demo_%@gmail.com']);
+                    });
+                } else {
+                    $query->where('ad.email', $email);
+                }
+            }
+        }
+
+        if ($request->has('phone')) {
+            $phone = trim((string) $request->input('phone'));
+            if ($phone !== '') {
+                if ($phone === '4444444444') {
+                    $query->where(function ($q) use ($phone) {
+                        $q->where(function ($phoneQuery) use ($phone) {
+                            $phoneQuery->where('ad.phone', $phone)
+                                ->orWhere('ad.phone', 'LIKE', $phone . '_%');
+                        })
+                            ->orWhere('ad.country_code', 'LIKE', '%' . $phone . '%')
+                            ->orWhereRaw("(COALESCE(ad.country_code, '') || COALESCE(ad.phone, '')) LIKE ?", ["%{$phone}%"]);
+                    });
+                } else {
+                    $query->where(function ($q) use ($phone) {
+                        $q->where('ad.phone', 'LIKE', '%' . $phone . '%')
+                            ->orWhere('ad.country_code', 'LIKE', '%' . $phone . '%')
+                            ->orWhereRaw("(COALESCE(ad.country_code, '') || COALESCE(ad.phone, '')) LIKE ?", ["%{$phone}%"]);
+                    });
+                }
+            }
+        }
+
+        if ($request->filled('status')) {
+            $query->where('ad.status', $request->input('status'));
+        }
+
+        if (
+            $request->filled('quick_date_range') ||
+            $request->filled('from_date') ||
+            $request->filled('to_date')
+        ) {
+            $dateField = $request->input('date_filter_field', 'created_at') === 'updated_at'
+                ? 'cm.updated_at'
+                : 'cm.created_at';
+            [$start, $end] = $this->resolveClientDateRange($request);
+
+            if ($start && $end) {
+                $query->whereBetween($dateField, [$start, $end]);
             }
         }
 

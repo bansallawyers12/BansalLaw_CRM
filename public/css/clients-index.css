@@ -447,17 +447,26 @@
 /* Client name cell */
 .clients-listing .client-name-cell {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
 }
 
 .clients-listing .client-name-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.clients-listing .client-name-meta__row {
     display: flex;
     flex-direction: row;
     align-items: center;
     flex-wrap: nowrap;
     gap: 8px;
     min-width: 0;
+    max-width: 100%;
 }
 
 .clients-listing .client-name-link {
@@ -471,6 +480,36 @@
     font-size: 0.9375rem;
     text-decoration: none;
     line-height: 1.35;
+}
+
+.clients-listing .client-name-refs {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    margin-top: 1px;
+}
+
+.clients-listing .client-name-ref-line {
+    display: block;
+    color: var(--text-muted, #5e7a90) !important;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none !important;
+    line-height: 1.35;
+}
+
+.clients-listing .client-name-ref-line:hover {
+    color: var(--sidebar-active, #3a6fa8) !important;
+    text-decoration: underline !important;
+}
+
+.clients-listing .client-name-ref-more {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted, #5e7a90);
 }
 
 .clients-listing .client-name-link:hover {

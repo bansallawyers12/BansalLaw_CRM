@@ -181,6 +181,31 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                 $cdnMatterRefLabel = $cdnMatterRow?->client_unique_matter_no;
             }
 
+            // Prefer the current matter's primary other-party name as the hero label.
+            $cdnPartyDisplayName = '';
+            if ($cdnMatterRow && \Illuminate\Support\Facades\Schema::hasTable('client_matter_opposing_parties')) {
+                if (! $cdnMatterRow->relationLoaded('opposingParties')) {
+                    $cdnMatterRow->load('opposingParties');
+                }
+                $cdnFirstParty = $cdnMatterRow->opposingParties
+                    ->sortBy([
+                        fn ($party) => (int) ($party->sort_order ?? 0),
+                        fn ($party) => (int) ($party->id ?? 0),
+                    ])
+                    ->first();
+                $cdnPartyDisplayName = trim((string) ($cdnFirstParty->name ?? ''));
+            }
+            if ($cdnPartyDisplayName !== '') {
+                $cdnFn = $cdnPartyDisplayName;
+                $cdnLn = '';
+                $cdnPartyWords = preg_split('/\s+/', $cdnPartyDisplayName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                if (count($cdnPartyWords) >= 2) {
+                    $cdnInitials = strtoupper(mb_substr($cdnPartyWords[0], 0, 1) . mb_substr($cdnPartyWords[count($cdnPartyWords) - 1], 0, 1));
+                } else {
+                    $cdnInitials = strtoupper(mb_substr($cdnPartyDisplayName, 0, min(2, max(1, mb_strlen($cdnPartyDisplayName)))));
+                }
+            }
+
             $cdnCanReopenClosedMatter = false;
             $cdnReopenRequestedByName = null;
             $cdnReopenRequestedById = (int) ($cdnMatterRow->reopen_requested_by ?? 0);

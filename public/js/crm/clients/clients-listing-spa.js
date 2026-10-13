@@ -1,6 +1,6 @@
 /**
  * Clients listing SPA — no full page reloads for tabs, filters, pagination, bulk actions.
- * Loaded only on /clients index; handles Clients / Archived / Leads tab swaps via AJAX.
+ * Loaded only on /clients index; handles Master List / Clients / Archived tab swaps via AJAX.
  */
 (function ($, window) {
     'use strict';
@@ -388,7 +388,16 @@
 
         $(document).on('click.clientsListingSpa', '#clients-listing-spa-root #clearFilters', function (e) {
             e.preventDefault();
-            loadListing(cfg().routes.clientsIndex || '/clients');
+            var clearUrl = cfg().routes.clientsIndex || '/clients';
+            try {
+                var current = new URL(window.location.href);
+                if (current.searchParams.get('list') === 'clients') {
+                    var u = new URL(clearUrl, window.location.origin);
+                    u.searchParams.set('list', 'clients');
+                    clearUrl = u.toString();
+                }
+            } catch (err) {}
+            loadListing(clearUrl);
         });
 
         $(document).on('click.clientsListingSpa', '#clients-listing-spa-root #clearLeadFilters', function (e) {

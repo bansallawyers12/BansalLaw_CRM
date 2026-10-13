@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Clients Matters List')
 
 @section('styles')
@@ -327,9 +327,15 @@
                                             $createdDisplay = ! empty($list->created_at)
                                                 ? date('d/m/Y', strtotime($list->created_at))
                                                 : '—';
-                                            $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                                            $matterRefForName = trim((string) ($list->client_unique_matter_no ?? ''));
+                                            $clientName = trim((string) ($list->opposing_party_name ?? ''));
+                                            if ($clientName === '') {
+                                                $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                                            }
                                             if ($clientName === '') {
                                                 $clientName = '—';
+                                            } elseif ($matterRefForName !== '') {
+                                                $clientName .= ' (' . $matterRefForName . ')';
                                             }
                                         @endphp
                                         <tr class="matter-data-row" id="id_{{ $list->id }}">

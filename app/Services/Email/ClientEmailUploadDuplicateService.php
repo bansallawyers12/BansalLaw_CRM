@@ -28,6 +28,10 @@ class ClientEmailUploadDuplicateService
     ): ?array {
         $unassigned = $this->unassignedMatchService->findMatchAcrossMailFolders($parsedData, $fileHash);
         if ($unassigned instanceof EmailLog) {
+            if ($this->shouldAllowDuplicateManualUploadInSyncQueue($unassigned)) {
+                return null;
+            }
+
             $summary = $this->unassignedMatchService->summarizeMatch($unassigned);
             $summary['location'] = $this->locationKey($unassigned);
             $summary['location_label'] = $this->locationLabel($unassigned);
@@ -52,6 +56,10 @@ class ClientEmailUploadDuplicateService
             return null;
         }
 
+        if ($this->shouldAllowDuplicateManualUploadInSyncQueue($existing)) {
+            return null;
+        }
+
         $match = $this->summarizeExisting($existing);
 
         return [
@@ -63,6 +71,32 @@ class ClientEmailUploadDuplicateService
             'existing' => $match,
             'existing_match' => $match,
         ];
+    }
+
+    /**
+     * Local only: allow manual .msg/.eml upload when the same message already sits in the
+     * synced Unassigned or Assigned queue so the existing row can show "Manual upload match".
+     */
+    protected function shouldAllowDuplicateManualUploadInSyncQueue(EmailLog $existing): bool
+    {
+        if (! app()->environment('local')) {
+            return false;
+        }
+
+        if ($this->unassignedMatchService->isUnassignedSynced($existing)) {
+            return true;
+        }
+
+        if (! $this->threadMatchService->isManualClientUpload($existing)) {
+            $status = (string) ($existing->sync_assignment_status ?? '');
+            if (in_array($status, ['auto_assigned', 'manual_assigned'], true)
+                && (int) ($existing->client_id ?? 0) > 0
+                && ! empty($existing->synced_email_id)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

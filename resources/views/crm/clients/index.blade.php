@@ -1,6 +1,6 @@
 @extends('layouts.crm_client_detail')
 @include('components.require-tinymce')
-@section('title', 'Clients')
+@section('title', (($listScope ?? 'master') === 'clients') ? 'Clients' : 'Master List')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
@@ -175,9 +175,14 @@
                                 <i class="fa-solid fa-users"></i>
                             </span>
                             <div>
-                                <h4>All Clients</h4>
+                                @php $listScope = $listScope ?? 'master'; @endphp
+                                <h4>{{ $listScope === 'clients' ? 'All Clients' : 'Master List' }}</h4>
                                 <p class="clients-page-header__subtitle">
-                                    {{ number_format($lists->total()) }} {{ Str::plural('client', $lists->total()) }} &middot; Manage and search your client records
+                                    @if($listScope === 'clients')
+                                        {{ number_format($lists->total()) }} active {{ Str::plural('matter', $lists->total()) }} &middot; One row per matter (clients without matters are not listed)
+                                    @else
+                                        {{ number_format($lists->total()) }} {{ Str::plural('record', $lists->total()) }} &middot; Clients and leads in one list
+                                    @endif
                                 </p>
                             </div>
                         </div>
@@ -200,15 +205,16 @@
 
                 <div class="card-body">
                     <div class="clients-toolbar">
+                        @php $listScope = $listScope ?? 'master'; @endphp
                         <ul class="clients-tabs nav" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link active" id="clients-tab" href="{{ URL::to('/clients') }}">Clients</a>
+                                <a class="nav-link {{ $listScope === 'master' ? 'active' : '' }}" id="master-list-tab" href="{{ URL::to('/clients') }}">Master List</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ $listScope === 'clients' ? 'active' : '' }}" id="clients-tab" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="lead-tab" href="{{ URL::to('/leads') }}">Leads</a>
                             </li>
                         </ul>
                         <span class="clients-select-help"><i class="fa-regular fa-square-check"></i> Select clients with the checkboxes on the left</span>
@@ -249,6 +255,9 @@
                             @endif
                         </div>
                         <form action="{{URL::to('/clients')}}" method="get" id="filterForm">
+                            @if(($listScope ?? 'master') === 'clients')
+                                <input type="hidden" name="list" value="clients">
+                            @endif
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -279,11 +288,18 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="type">Record Type</label>
-                                        <select class="form-control" name="type" id="type">
-                                            <option value="">All Types</option>
-                                            <option value="client" {{ request('type') == 'client' ? 'selected' : '' }}>Client</option>
-                                            <option value="lead" {{ request('type') == 'lead' ? 'selected' : '' }}>Lead</option>
-                                        </select>
+                                        @if(($listScope ?? 'master') === 'clients')
+                                            <input type="hidden" name="type" value="client">
+                                            <select class="form-control" id="type" disabled>
+                                                <option value="client" selected>Client</option>
+                                            </select>
+                                        @else
+                                            <select class="form-control" name="type" id="type">
+                                                <option value="">All Types</option>
+                                                <option value="client" {{ request('type') == 'client' ? 'selected' : '' }}>Client</option>
+                                                <option value="lead" {{ request('type') == 'lead' ? 'selected' : '' }}>Lead</option>
+                                            </select>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="col-md-2">
@@ -349,7 +365,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg me-3">Apply Filters</button>
-                                        <a class="btn btn-info" href="{{URL::to('/clients')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{ ($listScope ?? 'master') === 'clients' ? URL::to('/clients?list=clients') : URL::to('/clients') }}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -358,7 +374,7 @@
 
                     @if($lists->total() > 0)
                     <div class="clients-results-bar">
-                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} clients
+                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} {{ ($listScope ?? 'master') === 'clients' ? 'matters' : 'records' }}
                         @if($activeFilterCount > 0)
                             <span class="clients-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
                         @endif
@@ -385,7 +401,13 @@
                             <tbody class="tdata">
                                 @if($lists->count() > 0)
                                     @foreach (@$lists as $list)
-                                    <tr id="id_{{@$list->id}}" class="client-data-row">
+                                    @php
+                                        $isClientsMatterRow = ($listScope ?? 'master') === 'clients';
+                                        $rowDomId = $isClientsMatterRow
+                                            ? ('id_matter_' . (int) ($list->listing_client_matter_id ?? 0))
+                                            : ('id_' . @$list->id);
+                                    @endphp
+                                    <tr id="{{ $rowDomId }}" class="client-data-row" @if($isClientsMatterRow) data-client-matter-id="{{ (int) ($list->listing_client_matter_id ?? 0) }}" @endif>
                                             <td class="client-select-cell">
                                                 <label class="client-row-checkbox" for="checkbox-{{ @$list->id }}" title="Select client">
                                                     <input data-id="{{@$list->id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" data-unread="{{ (int) ($unreadEmailCounts[$list->id] ?? 0) }}" type="checkbox" data-checkboxes="mygroup" class="cb-element your-checkbox" id="checkbox-{{ @$list->id }}">
@@ -393,23 +415,60 @@
                                                 </label>
                                             </td>
                                             <?php
-                                            // Check if active matter exists
-                                            $latestMatter = \DB::table('client_matters')
-                                                ->where('client_id', $list->id)
-                                                ->where('matter_status', 1)
-                                                ->orderByDesc('id')
-                                                ->first();
-                                            $encodedId = base64_encode(convert_uuencode(@$list->id));
-                                            $clientDetailUrl = $latestMatter
-                                                ? URL::to('/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no )
-                                                : URL::to('/clients/detail/'.$encodedId);
                                             $firstName = trim((string) @$list->first_name);
                                             $lastName = trim((string) @$list->last_name);
-                                            $displayName = trim($firstName . ' ' . $lastName);
+                                            $encodedId = base64_encode(convert_uuencode(@$list->id));
+                                            $clientRef = trim((string) ($list->client_id ?? ''));
+                                            $isClientsMatterRow = ($listScope ?? 'master') === 'clients';
+                                            if ($isClientsMatterRow) {
+                                                $primaryMatterRef = trim((string) ($list->listing_matter_ref ?? ''));
+                                                $activeMatterRefs = $primaryMatterRef !== '' ? [$primaryMatterRef] : [];
+                                                $partyDisplayName = trim((string) ($list->listing_opposing_party_name ?? ''));
+                                                $baseDisplayName = $partyDisplayName !== ''
+                                                    ? $partyDisplayName
+                                                    : trim($firstName . ' ' . $lastName);
+                                                $displayName = $baseDisplayName;
+                                                if ($displayName !== '' && $primaryMatterRef !== '') {
+                                                    $displayName .= ' (' . $primaryMatterRef . ')';
+                                                }
+                                                $clientDetailUrl = $primaryMatterRef !== ''
+                                                    ? URL::to('/clients/detail/'.$encodedId.'/'.$primaryMatterRef)
+                                                    : URL::to('/clients/detail/'.$encodedId);
+                                                $nameRefLines = $clientRef !== '' ? [$clientRef] : [];
+                                            } else {
+                                                $activeMatterRefs = $activeMatterRefsByClientId[$list->id] ?? [];
+                                                $primaryMatterRef = $activeMatterRefs[0] ?? null;
+                                                $clientDetailUrl = $primaryMatterRef
+                                                    ? URL::to('/clients/detail/'.$encodedId.'/'.$primaryMatterRef)
+                                                    : URL::to('/clients/detail/'.$encodedId);
+                                                $nameRefLines = [];
+                                                if ($clientRef !== '') {
+                                                    if (count($activeMatterRefs) > 1) {
+                                                        $nameRefLines[] = $clientRef . ' · ' . count($activeMatterRefs) . ' active matters';
+                                                    } elseif (! empty($activeMatterRefs)) {
+                                                        $nameRefLines[] = $clientRef . ' / ' . $activeMatterRefs[0];
+                                                    } else {
+                                                        $nameRefLines[] = $clientRef;
+                                                    }
+                                                }
+                                                $partyDisplayName = trim((string) (($primaryOpposingPartyByClientId ?? [])[$list->id] ?? ''));
+                                                $displayName = $partyDisplayName !== ''
+                                                    ? $partyDisplayName
+                                                    : trim($firstName . ' ' . $lastName);
+                                            }
                                             if ($displayName === '') {
                                                 $displayName = config('constants.empty');
                                             }
-                                            $initials = strtoupper(substr($firstName !== '' ? $firstName : $lastName, 0, 1) . substr($lastName !== '' ? $lastName : $firstName, 0, 1));
+                                            if ($partyDisplayName !== '') {
+                                                $partyWords = preg_split('/\s+/', $partyDisplayName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                                                if (count($partyWords) >= 2) {
+                                                    $initials = strtoupper(substr($partyWords[0], 0, 1) . substr($partyWords[count($partyWords) - 1], 0, 1));
+                                                } else {
+                                                    $initials = strtoupper(substr($partyDisplayName, 0, 2));
+                                                }
+                                            } else {
+                                                $initials = strtoupper(substr($firstName !== '' ? $firstName : $lastName, 0, 1) . substr($lastName !== '' ? $lastName : $firstName, 0, 1));
+                                            }
                                             if ($initials === '') {
                                                 $initials = '?';
                                             }
@@ -425,11 +484,30 @@
                                                 <div class="client-name-cell">
                                                     <span class="client-avatar" aria-hidden="true">{{ $initials }}</span>
                                                     <div class="client-name-meta">
-                                                        <a href="{{ $clientDetailUrl }}" class="client-name-link" title="View client profile">{{ Str::limit($displayName, 50, '...') }}</a>
-                                                        @if($unreadMailCount > 0)
-                                                            <a href="{{ $clientEmailsUrl }}" class="client-unread-mail-badge" title="{{ $unreadMailCount }} unread {{ Str::plural('email', $unreadMailCount) }} — open Emails tab">
-                                                                <i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ $unreadMailCount }}
-                                                            </a>
+                                                        <div class="client-name-meta__row">
+                                                            <a href="{{ $clientDetailUrl }}" class="client-name-link" title="View client profile">{{ Str::limit($displayName, 50, '...') }}</a>
+                                                            @if($unreadMailCount > 0)
+                                                                <a href="{{ $clientEmailsUrl }}" class="client-unread-mail-badge" title="{{ $unreadMailCount }} unread {{ Str::plural('email', $unreadMailCount) }} — open Emails tab">
+                                                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ $unreadMailCount }}
+                                                                </a>
+                                                            @endif
+                                                        </div>
+                                                        @if(! empty($nameRefLines))
+                                                            <div class="client-name-refs" title="{{ implode(', ', $nameRefLines) }}">
+                                                                @foreach($nameRefLines as $idx => $refLine)
+                                                                    @php
+                                                                        $isMultiMatterSummary = ($listScope ?? 'master') === 'master'
+                                                                            && count($activeMatterRefs ?? []) > 1
+                                                                            && $clientRef !== '';
+                                                                        $refHref = $isMultiMatterSummary
+                                                                            ? route('clients.clientsmatterslist', ['client_id' => $clientRef])
+                                                                            : (($activeMatterRefs[$idx] ?? $primaryMatterRef)
+                                                                                ? URL::to('/clients/detail/'.$encodedId.'/'.($activeMatterRefs[$idx] ?? $primaryMatterRef))
+                                                                                : $clientDetailUrl);
+                                                                    @endphp
+                                                                    <a href="{{ $refHref }}" class="client-name-ref-line">{{ $refLine }}</a>
+                                                                @endforeach
+                                                            </div>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -443,15 +521,21 @@
                                             </td>
                                             <td>
                                                 @php
+                                                    $isLeadRecord = strtolower((string) ($list->type ?? '')) === 'lead';
                                                     $isActiveClient = (string) @$list->status === '1';
                                                 @endphp
-                                                <span class="status-badge {{ $isActiveClient ? 'active' : 'inactive' }}">
-                                                    <i class="fa-solid fa-circle"></i> {{ $isActiveClient ? 'Active' : 'Inactive' }}
+                                                <span class="status-badge {{ $isLeadRecord ? 'inactive' : ($isActiveClient ? 'active' : 'inactive') }}">
+                                                    <i class="fa-solid fa-circle"></i> {{ $isLeadRecord ? 'Lead' : ($isActiveClient ? 'Active' : 'Inactive') }}
                                                 </span>
                                             </td>
                                             <td>
-                                                @if(!empty($list->updated_at))
-                                                    {{ \Carbon\Carbon::parse($list->updated_at)->format('d/m/Y') }}
+                                                @php
+                                                    $updatedRaw = $isClientsMatterRow
+                                                        ? ($list->matter_row_updated_at ?? $list->updated_at)
+                                                        : $list->updated_at;
+                                                @endphp
+                                                @if(!empty($updatedRaw))
+                                                    {{ \Carbon\Carbon::parse($updatedRaw)->format('d/m/Y') }}
                                                 @else
                                                     {{ config('constants.empty') }}
                                                 @endif

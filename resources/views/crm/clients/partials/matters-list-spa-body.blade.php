@@ -290,9 +290,15 @@
                         $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
                         $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                         $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
-                        $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                        $matterRefForName = trim((string) ($list->client_unique_matter_no ?? ''));
+                        $clientName = trim((string) ($list->opposing_party_name ?? ''));
+                        if ($clientName === '') {
+                            $clientName = trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''));
+                        }
                         if ($clientName === '') {
                             $clientName = '—';
+                        } elseif ($matterRefForName !== '') {
+                            $clientName .= ' (' . $matterRefForName . ')';
                         }
                     @endphp
                     @if($isClosed)

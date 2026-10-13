@@ -740,13 +740,13 @@
                     <div class="clients-toolbar">
                         <ul class="clients-tabs nav" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients') }}">Clients</a>
+                                <a class="nav-link" id="master-list-tab" href="{{ URL::to('/clients') }}">Master List</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link active" id="lead-tab" href="{{ URL::to('/leads') }}">Leads</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="other-parties-tab" href="{{ route('leads.other_parties.index') }}">Other Parties</a>

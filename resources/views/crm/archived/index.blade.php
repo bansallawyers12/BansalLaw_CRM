@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Clients Archived')
 
 @section('styles')
@@ -64,13 +64,13 @@
                     <div class="clients-toolbar">
                         <ul class="clients-tabs nav" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients') }}">Clients</a>
+                                <a class="nav-link" id="master-list-tab" href="{{ URL::to('/clients') }}">Master List</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link active" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="lead-tab" href="{{ URL::to('/leads') }}">Leads</a>
                             </li>
                         </ul>
                         <span class="clients-select-help"><i class="fa-regular fa-square-check"></i> Select records with the checkboxes on the left</span>
