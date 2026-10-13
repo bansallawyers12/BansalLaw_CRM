@@ -810,10 +810,12 @@ class IncomingEmailSyncService
 
         foreach ($recipientTargets as $target) {
             $clientId = (int) ($target['client_id'] ?? 0);
-            $clientMatterId = (int) ($target['client_matter_id'] ?? 0);
-            if ($clientId <= 0 || $clientMatterId <= 0) {
+            if ($clientId <= 0) {
                 continue;
             }
+
+            $clientMatterId = (int) ($target['client_matter_id'] ?? 0);
+            $clientMatterId = $clientMatterId > 0 ? $clientMatterId : null;
 
             if ($this->isDuplicate(
                 $mailbox,

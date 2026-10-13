@@ -665,8 +665,8 @@ class EmailMatchingService
     }
 
     /**
-     * Distinct clients/leads matched via To/Cc/Bcc addresses with an assignable matter.
-     * Used by IMAP auto-sync to file the same message on every matching recipient client.
+     * Distinct clients/leads matched via To/Cc/Bcc addresses for IMAP multi-recipient fan-out.
+     * Uses an assignable matter when available; otherwise client_matter_id is 0 (file on client only).
      *
      * @param  list<string>|array<string, mixed>  $recipientsOrParsed
      * @return list<array{
@@ -693,13 +693,33 @@ class EmailMatchingService
 
         foreach ($matches as $match) {
             $clientId = (int) ($match['client_id'] ?? 0);
-            $clientMatterId = (int) ($match['client_matter_id'] ?? 0);
-            if ($clientId <= 0 || $clientMatterId <= 0) {
+            if ($clientId <= 0) {
                 continue;
             }
 
             $existing = $byClient[$clientId] ?? null;
-            if ($existing === null || (int) ($match['confidence'] ?? 0) > (int) ($existing['confidence'] ?? 0)) {
+            if ($existing === null) {
+                $byClient[$clientId] = $match;
+
+                continue;
+            }
+
+            $incomingMatterId = (int) ($match['client_matter_id'] ?? 0);
+            $existingMatterId = (int) ($existing['client_matter_id'] ?? 0);
+            $incomingConfidence = (int) ($match['confidence'] ?? 0);
+            $existingConfidence = (int) ($existing['confidence'] ?? 0);
+
+            if ($incomingMatterId > 0 && $existingMatterId <= 0) {
+                $byClient[$clientId] = $match;
+
+                continue;
+            }
+
+            if ($incomingMatterId <= 0 && $existingMatterId > 0) {
+                continue;
+            }
+
+            if ($incomingConfidence > $existingConfidence) {
                 $byClient[$clientId] = $match;
             }
         }
@@ -712,7 +732,7 @@ class EmailMatchingService
                 'client_name' => (string) ($match['client_name'] ?? ''),
                 'email' => (string) ($match['email'] ?? ''),
                 'record_type' => (string) ($match['record_type'] ?? 'client'),
-                'client_matter_id' => (int) $match['client_matter_id'],
+                'client_matter_id' => max(0, (int) ($match['client_matter_id'] ?? 0)),
                 'matter_no' => (string) ($match['matter_no'] ?? ''),
                 'matter_title' => (string) ($match['matter_title'] ?? ''),
                 'matched_by' => 'recipient_email',
