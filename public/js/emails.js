@@ -412,7 +412,7 @@
         if (typeof window.crmShowEmailUploadResultModal === 'function') {
             return window.crmShowEmailUploadResultModal({
                 type: 'warning',
-                title: 'Email already exist',
+                title: 'Duplicate Email Exist',
                 message: message,
                 dismissLabel: 'Cancel',
                 showContinue: true,
@@ -425,7 +425,7 @@
                     : undefined
             });
         }
-        showUploadNotification(message, 'warning', 'Email already exist');
+        showUploadNotification(message, 'warning', 'Duplicate Email Exist');
         return Promise.resolve('cancel');
     }
 

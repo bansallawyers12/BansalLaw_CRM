@@ -3222,7 +3222,7 @@ function crmInitOutlookEmailsInterface() {
             if (typeof window.crmShowEmailUploadResultModal === 'function') {
                 return window.crmShowEmailUploadResultModal({
                     type: 'warning',
-                    title: 'Email already exist',
+                    title: 'Duplicate Email Exist',
                     message: message,
                     dismissLabel: 'Cancel',
                     showContinue: true,
@@ -3235,7 +3235,7 @@ function crmInitOutlookEmailsInterface() {
                         : undefined
                 });
             }
-            return showUploadErrorAlert(message, 'Email already exist', '', null);
+            return showUploadErrorAlert(message, 'Duplicate Email Exist', '', null);
         }
 
         function rejectedBlockedDuplicateUpload(file, blockedDuplicateError) {
