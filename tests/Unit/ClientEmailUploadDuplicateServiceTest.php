@@ -220,4 +220,241 @@ class ClientEmailUploadDuplicateServiceTest extends TestCase
         $this->assertNotNull($block);
         $this->assertSame('existing_email', $block['error_code']);
     }
+
+    #[Test]
+    public function inbox_upload_is_not_blocked_when_subject_from_and_time_match_but_recipient_differs(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'to_mail' => 'viplucmca@yahoo.co.in',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'fetch_mail_sent_time' => Carbon::parse('2026-10-13 22:40:00', 'Australia/Melbourne'),
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'to_recipients' => ['other.person@example.com'],
+                'sent_date' => '2026-10-13 22:40:00',
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNull($block);
+    }
+
+    #[Test]
+    public function inbox_upload_is_still_blocked_when_subject_from_to_and_sent_time_match(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'to_mail' => 'viplucmca@yahoo.co.in',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'fetch_mail_sent_time' => Carbon::parse('2026-10-13 22:40:00', 'Australia/Melbourne'),
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'to_recipients' => ['viplucmca@yahoo.co.in'],
+                'sent_date' => '2026-10-13 22:40:00',
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
+    }
+
+    #[Test]
+    public function inbox_thread_match_allows_upload_when_recipient_differs(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'Re: FAM_1 | Court hearing',
+            'from_mail' => 'client@example.com',
+            'to_mail' => 'matter@example.com',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'Re: Re: FAM_1 | Court hearing',
+                'sender_email' => 'client@example.com',
+                'to_recipients' => ['other.person@example.com'],
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNull($block);
+    }
+
+    #[Test]
+    public function inbox_upload_is_not_blocked_when_message_id_matches_but_recipient_differs(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'to_mail' => 'viplucmca@yahoo.co.in',
+            'message_id' => '<same-message@example.com>',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'message_id' => '<same-message@example.com>',
+                'to_recipients' => ['other.person@example.com'],
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNull($block);
+    }
+
+    #[Test]
+    public function inbox_upload_is_still_blocked_when_message_id_and_recipient_match(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'to_mail' => 'viplucmca@yahoo.co.in',
+            'message_id' => '<same-message@example.com>',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'message_id' => '<same-message@example.com>',
+                'to_recipients' => ['viplucmca@yahoo.co.in'],
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
+    }
+
+    #[Test]
+    public function inbox_upload_is_still_blocked_when_message_id_matches_and_recipient_is_missing(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'message_id' => '<same-message@example.com>',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'message_id' => '<same-message@example.com>',
+            ],
+            '',
+            'inbox'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
+    }
+
+    #[Test]
+    public function inbox_upload_is_still_blocked_when_file_hash_matches(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'test vip',
+            'from_mail' => 'Vipul_Devlop.bi@outlook.com',
+            'to_mail' => 'viplucmca@yahoo.co.in',
+            'file_hash' => 'abc123samefile',
+            'client_id' => 10,
+            'client_matter_id' => 20,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            10,
+            20,
+            [
+                'subject' => 'test vip',
+                'sender_email' => 'Vipul_Devlop.bi@outlook.com',
+                'to_recipients' => ['other.person@example.com'],
+            ],
+            'abc123samefile',
+            'inbox'
+        );
+
+        $this->assertNotNull($block);
+        $this->assertSame('existing_email', $block['error_code']);
+    }
 }

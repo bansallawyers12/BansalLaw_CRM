@@ -139,7 +139,8 @@ class ClientEmailUploadDuplicateService
                     ->orWhere('message_id', $normalized)
                     ->orWhere('message_id', '<'.$normalized.'>');
             })->first();
-            if ($byMessageId) {
+            if ($byMessageId instanceof EmailLog
+                && ($mailType === 'sent' || ! $this->incomingPrimaryRecipientsDiffer($parsedData, $byMessageId))) {
                 return $byMessageId;
             }
         }
@@ -163,6 +164,9 @@ class ClientEmailUploadDuplicateService
                     continue;
                 }
                 if ($mailType === 'sent' && ! $this->parsedPrimaryRecipientMatchesStoredTo($parsedData, $row)) {
+                    continue;
+                }
+                if ($mailType !== 'sent' && $this->incomingPrimaryRecipientsDiffer($parsedData, $row)) {
                     continue;
                 }
 
@@ -197,6 +201,9 @@ class ClientEmailUploadDuplicateService
             if ($sender !== '' && ! str_contains(mb_strtolower((string) $candidate->from_mail), $sender)) {
                 continue;
             }
+            if ($this->incomingPrimaryRecipientsDiffer($parsedData, $candidate)) {
+                continue;
+            }
 
             return $candidate;
         }
@@ -222,6 +229,23 @@ class ClientEmailUploadDuplicateService
         }
 
         return null;
+    }
+
+    /**
+     * Incoming uploads stay duplicates when either To address is missing.
+     * They are different emails only when both primary To addresses exist and differ.
+     *
+     * @param  array<string, mixed>  $parsedData
+     */
+    protected function incomingPrimaryRecipientsDiffer(array $parsedData, EmailLog $existing): bool
+    {
+        $parsedPrimary = $this->primaryRecipientEmailFromParsed($parsedData);
+        $storedPrimary = $this->primaryRecipientEmailFromStored((string) ($existing->to_mail ?? ''));
+        if ($parsedPrimary === null || $storedPrimary === null) {
+            return false;
+        }
+
+        return $parsedPrimary !== $storedPrimary;
     }
 
     /**
