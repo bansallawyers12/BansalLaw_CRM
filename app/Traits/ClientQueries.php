@@ -165,6 +165,7 @@ trait ClientQueries
             ->where('ad.type', '=', 'client')
             ->whereNull('ad.is_deleted')
             ->where('cm.matter_status', '=', '1')
+            ->whereNotNull('cm.sel_matter_id')
             ->whereNotNull('cm.client_unique_matter_no')
             ->where('cm.client_unique_matter_no', '!=', '')
             ->where(function ($q) use ($closedStages) {
@@ -190,9 +191,13 @@ trait ClientQueries
     protected function applyClientMatterListingFilters($query, $request)
     {
         if ($request->has('client_id')) {
-            $client_id = $request->input('client_id');
-            if (trim((string) $client_id) !== '') {
-                $query->where('ad.client_id', '=', $client_id);
+            $client_id = trim((string) $request->input('client_id'));
+            if ($client_id !== '') {
+                if (ctype_digit($client_id)) {
+                    $query->where('ad.id', '=', (int) $client_id);
+                } else {
+                    $query->where('ad.client_id', '=', $client_id);
+                }
             }
         }
 

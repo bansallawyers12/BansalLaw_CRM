@@ -1,6 +1,6 @@
 @extends('layouts.crm_client_detail')
 @include('components.require-tinymce')
-@section('title', (($listScope ?? 'master') === 'clients') ? 'Clients' : 'Master List')
+@section('title', (($listScope ?? 'clients') === 'clients') ? 'Matter list' : 'Clients')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
@@ -175,8 +175,8 @@
                                 <i class="fa-solid fa-users"></i>
                             </span>
                             <div>
-                                @php $listScope = $listScope ?? 'master'; @endphp
-                                <h4>{{ $listScope === 'clients' ? 'All Clients' : 'Master List' }}</h4>
+                                @php $listScope = $listScope ?? 'clients'; @endphp
+                                <h4>{{ $listScope === 'clients' ? 'Matter list' : 'Clients' }}</h4>
                                 <p class="clients-page-header__subtitle">
                                     @if($listScope === 'clients')
                                         {{ number_format($lists->total()) }} active {{ Str::plural('matter', $lists->total()) }} &middot; One row per matter (clients without matters are not listed)
@@ -205,13 +205,13 @@
 
                 <div class="card-body">
                     <div class="clients-toolbar">
-                        @php $listScope = $listScope ?? 'master'; @endphp
+                        @php $listScope = $listScope ?? 'clients'; @endphp
                         <ul class="clients-tabs nav" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link {{ $listScope === 'master' ? 'active' : '' }}" id="master-list-tab" href="{{ URL::to('/clients') }}">Master List</a>
+                                <a class="nav-link {{ $listScope === 'clients' ? 'active' : '' }}" id="matter-list-tab" href="{{ URL::to('/clients') }}">Matter list</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ $listScope === 'clients' ? 'active' : '' }}" id="clients-tab" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
+                                <a class="nav-link {{ $listScope === 'master' ? 'active' : '' }}" id="clients-tab" href="{{ URL::to('/clients?list=master') }}">Clients</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>
@@ -255,8 +255,8 @@
                             @endif
                         </div>
                         <form action="{{URL::to('/clients')}}" method="get" id="filterForm">
-                            @if(($listScope ?? 'master') === 'clients')
-                                <input type="hidden" name="list" value="clients">
+                            @if(($listScope ?? 'clients') === 'master')
+                                <input type="hidden" name="list" value="master">
                             @endif
                             <div class="row">
                                 <div class="col-md-4">
@@ -288,7 +288,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="type">Record Type</label>
-                                        @if(($listScope ?? 'master') === 'clients')
+                                        @if(($listScope ?? 'clients') === 'clients')
                                             <input type="hidden" name="type" value="client">
                                             <select class="form-control" id="type" disabled>
                                                 <option value="client" selected>Client</option>
@@ -365,7 +365,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg me-3">Apply Filters</button>
-                                        <a class="btn btn-info" href="{{ ($listScope ?? 'master') === 'clients' ? URL::to('/clients?list=clients') : URL::to('/clients') }}">Reset</a>
+                                        <a class="btn btn-info" href="{{ ($listScope ?? 'clients') === 'master' ? URL::to('/clients?list=master') : URL::to('/clients') }}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -374,7 +374,7 @@
 
                     @if($lists->total() > 0)
                     <div class="clients-results-bar">
-                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} {{ ($listScope ?? 'master') === 'clients' ? 'matters' : 'records' }}
+                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} {{ ($listScope ?? 'clients') === 'clients' ? 'matters' : 'records' }}
                         @if($activeFilterCount > 0)
                             <span class="clients-results-bar__filtered"><i class="fa-solid fa-filter"></i> Filtered</span>
                         @endif
@@ -402,7 +402,7 @@
                                 @if($lists->count() > 0)
                                     @foreach (@$lists as $list)
                                     @php
-                                        $isClientsMatterRow = ($listScope ?? 'master') === 'clients';
+                                        $isClientsMatterRow = ($listScope ?? 'clients') === 'clients';
                                         $rowDomId = $isClientsMatterRow
                                             ? ('id_matter_' . (int) ($list->listing_client_matter_id ?? 0))
                                             : ('id_' . @$list->id);
@@ -419,7 +419,7 @@
                                             $lastName = trim((string) @$list->last_name);
                                             $encodedId = base64_encode(convert_uuencode(@$list->id));
                                             $clientRef = trim((string) ($list->client_id ?? ''));
-                                            $isClientsMatterRow = ($listScope ?? 'master') === 'clients';
+                                            $isClientsMatterRow = ($listScope ?? 'clients') === 'clients';
                                             if ($isClientsMatterRow) {
                                                 $primaryMatterRef = trim((string) ($list->listing_matter_ref ?? ''));
                                                 $activeMatterRefs = $primaryMatterRef !== '' ? [$primaryMatterRef] : [];
@@ -496,7 +496,7 @@
                                                             <div class="client-name-refs" title="{{ implode(', ', $nameRefLines) }}">
                                                                 @foreach($nameRefLines as $idx => $refLine)
                                                                     @php
-                                                                        $isMultiMatterSummary = ($listScope ?? 'master') === 'master'
+                                                                        $isMultiMatterSummary = ($listScope ?? 'clients') === 'master'
                                                                             && count($activeMatterRefs ?? []) > 1
                                                                             && $clientRef !== '';
                                                                         $refHref = $isMultiMatterSummary

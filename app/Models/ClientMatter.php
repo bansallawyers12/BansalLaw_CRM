@@ -58,6 +58,22 @@ class ClientMatter extends Model
     ];
 
     /**
+     * Active client_matters rows for pickers (detail dropdown, assign email, AJAX lists).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<ClientMatter>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<ClientMatter>
+     */
+    public function scopeActiveForClientPicker($query, int $clientRecordId)
+    {
+        return $query
+            ->where('client_matters.client_id', $clientRecordId)
+            ->where('client_matters.matter_status', 1)
+            ->whereNotNull('client_matters.sel_matter_id')
+            ->whereNotNull('client_matters.client_unique_matter_no')
+            ->where('client_matters.client_unique_matter_no', '!=', '');
+    }
+
+    /**
      * Get the client that owns the matter.
      */
     public function client()

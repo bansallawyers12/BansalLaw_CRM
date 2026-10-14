@@ -110,21 +110,26 @@
                     <input type="hidden" name="title" value="Matter Discussion">
 				<div class="modal-body sa-note-modal__body">
 					<div class="row g-3">
+                        @php
+                            $noteModalMatters = \App\Models\ClientMatter::query()
+                                ->activeForClientPicker((int) $fetchedData->id)
+                                ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                                ->select(
+                                    'client_matters.id',
+                                    'client_matters.client_unique_matter_no',
+                                    'matters.title',
+                                    'client_matters.sel_matter_id'
+                                )
+                                ->orderByDesc('client_matters.updated_at')
+                                ->get();
+                        @endphp
+                        @if($noteModalMatters->isNotEmpty())
                         <div class="col-12 col-lg-5">
 							<div class="form-group mb-0">
 								<label for="matter_id" class="sa-label">Select Matter</label>
 								<select name="matter_id" id="matter_id" class="form-control">
 								    <option value="">Select Client Matters</option>
-                                    <?php
-	                                    $matter_list_arr = DB::table('client_matters')
-                                    ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-	                                    ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title','client_matters.sel_matter_id')
-                                    ->where('client_matters.matter_status',1)
-                                    ->where('client_matters.client_id',@$fetchedData->id)
-	                                    ->orderBy('client_matters.updated_at', 'desc')
-                                    ->get();
-                                    ?>
-								    @foreach($matter_list_arr as $matterlist)
+								    @foreach($noteModalMatters as $matterlist)
 	                                        @php
 	                                            $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
 	                                            if (!empty($matterlist->client_unique_matter_no)) {
@@ -137,6 +142,7 @@
 								<span class="custom-error matter_id_error" role="alert"><strong></strong></span>
 							</div>
 						</div>
+                        @endif
 
                         <div class="col-12 col-lg-4">
 							<div class="form-group mb-0">

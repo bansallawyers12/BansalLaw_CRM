@@ -144,9 +144,9 @@ class ClientsController extends Controller
     */
     public function index(Request $request)
 	{
-        $listScope = strtolower(trim((string) $request->get('list', 'master')));
+        $listScope = strtolower(trim((string) $request->get('list', 'clients')));
         if (! in_array($listScope, ['master', 'clients'], true)) {
-            $listScope = 'master';
+            $listScope = 'clients';
         }
 
 		// Check authorization using trait
@@ -230,6 +230,7 @@ class ClientsController extends Controller
             ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->whereIn('cm.client_id', $clientIds)
             ->where('cm.matter_status', 1)
+            ->whereNotNull('cm.sel_matter_id')
             ->whereNotNull('cm.client_unique_matter_no')
             ->where('cm.client_unique_matter_no', '!=', '')
             ->where(function ($q) use ($closedStages) {
@@ -3429,30 +3430,73 @@ class ClientsController extends Controller
         return redirect()->back()->with('error', config('constants.server_error'));
     }
 
-    //Fetch selected client all matters at assign email to client popup
-    public function listAllMattersWRTSelClient(Request $request){ //dd($request->all());
-        if( ClientMatter::where('client_id', $request->client_id)->exists()){
-            //Fetch All client matters
-            $clientMatetrs = ClientMatter::leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-            ->select('client_matters.id', 'matters.title','client_matters.client_unique_matter_no')
-            ->where('client_id', $request->client_id)
-            ->get(); //dd($clientMatetrs);
-            if( !empty($clientMatetrs) && count($clientMatetrs)>0 ){
-                $response['status'] 	= 	true;
-                $response['message']	=	'Client matter is successfully fetched.';
-                $response['clientMatetrs']	=	$clientMatetrs;
-            } else {
-                $response['status'] 	= 	false;
-                $response['message']	=	'Please try again';
-                $response['clientMatetrs']	=	array();
-            }
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            $response['clientMatetrs']	=	array();
+    // Fetch active matters for one client/lead (assign email, reassign, compose helpers).
+    public function listAllMattersWRTSelClient(Request $request)
+    {
+        $clientRecordId = $this->resolveClientRecordIdForMatterListing($request->input('client_id'));
+        if ($clientRecordId === null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Client not found.',
+                'clientMatetrs' => [],
+            ]);
         }
-        echo json_encode($response);
-	}
+
+        $clientMatetrs = ClientMatter::query()
+            ->activeForClientPicker($clientRecordId)
+            ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+            ->select(
+                'client_matters.id',
+                'matters.title',
+                'client_matters.client_unique_matter_no'
+            )
+            ->orderByDesc('client_matters.updated_at')
+            ->get();
+
+        return response()->json([
+            'status' => $clientMatetrs->isNotEmpty(),
+            'message' => $clientMatetrs->isNotEmpty()
+                ? 'Client matter is successfully fetched.'
+                : 'No matters found for this client.',
+            'clientMatetrs' => $clientMatetrs,
+        ]);
+    }
+
+    /**
+     * Resolve admins.id from AJAX payload (numeric id or public client_id ref).
+     */
+    private function resolveClientRecordIdForMatterListing(mixed $raw): ?int
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (is_numeric($raw)) {
+            $id = (int) $raw;
+            if ($id < 1) {
+                return null;
+            }
+
+            $exists = Admin::query()
+                ->where('id', $id)
+                ->whereIn('type', ['client', 'lead'])
+                ->exists();
+
+            return $exists ? $id : null;
+        }
+
+        $ref = trim((string) $raw);
+        if ($ref === '') {
+            return null;
+        }
+
+        $id = Admin::query()
+            ->where('client_id', $ref)
+            ->whereIn('type', ['client', 'lead'])
+            ->value('id');
+
+        return $id ? (int) $id : null;
+    }
 
 
     public function checkEmail(Request $request)

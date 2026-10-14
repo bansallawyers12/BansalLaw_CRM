@@ -1077,7 +1077,7 @@
                         <p class="assign-email-field__hint" id="assignClientHint">Type a name, email, phone, or client ref — then pick a result.</p>
                     </div>
 
-                    <div class="assign-email-field assign-email-field--matter assign-email-field--disabled" id="assignMatterField">
+                    <div class="assign-email-field assign-email-field--matter assign-email-field--disabled" id="assignMatterField" hidden>
                         <label class="assign-email-field__label">
                             <span class="assign-email-field__label-text">
                                 <span class="assign-email-field__step" id="assignMatterStepBadge">2</span>
