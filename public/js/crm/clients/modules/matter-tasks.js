@@ -366,6 +366,29 @@
         return ($due.val() || '').trim();
     }
 
+    /**
+     * Resolve Y-m-d from Flatpickr selection or typed d/m/Y (calendar click can lag input value).
+     * @returns {{ok:boolean, empty?:boolean, value?:string, message?:string}}
+     */
+    function resolveDueDateFromPicker($due) {
+        var fp = getDueFlatpickr($due);
+        if (fp && fp.selectedDates && fp.selectedDates.length > 0) {
+            var d = fp.selectedDates[0];
+            if (d && !isNaN(d.getTime())) {
+                return {
+                    ok: true,
+                    value:
+                        d.getFullYear() +
+                        '-' +
+                        pad2(d.getMonth() + 1) +
+                        '-' +
+                        pad2(d.getDate())
+                };
+            }
+        }
+        return parseDueDateInput(getDueDateTypedValue($due));
+    }
+
     function validateTaskTitle($inp) {
         var title = ($inp.val() || '').trim();
         clearFieldInvalid($inp);
@@ -387,8 +410,7 @@
         clearFieldInvalid($due);
         clearFieldInvalid($visible);
 
-        var typed = getDueDateTypedValue($due);
-        var parsed = parseDueDateInput(typed);
+        var parsed = resolveDueDateFromPicker($due);
         if (!parsed.ok) {
             markFieldInvalid($visible);
             notifyError(parsed.message || 'Please enter a valid due date.');
@@ -406,8 +428,7 @@
 
         if (fp && typeof fp.setDate === 'function') {
             try {
-                // Input shows d/m/Y; selectedDates still resolve from parsed Y-m-d
-                fp.setDate(parsed.value, true, 'Y-m-d');
+                fp.setDate(parsed.value, false, 'Y-m-d');
             } catch (e) {
                 markFieldInvalid($visible);
                 notifyError('Please enter a valid due date (DD/MM/YYYY).');
@@ -477,20 +498,29 @@
                 $(instance.input)
                     .off('blur.matterTaskDue input.matterTaskDue')
                     .on('blur.matterTaskDue', function () {
-                        var typed = (instance.input.value || '').trim();
-                        if (!typed) {
+                        // Defer: clicking a calendar day blurs the input first — do not clear mid-pick.
+                        window.setTimeout(function () {
+                            if (instance.isOpen) {
+                                return;
+                            }
+                            if (instance.selectedDates && instance.selectedDates.length > 0) {
+                                clearFieldInvalid($(instance.input));
+                                return;
+                            }
+                            var typed = (instance.input.value || '').trim();
+                            if (!typed) {
+                                clearFieldInvalid($(instance.input));
+                                instance.clear();
+                                return;
+                            }
+                            var parsed = parseDueDateInput(typed);
+                            if (!parsed.ok) {
+                                markFieldInvalid($(instance.input));
+                                return;
+                            }
                             clearFieldInvalid($(instance.input));
-                            instance.clear();
-                            return;
-                        }
-                        var parsed = parseDueDateInput(typed);
-                        if (!parsed.ok) {
-                            markFieldInvalid($(instance.input));
-                            return;
-                        }
-                        clearFieldInvalid($(instance.input));
-                        instance.setDate(parsed.value, true, 'Y-m-d');
-                        instance.close();
+                            instance.setDate(parsed.value, true, 'Y-m-d');
+                        }, 0);
                     })
                     .on('input.matterTaskDue', function () {
                         clearFieldInvalid($(instance.input));
@@ -498,18 +528,11 @@
             },
             onChange: function (selectedDates, dateStr, instance) {
                 clearFieldInvalid($due);
+                clearFieldInvalid($(instance.input));
                 // Ensure popup hides after picking a day (do not leave sticky inline styles)
                 if (selectedDates && selectedDates.length && instance && typeof instance.close === 'function') {
                     instance.close();
                 }
-            },
-            onOpen: function (selectedDates, dateStr, instance) {
-                if (!instance.calendarContainer) {
-                    return;
-                }
-                instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
-                // Only z-index — never set display/visibility/opacity inline or closeOnSelect cannot hide the calendar
-                instance.calendarContainer.style.zIndex = '100000';
             },
             onClose: function (selectedDates, dateStr, instance) {
                 if (!instance.calendarContainer) {
@@ -519,6 +542,17 @@
                 instance.calendarContainer.style.removeProperty('display');
                 instance.calendarContainer.style.removeProperty('visibility');
                 instance.calendarContainer.style.removeProperty('opacity');
+                if (selectedDates && selectedDates.length > 0) {
+                    clearFieldInvalid($(instance.input));
+                }
+            },
+            onOpen: function (selectedDates, dateStr, instance) {
+                if (!instance.calendarContainer) {
+                    return;
+                }
+                instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
+                // Only z-index — never set display/visibility/opacity inline or closeOnSelect cannot hide the calendar
+                instance.calendarContainer.style.zIndex = '100000';
             }
         });
 
